@@ -96,13 +96,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
     @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(DbSchema.get(DataIntegrationDbSchema.SCHEMA_NAME));
-    }
-
-    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
     }

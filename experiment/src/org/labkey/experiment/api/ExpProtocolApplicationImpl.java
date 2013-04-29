@@ -189,6 +189,24 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _object.setActivityDate(date);
     }
 
+    public void setStartTime(Date date)
+    {
+        ensureUnlocked();
+        _object.setStartTime(date);
+    }
+
+    public void setEndTime(Date date)
+    {
+        ensureUnlocked();
+        _object.setEndTime(date);
+    }
+
+    public void setRecordCount(Integer recordCount)
+    {
+        ensureUnlocked();
+        _object.setRecordCount(recordCount);
+    }
+
     public int getActionSequence()
     {
         return _object.getActionSequence();
@@ -202,6 +220,21 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public Date getActivityDate()
     {
         return _object.getActivityDate();
+    }
+
+    public Date getStartTime()
+    {
+        return _object.getStartTime();
+    }
+
+    public Date getEndTime()
+    {
+        return _object.getEndTime();
+    }
+
+    public Integer getRecordCount()
+    {
+        return _object.getRecordCount();
     }
 
     public String getComments()

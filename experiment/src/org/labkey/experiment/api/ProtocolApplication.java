@@ -35,6 +35,9 @@ public class ProtocolApplication extends IdentifiableBase
     private Integer runId;
     private int actionSequence;
     private String comments;
+    private Date startTime;
+    private Date endTime;
+    private Integer recordCount;
 
     public int getRowId()
     {
@@ -117,4 +120,37 @@ public class ProtocolApplication extends IdentifiableBase
     {
         this.comments = comments;
     }
+
+    public Integer getRecordCount()
+    {
+        return this.recordCount;
+    }
+
+    public void setRecordCount(Integer recordCount)
+    {
+        this.recordCount = recordCount;
+    }
+
+    public Date getStartTime()
+    {
+        return this.startTime;
+    }
+
+    public void setStartTime(Date startTime)
+    {
+        this.startTime = startTime;
+
+    }
+
+    public Date getEndTime()
+    {
+        return this.endTime;
+    }
+
+    public void setEndTime(Date endTime)
+    {
+        this.endTime = endTime;
+
+    }
+
 }

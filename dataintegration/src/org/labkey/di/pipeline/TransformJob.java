@@ -201,25 +201,30 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
 
         for (RecordedAction action : actions)
         {
-            if (action.getName() == TransformTask.ACTION_NAME)
-            {
-                for (Map.Entry<RecordedAction.ParameterType, Object> param : action.getParams().entrySet())
-                {
-                    RecordedAction.ParameterType paramKey = param.getKey();
-                    if (paramKey.getName() == TransformJobContext.Variable.RecordsInserted.getName() ||
-                        paramKey.getName() == TransformJobContext.Variable.RecordsDeleted.getName()    )
-                    {
-                        assert paramKey.getType() == PropertyType.INTEGER;
-                        // todo: should we break out inserted and deleted records in the TransformRun table
-                        // instead of just having one record count?
-                        recordCount += (Integer) param.getValue();
-                    }
-                }
-            }
+            recordCount += getRecordCountForAction(action);
         }
 
         logRunFinish("Complete", run, recordCount);
         super.clearActionSet(run);
+    }
+
+    public int getRecordCountForAction(RecordedAction action)
+    {
+        int recordCount = 0;
+        for (Map.Entry<RecordedAction.ParameterType, Object> param : action.getParams().entrySet())
+        {
+            RecordedAction.ParameterType paramKey = param.getKey();
+            if (paramKey.getName() == TransformJobContext.Variable.RecordsInserted.getName() ||
+                    paramKey.getName() == TransformJobContext.Variable.RecordsDeleted.getName()    )
+            {
+                assert paramKey.getType() == PropertyType.INTEGER;
+                // todo: should we break out inserted and deleted records in the TransformRun table
+                // instead of just having one record count?
+                recordCount += (Integer) param.getValue();
+            }
+        }
+
+        return recordCount;
     }
 
     @Override

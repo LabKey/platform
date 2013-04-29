@@ -294,7 +294,9 @@ public class ExpGeneratorHelper
             // Look up the step by its name
             ExpProtocolAction step = expActionMap.get(action.getName());
 
-            ExpProtocolApplication app = run.addProtocolApplication(job.getUser(), step, ExpProtocol.ApplicationType.ProtocolApplication, action.getName());
+            ExpProtocolApplication app = run.addProtocolApplication(job.getUser(), step, ExpProtocol.ApplicationType.ProtocolApplication,
+                    action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
+
             if (!action.getName().equals(action.getDescription()))
             {
                 app.setName(action.getDescription());

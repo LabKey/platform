@@ -592,6 +592,17 @@
       <ns:column columnName="ActionSequence">
           <ns:description>Contains an index of when this step was performed within the run</ns:description>
       </ns:column>
+      <ns:column columnName="StartTime">
+          <ns:formatString>HH:mm:ss.SSS</ns:formatString>
+          <ns:description>Contains the time this step was started</ns:description>
+      </ns:column>
+      <ns:column columnName="EndTime">
+          <ns:formatString>HH:mm:ss.SSS</ns:formatString>
+          <ns:description>Contains the time this step was finished</ns:description>
+      </ns:column>
+      <ns:column columnName="RecordCount">
+          <ns:description>Contains the number of records affected by this step</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per step taken when performing an experiment run.</ns:description>
   </ns:table>

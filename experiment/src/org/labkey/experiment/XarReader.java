@@ -711,6 +711,14 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private java.sql.Timestamp getSqlTimestamp(Calendar date)
+    {
+        if (date != null)
+            return new java.sql.Timestamp(date.getTimeInMillis());
+
+        return null;
+    }
+
     private void loadProtocolApplication(ProtocolApplicationBaseType xmlProtocolApp,
                                          ExperimentRun experimentRun,
                                          XarContext context, boolean firstApp) throws SQLException, ExperimentException
@@ -733,15 +741,29 @@ public class XarReader extends AbstractXarImporter
         TableInfo tiDataInput = ExperimentServiceImpl.get().getTinfoDataInput();
 
         java.sql.Timestamp sqlDateTime = null;
+        java.sql.Timestamp sqlStartTime = null;
+        java.sql.Timestamp sqlEndTime = null;
+        Integer recordCount = null;
+
         if (!xmlProtocolApp.isNilActivityDate())
         {
-            Calendar date = xmlProtocolApp.getActivityDate();
-            if (date != null)
-                sqlDateTime = new java.sql.Timestamp(date.getTimeInMillis());
+            sqlDateTime = getSqlTimestamp(xmlProtocolApp.getActivityDate());
         }
         if (sqlDateTime == null)
         {
             sqlDateTime = new java.sql.Timestamp(System.currentTimeMillis());
+        }
+        if (!xmlProtocolApp.isNilStartTime())
+        {
+            sqlStartTime = getSqlTimestamp(xmlProtocolApp.getStartTime());
+        }
+        if (!xmlProtocolApp.isNilEndTime())
+        {
+            sqlEndTime = getSqlTimestamp(xmlProtocolApp.getEndTime());
+        }
+        if (!xmlProtocolApp.isNilRecordCount())
+        {
+            recordCount = xmlProtocolApp.getRecordCount();
         }
 
         String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, "ProtocolApplication");
@@ -769,6 +791,9 @@ public class XarReader extends AbstractXarImporter
             protocolApp.setActionSequence(xmlProtocolApp.getActionSequence());
             protocolApp.setRunId(runId);
             protocolApp.setComments(trimString(xmlProtocolApp.getComments()));
+            protocolApp.setStartTime(sqlStartTime);
+            protocolApp.setEndTime(sqlEndTime);
+            protocolApp.setRecordCount(recordCount);
 
             protocolApp = Table.insert(getUser(), tiProtApp, protocolApp);
         }

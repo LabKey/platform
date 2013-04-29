@@ -71,15 +71,14 @@ public class SimpleQueryTransformStep extends TransformTask
         _context = context;
     }
 
-
-    public void doWork() throws PipelineJobException
+    public void doWork(RecordedAction action) throws PipelineJobException
     {
         try
         {
             getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
                 getJob().setStatus("ERROR");
-            recordWork();
+            recordWork(action);
         }
         catch (Exception x)
         {
@@ -87,9 +86,8 @@ public class SimpleQueryTransformStep extends TransformTask
         }
    }
 
-    private void recordWork()
+    private void recordWork(RecordedAction action)
     {
-        RecordedAction action = new RecordedAction(TransformTask.ACTION_NAME);
         if (-1 != _recordsInserted)
             action.addParameter(RecordsInserted.getParameterType(),_recordsInserted);
         if (-1 != _recordsDeleted)
@@ -106,8 +104,6 @@ public class SimpleQueryTransformStep extends TransformTask
         catch (URISyntaxException ignore)
         {
         }
-
-        addRecordedAction(action);
     }
 
 

@@ -172,7 +172,7 @@ public class TransformRun
         return _jobId;
     }
 
-    public void setExpRunId(int expRunId)
+    public void setExpRunId(Integer expRunId)
     {
         _expRunId = expRunId;
     }

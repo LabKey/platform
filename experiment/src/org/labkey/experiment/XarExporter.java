@@ -218,24 +218,45 @@ public class XarExporter
         }
     }
 
+    private Calendar getGregorianCalender(Date date)
+    {
+        Calendar cal = new GregorianCalendar();
+        cal.setTime(date);
+        return cal;
+    }
+
     private void addProtocolApplication(ExpProtocolApplication application, ExpRunImpl run, ExperimentRunType.ProtocolApplications xApplications)
         throws ExperimentException
     {
         ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();
         xApplication.setAbout(_relativizedLSIDs.relativize(application.getLSID()));
         xApplication.setActionSequence(application.getActionSequence());
-        Date activityDate = application.getActivityDate();
-        if (activityDate != null)
+        Date date = application.getActivityDate();
+        if (date != null)
         {
-            Calendar cal = new GregorianCalendar();
-            cal.setTime(application.getActivityDate());
-            xApplication.setActivityDate(cal);
+            xApplication.setActivityDate(getGregorianCalender(date));
         }
         if (application.getComments() != null)
         {
             xApplication.setComments(application.getComments());
         }
         xApplication.setCpasType(application.getApplicationType().toString());
+        date = application.getStartTime();
+        if (date != null)
+        {
+            xApplication.setStartTime(getGregorianCalender(date));
+        }
+        date = application.getEndTime();
+        if (date != null)
+        {
+            xApplication.setEndTime(getGregorianCalender(date));
+        }
+
+        Integer recordCount = application.getRecordCount();
+        if (recordCount != null)
+        {
+            xApplication.setRecordCount(recordCount);
+        }
 
         InputOutputRefsType inputRefs = null;
         Data[] inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());

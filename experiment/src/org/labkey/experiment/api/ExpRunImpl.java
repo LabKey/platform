@@ -200,6 +200,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpProtocolApplicationImpl addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType appType, String name)
     {
+        return addProtocolApplication(user, action, appType, name, null, null, null);
+    }
+
+    public ExpProtocolApplicationImpl addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType appType, String name, java.util.Date startTime, java.util.Date endTime, Integer recordCount)
+    {
         ensureUnlocked();
         ProtocolApplication pa = new ProtocolApplication();
         if (action == null)
@@ -219,6 +224,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         pa.setLSID(ExperimentService.get().generateGuidLSID(getContainer(), ExpProtocolApplication.class));
         pa.setCpasType(appType.toString());
         pa.setRunId(getRowId());
+        pa.setStartTime(startTime);
+        pa.setEndTime(endTime);
+        pa.setRecordCount(recordCount);
         try
         {
             pa = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), pa);
