@@ -44,6 +44,7 @@ import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
+import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.ScheduleBuilder;
@@ -170,15 +171,18 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             throw new  XmlException("Invalid transform class specified");
         }
 
-        if (null != transformXML.getSource())
+        SchemaQueryType source = transformXML.getSource();
+        if (null != source)
         {
-            meta.setSourceSchema(SchemaKey.fromString(transformXML.getSource().getSchemaName()));
-            meta.setSourceQuery(transformXML.getSource().getQueryName());
-            if (null != transformXML.getSource().getSourceOption())
+            meta.setSourceSchema(SchemaKey.fromString(source.getSchemaName()));
+            meta.setSourceQuery(source.getQueryName());
+            if (null != source.getTimestampColumnName())
+                meta.setSourceTimestampColumnName(source.getTimestampColumnName());
+            if (null != source.getSourceOption())
             {
                 try
                 {
-                    meta.setSourceOptions(CopyConfig.SourceOptions.valueOf(transformXML.getSource().getSourceOption()));
+                    meta.setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption()));
                 }
                 catch (IllegalArgumentException x)
                 {
@@ -187,15 +191,16 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 }
             }
         }
-        if (null != transformXML.getDestination())
+        SchemaQueryType destination = transformXML.getDestination();
+        if (null != destination)
         {
-            meta.setTargetSchema(SchemaKey.fromString(transformXML.getDestination().getSchemaName()));
-            meta.setTargetQuery(transformXML.getDestination().getQueryName());
-            if (null != transformXML.getDestination().getTargetOption())
+            meta.setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
+            meta.setTargetQuery(destination.getQueryName());
+            if (null != destination.getTargetOption())
             {
                 try
                 {
-                    meta.setTargetOptions(CopyConfig.TargetOptions.valueOf(transformXML.getDestination().getTargetOption()));
+                    meta.setTargetOptions(CopyConfig.TargetOptions.valueOf(destination.getTargetOption()));
                 }
                 catch (IllegalArgumentException x)
                 {

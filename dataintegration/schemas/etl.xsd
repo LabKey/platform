@@ -19,6 +19,7 @@
     <complexType name="SchemaQueryType">
         <attribute name="schemaName" type="string" use="required" />
         <attribute name="queryName" type="string" use="required" />
+        <attribute name="timestampColumnName" type="string" use="optional" />
         <attribute name="sourceOption" type="string" use="optional" />
         <attribute name="targetOption" type="string" use="optional" />
     </complexType>
