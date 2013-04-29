@@ -56,54 +56,53 @@ for (TransformConfiguration c : configurationsList)
 }
 
 boolean isAdmin = context.hasPermission(AdminPermission.class);
-
 %>
 <script>
-var X = Ext4 || Ext;
+    var X = Ext4 || Ext;
 
-function onFailedConfigurationUpdate(response,config)
-{
-    X.MessageBox.show({
-        modal:true,
-        title:response.statusText,
-        msg:"There was an error updating the configuration",
-        icon:Ext.MessageBox.ERROR,
-        buttons: Ext.MessageBox.OK,
-        fn: function(){window.location.reload(true);}
-    });
-}
-function Transform_setProperty(transformId, property, value)
-{
-    var params = {'transformId':transformId};
-    params[property] = value;
+    function onFailedConfigurationUpdate(response,config)
+    {
+        X.MessageBox.show({
+            modal:true,
+            title:response.statusText,
+            msg:"There was an error updating the configuration",
+            icon:Ext.MessageBox.ERROR,
+            buttons: Ext.MessageBox.OK,
+            fn: function(){window.location.reload(true);}
+        });
+    }
+    function Transform_setProperty(transformId, property, value)
+    {
+        var params = {'transformId':transformId};
+        params[property] = value;
 
-    X.Ajax.request({
-        url : <%=q(buildURL(DataIntegrationController.UpdateTransformConfigurationAction.class))%>,
-        params : params,
-        method : "POST"
-        ,failure : onFailedConfigurationUpdate
-    });
-}
-function Transform_setEnabled(transformId, enabled)
-{
-    Transform_setProperty(transformId, "enabled", enabled);
-}
-function Transform_setVerboseLogging(transformId, verbose)
-{
-    Transform_setProperty(transformId, "verboseLogging", verbose);
-}
+        X.Ajax.request({
+            url : <%=q(buildURL(DataIntegrationController.UpdateTransformConfigurationAction.class))%>,
+            params : params,
+            method : "POST"
+            ,failure : onFailedConfigurationUpdate
+        });
+    }
+    function Transform_setEnabled(transformId, enabled)
+    {
+        Transform_setProperty(transformId, "enabled", enabled);
+    }
+    function Transform_setVerboseLogging(transformId, verbose)
+    {
+        Transform_setProperty(transformId, "verboseLogging", verbose);
+    }
 
-function Transform_runNow(transformId)
-{
-    var params = {'transformId':transformId};
-    X.Ajax.request({
-        url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
-        params : params,
-        method : "POST"
+    function Transform_runNow(transformId)
+    {
+        var params = {'transformId':transformId};
+        X.Ajax.request({
+            url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
+            params : params,
+            method : "POST"
 //        ,success : onSuccess
 //        ,failure : onFailure
-    });
-}
+        });
+    }
 
 
 
@@ -132,6 +131,16 @@ function onRunNowClicked(el,id)
 {
     Transform_runNow(id);
 }
+
+    Ext4.onReady(function() {
+        Ext4.create('Ext.Button',  {
+            text : 'View Processed Jobs',
+            renderTo : 'jobsButton',
+            handler : function() {
+                window.location = LABKEY.ActionURL.buildURL("DataIntegration", "viewJobs", LABKEY.ActionURL.getContainer(), null);
+            }
+        });
+    });
 </script>
 
 
@@ -189,4 +198,4 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
 </div>
 
 <br>
-<%=textLink("view completed jobs", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(context.getContainer()))%>
+<div id='jobsButton'></div>

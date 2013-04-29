@@ -69,6 +69,23 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class viewJobsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<Object>(DataIntegrationController.class, "processedETLJobs.jsp", null);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Processed Jobs");
+            return root;
+        }
+    }
+
 
     @SuppressWarnings("UnusedDeclaration")
     public static class TransformConfigurationForm
