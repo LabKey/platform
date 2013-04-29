@@ -59,6 +59,12 @@ public interface ExpProtocolApplication extends ExpObject
 
     Date getActivityDate();
 
+    Date getStartTime();
+
+    Date getEndTime();
+
+    Integer getRecordCount();
+
     String getComments();
 
     public void setRun(ExpRun run);
@@ -68,6 +74,12 @@ public interface ExpProtocolApplication extends ExpObject
     public void setProtocol(ExpProtocol protocol);
 
     public void setActivityDate(Date date);
+
+    public void setStartTime(Date date);
+
+    public void setEndTime(Date date);
+
+    public void setRecordCount(Integer recordCount);
     
     void save(User user);
 }

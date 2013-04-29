@@ -20,6 +20,7 @@ import org.labkey.api.exp.PropertyType;
 import java.io.File;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -41,6 +42,9 @@ public class RecordedAction
 
     private String _name;
     private String _description;
+    private Date _startTime;
+    private Date _endTime;
+    private Integer _recordCount;
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -102,6 +106,36 @@ public class RecordedAction
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public void setStartTime(Date startTime)
+    {
+        _startTime = startTime;
+    }
+
+    public Date getStartTime()
+    {
+        return _startTime;
+    }
+
+    public void setEndTime(Date endTime)
+    {
+        _endTime = endTime;
+    }
+
+    public Date getEndTime()
+    {
+        return _endTime;
+    }
+
+    public void setRecordCount(Integer recordCount)
+    {
+        _recordCount = recordCount;
+    }
+
+    public Integer getRecordCount()
+    {
+        return _recordCount;
     }
 
     public void addParameter(ParameterType type, Object value)
