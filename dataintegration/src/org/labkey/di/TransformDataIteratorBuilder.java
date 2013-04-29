@@ -20,6 +20,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import static org.labkey.di.DataIntegrationDbSchema.Columns.*;
 
@@ -53,6 +54,6 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             out.addColumn(i);
         }
         out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _txTransformRunId);
-        return out;
+        return LoggingDataIterator.wrap(out);
     }
 }

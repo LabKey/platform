@@ -640,7 +640,7 @@ public class QueryPivot extends QueryRelation
             public SQLFragment getValueSql()
             {
                 if (null == c)
-                    return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().sqlTypeNameFromSqlType(getJdbcType().sqlType)));
+                    return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().sqlTypeNameFromJdbcType(getJdbcType())));
                 else
                     return new SQLFragment(getTable().getAlias() + "." + alias);
             }

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
+import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -168,11 +169,35 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         {
             meta.setSourceSchema(SchemaKey.fromString(transformXML.getSource().getSchemaName()));
             meta.setSourceQuery(transformXML.getSource().getQueryName());
+            if (null != transformXML.getSource().getSourceOption())
+            {
+                try
+                {
+                    meta.setSourceOptions(CopyConfig.SourceOptions.valueOf(transformXML.getSource().getSourceOption()));
+                }
+                catch (IllegalArgumentException x)
+                {
+                    // TODO
+                    throw x;
+                }
+            }
         }
         if (null != transformXML.getDestination())
         {
             meta.setTargetSchema(SchemaKey.fromString(transformXML.getDestination().getSchemaName()));
             meta.setTargetQuery(transformXML.getDestination().getQueryName());
+            if (null != transformXML.getDestination().getTargetOption())
+            {
+                try
+                {
+                    meta.setTargetOptions(CopyConfig.TargetOptions.valueOf(transformXML.getDestination().getTargetOption()));
+                }
+                catch (IllegalArgumentException x)
+                {
+                    // TODO
+                    throw x;
+                }
+            }
         }
 
         return meta;

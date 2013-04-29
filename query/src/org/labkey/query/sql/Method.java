@@ -395,7 +395,7 @@ public abstract class Method
                 try
                 {
                     jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType);
+                    typeName = schema.getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
                     if (fragments.length > 2)
                         length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};

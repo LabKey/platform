@@ -1744,7 +1744,7 @@ public class SpecimenImporter
 
     private void appendEqualCheck(DbSchema schema, StringBuilder sql, ImportableColumn col)
     {
-        String dialectType = schema.getSqlDialect().sqlTypeNameFromSqlType(col.getSQLType().sqlType);
+        String dialectType = schema.getSqlDialect().sqlTypeNameFromJdbcType(col.getSQLType());
         String paramCast = "CAST(? AS " + dialectType + ")";
         // Each unique col has two parameters in the null-equals check.
         sql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ").append(paramCast).append(" IS NULL)");

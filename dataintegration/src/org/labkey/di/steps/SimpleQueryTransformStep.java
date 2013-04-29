@@ -228,7 +228,10 @@ public class SimpleQueryTransformStep extends TransformTask
                 context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getTargetSchema() + "." + meta.getTargetQuery()));
                 return -1;
             }
-            return qus.importRows(u, c, source.getDataIterator(context), context.getErrors(), null);
+            if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
+                return qus.mergeRows(u, c, source.getDataIterator(context), context.getErrors(), null);
+            else
+                return qus.importRows(u, c, source.getDataIterator(context), context.getErrors(), null);
         }
         catch (SQLException sqlx)
         {
