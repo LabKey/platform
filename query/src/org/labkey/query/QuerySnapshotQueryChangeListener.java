@@ -77,12 +77,21 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
             try
             {
                 // update QueryTableName (stored in query.QuerySnapshotDef)
+                boolean changed = false;
                 String queryTableName = qsd.getQueryTableName();
-                if (queryTableName != null && queryNameChangeMap.containsKey(queryTableName))
+                if (null != queryTableName && queryNameChangeMap.containsKey(queryTableName))
                 {
                     qsd.setQueryTableName(queryNameChangeMap.get(queryTableName));
-                    qsd.save(user);
+                    changed = true;
                 }
+                String snapshotName = qsd.getName();
+                if (null != snapshotName && queryNameChangeMap.containsKey(snapshotName))
+                {
+                    qsd.setName(queryNameChangeMap.get(snapshotName));
+                    changed = true;
+                }
+                if (changed)
+                    qsd.save(user);
             }
             catch (Exception e)
             {

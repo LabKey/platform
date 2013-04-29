@@ -207,6 +207,12 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         edit().setQueryTableName(queryTableName);
     }
 
+    @Override
+    public void setName(String name)
+    {
+        edit().setName(name);
+    }
+
     public Date getCreated()
     {
         return _snapshotDef.getCreated();
