@@ -106,8 +106,12 @@ public class Parameter
 
     private String _name;
     private @Nullable String _uri = null;       // for migration of ontology based code
-    private @Nullable String _variable = null;  // not used internally, but provided for convenience
     private final @Nullable JdbcType _type;
+
+    // _variable and _length are not used internally, but are provided for convenience
+    private @Nullable String _variable = null;
+    private int _length;
+
 
     // only allow setting once, do not clear
     private boolean _constant = false;
@@ -353,6 +357,18 @@ public class Parameter
     public void setVariableName(@Nullable String variable)
     {
         _variable = variable;
+    }
+
+
+    public int getLength()
+    {
+        return _length;
+    }
+
+
+    public void setLength(int length)
+    {
+        _length = length;
     }
 
 

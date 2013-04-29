@@ -49,13 +49,22 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         super(queryTable, dbTable, helper);
     }
 
+
     @Override
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        DataIteratorContext context = new DataIteratorContext(errors);
-        return _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.IMPORT), extraScriptContext);
     }
+
+
+    @Override
+    public int mergeRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws SQLException
+    {
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+    }
+
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
@@ -64,11 +73,13 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+
     @Override
     protected SimpleTable getQueryTable()
     {
         return (SimpleTable)super.getQueryTable();
     }
+
 
     public DataIteratorBuilder createImportETL(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
     {

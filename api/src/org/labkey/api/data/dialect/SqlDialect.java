@@ -231,6 +231,7 @@ public abstract class SqlDialect
     }
 
 
+    @NotNull
     public String sqlTypeNameFromSqlType(int sqlType)
     {
         String sqlTypeName = _sqlTypeIntMap.get(sqlType);
@@ -238,7 +239,22 @@ public abstract class SqlDialect
         return null != sqlTypeName ? sqlTypeName : "OTHER";
     }
 
+
+    @Nullable
+    public String sqlTypeNameFromJdbcType(JdbcType type)
+    {
+        switch (type)
+        {
+            case GUID:
+                return getGuidType();
+            default:
+                return _sqlTypeIntMap.get(type.sqlType);
+        }
+    }
+
+
     protected abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
+
 
     protected String getDatabaseMaintenanceSql()
     {

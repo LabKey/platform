@@ -1530,7 +1530,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 d = CoreSchema.getInstance().getSqlDialect();
             else
                 d = getParentTable().getSqlDialect();
-            sqlTypeName = d.sqlTypeNameFromSqlType(jdbcType.sqlType);
+            sqlTypeName = d.sqlTypeNameFromJdbcType(jdbcType);
         }
         return sqlTypeName;
     }

@@ -129,6 +129,8 @@ public class StatementUtils
         {
             p = new Parameter(c, null);
             p.setVariableName(makeVariableName(c.getName()));
+            if (p.getType().isText() && p.getType()!=JdbcType.GUID && c.getScale() > 0)
+                p.setLength(c.getScale());
             parameters.put(c.getName(), p);
         }
         return p;
@@ -369,7 +371,7 @@ public class StatementUtils
         {
             cols.add(new SQLFragment("Container"));
             if (null == containerParameter && null == c)
-                containerParameter = createParameter("container", JdbcType.VARCHAR);
+                containerParameter = createParameter("container", JdbcType.GUID);
             values.add(appendParameterOrVariableOrConstant(new SQLFragment(), containerParameter, containerIdConstant));
             done.add("Container");
         }
@@ -481,7 +483,7 @@ public class StatementUtils
             if (operation.merge == op)
             {
                 sqlfInsertInto.append("IF ");
-                sqlfInsertInto.append(dialect.isSqlServer() ? "@@ROWCOUNT>0" :  "NOT FOUND");
+                sqlfInsertInto.append(dialect.isSqlServer() ? "@@ROWCOUNT=0" :  "NOT FOUND");
                 sqlfInsertInto.append(ifTHEN).append("\n\t");
             }
 
@@ -535,7 +537,7 @@ public class StatementUtils
             sqlfInsertInto.append(";\n");
 
             if (operation.merge == op)
-                sqlfInsertInto.append(ifEND).append("\n");
+                sqlfInsertInto.append(ifEND).append(";\n");
         }
 
         //
@@ -672,12 +674,8 @@ public class StatementUtils
                 for (Map.Entry<String, Parameter> e : parameters.entrySet())
                 {
                     Parameter p = e.getValue();
-                    String variable = p.getVariableName();
-                    String type = dialect.sqlTypeNameFromSqlType(p.getType().sqlType);
                     sqlfDeclare.append(comma);
-                    sqlfDeclare.append(variable);
-                    sqlfDeclare.append(" ");
-                    sqlfDeclare.append(type);
+                    String variable = variableDeclaration(sqlfDeclare, p);
                     select.append(comma).append(variable).append("=?");
                     select.add(p);
                     comma = ", ";
@@ -707,7 +705,7 @@ public class StatementUtils
             {
                 Parameter p = e.getValue();
                 String variable = p.getVariableName();
-                String type = dialect.sqlTypeNameFromSqlType(p.getType().sqlType);
+                String type = dialect.sqlTypeNameFromJdbcType(p.getType());
                 fn.append("\n").append(comma);
                 fn.append(variable);
                 fn.append(" ");
@@ -798,6 +796,22 @@ public class StatementUtils
         }
 
         return ret;
+    }
+
+
+    private String variableDeclaration(SQLFragment sqlfDeclare, Parameter p)
+    {
+        String variable = p.getVariableName();
+        sqlfDeclare.append(variable);
+        sqlfDeclare.append(" ");
+        String type = dialect.sqlTypeNameFromJdbcType(p.getType());
+        sqlfDeclare.append(type);
+        if (p.getType().isText() && p.getType() != JdbcType.GUID)
+        {
+            int length = p.getLength() > 0 ? p.getLength() : 4000;
+            sqlfDeclare.append("(").append(length).append(")");
+        }
+        return variable;
     }
 
 

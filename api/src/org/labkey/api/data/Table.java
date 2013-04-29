@@ -1533,7 +1533,7 @@ public class Table
             try
             {
                 PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
-                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromSqlType(JdbcType.TIMESTAMP.sqlType) + ")");
+                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromJdbcType(JdbcType.TIMESTAMP) + ")");
                 stmt.execute();
                 stmt.close();
 

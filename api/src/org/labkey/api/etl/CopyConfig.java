@@ -43,6 +43,7 @@ public class CopyConfig
     {
     }
 
+
     public CopyConfig(String sourceSchema, String source, String targetSchema, String target)
     {
         this._sourceSchema = SchemaKey.decode(sourceSchema);
@@ -51,14 +52,16 @@ public class CopyConfig
         this._targetQuery = target;
     }
 
-    enum TargetOptions
+
+    public enum TargetOptions
     {
         merge,
         append,
-        truncateAndAppend
+        truncate
     }
 
-    enum SourceOptions
+
+    public enum SourceOptions
     {
         deleteRowsAfterSelect
     }

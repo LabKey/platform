@@ -158,9 +158,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    //
-    // TODO do import and insert have different behavior wrt importAlaises?
-    //
     protected int _importRowsUsingETL(User user, Container container, DataIterator rows, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
             throws SQLException
     {
@@ -229,6 +226,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throws SQLException
     {
         return _importRowsUsingInsertRows(user,container,rows,errors,extraScriptContext);
+    }
+
+
+    @Override
+    public int mergeRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        throw new UnsupportedOperationException("merge is not supported for all tables");
     }
 
 

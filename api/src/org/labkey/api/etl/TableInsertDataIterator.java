@@ -27,6 +27,7 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -41,6 +42,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     final TableInfo _table;
     final Container _c;
     boolean _selectIds = false;
+    QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.INSERT;
     final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
 
 
@@ -64,6 +66,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super(data, null, context);
         this._table = table;
         this._c = c;
+        this._insertOption = context.getInsertOption();
 
         ColumnInfo colAutoIncrement = null;
         Integer indexAutoIncrement = null;
@@ -122,7 +125,12 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+
+            if (_insertOption == QueryUpdateService.InsertOption.MERGE)
+                _stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+            else
+                _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+
             super.init();
             if (_selectIds)
                 _batchSize = 1;
@@ -132,6 +140,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             throw new RuntimeSQLException(x);
         }
     }
+
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
