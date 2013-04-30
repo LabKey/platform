@@ -165,7 +165,7 @@ public class SimpleUserSchema extends UserSchema
         return null;
     }
 
-    public static class SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
+    public static class  SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
     {
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;

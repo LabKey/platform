@@ -123,7 +123,7 @@ public class LabKeyScope extends DbScope
 
             if (null == resource)
             {
-                LOG.warn("no schema metadata xml found for schema '" + schemaName + "'");
+                LOG.info("no schema metadata xml found for schema '" + schemaName + "'");
                 resource = new DbSchemaResource(schema);
             }
         }
