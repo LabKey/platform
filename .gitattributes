@@ -813,6 +813,7 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.01-0.02.
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.03-0.04.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.10-13.11.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.11-13.12.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
