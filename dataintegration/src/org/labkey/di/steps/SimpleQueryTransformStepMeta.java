@@ -31,7 +31,6 @@ public class SimpleQueryTransformStepMeta extends CopyConfig implements StepMeta
     Class targetStepClass = SimpleQueryTransformStep.class;
     Class taskClass;
     private String description;
-    private String id;
 
     public Class getTargetStepClass()
     {
@@ -51,16 +50,6 @@ public class SimpleQueryTransformStepMeta extends CopyConfig implements StepMeta
     public void setTaskClass(Class taskClass)
     {
         this.taskClass = taskClass;
-    }
-
-    public String getId()
-    {
-        return id;
-    }
-
-    public void setId(String id)
-    {
-        this.id = id;
     }
 
     public String getDescription()

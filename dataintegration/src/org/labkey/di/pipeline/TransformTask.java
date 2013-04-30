@@ -42,7 +42,10 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         super(factory, job);
 
         _txJob = (TransformJob)job;
-        _variableMap = new VariableMapImpl(_txJob.getVariableMap());
+        if (null != _txJob)
+            _variableMap = new VariableMapImpl(_txJob.getVariableMap());
+        else
+            _variableMap = new VariableMapImpl();
     }
 
     protected TransformJob getTransformJob()
@@ -69,6 +72,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         return _records;
     }
 
+
     private void addParameters(RecordedAction action)
     {
         for (String key : _variableMap.keySet())
@@ -79,5 +83,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
     }
 
+    abstract public boolean hasWork();
     abstract public void doWork(RecordedAction action) throws PipelineJobException;
 }

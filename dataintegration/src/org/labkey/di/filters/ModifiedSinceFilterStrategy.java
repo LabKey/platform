@@ -85,17 +85,20 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
     {
         init();
 
-        SimpleFilter f = null;
-        Date lastSuccessfulEndDate = getLastSuccessfulIncrementalEndTimestamp();
+        SimpleFilter f = new SimpleFilter();
+        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestamp();
+        if (null != incrementalStartTimestamp)
+            f.addCondition(_tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
 
-        if (null != lastSuccessfulEndDate)
-            f = new SimpleFilter(_tsCol.getFieldKey(), lastSuccessfulEndDate, CompareType.GT);
+        Aggregate max = new Aggregate(_tsCol, Aggregate.Type.MAX);
 
         TableSelector ts = new TableSelector(_table, Collections.singleton(_tsCol), f, null);
-        long count = ts.getRowCount();
-        return count > 0;
+        Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
+        List<Aggregate.Result> list = results.get(_tsCol.getName());
+        Aggregate.Result maxResult = list.get(0);
+        Date incrementalEndDate = ((Date)maxResult.getValue());
+        return (null != incrementalEndDate);
     }
-
 
 
     @Override

@@ -71,6 +71,23 @@ public class SimpleQueryTransformStep extends TransformTask
         _context = context;
     }
 
+
+    @Override
+    public boolean hasWork()
+    {
+        QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
+        if (null == sourceSchema || null == sourceSchema.getDbSchema())
+            throw new IllegalArgumentException("ERROR: Source schema not found: " + _meta.getSourceSchema());
+
+        TableInfo t = sourceSchema.getTable(_meta.getSourceQuery());
+        if (null == t)
+            throw new IllegalArgumentException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
+
+        FilterStrategy filterStrategy = getFilterStrategy();
+        return filterStrategy.hasWork();
+    }
+
+
     public void doWork(RecordedAction action) throws PipelineJobException
     {
         try

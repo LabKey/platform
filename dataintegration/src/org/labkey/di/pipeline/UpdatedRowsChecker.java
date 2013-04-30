@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -31,10 +32,14 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.steps.SimpleQueryTransformStep;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -49,17 +54,15 @@ public class UpdatedRowsChecker implements Callable<Boolean>
     final private ScheduledPipelineJobDescriptor d;
     final private Container c;
     final private User user;
-    final private SchemaKey sourceSchemaName;
-    final private String sourceQueryName;
     final private boolean verbose;
+    List<SimpleQueryTransformStepMeta> stepMetas;
 
-    public UpdatedRowsChecker(ScheduledPipelineJobDescriptor d, ScheduledPipelineJobContext context, SchemaKey sourceSchemaName, String sourceQueryName)
+    public UpdatedRowsChecker(ScheduledPipelineJobDescriptor d, ScheduledPipelineJobContext context,  List<SimpleQueryTransformStepMeta> steps)
     {
         this.d = d;
         this.c = context.getContainer();
         this.user = context.getUser();
-        this.sourceSchemaName = sourceSchemaName;
-        this.sourceQueryName = sourceQueryName;
+        this.stepMetas = steps;
         this.verbose = context.isVerbose();
     }
 
@@ -73,17 +76,6 @@ public class UpdatedRowsChecker implements Callable<Boolean>
         return user;
     }
 
-    public SchemaKey getSourceSchemaName()
-    {
-        return sourceSchemaName;
-    }
-
-    public String getSourceQueryName()
-    {
-        return sourceQueryName;
-    }
-
-
     @Override
     public Boolean call() throws Exception
     {
@@ -93,39 +85,17 @@ public class UpdatedRowsChecker implements Callable<Boolean>
         if (null == c)
             return false;
 
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), c, getSourceSchemaName());
-        if (schema == null)
+        for (SimpleQueryTransformStepMeta stepMeta : stepMetas)
         {
-            LOG.warn("Unable to find schema " + getSourceSchemaName() + " in " + c.getPath());
-            return false;
+            // TODO : mapping from Step -> StepMeta should not be hard coded
+            ContainerUser context = d.getJobContext(getContainer(), getUser());
+            SimpleQueryTransformStep step = new SimpleQueryTransformStep(null, null, stepMeta, (TransformJobContext)context);
+
+            if (step.hasWork())
+                return true;
         }
-
-        TableInfo tableInfo = schema.getTable(getSourceQueryName());
-        if (tableInfo == null)
-        {
-            LOG.warn("Unable to find query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + c.getPath());
-            return false;
-        }
-
-        FieldKey modifiedFieldKey = FieldKey.fromParts("modified");
-        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(modifiedFieldKey));
-        if (columns.isEmpty())
-        {
-            LOG.warn("Could not find Modified column on query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + c.getPath());
-            return false;
-        }
-
-        SimpleFilter filter = new SimpleFilter();
-        Date mostRecentRun = getMostRecentRun();
-        if (mostRecentRun != null)
-        {
-            filter.addCondition(modifiedFieldKey, mostRecentRun, CompareType.GTE);
-        }
-        long updatedRows = new TableSelector(tableInfo, columns.values(), filter, null).getRowCount();
-
-        // TODO log somewhere (if verbose log even if there is no work found)
-
-        return updatedRows > 0;
+        // TODO log somewhere (if verbose then log even if there is no work found)
+        return false;
     }
 
 
