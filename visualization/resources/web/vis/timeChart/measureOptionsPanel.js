@@ -80,6 +80,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     },
 
     initComponent : function() {
+        Ext4.tip.QuickTipManager.init();
+
         // track if the panel has changed in a way that would require a chart/data refresh
         this.hasChanges = false;
         this.requireDataRefresh = false;
@@ -528,9 +530,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     {
         this.fullFilterText = null;
         text = LABKEY.Utils.encodeHtml(text);
-        if(text.length > 25) {
+        if(text.length > 30) {
             this.fullFilterText = text;
-            text = text.substr(0, 24) + "...";
+            text = text.substr(0, 29) + "...";
         }
         var warning = "<b>This chart data is filtered:</b> " + text;
         this.dataFilterWarning.setText(warning, false);

@@ -98,9 +98,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     initComponent : function() {
 
-        // for selenium testing showTimeChartAxisPanel function
-        window.timeChartPanelId = this.getId();
-
         if(this.viewInfo.type != "line")
             return;
         
@@ -447,46 +444,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 this.editorSavePanel.setSaveAs(true);
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
                         }, scope: this});
-
-        // for selenium testing, add a funtion that can be evaluated by selenium to open the axis/title panels similar to clicking on the axis label or title
-        // this function can be removed once we figure out how to click on text within the SVG chart
-        window.showTimeChartAxisPanel = function(type){
-            var scopedThis = Ext4.getCmp(window.timeChartPanelId);
-            var height = 100;
-            var width = 100;
-
-            // reference the panel based on the passed in type parameter
-            var panelRef = null;
-            if (type == 'X-Axis')
-            {
-                panelRef = scopedThis.editorXAxisPanel;
-                height = 250;
-                width = 800;
-            }
-            else if (type == 'Left-Axis')
-            {
-                panelRef = scopedThis.editorYAxisLeftPanel;
-                height = 220;
-                width = 320;
-            }
-            else if (type == 'Right-Axis')
-            {
-                panelRef = scopedThis.editorYAxisRightPanel;
-                height = 220;
-                width = 320;
-            }
-            else if (type == 'Title')
-            {
-                panelRef = scopedThis.editorMainTitlePanel;
-                height = 130;
-                width = 300;
-            }
-            else
-                return; // unknown type
-
-            // place the panel by the aesthetics options panel
-            scopedThis.optionsButtonClicked(scopedThis.aestheticsButton, panelRef, width, height, 'center');
-        };
 
         // if edit mode, then add the editor panel buttons and save buttons
         this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
