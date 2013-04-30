@@ -657,16 +657,6 @@ public class ExcelFactory
         @Test
         public void testExcelFileImportShouldFail() throws Exception
         {
-            String fileNotFoundError = null;
-            System.out.println("OS: " + System.getProperty("os.name"));
-//            if(System.getProperty("os.name").contains("indow"))
-//            {
-//                fileNotFoundError = "The system cannot find the file specified";
-//            }
-//            else
-//            {
-//                fileNotFoundError = "No such file or directory";
-//            }
             attemptImportExpectError("doesntexist.xls", FileNotFoundException.class);
             attemptImportExpectError("", FileNotFoundException.class);
             attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class);
