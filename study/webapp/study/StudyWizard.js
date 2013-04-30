@@ -709,7 +709,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 schemaName: 'study',
                 queryName: 'Datasets',
                 filterArray: [ LABKEY.Filter.create('ShowByDefault', true) ],
-                columns: 'dataSetId, label, category, description',
+                columns: 'dataSetId, name, label, category, description',
                 sort: 'label'
             }),
             viewConfig: {forceFit: true, scrollOffset: 0},
@@ -884,7 +884,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             if (this.info.datasets)
             {
                 for(i = 0; i < this.info.datasets.length; i++){
-                    studyQueries[this.info.datasets[i].data.Label] = this.info.datasets[i].data.Label;
+                    studyQueries[this.info.datasets[i].data.Name] = this.info.datasets[i].data.Name;
                 }
             }
 
@@ -1016,7 +1016,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         });
                     }
                 },
-                autoLoad: true
+                autoLoad: true,
+                sortInfo: {field: 'name', direction: 'ASC'}
             }),
             selModel: selectionModel,
             columns: [
@@ -1450,6 +1451,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         index.Label.header = 'Dataset';
         index.Label.width = 250;
         index.DataSetId.hidden = true;
+        index.Name.hidden = true;
     },
 
     customizeVisitColumnModel: function(colModel, index, c){
