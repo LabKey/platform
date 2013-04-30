@@ -30,6 +30,8 @@ import org.labkey.api.query.SchemaKey;
  */
 public class CopyConfig
 {
+    protected String _id;
+
     protected SchemaKey _sourceSchema;
     protected String _sourceQuery;
     protected String _sourceTimestampColumnName = "modified";
@@ -135,5 +137,15 @@ public class CopyConfig
     public void setTargetOptions(TargetOptions targetOptions)
     {
         _targetOptions = targetOptions;
+    }
+
+    public String getId()
+    {
+        return _id;
+    }
+
+    public void setId(String id)
+    {
+        _id = id;
     }
 }
