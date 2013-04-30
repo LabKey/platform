@@ -88,6 +88,8 @@ public class SimpleQueryTransformStep extends TransformTask
 
     private void recordWork(RecordedAction action)
     {
+        // todo: either add these to the variable map or put directly on the action itself
+        // todo: via a property
         if (-1 != _recordsInserted)
             action.addParameter(RecordsInserted.getParameterType(),_recordsInserted);
         if (-1 != _recordsDeleted)

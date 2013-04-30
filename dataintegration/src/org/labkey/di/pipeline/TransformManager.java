@@ -31,11 +31,15 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -54,6 +58,8 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.VariableMap;
+import org.labkey.di.VariableMapImpl;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -430,8 +436,38 @@ public class TransformManager implements DataIntegrationService
         }
     }
 
+    public Integer getLastSuccessfulTransformExpRun(String transformId, int version)
+    {
+        SimpleFilter f = new SimpleFilter();
+        Sort s = new Sort("-StartTime");
+        TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
 
+        f.addCondition(new FieldKey(null, "TransformId"), transformId, CompareType.EQUAL);
+        f.addCondition(new FieldKey(null, "TransformVersion"), version, CompareType.EQUAL);
+        f.addCondition(new FieldKey(null, "status"), "Complete", CompareType.EQUAL);
 
+        Integer[] expRunIds = new TableSelector(ti.getColumn("ExpRunId"), f, s).getArray(Integer.class);
+
+        if (expRunIds != null && expRunIds.length > 0)
+            return expRunIds[0];
+
+        return null;
+   }
+
+    public VariableMap getVariableMapForTransformStep(Integer expRunId, String transformStepId)
+    {
+        ExpProtocolApplication[] protocolApps = ExperimentService.get().getExpProtocolApplicationsForRun(expRunId);
+        for (ExpProtocolApplication protocolApp : protocolApps)
+        {
+            if (StringUtils.equals(protocolApp.getName(), transformStepId))
+            {
+                ProtocolApplicationParameter[] params = ExperimentService.get().getProtocolApplicationParameters(protocolApp.getRowId());
+                return new VariableMapImpl(null, params);
+            }
+        }
+
+        return null;
+    }
 
     //
     // DataIntegrationService

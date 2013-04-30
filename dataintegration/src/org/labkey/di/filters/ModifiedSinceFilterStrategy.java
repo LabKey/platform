@@ -27,6 +27,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.VariableMap;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
 
 import java.util.Arrays;
@@ -126,7 +127,20 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
 
     Date getLastSuccessfulIncrementalEndTimestamp()
     {
-        // TODO
-        return new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5));
+        // get the experiment run for the last successfully run transform for this configuration
+        Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
+        if (null != expRunId)
+        {
+            VariableMap map = TransformManager.get().getVariableMapForTransformStep(expRunId, _config.getId());
+            if (null != map)
+            {
+                for (String key : map.keySet())
+                {
+                    if (StringUtils.equals(key, TransformJobContext.Variable.IncrementalEndTimestamp.getName()))
+                        return (Date) map.get(key);
+                }
+            }
+        }
+        return null;
     }
 }

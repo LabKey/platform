@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.di.VariableDescription;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import java.util.Date;
@@ -33,7 +34,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     final private RecordedActionSet _records = new RecordedActionSet();
     final private VariableMap _variableMap;
 
-    public static final String ACTION_NAME = "Query Transform";
     public static final String INPUT_ROLE = "Row Source";
     public static final String OUTPUT_ROLE = "Row Destination";
 
@@ -59,13 +59,24 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     public RecordedActionSet run() throws PipelineJobException
     {
-        RecordedAction action = new RecordedAction(TransformTask.ACTION_NAME);
+        RecordedAction action = new RecordedAction(_factory.getId().getName());
         action.setStartTime(new Date());
         doWork(action);
         action.setEndTime(new Date());
         action.setRecordCount(_txJob.getRecordCountForAction(action));
+        addParameters(action);
         _records.add(action);
         return _records;
+    }
+
+    private void addParameters(RecordedAction action)
+    {
+        for (String key : _variableMap.keySet())
+        {
+            VariableDescription d = _variableMap.getDescription(key);
+            if (d != null)
+                action.addParameter(d.getParameterType(), _variableMap.get(key));
+        }
     }
 
     abstract public void doWork(RecordedAction action) throws PipelineJobException;

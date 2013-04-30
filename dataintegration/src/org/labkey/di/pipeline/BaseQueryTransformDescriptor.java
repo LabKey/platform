@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -422,10 +423,15 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     private SimpleQueryTransformStepMeta getTransformStepMetaFromTaskId(TaskId tid)
     {
-        int i = Integer.parseInt(tid.getName());
+        SimpleQueryTransformStepMeta meta = null;
 
-        if (i < _stepMetaDatas.size())
-            return _stepMetaDatas.get(i);
+        // step ids are guaranteed to be unique
+        for (int i = 0; i < _stepMetaDatas.size(); i++)
+        {
+            meta = _stepMetaDatas.get(i);
+            if (StringUtils.equals(meta.getId(), tid.getName()))
+                return meta;
+        }
 
         return null;
     }
@@ -439,18 +445,18 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         // associate the correct stepMetaData with the task via the index
         for (int i = 0; i < _stepMetaDatas.size(); i++)
         {
-            String taskId = String.valueOf(i);
             SimpleQueryTransformStepMeta meta = _stepMetaDatas.get(i);
+            String taskName = meta.getId();
             Class taskClass = meta.getTaskClass();
             // check to see if this class is part of our known transform tasks
             if (org.labkey.di.pipeline.TransformTask.class.isAssignableFrom(taskClass))
             {
-                PipelineJobService.get().addTaskFactory(new TransformTaskFactory(taskClass, taskId));
+                PipelineJobService.get().addTaskFactory(new TransformTaskFactory(taskClass, taskName));
             }
             else
             if (org.labkey.di.pipeline.TestTask.class.isAssignableFrom(taskClass))
             {
-                PipelineJobService.get().addTaskFactory(new TestTaskFactory(taskClass, taskId));
+                PipelineJobService.get().addTaskFactory(new TestTaskFactory(taskClass, taskName));
             }
             else
             {
@@ -459,7 +465,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 continue;
             }
 
-            progressionSpec.add(new TaskId(taskClass, taskId));
+            progressionSpec.add(new TaskId(taskClass, taskName));
         }
 
         // Register the task to generate an experiment run to track this transform as the last step.

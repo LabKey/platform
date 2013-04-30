@@ -34,6 +34,9 @@ import java.io.Serializable;
  */
 public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable
 {
+    String _transformId;
+    int _version;
+
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
     public TransformJobContext()
@@ -43,8 +46,19 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         super(descriptor, container, user);
+        _transformId = descriptor.getId();
+        _version = descriptor.getVersion();
     }
 
+    public String getTransformId()
+    {
+        return _transformId;
+    }
+
+    public int getTransformVersion()
+    {
+        return _version;
+    }
 
     /* VARIABLES */
 

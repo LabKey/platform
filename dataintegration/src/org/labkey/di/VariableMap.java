@@ -15,6 +15,8 @@
  */
 package org.labkey.di;
 
+import java.util.Set;
+
 /**
 * Created with IntelliJ IDEA.
 * User: matthew
@@ -26,4 +28,6 @@ public interface VariableMap
     Object get(String key);
     Object put(String key, Object value);
     Object put(VariableDescription v, Object value);
+    VariableDescription getDescription(String key);
+    Set<String> keySet();
 }

@@ -41,9 +41,9 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
         super(namespaceClass);
     }
 
-    public TransformTaskFactory(Class namespaceClass, String name)
+    public TransformTaskFactory(Class namespaceClass, String id)
     {
-        super(namespaceClass, name);
+        super(namespaceClass, id);
     }
 
     public PipelineJob.Task createTask(PipelineJob pjob)
@@ -62,7 +62,7 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
 
     public String getStatusName()
     {
-        return "ETL QueryTransformTask";
+        return "ETL " + getId().getName();
     }
 
     public boolean isJobComplete(PipelineJob job)
@@ -72,8 +72,6 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
 
     public List<String> getProtocolActionNames()
     {
-        // undone: we may need to register the action name dynamically as we
-        // undone: set up the pipeline
-        return Arrays.asList(TransformTask.ACTION_NAME);
+        return Arrays.asList(getId().getName());
     }
 }

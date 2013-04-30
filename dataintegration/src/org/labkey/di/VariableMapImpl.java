@@ -16,6 +16,8 @@
 package org.labkey.di;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import java.util.Set;
 
 
 /**
@@ -42,6 +44,15 @@ public class VariableMapImpl implements VariableMap
         _outer = parentScope;
     }
 
+    public VariableMapImpl(VariableMap parentScope, ProtocolApplicationParameter[] params)
+    {
+        _outer = parentScope;
+
+        if (params != null)
+            for (ProtocolApplicationParameter param : params)
+                put(param.getName(), param.getValue());
+    }
+
 
     @Override
     public Object get(String key)
@@ -66,5 +77,17 @@ public class VariableMapImpl implements VariableMap
     {
         declarations.put(var.getName(), var);
         return put(var.getName(), value);
+    }
+
+    @Override
+    public Set<String> keySet()
+    {
+        return values.keySet();
+    }
+
+    @Override
+    public VariableDescription getDescription(String key)
+    {
+        return declarations.get(key);
     }
 }

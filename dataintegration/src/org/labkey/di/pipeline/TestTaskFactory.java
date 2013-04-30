@@ -72,6 +72,6 @@ public class TestTaskFactory extends AbstractTaskFactory<AbstractTaskFactorySett
 
     public List<String> getProtocolActionNames()
     {
-        return Arrays.asList(TestTask.ACTION_NAME);
+        return Arrays.asList(getId().getName());
     }
 }
