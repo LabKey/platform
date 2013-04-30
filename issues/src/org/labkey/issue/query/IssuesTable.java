@@ -157,12 +157,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
     }
 
     @Override
-    public ContainerContext getContainerContext()
-    {
-        return new ContainerContext.FieldKeyContext(getContainerFieldKey());
-    }
-
-    @Override
     public FieldKey getContainerFieldKey()
     {
         return new FieldKey(null, "Folder");

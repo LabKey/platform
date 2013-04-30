@@ -1101,12 +1101,10 @@ public class QueryServiceImpl extends QueryService
                 UserSchema schema = LinkedSchema.get(user, c, def);
                 if (schema != null)
                     ret.put(def.getUserSchemaName(), schema);
-                else
-                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>");
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>", e);
+                Logger.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -1125,8 +1123,7 @@ public class QueryServiceImpl extends QueryService
             }
             catch (Exception e)
             {
-                Container sourceContainer = def.lookupSourceContainer();
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>", e);
+                Logger.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 

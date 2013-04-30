@@ -73,6 +73,14 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         // Don't need to filter here, let the underlying table handle it
     }
 
+    // Disallow container filtering.  At some point in the future we may introduce a 'inherit' bit on
+    // external and linked schemas so they are available in sub-folders and become container filterable.
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
+
     @Override
     protected void addTableURLs()
     {
@@ -229,4 +237,5 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
             addCondition(filter);
         }
     }
+
 }

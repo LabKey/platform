@@ -422,7 +422,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             else
             {
-                log.info("!! Not using cached table: schemas not equal");
+                log.debug("!! Not using cached table: schemas not equal");
             }
         }
 

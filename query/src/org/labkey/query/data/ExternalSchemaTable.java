@@ -57,6 +57,14 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         }
     }
 
+    // Disallow container filtering.  At some point in the future we may introduce a 'inherit' bit on
+    // external and linked schemas so they are available in sub-folders and become container filterable.
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
+
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();

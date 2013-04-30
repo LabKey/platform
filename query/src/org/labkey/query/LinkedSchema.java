@@ -86,12 +86,21 @@ public class LinkedSchema extends ExternalSchema
     {
         Container sourceContainer = def.lookupSourceContainer();
         if (sourceContainer == null)
+        {
+            Logger.getLogger(LinkedSchema.class).warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
             return null;
+        }
 
         TemplateSchemaType template = def.lookupTemplate(sourceContainer);
-        UserSchema sourceSchema = getSourceSchema(def, template, sourceContainer, user);
+        String sourceSchemaName = def.getSourceSchemaName();
+        if (sourceSchemaName == null && template != null)
+            sourceSchemaName = template.getSourceSchemaName();
+        UserSchema sourceSchema = getSourceSchema(def, sourceSchemaName, sourceContainer, user);
         if (sourceSchema == null)
+        {
+            Logger.getLogger(LinkedSchema.class).warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
             return null;
+        }
 
         final Set<String> tableNames = sourceSchema.getTableNames();
         final Set<String> queryNames = sourceSchema.getQueryDefs().keySet();
@@ -127,11 +136,8 @@ public class LinkedSchema extends ExternalSchema
         return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables, availableQueries);
     }
 
-    private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, Container sourceContainer, User user)
+    private static UserSchema getSourceSchema(LinkedSchemaDef def, String sourceSchemaName, Container sourceContainer, User user)
     {
-        String sourceSchemaName = def.getSourceSchemaName();
-        if (sourceSchemaName == null && template != null)
-            sourceSchemaName = template.getSourceSchemaName();
         SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
 
         // Disallow recursive linked schema
