@@ -84,7 +84,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -1299,15 +1301,16 @@ public class ContainerManager
                 return false;
             }
 
-            List<Throwable> errors = fireDeleteContainer(c, user);
-
-            if (errors.size() != 0)
+            try
             {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
+                fireDeleteContainer(c, user);
+            }
+            catch (Exception e)
+            {
+                if (e instanceof RuntimeException)
+                    throw (RuntimeException)e;
                 else
-                    throw new RuntimeException(first);
+                    throw new RuntimeException(e);
             }
 
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
@@ -1743,8 +1746,26 @@ public class ContainerManager
 
     private static List<ContainerListener> getListeners()
     {
-        List<ContainerListener> combined = new ArrayList<ContainerListener>(_listeners.size() + _laterListeners.size());
+        List<ContainerListener> combined = new ArrayList<>(_listeners.size() + _laterListeners.size());
         combined.addAll(_listeners);
+        combined.addAll(_laterListeners);
+
+        return combined;
+    }
+
+
+    private static List<ContainerListener> getListenersReversed()
+    {
+        List<ContainerListener> combined = new LinkedList<>();
+
+        // Copy to guarantee consistency between .listIterator() and .size()
+        List<ContainerListener> copy = new ArrayList<>(_listeners);
+        ListIterator<ContainerListener> iter = copy.listIterator(copy.size());
+
+        // Iterate in reverse
+        while(iter.hasPrevious())
+            combined.add(iter.previous());
+
         combined.addAll(_laterListeners);
 
         return combined;
@@ -1767,10 +1788,9 @@ public class ContainerManager
     }
 
 
-    protected static List<Throwable> fireDeleteContainer(Container c, User user)
+    protected static void fireDeleteContainer(Container c, User user) throws Exception
     {
-        List<ContainerListener> list = getListeners();
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<ContainerListener> list = getListenersReversed();
 
         for (ContainerListener l : list)
         {
@@ -1781,10 +1801,11 @@ public class ContainerManager
             catch (Throwable t)
             {
                 LOG.error("fireDeleteContainer for " + l.getClass().getName(), t);
-                errors.add(t);
+
+                // We now fail fast (first Throwable aborts iteration), #17560
+                throw t;
             }
         }
-        return errors;
     }
 
 
