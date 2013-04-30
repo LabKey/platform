@@ -212,7 +212,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    public final ContainerFilterable createDataTable()
+    public ContainerFilterable createDataTable()
     {
         ContainerFilterable table = createDataTable(true);
         if (null != table)
