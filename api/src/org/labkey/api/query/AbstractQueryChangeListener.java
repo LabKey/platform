@@ -57,7 +57,7 @@ public abstract class AbstractQueryChangeListener implements QueryChangeListener
     protected abstract void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
-    public Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         List<String> ret = new ArrayList<>();
         for (String query : queries)

@@ -525,7 +525,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath, qd.getName()));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
-        result.addAll(QueryService.get().getCustomViews(getUser(), container, legacySchemaName, legacyQueryName, true));
+        result.addAll(QueryService.get().getCustomViews(getUser(), container, getUser(), legacySchemaName, legacyQueryName, true));
 
         // Look in the standard location (based on the assay design name) for additional custom views
         result.addAll(super.getModuleCustomViews(container, qd));

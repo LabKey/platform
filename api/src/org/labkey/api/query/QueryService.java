@@ -106,13 +106,22 @@ abstract public class QueryService
     /** Get schema for SchemaKey path. */
     abstract public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
 
-    /** If schema, query, or user is null, return custom views for all schemas/queries/users.  To get only shared custom views, use {@link QueryService#getSharedCustomViews(Container, String, String, boolean)}. */
-    abstract public List<CustomView> getCustomViews(@Nullable User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    abstract public CustomView getCustomView(@Nullable User user, Container container, String schema, String query, String name);
+    /**
+     * Get the list of custom views.
+     * If schema, query, or owner is null, return custom views for all schemas/queries/users.
+     * To get only shared custom views, use {@link QueryService#getSharedCustomViews(User, Container, String, String, boolean)}.
+     * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
+     */
+    abstract public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    abstract public CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name);
 
-    /** If schema, query is null, return custom views for all schemas/queries */
-    abstract public List<CustomView> getSharedCustomViews(Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    abstract public CustomView getSharedCustomView(Container container, String schema, String query, String name);
+    /**
+     * Get the list of shared custom views.
+     * If schema, query is null, return custom views for all schemas/queries.
+     * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
+     */
+    abstract public List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    abstract public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
 

@@ -76,12 +76,13 @@ public interface QueryChangeListener
      * Get a textual representation of items that depdend on a table or query.
      * For example, the user can be presented with a list of items that will break if a query is deleted.
      *
+     * @param user The current user.
      * @param container The container the tables or queries are deleted from.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
      * @param queries The query or table names.
      */
-    Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
+    Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     // CONSIDER: Create a generic class instead of using an enum.
     public enum QueryProperty

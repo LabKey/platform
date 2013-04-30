@@ -573,7 +573,7 @@ public class ReportUtil
 
             if (includeQueries)
             {
-                for (CustomView view : QueryService.get().getCustomViews(user, c, schemaName, queryName, false))
+                for (CustomView view : QueryService.get().getCustomViews(user, c, user, schemaName, queryName, false))
                 {
                     if (view.isHidden())
                         continue;

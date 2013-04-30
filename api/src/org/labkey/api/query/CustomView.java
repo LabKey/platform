@@ -49,5 +49,5 @@ public interface CustomView extends CustomViewInfo
     /** @return true if serialized sucessfully. */
     boolean serialize(VirtualFile dir) throws IOException;
 
-    Collection<String> getDependents();
+    Collection<String> getDependents(User user);
 }

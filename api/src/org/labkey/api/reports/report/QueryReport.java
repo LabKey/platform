@@ -186,7 +186,7 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
 
         if (viewName != null)
-            return QueryService.get().getCustomView(context.getUser(), context.getContainer(), schemaName, queryName, viewName);
+            return QueryService.get().getCustomView(context.getUser(), context.getContainer(), context.getUser(), schemaName, queryName, viewName);
 
         return null;
     }

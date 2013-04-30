@@ -146,7 +146,7 @@ public class QueryHelper
 
     private CustomView getCustomView()
     {
-        return QueryService.get().getCustomView(_user, _c, _schemaName, _queryName, _viewName);
+        return QueryService.get().getCustomView(_user, _c, _user, _schemaName, _queryName, _viewName);
     }
 
     private SimpleFilter getViewFilter(CustomView baseView)

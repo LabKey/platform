@@ -144,7 +144,7 @@ public interface QueryDefinition
      * Returns whether this is a table-based query definition (versus a custom query).
      */
     boolean isTableQueryDefinition();
-    Collection<String> getDependents();
+    Collection<String> getDependents(User user);
 
     boolean isSqlEditable();
     boolean isMetadataEditable();
