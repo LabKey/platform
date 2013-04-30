@@ -16,17 +16,20 @@
 
 package org.labkey.api.visualization;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,6 +145,16 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             // measures[].dateOptions.zeroDateCol.queryName
             // measures[].dimension.queryName
             // measures[].measure.queryName
+            // filterQuery (as schema.query key, i.e. study.DEM-1)
+            // filterUrl (as filter parameter fieldKeys)
+
+            // most property updates only care about the query name old value string and new value string
+            Map<String, String> queryNameChangeMap = new HashMap<String, String>();
+            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            {
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            }
+
             JSONObject json = new JSONObject(getJSON());
 
             boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), "queryName", changes);
@@ -196,6 +209,51 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                 }
 
                 hasUpdates = hasUpdates || dateColUpdates || zeroDateColUpdates || dimensionUpdates || measureUpdates;
+            }
+
+            // update filterQuery (should be schema.query)
+            if (null != json.getString("filterQuery"))
+            {
+                String[] keyParts = json.getString("filterQuery").split("\\.");
+                if (keyParts.length == 2 && queryNameChangeMap.containsKey(keyParts[1]))
+                {
+                    String queryKey = keyParts[0] + "." + queryNameChangeMap.get(keyParts[1]);
+                    json.put("filterQuery", queryKey);
+                    hasUpdates = true;
+                }
+            }
+
+            // update filterUrl (parameter fieldKeys)
+            if (null != json.getString("filterUrl"))
+            {
+                boolean filterUrlChanges = false;
+                ActionURL filterUrl = new ActionURL(json.getString("filterUrl"));
+                for (String filterKey : filterUrl.getParameterMap().keySet())
+                {
+                    String value = filterUrl.getParameter(filterKey);
+                    String[] parts = StringUtils.splitPreserveAllTokens(filterKey, '~');
+                    if (parts.length == 2)
+                    {
+                        String dataRegionName = parts[0].substring(0, filterKey.indexOf("."));
+                        FieldKey fieldKey = FieldKey.fromString(parts[0].substring(dataRegionName.length()+1));
+                        String op = parts[1];
+
+                        FieldKey filterTable = fieldKey.getTable();
+                        if (filterTable != null && filterTable.getName() != null && queryNameChangeMap.containsKey(filterTable.getName()))
+                        {
+                            fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), queryNameChangeMap.get(filterTable.getName())), fieldKey.getName());
+                            filterUrl.deleteParameter(filterKey);
+                            filterUrl.addParameter(dataRegionName + "." + fieldKey.toString() + "~" + op, value);
+                            filterUrlChanges = true;
+                        }
+                    }
+                }
+
+                if (filterUrlChanges)
+                {
+                    json.put("filterUrl", filterUrl.toString());
+                    hasUpdates = true;
+                }
             }
 
             if (hasUpdates)
