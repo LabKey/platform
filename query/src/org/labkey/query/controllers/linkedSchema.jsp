@@ -34,9 +34,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
       resources.add(ClientDependency.fromFilePath("Ext4"));
-      resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
-      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.js"));
-      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.css"));
+      resources.add(ClientDependency.fromFilePath("sqv"));
       return resources;
   }
 %>
@@ -133,7 +131,7 @@
             }
         });
 
-        var sqvModel = Ext4.create('LABKEY.SQVModel', {});
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
 
         var schemaTypeField = Ext4.create('Ext.form.field.Hidden', {
             name: 'schemaType',

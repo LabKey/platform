@@ -30,7 +30,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
         resources.add(ClientDependency.fromFilePath("Ext4"));
-        resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
+        resources.add(ClientDependency.fromFilePath("sqv"));
         return resources;
     }
 %>
@@ -40,13 +40,8 @@
     ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
 %>
-
-<script>
-    LABKEY.requiresScript('SQVSelector.js');
-</script>
 <script type="text/javascript">
-    Ext4.onReady(function(){
-        console.log('<%=h(props)%>');
+    Ext4.onReady(function() {
 
         var webPartTitle = Ext4.create('Ext.form.field.Text', {
             fieldLabel: 'Web Part Title',
@@ -56,7 +51,7 @@
             width : 500
         });
 
-        var sqvModel = Ext4.create('LABKEY.SQVModel', {});
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
         var schemaName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
             id : 'schemaName',
             editable : true,

@@ -22,10 +22,8 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -35,7 +33,7 @@
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
         //Need to include the Helper for a use of the form panel configuration.
         resources.add(ClientDependency.fromFilePath("Ext4"));
-        resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
+        resources.add(ClientDependency.fromFilePath("sqv"));
         return resources;
     }
 %>
@@ -70,7 +68,7 @@ If you want to let users change the list that's displayed or customize the view 
 <div id="SQVPicker"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
-        var sqvModel = Ext4.create('LABKEY.SQVModel', {});
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
         var title = Ext4.create('Ext.form.field.Text', {
             name : 'title',
             value :  <%=PageFlowUtil.jsString(props.get("title"))%>,

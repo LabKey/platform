@@ -3,12 +3,11 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-LABKEY.requiresScript("SQVSelector.js");
-
 Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
     extend : 'Ext.panel.Panel',
+
+//    requires : ['LABKEY.sqv.Model'],
 
     constructor : function(config) {
 
@@ -168,7 +167,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
     createMainPanel : function() {
 
-        var model = Ext4.create('LABKEY.SQVModel', {});
+        var model = Ext4.create('LABKEY.sqv.Model', {});
 
         model.changeQueryStore = function(containerId, schema){
 

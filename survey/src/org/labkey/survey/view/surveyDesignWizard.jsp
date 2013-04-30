@@ -31,6 +31,7 @@
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
       resources.add(ClientDependency.fromFilePath("Ext4"));
       resources.add(ClientDependency.fromFilePath("codemirror"));
+      resources.add(ClientDependency.fromFilePath("sqv"));
       resources.add(ClientDependency.fromFilePath("/survey/surveyDesignPanel.js"));
       return resources;
   }
@@ -45,11 +46,12 @@
     String allSchemas = ctx.getActionURL().getParameter("allSchemas");
     String renderId = "survey-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-
+<div id="<%= h(renderId)%>" class="dvc"></div>
 <script type="text/javascript">
-    Ext4.QuickTips.init();
 
     Ext4.onReady(function(){
+
+        Ext4.QuickTips.init();
 
         var panel = Ext4.create('LABKEY.ext4.SurveyDesignPanel', {
             height          : 653,
@@ -61,13 +63,11 @@
             allSchemas      : <%=q(allSchemas)%>
         });
 
-        var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+        var _resize = function() {
+            if (panel && panel.doLayout) { panel.doLayout(); }
         };
 
         Ext4.EventManager.onWindowResize(_resize);
     });
 </script>
-
-<div id="<%= h(renderId)%>" class="dvc"></div>
 
