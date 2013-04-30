@@ -800,8 +800,6 @@ core/webapp/stylesheet.css -text
 core/webapp/stylesheet.scss -text
 dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text
-dataintegration/resources/etls/DemoETL/config.xml -text
-dataintegration/resources/etls/IssuesETL/config.xml -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.01-0.02.sql -text
