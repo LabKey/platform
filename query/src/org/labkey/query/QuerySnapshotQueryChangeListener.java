@@ -57,7 +57,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         // UNDONE
         return Collections.emptyList();

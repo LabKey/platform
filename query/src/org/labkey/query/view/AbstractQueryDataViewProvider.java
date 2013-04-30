@@ -17,12 +17,9 @@ package org.labkey.query.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
-import org.labkey.api.data.views.ProviderType;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
@@ -101,7 +98,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     {
         List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
 
-        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), null, null, true))
+        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true))
         {
             if (view.isHidden())
                 continue;

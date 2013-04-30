@@ -95,7 +95,6 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -147,7 +146,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
@@ -2365,7 +2363,7 @@ public class ReportsController extends SpringActionController
 
                     if (!StringUtils.equals(_view.getName(), form.getViewName()))
                     {
-                        if (null != QueryService.get().getCustomView(getUser(), getContainer(), _view.getSchemaName(), _view.getQueryName(), form.getViewName()))
+                        if (null != QueryService.get().getCustomView(getUser(), getContainer(), getUser(), _view.getSchemaName(), _view.getQueryName(), form.getViewName()))
                             errors.rejectValue("viewName", ERROR_MSG, "There is already a view with the name of: " + form.getViewName());
                     }
                 }

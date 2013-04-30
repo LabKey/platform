@@ -146,9 +146,9 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     }
 
     @Override
-    public Collection<String> getDependents()
+    public Collection<String> getDependents(User user)
     {
-        return QueryManager.get().getQueryDependents(null, null, getSchemaPath(), Collections.singleton(getName()));
+        return QueryManager.get().getQueryDependents(user, null, null, getSchemaPath(), Collections.singleton(getName()));
     }
 
 }

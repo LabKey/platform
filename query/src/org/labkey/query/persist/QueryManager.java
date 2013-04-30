@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -209,16 +208,16 @@ public class QueryManager
      * @param container The current container.
      * @param schemaName The schema name or null for all schemas.
      * @param queryName The query name or null for all queries in the schema.
-     * @param user The owner or null for all views (shared or owned by someone.)
+     * @param owner The owner or null for all views (shared or owned by someone.)
      * @param inheritable If true, look up container hierarchy and in Shared project for custom views.
      * @param sharedOnly If true, ignore the <code>user</code> parameter and only include shared custom views.
      * @return List of custom views entities in priority order.
      */
-    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable, boolean sharedOnly)
+    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User owner, boolean inheritable, boolean sharedOnly)
     {
         List<CstmView> views = new ArrayList<CstmView>();
 
-        getCstmViewsInContainer(views, container, schemaName, queryName, user, false, sharedOnly);
+        getCstmViewsInContainer(views, container, schemaName, queryName, owner, false, sharedOnly);
 
         if (!inheritable)
             return views;
@@ -226,12 +225,12 @@ public class QueryManager
         Container containerCur = container == null ? null : container.getParent();
         while (containerCur != null && !containerCur.isRoot())
         {
-            getCstmViewsInContainer(views, containerCur, schemaName, queryName, user, true, sharedOnly);
+            getCstmViewsInContainer(views, containerCur, schemaName, queryName, owner, true, sharedOnly);
             containerCur = containerCur.getParent();
         }
 
         // look in the shared project
-        getCstmViewsInContainer(views, ContainerManager.getSharedContainer(), schemaName, queryName, user, true, sharedOnly);
+        getCstmViewsInContainer(views, ContainerManager.getSharedContainer(), schemaName, queryName, owner, true, sharedOnly);
 
         return views;
     }
@@ -578,11 +577,11 @@ public class QueryManager
             l.queryDeleted(user, container, scope, schema, queries);
     }
 
-    public Collection<String> getQueryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         ArrayList<String> dependents = new ArrayList<>();
         for (QueryChangeListener l : QUERY_LISTENERS)
-            dependents.addAll(l.queryDependents(container, scope, schema, queries));
+            dependents.addAll(l.queryDependents(user, container, scope, schema, queries));
         return dependents;
     }
 
@@ -923,7 +922,7 @@ public class QueryManager
 
         //validate views
         Set<String> queryErrors = new HashSet<String>();
-        List<CustomView> views = QueryService.get().getCustomViews(user, container, schema.getSchemaName(), queryName, true);
+        List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
         for (CustomView v : views)
         {
             validateViewColumns(user, container, v, "columns", v.getColumns(), queryErrors, table);

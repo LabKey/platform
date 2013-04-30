@@ -1029,7 +1029,7 @@ public class SpecimenUtils
         StudyQuerySchema querySchema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), getViewContext().getUser(), true);
         TableInfo table = querySchema.getTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
         QueryDefinition queryDef = querySchema.getQueryDefForTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME);
-        CustomView defaultView = QueryService.get().getCustomView(getViewContext().getUser(), container, querySchema.getName(), queryDef.getName(), null);
+        CustomView defaultView = QueryService.get().getCustomView(getViewContext().getUser(), container, getViewContext().getUser(), querySchema.getName(), queryDef.getName(), null);
         List<ColumnInfo> columns = queryDef.getColumns(defaultView, table);
         dr.setTable(table);
         dr.setColumns(columns);

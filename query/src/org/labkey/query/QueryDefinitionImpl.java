@@ -81,6 +81,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -203,7 +204,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
 
         // Database custom view and module custom views.
-        ret.putAll(QueryServiceImpl.get().getCustomViewMap(owner, getContainer(), this, true, sharedOnly));
+        ret.putAll(QueryServiceImpl.get().getCustomViewMap(getUser(), getContainer(), owner, this, true, sharedOnly));
 
         // Session views have highest precedence.
         if (owner != null && request != null)
@@ -399,7 +400,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             // CONSIDER: define UserSchema.equals() ?
             if (schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
                 schema.getContainer().equals(getSchema().getContainer()) &&
-                schema.getUser().equals(getSchema().getUser()))
+                Objects.equals(schema.getUser(), getSchema().getUser()))
             {
                 Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
                 TableInfo table = _cache.get(key);
@@ -770,7 +771,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             if (view.getName() != null)
             {
                 // Try and grab the columns from the default view
-                CustomView defaultView = QueryService.get().getCustomView(getUser(), getContainer(), getSchemaName(), getQueryDef().getName(), null);
+                CustomView defaultView = QueryService.get().getCustomView(getUser(), getContainer(), getUser(), getSchemaName(), getQueryDef().getName(), null);
                 if (defaultView != null)
                 {
                     ret = QueryService.get().getDisplayColumns(table, defaultView.getColumnProperties());
@@ -931,9 +932,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return false;
     }
 
-    public Collection<String> getDependents()
+    public Collection<String> getDependents(User user)
     {
-        return QueryManager.get().getQueryDependents(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
+        return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
     }
 
     @Override

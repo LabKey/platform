@@ -94,7 +94,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
-import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
@@ -169,7 +168,7 @@ public class VisualizationController extends SpringActionController
             baseFilter.applyToURL(filterURL, FILTER_DATAREGION);
 
             // Finally, add view-level filters:
-            CustomView view = QueryService.get().getCustomView(user, container, settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
+            CustomView view = QueryService.get().getCustomView(user, container, user, settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
             if (view != null)
                 view.applyFilterAndSortToURL(filterURL, FILTER_DATAREGION);
 

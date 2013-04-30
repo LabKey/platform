@@ -632,9 +632,9 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
     }
 
     @Override
-    public Collection<String> getDependents()
+    public Collection<String> getDependents(User user)
     {
-        return QueryManager.get().getQueryDependents(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
+        return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
     }
 
 }

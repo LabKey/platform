@@ -738,7 +738,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition def = getDataSetDefinition();
 
                 if (def != null &&
-                    QueryService.get().getCustomView(getUser(), getContainer(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
+                    QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
                     if (reportId != null && reportId.getReport(getViewContext()) != null)

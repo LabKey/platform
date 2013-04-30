@@ -74,7 +74,7 @@ public class CustomViewWriter extends BaseFolderWriter
 
             for (String tableName : tableAndQueryNames)
             {
-                List<CustomView> customViews = QueryService.get().getSharedCustomViews(c, schemaKey.toString(), tableName, false);
+                List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, c, schemaKey.toString(), tableName, false);
 
                 for (CustomView customView : customViews)
                 {

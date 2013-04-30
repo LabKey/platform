@@ -465,7 +465,7 @@ public class RequestabilityManager
             SimpleFilter viewFilter = new SimpleFilter();
             if (_viewName != null)
             {
-                CustomView baseView = QueryService.get().getCustomView(user, container, _schemaName, _queryName, _viewName);
+                CustomView baseView = QueryService.get().getCustomView(user, container, user, _schemaName, _queryName, _viewName);
                 if (baseView != null)
                 {
                     // copy our saved view filter into our SimpleFilter via an ActionURL (yuck...)

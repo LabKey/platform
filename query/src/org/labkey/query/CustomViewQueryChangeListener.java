@@ -67,13 +67,13 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         QueryServiceImpl svc = QueryServiceImpl.get();
         String schemaName = schema.toString();
 
         List<String> ret = new ArrayList<>();
-        List<CustomView> views = svc.getCustomViews(null, container, schemaName, null, true);
+        List<CustomView> views = svc.getCustomViews(user, container, null, schemaName, null, true);
         VIEW_LOOP:
         for (CustomView view : views)
         {
@@ -158,7 +158,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        for (CustomView customView : QueryService.get().getCustomViews(null, container, schemaKey.toString(), null, false))
+        for (CustomView customView : QueryService.get().getCustomViews(user, container, null, schemaKey.toString(), null, false))
         {
             try {
                 boolean hasUpdates = false;
