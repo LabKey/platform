@@ -4999,7 +4999,6 @@ internal/webapp/FileUploadField.css -text
 internal/webapp/FileUploadField.js -text
 internal/webapp/GuidedTip.css -text
 internal/webapp/GuidedTip.js -text
-internal/webapp/SQVSelector.js -text
 internal/webapp/StatusBar.js -text
 internal/webapp/TemplateHelper.js -text
 internal/webapp/TemplateHelper_test.js -text
@@ -5798,6 +5797,8 @@ internal/webapp/slider/css/rangeslider.css -text
 internal/webapp/slider/range.js -text
 internal/webapp/slider/rangeslider.js -text
 internal/webapp/slider/slidertimer.js -text
+internal/webapp/sqv.lib.xml -text
+internal/webapp/sqv/Selector.js -text
 internal/webapp/stacktrace-0.3.js -text
 internal/webapp/tiny_mce/langs/en.js -text
 internal/webapp/tiny_mce/license.txt -text

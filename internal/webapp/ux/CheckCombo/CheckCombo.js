@@ -5,9 +5,7 @@
  * however, it has been substantially changed
  */
 
-(function(Ext){
-
-Ext.define('LABKEY.layout.component.BoundList', {
+Ext4.define('LABKEY.layout.component.BoundList', {
     extend: 'Ext.layout.component.BoundList',
     alias: 'layout.boundlist-checkbox',
     beginLayout: function(ownerContext){
@@ -19,8 +17,7 @@ Ext.define('LABKEY.layout.component.BoundList', {
     }
 });
 
-Ext.define('Ext.ux.CheckCombo',
-{
+Ext4.define('Ext.ux.CheckCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.checkcombo',
     multiSelect: true,
@@ -28,15 +25,14 @@ Ext.define('Ext.ux.CheckCombo',
     allText: 'All',
     delim: ';',
 
-    initComponent: function()
-    {
-        this.plugins = this.plugins || [];
-        this.plugins.push('combo-autowidth');
+    initComponent: function() {
+//        this.plugins = this.plugins || [];
+//        this.plugins.push('combo-autowidth');
         this.listConfig = this.listConfig || {};
-        Ext.apply(this.listConfig, {
+        Ext4.apply(this.listConfig, {
             tpl: new Ext4.XTemplate(
                 '<ul><tpl for=".">',
-                    '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="' + Ext.baseCSSPrefix + 'combo-checker"></span>',
+                    '<li role="option" class="' + Ext4.baseCSSPrefix + 'boundlist-item"><span class="' + Ext4.baseCSSPrefix + 'combo-checker"></span>',
                     '&nbsp;{[this.getDisplayText(values, "' + this.displayField + '", "' + (Ext4.isDefined(this.nullCaption) ? this.nullCaption : "[none]") + '")]}',
                 '</li></tpl></ul>',
                 {
@@ -61,13 +57,13 @@ Ext.define('Ext.ux.CheckCombo',
             ],
             renderTpl: [
                 '<div id="{id}-outerEl" style="overflow:auto" width=auto;>',
-                (this.addAllSelector ? '<div id="{id}-checkAllEl" class="' + Ext.baseCSSPrefix + 'boundlist-item" role="option"><span class="' + Ext.baseCSSPrefix + 'combo-checker">&nbsp;</span> '+this.allText+'</div>' : ''),
+                (this.addAllSelector ? '<div id="{id}-checkAllEl" class="' + Ext4.baseCSSPrefix + 'boundlist-item" role="option"><span class="' + Ext4.baseCSSPrefix + 'combo-checker">&nbsp;</span> '+this.allText+'</div>' : ''),
                 '<div id="{id}-listEl" class="{baseCls}-list-ct"></div>',
                 '{%',
                     'var me=values.$comp, pagingToolbar=me.pagingToolbar;',
                     'if (pagingToolbar) {',
                         'pagingToolbar.ownerLayout = me.componentLayout;',
-                        'Ext.DomHelper.generateMarkup(pagingToolbar.getRenderTree(), out);',
+                        'Ext4.DomHelper.generateMarkup(pagingToolbar.getRenderTree(), out);',
                     '}',
                 '%}',
                 '</div>',
@@ -77,12 +73,12 @@ Ext.define('Ext.ux.CheckCombo',
             ],
             componentLayout: 'boundlist-checkbox',
             onDestroy: function() {
-                Ext.destroyMembers(this, 'pagingToolbar', 'outerEl', 'listEl');
+                Ext4.destroyMembers(this, 'pagingToolbar', 'outerEl', 'listEl');
                 this.callParent();
             }
         });
 
-        this.callParent(arguments);
+        this.callParent();
     },
 
     createPicker: function()
@@ -91,13 +87,13 @@ Ext.define('Ext.ux.CheckCombo',
         picker.on('render', function(picker){
             if (picker.checkAllEl)
             {
-                picker.checkAllEl.addClsOnOver(Ext.baseCSSPrefix + 'boundlist-item-over');
+                picker.checkAllEl.addClsOnOver(Ext4.baseCSSPrefix + 'boundlist-item-over');
 
                 picker.checkAllEl.on('click', function(e)
                 {
-                    if(picker.checkAllEl.hasCls(Ext.baseCSSPrefix + 'boundlist-selected'))
+                    if(picker.checkAllEl.hasCls(Ext4.baseCSSPrefix + 'boundlist-selected'))
                     {
-                        picker.checkAllEl.removeCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                        picker.checkAllEl.removeCls(Ext4.baseCSSPrefix + 'boundlist-selected');
                         this.setValue('');
                         this.fireEvent('select', this, []);
                     }
@@ -108,7 +104,7 @@ Ext.define('Ext.ux.CheckCombo',
                         {
                             records.push(record);
                         });
-                        picker.checkAllEl.addCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                        picker.checkAllEl.addCls(Ext4.baseCSSPrefix + 'boundlist-selected');
                         this.select(records);
                         this.fireEvent('select', this, records);
                     }
@@ -136,11 +132,9 @@ Ext.define('Ext.ux.CheckCombo',
         if(checker)
         {
             if(selectedRecords.length == this.store.getTotalCount())
-                checker.addCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                checker.addCls(Ext4.baseCSSPrefix + 'boundlist-selected');
             else
-                checker.removeCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                checker.removeCls(Ext4.baseCSSPrefix + 'boundlist-selected');
         }
     }
 });
-
-})(Ext4);
