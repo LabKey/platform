@@ -16,21 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.view.template.MenuBarView" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -46,20 +43,11 @@
     List<Portal.WebPart> menus = ((MenuBarView) HttpView.currentView()).getModelBean();
     ViewContext currentContext = HttpView.currentContext();
     Container c = currentContext.getContainer();
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    NavTree homeLink;
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    boolean folderMenu = folderMode.isShowInMenu();
-    boolean customMenusEnabled = laf.isMenuUIEnabled();
     boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null;
     Container p = c.getProject();
     folderMode.isShowInMenu();
-
-    if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
-        homeLink = new NavTree(laf.getShortName() + " Home", AppProps.getInstance().getHomePageActionURL());
-    else
-        homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c.getProject(), currentContext.getUser()));
 %>
 <div id="menubar" class="labkey-main-menu">
     <ul>
@@ -247,6 +235,7 @@
             }
         });
 
+        HoverNavigation.Parts = {};
         HoverNavigation._project = new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
 <%
     if (showFolderNavigation)
@@ -263,7 +252,7 @@
 
         String menuName = part.getName() + part.getIndex();
 %>
-        new HoverNavigation({hoverElem:"<%=menuName%>$Header", webPartName: "<%=part.getName()%>",
+        HoverNavigation.Parts["_<%=menuName%>"] = new HoverNavigation({hoverElem:"<%=menuName%>$Header", webPartName: "<%=part.getName()%>",
             partConfig: { <%
                     String sep = "";
                     for (Map.Entry<String,String> entry : part.getPropertyMap().entrySet())
