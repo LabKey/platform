@@ -98,6 +98,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
         sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
         sqlTypeNameMap.put("TIMESTAMP", Types.BINARY);
+
+        // LabKey custom data types
+        sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
+        sqlTypeNameMap.put("LSIDTYPE", Types.VARCHAR);
     }
 
     @Override
@@ -788,7 +792,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public List<String> getChangeStatements(TableChange change)
     {
-        List<String> sql = new ArrayList<String>();
+        List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
             case CreateTable:
@@ -812,8 +816,8 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     private List<String> getCreateTableStatements(TableChange change)
     {
-        List<String> statements = new ArrayList<String>();
-        List<String> createTableSqlParts = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
+        List<String> createTableSqlParts = new ArrayList<>();
         String pkColumn = null;
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -859,7 +863,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     private List<String> getRenameColumnsStatements(TableChange change)
     {
-        List<String> statements = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
             statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
@@ -880,7 +884,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     private String getDropColumnsStatement(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<String>();
+        List<String> sqlParts = new ArrayList<>();
 
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -892,7 +896,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     private String getAddColumnsStatement(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<String>();
+        List<String> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
             sqlParts.add(getSqlColumnSpec(prop));
@@ -903,7 +907,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
-        List<String> colSpec = new ArrayList<String>();
+        List<String> colSpec = new ArrayList<>();
         colSpec.add(makeLegalIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlType(prop));
 
