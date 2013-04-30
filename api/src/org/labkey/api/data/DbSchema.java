@@ -26,6 +26,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
+import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -401,6 +402,17 @@ public class DbSchema
     {
         // Scope holds cache for all its tables
         return _scope.getTable(this, tableName);
+    }
+
+    /**
+     * Get a topologically sorted list of TableInfos within this schema.
+     * Not all existing schemas are supported yet since their FKs don't expose the query tableName they join to or they contain loops.
+     *
+     * @throws IllegalStateException if a loop is detected.
+     */
+    public List<TableInfo> getSortedTables()
+    {
+        return TableSorter.sort(this);
     }
 
     public DbScope getScope()

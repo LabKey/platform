@@ -819,6 +819,7 @@ api/src/org/labkey/api/query/SchemaTreeVisitor.java -text
 api/src/org/labkey/api/query/SchemaTreeWalker.java -text
 api/src/org/labkey/api/query/SimpleSchemaTreeVisitor.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text
+api/src/org/labkey/api/query/TableSorter.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text
 api/src/org/labkey/api/query/UserIdQueryForeignKey.java -text

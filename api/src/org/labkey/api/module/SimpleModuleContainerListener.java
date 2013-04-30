@@ -15,11 +15,13 @@
  */
 package org.labkey.api.module;
 
+import common.Logger;
 import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -72,11 +74,17 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
 
     protected void purgeSchema(String schemaName, Container c, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
-        if (schema == null)
-        {
+        // Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
+        //UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+        DbSchema dbSchema = DbSchema.get(schemaName);
+        if (dbSchema == null)
             return;
-        }
+
+        UserSchema schema = QueryService.get().createSimpleUserSchema(schemaName, null, user, c, dbSchema);
+        if (schema == null)
+            return;
+
+        Logger.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
 
         try
         {
