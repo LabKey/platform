@@ -109,7 +109,15 @@
             },
 
             statics : {
-                visiblePopup : false
+                visiblePopup : false,
+                clickClose : false,
+                _click : function(e) {
+                    if (HoverNavigation.visiblePopup) {
+                        if (!HoverNavigation.visiblePopup.focused(e)) {
+                            HoverNavigation.visiblePopup.hide();
+                        }
+                    }
+                }
             },
 
             showDelay : 500,
@@ -146,6 +154,12 @@
                 // Configure hover element list
                 this.hoverEl.hover(this.onTargetOver, this.delayCheck, this);
                 this.popup.hover(this.cancelHide, this.delayCheck, this);
+
+                // Initialize global click
+                if (!HoverNavigation.clickClose) {
+                    HoverNavigation.clickClose = true;
+                    Ext4.getDoc().on('click', HoverNavigation._click);
+                }
             },
 
             cancelShow : function() {
@@ -173,6 +187,10 @@
 
             notFocused : function(e) {
                 return !this.hoverEl.getRegion().contains(e.getPoint()) || !this.popup.getRegion().contains(e.getPoint());
+            },
+
+            focused : function(e) {
+                return this.hoverEl.getRegion().contains(e.getPoint()) || this.popup.getRegion().contains(e.getPoint());
             },
 
             delayCheck : function(e) {
