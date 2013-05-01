@@ -220,10 +220,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                         _form.isMaskClinic(), _datasets, new PipelineJobLoggerGetter(this)
                 );
 
-                // Save these snapshot settings to support specimen refresh and provide history
-                StudySnapshot snapshot = new StudySnapshot(studyCtx, _dstContainer, _form.isSpecimenRefresh());
-                Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
-
                 if (selectedVisits != null)
                     studyCtx.setVisitIds(selectedVisits);
 
@@ -237,6 +233,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 }
 
                 ctx.addContext(StudyExportContext.class, studyCtx);
+
+                // Save these snapshot settings to support specimen refresh and provide history
+                StudySnapshot snapshot = new StudySnapshot(studyCtx, _dstContainer, _form.isSpecimenRefresh());
+                Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
 
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
