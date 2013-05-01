@@ -17,15 +17,20 @@ package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
@@ -36,7 +41,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -65,44 +69,24 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static PipelineRoot NULL_ROOT;
-
-    static
+    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Pipeline roots", new CacheLoader<String, PipelineRoot>()
     {
-        NULL_ROOT = new PipelineRoot();
-        assert MemTracker.remove(NULL_ROOT);
-    }
+        @Override
+        public PipelineRoot load(String key, @Nullable Object argument)
+        {
+            return new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class);
+        }
+    });
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("Type", type);
-        try
-        {
-            String cacheKey = getCacheKey(container, type);
-            PipelineRoot root = (PipelineRoot) DbCache.get(pipeline.getTableInfoPipelineRoots(), cacheKey);
 
-            if (root != null)
-                return (root == NULL_ROOT) ? null : root;
-
-            PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
-            if (roots.length > 0)
-            {
-                DbCache.put(pipeline.getTableInfoPipelineRoots(), cacheKey, roots[0]);
-                return roots[0];
-            }
-            else
-                DbCache.put(pipeline.getTableInfoPipelineRoots(), cacheKey, NULL_ROOT);
-
-            return null;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return CACHE.get(getCacheKey(container, type), filter);
     }
 
-    private static String getCacheKey(Container c, String type)
+    private static String getCacheKey(Container c, @Nullable String type)
     {
         return c.getId() + "/" + StringUtils.trimToEmpty(type);
     }
@@ -120,10 +104,11 @@ public class PipelineManager
     }
 
 
-    static public PipelineRoot[] getPipelineRoots(String type) throws SQLException
+    static public PipelineRoot[] getPipelineRoots(String type)
     {
         SimpleFilter filter = new SimpleFilter("Type", type);
-        return Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
+
+        return new TableSelector(pipeline.getTableInfoPipelineRoots(), filter, null).getArray(PipelineRoot.class);
     }
 
     static public void setPipelineRoot(User user, Container container, URI[] roots, String type,
@@ -132,46 +117,52 @@ public class PipelineManager
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
 
-        if (roots == null || roots.length == 0 || (roots.length == 1 && roots[0] == null))
+        try
         {
-            if (oldValue != null)
+            if (roots == null || roots.length == 0 || (roots.length == 1 && roots[0] == null))
             {
-                Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId());
-            }
-        }
-        else
-        {
-            if (oldValue == null)
-            {
-                newValue = new PipelineRoot();
+                if (oldValue != null)
+                {
+                    Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId());
+                }
             }
             else
             {
-                newValue = new PipelineRoot(oldValue);
-            }
-            newValue.setPath(roots[0].toString());
-            newValue.setSupplementalPath(roots.length > 1 ? roots[1].toString() : null);
-            newValue.setContainerId(container.getId());
-            newValue.setType(type);
-            newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
-            newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
-            newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
-            newValue.setSearchable(searchable);
-            if (oldValue == null)
-            {
-                Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
-            }
-            else
-            {
-                Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
-            }
+                if (oldValue == null)
+                {
+                    newValue = new PipelineRoot();
+                }
+                else
+                {
+                    newValue = new PipelineRoot(oldValue);
+                }
+                newValue.setPath(roots[0].toString());
+                newValue.setSupplementalPath(roots.length > 1 ? roots[1].toString() : null);
+                newValue.setContainerId(container.getId());
+                newValue.setType(type);
+                newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
+                newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
+                newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
+                newValue.setSearchable(searchable);
+                if (oldValue == null)
+                {
+                    Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
+                }
+                else
+                {
+                    Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
+                }
 
-            Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-            if (null != ss)
-                ss.addPathToCrawl(davPath, null);
+                Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                if (null != ss)
+                    ss.addPathToCrawl(davPath, null);
+            }
         }
-        DbCache.remove(pipeline.getTableInfoPipelineRoots(), getCacheKey(container, type));
+        finally
+        {
+            CACHE.remove(getCacheKey(container, type));
+        }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
                 container, user, ContainerManager.Property.PipelineRoot, oldValue, newValue));
@@ -182,7 +173,7 @@ public class PipelineManager
         try
         {
             StringBuilder sql = new StringBuilder();
-            List<Object> params = new ArrayList<Object>();
+            List<Object> params = new ArrayList<>();
             sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
                 .append(" SET JobId = NULL ")
                 .append("WHERE JobId IN (SELECT RowId FROM " + pipeline.getTableInfoStatusFiles() + " p ")
@@ -209,7 +200,6 @@ public class PipelineManager
                         ContainerUtil.purgeTable(t , container, null);
                 }
 
-                DbCache.clear(pipeline.getTableInfoPipelineRoots());
                 ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 
                 ExperimentService.get().commitTransaction();
@@ -223,6 +213,7 @@ public class PipelineManager
         {
             _log.error("Failed to delete pipeline status info for container '" + container.getPath() + "'.", e);
         }
+
         try
         {
             ContainerUtil.purgeTable(pipeline.getTableInfoPipelineRoots(), container, "Container");
@@ -230,6 +221,10 @@ public class PipelineManager
         catch (SQLException e)
         {
             _log.error("Failed to delete pipeline roots for container '" + container.getPath() + "'.", e);
+        }
+        finally
+        {
+            CACHE.remove(getCacheKey(container, null));
         }
     }
 
@@ -357,7 +352,7 @@ public class PipelineManager
     {
         if (notifyOwner || !StringUtils.isEmpty(notifyUsers))
         {
-            Map<String, StringBuilder> recipients = new HashMap<String, StringBuilder>();
+            Map<String, StringBuilder> recipients = new HashMap<>();
             for (PipelineStatusFileImpl sf : statusFiles)
             {
                 if (notifyOwner && !StringUtils.isEmpty(sf.getEmail()))
@@ -384,7 +379,7 @@ public class PipelineManager
                 recipients.put("notifyUsers", sb);
             }
 
-            List<PipelineDigestMessage> messages = new ArrayList<PipelineDigestMessage>();
+            List<PipelineDigestMessage> messages = new ArrayList<>();
             for (StringBuilder sb : recipients.values())
             {
                 PipelineDigestMessage message = new PipelineDigestMessage(c, template, statusFiles, min, max, sb.toString());
@@ -498,7 +493,7 @@ public class PipelineManager
         protected String _jobDescription;
         protected String _timeCreated;
         protected String _status;
-        private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+        private List<ReplacementParam> _replacements = new ArrayList<>();
 
         protected static final String DEFAULT_BODY = "Job description: ^jobDescription^\n" +
                 "Created: ^timeCreated^\n" +
@@ -556,7 +551,7 @@ public class PipelineManager
 
     public static abstract class PipelineDigestTemplate extends EmailTemplate
     {
-        private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+        private List<ReplacementParam> _replacements = new ArrayList<>();
         private PipelineStatusFileImpl[] _statusFiles;
         private String _startTime;
         private String _endTime;

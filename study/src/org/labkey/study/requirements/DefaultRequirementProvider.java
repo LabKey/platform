@@ -83,7 +83,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public R getRequirement(Container container, Object requirementPrimaryKey)
     {
-        return Table.selectObject(getRequirementTableInfo(), requirementPrimaryKey, _requirementClass);
+        return new TableSelector(getRequirementTableInfo()).getObject(requirementPrimaryKey, _requirementClass);
     }
 
     public R[] getRequirements(Container container, String ownerEntityId)
@@ -135,7 +135,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public A getActor(Container c, Object primaryKey)
     {
-        return Table.selectObject(getActorTableInfo(), primaryKey, _actorClass);
+        return new TableSelector(getActorTableInfo()).getObject(primaryKey, _actorClass);
     }
 
     public Collection<A> getActorsInUse(Container c)

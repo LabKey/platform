@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -35,7 +36,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
     ProtocolAction _action;
     static public ExpProtocolActionImpl fromRowId(int id)
     {
-        ProtocolAction action = Table.selectObject(ExperimentServiceImpl.get().getTinfoProtocolAction(), id, ProtocolAction.class);
+        ProtocolAction action = new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolAction()).getObject(id, ProtocolAction.class);
         if (action == null)
             return null;
         return new ExpProtocolActionImpl(action);

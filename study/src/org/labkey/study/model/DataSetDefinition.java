@@ -1461,7 +1461,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         if (_cohortId == null)
             return null;
-        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
+        return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
     public Integer getProtocolId()

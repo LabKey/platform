@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -86,7 +85,7 @@ public class PipelineServiceImpl extends PipelineService
 
     private static Logger _log = Logger.getLogger(PipelineService.class);
 
-    private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<String, PipelineProvider>();
+    private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<>();
     private PipelineQueue _queue = null;
 
     public static PipelineServiceImpl get()
@@ -197,16 +196,9 @@ public class PipelineServiceImpl extends PipelineService
     @NotNull
     public Map<Container, PipeRoot> getAllPipelineRoots()
     {
-        PipelineRoot[] pipelines;
-        try
-        {
-            pipelines = PipelineManager.getPipelineRoots(PipelineRoot.PRIMARY_ROOT);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        Map<Container, PipeRoot> result = new HashMap<Container, PipeRoot>();
+        PipelineRoot[] pipelines = PipelineManager.getPipelineRoots(PipelineRoot.PRIMARY_ROOT);
+
+        Map<Container, PipeRoot> result = new HashMap<>();
         for (PipelineRoot pipeline : pipelines)
         {
             try
@@ -220,6 +212,7 @@ public class PipelineServiceImpl extends PipelineService
                 _log.error("unexpected error", x);
             }
         }
+
         return result;
     }
 
@@ -269,7 +262,7 @@ public class PipelineServiceImpl extends PipelineService
     public List<PipelineProvider> getPipelineProviders()
     {
         // Get a list of unique providers
-        return new ArrayList<PipelineProvider>(new HashSet<PipelineProvider>(_mapPipelineProviders.values()));
+        return new ArrayList<>(new HashSet<>(_mapPipelineProviders.values()));
     }
 
     @Nullable
@@ -335,9 +328,9 @@ public class PipelineServiceImpl extends PipelineService
     public HttpView getSetupView(SetupForm form)
     {
         if (form.getErrors() != null)
-            return new JspView<SetupForm>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
+            return new JspView<>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
         else
-            return new JspView<SetupForm>("/org/labkey/pipeline/setup.jsp", form);
+            return new JspView<>("/org/labkey/pipeline/setup.jsp", form);
     }
 
     public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
@@ -479,9 +472,9 @@ public class PipelineServiceImpl extends PipelineService
     private List<String> parseArray(String dbPaths)
     {
         if(dbPaths == null) return null;
-        if(dbPaths.length() == 0) return new ArrayList<String>();
+        if(dbPaths.length() == 0) return new ArrayList<>();
         String[] tokens = dbPaths.split("\\|");
-        return new ArrayList<String>(Arrays.asList(tokens));
+        return new ArrayList<>(Arrays.asList(tokens));
     }
 
     private String list2String(List<String> sequenceDbPathsList)

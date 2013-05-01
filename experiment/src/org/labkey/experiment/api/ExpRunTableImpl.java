@@ -892,12 +892,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             {
                                 oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
                             }
-                            Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
+                            Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getObject(oldValue, Map.class);
                             if (oldLookupTarget != null)
                             {
                                 oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
                             }
-                            Map<String, Object> newLookupTarget = Table.selectObject(fkTableInfo, newValue, Map.class);
+                            Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getObject(newValue, Map.class);
                             if (newLookupTarget != null)
                             {
                                 newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());

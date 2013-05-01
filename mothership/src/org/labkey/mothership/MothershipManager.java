@@ -151,7 +151,7 @@ public class MothershipManager
                     filter.addCondition("SVNURL", svnURL);
                 }
                 filter.addCondition("Container", container.getId());
-                SoftwareRelease result = Table.selectObject(getTableInfoSoftwareRelease(), filter, null, SoftwareRelease.class);
+                SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
                 if (result == null)
                 {
                     result = new SoftwareRelease();
@@ -200,18 +200,18 @@ public class MothershipManager
     }
 
 
-    public ServerInstallation getServerInstallation(String serverGUID, String containerId) throws SQLException
+    public ServerInstallation getServerInstallation(String serverGUID, String containerId)
     {
         SimpleFilter filter = new SimpleFilter("ServerInstallationGUID", serverGUID);
         filter.addCondition("Container", containerId);
-        return Table.selectObject(getTableInfoServerInstallation(), filter, null, ServerInstallation.class);
+        return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
-    public ServerSession getServerSession(String serverSessionGUID, String containerId) throws SQLException
+    public ServerSession getServerSession(String serverSessionGUID, String containerId)
     {
         SimpleFilter filter = new SimpleFilter("ServerSessionGUID", serverSessionGUID);
         filter.addCondition("Container", containerId);
-        return Table.selectObject(getTableInfoServerSession(), filter, null, ServerSession.class);
+        return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
     public ExceptionStackTrace getExceptionStackTrace(String stackTraceHash, String containerId)
@@ -219,14 +219,14 @@ public class MothershipManager
     {
         SimpleFilter filter = new SimpleFilter("StackTraceHash", stackTraceHash);
         filter.addCondition("Container", containerId);
-        return Table.selectObject(getTableInfoExceptionStackTrace(), filter, null, ExceptionStackTrace.class);
+        return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
-    public ExceptionStackTrace getExceptionStackTrace(int exceptionStackTraceId, Container container) throws SQLException
+    public ExceptionStackTrace getExceptionStackTrace(int exceptionStackTraceId, Container container)
     {
         SimpleFilter filter = new SimpleFilter("ExceptionStackTraceId", exceptionStackTraceId);
         filter.addCondition("Container", container.getId());
-        return Table.selectObject(getTableInfoExceptionStackTrace(), filter, null, ExceptionStackTrace.class);
+        return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
     public void deleteForContainer(Container c) throws SQLException
@@ -487,16 +487,9 @@ public class MothershipManager
 
     public ServerInstallation getServerInstallation(int id, String containerId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("ServerInstallationId", id);
-            filter.addCondition("Container", containerId);
-            return Table.selectObject(getTableInfoServerInstallation(), filter, null, ServerInstallation.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("ServerInstallationId", id);
+        filter.addCondition("Container", containerId);
+        return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ServerInstallation.class);
     }
 
     public List<User> getAssignedToList(Container container)

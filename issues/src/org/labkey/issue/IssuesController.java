@@ -1810,7 +1810,7 @@ public class IssuesController extends SpringActionController
                 Issue issue = issuesIds.get(issueId);
                 if (issue == null)
                 {
-                    issue = Table.selectObject(IssuesSchema.getInstance().getTableInfoIssues(), issueId, Issue.class);
+                    issue = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(issueId, Issue.class);
                     issuesIds.put(issueId, issue);
                 }
 

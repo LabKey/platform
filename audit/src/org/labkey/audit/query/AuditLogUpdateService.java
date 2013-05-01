@@ -22,7 +22,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;
@@ -46,9 +46,9 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
     {
-        return Table.selectObject(getQueryTable(), keys.get("RowId"), Map.class);
+        return new TableSelector(getQueryTable()).getObject(keys.get("RowId"), Map.class);
     }
 
     @Override

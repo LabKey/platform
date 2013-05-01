@@ -31,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
@@ -174,14 +175,14 @@ public class QueryManager
 
     public QuerySnapshotDef getQuerySnapshotDef(int id)
     {
-        return Table.selectObject(getTableInfoQuerySnapshotDef(), id, QuerySnapshotDef.class);
+        return new TableSelector(getTableInfoQuerySnapshotDef()).getObject(id, QuerySnapshotDef.class);
     }
 
     public CstmView getCustomView(int id) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(getTableInfoCustomView().getColumn("CustomViewId"), id);
-        CstmView view = Table.selectObject(getTableInfoCustomView(), id, CstmView.class);
+        CstmView view = new TableSelector(getTableInfoCustomView()).getObject(id, CstmView.class);
         _log.debug(view);
         return view;
     }

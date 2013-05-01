@@ -69,7 +69,6 @@ import org.labkey.study.designer.StudyDesignVersion;
 import org.labkey.study.designer.XMLSerializer;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.VaccineStudyWebPart;
 import org.springframework.validation.BindException;

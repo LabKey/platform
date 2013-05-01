@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;
@@ -51,12 +52,12 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
     @Override
     @SuppressWarnings("unchecked")
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
-        Map<String,Object> result = Table.selectObject(queryTableInfo, container.getId(), Map.class);
+        Map<String, Object> result = new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
         return result;
     }
 

@@ -825,12 +825,12 @@ public class AssayPublishManager implements AssayPublishService.Service
         return Pair.of(lsids,ul);
     }
 
-    public UploadLog getUploadLog(Container c, int id) throws SQLException
+    public UploadLog getUploadLog(Container c, int id)
     {
         SimpleFilter filter = new SimpleFilter("container", c.getId());
         filter.addCondition("rowId", id);
 
-        return Table.selectObject(getTinfoUpdateLog(), filter, null, UploadLog.class);
+        return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
     }
     
     public ActionURL getPublishHistory(Container c, ExpProtocol protocol)

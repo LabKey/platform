@@ -73,10 +73,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private boolean _populated;
 
     private ExpProtocolApplicationImpl[] _protocolSteps;
-    private Map<ExpMaterial, String> _materialInputs = new HashMap<ExpMaterial, String>();
-    private Map<ExpData, String> _dataInputs = new HashMap<ExpData, String>();
-    private List<ExpMaterial> _materialOutputs = new ArrayList<ExpMaterial>();
-    private List<ExpData> _dataOutputs = new ArrayList<ExpData>();
+    private Map<ExpMaterial, String> _materialInputs = new HashMap<>();
+    private Map<ExpData, String> _dataInputs = new HashMap<>();
+    private List<ExpMaterial> _materialOutputs = new ArrayList<>();
+    private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
 
     static public ExpRunImpl[] fromRuns(ExperimentRun[] runs)

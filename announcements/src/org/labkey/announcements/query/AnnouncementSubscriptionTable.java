@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -125,11 +126,11 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
         {
             Pair<User, AnnouncementModel> targets = getTargets(keys, user);
             SimpleFilter filter = createFilter(targets);
-            return Table.selectObject(AnnouncementSubscriptionTable.this, filter, Map.class);
+            return new TableSelector(AnnouncementSubscriptionTable.this).getObject(filter, Map.class);
         }
 
         private SimpleFilter createFilter(Pair<User, AnnouncementModel> targets)

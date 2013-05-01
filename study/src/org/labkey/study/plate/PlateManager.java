@@ -81,13 +81,13 @@ import java.util.Set;
  */
 public class PlateManager implements PlateService.Service
 {
-    private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<PlateService.PlateDetailsResolver>();
+    private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private final Object TEMPLATE_NAME_SYNC_OBJ = new Object();
     private Set<String> _distinctTemplateNames;
     private boolean _lsidHandlersRegistered = false;
 
 
-    private Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<String, PlateTypeHandler>();
+    private Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
 
     public PlateManager()
     {
@@ -105,13 +105,13 @@ public class PlateManager implements PlateService.Service
 
             public List<String> getTemplateTypes()
             {
-                return new ArrayList<String>();
+                return new ArrayList<>();
             }
 
             @Override
             public List<Pair<Integer, Integer>> getSupportedPlateSizes()
             {
-                return Collections.singletonList(new Pair<Integer, Integer>(8, 12));
+                return Collections.singletonList(new Pair<>(8, 12));
             }
 
             public WellGroup.Type[] getWellGroupTypes()
@@ -287,7 +287,7 @@ public class PlateManager implements PlateService.Service
         setProperties(plate.getContainer(), plate);
 
         // populate wells:
-        Map<String, List<PositionImpl>> groupLsidToPositions = new HashMap<String, List<PositionImpl>>();
+        Map<String, List<PositionImpl>> groupLsidToPositions = new HashMap<>();
         Position[][] positionArray;
         if (plate.isTemplate())
             positionArray = new Position[plate.getRows()][plate.getColumns()];
@@ -306,7 +306,7 @@ public class PlateManager implements PlateService.Service
                 List<PositionImpl> groupPositions = groupLsidToPositions.get(wellgroupLsid);
                 if (groupPositions == null)
                 {
-                    groupPositions = new ArrayList<PositionImpl>();
+                    groupPositions = new ArrayList<>();
                     groupLsidToPositions.put(wellgroupLsid, groupPositions);
                 }
                 groupPositions.add(position);
@@ -318,7 +318,7 @@ public class PlateManager implements PlateService.Service
 
         // populate well groups:
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
-        List<WellGroupTemplateImpl> sortedGroups = new ArrayList<WellGroupTemplateImpl>();
+        List<WellGroupTemplateImpl> sortedGroups = new ArrayList<>();
         for (WellGroupTemplateImpl wellgroup : wellgroups)
         {
             setProperties(plate.getContainer(), wellgroup);
@@ -425,7 +425,7 @@ public class PlateManager implements PlateService.Service
     private Map<String, Object> getPositionProperties(PlateTemplateImpl plate, PositionImpl position)
     {
         List<? extends WellGroupTemplateImpl> groups = plate.getWellGroups(position);
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
         int index = 0;
         for (WellGroupTemplateImpl group : groups)
         {
@@ -511,12 +511,12 @@ public class PlateManager implements PlateService.Service
         SimpleFilter plateFilter = new SimpleFilter();
         plateFilter.addCondition("RowId", rowid);
         plateFilter.addCondition("Container", container.getId());
-        PlateTemplateImpl plate = Table.selectObject(StudySchema.getInstance().getTableInfoPlate(),
-                plateFilter, null, PlateTemplateImpl.class);
+        PlateTemplateImpl plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
+                plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
         PositionImpl[] positions = getPositions(plate);
 
-        List<String> lsids = new ArrayList<String>();
+        List<String> lsids = new ArrayList<>();
         lsids.add(plate.getLSID());
         for (WellGroupTemplateImpl wellgroup : wellgroups)
             lsids.add(wellgroup.getLSID());

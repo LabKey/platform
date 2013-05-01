@@ -83,7 +83,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
 
-    private List<FileListener> _fileListeners = new CopyOnWriteArrayList<FileListener>();
+    private List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
 
     enum Props {
         root,

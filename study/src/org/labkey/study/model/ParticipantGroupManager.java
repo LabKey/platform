@@ -563,7 +563,8 @@ public class ParticipantGroupManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try {
+        try
+        {
             scope.ensureTransaction();
 
             ParticipantGroup ret;

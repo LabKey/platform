@@ -22,16 +22,16 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 
-import java.util.List;
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.io.Serializable;
+import java.util.List;
 
 /**
  * User: brittp
@@ -252,7 +252,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
         if (_cohortId == null)
             return null;
-        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
+        return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
     @Override

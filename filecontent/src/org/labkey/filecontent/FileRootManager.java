@@ -16,13 +16,17 @@
 
 package org.labkey.filecontent;
 
-import org.labkey.api.cache.DbCache;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
@@ -37,7 +41,23 @@ public class FileRootManager
 {
     public static final String FILECONTENT_SCHEMA_NAME = "filecontent";
     private static final FileRootManager _instance = new FileRootManager();
-    private static final FileRoot NULL_ROOT = new FileRoot();
+    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "FileRoots", new CacheLoader<String, FileRoot>(){
+        @Override
+        public FileRoot load(String key, @Nullable Object c)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
+
+            // TODO: Should use getObject() instead... but not until we add a constraint to this table, see #
+            // return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
+
+            FileRoot[] fileRoots = new TableSelector(getTinfoFileRoots(), filter, null).getArray(FileRoot.class);
+
+            if (0 == fileRoots.length)
+                return null;
+            else
+                return fileRoots[0];
+        }
+    });
 
     private FileRootManager(){}
 
@@ -66,42 +86,19 @@ public class FileRootManager
         if (c == null)
             throw new IllegalArgumentException("getFileRoot: Container cannot be null");
         
-        try
-        {
-            String cacheKey = getCacheKey(c);
-            FileRoot root = (FileRoot) DbCache.get(getTinfoFileRoots(), cacheKey);
+        FileRoot root = CACHE.get(getCacheKey(c), c);
 
-            if (root != null)
-                return (root == NULL_ROOT) ? new FileRoot(c) : root;
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c.getId());
-            FileRoot[] roots = Table.select(getTinfoFileRoots(), Table.ALL_COLUMNS, filter, null, FileRoot.class);
-            if (roots.length > 0)
-            {
-                root = roots[0];
-                DbCache.put(getTinfoFileRoots(), cacheKey, root);
-            }
-            else
-            {
-                DbCache.put(getTinfoFileRoots(), cacheKey, NULL_ROOT);
-                root = new FileRoot(c);
-            }
-            return root;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return null == root ? new FileRoot(c) : root;
     }
 
     public void deleteFileRoot(Container c)
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", c.getId());
+            SimpleFilter filter = new SimpleFilter("Container", c);
             Table.delete(getTinfoFileRoots(), filter);
 
-            DbCache.remove(getTinfoFileRoots(), getCacheKey(c));
+            CACHE.remove(getCacheKey(c));
         }
         catch (SQLException x)
         {
@@ -114,10 +111,11 @@ public class FileRootManager
         try
         {
             if (root.isNew())
+            {
                 return Table.insert(user, getTinfoFileRoots(), root);
+            }
             else
             {
-                DbCache.remove(getTinfoFileRoots(), root.getContainer());
                 return Table.update(user, getTinfoFileRoots(), root, root.getRowId());
             }
         }
@@ -125,10 +123,15 @@ public class FileRootManager
         {
             throw new RuntimeSQLException(x);
         }
+        finally
+        {
+            // Must clear cache in both insert & update, otherwise NULL marker remains in the cache
+            CACHE.remove(root.getContainer());
+        }
     }
 
     public void clearCache()
     {
-        DbCache.clear(getTinfoFileRoots());
+        CACHE.clear();
     }
 }

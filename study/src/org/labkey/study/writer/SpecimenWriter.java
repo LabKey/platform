@@ -58,8 +58,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         pw.println("# specimens");
 
         SQLFragment sql = new SQLFragment().append("\nSELECT ");
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
-        List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>(columns.size());
+        List<DisplayColumn> displayColumns = new ArrayList<>(columns.size());
+        List<ColumnInfo> selectColumns = new ArrayList<>(columns.size());
         String comma = "";
 
         for (SpecimenColumn column : columns)

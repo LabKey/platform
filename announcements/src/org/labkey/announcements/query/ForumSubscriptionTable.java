@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;
@@ -223,7 +224,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            return Table.selectObject(ForumSubscriptionTable.this, getTargets(keys, user, container).createUserSchemaFilter(), Map.class);
+            return new TableSelector(ForumSubscriptionTable.this).getObject(getTargets(keys, user, container).createUserSchemaFilter(), Map.class);
         }
 
         @Override

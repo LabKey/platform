@@ -37,6 +37,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -107,12 +108,12 @@ public class StudyDesignManager
         return getSchema().getTable(STUDY_VERSION_TABLE_NAME);
     }
 
-    public StudyDesignInfo getStudyDesign(Container c, int studyId) throws SQLException
+    public StudyDesignInfo getStudyDesign(Container c, int studyId)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("(Container = ? OR SourceContainer = ?) AND StudyId= ?", new Object[] {c.getId(), c.getId(), studyId} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"), FieldKey.fromParts("StudyId"));
 
-        return Table.selectObject(getStudyDesignTable(), filter, null, StudyDesignInfo.class);
+        return new TableSelector(getStudyDesignTable(), filter, null).getObject(StudyDesignInfo.class);
     }
 
     public StudyDesignInfo[] getStudyDesigns(Container c) throws SQLException
@@ -568,11 +569,11 @@ public class StudyDesignManager
         return s.toString();
     }
 
-    public StudyDesignInfo getDesignForStudy(Study study) throws SQLException
+    public StudyDesignInfo getDesignForStudy(Study study)
     {
         SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
         filter.addCondition("Active", Boolean.TRUE);
-        StudyDesignInfo info = Table.selectObject(getStudyDesignTable(), filter, null, StudyDesignInfo.class);
+        StudyDesignInfo info = new TableSelector(getStudyDesignTable(), filter, null).getObject(StudyDesignInfo.class);
         return info;
     }
 

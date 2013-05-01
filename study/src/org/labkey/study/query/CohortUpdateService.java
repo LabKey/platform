@@ -18,16 +18,20 @@ package org.labkey.study.query;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.*;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -68,7 +72,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("Cohort");
-        Map<String,Object> result = Table.selectObject(queryTableInfo, keyFromMap(keys), Map.class);
+        Map<String, Object> result = new TableSelector(queryTableInfo).getObject(keyFromMap(keys), Map.class);
         return result;
     }
 

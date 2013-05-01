@@ -422,7 +422,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpMaterialImpl getExpMaterial(int rowid)
     {
-        Material material = Table.selectObject(getTinfoMaterial(), rowid, Material.class);
+        Material material = new TableSelector(getTinfoMaterial()).getObject(rowid, Material.class);
         return material == null ? null : new ExpMaterialImpl(material);
     }
 
@@ -462,7 +462,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         if (null == ms)
         {
-            ms = Table.selectObject(getTinfoMaterialSource(), rowId, MaterialSource.class);
+            ms = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
 
             if (null == ms)
                 ms = MISS_MARKER;
@@ -560,7 +560,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperimentImpl getExpExperiment(int rowid)
     {
-        Experiment experiment = Table.selectObject(getTinfoExperiment(), (Integer) rowid, Experiment.class);
+        Experiment experiment = new TableSelector(getTinfoExperiment()).getObject(rowid, Experiment.class);
         if (null != experiment)
         {
             return new ExpExperimentImpl(experiment);
@@ -2896,7 +2896,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
-        ProtocolApplication app = Table.selectObject(getTinfoProtocolApplication(), rowId, ProtocolApplication.class);
+        ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
         if (app == null)
             return null;
         return new ExpProtocolApplicationImpl(app);
