@@ -1359,7 +1359,7 @@ public class DavController extends SpringActionController
                 WebdavResource resource = root;
                 if (resource.isCollection())
                 {
-                    ArrayList<String> listPaths = (ArrayList<String>) resource.listNames();
+                    Collection<String> listPaths = resource.listNames();  // 17749
                     ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>();
 
                     // Build resource set
