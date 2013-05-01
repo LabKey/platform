@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -24,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;

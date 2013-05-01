@@ -816,10 +816,10 @@ dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
-dataintegration/src/org/labkey/di/VariableDescription.java -text
 dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text
 dataintegration/src/org/labkey/di/data/TransformDataType.java -text
+dataintegration/src/org/labkey/di/data/TransformProperty.java -text
 dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text

@@ -22,22 +22,19 @@ import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.exp.pipeline.XarGeneratorFactorySettings;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
-import org.labkey.experiment.ExperimentRunGraph;
 
 import java.io.IOException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.util.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Creates an experiment run to represent the work that the task's job has done so far.
@@ -158,6 +155,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             }
         }
         catch (SQLException e)
+        {
+            throw new PipelineJobException("Failed to save experiment run in the database", e);
+        }
+        catch (ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

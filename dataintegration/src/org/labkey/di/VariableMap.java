@@ -15,6 +15,9 @@
  */
 package org.labkey.di;
 
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.SystemProperty;
+
 import java.util.Set;
 
 /**
@@ -27,7 +30,7 @@ public interface VariableMap
 {
     Object get(String key);
     Object put(String key, Object value);
-    Object put(VariableDescription v, Object value);
-    VariableDescription getDescription(String key);
+    Object put(SystemProperty p, Object value);
+    PropertyDescriptor getDescriptor(String key);
     Set<String> keySet();
 }

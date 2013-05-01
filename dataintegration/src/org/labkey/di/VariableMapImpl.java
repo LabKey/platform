@@ -16,7 +16,11 @@
 package org.labkey.di;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.SystemProperty;
+
+import java.util.Map;
 import java.util.Set;
 
 
@@ -29,7 +33,7 @@ import java.util.Set;
 public class VariableMapImpl implements VariableMap
 {
     final VariableMap _outer;
-    final CaseInsensitiveHashMap<VariableDescription> declarations = new CaseInsensitiveHashMap<>();
+    final CaseInsensitiveHashMap<PropertyDescriptor> declarations = new CaseInsensitiveHashMap<>();
     final CaseInsensitiveHashMap<Object> values = new CaseInsensitiveHashMap<>();
 
     // No-args constructor to support de-serialization in Java 7
@@ -44,13 +48,16 @@ public class VariableMapImpl implements VariableMap
         _outer = parentScope;
     }
 
-    public VariableMapImpl(VariableMap parentScope, ProtocolApplicationParameter[] params)
+    public VariableMapImpl(VariableMap parentScope, Map<String, ObjectProperty> propertyMap)
     {
         _outer = parentScope;
-
-        if (params != null)
-            for (ProtocolApplicationParameter param : params)
-                put(param.getName(), param.getValue());
+        if (propertyMap != null)
+        {
+            for (ObjectProperty property : propertyMap.values())
+            {
+                put(property.getName(), property.value());
+            }
+        }
     }
 
 
@@ -66,17 +73,18 @@ public class VariableMapImpl implements VariableMap
     @Override
     public Object put(String key, Object value)
     {
-        VariableDescription d = declarations.get(key);
-        if (null != d)
-            value = d.getType().convert(value);
+        PropertyDescriptor pd = declarations.get(key);
+        if (null != pd)
+            value = pd.getJdbcType().convert(value);
         return values.put(key,value);
     }
 
 
-    public Object put(VariableDescription var, Object value)
+    public Object put(SystemProperty prop, Object value)
     {
-        declarations.put(var.getName(), var);
-        return put(var.getName(), value);
+        PropertyDescriptor pd = prop.getPropertyDescriptor();
+        declarations.put(pd.getName(), pd);
+        return put(pd.getName(), value);
     }
 
     @Override
@@ -86,7 +94,7 @@ public class VariableMapImpl implements VariableMap
     }
 
     @Override
-    public VariableDescription getDescription(String key)
+    public PropertyDescriptor getDescriptor(String key)
     {
         return declarations.get(key);
     }

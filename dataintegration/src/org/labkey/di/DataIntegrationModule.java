@@ -38,6 +38,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.di.data.TransformDataType;
+import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
@@ -79,6 +80,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     protected void init()
     {
         addController("dataintegration", DataIntegrationController.class);
+        TransformProperty.register();
     }
 
     public boolean hasScripts()

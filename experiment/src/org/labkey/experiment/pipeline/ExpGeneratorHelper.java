@@ -17,6 +17,7 @@ package org.labkey.experiment.pipeline;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
@@ -33,6 +34,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.query.ValidationException;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -141,7 +143,7 @@ public class ExpGeneratorHelper
     }
 
 
-    static public ExpRunImpl insertRun(PipelineJob job, XarSource source, XarWriter xarWriter) throws SQLException, PipelineJobException
+    static public ExpRunImpl insertRun(PipelineJob job, XarSource source, XarWriter xarWriter) throws SQLException, PipelineJobException, ValidationException
     {
         ExpRunImpl run;
         try
@@ -258,7 +260,7 @@ public class ExpGeneratorHelper
     }
 
     static private ExpRunImpl insertRun(PipelineJob job, Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
-        throws SQLException, PipelineJobException
+        throws SQLException, PipelineJobException, ValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(job.getContainer(), job.getDescription());
         run.setProtocol(parentProtocol);
@@ -312,10 +314,17 @@ public class ExpGeneratorHelper
                 RecordedAction.ParameterType paramType = param.getKey();
                 protAppParam.setName(paramType.getName());
                 protAppParam.setOntologyEntryURI(paramType.getURI());
-                
+
                 protAppParam.setValue(paramType.getType(), param.getValue());
 
                 ExperimentServiceImpl.get().loadParameter(job.getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), "ProtocolApplicationId", app.getRowId());
+            }
+
+            // If there are any propery settings, transfer them here
+            for (Map.Entry<PropertyDescriptor, Object> prop : action.getProps().entrySet())
+            {
+                PropertyDescriptor pd = prop.getKey();
+                app.setProperty(job.getUser(), pd, prop.getValue());
             }
 
             // Set up the inputs

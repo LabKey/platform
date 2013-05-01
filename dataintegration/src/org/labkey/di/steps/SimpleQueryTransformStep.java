@@ -37,12 +37,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
+import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
-import static org.labkey.di.pipeline.TransformJobContext.Variable.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -105,12 +105,10 @@ public class SimpleQueryTransformStep extends TransformTask
 
     private void recordWork(RecordedAction action)
     {
-        // todo: either add these to the variable map or put directly on the action itself
-        // todo: via a property
         if (-1 != _recordsInserted)
-            action.addParameter(RecordsInserted.getParameterType(),_recordsInserted);
+            action.addProperty(TransformProperty.RecordsInserted.getPropertyDescriptor(), _recordsInserted);
         if (-1 != _recordsDeleted)
-            action.addParameter(RecordsDeleted.getParameterType(),_recordsInserted);
+            action.addProperty(TransformProperty.RecordsDeleted.getPropertyDescriptor(), _recordsDeleted);
 
         try
         {

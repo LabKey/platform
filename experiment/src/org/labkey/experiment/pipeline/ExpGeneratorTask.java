@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 
 import java.sql.SQLException;
@@ -103,6 +104,10 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
             }
         }
         catch (SQLException e)
+        {
+            throw new PipelineJobException("Failed to save experiment run in the database", e);
+        }
+        catch (ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

@@ -15,11 +15,11 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.di.VariableDescription;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import java.util.Date;
@@ -67,19 +67,18 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         doWork(action);
         action.setEndTime(new Date());
         action.setRecordCount(_txJob.getRecordCountForAction(action));
-        addParameters(action);
+        addProperties(action);
         _records.add(action);
         return _records;
     }
 
-
-    private void addParameters(RecordedAction action)
+    private void addProperties(RecordedAction action)
     {
         for (String key : _variableMap.keySet())
         {
-            VariableDescription d = _variableMap.getDescription(key);
-            if (d != null)
-                action.addParameter(d.getParameterType(), _variableMap.get(key));
+            PropertyDescriptor pd = _variableMap.getDescriptor(key);
+            if (pd != null)
+                action.addProperty(pd, _variableMap.get(key));
         }
     }
 

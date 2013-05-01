@@ -16,15 +16,10 @@
 package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.di.VariableDescription;
-import org.labkey.di.VariableMapImpl;
 
 import java.io.Serializable;
 
@@ -58,58 +53,5 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     public int getTransformVersion()
     {
         return _version;
-    }
-
-    /* VARIABLES */
-
-    VariableMapImpl jobVariables;
-
-
-    // these are known built-in variables, might become property descriptors or protocolparameters or something,
-    // just going to use an enum for now
-    public enum Variable implements VariableDescription
-    {
-        IncrementalStartTimestamp(JdbcType.TIMESTAMP),
-        IncrementalEndTimestamp(JdbcType.TIMESTAMP),
-        TranformRunId(JdbcType.INTEGER),
-        UserId(JdbcType.INTEGER),
-        RecordsInserted(JdbcType.BIGINT),
-        RecordsDeleted(JdbcType.BIGINT)
-        ;
-
-        final JdbcType _type;
-
-        Variable(JdbcType type)
-        {
-            _type = type;
-        }
-
-
-        @Override
-        public String getName()
-        {
-            return this.name();
-        }
-
-        @Override
-        public String getURI()
-        {
-            return getClass().getName() + "#" + getName();
-        }
-
-        @Override
-        public JdbcType getType()
-        {
-            return _type;
-        }
-
-        @Override
-        public RecordedAction.ParameterType getParameterType()
-        {
-            PropertyType pt = PropertyType.INTEGER;
-            if (getType().isDateOrTime())
-                pt = PropertyType.DATE_TIME;
-            return new RecordedAction.ParameterType(getName(), getURI(), pt);
-        }
     }
 }

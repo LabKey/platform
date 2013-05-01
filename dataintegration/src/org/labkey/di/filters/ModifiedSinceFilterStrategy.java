@@ -25,6 +25,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformManager;
@@ -124,8 +125,8 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
             incrementalEndDate = incrementalStartTimestamp;
         f.addCondition(_tsCol.getFieldKey(), incrementalEndDate, CompareType.LTE);
 
-        variables.put(TransformJobContext.Variable.IncrementalStartTimestamp, incrementalStartTimestamp);
-        variables.put(TransformJobContext.Variable.IncrementalEndTimestamp, incrementalEndDate);
+        variables.put(TransformProperty.IncrementalStartTimestamp, incrementalStartTimestamp);
+        variables.put(TransformProperty.IncrementalEndTimestamp, incrementalEndDate);
         return f;
     }
 
@@ -138,13 +139,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         {
             VariableMap map = TransformManager.get().getVariableMapForTransformStep(expRunId, _config.getId());
             if (null != map)
-            {
-                for (String key : map.keySet())
-                {
-                    if (StringUtils.equals(key, TransformJobContext.Variable.IncrementalEndTimestamp.getName()))
-                        return (Date) map.get(key);
-                }
-            }
+                return (Date) map.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
         }
         return null;
     }

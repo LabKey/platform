@@ -1856,8 +1856,8 @@ public class ExperimentController extends SpringActionController
 
             JspView<Map<String, ? extends AbstractParameter>> paramsView = new JspView<Map<String, ? extends AbstractParameter>>("/org/labkey/experiment/Parameters.jsp", map);
             paramsView.setTitle("Protocol Application Parameters");
-
-            return new VBox(detailsView, paramsView, outMGrid, outDGrid);
+            CustomPropertiesView cpv = new CustomPropertiesView(_app.getLSID(), c);
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), paramsView, outMGrid, outDGrid);
         }
 
         public NavTree appendNavTrail(NavTree root)

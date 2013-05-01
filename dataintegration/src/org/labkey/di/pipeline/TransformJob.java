@@ -19,6 +19,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
@@ -34,6 +35,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
+import org.labkey.di.data.TransformProperty;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -211,18 +213,16 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     public int getRecordCountForAction(RecordedAction action)
     {
         int recordCount = 0;
-        for (Map.Entry<RecordedAction.ParameterType, Object> param : action.getParams().entrySet())
-        {
-            RecordedAction.ParameterType paramKey = param.getKey();
-            if (paramKey.getName() == TransformJobContext.Variable.RecordsInserted.getName() ||
-                    paramKey.getName() == TransformJobContext.Variable.RecordsDeleted.getName()    )
-            {
-                assert paramKey.getType() == PropertyType.INTEGER;
-                // todo: should we break out inserted and deleted records in the TransformRun table
-                // instead of just having one record count?
-                recordCount += (Integer) param.getValue();
-            }
-        }
+        Map<PropertyDescriptor, Object> propMap = action.getProps();
+
+        if (propMap.containsKey(TransformProperty.RecordsInserted.getPropertyDescriptor()))
+            recordCount += (Integer) propMap.get(TransformProperty.RecordsInserted.getPropertyDescriptor());
+
+        if (propMap.containsKey(TransformProperty.RecordsDeleted.getPropertyDescriptor()))
+            recordCount += (Integer) propMap.get(TransformProperty.RecordsDeleted.getPropertyDescriptor());
+
+        if (propMap.containsKey(TransformProperty.RecordsModified.getPropertyDescriptor()))
+            recordCount += (Integer) propMap.get(TransformProperty.RecordsModified.getPropertyDescriptor());
 
         return recordCount;
     }

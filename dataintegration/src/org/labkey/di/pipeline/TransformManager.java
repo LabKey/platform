@@ -461,8 +461,7 @@ public class TransformManager implements DataIntegrationService
         {
             if (StringUtils.equals(protocolApp.getName(), transformStepId))
             {
-                ProtocolApplicationParameter[] params = ExperimentService.get().getProtocolApplicationParameters(protocolApp.getRowId());
-                return new VariableMapImpl(null, params);
+                return new VariableMapImpl(null, protocolApp.getObjectProperties());
             }
         }
 
