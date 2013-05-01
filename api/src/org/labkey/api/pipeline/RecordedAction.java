@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.PropertyDescriptor;
 
 import java.io.File;
 import java.net.URI;
@@ -39,7 +40,7 @@ public class RecordedAction
     private Set<DataFile> _inputs = new LinkedHashSet<DataFile>();
     private Set<DataFile> _outputs = new LinkedHashSet<DataFile>();
     private Map<ParameterType, Object> _params = new LinkedHashMap<ParameterType, Object>();
-
+    private Map<PropertyDescriptor, Object> _props = new LinkedHashMap<PropertyDescriptor, Object>();
     private String _name;
     private String _description;
     private Date _startTime;
@@ -143,9 +144,19 @@ public class RecordedAction
         _params.put(type, value);
     }
 
+    public void addProperty(PropertyDescriptor pd, Object value )
+    {
+        _props.put(pd,value);
+    }
+
     public Map<ParameterType, Object> getParams()
     {
         return Collections.unmodifiableMap(_params);
+    }
+
+    public Map<PropertyDescriptor, Object> getProps()
+    {
+        return Collections.unmodifiableMap(_props);
     }
 
     public static class ParameterType
