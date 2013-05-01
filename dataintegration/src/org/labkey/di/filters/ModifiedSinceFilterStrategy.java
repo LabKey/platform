@@ -73,8 +73,10 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         if (null == _table)
             throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
 
-        String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), "modified");
+        String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), "_txmodified");
         _tsCol = _table.getColumn(timestampColumnName);
+        if (null == _tsCol)
+            _tsCol = _table.getColumn("modified");
         if (null == _tsCol)
             throw new IllegalArgumentException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
     }

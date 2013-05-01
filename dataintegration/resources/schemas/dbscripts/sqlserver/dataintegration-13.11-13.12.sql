@@ -22,7 +22,7 @@ AS
 DECLARE @sql NVARCHAR(1000)
 SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD  ' +
      '_txRowVersion ROWVERSION, ' +
-     '_txLastUpdated DATETIME, ' +
+     '_txModified DATETIME, ' +
      '_txTranformRunId INT, ' +
      '_txNote NVARCHAR(1000)';
 EXEC sp_executesql @sql;
