@@ -123,7 +123,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
     private BlockingCache<String, T[]> getCache()
     {
         DatabaseCache<Wrapper<T[]>> cache = DbCache.getCacheGeneric(_table);
-        return new BlockingCache<String, T[]>(cache, null);
+        return new BlockingCache<>(cache, null);
     }
 
 

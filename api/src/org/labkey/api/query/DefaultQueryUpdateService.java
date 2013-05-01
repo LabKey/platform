@@ -171,7 +171,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         TableInfo table = getDbTable();
         Object[] typedParameters = convertToTypedValues(keys, table.getPkColumns());
 
-        Map<String, Object> row = ((Map<String,Object>)Table.selectObject(table, typedParameters, Map.class));
+        Map<String, Object> row = new TableSelector(table).getObject(typedParameters, Map.class);
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();

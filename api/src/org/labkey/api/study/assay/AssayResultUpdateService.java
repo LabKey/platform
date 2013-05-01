@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -94,12 +95,12 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                     {
                         oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
                     }
-                    Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
+                    Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getObject(oldValue, Map.class);
                     if (oldLookupTarget != null)
                     {
                         oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
                     }
-                    Map<String, Object> newLookupTarget = Table.selectObject(fkTableInfo, newValue, Map.class);
+                    Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getObject(newValue, Map.class);
                     if (newLookupTarget != null)
                     {
                         newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());

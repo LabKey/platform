@@ -46,7 +46,7 @@ import java.util.Set;
 public class SecurityPolicyManager
 {
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<SecurityPolicy>(core.getSchema().getScope(), 20000, "SecurityPolicies");
+    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), 20000, "SecurityPolicies");
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
@@ -64,8 +64,8 @@ public class SecurityPolicyManager
             {
                 SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
 
-                SecurityPolicyBean policyBean = Table.selectObject(core.getTableInfoPolicies(), resource.getResourceId(),
-                        SecurityPolicyBean.class);
+                SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies())
+                        .getObject(resource.getResourceId(), SecurityPolicyBean.class);
 
                 TableInfo table = core.getTableInfoRoleAssignments();
 
@@ -106,8 +106,8 @@ public class SecurityPolicyManager
 
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
-            SecurityPolicyBean currentPolicyBean = Table.selectObject(core.getTableInfoPolicies(),
-                    policy.getResourceId(), SecurityPolicyBean.class);
+            SecurityPolicyBean currentPolicyBean = new TableSelector(core.getTableInfoPolicies())
+                    .getObject(policy.getResourceId(), SecurityPolicyBean.class);
 
             if (null != currentPolicyBean && null != policy.getModified() &&
                     0 != policy.getModified().compareTo(currentPolicyBean.getModified()))

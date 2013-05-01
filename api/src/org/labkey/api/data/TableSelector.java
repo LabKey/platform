@@ -150,13 +150,13 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         return this;
     }
 
-    // pk can be single value or an array of values
+    // pk can be single value, an array of values, or a filter (??)
     public <K> K getObject(Object pk, Class<K> clazz)
     {
         return getObject(null, pk, clazz);
     }
 
-    // pk can be single value or an array of values
+    // pk can be single value, an array of values, or a filter (??)
     public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)
     {
         List<ColumnInfo> pkColumns = _table.getPkColumns();

@@ -58,11 +58,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private Map<String, Object> _row;
-    private Map<String, Object> _extra = new HashMap<String, Object>();
+    private Map<String, Object> _extra = new HashMap<>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
-    protected Set<FieldKey> _ignoredColumnFilters = new LinkedHashSet<FieldKey>();
+    protected Set<FieldKey> _ignoredColumnFilters = new LinkedHashSet<>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
@@ -198,8 +198,8 @@ public class RenderContext implements Map<String, Object>, Serializable
         assert null != (displayColumns = Collections.unmodifiableList(displayColumns));
         Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
 
-        Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());
-        LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
+        Set<ColumnInfo> ret = new NullPreventingSet<>(new LinkedHashSet<ColumnInfo>());
+        LinkedHashSet<FieldKey> keys = new LinkedHashSet<>();
 
         if (null == displayColumns || displayColumns.size() == 0)
         {
@@ -240,7 +240,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, method end");
 
-        return new ArrayList<ColumnInfo>(ret);
+        return new ArrayList<>(ret);
     }
 
 
@@ -308,7 +308,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             return Collections.emptyMap();
         }
 
-        List<Aggregate> aggregates = new ArrayList<Aggregate>();
+        List<Aggregate> aggregates = new ArrayList<>();
         Map<FieldKey, ColumnInfo> availableFieldKeys = Table.createColumnMap(tinfo, cols);
 
         for (Aggregate aggregate : aggregatesIn)

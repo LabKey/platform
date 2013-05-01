@@ -181,18 +181,17 @@ public class Table
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
             throws SQLException
     {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(cache);
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(cache);
     }
 
     @Deprecated /** Use SqlSelector */    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
+    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
     }
 
-    /** Use TableSelector instead */
     @NotNull
-    @Deprecated
+    @Deprecated /** Use TableSelector */
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
@@ -206,6 +205,30 @@ public class Table
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return new LegacySqlExecutor(schema).execute(f);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, filter, sort).getObject(clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(c, pk, clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
     }
 
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
@@ -231,14 +254,6 @@ public class Table
     }
 
 
-    // 12 usages
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, filter, sort).getObject(clss);
-    }
-
-
     // 87 usages
     @NotNull
     @Deprecated /** Use TableSelector */
@@ -254,31 +269,6 @@ public class Table
     public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
-    }
-
-
-    // 31 usages
-    /** Use TableSelector instead */
-    @Deprecated
-    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-
-    // 24 usages
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-
-    // 5 usages
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(c, pk, clss);
     }
 
 
@@ -322,7 +312,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 194 usages
+    // 192 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -358,14 +348,14 @@ public class Table
 
     // 62 usages
     @Deprecated /** Use SqlSelector */
-    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
+    public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
     }
 
     // 41 usages
     @Deprecated /** Use SqlSelector */
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
+    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet();
     }
@@ -382,7 +372,7 @@ public class Table
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
             throws SQLException
     {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).getResultSet(cache);
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet(cache);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -471,7 +461,7 @@ public class Table
             sqlLine = sqlLine.trim();
             if (!sqlLine.startsWith("--"))
             {
-                return sqlLine.toUpperCase().startsWith("SELECT");
+                return StringUtils.startsWithIgnoreCase(sqlLine, "SELECT");
             }
         }
         return false;
@@ -1107,7 +1097,7 @@ public class Table
         SQLFragment where = filter.getSQLFragment(table, null);
 
         String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
-        int result = Table.execute(table.getSchema(), deleteSQL, where.getParams().toArray());
+        int result = execute(table.getSchema(), deleteSQL, where.getParams().toArray());
 
         notifyTableUpdate(table);
         return result;
@@ -1202,7 +1192,7 @@ public class Table
 
     public static void snapshot(TableInfo tinfo, String tableName) throws SQLException
     {
-        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, null, null, null);
+        SQLFragment sqlSelect = getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
         sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
         sqlSelectInto.append(sqlSelect);
@@ -1445,18 +1435,18 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            Results rsAll = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, ALL_ROWS, NO_OFFSET);
+            Results rsAll = selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, ALL_ROWS, NO_OFFSET);
             rsAll.last();
             int maxRows = rsAll.getRow();
-            assertTrue(((Table.TableResultSet)rsAll.getResultSet()).isComplete());
+            assertTrue(((TableResultSet)rsAll.getResultSet()).isComplete());
             rsAll.close();
 
             maxRows -= 2;
-            Results rs = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, maxRows, NO_OFFSET);
+            Results rs = selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, maxRows, NO_OFFSET);
             rs.last();
             int row = rs.getRow();
             assertTrue(row == maxRows);
-            assertFalse(((Table.TableResultSet)rs.getResultSet()).isComplete());
+            assertFalse(((TableResultSet)rs.getResultSet()).isComplete());
             rs.close();
         }
 

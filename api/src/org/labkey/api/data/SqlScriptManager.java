@@ -53,7 +53,7 @@ public class SqlScriptManager
 
         SqlSelector selector = new SqlSelector(_core.getSchema(), "SELECT FileName FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ?", provider.getProviderName());
         Collection<String> runFilenames = selector.getCollection(String.class);
-        Set<SqlScript> runScripts = new HashSet<SqlScript>(runFilenames.size());
+        Set<SqlScript> runScripts = new HashSet<>(runFilenames.size());
 
         for (String filename : runFilenames)
         {
@@ -77,7 +77,7 @@ public class SqlScriptManager
             return null;
         }
 
-        return Table.selectObject(_core.getTableInfoSqlScripts(), new String[]{provider.getProviderName(), fileName}, SqlScriptBean.class);
+        return new TableSelector(_core.getTableInfoSqlScripts()).getObject(new String[]{provider.getProviderName(), fileName}, SqlScriptBean.class);
     }
 
 

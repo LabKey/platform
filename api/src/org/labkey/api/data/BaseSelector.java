@@ -87,7 +87,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
         if (null != getter)
         {
-            list = new ArrayList<K>();
+            list = new ArrayList<>();
             forEach(new ForEachBlock<ResultSet>() {
                 @Override
                 public void exec(ResultSet rs) throws SQLException
@@ -114,7 +114,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
                         copy.close();
 
                         // TODO: Not very efficient...
-                        ArrayList<K> list = new ArrayList<K>(arrayListMaps.length);
+                        ArrayList<K> list = new ArrayList<>(arrayListMaps.length);
                         //noinspection unchecked
                         Collections.addAll(list, arrayListMaps);
                         return list;
@@ -137,7 +137,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return getObject(getArrayList(clazz), clazz);
     }
 
-    public <K> K getObject(Class<K> clazz, ResultSetFactory factory)
+    protected <K> K getObject(Class<K> clazz, ResultSetFactory factory)
     {
         return getObject(getArrayList(clazz, factory), clazz);
     }

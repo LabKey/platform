@@ -325,7 +325,7 @@ public class DbSequenceManager
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = n / (elapsed / 1000.0);
 
-            assertTrue(perSecond > 100);   // A very low bar
+            assertTrue("DbSequence.next() performance was much lower than expected, " + perSecond + " per second", perSecond > 100);   // A very low bar
         }
 
         @Test

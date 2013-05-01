@@ -35,7 +35,7 @@ import java.util.Map;
 @Deprecated  // Use CacheManager.getCache() or DatabaseCache instead
 public class DbCache
 {
-    private static final Map<Path, DatabaseCache<Object>> CACHES = new HashMap<Path, DatabaseCache<Object>>(100);
+    private static final Map<Path, DatabaseCache<Object>> CACHES = new HashMap<>(100);
 
     public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
@@ -57,7 +57,7 @@ public class DbCache
 
             if (null == cache && create)
             {
-                cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "DbCache: " + tinfo.getName());
+                cache = new DatabaseCache<>(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "DbCache: " + tinfo.getName());
                 CACHES.put(cacheKey, cache);
             }
 

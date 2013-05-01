@@ -780,7 +780,7 @@ public class OntologyManager
 
     public static OntologyObject getOntologyObject(int id)
     {
-        return Table.selectObject(getTinfoObject(), id, OntologyObject.class);
+        return new TableSelector(getTinfoObject()).getObject(id, OntologyObject.class);
     }
 
     //todo:  review this.  this doesn't delete the underlying data objects.  should it?
@@ -1793,7 +1793,7 @@ public class OntologyManager
 
     public static PropertyDescriptor getPropertyDescriptor(int propertyId)
     {
-        return Table.selectObject(getTinfoPropertyDescriptor(), propertyId, PropertyDescriptor.class);
+        return new TableSelector(getTinfoPropertyDescriptor()).getObject(propertyId, PropertyDescriptor.class);
     }
 
     
@@ -1842,7 +1842,7 @@ public class OntologyManager
 
     public static DomainDescriptor getDomainDescriptor(int id, boolean force)
     {
-        return Table.selectObject(getTinfoDomainDescriptor(), id, DomainDescriptor.class);
+        return new TableSelector(getTinfoDomainDescriptor()).getObject(id, DomainDescriptor.class);
     }
 
 
