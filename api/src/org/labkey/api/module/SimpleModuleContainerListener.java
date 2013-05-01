@@ -74,13 +74,16 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
 
     protected void purgeSchema(String schemaName, Container c, User user)
     {
-        // Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
-        //UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+        UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+        /*
+        // UNDONE: Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
+        // UNDONE: Unfortunately, it's way to slow to walk all module's schemas on container delete.
         DbSchema dbSchema = DbSchema.get(schemaName);
         if (dbSchema == null)
             return;
 
         UserSchema schema = QueryService.get().createSimpleUserSchema(schemaName, null, user, c, dbSchema);
+        */
         if (schema == null)
             return;
 
