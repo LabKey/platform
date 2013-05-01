@@ -3334,7 +3334,8 @@ public class SpecimenController extends BaseStudyController
                 registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
             if (study != null)
             {
-                if (!study.isAncillaryStudy() && !study.isSnapshotStudy())
+                boolean enableSpecimenRequest = SampleManager.getInstance().getRepositorySettings(study.getContainer()).isEnableRequests();
+                if (!study.isAncillaryStudy() && !study.isSnapshotStudy() && enableSpecimenRequest)
                 {
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestLocationReportFactory());
@@ -4040,7 +4041,7 @@ public class SpecimenController extends BaseStudyController
         {
             RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
             settings.setSimple(form.isSimple());
-            settings.setEnableRequests(!form.isSimple()); //We only expose one setting for now...
+            settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
             SampleManager.getInstance().saveRepositorySettings(getContainer(), settings);
 
             return HttpView.redirect(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));

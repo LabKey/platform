@@ -484,7 +484,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public boolean allowsAvailabilityFilter()
     {
-        return true;
+        return SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
     }
 
     public boolean allowsParticipantAggregegates()

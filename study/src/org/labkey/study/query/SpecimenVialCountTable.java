@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 
 /**
@@ -34,9 +35,12 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
 
         addColumn(new AliasedColumn(this, "TotalCount", _rootTable.getColumn("VialCount")));
-        addColumn(new AliasedColumn(this, "LockedInRequest", _rootTable.getColumn("LockedInRequestCount")));
+
+        boolean enableSpecimenRequest = SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+
+        addColumn(new AliasedColumn(this, "LockedInRequest", _rootTable.getColumn("LockedInRequestCount"))).setHidden(!enableSpecimenRequest);
         addColumn(new AliasedColumn(this, "AtRepository", _rootTable.getColumn("AtRepositoryCount")));
-        addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount")));
-        addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount")));
+        addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount"))).setHidden(!enableSpecimenRequest);
+        addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount"))).setHidden(!enableSpecimenRequest);
     }
 }

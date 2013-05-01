@@ -64,6 +64,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         DEFAULT
     }
     private boolean _requireSequenceNum;
+    private boolean _enableRequests;
 
     private static class SpecimenDataRegion extends DataRegion
     {
@@ -317,6 +318,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
         _requireSequenceNum = requireSequenceNum;
+        _enableRequests = SampleManager.getInstance().getRepositorySettings(schema.getContainer()).isEnableRequests();
 
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)
@@ -770,7 +772,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                             getUser().isAdministrator());
         }
         RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
-        if (!settings.isSimple() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
+        if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,

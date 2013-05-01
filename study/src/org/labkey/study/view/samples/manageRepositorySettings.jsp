@@ -32,13 +32,37 @@
    {
 %>
 <form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
-    <div>
-        <input type="radio" name="simple" value="true" <%=text(settings.isSimple() ? "CHECKED" : "") %>> Standard Specimen Repository - allows you to upload a list of available specimens
-    </div>
-    <div>
-        <input type="radio" name="simple" value="false" <%=text(settings.isSimple() ? "" : "CHECKED") %>> Advanced (External) Specimen Repository -
-                relies on an external set of tools to track movement of specimens between locations. The advanced system also enables a customizable specimen
-                request system.
+    <table width="100%">
+        <tr><td class="labkey-announcement-title" align="left"><span>Repository Type</span></td></tr>
+        <tr><td class="labkey-title-area-line"></td></tr>
+        <tr><td>
+            <div style="padding-bottom: 1em">
+                    <input type="radio" name="simple" value="true" <%=text(settings.isSimple() ? "CHECKED" : "") %> onChange="document.getElementById('enableRequestsBlock').style.display = 'none';">
+                    <em>Standard Specimen Repository</em>: allows you to upload a list of available specimens
+                </div>
+                <div>
+                    <input type="radio" name="simple" value="false" <%=text(settings.isSimple() ? "" : "CHECKED") %> onChange="document.getElementById('enableRequestsBlock').style.display = 'block';">
+                    <em>Advanced (External) Specimen Repository</em>:
+                            relies on an external set of tools to track movement of specimens between locations. The advanced system also optionally enables a customizable specimen
+                            request system.
+                </div>        </td></tr>
+    </table>
+
+    <div id="enableRequestsBlock" style="padding-bottom: 1em;;display:<%= h(settings.isSimple() ? "none" : "block") %>">
+        <table width="100%">
+            <tr><td class="labkey-announcement-title" align="left"><span>Specimen Requests</span></td></tr>
+            <tr><td class="labkey-title-area-line"></td></tr>
+            <tr><td>
+                <div style="padding-bottom: 1em">
+                    <input type="radio" name="enableRequests" value="true"  <%=text(settings.isEnableRequests() ? "CHECKED" : "") %>><em>Enabled</em>:
+                    The system will allow users with appropriate permissions to request specimens, and will show counts of available specimens.
+                </div>
+                <div style="padding-bottom: 1em">
+                    <input type="radio" name="enableRequests" value="false"  <%=text(!settings.isEnableRequests() ? "CHECKED" : "") %>><em>Disabled</em>:
+                    Specimen request features such as the specimen shopping cart will not appear in the specimen tracking user interface.
+                </div>
+            </td></tr>
+        </table>
     </div>
     <br/>
     <div>

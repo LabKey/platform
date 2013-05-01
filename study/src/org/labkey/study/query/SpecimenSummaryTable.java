@@ -75,8 +75,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantSequenceNumColumn.setIsUnselectable(true);
         addColumn(_participantSequenceNumColumn);
 
+        boolean enableSpecimenRequest = SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
-        addWrapColumn(_rootTable.getColumn("AvailableVolume"));
+        addWrapColumn(_rootTable.getColumn("AvailableVolume")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
         addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
@@ -87,10 +88,10 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("FirstProcessedByInitials"));
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
         addWrapColumn(_rootTable.getColumn("VialCount"));
-        addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
+        addWrapColumn(_rootTable.getColumn("LockedInRequestCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("AtRepositoryCount"));
-        addWrapColumn(_rootTable.getColumn("AvailableCount"));
-        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount"));
+        addWrapColumn(_rootTable.getColumn("AvailableCount")).setHidden(!enableSpecimenRequest);
+        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));

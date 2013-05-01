@@ -72,7 +72,7 @@
         </tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
         <tr>
-            <td colspan="2">The specimen request system can display warning icons when one or zero vials of any primary specimen are available for request.  The icon will appear next to all vials of that the primary specimen.</td>
+            <td colspan="2">If enabled, the specimen request system can display warning icons when one or zero vials of any primary specimen are available for request.  The icon will appear next to all vials of that the primary specimen.</td>
         </tr>
         <tr>
             <th align="right">Display one available vial warning:</th>

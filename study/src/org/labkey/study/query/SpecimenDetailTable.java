@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
+import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -69,8 +70,9 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         });
         addColumn(specimenComment);
 
-        addWrapColumn(_rootTable.getColumn("LockedInRequest"));
-        addWrapColumn(_rootTable.getColumn("Requestable"));
+        boolean enableSpecimenRequest = SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
+        addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 
         ColumnInfo siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
         siteNameColumn.setFk(new LookupForeignKey("RowId")
@@ -102,8 +104,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         ColumnInfo availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
         // Don't setKeyField. Use addQueryFieldKeys where needed
-        addColumn(availableColumn);
-        addWrapColumn(_rootTable.getColumn("AvailabilityReason"));
+        addColumn(availableColumn).setHidden(!enableSpecimenRequest);
+        addWrapColumn(_rootTable.getColumn("AvailabilityReason")).setHidden(!enableSpecimenRequest);
 
         addColumn(new QualityControlFlagColumn(this));
         addColumn(new QualityControlCommentsColumn(this));
@@ -111,10 +113,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(createCollectionCohortColumn(_userSchema, this));
 
         addWrapColumn(_rootTable.getColumn("VialCount"));
-        addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
+        addWrapColumn(_rootTable.getColumn("LockedInRequestCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("AtRepositoryCount"));
-        addWrapColumn(_rootTable.getColumn("AvailableCount"));
-        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount"));
+        addWrapColumn(_rootTable.getColumn("AvailableCount")).setHidden(!enableSpecimenRequest);
+        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount")).setHidden(!enableSpecimenRequest);
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
 

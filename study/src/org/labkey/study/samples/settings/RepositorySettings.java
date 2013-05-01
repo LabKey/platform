@@ -120,7 +120,7 @@ public class RepositorySettings
 
     public void setEnableRequests(boolean enableRequests)
     {
-        assert _simple || enableRequests : "Specimen requests may only be enabled for advanced specimen repository type";
+        assert (_simple && !enableRequests) || !_simple : "Specimen requests may only be enabled for advanced specimen repository type";
         _enableRequests = enableRequests;
     }
 
