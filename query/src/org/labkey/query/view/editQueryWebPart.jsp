@@ -40,6 +40,7 @@
     ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
 %>
+<labkey:scriptDependency/>
 <script type="text/javascript">
     Ext4.onReady(function() {
 
