@@ -30,6 +30,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /*
 * User: Dave
@@ -108,8 +109,8 @@ public class ModuleHtmlView extends HtmlView
 
         String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
         String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
-        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", contextPath);
-        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", containerPath);
+        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", Matcher.quoteReplacement(contextPath)); // 17751
+        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", Matcher.quoteReplacement(containerPath));
 
         return ret;
     }
