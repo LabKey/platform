@@ -27,6 +27,6 @@ SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD  ' +
      '_txNote NVARCHAR(1000)';
 EXEC sp_executesql @sql;
 SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD CONSTRAINT [_DF_' + @tableName + '_updated] ' +
-    'DEFAULT getutcdate() FOR [_txLastUpdated]';
+    'DEFAULT getutcdate() FOR [_txModified]';
 EXEC sp_executesql @sql;
 GO
