@@ -139,11 +139,11 @@
     if (ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="/labkey/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=contextPath%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
 <%
     }
 %>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="/labkey/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
     <script type="text/javascript">
         (function(){
             var p = document.getElementById('permalink');
