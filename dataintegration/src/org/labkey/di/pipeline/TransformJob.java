@@ -20,10 +20,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskId;
@@ -152,29 +150,10 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     @Override
     public TaskPipeline getTaskPipeline()
     {
-        TaskId tid = new TaskId(TransformJob.class);
+        if (null != _etlDescriptor)
+            return _etlDescriptor.getTaskPipeline();
 
-        TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(tid);
-        if (null == pipeline)
-        {
-            // If we are retrying a task because it didn't complete then we need
-            // to register the task pipeline before it is available.  Normally this
-            // happens when we queue the pipeline job but in the retry case the job
-            // is being queued directly from the pipeline service.
-            try
-            {
-                if (null != _etlDescriptor)
-                {
-                    _etlDescriptor.registerTransformSteps();
-                    pipeline = PipelineJobService.get().getTaskPipeline(tid);
-                }
-            }
-            catch(CloneNotSupportedException ex)
-            {
-            }
-        }
-
-        return pipeline;
+        return null;
     }
 
     //

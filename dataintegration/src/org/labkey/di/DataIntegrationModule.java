@@ -39,6 +39,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
+import org.labkey.di.pipeline.BaseQueryTransformDescriptor;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
@@ -50,6 +51,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -120,7 +122,11 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<Class> getUnitTests()
     {
-        return Collections.singleton((Class)TransformManager.TestCase.class);
+        return new HashSet<Class>(Arrays.asList(
+                TransformManager.TestCase.class,
+                VariableMapImpl.TestCase.class,
+                BaseQueryTransformDescriptor.TestCase.class
+        ));
     }
 
     /** web parts **/

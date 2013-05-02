@@ -15,12 +15,15 @@
  */
 package org.labkey.di.pipeline;
 
+import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.etl.CopyConfig;
@@ -32,10 +35,13 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.di.ScheduledPipelineJobContext;
@@ -51,11 +57,14 @@ import org.labkey.etl.xml.TransformsType;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -72,6 +81,14 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     /** How often to check if the definition has changed */
     private static final int UPDATE_CHECK_FREQUENCY = 2000;
 
+    // errors
+    private static final String INVALID_TYPE = "Invalid transform type specified";
+    private static final String TYPE_REQUIRED = "Transform type attribute is required";
+    private static final String ID_REQUIRED = "Id attribute is required";
+    private static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
+    private static final String INVALID_TARGET_OPTION = "Invaild targetOption attribute value specified";
+    private static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
+
     private transient Resource _resource;
     private Path _resourcePath;
     private long _lastUpdateCheck;
@@ -84,6 +101,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     // steps
     private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<SimpleQueryTransformStepMeta>();
+    private CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
 
 
     public BaseQueryTransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
@@ -138,7 +156,12 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         SimpleQueryTransformStepMeta meta = new SimpleQueryTransformStepMeta();
 
         if (null == transformXML.getId())
-            throw new XmlException("Id attribute is required");
+            throw new XmlException(ID_REQUIRED);
+
+        if (_stepIds.contains(transformXML.getId()))
+            throw new XmlException(DUPLICATE_ID);
+
+        _stepIds.add(transformXML.getId());
         meta.setId(transformXML.getId());
 
         if (null != transformXML.getDescription())
@@ -147,29 +170,26 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
         String className = transformXML.getType();
-        if (null != className)
-        {
-            try
-            {
-                Class taskClass = Class.forName(className);
-                if (isValidTaskClass(taskClass))
-                {
-                    meta.setTaskClass(taskClass);
-                }
-                else
-                {
-                    className = null;
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new XmlException("Invalid transform class specified");
-            }
-        }
-
         if (null == className)
         {
-            throw new  XmlException("Invalid transform class specified");
+            throw new  XmlException(TYPE_REQUIRED);
+        }
+
+        try
+        {
+            Class taskClass = Class.forName(className);
+            if (isValidTaskClass(taskClass))
+            {
+                meta.setTaskClass(taskClass);
+            }
+            else
+            {
+                throw new XmlException(INVALID_TYPE);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new XmlException(INVALID_TYPE);
         }
 
         SchemaQueryType source = transformXML.getSource();
@@ -187,8 +207,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 }
                 catch (IllegalArgumentException x)
                 {
-                    // TODO
-                    throw x;
+                    throw new XmlException(INVALID_SOURCE_OPTION);
                 }
             }
         }
@@ -205,8 +224,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 }
                 catch (IllegalArgumentException x)
                 {
-                    // TODO
-                    throw x;
+                    throw new XmlException(INVALID_TARGET_OPTION);
                 }
             }
         }
@@ -332,7 +350,6 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         TransformJob job = new TransformJob((TransformJobContext)context, this);
         try
         {
-            registerTransformSteps();
             PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
         }
         catch (Exception e)
@@ -427,10 +444,29 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return null;
     }
 
-    public void registerTransformSteps() throws CloneNotSupportedException
+    // get/build the task pipeline specific to this descriptor
+    public TaskPipeline getTaskPipeline()
+    {
+        TaskId pipelineId = new TaskId(TransformJob.class, getId());
+        TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
+
+        if (null == pipeline)
+        {
+            try
+            {
+                registerTaskPipeline(pipelineId);
+                pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
+            }
+            catch(CloneNotSupportedException ignore) {}
+        }
+
+        return pipeline;
+    }
+
+    private void registerTaskPipeline(TaskId pipelineId) throws CloneNotSupportedException
     {
         ArrayList<Object> progressionSpec = new ArrayList<Object>();
-        TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
+        TaskPipelineSettings settings = new TaskPipelineSettings(pipelineId);
 
         // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
@@ -475,5 +511,117 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             return true;
 
         return false;
+    }
+
+    public static class TestCase extends Assert
+    {
+        String BASE_PATH = "sampledata/dataintegration/etls/";
+        String ONE_TASK = "one.xml";
+        String FOUR_TASKS = "four.xml";
+        String NO_ID = "noid.xml";
+        String DUP_ID = "duplicate.xml";
+        String UNKNOWN_CLASS = "unknown.xml";
+        String INVALID_CLASS = "invalid.xml";
+        String NO_CLASS = "noclass.xml";
+        String BAD_SOURCE_OPT = "badsourceopt.xml";
+        String BAD_TARGET_OPT = "badtargetopt.xml";
+
+
+        class EtlResource implements Resource
+        {
+            private File _f;
+            public EtlResource(File f) { _f = f;}
+            public Resolver getResolver() { return null; }
+            public Path getPath() { return new Path(_f.getPath());}
+            public String getName() { return null; }
+            public boolean exists() { return _f.exists();}
+            public boolean isCollection() { return false; }
+            public Resource find(String name) { return null ;}
+            public boolean isFile() { return true; }
+            public Collection<String> listNames() { return null; }
+            public Collection<? extends Resource> list() { return null; }
+            public Resource parent() { return null; }
+            public long getVersionStamp() { return 0; }
+            public long getLastModified() { return 0; }
+            public InputStream getInputStream() throws IOException
+            {
+                return new FileInputStream(_f);
+            }
+            public String toString() { return _f.toString();}
+        }
+
+        private File getFile(String file)
+        {
+            return new File(AppProps.getInstance().getProjectRoot() + "/" + BASE_PATH + file);
+        }
+
+        @Test
+        public void descriptorSyntax() throws XmlException, IOException
+        {
+            BaseQueryTransformDescriptor d;
+
+            d = checkValidSyntax(getFile(ONE_TASK));
+            assert d._stepMetaDatas.size() == 1;
+
+            d = checkValidSyntax(getFile(FOUR_TASKS));
+            assert d._stepMetaDatas.size() == 4;
+
+            checkInvalidSyntax(getFile(NO_ID), BaseQueryTransformDescriptor.ID_REQUIRED);
+            checkInvalidSyntax(getFile(DUP_ID), BaseQueryTransformDescriptor.DUPLICATE_ID);
+            checkInvalidSyntax(getFile(NO_CLASS), BaseQueryTransformDescriptor.TYPE_REQUIRED);
+            checkInvalidSyntax(getFile(UNKNOWN_CLASS), BaseQueryTransformDescriptor.INVALID_TYPE);
+            checkInvalidSyntax(getFile(INVALID_CLASS), BaseQueryTransformDescriptor.INVALID_TYPE);
+            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), BaseQueryTransformDescriptor.INVALID_SOURCE_OPTION);
+            checkInvalidSyntax(getFile(BAD_TARGET_OPT), BaseQueryTransformDescriptor.INVALID_TARGET_OPTION);
+        }
+
+        @Test
+        public void registerTaskPipeline() throws XmlException, IOException, CloneNotSupportedException
+        {
+            BaseQueryTransformDescriptor d1 = new BaseQueryTransformDescriptor(new EtlResource(getFile(ONE_TASK)), "junit");
+            TaskPipeline p1 = d1.getTaskPipeline();
+            assert null != p1;
+
+            // calling twice should be just fine
+            p1 = d1.getTaskPipeline();
+            assert null != p1;
+            verifyTaskPipeline(p1, d1);
+
+            BaseQueryTransformDescriptor d4 = new BaseQueryTransformDescriptor(new EtlResource(getFile(FOUR_TASKS)), "junit");
+            TaskPipeline p4 = d4.getTaskPipeline();
+            assert null != p4;
+            verifyTaskPipeline(p4, d4);
+        }
+
+        private void verifyTaskPipeline(TaskPipeline p, BaseQueryTransformDescriptor d)
+        {
+            TaskId[] steps = p.getTaskProgression();
+
+            // we should always have one more task than steps to account for the
+            // ExpGenerator task
+            assert steps.length == d._stepMetaDatas.size() + 1;
+
+            TaskId expStep = steps[steps.length - 1];
+            assert expStep.getNamespaceClass() == ExpGeneratorId.class;
+        }
+
+        private BaseQueryTransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
+        {
+            EtlResource etl = new EtlResource(file);
+            return new BaseQueryTransformDescriptor(etl, "junit");
+        }
+
+        private void checkInvalidSyntax(File file, String expected) throws IOException
+        {
+            EtlResource etl = new EtlResource(file);
+            try
+            {
+                BaseQueryTransformDescriptor d = new BaseQueryTransformDescriptor(etl, "junit");
+            }
+            catch (XmlException x)
+            {
+                assert StringUtils.equalsIgnoreCase(x.getMessage(), expected);
+            }
+        }
     }
 }
