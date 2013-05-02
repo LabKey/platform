@@ -200,14 +200,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             props.setSupportEmail(null);
         }
 
-        FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
-        try
-        {
-            folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
+        FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
         props.save();
