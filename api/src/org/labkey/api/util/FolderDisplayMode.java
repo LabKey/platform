@@ -27,12 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 public enum FolderDisplayMode
 {
     ALWAYS("Always", false),
-    @Deprecated
-    OPTIONAL_ON("Optionally -- Show by default", true),
-    @Deprecated
-    OPTIONAL_OFF("Optionally -- Hide by default", true),
-    @Deprecated
-    IN_MENU("As drop down menu", true),
     ADMIN("Only for Administrators", false);
 
     private String displayString;
@@ -47,10 +41,28 @@ public enum FolderDisplayMode
     {
         return displayString;
     }
-    
+
+    /**
+     * Will return FolderDisplayMode.ALWAYS for any non legal enum value.
+     * @param str String value of the the enumeration
+     * @return FolderDisplayMode
+     */
     public static FolderDisplayMode fromString(String str)
     {
-        return null == StringUtils.trimToNull(str) ? ALWAYS : valueOf(str);         
+        FolderDisplayMode mode = ALWAYS; // default
+
+        if (null == StringUtils.trimToNull(str))
+            return mode;
+
+        try
+        {
+            mode = valueOf(str);
+        }
+        catch (IllegalArgumentException e)
+        {
+            /* Skip setting */
+        }
+        return mode;
     }
 
     public boolean isShowInMenu()

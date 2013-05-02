@@ -28,7 +28,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.writer.ContainerUser;
@@ -441,10 +440,6 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         {
             case ALWAYS:
                 return true;
-            case OPTIONAL_OFF:
-            case OPTIONAL_ON:
-            case IN_MENU:
-                return false; //The menu bar takes care of this now...
             case ADMIN:
                 return isAdminMode() || getUser().isAdministrator();
             default:

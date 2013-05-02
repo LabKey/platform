@@ -118,14 +118,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public FolderDisplayMode getFolderDisplayMode()
     {
-        try
-        {
-            return FolderDisplayMode.fromString(lookupStringValue(FOLDER_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
-        }
-        catch (IllegalArgumentException e)
-        {
-            return FolderDisplayMode.ALWAYS;
-        }
+        return FolderDisplayMode.fromString(lookupStringValue(FOLDER_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
     }
 
     public boolean isHelpMenuEnabled()
