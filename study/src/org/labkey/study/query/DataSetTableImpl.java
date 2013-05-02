@@ -73,6 +73,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
@@ -655,22 +656,47 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     @Override
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
-        // First apply all the metadata from study.StudyData so that it doesn't have to be duplicated for
-        // every dataset
-        super.overlayMetadata(StudyQuerySchema.STUDY_DATA_TABLE_NAME, schema, errors);
-
-        if (!_dsd.getName().equalsIgnoreCase(tableName))
+        checkLocked();
+        if (isMetadataOverrideable())
         {
-            super.overlayMetadata(_dsd.getName(), schema, errors);
-        }
+            // First apply all the metadata from study.StudyData so that it doesn't have to be duplicated for
+            // every dataset
+            // Then include the specific overrides for this dataset
+            overlayMetadataIfExists(StudyQuerySchema.STUDY_DATA_TABLE_NAME, schema, errors);
 
-        if (_dsd.getLabel() != null && !_dsd.getLabel().equalsIgnoreCase(tableName))
-        {
-            super.overlayMetadata(_dsd.getLabel(), schema, errors);
+            if (null == _dsd.getLabel() || _dsd.getLabel().equalsIgnoreCase(_dsd.getName()))
+            {   // Name and label are same (or label null so we don't care about it)
+                if (!_dsd.getName().equalsIgnoreCase(tableName))
+                {
+                    overlayMetadataIfExists(_dsd.getName(), schema, errors);
+                }
+                overlayMetadataIfExists(tableName, schema, errors);
+            }
+            else
+            {   // Name and label different; try name, then label only if name not found
+                TableType metadata = QueryService.get().findMetadataOverride(schema, _dsd.getName(), false, false, errors, null);
+                if (null != metadata)
+                {
+                    overlayMetadata(metadata, schema, errors);
+                }
+                else
+                {
+                    overlayMetadataIfExists(_dsd.getLabel(), schema, errors);
+                }
+                if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
+                {
+                    // TableName different than both name and label, so overlay it if found
+                    overlayMetadataIfExists(tableName, schema, errors);
+                }
+            }
         }
+    }
 
-        // Then include the specific overrides for this dataset
-        super.overlayMetadata(tableName, schema, errors);
+    private void overlayMetadataIfExists(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
+        if (null != metadata)
+            overlayMetadata(metadata, schema, errors);
     }
 
     private class QCStateDisplayColumn extends DataColumn

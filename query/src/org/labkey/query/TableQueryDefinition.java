@@ -225,12 +225,12 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         {
             List<QueryException> errors = new ArrayList<>();
             TableInfo tableInfo = getTable(getSchema(), errors, false);
-            if (null != tableInfo)
-                _title = tableInfo.getTitle();
+            if (null != tableInfo && null != tableInfo.getName())
+                _title = tableInfo.getTitleField();
         }
 
-        if (null != _title)
-            return _title;
-        return getName();
+        if (null == _title)
+            _title = getName();
+        return _title;
     }
 }

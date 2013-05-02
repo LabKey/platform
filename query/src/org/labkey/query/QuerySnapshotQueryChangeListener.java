@@ -91,7 +91,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
                     changed = true;
                 }
                 if (changed)
-                    qsd.save(user);
+                    qsd.save(qsd.getModifiedBy());
             }
             catch (Exception e)
             {
