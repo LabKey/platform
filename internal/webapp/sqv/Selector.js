@@ -33,7 +33,14 @@ Ext4.define('LABKEY.sqv.Model', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'isUserDefined', type : 'boolean'},
+                {name : 'title',         type : 'string', sortType: 'asUCString'},
                 {name : 'name',          type : 'string', sortType: 'asUCString'},
+                {name : 'label',         type : 'string', sortType: 'asUCString', convert: function(value, record){
+                    if (record.data.title != null && record.data.title != '')
+                        return record.data.name != record.data.title ? record.data.name + ' (' + record.data.title + ')' : record.data.title;
+                    else
+                        return record.data.name;
+                }},
                 {name : 'viewDataURL',   type : 'string'},
                 {name : 'listId',        type : 'string'}
             ],
@@ -232,7 +239,8 @@ Ext4.define('LABKEY.sqv.Model', {
             name: 'queryCombo',
             queryMode:'local',
             fieldLabel: config.defaultSchema || 'Query',
-            displayField:'name',
+            displayField:'label',
+            valueField:'name',
             store:this.queryStore,
             editable:false,
             disabled:true,
