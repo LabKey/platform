@@ -59,8 +59,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     String getName();
 
-
+    /** Get title or name, if title is null **/
     String getTitle();
+
+    /** Get title field, whether null or not **/
+    @Nullable
+    String getTitleField();
 
     /**
      * simple name that can be used directly in SQL statement

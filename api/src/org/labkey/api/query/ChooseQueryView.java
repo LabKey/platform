@@ -63,11 +63,15 @@ public class ChooseQueryView extends WebPartView
                 url = _schema.urlFor(QueryAction.executeQuery, queryDef);
             }
 
+            String queryTitle = queryDef.getName();
+            if (null != queryDef.getTitle())
+                queryTitle = queryDef.getTitle();
+
             out.write("<tr><td>");
             out.write("<a href=\"");
             out.write(PageFlowUtil.filter(url));
             out.write("\">");
-            out.write(PageFlowUtil.filter(queryName));
+            out.write(PageFlowUtil.filter(queryTitle));
             out.write("</a>");
             out.write("</td>");
             out.write("<td>");

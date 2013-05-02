@@ -417,6 +417,11 @@ abstract public class AbstractTableInfo implements TableInfo
         return _title == null ? _name : _title;
     }
 
+    public String getTitleField()
+    {
+        return _title;
+    }
+
     public String getDescription()
     {
         return _description;
