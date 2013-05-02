@@ -66,7 +66,7 @@
     <div id="add-members">
         Add New Members (enter one email address per line):<br>
         <labkey:autoCompleteTextArea name="names"
-                                     url="<%=q(bean.getCompleteUsersPrefix())%>"
+                                     url="<%=h(bean.getCompleteUsersPrefix())%>"
                                      rows="8" cols="30"/><br>
         <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all
         new<%
