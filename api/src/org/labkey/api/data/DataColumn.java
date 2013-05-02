@@ -613,6 +613,7 @@ public class DataColumn extends DisplayColumn
                     "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
                     "            completionUrl   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
                     "            sharedStore     : true,\n" +
+                    "            sharedStoreId   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
                     "            tagConfig   : {\n" +
                     "                tag     : 'input',\n" +
                     "                type    : 'text',\n" +

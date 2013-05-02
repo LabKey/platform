@@ -122,6 +122,8 @@ public abstract class SamplePropertyHelper<ObjectType>
                             autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.ParticipantId);
                         else if (sampleProperty.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME))
                             autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.SpecimenGlobalUniqueId);
+                        else if (sampleProperty.getName().equals(AbstractAssayProvider.VISITID_PROPERTY_NAME))
+                            autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.VisitId);
                     }
                 }
                 ColumnInfo col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user, view.getViewContext().getContainer());
