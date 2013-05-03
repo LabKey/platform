@@ -147,6 +147,8 @@ public interface CustomViewInfo
     /** Convenience for <code>getOwner() == null</code> */
     boolean isShared();
     User getCreatedBy();
+    Date getCreated();
+    User getModifiedBy();
     Date getModified();
 
     String getSchemaName();

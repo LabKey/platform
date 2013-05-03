@@ -583,8 +583,6 @@ public class ReportUtil
 
                     ViewInfo info = new ViewInfo(view.getName(), "query view");
 
-                    User createdBy = view.getCreatedBy();
-
                     // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
                     Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
                             QueryParam.queryName.name(), view.getQueryName(),
@@ -601,7 +599,10 @@ public class ReportUtil
                     info.setQueryLabel(getQueryLabelByName(user, c, view.getSchemaName(), view.getQueryName()));
                     info.setSchema(view.getSchemaName());
                     info.setEditable(view.isEditable());
-                    info.setCreatedBy(createdBy);
+                    info.setCreatedBy(view.getCreatedBy());
+                    info.setCreated(view.getCreated());
+                    info.setModifiedBy(view.getModifiedBy());
+                    info.setModified(view.getModified());
                     info.setPermissions(view.isShared() ? "public" : "private");
 
                     boolean inherited = isInherited(view, c);
