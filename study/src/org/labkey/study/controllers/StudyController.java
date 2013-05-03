@@ -292,7 +292,7 @@ public class StudyController extends BaseStudyController
                         || studySchema.getTableNames().contains(form.getTypeName())
                         || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
                 {
-                    errors.reject("defineDatasetType", "There is a dataset or query named " + form.getTypeName() + " already defined in this folder.");
+                    errors.reject("defineDatasetType", "There is a dataset or query named \"" + form.getTypeName() + "\" already defined in this folder.");
                 }
             }
         }

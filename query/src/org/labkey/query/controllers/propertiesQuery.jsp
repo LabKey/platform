@@ -21,6 +21,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
+
+<labkey:errors />
 <form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
     <table width="100%">
         <tr>

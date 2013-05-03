@@ -1778,6 +1778,14 @@ public class QueryController extends SpringActionController
 
 			if (!StringUtils.isEmpty(form.rename) && !form.rename.equalsIgnoreCase(queryDef.getName()))
 			{
+                // issue 17766: check if query or table exist with this name
+                if (null != QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.rename, true)
+                    || null != form.getSchema().getTable(form.rename))
+                {
+                    errors.reject(ERROR_MSG, "A query or table with the name \"" + form.rename + "\" already exists.");
+                    return false;
+                }
+
 				queryDef.setName(form.rename);
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName(), form.rename);

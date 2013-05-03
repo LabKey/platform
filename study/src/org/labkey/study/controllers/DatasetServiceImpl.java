@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
@@ -247,11 +248,11 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getName().equals(updated.getName()))
             {
-                DataSet existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
-
-                if (existing != null)
+                // issue 17766: check if dataset or query exist with this name
+                if (null != studyManager.getDataSetDefinitionByName(study, updated.getName())
+                    || null != QueryService.get().getQueryDef(getUser(), getContainer(), "study", updated.getName()))
                 {
-                    errors.add("A Dataset already exists with the name \"" + updated.getName() +"\"");
+                    errors.add("A Dataset or Query already exists with the name \"" + updated.getName() +"\"");
                     return errors;
                 }
             }

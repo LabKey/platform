@@ -73,6 +73,18 @@ public class CustomViewInfoImpl implements CustomViewInfo
     }
 
     @Override
+    public Date getCreated()
+    {
+        return _cstmView.getCreated();
+    }
+
+    @Override
+    public User getModifiedBy()
+    {
+        return UserManager.getUser(_cstmView.getModifiedBy());
+    }
+
+    @Override
     public Date getModified()
     {
         return _cstmView.getModified();

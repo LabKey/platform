@@ -69,6 +69,18 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
+    public Date getCreated()
+    {
+        return _customViewDef.getLastModified();
+    }
+
+    @Override
+    public User getModifiedBy()
+    {
+        return null;
+    }
+
+    @Override
     public Date getModified()
     {
         return _customViewDef.getLastModified();
