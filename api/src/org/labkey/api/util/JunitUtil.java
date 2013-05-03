@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -97,6 +96,7 @@ public class JunitUtil
     // of the executed tasks; use the returned ExecutorService if awaiting termination is needed.
     public static ExecutorService createRace(final Runnable runnable, int threads, int invocations)
     {
+        assert threads <= invocations : "I expected number of invocations to be >= number of threads";
         final CountDownLatch latch = new CountDownLatch(invocations);
 
         Runnable runnableWrapper = new Runnable()

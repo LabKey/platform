@@ -21,13 +21,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -279,7 +280,8 @@ public class DbSequenceManager
 
     public static class TestCase extends Assert
     {
-        private static final String NAME = "org.labkey.api.data.DbSequence.Test";
+        // Append a GUID to allow multiple, simultaneous invocations of this test
+        private final String NAME = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
         private DbSequence _sequence;
 
@@ -325,7 +327,7 @@ public class DbSequenceManager
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = n / (elapsed / 1000.0);
 
-            assertTrue("DbSequence.next() performance was much lower than expected, " + perSecond + " per second", perSecond > 100);   // A very low bar
+            assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
 
         @Test
@@ -334,8 +336,8 @@ public class DbSequenceManager
             final int threads = 5;
             final int n = 1000;
             final int totalCount = threads * n;
-            final Set<Integer> values = new HashSet<>(totalCount);
-            final Set<Integer> duplicateValues = new HashSet<>();
+            final Set<Integer> values = new ConcurrentHashSet<>();
+            final Set<Integer> duplicateValues = new ConcurrentHashSet<>();
             final long start = System.currentTimeMillis();
 
             JunitUtil.createRace(new Runnable(){
@@ -354,8 +356,8 @@ public class DbSequenceManager
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = totalCount / (elapsed / 1000.0);
 
+            assertEquals(duplicateValues.size() + " duplicate values were detected: " + duplicateValues.toString(), 0, duplicateValues.size());
             assertEquals(totalCount, values.size());
-            assertEquals(duplicateValues.size() + " duplicate values were detected!", 0, duplicateValues.size());
 
             for (int i = 0; i < threads * n; i++)
                 assertTrue(values.contains(i + 1));
