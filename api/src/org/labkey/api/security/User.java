@@ -53,8 +53,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public static final User guest = new GuestUser("guest");
     // Search user is guest plus Reader everywhere
     private static User search;
-    // Reference fixup user is guest plus Editor everywhere
-    private static User referenceFixup;
 
     public User()
     {
@@ -110,7 +108,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     // and a couple other places where treating an arbitrary user as currentUser is valid (e.g., email notifications)
     public String getDisplayName(User currentUser)
     {
-        if (currentUser == search || currentUser == referenceFixup)
+        if (currentUser == search)
             return StringUtils.join(new String[] {_displayName, getEmail(), _firstName, _lastName}, " ");
         if (null == currentUser || currentUser.isGuest())
         {
@@ -272,20 +270,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public boolean isSearchUser()
     {
         return this == getSearchUser();
-    }
-
-    public static synchronized  User getReferenceFixupUser()
-    {
-        if (referenceFixup == null)
-        {
-            referenceFixup = new LimitedUser(new GuestUser("referenceFixup"), new int[0], Collections.singleton(RoleManager.getRole(EditorRole.class)), false);
-        }
-        return referenceFixup;
-    }
-
-    public boolean isReferenceFixupUser()
-    {
-        return this == getReferenceFixupUser();
     }
 
     public String getPhone()
