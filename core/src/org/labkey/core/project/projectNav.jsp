@@ -58,6 +58,12 @@
             cols = rowsPerCol;
             rowsPerCol = numProjects / cols;
         }
+        else if (rowsPerCol == 0)
+        {
+            // Number of Projects is less than MAX_COLS
+            cols = 1;
+            rowsPerCol = numProjects;
+        }
         else
             cols = MAX_COLS;
 

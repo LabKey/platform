@@ -114,9 +114,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.FolderMenu;
-import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -166,7 +164,6 @@ import org.labkey.core.workbook.WorkbookSearchView;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -280,26 +277,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                     {
                         return new ContactWebPart();
-                    }
-                },
-                new AlwaysAvailableWebPartFactory("Folders", WebPartFactory.LOCATION_MENUBAR, false, false) {
-                    public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
-                    {
-                        final ProjectsMenu projectsMenu = new ProjectsMenu(portalCtx);
-                        projectsMenu.setCollapsed(false);
-                        WebPartView v = new WebPartView("Folders") {
-                            @Override
-                            protected void renderView(Object model, PrintWriter out) throws Exception
-                            {
-                                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
-                                include(new ContainerMenu(portalCtx));
-                                out.write("</td><td style='vertical-align:top;padding:4px'>");
-                                include(projectsMenu);
-                                out.write("</td></tr></table>");
-                            }
-                        };
-                        v.setFrame(WebPartView.FrameType.PORTAL);
-                        return v;
                     }
                 },
                 new BaseWebPartFactory("FolderNav")
