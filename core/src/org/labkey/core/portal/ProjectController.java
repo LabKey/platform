@@ -1234,7 +1234,7 @@ public class ProjectController extends SpringActionController
 
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
             if (null == factory)
-                throw new RuntimeException("Couldn't get the web part factory for web part '" + webPartName + "'!");
+                throw new NotFoundException("Couldn't get the web part factory for web part '" + webPartName + "'!");
 
             Portal.WebPart part = factory.createWebPart();
             if (null == part)
