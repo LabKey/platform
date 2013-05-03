@@ -55,13 +55,13 @@
         <tr>
             <% if (visibleCollectors.size() > 1)
             { %>
-                <td><input value="<%= h(collector.getShortName()) %>" type="radio" name="dataCollectorName" <% if (first) { %>checked="true" <% } %> onchange="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="radio" name="dataCollectorName" <% if (first) { %>checked="true" <% } %> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
             <% }
             else
             { %>
-                <td><input value="<%= h(collector.getShortName()) %>" type="hidden" name="dataCollectorName" /></td>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="hidden" name="dataCollectorName" /></td>
             <% } %>
-            <td><%= collector.getDescription(bean) %></td>
+            <td><label for="<%=h(collector.getShortName()).replace(" ", "")%>"><%= collector.getDescription(bean) %></label></td>
         </tr>
         <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
             <td></td>
@@ -79,7 +79,7 @@
         <%
         for (AssayDataCollector collector : visibleCollectors)
         { %>
-            document.getElementById('collector-<%= h(collector.getShortName()) %>').style.visibility = 'collapse';
+            document.getElementById('collector-<%= h(collector.getShortName()) %>').style.visibility = 'hidden';
         <% } %>
     }
 
