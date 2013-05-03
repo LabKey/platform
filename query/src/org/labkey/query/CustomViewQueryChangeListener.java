@@ -171,20 +171,20 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                     hasUpdates = true;
                 }
 
-                // update custom view column list based on fieldKey table name
+                // update custom view column list based on fieldKey parts
                 boolean columnsUpdated = false;
                 List<FieldKey> updatedColumns = new ArrayList<FieldKey>();
-                for (FieldKey col : customView.getColumns())
+                for (FieldKey origFieldKey : customView.getColumns())
                 {
-                    FieldKey colTable = col.getTable();
-                    if (colTable != null && colTable.getName() != null && queryNameChangeMap.containsKey(colTable.getName()))
+                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
+                    if (newFieldKey != null)
                     {
-                        updatedColumns.add(new FieldKey(new FieldKey(colTable.getParent(), queryNameChangeMap.get(colTable.getName())), col.getName()));
+                        updatedColumns.add(newFieldKey);
                         columnsUpdated = true;
                     }
                     else
                     {
-                        updatedColumns.add(col);
+                        updatedColumns.add(origFieldKey);
                     }
                 }
                 if (columnsUpdated)
@@ -196,51 +196,48 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(customView.getFilterAndSort());
                 ActionURL updatedFilterAndSortUrl = new ActionURL();
 
-                // update filter info list based on fieldKey table name, and include them in the udpated FilterAndSort URL
+                // update filter info list based on fieldKey parts, and include them in the udpated FilterAndSort URL
                 boolean filtersUpdated = false;
                 for (FilterInfo filterInfo : fas.getFilter())
                 {
-                    FieldKey fieldKey = filterInfo.getField();
-                    FieldKey filterTable = filterInfo.getField().getTable();
-                    if (filterTable != null && filterTable.getName() != null && queryNameChangeMap.containsKey(filterTable.getName()))
+                    FieldKey origFieldKey = filterInfo.getField();
+                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
+                    if (newFieldKey != null)
                     {
-                        fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), queryNameChangeMap.get(filterTable.getName())), filterInfo.getField().getName());
                         filtersUpdated = true;
                     }
 
-                    filterInfo.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, fieldKey);
+                    filterInfo.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
                 }
 
-                // update sort field list based on fieldKey table name, and include them in the udpated FilterAndSort URL
+                // update sort field list based on fieldKey parts, and include them in the udpated FilterAndSort URL
                 boolean sortsUpdated = false;
                 Sort sort = new Sort();
                 for (Sort.SortField sortField : fas.getSort())
                 {
-                    FieldKey fieldKey = sortField.getFieldKey();
-                    FieldKey sortTable = sortField.getFieldKey().getTable();
-                    if (sortTable != null && sortTable.getName() != null && queryNameChangeMap.containsKey(sortTable.getName()))
+                    FieldKey origFieldKey = sortField.getFieldKey();
+                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
+                    if (newFieldKey != null)
                     {
-                        fieldKey = new FieldKey(new FieldKey(sortTable.getParent(), queryNameChangeMap.get(sortTable.getName())), sortField.getFieldKey().getName());
                         sortsUpdated = true;
                     }
 
-                    sort.appendSortColumn(fieldKey, sortField.getSortDirection(), true);
+                    sort.appendSortColumn(newFieldKey != null ? newFieldKey : origFieldKey, sortField.getSortDirection(), true);
                 }
                 sort.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, false);
 
-                // update aggregates based on fieldKey table name, and include them in the udpated FilterAndSort URL
+                // update aggregates based on fieldKey parts, and include them in the udpated FilterAndSort URL
                 boolean aggregatesUpdated = false;
                 for (Aggregate aggregate : fas.getAggregates())
                 {
-                    FieldKey fieldKey = aggregate.getFieldKey();
-                    FieldKey aggTable = aggregate.getFieldKey().getTable();
-                    if (aggTable != null && aggTable.getName() != null && queryNameChangeMap.containsKey(aggTable.getName()))
+                    FieldKey origFieldKey = aggregate.getFieldKey();
+                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
+                    if (newFieldKey != null)
                     {
-                        fieldKey = new FieldKey(new FieldKey(aggTable.getParent(), queryNameChangeMap.get(aggTable.getName())), aggregate.getFieldKey().getName());
                         aggregatesUpdated = true;
                     }
 
-                    aggregate.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, fieldKey);
+                    aggregate.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
                 }
 
                 // add the container filters to the updated FilterAndSort URL
@@ -259,7 +256,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 if (hasUpdates)
                 {
                     HttpServletRequest request = new MockHttpServletRequest();
-                    customView.save(user, request);
+                    customView.save(customView.getModifiedBy(), request);
                 }
             }
             catch (Exception e)
@@ -267,5 +264,29 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 Logger.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
             }
         }
+    }
+
+    private FieldKey getUpdatedFieldKeyReference(FieldKey col, Map<String, String> queryNameChangeMap)
+    {
+        List<String> keyParts = new ArrayList<>();
+        keyParts.add(col.getName());
+
+        // we don't have to worry about field keys without parents (i.e. column/field names without lookup)
+        FieldKey parent = col.getParent();
+        while (parent != null)
+        {
+            // look through the parts of the field key in search of something that matches a query name change
+            // TODO: issue 17760 - unexpected "fixup" of column names that happen to match a renamed query
+            if (queryNameChangeMap.containsKey(parent.getName()))
+            {
+                return FieldKey.fromParts(new FieldKey(parent.getParent(), queryNameChangeMap.get(parent.getName())), FieldKey.fromParts(keyParts));
+            }
+            else
+            {
+                keyParts.add(0, parent.getName());
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
 }

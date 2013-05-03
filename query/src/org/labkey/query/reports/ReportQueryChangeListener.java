@@ -29,6 +29,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
@@ -158,7 +159,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
                 if (hasUpdates)
                 {
-                    ContainerUser rptContext = new DefaultContainerUser(container, user);
+                    ContainerUser rptContext = new DefaultContainerUser(container, UserManager.getUser(descriptor.getModifiedBy()));
                     ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
                 }
             }
