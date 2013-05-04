@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
@@ -115,9 +116,9 @@ public interface QueryUpdateService
      * <code>getRows()</code> to refetch if that behavior is necessary.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public int importRows(User user, Container container, DataIterator rows,
-           BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
-        throws SQLException;
+    public int importRows(User user, Container container, DataIteratorBuilder rows,
+                          BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
+            throws SQLException;
 
     /**
      * Inserts the given values as new rows into the source table of this query.  Same as insertRows() except for the use

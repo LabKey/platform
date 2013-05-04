@@ -55,6 +55,20 @@ public abstract class AbstractDataIterator implements DataIterator
     }
 
 
+    @Override
+    public boolean isConstant(int i)
+    {
+        return false;
+    }
+
+
+    @Override
+    public Object getConstantValue()
+    {
+        return null;
+    }
+
+
     protected boolean hasErrors()
     {
         return _errors.hasErrors();

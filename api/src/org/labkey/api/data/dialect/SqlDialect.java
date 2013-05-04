@@ -47,6 +47,7 @@ import org.labkey.api.query.Closure;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
+import org.springframework.dao.ConcurrencyFailureException;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -300,17 +301,19 @@ public abstract class SqlDialect
     }
 
 
-    public static boolean isTransactionException(SQLException x)
+    public static boolean isTransactionException(Exception x)
     {
-        String msg = StringUtils.defaultString(x.getMessage(), "");
-        String state = StringUtils.defaultString(x.getSQLState(), "");
-        return msg.toLowerCase().contains("deadlock") || state.startsWith("25") || state.startsWith("40");
-    }
-
-
-    public static boolean isTransactionException(RuntimeSQLException x)
-    {
-        return isTransactionException(x.getSQLException());
+        if (x instanceof ConcurrencyFailureException)
+            return true;
+        if (x instanceof RuntimeSQLException)
+            x = ((RuntimeSQLException)x).getSQLException();
+        if (x instanceof SQLException)
+        {
+            String msg = StringUtils.defaultString(x.getMessage(), "");
+            String state = StringUtils.defaultString(((SQLException)x).getSQLState(), "");
+            return msg.toLowerCase().contains("deadlock") || state.startsWith("25") || state.startsWith("40");
+        }
+        return false;
     }
 
 

@@ -158,7 +158,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingETL(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
@@ -167,7 +167,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.getErrors().setExtraContext(extraScriptContext);
 
         boolean hasTableScript = hasTableScript(container);
-        DataIteratorBuilder in = new DataIteratorBuilder.Wrapper(rows);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.getInsertOption().useImportAliases);
         if (hasTableScript)
             in = helper.before(in);
@@ -222,10 +221,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingInsertRows(user,container,rows,errors,extraScriptContext);
+        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,extraScriptContext);
     }
 
 
@@ -253,8 +252,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
+        DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<Map<String, Object>>();
-        int count = _importRowsUsingETL(user, container, di, outputRows, context, extraScriptContext);
+        int count = _importRowsUsingETL(user, container, dib, outputRows, context, extraScriptContext);
 
         if (context.getErrors().hasErrors())
             return null;

@@ -338,7 +338,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
 
-    /* TODO change prototype if/when QueryUpdateServie supports DataIterator */
+    /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
     {
         if (_target != null)
@@ -347,14 +347,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             try
             {
                 scope.beginTransaction();
-                List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
-    //            List res = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl.getDataIterator(errors), errors, new HashMap<String, Object>());
+//                List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
+                int count = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl, errors, new HashMap<String, Object>());
                 if (errors.hasErrors())
                     return 0;
                 scope.commitTransaction();
-                return res.size();
+                return count;
             }
-            catch (BatchValidationException x)
+            /* catch (BatchValidationException x)
             {
                 assert x.hasErrors();
                 if (x != errors)
@@ -370,7 +370,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             catch (QueryUpdateServiceException x)
             {
                 errors.addRowError(new ValidationException(x.getMessage()));
-            }
+            } */
             catch (SQLException x)
             {
                 boolean isConstraint = scope.getSqlDialect().isConstraintException(x);

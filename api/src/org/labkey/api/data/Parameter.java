@@ -119,6 +119,10 @@ public class Parameter
     private PreparedStatement _stmt;
     private int[] _indexes;
 
+    // used to to optimize calls to Statment.set*()
+    private boolean _isSet = false;
+    private boolean _isNull = false;
+
 
     public Parameter(PreparedStatement stmt, int index)
     {
@@ -222,7 +226,10 @@ public class Parameter
         {
             if (null == value)
             {
-                setNull(type);
+                if (!_isNull)
+                    setNull(type);
+                _isSet = true;
+                _isNull = true;
                 return;
             }
 
@@ -239,6 +246,8 @@ public class Parameter
                     if (len > Integer.MAX_VALUE)
                         throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
                     _stmt.setBinaryStream(_indexes[0], is, (int)len);
+                    _isSet = true;
+                    _isNull = false;
                     return;
                 }
                 catch (Exception x)
@@ -258,11 +267,15 @@ public class Parameter
         }
     }
 
+
     private void setNull(JdbcType type) throws SQLException
     {
         for (int index : _indexes)
             _stmt.setNull(index, null==type ? JdbcType.VARCHAR.sqlType : type.sqlType);
+        _isSet = true;
+        _isNull = true;
     }
+
 
     private void setObject(JdbcType type, Object value) throws SQLException
     {
@@ -272,6 +285,8 @@ public class Parameter
         else
             for (int index : _indexes)
                 _stmt.setObject(index, value, type.sqlType);
+        _isSet = true;
+        _isNull = (value == null);
     }
 
     
@@ -386,6 +401,7 @@ public class Parameter
         Integer _rowId;
         Integer _objectId;
         CaseInsensitiveHashMap<Parameter> _map;
+        Parameter[] _parameters;
         DbScope _scope;
         SqlDialect _dialect;
 
@@ -467,6 +483,7 @@ public class Parameter
                     _map.put(uri, p);
                 }
             }
+            _parameters = parameters.toArray(new Parameter[parameters.size()]);
             _stmt = stmt;
         }
 
@@ -511,6 +528,8 @@ public class Parameter
 
         public void executeBatch() throws SQLException
         {
+            prepareParametersBeforeExecute();
+
             _objectId = null;
             _rowId = null;
             _stmt.executeBatch();
@@ -519,6 +538,8 @@ public class Parameter
 
         public boolean execute() throws SQLException
         {
+            prepareParametersBeforeExecute();
+
             ResultSet rs = null;
             _rowId = null;
             _objectId = null;
@@ -581,14 +602,30 @@ public class Parameter
         }
 
 
+        private void prepareParametersBeforeExecute() throws SQLException
+        {
+            for (Parameter p : _parameters)
+            {
+                if (!p._isSet)
+                {
+                    assert !p._constant;
+                    if (!p._isNull)
+                        p.setValue(null);
+                }
+            }
+        }
+
+
         public void addBatch() throws SQLException
         {
+            prepareParametersBeforeExecute();
             _stmt.addBatch();
         }
 
 
         public void close() throws SQLException
         {
+            _stmt.clearParameters();
             _stmt.close();
             afterClose();
         }
@@ -601,10 +638,9 @@ public class Parameter
 
         public void clearParameters() throws SQLException
         {
-            _stmt.clearParameters();
-            for (Parameter p : _map.values())
+            for (Parameter p : _parameters)
                 if (!p._constant)
-                    p.setValue(null);
+                    p._isSet = false;
         }
 
 

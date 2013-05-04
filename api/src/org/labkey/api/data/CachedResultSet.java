@@ -1456,25 +1456,37 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         @Override
         public ColumnInfo getColumnInfo(int i)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         @Override
         public boolean next() throws BatchValidationException
         {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
+            return false;
         }
 
         @Override
         public Object get(int i)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         @Override
         public void close() throws IOException
         {
-            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public boolean isConstant(int i)
+        {
+            return false;
+
+        }
+
+        @Override
+        public Object getConstantValue()
+        {
+            return null;
         }
     }
 }

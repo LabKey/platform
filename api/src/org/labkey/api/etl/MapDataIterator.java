@@ -106,6 +106,18 @@ public interface MapDataIterator extends DataIterator
         }
 
         @Override
+        public boolean isConstant(int i)
+        {
+            return false;
+        }
+
+        @Override
+        public Object getConstantValue()
+        {
+            return null;
+        }
+
+        @Override
         public boolean next() throws BatchValidationException
         {
             _currentMap = null;

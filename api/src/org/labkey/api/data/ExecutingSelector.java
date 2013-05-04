@@ -16,12 +16,12 @@
 
 package org.labkey.api.data;
 
-import net.sf.ehcache.transaction.DeadLockException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Table.TableResultSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.MemTracker;
+import org.springframework.dao.ConcurrencyFailureException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -163,10 +163,11 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                     }
                 });
             }
-            catch (DeadLockException x)
+            catch (RuntimeSQLException|ConcurrencyFailureException x)
             {
-                if (retry-- > 0)
-                    continue;
+                if (SqlDialect.isTransactionException(x))
+                    if (retry-- > 0)
+                        continue;
                 throw x;
             }
         }

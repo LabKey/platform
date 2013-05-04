@@ -812,6 +812,18 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
 
         @Override
+        public boolean isConstant(int i)
+        {
+            return false;
+        }
+
+        @Override
+        public Object getConstantValue()
+        {
+            return null;
+        }
+
+        @Override
         public void close() throws IOException
         {
             if (null != _it)

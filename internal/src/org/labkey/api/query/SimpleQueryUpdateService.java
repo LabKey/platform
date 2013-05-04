@@ -51,7 +51,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.IMPORT), extraScriptContext);
@@ -62,7 +62,8 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+        DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(rows);
+        return _importRowsUsingETL(user, container, dib, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
     }
 
 

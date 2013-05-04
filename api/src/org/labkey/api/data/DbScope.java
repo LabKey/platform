@@ -218,21 +218,39 @@ public class DbScope
         return _driverVersion;
     }
 
+
     public Connection ensureTransaction() throws SQLException
+    {
+        return ensureTransaction(Connection.TRANSACTION_READ_COMMITTED);
+    }
+
+
+    public Connection ensureTransaction(int isolationLevel) throws SQLException
     {
         if (isTransactionActive())
         {
             Transaction transaction = getCurrentTransaction();
+            assert null != transaction;
             transaction._count++;
-            return transaction.getConnection();
+            Connection conn = transaction.getConnection();
+//            if (conn.getTransactionIsolation() < isolationLevel)
+//                conn.setTransactionIsolation(isolationLevel);
+            return conn;
         }
         else
         {
-            return beginTransaction();
+            return beginTransaction(isolationLevel);
         }
     }
 
+
     public Connection beginTransaction() throws SQLException
+    {
+        return beginTransaction(Connection.TRANSACTION_READ_COMMITTED);
+    }
+
+
+    public Connection beginTransaction(int isolationLevel) throws SQLException
     {
         if (isTransactionActive())
             throw new IllegalStateException("Existing transaction");
@@ -243,6 +261,10 @@ public class DbScope
         try
         {
             conn = _getConnection(null);
+            // we expect connetions coming from the cache to be at a low transaction isolation level
+            // if not then we probably didn't reset after a previous commit/abort
+            //assert Connection.TRANSACTION_READ_COMMITTED >= conn.getTransactionIsolation();
+            //conn.setTransactionIsolation(isolationLevel);
             conn.setAutoCommit(false);
         }
         finally
@@ -278,6 +300,7 @@ public class DbScope
             Connection conn = t.getConnection();
             conn.commit();
             conn.setAutoCommit(true);
+//            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             conn.close();
             synchronized (_transaction)
             {
@@ -286,6 +309,7 @@ public class DbScope
             t.runCommitTasks();
         }
     }
+
 
     private Thread getEffectiveThread()
     {
@@ -500,8 +524,11 @@ public class DbScope
         Transaction t = getCurrentTransaction();
 
         if (null != t)
+        {
             assert t.getConnection() == conn : "Attempting to close a different connection from the one associated with this thread: " + conn + " vs " + t.getConnection(); //Should release same conn we handed out
+        }
         else
+        {
             try
             {
                 conn.close();
@@ -510,6 +537,7 @@ public class DbScope
             {
                 _log.warn("error releasing connection: " + e.getMessage(), e);
             }
+        }
     }
 
 
@@ -1132,6 +1160,7 @@ public class DbScope
 
             try
             {
+//                conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
                 conn.close();
             }
             catch (SQLException e)

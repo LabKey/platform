@@ -42,6 +42,10 @@ public interface DataIterator extends Closeable
     /* description of column i */
     ColumnInfo getColumnInfo(int i);
 
+    /* to enable optimizations, could consider adding to ColumnInfo  */
+    boolean isConstant(int i);
+    Object getConstantValue();
+
     /*
      * Iterators should usually just add errors to a shared ValidationException,
      * however, they may throw to force processing to stop.
