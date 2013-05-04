@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -97,7 +98,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT), extraScriptContext);
         if (count > 0 && !errors.hasErrors())

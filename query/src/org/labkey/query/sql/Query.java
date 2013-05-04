@@ -1203,7 +1203,7 @@ public class Query
 //            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
             TableInfo rTableInfo = DefaultSchema.get(user,c).getSchema("lists").getTable("R");
             DataIteratorContext context = new DataIteratorContext();
-            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize).getDataIterator(context), context.getErrors(), null);
+            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
@@ -1215,7 +1215,7 @@ public class Query
 //            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
             TableInfo sTableInfo = DefaultSchema.get(user,qtest).getSchema("lists").getTable("S");
             context = new DataIteratorContext();
-            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize).getDataIterator(context), context.getErrors(), null);
+            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 

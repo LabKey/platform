@@ -46,6 +46,7 @@ import org.labkey.di.pipeline.TransformTaskFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -151,9 +152,9 @@ public class SimpleQueryTransformStep extends TransformTask
         context.setFailFast(true);
         try
         {
-            targetScope.ensureTransaction();
+            targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
             if (null != sourceScope)
-                sourceScope.ensureTransaction();
+                sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ);
 
             long start = System.currentTimeMillis();
             log.info(DateUtil.toISO(start) + " Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
@@ -207,7 +208,8 @@ public class SimpleQueryTransformStep extends TransformTask
             FilterStrategy filterStrategy = getFilterStrategy();
             Filter f = filterStrategy.getFilter(getVariableMap());
 
-            ResultSet rs = new TableSelector(t, f, null).getResults();
+            TableSelector ts = new TableSelector(t, f, null);
+            ResultSet rs = ts.getResults(false);
 
             return new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context));
         }
@@ -244,7 +246,7 @@ public class SimpleQueryTransformStep extends TransformTask
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
                 return qus.mergeRows(u, c, source.getDataIterator(context), context.getErrors(), null);
             else
-                return qus.importRows(u, c, source.getDataIterator(context), context.getErrors(), null);
+                return qus.importRows(u, c, source, context.getErrors(), null);
         }
         catch (SQLException sqlx)
         {
