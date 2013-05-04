@@ -102,13 +102,25 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             else
                 baseParams['query.sort'] = config.sort;
         }
+        else if (config.sortInfo) {
+            var sInfo = ("DESC" == config.sortInfo.direction ? '-' : '') + config.sortInfo.field;
+            if (config.sql) {
+                qsParams['query.sort'] = sInfo;
+            }
+            else {
+                baseParams['query.sort'] = sInfo;
+            }
+        }
+
         if (config.parameters)
         {
             for (var n in config.parameters)
                 baseParams["query.param." + n] = config.parameters[n];
         }
 
-        delete config.sort; //important...otherwise the base Ext.data.Store interprets it
+        //important...otherwise the base Ext.data.Store interprets it
+        delete config.sort;
+        delete config.sortInfo;
 
         if (config.viewName && !config.sql)
             baseParams['query.viewName'] = config.viewName;
@@ -639,10 +651,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
-        if(options.sort) {
-            options['query.sort'] = "DESC" == options.dir
-                    ? "-" + options.sort
-                    : options.sort;
+        if(options.params && options.params.sort) {
+            options.params['query.sort'] = "DESC" == options.params.dir
+                    ? "-" + options.params.sort
+                    : options.params.sort;
+            delete options.params.sort;
+            delete options.params.dir;
         }
 
         // respect base filters
@@ -669,9 +683,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 this.setBaseParam(param, baseFilters[param]);
             }
         }
-
-        delete options.dir;
-        delete options.sort;
     },
 
     isFilterParam : function(param) {

@@ -866,7 +866,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                         var filterType = dropDowns[0].getFilterType();
                         filters.push(LABKEY.Filter.create(filterColName, value, filterType));
                         filterType = dropDowns[1].getFilterType();
-                        if (filterType)
+                        if (filterType && filterType.getURLSuffix().length > 0)
                         {
                             value = validateEntry(1);
                             if (!value)
