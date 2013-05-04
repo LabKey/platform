@@ -215,7 +215,10 @@ public class StudySchedule implements CustomApiForm
                         Integer id = (Integer)timepoint.get("id");
                         Boolean required = (Boolean)timepoint.get("required");
 
-                        timepoints.add(new VisitDataSet(container, -1, id, required != null ? required : false));
+                        if(id != null)
+                        {
+                            timepoints.add(new VisitDataSet(container, -1, id, required != null ? required : false));
+                        }
                     }
                 }
                 

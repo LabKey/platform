@@ -1578,7 +1578,7 @@ public class QueryServiceImpl extends QueryService
 
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
-        SQLFragment selectFrag = new SQLFragment("SELECT ");
+        SQLFragment selectFrag = new SQLFragment("SELECT ");   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
         String strComma = "\n";
         String tableName = table.getName();
 
@@ -1593,7 +1593,7 @@ public class QueryServiceImpl extends QueryService
 
         if (allColumns.isEmpty())
         {
-            selectFrag.append(" * ");
+            selectFrag.append("* ");
         }
         else
         {

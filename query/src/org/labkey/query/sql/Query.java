@@ -655,6 +655,12 @@ public class Query
             if (!simpleSelect || hasMetadata)
             {
                 TableInfo ti = def.getTable(getParseErrors(), true);
+                if (null == ti)
+                {
+                    if (getParseErrors().isEmpty())
+                        parseError(getParseErrors(), "Could not load table: " +  key.getName() + "' has errors", node);
+                    return null;
+                }
                 return new QueryTable(this, schema, ti, alias);
             }
 

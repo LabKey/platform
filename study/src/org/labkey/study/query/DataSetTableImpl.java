@@ -98,6 +98,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
     DataSetDefinition _dsd;
     TableInfo _fromTable;
+    private ContainerFilterable _assayResultTable;
 
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
@@ -398,7 +399,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 
         if (_dsd.isAssayData())
         {
-            TableInfo assayResultTable = createAssayResultTable();
+            TableInfo assayResultTable = getAssayResultTable();
             if (assayResultTable != null)
             {
                 for (final ColumnInfo columnInfo : assayResultTable.getColumns())
@@ -483,7 +484,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         if (protocol != null)
         {
             // First, see the if the assay table can resolve the column
-            result = createAssayResultTable().getColumn(name);
+            result = getAssayResultTable().getColumn(name);
             if (result != null)
             {
                 return wrapAssayColumn(result);
@@ -591,7 +592,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         {
             // Join in Assay-side data to make it appear as if it's in the dataset table itself 
             String assayResultAlias = getAssayResultAlias(alias);
-            TableInfo assayResultTable = createAssayResultTable();
+            TableInfo assayResultTable = getAssayResultTable();
             // Check if assay design has been deleted
             if (assayResultTable != null)
             {
@@ -625,26 +626,29 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     }
 
 
-    private TableInfo createAssayResultTable()
+    private TableInfo getAssayResultTable()
     {
-        ExpProtocol protocol = _dsd.getAssayProtocol();
-        if (protocol == null)
+        if (_assayResultTable == null)
         {
-            return null;
+            ExpProtocol protocol = _dsd.getAssayProtocol();
+            if (protocol == null)
+            {
+                return null;
+            }
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+            {
+                // Provider must have been in a module that's no longer available
+                return null;
+            }
+            AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
+            _assayResultTable = schema.createDataTable(false);
+            if (_assayResultTable != null)
+            {
+                _assayResultTable.setContainerFilter(ContainerFilter.EVERYTHING);
+            }
         }
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider == null)
-        {
-            // Provider must have been in a module that's no longer available
-            return null;
-        }
-        AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
-        ContainerFilterable result = schema.createDataTable(false);
-        if (result != null)
-        {
-            result.setContainerFilter(ContainerFilter.EVERYTHING);
-        }
-        return result;
+        return _assayResultTable;
     }
 
     @Override
@@ -831,7 +835,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 
         if (_dsd.isAssayData())
         {
-            TableInfo assayResultTable = createAssayResultTable();
+            TableInfo assayResultTable = getAssayResultTable();
             if (assayResultTable != null)
             {
                 columns = new LinkedHashMap<FieldKey, ColumnInfo>(columns);

@@ -579,7 +579,10 @@ public class QueryController extends SpringActionController
                 QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaName(), form.ff_newQueryName);
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
-                newDef.setSql(query.getQueryText());
+                String sql = query.getQueryText();
+                if (null == sql)
+                    sql = "SELECT * FROM \"" + form.ff_baseTableName + "\"";
+                newDef.setSql(sql);
 
                 try
                 {
@@ -2067,8 +2070,6 @@ public class QueryController extends SpringActionController
     {
         private Integer _start;
         private Integer _limit;
-        private String _sort;
-        private String _dir;
         private boolean _includeDetailsColumn = false;
         private boolean _includeUpdateColumn = false;
         private String _containerFilter;
@@ -2093,26 +2094,6 @@ public class QueryController extends SpringActionController
         public void setLimit(Integer limit)
         {
             _limit = limit;
-        }
-
-        public String getSort()
-        {
-            return _sort;
-        }
-
-        public void setSort(String sort)
-        {
-            _sort = sort;
-        }
-
-        public String getDir()
-        {
-            return _dir;
-        }
-
-        public void setDir(String dir)
-        {
-            _dir = dir;
         }
 
         public String getContainerFilter()
@@ -2192,13 +2173,6 @@ public class QueryController extends SpringActionController
             }
             if (form.getStart() != null)
                 form.getQuerySettings().setOffset(form.getStart().intValue());
-            if (form.getSort() != null)
-            {
-                ActionURL sortFilterURL = getViewContext().getActionURL().clone();
-                boolean desc = "DESC".equals(form.getDir());
-                sortFilterURL.replaceParameter("query.sort", (desc ? "-" : "") + form.getSort());
-                form.getQuerySettings().setSortFilterURL(sortFilterURL); //this isn't working!
-            }
             if (form.getContainerFilter() != null)
             {
                 // If the user specified an incorrect filter, throw an IllegalArgumentException
