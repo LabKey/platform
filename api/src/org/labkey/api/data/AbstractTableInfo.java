@@ -163,7 +163,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             if (_detailsURL != null && _detailsURL != LINK_DISABLER)
             {
-                _detailsURL.setContainerContext(cc);
+                _detailsURL.setContainerContext(cc, false);
             }
         }
     }
@@ -775,20 +775,6 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
 
-    DetailsURL parseDetailsURL(Container c, String url, Collection<QueryException> errors)
-    {
-        try
-        {
-            return DetailsURL.fromString(c, url);
-        }
-        catch (IllegalArgumentException x)
-        {
-            errors.add(new QueryException("Illegal URL expression: " + url, x));
-            return null;
-        }
-    }
-    
-
     public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
     {
         checkLocked();
@@ -820,7 +806,7 @@ abstract public class AbstractTableInfo implements TableInfo
             if (StringUtils.isBlank(xmlTable.getGridUrl()))
                 _gridURL = LINK_DISABLER;
             else
-                _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
+                _gridURL = DetailsURL.fromString(xmlTable.getGridUrl(), null, errors);
         }
 
         if (xmlTable.isSetImportUrl())
@@ -828,40 +814,36 @@ abstract public class AbstractTableInfo implements TableInfo
             if (StringUtils.isBlank(xmlTable.getImportUrl()))
                 _importURL = LINK_DISABLER;
             else
-                _importURL = parseDetailsURL(schema.getContainer(), xmlTable.getImportUrl(), errors);
+                _importURL = DetailsURL.fromString(xmlTable.getImportUrl(), null, errors);
         }
         if (xmlTable.isSetInsertUrl())
         {
             if (StringUtils.isBlank(xmlTable.getInsertUrl()))
                 _insertURL = LINK_DISABLER;
             else
-                _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getInsertUrl(), errors);
+                _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl(), null, errors);
         }
         if (xmlTable.isSetUpdateUrl())
         {
             if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
                 _updateURL = LINK_DISABLER;
             else
-                _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
+                _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl(), null, errors);
         }
         if (xmlTable.isSetDeleteUrl())
         {
             if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
                 _deleteURL = LINK_DISABLER;
             else
-                _deleteURL = parseDetailsURL(schema.getContainer(), xmlTable.getDeleteUrl(), errors);
+                _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl(), null, errors);
         }
 
         if (xmlTable.isSetTableUrl())
         {
             if (StringUtils.isBlank(xmlTable.getTableUrl()))
-            {
                 _detailsURL = LINK_DISABLER;
-            }
             else
-            {
-                _detailsURL = parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors);
-            }
+                _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl(), null, errors);
         }
 
         if (xmlTable.isSetCacheSize())

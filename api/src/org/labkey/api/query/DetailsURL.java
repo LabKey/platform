@@ -17,6 +17,8 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -36,7 +38,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 
-public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
+public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
     public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
     public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
@@ -60,40 +62,69 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         return "Invalid url pattern: " + str;
     }
 
-
-    public static DetailsURL fromString(String str)
+    /**
+     * Create DetailsURL from a string.
+     * Use {@link StringExpressionFactory#createURL(String)} to obtain parsed URLs from a cache.
+     *
+     * @param str The URL template string.
+     * @return DetailsURL
+     * @throws IllegalArgumentException if URL string is invalid.
+     * @see StringExpressionFactory#createURL(String) for cached URLs.
+     */
+    @NotNull
+    public static DetailsURL fromString(@NotNull String str)
     {
-        DetailsURL ret = new DetailsURL(str);
-        try
-        {
-            ret.parse();
-        }
-        catch (IllegalStateException x)
-        {
-            // ignore during startup
-        }
+        DetailsURL ret = new DetailsURL(str, null);
+        ret.parse();    // validate
         return ret;
     }
 
-    public static DetailsURL fromString(Container c, String str, Collection<QueryException> qpe)
+    /**
+     * Create DetailsURL from a string with a {@link ContainerContext}.
+     * Usually, ContainerContext will be supplied to the DetailsURL from the
+     * {@link org.labkey.api.data.TableInfo} that the DetailsURL is attached to.
+     *
+     * @param str The URL template string.
+     * @param cc The ContainerContext.
+     * @param errors If not null, any URL parse errors are added to the collection and null is returned.
+     * @return DetailsURL or null.
+     * @throws IllegalArgumentException if errors is null and URL string is invalid.
+     * @see StringExpressionFactory#createURL(String)
+     */
+    @Nullable
+    public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc, @Nullable Collection<QueryException> errors)
+        throws IllegalArgumentException
     {
         try
         {
-            return fromString(c, str);
+            return fromString(str, cc);
         }
         catch (IllegalArgumentException iae)
         {
-            if (qpe != null)
-                qpe.add(new MetadataException(iae.getMessage(), iae));
+            if (errors != null)
+                errors.add(new MetadataException("Illegal URL expression '" + str + "': " + iae.getMessage(), iae));
             else
                 throw iae;
         }
         return null;
     }
 
-    public static DetailsURL fromString(Container c, String str)
+    /**
+     * Create DetailsURL from the string with a {@link ContainerContext}.
+     * Usually, ContainerContext will be supplied to the DetailsURL from the
+     * {@link org.labkey.api.data.TableInfo} that the DetailsURL is attached to.
+     *
+     * @param str The URL template string.
+     * @param cc The ContainerContext.
+     * @return DetailsURL
+     * @throws IllegalArgumentException if URL string is invalid.
+     * @see StringExpressionFactory#createURL(String)
+     */
+    @NotNull
+    public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc)
+        throws IllegalArgumentException
     {
-        DetailsURL ret = new DetailsURL(c, str);
+        DetailsURL ret = new DetailsURL(str, cc);
         ret.parse();    // validate
         return ret;
     }
@@ -105,10 +136,10 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     }
 
 
-    protected DetailsURL(Container c, String str)
+    protected DetailsURL(@NotNull String str, @Nullable ContainerContext cc)
     {
         _urlSource = str;
-        _containerContext = c;
+        _containerContext = cc;
     }
 
 
@@ -148,6 +179,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     @Override
     protected void parse()
+            throws IllegalArgumentException
     {
         assert null == _url || null == _urlSource;
 
@@ -185,7 +217,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
                         "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}");
         }
         else
-            throw new IllegalStateException();
+            throw new IllegalArgumentException("URL required");
             
         _source = StringUtils.trimToEmpty(_parsedUrl.getQueryString(true));
 
@@ -228,7 +260,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     @Override
     public StringExpressionFactory.FieldKeyStringExpression dropParent(String parentName)
     {
-        return super.dropParent(parentName);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.dropParent(parentName);
     }
 
 

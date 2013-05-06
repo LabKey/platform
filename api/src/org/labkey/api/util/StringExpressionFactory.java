@@ -355,6 +355,7 @@ public class StringExpressionFactory
             return super.toString();
         }
     }
+
     private static class EncodePart extends SubstitutePart
     {
         public EncodePart(String value)
