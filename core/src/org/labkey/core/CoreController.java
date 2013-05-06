@@ -100,7 +100,6 @@ import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
@@ -1709,7 +1708,7 @@ public class CoreController extends SpringActionController
                         containers.add(o);
                         ct = ct.getParent();
                     }
-                    record.put("effectiveValue", mp.getEffectiveValue(getUser(), getContainer()));
+                    record.put("effectiveValue", mp.getEffectiveValue(getContainer()));
                     Collections.reverse(containers);  //reverse so root first
                     record.put("siteValues", containers);
 
@@ -1819,7 +1818,7 @@ public class CoreController extends SpringActionController
                     if (saveUser == null)
                         throw new IllegalArgumentException("Invalid user: " + row.getInt("userId"));
 
-                    mp.saveValue(ctx.getUser(), ct, saveUser, row.getString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.getString("value"));
                 }
                 ExperimentService.get().commitTransaction();
             }

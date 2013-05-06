@@ -85,28 +85,28 @@ public class ModulePropertiesTestCase extends Assert
         String projectVal = "ProjectValue";
         String folderVal = "FolderValue";
 
-        prop2.saveValue(_user, ContainerManager.getRoot(), saveUser, rootVal);
-        prop2.saveValue(_user, _project, saveUser, projectVal);
-        prop2.saveValue(_user, _subFolder, saveUser, folderVal);
+        prop2.saveValue(_user, ContainerManager.getRoot(), rootVal);
+        prop2.saveValue(_user, _project, projectVal);
+        prop2.saveValue(_user, _subFolder, folderVal);
 
-        assertEquals(rootVal, prop2.getEffectiveValue(_user, ContainerManager.getRoot()));
-        assertEquals(projectVal, prop2.getEffectiveValue(_user, _project));
-        assertEquals(folderVal, prop2.getEffectiveValue(_user, _subFolder));
+        assertEquals(rootVal, prop2.getEffectiveValue(ContainerManager.getRoot()));
+        assertEquals(projectVal, prop2.getEffectiveValue(_project));
+        assertEquals(folderVal, prop2.getEffectiveValue(_subFolder));
 
-        prop2.saveValue(_user, _subFolder, saveUser, null);
-        assertEquals(projectVal, prop2.getEffectiveValue(_user, _subFolder));
+        prop2.saveValue(_user, _subFolder, null);
+        assertEquals(projectVal, prop2.getEffectiveValue(_subFolder));
 
-        prop2.saveValue(_user, _project, saveUser, null);
-        assertEquals(rootVal, prop2.getEffectiveValue(_user, _subFolder));
+        prop2.saveValue(_user, _project, null);
+        assertEquals(rootVal, prop2.getEffectiveValue(_subFolder));
 
-        prop2.saveValue(_user, ContainerManager.getRoot(), saveUser, null);
-        assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_user, _subFolder));
+        prop2.saveValue(_user, ContainerManager.getRoot(), null);
+        assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_subFolder));
 
         String newVal = "NewValue";
-        prop2.saveValue(_user, _project, saveUser, newVal);
-        assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_user, ContainerManager.getRoot()));
-        assertEquals(newVal, prop2.getEffectiveValue(_user, _project));
-        assertEquals(newVal, prop2.getEffectiveValue(_user, _subFolder));
+        prop2.saveValue(_user, _project, newVal);
+        assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(ContainerManager.getRoot()));
+        assertEquals(newVal, prop2.getEffectiveValue(_project));
+        assertEquals(newVal, prop2.getEffectiveValue(_subFolder));
 
         ContainerManager.deleteAll(_project, _user);
     }
