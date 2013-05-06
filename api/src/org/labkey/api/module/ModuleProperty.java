@@ -161,7 +161,7 @@ public class ModuleProperty
         return ret;
     }
 
-    public void saveValue(User u, Container c, User userToSave, @Nullable String value)
+    public void saveValue(User u, Container c, @Nullable String value)
     {
         if (!isCanSetPerContainer() && !c.isRoot())
             throw new IllegalArgumentException("This property can not be set for this container.  It can only be set site-wide, which means it must be set on the root container.");
@@ -179,7 +179,7 @@ public class ModuleProperty
                 throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userToSave, c, getCategory(), true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(PropertyManager.SHARED_USER, c, getCategory(), true);
 
         if (!StringUtils.isEmpty(value))
             props.put(getName(), value);
@@ -192,14 +192,9 @@ public class ModuleProperty
     /**
      * NOTE: does not test permissions
      */
-    public String getEffectiveValue(User user, Container c)
+    public String getEffectiveValue(Container c)
     {
-        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported?
-
-//        if(user == null || !isCanSetPerUser())
-//            userId = 0;
-//        else
-//            userId = user.getUserId();
+        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
 
         String value;
         if(isCanSetPerContainer())

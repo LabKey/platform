@@ -1204,7 +1204,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         for (ModuleProperty p : getModuleProperties().values())
         {
             if (!p.isExcludeFromClientContext())
-                props.put(p.getName(), p.getEffectiveValue(u, c));
+                props.put(p.getName(), p.getEffectiveValue(c));
         }
         return props;
     }
