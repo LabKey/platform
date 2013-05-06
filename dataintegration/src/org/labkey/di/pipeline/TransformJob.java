@@ -143,7 +143,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
 
     public int getTransformRunId()
     {
-        return getTransformRun().getRowId();
+        return _runId;
     }
 
 
