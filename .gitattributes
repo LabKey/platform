@@ -1481,9 +1481,7 @@ lab/module.properties -text
 lab/src/org/labkey/lab/LabController.java -text
 lab/src/org/labkey/lab/LabFolderTabs.java -text
 lab/src/org/labkey/lab/LabFolderType.java -text
-lab/src/org/labkey/lab/LabManager.java -text
 lab/src/org/labkey/lab/LabModule.java -text
-lab/src/org/labkey/lab/LabSchema.java -text
 lab/src/org/labkey/lab/audit/LabEventsAuditViewFactory.java -text
 lab/src/org/labkey/lab/history.jsp -text
 list/List.iml -text

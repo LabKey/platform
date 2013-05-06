@@ -65,7 +65,7 @@ public class LabModule extends DefaultModule
             {
                 public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                 {
-                    JspView view = new JspView<Portal.WebPart>("/org/labkey/lab/history.jsp", webPart);
+                    JspView view = new JspView<>("/org/labkey/lab/history.jsp", webPart);
                     view.setTitle("Lab History");
                     return view;
                 }
