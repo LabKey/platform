@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -123,13 +124,20 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     {
         try
         {
+            final Map<String,Object> constants = new CaseInsensitiveHashMap<>();
+            for (int i=1 ; i<=_data.getColumnCount() ; i++)
+            {
+                if (_data.isConstant(i))
+                    constants.put(_data.getColumnInfo(i).getName(),_data.getConstantValue(i));
+            }
+
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
 
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
                 _stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
             else
-                _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+                _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false);
 
             super.init();
             if (_selectIds)
@@ -149,6 +157,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         return this;
     }
 
+
     @Override
     protected void onFirst()
     {
@@ -165,6 +174,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             return;
         _closed = true;
         super.close();
-        _scope.releaseConnection(_conn);
+        if (null != _scope && null != _conn)
+            _scope.releaseConnection(_conn);
     }
 }

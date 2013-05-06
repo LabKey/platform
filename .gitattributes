@@ -396,6 +396,7 @@ api/src/org/labkey/api/ehr/EHRService.java -text
 api/src/org/labkey/api/ehr/HistoryDataSource.java -text
 api/src/org/labkey/api/ehr/HistoryRow.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
+api/src/org/labkey/api/etl/AsyncDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
 api/src/org/labkey/api/etl/CachingDataIterator.java -text
 api/src/org/labkey/api/etl/CoerceDataIterator.java -text

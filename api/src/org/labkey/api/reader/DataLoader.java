@@ -818,7 +818,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
 
         @Override
-        public Object getConstantValue()
+        public Object getConstantValue(int i)
         {
             return null;
         }

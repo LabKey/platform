@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -34,13 +35,13 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -78,9 +79,13 @@ public class StatementUtils
         return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.insert);
     }
 
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+
+    public static Parameter.ParameterMap insertStatement(
+            Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames,
+            @Nullable Container c, @Nullable User user, Map<String,Object> constants,
+            boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.insert);
+        return new StatementUtils(table, constants).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.insert);
     }
 
 
@@ -113,8 +118,20 @@ public class StatementUtils
      */
 
     boolean useVariables = false;
-    SqlDialect dialect;
-    Map<String,Parameter> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<String,Parameter>());
+    final SqlDialect dialect;
+    final Map<String,Object> constants = new CaseInsensitiveHashMap<>();
+    final Map<String,ParameterHolder> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<String,ParameterHolder>());
+
+
+    private static class ParameterHolder
+    {
+        Parameter p;
+        int length = -1;
+        String variableName = null;
+        Object constantValue = null;
+        boolean isConstant = false;
+    }
+
 
     private String makeVariableName(String name)
     {
@@ -122,65 +139,96 @@ public class StatementUtils
     }
 
 
-    private Parameter createParameter(ColumnInfo c)
+    private ParameterHolder createParameter(ColumnInfo c)
     {
-        Parameter p = parameters.get(c.getName());
-        if (null == p)
+        ParameterHolder ph = parameters.get(c.getName());
+        if (null == ph)
         {
-            p = new Parameter(c, null);
-            p.setVariableName(makeVariableName(c.getName()));
-            if (p.getType().isText() && p.getType()!=JdbcType.GUID && c.getScale() > 0)
-                p.setLength(c.getScale());
-            parameters.put(c.getName(), p);
+            ph = new ParameterHolder();
+            ph.p = new Parameter(c, null);
+            initParameterHolder(ph, c);
+            parameters.put(c.getName(), ph);
         }
-        return p;
+        return ph;
+    }
+
+    private void initParameterHolder(ParameterHolder ph, @Nullable ColumnInfo columnInfo)
+    {
+        String name = ph.p.getName();
+        JdbcType type = ph.p.getType();
+        if (constants.containsKey(name))
+        {
+            try
+            {
+                Object value = Parameter.getValueToBind(constants.get(name), type);
+                if (null == value || value instanceof Number || value instanceof String || value instanceof java.util.Date)
+                {
+                    ph.isConstant = true;
+                    ph.constantValue = value;
+                }
+            }
+            catch (SQLException x)
+            {
+                //
+            }
+        }
+        ph.variableName = makeVariableName(name);
+        if (type.isText() && type!= JdbcType.GUID && (null != columnInfo && columnInfo.getScale() > 0))
+            ph.length = columnInfo.getScale();
     }
 
 
-    private Parameter createParameter(String name, JdbcType type)
+    private ParameterHolder createParameter(String name, JdbcType type)
     {
-        Parameter p = parameters.get(name);
-        if (null == p)
+        ParameterHolder ph = parameters.get(name);
+        if (null == ph)
         {
-            p = new Parameter(name, type);
-            p.setVariableName(makeVariableName(name));
-            parameters.put(name, p);
+            ph = new ParameterHolder();
+            ph.p = new Parameter(name, type);
+            initParameterHolder(ph, null);
+            parameters.put(name, ph);
         }
-        return p;
+        return ph;
     }
 
 
-    private Parameter createParameter(String name, String uri, JdbcType type)
+    private ParameterHolder createParameter(String name, String uri, JdbcType type)
     {
-        Parameter p = parameters.get(name);
-        if (null == p)
+        ParameterHolder ph = parameters.get(name);
+        if (null == ph)
         {
-            p = new Parameter(name, uri, null, type);
-            p.setVariableName(makeVariableName(name));
-            parameters.put(name, p);
+            ph = new ParameterHolder();
+            ph.p = new Parameter(name, uri, null, type);
+            initParameterHolder(ph, null);
+            parameters.put(name, ph);
         }
-        return p;
+        return ph;
     }
 
 
-    public SQLFragment appendParameterOrVariable(SQLFragment f, Parameter p)
+    public SQLFragment appendParameterOrVariable(SQLFragment f, ParameterHolder ph)
     {
-        if (useVariables)
+        if (ph.isConstant)
         {
-            f.append(p.getVariableName());
+            toLiteral(f, ph.constantValue, ph.p.getType());
+        }
+        else if (useVariables)
+        {
+            f.append(ph.variableName);
         }
         else
         {
             f.append("?");
-            f.add(p);
+            f.add(ph.p);
         }
         return f;
     }
 
-    public SQLFragment appendParameterOrVariableOrConstant(SQLFragment f, Parameter p, String literal)
+
+    public SQLFragment appendParameterOrVariableOrConstant(SQLFragment f, ParameterHolder ph, String literal)
     {
         if (null == literal)
-            return appendParameterOrVariable(f, p);
+            return appendParameterOrVariable(f, ph);
         f.append(literal);
         return f;
     }
@@ -188,12 +236,12 @@ public class StatementUtils
 
     public SQLFragment appendParameterOrVariable(SQLFragment f, ColumnInfo col)
     {
-        Parameter p = createParameter(col);
+        ParameterHolder p = createParameter(col);
         return appendParameterOrVariable(f, p);
     }
 
 
-    public SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, Parameter p)
+    public SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
     {
         if (JdbcType.valueOf(dp.getSqlType()) == JdbcType.BOOLEAN)
         {
@@ -215,6 +263,14 @@ public class StatementUtils
     private StatementUtils(@NotNull TableInfo t)
     {
         dialect = t.getSqlDialect();
+    }
+
+
+    private StatementUtils(@NotNull TableInfo t, @Nullable Map<String,Object> constants)
+    {
+        dialect = t.getSqlDialect();
+        if (null != constants)
+            this.constants.putAll(constants);
     }
 
 
@@ -242,14 +298,18 @@ public class StatementUtils
         useVariables = operation.merge == op; //  && dialect.isPostgreSQL();
         String ifTHEN = dialect.isSqlServer() ? " BEGIN " : " THEN ";
         String ifEND = dialect.isSqlServer() ? " END " : " END IF ";
-        String containerIdConstant = null==c ? null : "'" + c.getId() + "'";
 
-        Timestamp ts = new Timestamp(System.currentTimeMillis());
-        Parameter containerParameter = null;
+        if (null != c)
+        {
+            assert null == constants.get("container") || c.getId().equals(constants.get("container"));
+            if (null == constants.get("container"))
+                constants.put("container",c.getId());
+        }
+
         String objectURIColumnName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                 ? updatable.getObjectURIColumnName()
                 : "objecturi";
-        Parameter objecturiParameter = null;
+        ParameterHolder objecturiParameter = null;
         if (null != objectURIColumnName)
             objecturiParameter = createParameter(objectURIColumnName, JdbcType.VARCHAR);
 
@@ -311,12 +371,9 @@ public class StatementUtils
 
                 objectIdVar = dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
                 useVariables = dialect.isPostgreSQL();
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;");
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
 
-                if (null == c)
-                    containerParameter = createParameter("container", JdbcType.VARCHAR);
-//                if (autoFillDefaultColumns && null != c)
-//                    containerParameter.setValue(c.getId(), true);
+                ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
 
                 // Insert a new row in exp.Object if there isn't already a row for this object
 
@@ -324,11 +381,11 @@ public class StatementUtils
                 // no properties in the domain when the row was originally inserted
                 sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi) ");
                 sqlfInsertObject.append("SELECT ");
-                appendParameterOrVariableOrConstant(sqlfInsertObject, containerParameter, containerIdConstant);
+                appendParameterOrVariable(sqlfInsertObject, containerParameter);
                 sqlfInsertObject.append(" AS Container,");
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
                 sqlfInsertObject.append(" AS ObjectURI WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
-                appendParameterOrVariableOrConstant(sqlfInsertObject, containerParameter, containerIdConstant);
+                appendParameterOrVariable(sqlfInsertObject, containerParameter);
                 sqlfInsertObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
                 sqlfInsertObject.append(");\n");
@@ -336,7 +393,7 @@ public class StatementUtils
                 // Grab the object's ObjectId
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
-                appendParameterOrVariableOrConstant(sqlfSelectObject, containerParameter, containerIdConstant);
+                appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfSelectObject, objecturiParameter);
                 sqlfSelectObject.append(");\n");
@@ -366,15 +423,6 @@ public class StatementUtils
         List<SQLFragment> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
 
-        col = table.getColumn("Container");
-        if (null != col)
-        {
-            cols.add(new SQLFragment("Container"));
-            if (null == containerParameter && null == c)
-                containerParameter = createParameter("container", JdbcType.GUID);
-            values.add(appendParameterOrVariableOrConstant(new SQLFragment(), containerParameter, containerIdConstant));
-            done.add("Container");
-        }
 
         if (autoFillDefaultColumns && operation.update != op)
         {
@@ -396,7 +444,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(new SQLFragment("Created"));
-                values.add(new SQLFragment("CAST('" + ts + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
+                values.add(new SQLFragment("{fn now()}"));
                 done.add("Created");
             }
         }
@@ -415,14 +463,14 @@ public class StatementUtils
         if (autoFillDefaultColumns && null != colModified)
         {
             cols.add(new SQLFragment("Modified"));
-            values.add(new SQLFragment("CAST('" + ts + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
+            values.add(new SQLFragment("{fn now()}"));
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
         if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
         {
             cols.add(new SQLFragment(colVersion.getSelectName()));
-            values.add(new SQLFragment("CAST('" + ts + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
+            values.add(new SQLFragment("{fn now()}"));
             done.add(colVersion.getName());
         }
 
@@ -461,8 +509,8 @@ public class StatementUtils
             {
                 if (null != skipColumnNames && skipColumnNames.contains(StringUtils.defaultString(remap.get(name),name)))
                     continue;
-                Parameter p = createParameter(column);
-                appendParameterOrVariable(valueSQL, p);
+                ParameterHolder ph = createParameter(column);
+                appendParameterOrVariable(valueSQL, ph);
             }
             cols.add(new SQLFragment(column.getSelectName()));
             values.add(valueSQL);
@@ -530,7 +578,7 @@ public class StatementUtils
                 if (null != objectIdVar)
                 {
                     rowIdVar = dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
-                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;");
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");
                 }
                 dialect.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName(), rowIdVar);
             }
@@ -604,8 +652,8 @@ public class StatementUtils
                 if (done.contains(dp.getName()))
                     continue;
                 PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
-                Parameter v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
-                Parameter mv = createParameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR);
+                ParameterHolder v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
+                ParameterHolder mv = createParameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR);
                 sqlfObjectProperty.append("IF (");
                 appendPropertyValue(sqlfObjectProperty, dp, v);
                 sqlfObjectProperty.append(" IS NOT NULL");
@@ -671,13 +719,13 @@ public class StatementUtils
                 sqlfDeclare.append("DECLARE ");
                 select.append("SELECT ");
                 comma = "";
-                for (Map.Entry<String, Parameter> e : parameters.entrySet())
+                for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
                 {
-                    Parameter p = e.getValue();
+                    ParameterHolder ph = e.getValue();
                     sqlfDeclare.append(comma);
-                    String variable = variableDeclaration(sqlfDeclare, p);
+                    String variable = variableDeclaration(sqlfDeclare, ph);
                     select.append(comma).append(variable).append("=?");
-                    select.add(p);
+                    select.add(ph.p);
                     comma = ", ";
                 }
                 sqlfDeclare.append(";\n");
@@ -701,11 +749,11 @@ public class StatementUtils
             call.append(fnName).append("(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
-            for (Map.Entry<String, Parameter> e : parameters.entrySet())
+            for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
             {
-                Parameter p = e.getValue();
-                String variable = p.getVariableName();
-                String type = dialect.sqlTypeNameFromJdbcType(p.getType());
+                ParameterHolder ph = e.getValue();
+                String variable = ph.variableName;
+                String type = dialect.sqlTypeNameFromJdbcType(ph.p.getType());
                 fn.append("\n").append(comma);
                 fn.append(variable);
                 fn.append(" ");
@@ -713,7 +761,7 @@ public class StatementUtils
 //                fn.append(" -- ").append(AliasManager.makeLegalName(p.getName(), null, false));
                 drop.append(comma).append(type);
                 call.append(comma).append("?");
-                call.add(p);
+                call.add(ph.p);
                 comma = ",";
             }
             fn.append("\n) RETURNS ");
@@ -777,16 +825,6 @@ public class StatementUtils
             }});
         }
 
-//        if (null != constants)
-//        {
-//            for (Map.Entry e : constants.entrySet())
-//            {
-//                Parameter p = ret._map.get(e.getKey());
-//                if (null != p)
-//                    p.setValue(e.getValue(), true);
-//            }
-//        }
-
         if (selectIds)
         {
             // Why is one of these boolean and the other an index?? I don't know
@@ -799,19 +837,52 @@ public class StatementUtils
     }
 
 
-    private String variableDeclaration(SQLFragment sqlfDeclare, Parameter p)
+    private String variableDeclaration(SQLFragment sqlfDeclare, ParameterHolder ph)
     {
-        String variable = p.getVariableName();
+        String variable = ph.variableName;
         sqlfDeclare.append(variable);
         sqlfDeclare.append(" ");
-        String type = dialect.sqlTypeNameFromJdbcType(p.getType());
+        String type = dialect.sqlTypeNameFromJdbcType(ph.p.getType());
         sqlfDeclare.append(type);
-        if (p.getType().isText() && p.getType() != JdbcType.GUID)
+        if (ph.p.getType().isText() && ph.p.getType() != JdbcType.GUID)
         {
-            int length = p.getLength() > 0 ? p.getLength() : 4000;
+            int length = ph.length > 0 ? ph.length : 4000;
             sqlfDeclare.append("(").append(length).append(")");
         }
         return variable;
+    }
+
+
+    void toLiteral(SQLFragment f, Object value, JdbcType type)
+    {
+        if (null == value)
+        {
+            f.append("NULL");
+            return;
+        }
+        if (value instanceof Number)
+        {
+            f.append(value.toString());
+            return;
+        }
+        if (value instanceof SimpleTranslator.NowTimestamp)
+        {
+            f.append("{fn now()}");
+            return;
+        }
+        if (value instanceof java.sql.Date)
+        {
+            f.append("{ts '").append(DateUtil.formatDate((java.sql.Date)value).substring(0,10)).append("'}");
+            return;
+        }
+        else if (value instanceof java.util.Date)
+        {
+            f.append("{ts '").append(DateUtil.formatDate((java.sql.Date)value)).append("'}");
+            return;
+        }
+        assert value instanceof String;
+        value = String.valueOf(value);
+        f.append(dialect.getStringHandler().quoteStringLiteral((String)value));
     }
 
 
@@ -838,11 +909,11 @@ public class StatementUtils
             Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.insertStatement(conn, issues, null, container, user, true, true);
+                m = StatementUtils.insertStatement(conn, issues, null, container, user, null, true, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.insertStatement(conn, test, null, container, user, true, true);
+                m = StatementUtils.insertStatement(conn, test, null, container, user, null, true, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }

@@ -1484,7 +1484,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         }
 
         @Override
-        public Object getConstantValue()
+        public Object getConstantValue(int i)
         {
             return null;
         }

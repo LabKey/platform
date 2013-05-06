@@ -329,6 +329,20 @@ checkRequired:
     }
 
 
+    @Override
+    public boolean isConstant(int i)
+    {
+        return _data.isConstant(i);
+    }
+
+
+    @Override
+    public Object getConstantValue(int i)
+    {
+        return _data.getConstantValue(i);
+    }
+
+
     /*
     * Tests
     */

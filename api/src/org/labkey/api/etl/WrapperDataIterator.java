@@ -98,8 +98,8 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
     }
 
     @Override
-    public Object getConstantValue()
+    public Object getConstantValue(int i)
     {
-        return _delegate.getConstantValue();
+        return _delegate.getConstantValue(i);
     }
 }

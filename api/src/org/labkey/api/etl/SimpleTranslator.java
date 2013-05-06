@@ -435,7 +435,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public Object call() throws Exception
         {
             if (null == _ts)
-                _ts =  new Timestamp(System.currentTimeMillis());
+                _ts =  new NowTimestamp(System.currentTimeMillis());
             return _ts;
         }
     }
@@ -544,6 +544,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt));
     }
 
+
     public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
@@ -552,6 +553,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new PropertyConvertColumn(name, fromIndex, 0, pd, pt));
     }
 
+
     public int addCoaleseColumn(String name, int fromIndex, Callable second)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
@@ -559,17 +561,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new CoalesceColumn(fromIndex, second));
     }
 
+
     public int addNullColumn(String name, JdbcType type)
     {
         ColumnInfo col = new ColumnInfo(name, type);
         return addColumn(col, new NullColumn());
     }
 
+
     public int addConstantColumn(String name, JdbcType type, Object val)
     {
         ColumnInfo col = new ColumnInfo(name, type);
         return addColumn(col, new ConstantColumn(val));
     }
+
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
@@ -624,8 +629,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final String containerId = null == c ? null : c.getId();
         final Integer userId = null == user ? 0 : user.getUserId();
 
-        Callable containerCallable = new Callable(){public Object call() {return containerId;}};
-        Callable userCallable = new Callable(){public Object call() {return userId;}};
+        Callable containerCallable = new ConstantColumn(containerId);
+        Callable userCallable = new ConstantColumn(userId);
         Callable tsCallable = new TimestampColumn();
         Callable guidCallable = new Callable(){public Object call() {return GUID.makeGUID();}};
 
@@ -736,11 +741,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return _row[i];
     }
 
+
     // use carefully!  Mostly for implementing classes used for addColumn(Callable)
     public Object getInputColumnValue(int i)
     {
         return _data.get(i);
     }
+
 
     @Override
     public void beforeFirst()
@@ -749,17 +756,65 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         ((ScrollableDataIterator)_data).beforeFirst();
     }
 
+
     @Override
     public boolean isScrollable()
     {
         return _data instanceof ScrollableDataIterator && ((ScrollableDataIterator)_data).isScrollable();
     }
 
+
+    @Override
+    public boolean isConstant(int i)
+    {
+        Callable c = _outputColumns.get(i).getValue();
+        if (c instanceof ConstantColumn)
+            return true;
+        if (c instanceof PassthroughColumn)
+            return _data.isConstant(((PassthroughColumn)c).index);
+        if (c instanceof SimpleConvertColumn)
+            return _data.isConstant(((SimpleConvertColumn)c).index);
+        if (c instanceof TimestampColumn)
+            return true;
+        return false;
+    }
+
+
+    @Override
+    public Object getConstantValue(int i)
+    {
+        Callable c = _outputColumns.get(i).getValue();
+        if (c instanceof ConstantColumn)
+            return ((ConstantColumn)c).k;
+        if (c instanceof PassthroughColumn )
+            return _data.getConstantValue(((PassthroughColumn)c).index);
+        if (c instanceof SimpleConvertColumn)
+        {
+            SimpleConvertColumn scc = (SimpleConvertColumn)c;
+            return scc.convert(_data.getConstantValue(scc.index));
+        }
+        if (c instanceof TimestampColumn)
+            return new NowTimestamp(System.currentTimeMillis());
+        throw new IllegalStateException("shouldn't call this method unless isConstant()==true");
+    }
+
+
     @Override
     public void close() throws IOException
     {
         _data.close();
     }
+
+
+    // this is a marker interface to hint that this value may be replaced by {ts now()}
+    public static class NowTimestamp extends java.sql.Timestamp
+    {
+        NowTimestamp(long ms)
+        {
+            super(ms);
+        }
+    }
+
 
     /*
     * Tests

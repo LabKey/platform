@@ -44,7 +44,7 @@ public interface DataIterator extends Closeable
 
     /* to enable optimizations, could consider adding to ColumnInfo  */
     boolean isConstant(int i);
-    Object getConstantValue();
+    Object getConstantValue(int i);
 
     /*
      * Iterators should usually just add errors to a shared ValidationException,

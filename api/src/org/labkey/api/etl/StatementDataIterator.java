@@ -55,7 +55,11 @@ class StatementDataIterator extends AbstractDataIterator
     protected StatementDataIterator(DataIterator data, @Nullable Parameter.ParameterMap map, DataIteratorContext context)
     {
         super(context);
-        _data = data;
+
+        if (context.getInsertOption().batch && 0==1)
+            _data = new AsyncDataIterator(data, context);
+        else
+            _data = data;
         _stmt = map;
 
         _keyColumnInfo = new ArrayList<ColumnInfo>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
@@ -112,7 +116,7 @@ class StatementDataIterator extends AbstractDataIterator
         _bindings = bindings.toArray(new Triple[bindings.size()]);
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
-            _batchSize = Math.max(10, 2000/Math.max(2,_bindings.length));
+            _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
     }
 
     private static class Triple
@@ -250,7 +254,8 @@ class StatementDataIterator extends AbstractDataIterator
         _data.close();
         if (_stmt != null)
         {
-            try {
+            try
+            {
                 _stmt.close();
             }
             catch (SQLException x)

@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +37,7 @@ public class BatchValidationException extends Exception
     public BatchValidationException()
     {
         super();
-        this.rowErrors = new ArrayList<ValidationException>();
+        this.rowErrors = Collections.synchronizedList(new ArrayList<ValidationException>());
     }
 
     public BatchValidationException(List<ValidationException> rowErrors, Map<String, Object> extraContext)
@@ -84,7 +85,7 @@ public class BatchValidationException extends Exception
         return extraContext;
     }
 
-    // most for debug code to reuse the object
+    // mostly for debug code to reuse the object
     public void clear()
     {
         rowErrors.clear();

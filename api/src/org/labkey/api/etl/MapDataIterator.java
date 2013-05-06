@@ -112,7 +112,7 @@ public interface MapDataIterator extends DataIterator
         }
 
         @Override
-        public Object getConstantValue()
+        public Object getConstantValue(int i)
         {
             return null;
         }
