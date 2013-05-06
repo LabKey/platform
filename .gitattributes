@@ -1475,15 +1475,6 @@ issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
 issues/webapp/issues/hashbang.js -text
-lab/Lab.iml -text
-lab/build.xml -text
-lab/module.properties -text
-lab/src/org/labkey/lab/LabController.java -text
-lab/src/org/labkey/lab/LabFolderTabs.java -text
-lab/src/org/labkey/lab/LabFolderType.java -text
-lab/src/org/labkey/lab/LabModule.java -text
-lab/src/org/labkey/lab/audit/LabEventsAuditViewFactory.java -text
-lab/src/org/labkey/lab/history.jsp -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/build.xml -text
