@@ -218,7 +218,8 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
             Domain domain = PropertyService.get().getDomain(dd.getDomainId());
             if (domain != null)
             {
-                try {
+                try
+                {
                     domain.delete(user);
                 }
                 catch (Exception e)

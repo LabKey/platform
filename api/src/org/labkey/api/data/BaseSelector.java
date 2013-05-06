@@ -60,6 +60,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return list.toArray((K[]) Array.newInstance(clazz, list.size()));
     }
 
+    // Convenience method that avoids "unchecked assignment" warnings
     @Override
     public Map<String, Object>[] getMapArray()
     {
