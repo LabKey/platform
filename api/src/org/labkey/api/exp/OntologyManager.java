@@ -3552,7 +3552,8 @@ public class OntologyManager
     private static void validatePropertyDescriptor(PropertyDescriptor pd)
             throws ChangePropertyDescriptorException
     {
-        validateValue(pd.getName(), "Name", null);
+        String name = pd.getName();
+        validateValue(name, "Name", null);
         validateValue(pd.getPropertyURI(), "PropertyURI", "Please use a shorter field name.");
         validateValue(pd.getLabel(), "Label", null);
         validateValue(pd.getImportAliases(), "ImportAliases", null);
@@ -3567,6 +3568,14 @@ public class OntologyManager
         if (pd.getName() != null && pd.getName().toLowerCase().endsWith(MV_INDICATOR_SUFFIX))
         {
             throw new ChangePropertyDescriptorException("Field name cannot end with the suffix 'mvIndicator': " + pd.getName());
+        }
+        if (null != name)
+        {
+            for (char ch : name.toCharArray())
+            {
+                if (Character.isWhitespace(ch) && ' ' != ch)
+                    throw new ChangePropertyDescriptorException("Field name cannot contain whitespace other than ' ' (space)");
+            }
         }
     }
 
