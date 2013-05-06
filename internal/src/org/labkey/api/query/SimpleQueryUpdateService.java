@@ -84,39 +84,46 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
     public DataIteratorBuilder createImportETL(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
     {
-        DataIteratorBuilder wrap = new DataIteratorBuilder()
+        // Create object uri if column is present and domain is not empty.
+        final ColumnInfo objectUriColumn = getQueryTable().getObjectUriColumn();
+        final Domain domain = getQueryTable().getDomain();
+
+        DataIteratorBuilder ret = data;
+        if (objectUriColumn != null && domain != null && domain.getProperties().length > 0)
         {
-            @Override
-            public DataIterator getDataIterator(DataIteratorContext context)
+            ret = new DataIteratorBuilder()
             {
-                DataIterator it = data.getDataIterator(context);
-                ColumnInfo objectUriColumn = getQueryTable().getObjectUriColumn();
-                if (null == objectUriColumn)
-                    return it;
-                Map<String,Integer> colMap = DataIteratorUtil.createColumnNameMap(it);
-                Integer objectUriIndex = colMap.get(objectUriColumn.getName());
-                SimpleTranslator out = new SimpleTranslator(it, context);
-                Callable call = new Callable()
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
                 {
-                    @Override
-                    public Object call() throws Exception
+                    DataIterator it = data.getDataIterator(context);
+
+                    Map<String,Integer> colMap = DataIteratorUtil.createColumnNameMap(it);
+                    Integer objectUriIndex = colMap.get(objectUriColumn.getName());
+                    SimpleTranslator out = new SimpleTranslator(it, context);
+                    Callable call = new Callable()
                     {
-                        return getQueryTable().createObjectURI();
+                        @Override
+                        public Object call() throws Exception
+                        {
+                            return getQueryTable().createObjectURI();
+                        }
+                    };
+                    for (int i=1 ; i<=it.getColumnCount() ; i++)
+                    {
+                        if (null != objectUriIndex && i == objectUriIndex)
+                            out.addCoaleseColumn(objectUriColumn.getName(), i, call);
+                        else
+                            out.addColumn(i);
                     }
-                };
-                for (int i=1 ; i<=it.getColumnCount() ; i++)
-                {
-                    if (null != objectUriIndex && i == objectUriIndex)
-                        out.addCoaleseColumn(objectUriColumn.getName(), i, call);
-                    else
-                        out.addColumn(i);
-                }
-                if (null == objectUriIndex)
+                    if (null == objectUriIndex)
                         out.addColumn(objectUriColumn, call);
-                return LoggingDataIterator.wrap(out);
-            }
-        };
-        return super.createImportETL(user,container,wrap,context);
+                    return LoggingDataIterator.wrap(out);
+                }
+            };
+        }
+
+        return super.createImportETL(user, container, ret, context);
     }
 
 
