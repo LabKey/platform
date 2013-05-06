@@ -806,7 +806,10 @@ public enum Prop implements ReportProperty
     public void setModified(Date modified)
     {
         setProperty(Prop.modified, DateUtil.formatDate(modified));
-        super.setModified(modified);
+        if (null != modified)
+        {
+            super.setModified(modified);
+        }
     }
 
     public boolean isStale()
