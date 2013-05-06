@@ -23,7 +23,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -45,19 +44,9 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         setTitleColumn("Name");
 
         ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _userSchema.getContainer());
-        DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"))
-        {
-            @Override
-            public void setContainerContext(ContainerContext cc, boolean overwrite)
-            {
-                // Don't let our context be stomped over by the one using the Container/Folder column. We want to stay
-                // in the current container, even when the protocol is defined in another container.
-                if (_containerContext == null)
-                {
-                    super.setContainerContext(cc, overwrite);
-                }
-            }
-        };
+        DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"));
+        // Don't let our context be stomped over by the one using the Container/Folder column. We want to stay
+        // in the current container, even when the protocol is defined in another container.
         detailsURL.setContainerContext(_userSchema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
