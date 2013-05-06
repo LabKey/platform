@@ -18,6 +18,7 @@ package org.labkey.study;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.model.StudyImpl;
@@ -55,8 +56,7 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
         }
         catch (SQLException e)
         {
-            // ignore any failures.
-            _log.error("Failure cleaning up study data when deleting container " + c.getPath(), e);
+            throw new RuntimeSQLException(e);
         }
         // Changing the container tree can change what assays are in scope
         AssayManager.get().clearProtocolCache();

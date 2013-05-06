@@ -59,14 +59,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     @Override
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            AnnouncementManager.purgeContainer(c);
-        }
-        catch (Throwable t)
-        {
-            _log.error(t);
-        }
+        AnnouncementManager.purgeContainer(c);
     }
 
 

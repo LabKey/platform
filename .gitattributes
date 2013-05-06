@@ -1478,7 +1478,6 @@ issues/webapp/issues/hashbang.js -text
 lab/Lab.iml -text
 lab/build.xml -text
 lab/module.properties -text
-lab/src/org/labkey/lab/LabContainerListener.java -text
 lab/src/org/labkey/lab/LabController.java -text
 lab/src/org/labkey/lab/LabFolderTabs.java -text
 lab/src/org/labkey/lab/LabFolderType.java -text
@@ -1498,7 +1497,6 @@ list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
 list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text
 list/schemas/lists.xsd -text
-list/src/org/labkey/list/ListContainerListener.java -text
 list/src/org/labkey/list/ListModule.java -text
 list/src/org/labkey/list/model/FileNameUniquifier.java -text
 list/src/org/labkey/list/model/FolderListImporter.java -text

@@ -20,14 +20,14 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.Portal;
 
 import java.beans.PropertyChangeEvent;
@@ -64,8 +64,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         }
         catch (SQLException e)
         {
-            _log.error("Failed to delete Properties for container '" + c.getPath() + "'.", e);
-            ExceptionUtil.logExceptionToMothership(null, e);
+            throw new RuntimeSQLException(e);
         }
     }
 

@@ -672,7 +672,7 @@ public class AnnouncementManager
         }
         catch (SQLException x)
         {
-            _log.error("purgeContainer", x);
+            throw new RuntimeSQLException(x);
         }
     }
 

@@ -15,9 +15,9 @@
  */
 package org.labkey.demo;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.demo.model.DemoManager;
 
@@ -31,8 +31,6 @@ import java.sql.SQLException;
  */
 public class DemoContainerListener implements ContainerListener
 {
-    private static final Logger _log = Logger.getLogger(DemoContainerListener.class);
-
     public void containerCreated(Container c, User user)
     {
     }
@@ -45,8 +43,7 @@ public class DemoContainerListener implements ContainerListener
         }
         catch (SQLException e)
         {
-            // ignore any failures.
-            _log.error("Failure cleaning up demo data when deleting container " + c.getPath(), e);
+            throw new RuntimeSQLException(e);
         }
     }
 

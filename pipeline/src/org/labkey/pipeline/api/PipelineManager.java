@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -211,7 +212,7 @@ public class PipelineManager
         }
         catch (SQLException e)
         {
-            _log.error("Failed to delete pipeline status info for container '" + container.getPath() + "'.", e);
+            throw new RuntimeSQLException(e);
         }
 
         try
@@ -220,7 +221,7 @@ public class PipelineManager
         }
         catch (SQLException e)
         {
-            _log.error("Failed to delete pipeline roots for container '" + container.getPath() + "'.", e);
+            throw new RuntimeSQLException(e);
         }
         finally
         {

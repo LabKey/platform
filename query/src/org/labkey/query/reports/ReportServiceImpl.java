@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -468,12 +469,13 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public void containerDeleted(Container c, User user)
     {
-        try {
+        try
+        {
             ContainerUtil.purgeTable(getTable(), c, "ContainerId");
         }
         catch (SQLException x)
         {
-            _log.error("Error occurred deleting reports for container", x);
+            throw new RuntimeSQLException(x);
         }
     }
 

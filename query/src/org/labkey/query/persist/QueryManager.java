@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -643,7 +644,7 @@ public class QueryManager
             }
             catch (SQLException e)
             {
-                _log.error("Error", e);
+                throw new RuntimeSQLException(e);
             }
         }
 

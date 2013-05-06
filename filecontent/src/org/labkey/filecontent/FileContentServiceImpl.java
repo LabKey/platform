@@ -501,7 +501,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
         catch (SQLException x)
         {
-            _log.error("Purging attachments", x);
+            throw new RuntimeSQLException(x);
         }
     }
 

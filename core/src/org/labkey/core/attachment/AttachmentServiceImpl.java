@@ -707,7 +707,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
         catch (SQLException x)
         {
-            _log.error("Purging attachments", x);
+            throw new RuntimeSQLException(x);
         }
     }
 

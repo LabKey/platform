@@ -82,8 +82,6 @@ public class LabModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(new LabContainerListener());
         ModuleLoader.getInstance().registerFolderType(this, new LabFolderType(this));
 
         AuditLogService.get().addAuditViewFactory(LabEventsAuditViewFactory.getInstance());

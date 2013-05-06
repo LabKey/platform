@@ -17,28 +17,34 @@
 package org.labkey.list;
 
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.list.model.FolderListImporter;
+import org.labkey.list.model.FolderListWriter;
+import org.labkey.list.model.ListAuditViewFactory;
+import org.labkey.list.model.ListDef;
+import org.labkey.list.model.ListDomainType;
+import org.labkey.list.model.ListManager;
+import org.labkey.list.model.ListSchema;
+import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.view.ListController;
-import org.labkey.list.view.SingleListWebPartFactory;
 import org.labkey.list.view.ListWebPart;
-import org.labkey.list.model.*;
+import org.labkey.list.view.SingleListWebPartFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 
 public class ListModule extends DefaultModule
 {
@@ -61,7 +67,7 @@ public class ListModule extends DefaultModule
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> result = new ArrayList<WebPartFactory>();
+        List<WebPartFactory> result = new ArrayList<>();
         result.add(ListWebPart.FACTORY);
         result.add(new SingleListWebPartFactory());
         return result;
@@ -77,8 +83,6 @@ public class ListModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(new ListContainerListener());
         AuditLogService.get().addAuditViewFactory(ListAuditViewFactory.getInstance());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
@@ -104,7 +108,7 @@ public class ListModule extends DefaultModule
     @Override
     public Collection<String> getSummary(Container c)
     {
-        Collection<String> results = new ArrayList<String>();
+        Collection<String> results = new ArrayList<>();
         ListDef[] lists = ListManager.get().getLists(c);
         if(lists.length > 0)
         {

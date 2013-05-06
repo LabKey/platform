@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
-import org.apache.log4j.Logger;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -31,8 +30,6 @@ import java.sql.SQLException;
  */
 public class WikiContainerListener implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = Logger.getLogger(WikiContainerListener.class);
-
     public void containerCreated(Container c, User user)
     {
     }
