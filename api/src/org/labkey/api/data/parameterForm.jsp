@@ -86,7 +86,7 @@ Ext.onReady(function()
         item.fieldLabel = p.name;
         item.width = 250;
         item.name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
-        item.value=p.value;
+        item.value= LABKEY.ActionURL.getParameter(item.name) || p.value;
         items.push(item);
     }
     formpanel = new LABKEY.ext.FormPanel({

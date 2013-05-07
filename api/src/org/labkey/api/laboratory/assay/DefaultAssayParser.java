@@ -82,6 +82,9 @@ public class DefaultAssayParser implements AssayParser
     protected AssayImportMethod _method;
     private String HAS_RESULT = "__hasResult__";
 
+    private String RESULT_FIELD = "result";
+    private String RESULT_OOR_FIELD = "resultOORIndicator";
+
     private static final Logger _log = Logger.getLogger(AssayParser.class);
 
     public DefaultAssayParser(AssayImportMethod method, Container c, User u, int assayId)
@@ -130,6 +133,9 @@ public class DefaultAssayParser implements AssayParser
             TabLoader loader = getTabLoader(sb);
             configureColumns(propertyNameToDescriptor, loader);
             List<Map<String, Object>> rows = loader.load();
+            rows = processOORIndicators(rows, propertyNameToDescriptor, context);
+            context.getErrors().confirmNoErrors();
+
             rows = processRowsFromFile(rows, context);
             performDefaultChecks(rows, context);
             return rows;
@@ -139,6 +145,41 @@ public class DefaultAssayParser implements AssayParser
             context.getErrors().addError(e.getMessage());
             throw context.getErrors().getErrors();
         }
+    }
+
+    private List<Map<String, Object>> processOORIndicators(List<Map<String, Object>> rows, Map<String, PropertyDescriptor> propertyNameToDescriptor, ImportContext context)
+    {
+        if (!propertyNameToDescriptor.containsKey(RESULT_OOR_FIELD))
+            return rows;
+
+        Pattern p = Pattern.compile("^(<|>).*");
+
+        for (Map<String, Object> row : rows)
+        {
+            Object resultObj = row.get(RESULT_FIELD);
+            if (resultObj != null && resultObj instanceof String)
+            {
+                String resultString = (String)resultObj;
+                if (p.matcher(resultString).matches())
+                {
+                    String oor = resultString.substring(0, 1);
+                    resultString = resultString.substring(1);
+                    row.put(RESULT_OOR_FIELD, oor);
+                }
+
+                try
+                {
+                    Double result = Double.parseDouble(resultString);
+                    row.put(RESULT_FIELD, result);
+                }
+                catch (NumberFormatException e)
+                {
+                    context.getErrors().addError("Improper number format: " + resultString);
+                }
+            }
+        }
+
+        return rows;
     }
 
     protected List<Map<String, Object>> processRowsFromFile(List<Map<String, Object>> rows, ImportContext context) throws BatchValidationException
@@ -189,7 +230,7 @@ public class DefaultAssayParser implements AssayParser
             }
 
             String category = "category";
-            if (row.containsKey(category))
+            if (row.containsKey(category) && StringUtils.trimToNull((String)row.get(category)) != null)
             {
                 String errorMsg = "Row " + idx + ": unknown sample category: " + row.get(category);
                 try
@@ -270,6 +311,9 @@ public class DefaultAssayParser implements AssayParser
             if (pd != null)
             {
                 column.clazz = pd.getPropertyType().getJavaType();
+                if (RESULT_FIELD.equalsIgnoreCase(pd.getName()) && propertyNameToDescriptor.containsKey(RESULT_OOR_FIELD))
+                    column.clazz = String.class;
+
                 if (!columnName.equals(pd.getName()))
                     column.name = pd.getName();
             }

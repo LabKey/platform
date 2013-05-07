@@ -70,7 +70,7 @@ public class ExtendedSimpleModule extends SimpleModule
     }
 
     @Override
-    public void startupAfterSpringConfig(ModuleContext moduleContext)
+    final public void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         super.startupAfterSpringConfig(moduleContext);
         doStartupAfterSpringConfig(moduleContext);

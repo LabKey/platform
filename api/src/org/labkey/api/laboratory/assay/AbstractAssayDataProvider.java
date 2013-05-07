@@ -18,19 +18,29 @@ package org.labkey.api.laboratory.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.AbstractDataProvider;
 import org.labkey.api.laboratory.LaboratoryService;
+import org.labkey.api.laboratory.QueryCountNavItem;
+import org.labkey.api.laboratory.QueryTabbedReportItem;
+import org.labkey.api.laboratory.ReportItem;
+import org.labkey.api.laboratory.TabbedReportItem;
+import org.labkey.api.ldk.AbstractNavItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.laboratory.SingleNavItem;
 import org.labkey.api.laboratory.TabbedReportItem;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
@@ -42,6 +52,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import sun.plugin2.ipc.unix.DomainSocketNamedPipe;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -193,7 +204,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         resultMeta.put("sampleId", new JSONObject().put("lookups", false));
         resultMeta.put("subjectId", new JSONObject().put("lookups", false));
 
-        String[] hiddenResultFields = new String[]{"result", "qual_result", "qcstate", "requestid", "Run"};
+        String[] hiddenResultFields = new String[]{"result", "qual_result", "qcstate", "requestid", "Run", "resultOORIndicator", "resultNumber", "resultInRange"};
         for (String field : hiddenResultFields)
         {
             JSONObject json = getJsonObject(resultMeta, field);
@@ -238,7 +249,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                     continue;
                 }
 
-                SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + query.getTitle());
+                ReportItem qItem = new ReportItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + query.getTitle());
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
                 items.add(qItem);
@@ -255,7 +266,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         {
             AssayNavItem nav = new AssayNavItem(this, p);
             AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
-            TabbedReportItem item = new TabbedReportItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, p.getName() + ": Raw Data", _providerName);
+            TabbedReportItem item = new QueryTabbedReportItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, p.getName() + ": Raw Data", _providerName);
             item.setVisible(nav.isVisible(c, u));
             item.setOwnerKey(nav.getPropertyManagerKey());
             items.add(item);
@@ -277,7 +288,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                     continue;
                 }
 
-                TabbedReportItem qItem = new TabbedReportItem(this, schema.getSchemaName(), qd.getName(), p.getName() + ": " + query.getTitle(), _providerName);
+                TabbedReportItem qItem = new QueryTabbedReportItem(this, schema.getSchemaName(), qd.getName(), p.getName() + ": " + query.getTitle(), _providerName);
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
                 items.add(qItem);
@@ -323,6 +334,30 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 }
 
                 items.add(new SingleNavItem(this, p.getName() + " Runs", totalRuns.toString(), new DetailsURL(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p)), LaboratoryService.NavItemCategory.data.name()));
+            }
+        }
+
+        return Collections.unmodifiableList(items);
+    }
+
+    public List<NavItem> getSubjectIdSummary(Container c, User u, String subjectId)
+    {
+        List<NavItem> items = new ArrayList<NavItem>();
+
+        for (ExpProtocol p : getProtocols(c))
+        {
+            boolean visible = new AssayNavItem(this, p).isVisible(c, u);
+            if (visible)
+            {
+                AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
+                TableInfo ti = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME);
+                ColumnInfo ci = getSubjectColumn(ti);
+                if (ci != null)
+                {
+                    QueryCountNavItem item = new QueryCountNavItem(this, schema.getSchemaName(), ti.getName(), LaboratoryService.NavItemCategory.data.name(), p.getName());
+                    item.setFilter(new SimpleFilter(FieldKey.fromString(ci.getName()), subjectId));
+                    items.add(item);
+                }
             }
         }
 

@@ -56,6 +56,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private List<NavTree> _customMenus = null;
     private String _defaultLocation;
     private NavTree _custom;
+    private boolean _hidePageTitle = false;
 
     private final boolean _devMode =AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
@@ -975,5 +976,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public boolean isHidePageTitle()
+    {
+        return _hidePageTitle;
+    }
+
+    public void setHidePageTitle(boolean hidePageTitle)
+    {
+        _hidePageTitle = hidePageTitle;
     }
 }

@@ -141,7 +141,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 if(rec.raw && rec.raw[field.name]){
                     value = rec.raw[field.name].displayValue || rec.get(field.name);
                     if(value && field.jsonType == 'date'){
-                        var format = 'Y-m-d h:m A'; //NOTE: java date formats do not necessarily match Ext
+                        var format = field.extFormat || 'Y-m-d h:i A'; //NOTE: java date formats do not necessarily match Ext
                         value = value.format(format);
                     }
 

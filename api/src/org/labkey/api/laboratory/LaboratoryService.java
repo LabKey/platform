@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.assay.AssayDataProvider;
 import org.labkey.api.ldk.NavItem;
+import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -102,6 +103,14 @@ abstract public class LaboratoryService
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
     abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
+
+    abstract public void registerQueryButton(ButtonConfigFactory btn, String schema, String query);
+
+    abstract public List<ButtonConfigFactory> getQueryButtons(Container c, User u, String schema, String query);
+
+    abstract public void registerAssayButton(ButtonConfigFactory btn, String providerName, String domain);
+
+    abstract public List<ButtonConfigFactory> getAssayButtons(Container c, User u, String providerName, String domain);
 
     abstract public TableCustomizer getLaboratoryTableCustomizer();
 

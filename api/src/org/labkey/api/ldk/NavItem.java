@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 public interface NavItem
 {
     public static final String PROPERTY_CATEGORY = "ldk.navItem";
+    public static final String VIEW_PROPERTY_CATEGORY = "ldk.navItemDefaultView";
 
     public DataProvider getDataProvider();
 

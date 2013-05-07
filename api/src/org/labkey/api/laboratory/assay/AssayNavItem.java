@@ -98,7 +98,8 @@ public class AssayNavItem extends AbstractQueryNavItem
 
     public ActionURL getBrowseUrl(Container c, User u)
     {
-        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol);
+        return appendDefaultView(c, url, "Data");
     }
 
     public ActionURL getAssayRunTemplateUrl(Container c, User u)

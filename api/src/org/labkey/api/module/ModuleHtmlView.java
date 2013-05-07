@@ -73,6 +73,10 @@ public class ModuleHtmlView extends HtmlView
             Module _module = ((ModuleResourceResolver)_viewdef.getResource().getResolver()).getModule();
             _clientDependencies.add(ClientDependency.fromModule(_module));
         }
+
+        //if this HTML view uses a portal frame, we automatically hide the redundant page title
+        if (FrameType.PORTAL.equals(getFrame()))
+            setHidePageTitle(true);
     }
 
 

@@ -17,9 +17,14 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldk.AbstractNavItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -38,6 +43,7 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem implements Qu
         ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
         ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
         ret.put("browseUrl", getUrlObject(getBrowseUrl(c, u)));
+        ret.put("browseDefaultView", getDefaultViewName(c, getPropertyManagerKey()));
 
         return ret;
     }
@@ -45,5 +51,25 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem implements Qu
     public String getRendererName()
     {
         return "queryNavItemRenderer";
+    }
+
+    public static String getDefaultViewName(Container c, String key)
+    {
+        Map<String, String> map = PropertyManager.getProperties(c, NavItem.VIEW_PROPERTY_CATEGORY);
+        if (map != null && map.containsKey(key))
+            return map.get(key);
+
+        return null;
+    }
+
+    public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)
+    {
+        String view = getDefaultViewName(c, getPropertyManagerKey());
+        if (view != null)
+        {
+            url.addParameter(dataRegionName + ".viewName", view);
+        }
+
+        return url;
     }
 }

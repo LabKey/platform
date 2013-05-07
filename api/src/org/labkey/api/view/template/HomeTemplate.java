@@ -126,8 +126,8 @@ public class HomeTemplate extends PrintTemplate
         }
         page.setNavTrail(appBar.setNavTrail(navTrail, context));
 
-        //conditionalize page title for simple html pages
-        if(getBody() instanceof HtmlView && FrameType.PORTAL.equals(((HtmlView)getBody()).getFrame())){
+        //allow views to have flag to hide title
+        if(getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle()){
             appBar.setPageTitle(null);
         }
         return new AppBarView(appBar);

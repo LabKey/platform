@@ -18,6 +18,7 @@ package org.labkey.api.ehr;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.ehr.dataentry.DataEntryForm;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.resource.Resource;
@@ -83,7 +84,9 @@ abstract public class EHRService
     {
         housing(),
         project(),
+        projectDetails(),
         protocol(),
+        protocolDetails(),
         assignment(),
         moreReports(),
         animalSearch();
@@ -94,5 +97,30 @@ abstract public class EHRService
         }
     }
 
+    public enum EHR_ACTION_TYPE
+    {
+        animalGroupDetails(),
+        cageDetails(),
+        protocolDetails(),
+        projectDetails(),
+        procedureDetails();
+
+        EHR_ACTION_TYPE()
+        {
+
+        }
+    }
+
+    abstract public void registerActionOverride(EHR_ACTION_TYPE action, Module owner, String resourcePath);
+
     abstract public void registerHistoryDataSource(HistoryDataSource source);
+
+    /**
+     * Returns the container holding the EHR study, as defined by the passed container's module properties
+     * @param c
+     * @return
+     */
+    abstract public Container getEHRStudyContainer(Container c);
+
+    abstract public void registerFormType(DataEntryForm form);
 }

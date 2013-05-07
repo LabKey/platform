@@ -24,6 +24,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,6 +77,11 @@ public class UserDefinedButtonConfig implements ButtonConfig
     public void setOnClick(String onClick)
     {
         _onClick = onClick;
+    }
+
+    public List<NavTree> getMenuItems()
+    {
+        return Collections.unmodifiableList(_menuItems);
     }
 
     public void setMenuItems(List<NavTree> items)

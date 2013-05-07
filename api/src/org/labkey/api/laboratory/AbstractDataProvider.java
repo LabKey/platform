@@ -15,7 +15,9 @@
  */
 package org.labkey.api.laboratory;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 
@@ -52,5 +54,16 @@ public abstract class AbstractDataProvider implements DataProvider
     public List<NavItem> getMiscItems(Container c, User u)
     {
         return Collections.emptyList();
+    }
+
+    protected ColumnInfo getSubjectColumn(TableInfo ti)
+    {
+        for (ColumnInfo ci : ti.getColumns())
+        {
+            if (LaboratoryService.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(ci.getConceptURI()))
+                return ci;
+        }
+
+        return null;
     }
 }

@@ -299,7 +299,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
             if (meta != null && meta.containsKey("setGlobally") && meta.getBoolean("setGlobally"))
                 continue;
             else
-                columns.add(dp.getLabel());
+                columns.add(dp.getLabel() == null ? dp.getName() : dp.getLabel());
         }
 
         return columns;
@@ -324,6 +324,9 @@ public class DefaultAssayImportMethod implements AssayImportMethod
 
         public static SAMPLE_CATEGORY getEnum(String text)
         {
+            if (text == null)
+                return null;
+
             text = text.replaceAll(" ", "");
             return SAMPLE_CATEGORY.valueOf(text);
         }

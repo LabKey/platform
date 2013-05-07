@@ -15,21 +15,28 @@
  */
 package org.labkey.api.laboratory;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.ldk.AbstractNavItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -39,24 +46,26 @@ import java.util.List;
  */
 public class TabbedReportItem extends AbstractNavItem
 {
-    private String _name;
-    private String _label;
-    private String _category;
-    private String _schemaName;
-    private String _queryName;
-    private DataProvider _provider;
-    private boolean _visible = true;
+    protected String _name;
+    protected String _label;
+    protected String _category;
+    protected DataProvider _provider;
+    protected boolean _visible = true;
+    protected String _reportType = "query";
 
-    private FieldKey _subjectIdFieldKey = null;
-    private FieldKey _sampleDateFieldKey = null;
+    protected FieldKey _subjectIdFieldKey = null;
+    protected FieldKey _sampleDateFieldKey = null;
+    protected FieldKey _overlappingProjectsFieldKey = null;
+    protected FieldKey _allProjectsFieldKey = null;
 
-    public TabbedReportItem(DataProvider provider, String schemaName, String queryName, String label, String category)
+    public static final String OVERRIDES_PROP_KEY = "laboratory.tabItemOverride";
+    protected static final Logger _log = Logger.getLogger(TabbedReportItem.class);
+
+    public TabbedReportItem(DataProvider provider, String name, String label, String category)
     {
         _provider = provider;
-        _name = queryName;
+        _name = name;
         _label = label;
-        _schemaName = schemaName;
-        _queryName = queryName;
         _category = category;
 
     }
@@ -91,57 +100,13 @@ public class TabbedReportItem extends AbstractNavItem
         return _visible;
     }
 
-    public String getSchemaName()
-    {
-        return _schemaName;
-    }
-
-    public void setSchemaName(String schemaName)
-    {
-        _schemaName = schemaName;
-    }
-
-    public String getQueryName()
-    {
-        return _queryName;
-    }
-
-    public void setQueryName(String queryName)
-    {
-        _queryName = queryName;
-    }
-
     @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject json = super.toJSON(c, u);
+        applyOverrides(this, c, json);
 
-        UserSchema us = QueryService.get().getUserSchema(u, c, getSchemaName());
-        if (us == null)
-            return null;
-
-        QueryDefinition qd = us.getQueryDefForTable(getQueryName());
-        if (qd == null)
-            return null;
-
-        List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo ti = qd.getTable(errors, true);
-        if (ti == null)
-        {
-            return null;
-        }
-
-        for (ColumnInfo ci : ti.getColumns())
-        {
-            if (LaboratoryService.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(ci.getConceptURI()))
-            {
-                json.put("subjectFieldName", ci.getFieldKey());
-            }
-            else if (LaboratoryService.SAMPLEDATE_CONCEPT_URI.equalsIgnoreCase(ci.getConceptURI()))
-            {
-                json.put("dateFieldName", ci.getFieldKey());
-            }
-        }
+        json.put("overridesKey", getOverridesPropertyKey(this));
 
         if (_subjectIdFieldKey != null)
             json.put("subjectFieldName", _subjectIdFieldKey);
@@ -149,25 +114,59 @@ public class TabbedReportItem extends AbstractNavItem
         if (_sampleDateFieldKey != null)
             json.put("dateFieldName", _sampleDateFieldKey);
 
-        ColumnInfo overlappingCol = ti.getColumn("overlappingProjectsPivot");
-        if (overlappingCol != null)
+        if (_overlappingProjectsFieldKey != null)
         {
-            json.put("overlappingProjectsFieldName", overlappingCol.getFieldKey().toString());
-            json.put("overlappingProjectsFieldKeyArray", new JSONArray(overlappingCol.getFieldKey().getParts()));
+            json.put("overlappingProjectsFieldName", _overlappingProjectsFieldKey.toString());
+            json.put("overlappingProjectsFieldKeyArray", new JSONArray(_overlappingProjectsFieldKey.getParts()));
         }
 
-        ColumnInfo allProjectsCol = ti.getColumn("allProjectsPivot");
-        if (allProjectsCol != null)
+        if (_allProjectsFieldKey != null)
         {
-            json.put("allProjectsFieldName", allProjectsCol.getFieldKey().toString());
-            json.put("allProjectsFieldKeyArray", new JSONArray(allProjectsCol.getFieldKey().getParts()));
+            json.put("allProjectsFieldName", _allProjectsFieldKey.toString());
+            json.put("allProjectsFieldKeyArray", new JSONArray(_allProjectsFieldKey.getParts()));
         }
 
-        json.put("schemaName", getSchemaName());
-        json.put("queryName", getQueryName());
-        json.put("reportType", "query");
+        json.put("reportType", getReportType());
 
         return json;
+    }
+
+    protected void inferColumnsFromTable(TableInfo ti)
+    {
+        for (ColumnInfo ci : ti.getColumns())
+        {
+            if (_subjectIdFieldKey == null && LaboratoryService.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(ci.getConceptURI()))
+            {
+                _subjectIdFieldKey = ci.getFieldKey();
+            }
+            else if (_sampleDateFieldKey == null && LaboratoryService.SAMPLEDATE_CONCEPT_URI.equalsIgnoreCase(ci.getConceptURI()))
+            {
+                _sampleDateFieldKey = ci.getFieldKey();
+            }
+        }
+
+        if (_overlappingProjectsFieldKey == null || _allProjectsFieldKey == null)
+        {
+            FieldKey overlapKey = FieldKey.fromString("overlappingProjectsPivot");
+            FieldKey allKey = FieldKey.fromString("allProjectsPivot");
+
+            Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(ti, PageFlowUtil.set(overlapKey, allKey));
+            if (_overlappingProjectsFieldKey == null && colMap.containsKey(overlapKey))
+                _overlappingProjectsFieldKey = colMap.get(overlapKey).getFieldKey();
+
+            if (_allProjectsFieldKey == null && colMap.containsKey(allKey))
+                _allProjectsFieldKey = colMap.get(allKey).getFieldKey();
+        }
+    }
+
+    public String getReportType()
+    {
+        return _reportType;
+    }
+
+    public void setReportType(String reportType)
+    {
+        _reportType = reportType;
     }
 
     public FieldKey getSubjectIdFieldKey()
@@ -190,8 +189,47 @@ public class TabbedReportItem extends AbstractNavItem
         _sampleDateFieldKey = sampleDateFieldKey;
     }
 
+    public FieldKey getOverlappingProjectsFieldKey()
+    {
+        return _overlappingProjectsFieldKey;
+    }
+
+    public void setOverlappingProjectsFieldKey(FieldKey overlappingProjectsFieldKey)
+    {
+        _overlappingProjectsFieldKey = overlappingProjectsFieldKey;
+    }
+
+    public FieldKey getAllProjectsFieldKey()
+    {
+        return _allProjectsFieldKey;
+    }
+
+    public void setAllProjectsFieldKey(FieldKey allProjectsFieldKey)
+    {
+        _allProjectsFieldKey = allProjectsFieldKey;
+    }
+
     public void setVisible(boolean visible)
     {
         _visible = visible;
+    }
+
+    public static String getOverridesPropertyKey(NavItem item)
+    {
+        return item.getDataProvider().getKey() + "||tabReport||" + item.getCategory() + "||" + item.getName() + "||" + item.getLabel();
+    }
+
+    public static void applyOverrides(NavItem item, Container c, JSONObject json)
+    {
+        Map<String, String> map = PropertyManager.getProperties(c, OVERRIDES_PROP_KEY);
+        if (map.containsKey(getOverridesPropertyKey(item)))
+        {
+            JSONObject props = new JSONObject(map.get(getOverridesPropertyKey(item)));
+            if (props.containsKey("label"))
+                json.put("label", props.get("label"));
+
+            if (props.containsKey("category"))
+                json.put("category", props.get("category"));
+        }
     }
 }

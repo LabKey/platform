@@ -114,7 +114,8 @@ public class SimpleSettingsItem extends AbstractQueryNavItem implements Settings
         if (c.isRoot())
             c = ContainerManager.getSharedContainer();
 
-        return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        return appendDefaultView(c, url, "query");
     }
 
     public JSONObject toJSON(Container c, User u)

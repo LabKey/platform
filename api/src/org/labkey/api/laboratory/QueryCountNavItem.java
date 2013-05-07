@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -38,6 +39,7 @@ public class QueryCountNavItem extends SingleNavItem
 {
     private String _schema;
     private String _query;
+    private SimpleFilter _filter = null;
 
     public QueryCountNavItem(DataProvider provider, String schema, String query, String category, String label)
     {
@@ -59,16 +61,25 @@ public class QueryCountNavItem extends SingleNavItem
     private TableInfo getTableInfo(Container c, User u)
     {
         UserSchema us = QueryService.get().getUserSchema(u, c, _schema);
-        TableInfo ti = us.getTable(_query);
-        return ti;
+        return us.getTable(_query);
     }
 
     private Long getRowCount(Container c, User u)
     {
         TableInfo ti = getTableInfo(c, u);
-        SimpleFilter filter = null;
+        if (ti == null)
+            return new Long(0);
+
+        SimpleFilter filter = new SimpleFilter();
+
         if (ti.getColumn("container") != null)
-            new SimpleFilter(FieldKey.fromString("container"), c.getEntityId());
+            filter.addClause(ContainerFilter.CURRENT.createFilterClause(ti.getSchema(), FieldKey.fromString("container"), c));
+
+        if (_filter != null)
+        {
+            for (SimpleFilter.FilterClause clause : _filter.getClauses())
+                filter.addCondition(clause);
+        }
 
         TableSelector ts = new TableSelector(ti, ti.getPkColumns(), filter, null);
         return ts.getRowCount();
@@ -76,7 +87,11 @@ public class QueryCountNavItem extends SingleNavItem
 
     protected ActionURL getActionURL(Container c, User u)
     {
-        return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        if (_filter != null)
+            _filter.applyToURL(url, "query");
+
+        return url;
     }
 
     public JSONObject toJSON(Container c, User u)
@@ -85,5 +100,10 @@ public class QueryCountNavItem extends SingleNavItem
         _itemText = total.toString();
 
         return super.toJSON(c, u);
+    }
+
+    public void setFilter(SimpleFilter filter)
+    {
+        _filter = filter;
     }
 }

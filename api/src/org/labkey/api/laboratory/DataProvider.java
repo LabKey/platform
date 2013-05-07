@@ -105,4 +105,6 @@ public interface DataProvider
     public Module getOwningModule();
 
     public List<NavItem> getSummary(Container c, User u);
+
+    public List<NavItem> getSubjectIdSummary(Container c, User u, String subjectId);
 }

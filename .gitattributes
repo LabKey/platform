@@ -395,6 +395,10 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
 api/src/org/labkey/api/ehr/HistoryDataSource.java -text
 api/src/org/labkey/api/ehr/HistoryRow.java -text
+api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
+api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/DataEntryForm.java -text
+api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/AsyncDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
@@ -570,10 +574,13 @@ api/src/org/labkey/api/laboratory/AbstractQueryNavItem.java -text
 api/src/org/labkey/api/laboratory/DataProvider.java -text
 api/src/org/labkey/api/laboratory/DetailsUrlNavItem.java -text
 api/src/org/labkey/api/laboratory/ImportingNavItem.java -text
+api/src/org/labkey/api/laboratory/JSTabbedReportItem.java -text
 api/src/org/labkey/api/laboratory/LaboratoryService.java -text
 api/src/org/labkey/api/laboratory/LaboratoryUrls.java -text
 api/src/org/labkey/api/laboratory/QueryCountNavItem.java -text
 api/src/org/labkey/api/laboratory/QueryNavItem.java -text
+api/src/org/labkey/api/laboratory/QueryTabbedReportItem.java -text
+api/src/org/labkey/api/laboratory/ReportItem.java -text
 api/src/org/labkey/api/laboratory/SettingsNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleQueryNavItem.java -text
@@ -599,6 +606,8 @@ api/src/org/labkey/api/ldk/LDKService.java -text
 api/src/org/labkey/api/ldk/NavItem.java -text
 api/src/org/labkey/api/ldk/notification/Notification.java -text
 api/src/org/labkey/api/ldk/notification/NotificationService.java -text
+api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
+api/src/org/labkey/api/ldk/table/SimpleButtonConfigFactory.java -text
 api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text
 api/src/org/labkey/api/mbean/CacheMXBean.java -text
 api/src/org/labkey/api/mbean/ErrorsMXBean.java -text

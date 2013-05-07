@@ -33,6 +33,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -132,6 +133,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
+    private FieldKey sortFieldKey = null;
     private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
@@ -336,6 +338,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setWidth(col.getWidth());
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
+        setSortFieldKey(col.getSortFieldKey());
         if (col.getConceptURI() != null)
             setConceptURI(col.getConceptURI());
         setIsUnselectable(col.isUnselectable());
@@ -583,8 +586,18 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (getParentTable() == null)
             return this;
-        if (getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName()))
-            return this;
+
+        ColumnInfo sortCol = this;
+        if (sortFieldKey != null)
+        {
+            // The column may be on a separate table via a lookup, so use QueryService to resolve it
+            FieldKey translatedFieldKey = FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey);
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Collections.singleton(translatedFieldKey));
+            sortCol = columns.get(translatedFieldKey);
+        }
+        if (sortCol != null && getParentTable().getSqlDialect().isSortableDataType(sortCol.getSqlTypeName()))
+            return sortCol;
+
         return null;
     }
 
@@ -917,6 +930,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             textAlign = xmlCol.getTextAlign();
         if (xmlCol.isSetPropertyURI())
             propertyURI = xmlCol.getPropertyURI();
+        if (xmlCol.isSetSortColumn())
+            sortFieldKey = FieldKey.fromString(xmlCol.getSortColumn());
         if (xmlCol.isSetSortDescending())
             setSortDirection(xmlCol.getSortDescending() ? Sort.SortDirection.DESC : Sort.SortDirection.ASC);
         if (xmlCol.isSetDescription())
@@ -1543,6 +1558,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.jdbcType = null;
     }
 
+    public FieldKey getSortFieldKey()
+    {
+        return sortFieldKey;
+    }
+
+    public void setSortFieldKey(FieldKey sortFieldKey)
+    {
+        checkLocked();
+        this.sortFieldKey = sortFieldKey;
+    }
 
     public void setJdbcType(JdbcType type)
     {

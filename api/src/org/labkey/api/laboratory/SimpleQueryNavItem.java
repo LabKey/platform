@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
@@ -46,11 +47,7 @@ public class SimpleQueryNavItem extends AbstractQueryNavItem
 
     public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category)
     {
-        _schema = schema;
-        _query = query;
-        _label = query;
-        _category = category;
-        _dataProvider = provider;
+        this(provider, schema, query, category, query);
     }
 
     public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category, String label)
@@ -153,7 +150,8 @@ public class SimpleQueryNavItem extends AbstractQueryNavItem
     {
         try
         {
-            return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+            ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+            return appendDefaultView(c, url, "query");
         }
         catch (QueryParseException e)
         {

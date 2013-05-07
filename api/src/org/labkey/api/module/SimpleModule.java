@@ -187,6 +187,11 @@ public class SimpleModule extends SpringModule
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         registerSchemas();
+        registerContainerListeners();
+    }
+
+    protected void registerContainerListeners()
+    {
         ContainerManager.addContainerListener(new SimpleModuleContainerListener(this));
     }
 
