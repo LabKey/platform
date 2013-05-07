@@ -150,7 +150,7 @@ legend
     position: absolute;
     top: 0; right: 0;
     padding-right: 10px;
-    padding-top: 6px;
+    padding-top: 8px;
     /* Hack to keep IE7 from stretching the headerDiv across the whole width of the page */
     *width: 500px;
 }
@@ -1468,25 +1468,9 @@ table.labkey-main
 /* The top panel with the title and logo */
 #headerpanel
 {
-    padding: 2px 0;
+    padding: 0px;
     background-color: #FFFFFF;
 }
-
-/* The top panel with the title and logo */
-.labkey-header-panel table
-{
-    width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-.labkey-header-panel td, .labkey-header-panel th
-{
-    padding: 0px;
-}
-
-
-
-
 
 /* Optional Top Menu */
 #topmenu
@@ -1604,10 +1588,9 @@ table.labkey-main-search img:hover {
     border-radius: 2px;
     box-shadow: 0 0 0 black, inset 0px 3px 3px #EEE;
     border: 1px solid #BFBFBF;
-    height: 20px;
-    width : 200px;
+    height: 25px;
+    width : 303px;
     padding-left: 5px;
-    padding-right: 22px;
 }
 
 .lk-input input:hover {
@@ -3824,6 +3807,7 @@ li.labkey-app-bar-tab-inactive a {
 
 .labkey-main-menu
 {
+    height: 26px;
     background-color: #126495;
     padding: 1px;
     position: relative;
@@ -3841,6 +3825,7 @@ a.labkey-main-menu-link:visited
     margin: 0 0 0 20px;
     padding: 5px 0;
     width: 75%;
+    white-space: nowrap;
 }
 
 .labkey-main-menu-right
@@ -4045,4 +4030,37 @@ span.button-icon {
     margin-top: 5px;
     margin-bottom: -5px;
     text-align: right;
+}
+
+div.headermenu {
+    position: absolute;
+    top: 0px;
+    white-space: nowrap;
+    z-index: 1;
+    color: gray;
+    height: 16px;
+    background-color: #126495;
+    padding: 6px 13px 6px 6px;
+}
+
+div.dialog-headermenu,
+div.wizard-headermenu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 15px;
+    white-space: nowrap;
+}
+
+div.headermenu a.labkey-menu-text-link {
+    color: white;
+}
+
+div.headermenu a.labkey-menu-text-link:hover {
+    color: #d3d3d3;
+}
+
+.lk-input input.hdr-search-input {
+    padding-left: 22px;
+    background: #FFFFFF url(./_images/search.png) 2% center no-repeat;
 }
