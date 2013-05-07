@@ -729,3 +729,7 @@ li.labkey-app-bar-tab-inactive:hover {
 {
     color: #<%= text %>;
 }
+
+div.headermenu {
+    background-color: #<%= link %>;
+}
