@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Auto-generated based on columns that are set to be shownInUpdateView.
+ *
  * User: jeckels
  * Date: 11/21/12
  */

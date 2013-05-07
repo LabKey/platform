@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Auto-generated based on columns that are set to be shownInInsertView.
+ *
  * User: jeckels
  * Date: 11/21/12
  */

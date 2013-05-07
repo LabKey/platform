@@ -35,11 +35,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Dave
-* Date: Jan 9, 2009
-* Time: 4:37:30 PM
-*/
+/**
+ * A custom view backed by an XML file in a module. Read-only.
+ *
+ * User: Dave
+ * Date: Jan 9, 2009
+ */
 public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
 {
     private QueryDefinition _queryDef;

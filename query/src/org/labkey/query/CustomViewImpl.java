@@ -73,6 +73,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A custom view that's backed by a row in the database OR saved in the HTTP session for the user.
+ */
 public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
