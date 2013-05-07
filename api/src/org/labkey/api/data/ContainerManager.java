@@ -431,7 +431,6 @@ public class ContainerManager
 
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
-            props.setMenuUIEnabled(enabled);
             props.writeAuditLogEvent(u, props.getOldProperties());
             props.save();
             return true;

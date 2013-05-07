@@ -38,7 +38,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String THEME_FONT_PROP = "themeFont";
-    protected static final String MENU_UI_ENABLED_PROP = "menuUIEnabled";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
     protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
@@ -173,7 +172,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public boolean isMenuUIEnabled()
     {
-        return lookupBooleanValue(MENU_UI_ENABLED_PROP, false);
+        return true;
     }
 
     public boolean isShowMenuBar()

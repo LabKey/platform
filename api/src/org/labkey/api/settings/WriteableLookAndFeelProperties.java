@@ -103,9 +103,4 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
     {
         storeStringValue(REPORT_A_PROBLEM_PATH_PROP, reportAProblemPath);
     }
-
-    public void setMenuUIEnabled(boolean enabled)
-    {
-        storeBooleanValue(MENU_UI_ENABLED_PROP, enabled);
-    }
 }
