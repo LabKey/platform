@@ -89,11 +89,11 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 5000, "Property maps");
-	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 10000, "Property descriptors");
-	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
-	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<List<Pair<String, Boolean>>>(getExpSchema().getScope(), 2000, "Domain properties");
+	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
+	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
+    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property descriptors");
+	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors");
+	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
 
@@ -111,7 +111,7 @@ public class OntologyManager
     /** @return map from PropertyURI to value */
     public static Map<String, Object> getProperties(Container container, String parentLSID)
 	{
-		Map<String, Object> m = new HashMap<String, Object>();
+		Map<String, Object> m = new HashMap<>();
 		Map<String, ObjectProperty> propVals = getPropertyObjects(container, parentLSID);
 		if (null != propVals)
 		{
@@ -141,7 +141,7 @@ public class OntologyManager
 
 		assert total.start();
 		assert getExpSchema().getScope().isTransactionActive();
-		List<String> resultingLsids = new ArrayList<String>(rows.size());
+		List<String> resultingLsids = new ArrayList<>(rows.size());
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
@@ -1979,9 +1979,10 @@ public class OntologyManager
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
         List<Pair<String, Boolean>> propertyURIs = new ArrayList<Pair<String, Boolean>>(pdArray.length);
-        for (PropertyDescriptor pd : pdArray) {
+        for (PropertyDescriptor pd : pdArray)
+        {
             propDescCache.put(getCacheKey(pd), pd);
-            propertyURIs.add(new Pair<String, Boolean>(pd.getPropertyURI(), pd.isRequired()));
+            propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
         }
         domainPropertiesCache.put(getCacheKey(typeURI, c), propertyURIs);
 
@@ -2005,7 +2006,7 @@ public class OntologyManager
                 // NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
                 // Descriptors returned from this method will have their required bit set as appropriate for this domain 
 
-                // Clone so we nobody else messes up our copy
+                // Clone so nobody else messes up our copy
                 pd = pd.clone();
                 pd.setRequired(propertyURI.getValue().booleanValue());
                 result[index++] = pd;
