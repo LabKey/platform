@@ -50,7 +50,8 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     {
         NavTree tree = new NavTree();
         tree.setText(_text);
-        tree.setHref(_url.copy(c).getActionURL().toString());
+        if (_url != null)
+            tree.setHref(_url.copy(c).getActionURL().toString());
         tree.setScript(_jsHandler);
 
         return tree;

@@ -81,7 +81,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
 
     public List<NavTree> getMenuItems()
     {
-        return Collections.unmodifiableList(_menuItems);
+        return _menuItems == null ? null : Collections.unmodifiableList(_menuItems);
     }
 
     public void setMenuItems(List<NavTree> items)

@@ -643,6 +643,12 @@ abstract public class AbstractTableInfo implements TableInfo
         return _buttonBarConfig;
     }
 
+    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
+    {
+        checkLocked();
+        _buttonBarConfig = buttonBarConfig;
+    }
+
     public AggregateRowConfig getAggregateRowConfig()
     {
         return _aggregateRowConfig;
