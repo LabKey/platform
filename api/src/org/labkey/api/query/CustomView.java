@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.io.IOException;
 
+/**
+ * Additional information about a custom view beyond what's exposed in CustomViewInfo.
+ */
 public interface CustomView extends CustomViewInfo
 {
     QueryDefinition getQueryDefinition();

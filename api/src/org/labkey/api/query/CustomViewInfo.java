@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
+ * A subset of all of the information about a custom view. Split out because in some cases the full info
+ * is expensive to retrieve, and some usages only require this subset that is faster to make available.
+ *
  * User: klum
  * Date: Jun 17, 2009
  */
