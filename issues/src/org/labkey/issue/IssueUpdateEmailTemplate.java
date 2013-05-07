@@ -332,7 +332,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<String> recipients,  List<AttachmentFile> attachments)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients,  List<AttachmentFile> attachments)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;
@@ -342,11 +342,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
 
         StringBuilder sb = new StringBuilder();
         String separator = "";
-        for (String address : recipients)
+        for (User user : recipients)
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(address);
+            sb.append(user.getEmail());
         }
         _recipients = sb.toString();
 

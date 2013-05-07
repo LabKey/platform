@@ -1208,10 +1208,10 @@ public class IssuesController extends SpringActionController
         if (fieldChanges.isEmpty() && comment.isEmpty())
             return;
 
-        final Set<String> allAddresses = getEmailAddresses(issue, prevIssue, action);
-
-        for (String to : allAddresses)
+        final Set<User> allAddresses = getUsersToEmail(issue, prevIssue, action);
+        for (User user : allAddresses)
         {
+            String to = user.getEmail();
             try
             {
                 Issue.Comment lastComment = issue.getLastComment();
@@ -1252,9 +1252,9 @@ public class IssuesController extends SpringActionController
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private Set<String> getEmailAddresses(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+    private Set<User> getUsersToEmail(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
     {
-        final Set<String> emailAddresses = new HashSet<String>();
+        final Set<User> emailUsers = new HashSet<>();
         final Container c = getContainer();
         int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
         int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
@@ -1264,39 +1264,43 @@ public class IssuesController extends SpringActionController
         if (InsertAction.class.equals(action))
         {
             if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
-                emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
         }
         else
         {
             if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
 
             if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                emailAddresses.add(UserManager.getEmailForId(prevIssue.getAssignedTo()));
+                safeAddEmailUsers(emailUsers, UserManager.getUser(prevIssue.getAssignedTo()));
 
             if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
-                emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getCreatedBy()));
         }
 
         // add any users subscribed to this forum
         List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
         for (ValidEmail email : subscribedEmails)
-            emailAddresses.add(email.getEmailAddress());
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
 
         // add any explicit notification list addresses
         List<ValidEmail> emails = issue.getNotifyListEmail();
         for (ValidEmail email : emails)
-            emailAddresses.add(email.getEmailAddress());
-
-        final String current = getUser().getEmail();
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
 
         boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
         if (selfSpam)
-            emailAddresses.add(current);
+            safeAddEmailUsers(emailUsers, getUser());
         else
-            emailAddresses.remove(current);
+            emailUsers.remove(getUser());
 
-        return emailAddresses;
+        return emailUsers;
+    }
+
+    private void safeAddEmailUsers(Set<User> users, User user)
+    {
+        if (user != null && user.isActive())
+            users.add(user);
     }
 
     @RequiresPermissionClass(ReadPermission.class)

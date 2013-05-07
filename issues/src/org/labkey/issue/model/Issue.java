@@ -580,6 +580,10 @@ public class Issue extends Entity implements Serializable, Cloneable
             if (v == null && u == null)
                 u = UserManager.getUserByDisplayName(id);
 
+            // filter out inactive users
+            if (u != null && !u.isActive())
+                continue;
+
             String display = null != u ? u.getDisplayName(user) : null != v ? v.getEmailAddress() : id;
             ret.add(display);
         }
@@ -608,6 +612,11 @@ public class Issue extends Entity implements Serializable, Cloneable
                 u = UserManager.getUserByDisplayName(id);
             if (u != null)
                 try { v = new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
+
+            // filter out inactive users
+            if (u != null && !u.isActive())
+                continue;
+
             if (null != v)
                 ret.add(v);
         }
