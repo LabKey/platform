@@ -357,6 +357,9 @@ public class CoreQuerySchema extends UserSchema
             }
         }, "Group"));
         users.addColumn(groupsCol);
+        List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
+        visibleColumns.add(groupsCol.getFieldKey());
+        users.setDefaultVisibleColumns(visibleColumns);
     }
 
 
