@@ -17,6 +17,7 @@ package org.labkey.api.ldk;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.SimpleController;
 import org.labkey.api.module.SimpleModule;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.servlet.mvc.Controller;
@@ -37,6 +38,9 @@ public class ExtendedSimpleModule extends SimpleModule
     {
         try
         {
+            if (SimpleController.class.equals(controllerClass))
+                return new SimpleController(getName().toLowerCase());
+
             // try spring configuration first
             Controller con = (Controller)getBean(controllerClass);
             if (null == con)
