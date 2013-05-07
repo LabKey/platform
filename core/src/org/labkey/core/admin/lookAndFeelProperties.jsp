@@ -116,7 +116,7 @@
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Show Project Navigation</td>
+    <td class="labkey-form-label">Show Navigation</td>
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
