@@ -33,17 +33,17 @@ import java.util.List;
 * Date: Jan 4, 2009
 * Time: 9:44:28 AM
 */
-public class MenuBarView extends JspView<List<Portal.WebPart>>
+public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
 {
-    public MenuBarView(List<Portal.WebPart> menus)
+    public MenuBarView(List<Portal.WebPart> menus, PageConfig page)
     {
-        super(MenuBarView.class,  "menuBar.jsp", menus);
+        super(MenuBarView.class,  "menuBar.jsp", new MenuBarBean(menus, page));
         setFrame(FrameType.NONE);
     }
 
-    public MenuBarView(ViewContext ctx)
+    public MenuBarView(ViewContext ctx, PageConfig page)
     {
-        this(Collections.<Portal.WebPart>emptyList());
+        this(Collections.<Portal.WebPart>emptyList(), page);
         Container container = ctx.getContainer();
         Container project = container.getProject();
 
@@ -62,12 +62,24 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
             if (null == menuParts)
                 menuParts = Collections.emptyList();
 
-            setModelBean(menuParts);
+            setModelBean(new MenuBarBean(menuParts, page));
         }
         else
         {
             List<Portal.WebPart> menuParts = Collections.emptyList();
-            setModelBean(menuParts);
+            setModelBean(new MenuBarBean(menuParts, page));
+        }
+    }
+
+    public static class MenuBarBean
+    {
+        public List<Portal.WebPart> menus;
+        public PageConfig pageConfig;
+
+        private MenuBarBean(List<Portal.WebPart> menus, PageConfig page)
+        {
+            this.menus = menus;
+            this.pageConfig = page;
         }
     }
 }

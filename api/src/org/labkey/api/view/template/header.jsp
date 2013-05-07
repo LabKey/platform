@@ -16,28 +16,19 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.AdminReadPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.PopupAdminView" %>
-<%@ page import="org.labkey.api.view.PopupDeveloperView" %>
-<%@ page import="org.labkey.api.view.PopupHelpView" %>
-<%@ page import="org.labkey.api.view.PopupUserView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.menu.HeaderMenu" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -53,17 +44,21 @@
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
     TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
     ViewContext currentContext = HttpView.currentContext();
-    User user = (User) request.getUserPrincipal();
     Container c = currentContext.getContainer();
-    String contextPath = currentContext.getContextPath();
     ActionURL currentURL = currentContext.getActionURL();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(currentContext.getContainer());
 
     boolean hasWarnings = me.getWarningMessages().size() > 0;
     boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
+    boolean showHeaderMenu = !showSearchForm;
     if ("search".equalsIgnoreCase(currentURL.getController()) && "search".equalsIgnoreCase(currentURL.getAction()))
+    {
         showSearchForm = false;
-if ("true".equals(request.getParameter("testFont"))) {
+        showHeaderMenu = false;
+    }
+
+    if ("true".equals(request.getParameter("testFont")))
+    {
 %>
 <script type="text/javascript">
     function changeFontEl(el, themeFontClass)
@@ -85,72 +80,28 @@ if ("true".equals(request.getParameter("testFont"))) {
         }
     }
 </script>
-<%}%>
-<style type="text/css">
-
-    .lk-input input.hdr-search-input {
-        padding-left: 22px;
-        background: #FFFFFF url(<%=contextPath%>/_images/search.png) 2% center no-repeat;
+<%
     }
 
-</style>
-<div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
-  <tr>
-      <td style="padding-right: 1em;">
-          <form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
-              <div id="hdr-search" class="lk-input">
-                  <input placeholder="<%=h("Search " + laf.getShortName())%>" id="search-input" type="text" name="q" class="hdr-search-input" value="">
-                  <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
-              </div>
-          </form>
-      </td>
-      <td valign="top" align="right" class="labkey-main-nav">
-      <%
-          boolean needSeparator = false;
+    if (showSearchForm)
+    {
+%>
+<div id="headerDiv">
+    <form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0;">
+        <div id="hdr-search" class="lk-input">
+            <input placeholder="<%=h("Search " + laf.getShortName())%>" id="search-input" type="text" name="q" class="hdr-search-input" value="">
+            <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
+        </div>
+    </form>
+</div>
+<%
+    }
 
-          if (currentContext.hasPermission("header.jsp popupadminview", AdminPermission.class) || ContainerManager.getRoot().hasPermission("header.jsp popupadminview", user, AdminReadPermission.class))
-          {
-              include(new PopupAdminView(currentContext), out);
-              needSeparator = true;
-          }
-          else if (currentContext.getUser().isDeveloper())
-          {
-              include(new PopupDeveloperView(currentContext), out);
-              needSeparator = true;
-          }
-
-          PopupHelpView helpMenu = new PopupHelpView(c, user, bean.pageConfig.getHelpTopic());
-          if (helpMenu.hasChildren())
-          {
-              if (needSeparator)
-                  out.write(" | ");
-              include(helpMenu, out);
-              needSeparator = true;
-          }
-
-          if (null != user && !user.isGuest())
-          {
-              if (needSeparator)
-                  out.write(" | ");
-              include(new PopupUserView(currentContext), out);
-          }
-          else if (bean.pageConfig.shouldIncludeLoginLink())
-          {
-              if (needSeparator)
-                  out.write(" | ");
-
-              String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
-
-              if (null != authLogoHtml)
-                  out.print(authLogoHtml + "&nbsp;");
-
-              %><a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
-          }
-          if ("true".equals(request.getParameter("testFont"))) {
-        %><span onclick="changeFont()"></span><span class="labkey-theme-font-smallest" onclick="changeFont('Smallest')">A</span><span class="labkey-theme-font-small" onclick="changeFont('Small')">A</span><span class="labkey-theme-font-medium" onclick="changeFont('Medium')">A</span><span class="labkey-theme-font-large" onclick="changeFont('Large')">A</span></span><%}%>
-    </td>
-  </tr>
-</table></div>
+    if (showHeaderMenu)
+    {
+        include(new HeaderMenu(bean.pageConfig), out);
+    }
+%>
 
 <table id="header">
     <tr>

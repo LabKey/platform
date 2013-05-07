@@ -24,8 +24,10 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.menu.HeaderMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.view.template.MenuBarView" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -35,17 +37,21 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-        resources.add(ClientDependency.fromFilePath("ext3"));
+        resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }
 %>
 <%
-    List<Portal.WebPart> menus = ((MenuBarView) HttpView.currentView()).getModelBean();
+    MenuBarView me = ((MenuBarView) HttpView.currentView());
+    MenuBarView.MenuBarBean bean = me.getModelBean();
+    List<Portal.WebPart> menus = bean.menus;
+    PageConfig pageConfig = bean.pageConfig;
+
     ViewContext currentContext = HttpView.currentContext();
     Container c = currentContext.getContainer();
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null;
+    boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null && currentContext.isShowFolders();
     Container p = c.getProject();
     folderMode.isShowInMenu();
 %>
@@ -99,6 +105,9 @@
             }
         %>
     </ul>
+<%
+    include(new HeaderMenu(pageConfig), out);
+%>
 </div>
 <script type="text/javascript">
     Ext4.onReady(function() {

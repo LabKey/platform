@@ -69,7 +69,7 @@ public class HomeTemplate extends PrintTemplate
         else
             setView("header", getHeaderView(page));
 
-        setView("topmenu", new MenuBarView(context));
+        setView("topmenu", new MenuBarView(context, page));
 
         setBody(body);
         setView("appbar", getAppBarView(context, page));

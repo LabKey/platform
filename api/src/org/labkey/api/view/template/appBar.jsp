@@ -144,6 +144,7 @@
             var tabs = Ext4.query('.labkey-app-bar ul li');
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
             var folderHeader = Ext4.get(Ext4.query('.labkey-folder-header')[0]);
+            var signIn = Ext4.get(Ext4.query('.headermenu')[0]);
             var appBar = Ext4.query('.labkey-app-bar')[0];
             var viewportWidth = Ext4.Element.getViewportWidth();
             var folderHeaderWidth = viewportWidth - appBar.getBoundingClientRect().left - 60; // 60 is for some extra padding between the + tab and right side of the screen.
@@ -163,6 +164,9 @@
                 } else {
                     folderHeader.setWidth(folderHeaderWidth);
                 }
+            }
+            if (signIn) {
+                signIn.setLeft(viewportWidth - signIn.getBox().width - 20);
             }
         };
 

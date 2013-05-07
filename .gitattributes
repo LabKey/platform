@@ -1399,11 +1399,13 @@ api/src/org/labkey/api/view/WebThemeManager.java -text
 api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
 api/src/org/labkey/api/view/menu/FolderMenu.java -text
+api/src/org/labkey/api/view/menu/HeaderMenu.java -text
 api/src/org/labkey/api/view/menu/MenuView.java -text
 api/src/org/labkey/api/view/menu/NavTreeMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectAdminMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectsMenu.java -text
 api/src/org/labkey/api/view/menu/SiteAdminMenu.java -text
+api/src/org/labkey/api/view/menu/headerMenu.jsp -text
 api/src/org/labkey/api/view/menu/menuView.jsp -text
 api/src/org/labkey/api/view/springError.jsp -text
 api/src/org/labkey/api/view/tabbox.jsp -text
