@@ -39,6 +39,14 @@ public class ButtonBar extends DisplayElement
     private List<ButtonBarConfig> _configs = null;
     private boolean _renderedIncludes = false;
 
+    /**
+     * These button bars are unlikely to be useful for new code. They assume that a specific action name
+     * exists within the same controller. Instead, new code should generally use the TableInfo's update/insert/delete
+     * URLs to build up button bars.
+     *
+     * In the future, we could create a factory that creates button bars based on a TableInfo, and call it from
+     * various places that are building custom UI.
+     */
     public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
     public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
     public static ButtonBar BUTTON_BAR_INSERT = new ButtonBar();

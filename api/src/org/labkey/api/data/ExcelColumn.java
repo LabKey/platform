@@ -177,7 +177,12 @@ public class ExcelColumn extends RenderColumn
                 if (_style == null)
                 {
                     _style = _workbook.createCellStyle();
-                    short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
+                    String excelFormatString = getFormatString();
+                    // Excel has a different idea of how to represent scientific notation, so be sure that we
+                    // transform the Java format if needed.
+                    // https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17735
+                    excelFormatString = excelFormatString.replaceAll("[eE][^\\+]", "E+0");
+                    short formatIndex = _workbook.createDataFormat().getFormat(excelFormatString);
                     _style.setDataFormat(formatIndex);
                     _formatters.put(formatDescriptor, _style);
                 }
