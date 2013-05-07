@@ -1,6 +1,6 @@
 <view xmlns="http://labkey.org/data/xml/view" frame="portal">
     <permissions>
-        <permission name="insert" />
+        <permission name="read" />
     </permissions>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
