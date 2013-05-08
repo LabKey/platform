@@ -121,7 +121,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     static enum FIELD_NAME
     {
-        @Deprecated displayTitle,  // We no longer store this while indexing, but old documents may still have it.
         title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
         body,
 
@@ -465,7 +464,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             // TODO: We're implementing a ghetto analyzer here... we really should create a PerFieldAnalyzerWrapper
             // that uses Snowball for text fields and a whitespace, lowercase analyzer for fields that contain multiple
-            // terms that we don't want to stem. Custom properites could even specify an analyzer preference. This new
+            // terms that we don't want to stem. Custom properties could even specify an analyzer preference. This new
             // Analyzer should then be used at both index and search time.
 
             // Split the category string by whitespace, index each without stemming
@@ -1242,14 +1241,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 hit.url = hit.url + (-1 == hit.url.indexOf("?") ? "?" : "&") + docid;
             }
 
-            // Check for displayTitle to support old indexed documents TODO: Remove
-            hit.title = doc.get(FIELD_NAME.displayTitle.toString());
+            // Display title
+            hit.title = doc.get(FIELD_NAME.title.toString());
 
-            // No display title, try title
-            if (StringUtils.isBlank(hit.title))
-                hit.title = doc.get(FIELD_NAME.title.toString());
-
-            // No title at all... just use URL
+            // No title... just use URL
             if (StringUtils.isBlank(hit.title))
                 hit.title = hit.url;
 
