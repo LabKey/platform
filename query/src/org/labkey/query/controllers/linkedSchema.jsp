@@ -206,7 +206,7 @@
                     if (templateName) {
                         var record = field.store.getById(templateName);
                         if (record) {
-                            // Set the tables before setting the schema otherwise the previous tableCombo value may be used once the schemas then the schema's tables have been loaded.
+                            // Set the tables before setting the schema otherwise the previous tableCombo value may be used once the schemas's tables have been loaded.
                             tablesField.setDisabled(true);
                             tablesCombo.setDisabled(true);
                             tablesCombo.setValue(record.get('tables'));
@@ -292,9 +292,11 @@
             disabled: <%=def.getSourceSchemaName() == null && initialTemplate != null%>,
             //value: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
             initialValue: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
+            // Prevent the 'dataloaded' event from being fired when the template changes when creating a new linked schema.
+            initiallyLoaded: <%=bean.isInsert()%>,
             listeners: {
                 change: function (field, value) {
-                    console.log("source schema changed: " + value);
+//                    console.log("source schema changed: " + value);
                 }
 //                disable: function (field, options) {
 //                    sourceSchemaField.setDisabled(true);
@@ -377,6 +379,8 @@
             width: 395,
             //value: <%=text(new JSONArray(tables).toString())%>,
             initialValue: <%=text(new JSONArray(tables).toString())%>,
+            // Prevent the 'dataloaded' event from being fired when the template changes when creating a new linked schema.
+            initiallyLoaded: <%=bean.isInsert()%>,
             disabled: <%=def.getTables() == null && initialTemplate != null%>,
             multiSelect: true,
             allowBlank: true,
