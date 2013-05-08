@@ -24,9 +24,23 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAction;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -37,16 +51,25 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineSettings;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.DataIntegrationModule;
+import org.labkey.di.VariableMap;
+import org.labkey.di.data.TransformDataType;
+import org.labkey.di.data.TransformProperty;
 import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
@@ -66,6 +89,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -380,17 +404,6 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return job;
     }
 
-    // for now we are using the BaseQueryTransformDescriptor as a catch-all for every ETL transform task
-    PipelineJob.Task createTask(TestTaskFactory factory, TransformJob job, TransformJobContext context, int i)
-    {
-        SimpleQueryTransformStepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
-
-        if (null != meta)
-            return new TestTask(factory, job, meta, context);
-
-        return null;
-    }
-
     PipelineJob.Task createTask(TransformTaskFactory factory, TransformJob job, TransformJobContext context, int i)
     {
         if (i != 0)
@@ -398,8 +411,11 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
         SimpleQueryTransformStepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
 
-        if (null != meta)
+        if (meta.getTaskClass().equals(TransformTask.class))
             return new SimpleQueryTransformStep(factory, job, meta, context);
+        else
+        if (meta.getTaskClass().equals(TestTask.class))
+            return new TestTask(factory, job, meta);
 
         return null;
 
@@ -481,13 +497,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 PipelineJobService.get().addTaskFactory(new TransformTaskFactory(taskClass, taskName));
             }
             else
-            if (org.labkey.di.pipeline.TestTask.class.isAssignableFrom(taskClass))
             {
-                PipelineJobService.get().addTaskFactory(new TestTaskFactory(taskClass, taskName));
-            }
-            else
-            {
-                // we should have already checked this when parsing the ETL config file
+                //
+                // be sure to update if any new task factories are added
+                //
                 assert false;
                 continue;
             }
@@ -506,8 +519,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     private boolean isValidTaskClass(Class taskClass)
     {
-        if (org.labkey.di.pipeline.TransformTask.class.isAssignableFrom(taskClass) ||
-            org.labkey.di.pipeline.TestTask.class.isAssignableFrom(taskClass))
+        if (org.labkey.di.pipeline.TransformTask.class.isAssignableFrom(taskClass))
             return true;
 
         return false;
@@ -517,6 +529,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     {
         String BASE_PATH = "sampledata/dataintegration/etls/";
         String ONE_TASK = "one.xml";
+        String UNIT_TASKS = "unit.xml";
         String FOUR_TASKS = "four.xml";
         String NO_ID = "noid.xml";
         String DUP_ID = "duplicate.xml";
@@ -525,14 +538,21 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         String NO_CLASS = "noclass.xml";
         String BAD_SOURCE_OPT = "badsourceopt.xml";
         String BAD_TARGET_OPT = "badtargetopt.xml";
-
+        int TRY_QUANTA = 100; // ms
+        int NUM_TRIES = 100; // retry for a maximum of 10 seconds
 
         class EtlResource implements Resource
         {
             private File _f;
             public EtlResource(File f) { _f = f;}
             public Resolver getResolver() { return null; }
-            public Path getPath() { return new Path(_f.getPath());}
+            public Path getPath()
+            {
+                // this will break if we ever try to retry the job but
+                // we want the short path name to uniquely identify this
+                // pipeline id
+                return new Path(_f.getName());
+            }
             public String getName() { return null; }
             public boolean exists() { return _f.exists();}
             public boolean isCollection() { return false; }
@@ -542,7 +562,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             public Collection<? extends Resource> list() { return null; }
             public Resource parent() { return null; }
             public long getVersionStamp() { return 0; }
-            public long getLastModified() { return 0; }
+            public long getLastModified()
+            {
+                return _f.lastModified();
+            }
             public InputStream getInputStream() throws IOException
             {
                 return new FileInputStream(_f);
@@ -558,6 +581,11 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         @Test
         public void descriptorSyntax() throws XmlException, IOException
         {
+            //
+            // does a sanity check on ETL config file parsing and verifies that invalid ETL configuration options are
+            // correctly caught with the appropriate error messages
+            //
+
             BaseQueryTransformDescriptor d;
 
             d = checkValidSyntax(getFile(ONE_TASK));
@@ -578,6 +606,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         @Test
         public void registerTaskPipeline() throws XmlException, IOException, CloneNotSupportedException
         {
+            //
+            // verifies that the correct task pipeline is setup for ONE_TASK and FOUR_TASK ETL configurations
+            //
+
             BaseQueryTransformDescriptor d1 = new BaseQueryTransformDescriptor(new EtlResource(getFile(ONE_TASK)), "junit");
             TaskPipeline p1 = d1.getTaskPipeline();
             assert null != p1;
@@ -592,6 +624,280 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             assert null != p4;
             verifyTaskPipeline(p4, d4);
         }
+
+        @Test
+        public void runValidEtl() throws Exception
+        {
+            final User u = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            try
+            {
+                TransformJob job = runEtl(c, u, -1);
+                verifyEtl(job, true );
+            }
+            finally
+            {
+                cleanup(c,u);
+
+            }
+        }
+
+        @Test
+        public void runInvalidEtl() throws Exception
+        {
+            final User u = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            try
+            {
+                TransformJob job = runEtl(c, u, 1);
+                verifyEtl(job, false);
+            }
+            finally
+            {
+                cleanup(c,u);
+            }
+        }
+
+        private void cleanup(Container c, User u)
+        {
+            try
+            {
+                ContainerManager.deleteAll(c, u);
+            }
+            catch(UnauthorizedException ignore){}
+        }
+
+
+        private TransformJob runEtl(Container c, User u, int failStep) throws Exception
+        {
+            //
+            // runs an ETL job (junit.xml) with two test tasks.  Tests the end to end scenario of running a checker,
+            // executing a multi-step job, and logging the ETL as an experiment run
+            //
+            BaseQueryTransformDescriptor d = new BaseQueryTransformDescriptor(new EtlResource(getFile(UNIT_TASKS)), "junit");
+            TransformJobContext context = new TransformJobContext(d, c, u);
+            TransformJob job = (TransformJob) d.getPipelineJob(context);
+
+            VariableMap map = job.getVariableMap();
+            assert map.keySet().size() == 0;
+
+            // add a transient variable (non-persisted) to the variable map
+            // and ensure it doesn't show up in the protocol application properties
+            map.put(TestTask.Transient, "don't persist!");
+
+            if (failStep > 0)
+            {
+                // fail the step passed in; note that the index is 0 based
+                map.put(TestTask.FailStep, d._stepMetaDatas.get(failStep).getId());
+            }
+
+            PipelineService.get().queueJob(job);
+            waitForJobToFinish(job);
+
+            return job;
+        }
+
+        private void verifyEtl(TransformJob transformJob, boolean isSuccess) throws Exception
+        {
+            TransformRun transformRun = verifyTransformRun(transformJob, isSuccess);
+            if (isSuccess)
+                verifyTransformExp(transformRun, transformJob);
+        }
+
+        private TransformRun verifyTransformRun(TransformJob job, boolean isSuccess)
+        {
+            int runId = job.getTransformRunId();
+            BaseQueryTransformDescriptor d = job.getTransformDescriptor();
+            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), runId), null).getObject(TransformRun.class);
+            String status = run.getStatus();
+            Integer expId = run.getExpRunId();
+            Integer jobId = run.getJobId();
+
+            assert null != run.getStartTime();
+            assert null != run.getEndTime();
+            assert null != jobId;
+            assert StringUtils.equalsIgnoreCase(run.getTransformId(), d.getId());
+
+            if (isSuccess)
+            {
+                // number of records affected == number of steps * total number of record operations in each step
+                int numSteps = d._stepMetaDatas.size();
+                int totalRecordCount = numSteps * (TestTask.recordsDeleted + TestTask.recordsInserted + TestTask.recordsModified);
+
+                assert run.getRecordCount() == totalRecordCount;
+                assert StringUtils.equalsIgnoreCase(status, PipelineJob.COMPLETE_STATUS);
+                assert null != expId;
+            }
+            else
+            {
+                assert StringUtils.equalsIgnoreCase(status, PipelineJob.ERROR_STATUS);
+                assert null == expId;
+            }
+
+            return run;
+        }
+
+        // check that we logged the transform run experiment correctly
+        private void verifyTransformExp(TransformRun transformRun, TransformJob transformJob)
+        {
+            BaseQueryTransformDescriptor d = transformJob.getTransformDescriptor();
+            ExpRun expRun = ExperimentService.get().getExpRun(transformRun.getExpRunId());
+
+            //
+            // verify run standard properties
+            //
+            assert expRun.getJobId() == transformRun.getJobId();
+            assert expRun.getName().equalsIgnoreCase(TransformJob.ETL_PREFIX + d.getDescription());
+
+            //
+            // verify data inputs: test job has two source inputs
+            //
+            ExpData[] datas = expRun.getInputDatas(TransformTask.INPUT_ROLE, null);
+            verifyDatas(d, datas, 2, true );
+
+            //
+            // verify data outputs: test job has two target outputs
+            //
+            datas = expRun.getOutputDatas(ExperimentService.get().getDataType(TransformDataType.TRANSFORM_DATA_PREFIX));
+            verifyDatas(d, datas, 2, false);
+
+            //
+            //  verify protocol for this job
+            //
+            ExpProtocol protocol = expRun.getProtocol();
+            assert protocol.getName().equalsIgnoreCase(TransformJob.class.getName() + ":" + d.getId());
+            List<ExpProtocolAction> actions = protocol.getSteps();
+            // ignore input and output actions in count
+            assert (actions.size() - 2) == d._stepMetaDatas.size();
+
+            //
+            // verify protocol applications:  we have two steps that map to this
+            //
+            ExpProtocolApplication[] apps = expRun.getProtocolApplications();
+            assert (apps.length - 2) == d._stepMetaDatas.size();
+
+            for (ExpProtocolApplication app : apps)
+            {
+                verifyProtocolApplication(d, app, transformRun);
+            }
+       }
+
+
+        private void verifyProtocolApplication(BaseQueryTransformDescriptor d, ExpProtocolApplication app, TransformRun transformRun)
+        {
+            if (app.getName().equalsIgnoreCase("Run inputs") || app.getName().equalsIgnoreCase("Run outputs"))
+                return;
+
+            //
+            // verify inputs, outputs, standard props, custom properties
+            //
+            assert isValidStep(d, app.getName());
+
+            List<ExpData> datas = app.getInputDatas();
+            verifyDatas(d, datas.toArray(new ExpData[0]), 1, true);
+
+            datas = app.getOutputDatas();
+            verifyDatas(d, datas.toArray(new ExpData[0]), 1, false);
+
+            // verify our step start/end times are within the bounds of the entire run start/end times
+            assert(transformRun.getStartTime().getTime() <= app.getStartTime().getTime());
+            assert(transformRun.getEndTime().getTime() >= app.getEndTime().getTime());
+            // verify step recordcount is one step's worth of work
+            assert(app.getRecordCount() == TestTask.recordsDeleted + TestTask.recordsInserted + TestTask.recordsModified);
+            // verify we have object properties and they are found in the variable map
+            Map<String, ObjectProperty> mapProps = app.getObjectProperties();
+
+            // we should only have 3 custom properties for the test task
+            assert mapProps.size() == 3;
+            ObjectProperty prop = mapProps.get(TransformProperty.RecordsDeleted.getPropertyDescriptor().getPropertyURI());
+            assert TestTask.recordsDeleted == prop.getFloatValue();
+            prop = mapProps.get(TransformProperty.RecordsInserted.getPropertyDescriptor().getPropertyURI());
+            assert TestTask.recordsInserted == prop.getFloatValue();
+            prop = mapProps.get(TransformProperty.RecordsModified.getPropertyDescriptor().getPropertyURI());
+            assert TestTask.recordsModified == prop.getFloatValue();
+
+            // finally, verify that the VariableMap we build out of the protocol application properties is correct
+            verifyVariableMap(TransformManager.get().getVariableMapForTransformStep(transformRun.getExpRunId(), app.getName()), mapProps);
+       }
+
+        private void verifyVariableMap(VariableMap varMap, Map<String, ObjectProperty> propMap)
+        {
+            assert varMap.keySet().size() == propMap.keySet().size();
+            for (String key : propMap.keySet())
+            {
+                ObjectProperty p = propMap.get(key);
+                assert p.getFloatValue() == ((Integer)varMap.get(p.getName())).doubleValue();
+            }
+        }
+
+        private boolean isValidStep(BaseQueryTransformDescriptor d, String stepName)
+        {
+            for (SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
+            {
+                if (stepName.equalsIgnoreCase(meta.getId()))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void verifyDatas(BaseQueryTransformDescriptor d, ExpData[] datas, int expectedCount, boolean isInput)
+        {
+            assert datas.length == expectedCount;
+
+            for (ExpData data : datas)
+            {
+                verifyData(d, data.getName(), isInput);
+            }
+        }
+
+        // find the data name in the descriptor for this step
+        private void verifyData(BaseQueryTransformDescriptor d, String dataName, boolean isInput)
+        {
+            boolean found = false;
+            for(SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
+            {
+                String name;
+
+                if (isInput)
+                    name = meta.getSourceSchema() + "." + meta.getSourceQuery();
+                else
+                    name = meta.getTargetSchema() + "." + meta.getTargetQuery();
+
+                if (dataName.equalsIgnoreCase(name))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            assert found;
+        }
+
+        private void waitForJobToFinish(PipelineJob job) throws Exception
+        {
+            SimpleFilter f = new SimpleFilter();
+            TransformJob tj = (TransformJob) job;
+            TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
+
+            for (int i = 0; i < NUM_TRIES; i++)
+            {
+                Thread.sleep(TRY_QUANTA);
+
+                if (job.isDone())
+                {
+                    // wait for us to finish updating transformrun table before continuing
+                    Date endTime = new TableSelector(ti.getColumn("EndTime"), f, null).getObject(Date.class);
+                    if (null != endTime)
+                        break;
+                }
+            }
+
+            assert(job.isDone());
+        }
+
 
         private void verifyTaskPipeline(TaskPipeline p, BaseQueryTransformDescriptor d)
         {

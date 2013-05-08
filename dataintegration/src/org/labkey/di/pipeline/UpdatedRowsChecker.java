@@ -89,7 +89,19 @@ public class UpdatedRowsChecker implements Callable<Boolean>
         {
             // TODO : mapping from Step -> StepMeta should not be hard coded
             ContainerUser context = d.getJobContext(getContainer(), getUser());
-            SimpleQueryTransformStep step = new SimpleQueryTransformStep(null, null, stepMeta, (TransformJobContext)context);
+            TransformTask step = null;
+
+            if (TransformTask.class.equals(stepMeta.getTaskClass()))
+                step = new SimpleQueryTransformStep(null, null, stepMeta, (TransformJobContext)context);
+            else
+            if (TestTask.class.equals(stepMeta.getTaskClass()))
+                step = new TestTask(null, null, stepMeta);
+            else
+            {
+                assert false; // how in the heck did we get this far with an unknown class?
+                continue;
+            }
+
 
             if (step.hasWork())
                 return true;

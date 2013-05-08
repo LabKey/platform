@@ -826,7 +826,6 @@ dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
 dataintegration/src/org/labkey/di/pipeline/TestTask.java -text
-dataintegration/src/org/labkey/di/pipeline/TestTaskFactory.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJob.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text

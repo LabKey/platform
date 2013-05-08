@@ -15,40 +15,80 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.di.VariableMap;
+import org.labkey.di.data.TransformProperty;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * User: daxh
  * Date: 4/17/13
  */
-public class TestTask extends PipelineJob.Task<TestTaskFactory>
+public class TestTask extends TransformTask
 {
-    final SimpleQueryTransformStepMeta _meta;
-    final TransformJobContext _context;
-    final public static String ACTION_NAME = "Test Step";
+    public static final int recordsInserted = 3;
+    public static final int recordsModified = 2;
+    public static final int recordsDeleted = 1;
+    public static final long duration = 42; // in milliseconds
 
-    public TestTask(TestTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
+    //
+    // Tests can set this variable on the job variable map.  This task
+    // will throw an exception after running this task "FailAfter" times.
+    // Setting the variable to -1 will never fail
+    //
+    public static final String FailStep = "FailStep";
+    public static final String InjectedException = "Injected exception!";
+    public static final String Transient = "TransientProperty";
+
+
+    SimpleQueryTransformStepMeta _meta;
+
+    public TestTask(TransformTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta)
     {
         super(factory, job);
         _meta = meta;
-        _context = context;
     }
 
-    public RecordedActionSet run() throws PipelineJobException
+    public boolean hasWork()
     {
-        TransformJob job = (TransformJob) getJob();
-        TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
-        BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
-        TransformJobContext ctx = support.getTransformJobContext();
-        RecordedAction action = new RecordedAction(ACTION_NAME);
-        //
-        // do transform work here!
-        //
-        job.getLogger().info("Test task is running and doing great work!");
-        return new RecordedActionSet(action);
+        return true;
+    }
+
+    // test action that adds 3 inserted, 2 modified, and 1 deleted row(s)
+    public void doWork(RecordedAction action)  throws PipelineJobException
+    {
+        VariableMap map = getVariableMap();
+        String s = (String) map.get(FailStep);
+
+        if (null != s && StringUtils.equalsIgnoreCase(s, _factory.getId().getName()))
+        {
+            //throw new PipelineJobException("test injected failure!");
+            getJob().setActiveTaskStatus(PipelineJob.TaskStatus.error);
+            return;
+        }
+
+        action.addProperty(TransformProperty.RecordsInserted.getPropertyDescriptor(), recordsInserted);
+        getJob().getLogger().info("Test task fake inserted " + String.valueOf(recordsInserted) + " rows");
+        action.addProperty(TransformProperty.RecordsModified.getPropertyDescriptor(), recordsModified);
+        getJob().getLogger().info("Test task fake modified " + String.valueOf(recordsModified) + " rows");
+        action.addProperty(TransformProperty.RecordsDeleted.getPropertyDescriptor(), recordsDeleted);
+        getJob().getLogger().info("Test task fake deleted " + String.valueOf(recordsDeleted) + " rows");
+        try
+        {
+            Thread.sleep(duration);
+            // input is source table
+            // output is dest table
+            // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
+            action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
+            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+        }
+        catch (URISyntaxException ignore){}
+        catch (InterruptedException ignore) {}
     }
 }

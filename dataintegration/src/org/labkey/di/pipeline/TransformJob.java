@@ -49,8 +49,11 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
 {
     private final BaseQueryTransformDescriptor _etlDescriptor;
     private int _runId;
+    private Integer _expRunId;
+    private Integer _recordCount;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
+    public static final String ETL_PREFIX = "ETL Job: ";
 
 
     public TransformJob(TransformJobContext info, BaseQueryTransformDescriptor etlDescriptor)
@@ -71,19 +74,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         return _variableMap;
     }
 
-
-    public void logRunStart()
-    {
-        TransformRun run = getTransformRun();
-        if (run != null)
-        {
-            // mark the run as started
-            run.setStartTime(new Date());
-            update(run);
-        }
-    }
-
-    public void logRunFinish(String status, ExpRun expRun, int recordCount)
+    public void logRunFinish(String status, Integer expRunId, Integer recordCount)
     {
 
         TransformRun run = getTransformRun();
@@ -92,33 +83,32 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
             // Mark that the job has finished successfully
             run.setStatus(status);
             run.setEndTime(new Date());
-            run.setExpRunId(expRun.getRowId());
+            run.setExpRunId(expRunId);
             run.setRecordCount(recordCount);
             update(run);
         }
     }
 
-    // when we transition from a null task to a non-null task then
-    // use this as the indictoar that the job has started.
-    // we may need to revisit this if we support split jobs
-    public boolean setActiveTaskId(TaskId activeTaskId)
+    @Override
+    protected void done(Throwable throwable)
     {
-        if (activeTaskId != null && getActiveTaskId() == null)
-        {
-            logRunStart();
+        super.done(throwable);
 
-            // We mark the job as finished when the ExpGenerator task finishes.
-            // See clearActionSet() below
-        }
+        String status = PipelineJob.COMPLETE_STATUS;
 
-        return super.setActiveTaskId(activeTaskId);
+        if (this.isCancelled())
+            status = PipelineJob.CANCELLED_STATUS;
+
+        if (this.getErrors() > 0)
+            status = PipelineJob.ERROR_STATUS;
+
+        logRunFinish(status, _expRunId, _recordCount);
     }
 
     private void update(TransformRun run)
     {
         try
         {
-            run.setStartTime(new Date());
             Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getRowId());
         }
         catch (SQLException e)
@@ -185,7 +175,10 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
             recordCount += getRecordCountForAction(action);
         }
 
-        logRunFinish("Complete", run, recordCount);
+        if (null != run)
+            _expRunId = run.getRowId();
+
+        _recordCount = recordCount;
         super.clearActionSet(run);
     }
 
@@ -215,7 +208,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     @Override
     public String getDescription()
     {
-        return "ETL Job: " + _etlDescriptor.getDescription();
+        return ETL_PREFIX + _etlDescriptor.getDescription();
     }
 
     public void setRunId(int runId)

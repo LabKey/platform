@@ -66,8 +66,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         action.setStartTime(new Date());
         doWork(action);
         action.setEndTime(new Date());
-        action.setRecordCount(_txJob.getRecordCountForAction(action));
         addProperties(action);
+        action.setRecordCount(_txJob.getRecordCountForAction(action));
         _records.add(action);
         return _records;
     }
@@ -76,6 +76,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         for (String key : _variableMap.keySet())
         {
+            // Only add entries from the variable map if they were added
+            // with a property descriptor.  If the variable does not have
+            // a descriptor then we do not want to persist it
             PropertyDescriptor pd = _variableMap.getDescriptor(key);
             if (pd != null)
                 action.addProperty(pd, _variableMap.get(key));
