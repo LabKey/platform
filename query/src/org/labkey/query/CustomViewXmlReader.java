@@ -78,6 +78,7 @@ public class CustomViewXmlReader
     private ContainerFilter.Type _containerFilter;
 
     protected String _name;
+    private String _label;
 
 
     public CustomViewXmlReader() throws XmlValidationException
@@ -122,6 +123,11 @@ public class CustomViewXmlReader
     public ContainerFilter.Type getContainerFilter()
     {
         return _containerFilter;
+    }
+
+    public String getLabel()
+    {
+        return _label;
     }
 
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
@@ -258,6 +264,7 @@ public class CustomViewXmlReader
             reader._query = viewElement.getQuery();
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
             reader._customIconUrl = viewElement.getCustomIconUrl();
+            reader._label = viewElement.getLabel();
 
             //load the columns, filters, sorts, aggregates
             reader._colList = loadColumns(viewElement.getColumns());

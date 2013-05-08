@@ -152,4 +152,10 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         return QueryManager.get().getQueryDependents(user, null, null, getSchemaPath(), Collections.singleton(getName()));
     }
 
+    @Override
+    public String getLabel()
+    {
+        return _customViewDef.getLabel();
+    }
+
 }
