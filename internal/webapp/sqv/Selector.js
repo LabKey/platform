@@ -4,7 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * Created with IntelliJ IDEA.
  * User: Rylan
  * Date: 10/31/12
  * Time: 10:51 AM
