@@ -487,7 +487,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/jtds.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/tomcat/jtds.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -496,7 +496,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/mail.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/tomcat/mail.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -505,7 +505,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/postgresql.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/tomcat/postgresql.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
