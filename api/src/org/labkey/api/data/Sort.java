@@ -226,6 +226,16 @@ public class Sort
     }
 
     /**
+     * Insert an ascending sort column to the head of the sort list.
+     *
+     * @param fieldKey FieldKey of column to sort on.
+     */
+    public void insertSortColumn(FieldKey fieldKey)
+    {
+        insertSortColumn(fieldKey, SortDirection.ASC);
+    }
+
+    /**
      * Insert a sort column to the head of the sort list.
      *
      * @param fieldKey FieldKey of column to sort on. Use -fieldKey to indicate a descending sort.
