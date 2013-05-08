@@ -80,7 +80,7 @@ public class LookupColumn extends ColumnInfo
         assert lookupKey.getValueSql("test") != null;
         _lookupColumn = lookupColumn;
         setSqlTypeName(lookupColumn.getSqlTypeName());
-        setAlias(foreignKey.getAlias() + "$" + lookupColumn.getAlias());
+        setAlias(AliasManager.makeLegalName(foreignKey.getAlias() + "$" + lookupColumn.getAlias(),null));
     }
 
     public SQLFragment getValueSql(String tableAliasName)
