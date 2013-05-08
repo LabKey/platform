@@ -503,4 +503,17 @@ public class ClientDependency
 
         return ((ClientDependency)o).getUniqueKey().equals(getUniqueKey());
     }
+
+    /**
+     * @return The string representation of this ClientDependency, as would appear in an XML or other config file
+     */
+    public String getScriptString()
+    {
+        if (_filePath != null)
+            return _filePath.toString();
+        else if (_module != null)
+            return _module.getName() + "." + _primaryType.name();
+        else
+            return null;
+    }
 }
