@@ -52,7 +52,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
-import sun.plugin2.ipc.unix.DomainSocketNamedPipe;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

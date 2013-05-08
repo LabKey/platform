@@ -74,29 +74,26 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
 
     protected void purgeSchema(String schemaName, Container c, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
-        /*
-        // UNDONE: Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
-        // UNDONE: Unfortunately, it's way to slow to walk all module's schemas on container delete.
+        // Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
         DbSchema dbSchema = DbSchema.get(schemaName);
         if (dbSchema == null)
             return;
 
-        UserSchema schema = QueryService.get().createSimpleUserSchema(schemaName, null, user, c, dbSchema);
-        */
-        if (schema == null)
+        UserSchema userSchema = QueryService.get().createSimpleUserSchema(schemaName, null, user, c, dbSchema);
+        if (userSchema == null)
             return;
 
         Logger.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
 
         try
         {
-            List<TableInfo> sorted = schema.getSortedTables();
+            // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
+            List<TableInfo> sorted = dbSchema.getSortedTables();
             Collections.reverse(sorted);
-            for (TableInfo table : sorted)
+            for (TableInfo dbTable : sorted)
             {
                 ColumnInfo containerCol = null;
-                for (ColumnInfo column : table.getColumns())
+                for (ColumnInfo column : dbTable.getColumns())
                 {
                     if ("container".equalsIgnoreCase(column.getName()))
                     {
@@ -106,7 +103,9 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
                 }
 
                 if (containerCol != null)
-                    purgeTable(table, c, user);
+                {
+                    purgeTable(userSchema, dbTable, c, user);
+                }
             }
         }
         catch (SQLException e)
@@ -115,26 +114,27 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
         }
     }
 
-    protected void purgeTable(TableInfo table, Container c, User u)
+    protected void purgeTable(UserSchema userSchema, TableInfo dbTable, Container c, User u)
             throws SQLException
     {
-        if (table instanceof FilteredTable)
+        SimpleFilter filter = new SimpleFilter("Container", c);
+        if (dbTable.getTableType() == DatabaseTableType.TABLE)
         {
-            SimpleFilter filter = new SimpleFilter("Container", c);
-            TableInfo realTable = ((FilteredTable)table).getRealTable();
-            if (realTable.getTableType() == DatabaseTableType.TABLE)
-            {
-                Table.delete(realTable, filter);
-            }
+            Table.delete(dbTable, filter);
         }
 
-        Domain domain = table.getDomain();
-        if (domain != null)
+        // Get the UserSchema TableInfo for the DbSchema's SchemaTableInfo based upon the table's name.
+        TableInfo userTable = userSchema.getTable(dbTable.getName(), false);
+        if (userTable != null)
         {
-            SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
+            Domain domain = userTable.getDomain();
+            if (domain != null)
+            {
+                SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
 
-            Integer[] ids = new SqlSelector(table.getSchema(), objectIds).getArray(int.class);
-            OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
+                Integer[] ids = new SqlSelector(userTable.getSchema(), objectIds).getArray(Integer.class);
+                OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
+            }
         }
     }
 
