@@ -1234,8 +1234,20 @@ public class QueryView extends WebPartView<Object>
 
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        // default grid view stays at the top level
-        NavTree item = new NavTree("default", (String)null);
+        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
+
+        // default grid view stays at the top level. The default will have a getName == null, but a custom default views
+        // may have an alternate label defined in the .qview.xml file.
+        String defaultLabel = "default";
+        for (CustomView view : views)
+        {
+            if (view.getName() == null)
+            {
+                defaultLabel = view.getLabel();
+                break;
+            }
+        }
+        NavTree item = new NavTree(defaultLabel, (String)null);
         item.setScript(getChangeViewScript(""));
 
         item.setId(getBaseMenuId() + ":Views:default");
@@ -1268,7 +1280,6 @@ public class QueryView extends WebPartView<Object>
         menu.addMenuItem(item);
 
         // sort the grid view alphabetically, with private views over public ones
-        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
         Collections.sort(views, new Comparator<CustomView>() {
             public int compare(CustomView o1, CustomView o2)
             {
@@ -1285,14 +1296,16 @@ public class QueryView extends WebPartView<Object>
         {
             if (view.isHidden())
                 continue;
-            String label = view.getName();
-            if (label == null)
+            String name = view.getName();
+            // name == null is the default view, which was already added above.
+            if (name == null)
                 continue;
+            String label = view.getLabel();
 
             item = new NavTree(label, (String)null);
-            item.setScript(getChangeViewScript(label));
-            item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(label));
-            if (label.equals(currentView))
+            item.setScript(getChangeViewScript(name));
+            item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(name));
+            if (name.equals(currentView))
                 item.setStrong(true);
 
             StringBuilder description = new StringBuilder();
@@ -1522,25 +1535,6 @@ public class QueryView extends WebPartView<Object>
     protected String h(Object o)
     {
         return PageFlowUtil.filter(o);
-    }
-
-    protected void renderTitle(PrintWriter out)
-    {
-        if (getSettings().getAllowChooseView() && _buttonBarPosition != DataRegion.ButtonBarPosition.NONE)
-        {
-            StringBuffer sb = new StringBuffer();
-            sb.append("<br/><span><b>View :</b> ");
-
-            if (_customView != null)
-                sb.append(PageFlowUtil.filter(_customView.getName()));
-            else if (_report != null)
-                sb.append(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-            else
-                sb.append("default");
-            sb.append("</span>");
-
-            out.write(sb.toString());
-        }
     }
 
     /**
