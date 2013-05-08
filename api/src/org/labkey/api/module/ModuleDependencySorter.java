@@ -40,7 +40,7 @@ public class ModuleDependencySorter
 {
     public List<Module> sortModulesByDependencies(List<Module> modules, Collection<ModuleResourceLoader> loaders)
     {
-        List<Pair<Module, Set<String>>> dependencies = new ArrayList<Pair<Module, Set<String>>>();
+        List<Pair<Module, Set<String>>> dependencies = new ArrayList<>();
         Set<String> moduleNames = new CaseInsensitiveHashSet();
         for (Module module : modules)
         {
@@ -65,7 +65,7 @@ public class ModuleDependencySorter
 //  Uncomment this to generate an SVG graph of all module dependencies
 //        graphModuleDependencies(dependencies, "all");
 
-        List<Module> result = new ArrayList<Module>(modules.size());
+        List<Module> result = new ArrayList<>(modules.size());
         while (!dependencies.isEmpty())
         {
             Module module = findModuleWithoutDependencies(dependencies);
@@ -185,7 +185,7 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
+                List<Module> testModules = new ArrayList<>();
                 testModules.add(new MockModule("a", "b"));
                 testModules.add(new MockModule("b", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
@@ -200,7 +200,7 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
+                List<Module> testModules = new ArrayList<>();
                 testModules.add(new MockModule("a", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
                 sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
@@ -214,7 +214,7 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
+                List<Module> testModules = new ArrayList<>();
                 testModules.add(new MockModule("a", "b"));
                 testModules.add(new MockModule("b", "c"));
                 testModules.add(new MockModule("d", "e"));
@@ -229,7 +229,7 @@ public class ModuleDependencySorter
         @Test
         public void testGoodDependencies()
         {
-            List<Module> testModules = new ArrayList<Module>();
+            List<Module> testModules = new ArrayList<>();
             testModules.add(new MockModule("a", "b"));
             testModules.add(new MockModule("b", "c", "d"));
             testModules.add(new MockModule("c", "h"));
@@ -254,7 +254,7 @@ public class ModuleDependencySorter
         @Test
         public void testResourceLoaderDependencies()
         {
-            List<Module> testModules = new ArrayList<Module>();
+            List<Module> testModules = new ArrayList<>();
             testModules.add(new MockModule("a"));
             testModules.add(new MockModule("b"));
             testModules.add(new MockModule("c"));

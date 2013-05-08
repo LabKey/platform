@@ -49,9 +49,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final Logger _log = Logger.getLogger(RecompilingJspClassLoader.class);
     private static final String JSP_PATH = "/jspTempDir/classes";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");
-    private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<ResourceFinder, ClassLoader>();
+    private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
-    private static final Set<String> _compiledJsps = new HashSet<String>();    // Used during test mode
+    private static final Set<String> _compiledJsps = new HashSet<>();    // Used during test mode
 
     @Override
     public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
