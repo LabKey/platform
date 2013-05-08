@@ -1,4 +1,4 @@
-The following JAR files are distributed with LabKey and installed in the <tomcat>/common/lib directory.
+The following JAR files are distributed with LabKey and installed in the <tomcat>/lib directory.
 
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose

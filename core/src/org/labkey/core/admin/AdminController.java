@@ -715,7 +715,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            views.addView(new CreditsView("/core/META-INF/core/common_jars.txt", getCreditsFile(core, "common_jars.txt"), getCommonJars(), "Common JAR", "/external/lib/common directory", null, jarRegEx));
+            views.addView(new CreditsView("/core/META-INF/core/tomcat_jars.txt", getCreditsFile(core, "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
             views.addView(new CreditsView("/core/META-INF/core/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
 
             for (Module module : modules)
@@ -852,19 +852,19 @@ public class AdminController extends SpringActionController
     }
 
 
-    private Set<String> getCommonJars()
+    private Set<String> getTomcatJars()
     {
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File common = new File(AppProps.getInstance().getProjectRoot(), "external/lib/common");
+        File tomcat = new File(AppProps.getInstance().getProjectRoot(), "external/lib/tomcat");
 
-        if (!common.exists())
+        if (!tomcat.exists())
             return null;
 
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
-        addAllChildren(common, filenames);
+        addAllChildren(tomcat, filenames);
 
         return filenames;
     }

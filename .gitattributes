@@ -597,12 +597,12 @@ core/script-fragments/labkey/Security.footer.js -text
 core/script-fragments/labkey/Security.header.js -text
 core/script-fragments/labkey/Utils.footer.js -text
 core/script-fragments/labkey/Utils.header.js -text
-core/src/META-INF/core/common_jars.txt -text
 core/src/META-INF/core/executables.txt -text
 core/src/META-INF/core/installer.txt -text
 core/src/META-INF/core/jars.txt -text
 core/src/META-INF/core/scripts.txt -text
 core/src/META-INF/core/source.txt -text
+core/src/META-INF/core/tomcat_jars.txt -text
 core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text

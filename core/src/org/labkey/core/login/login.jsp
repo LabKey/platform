@@ -76,7 +76,7 @@
         String logoHtml = AuthenticationManager.getLoginPageLogoHtml(context.getActionURL());
         if (null != logoHtml)
         { %>
-        <tr><td colspan="2"><%=logoHtml%></td></tr>
+        <tr><td colspan="2"><%=text(logoHtml)%></td></tr>
         <tr><td colspan=2>&nbsp;</td></tr><%
         } %>
         <tr><td colspan=2>Type in your email address and password and click the Sign In button.</td></tr>
@@ -92,7 +92,7 @@
     { %>
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td></td><td><strong>Terms of Use</strong></td></tr>
-        <tr><td></td><td><%=bean.termsOfUseHTML%></td></tr>
+        <tr><td></td><td><%=text(bean.termsOfUseHTML)%></td></tr>
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
         <tr><td></td><td height="50px">
