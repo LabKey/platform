@@ -104,7 +104,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     ClassPath cp = new ClassPath();
                     cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/lib"));
-                    cp.addDirectory(getTomcatCommonLib());
+                    cp.addDirectory(getTomcatLib());
                     cp.addDirectory(getWebInfLib());
                     cp.addDirectory(getWebInfClasses());
 
@@ -224,35 +224,29 @@ public class RecompilingJspClassLoader extends JspClassLoader
     }
 
 
-    private String getTomcatCommonLib()
+    private File getTomcatLib()
     {
-        String COMMON_LIB = "common/lib";
+        String classPath = System.getProperty("java.class.path", ".");
 
-        String classPath = System.getProperty("java.class.path",".");
         for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
         {
             if (path.endsWith("/bin/bootstrap.jar"))
             {
-                path = path.substring(0,path.length()-"/bin/bootstrap.jar".length());
-                if (new File(path,COMMON_LIB).isDirectory())
-                    return new File(path,COMMON_LIB).getPath();
-                else if (new File(path,"lib").isDirectory())
-                    return new File(path,"lib").getPath();
+                path = path.substring(0, path.length() - "/bin/bootstrap.jar".length());
+                if (new File(path, "lib").isDirectory())
+                    return new File(path, "lib");
             }
         }
 
         String tomcat = System.getenv("CATALINA_HOME");
 
-        if (null == tomcat || !(new File(tomcat,COMMON_LIB).isDirectory()))
+        if (null == tomcat)
             tomcat = System.getenv("TOMCAT_HOME");
 
-        if (tomcat == null)
+        if (null == tomcat)
             _log.warn("Could not find CATALINA_HOME environment variable, unlikely to be successful recompiling JSPs");
 
-        if (new File(tomcat,COMMON_LIB).isDirectory())
-            return new File(tomcat,COMMON_LIB).getPath();
-        else //if (new File(tomcat,"lib").isDirectory())
-            return new File(tomcat,"lib").getPath();
+        return new File(tomcat, "lib");
     }
 
 
