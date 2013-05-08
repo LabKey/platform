@@ -241,6 +241,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
 
         this.editorXAxisPanel = Ext4.create('LABKEY.vis.XAxisOptionsPanel', {
+            multipleCharts: this.chartInfo.chartLayout != "single",
             axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
             zeroDateCol: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.zeroDateCol : {},
             interval: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : "Days",
@@ -258,6 +259,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
 
         this.editorYAxisLeftPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
+            inputPrefix: "left",
+            multipleCharts: this.chartInfo.chartLayout != "single",
             axis: this.chartInfo.axis[leftAxisIndex] ? this.chartInfo.axis[leftAxisIndex] : {side: "left"},
             defaultLabel: this.editorMeasurePanel.getDefaultLabel("left"),
             bubbleEvents: ['closeOptionsWindow'],
@@ -269,18 +272,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             }
         });
-        //Set radio/textfield names to aid with TimeChartTest.
+        //Set radio/textfield cls/IDs to aid with TimeChartTest.
         this.editorYAxisLeftPanel.labelResetButton.cls = "revertleftAxisLabel";
         this.editorYAxisLeftPanel.rangeManualRadio.id = "leftaxis_range_manual";
-        this.editorYAxisLeftPanel.rangeManualRadio.name = "leftaxis_range";
         this.editorYAxisLeftPanel.rangeAutomaticRadio.id = "leftaxis_range_automatic";
-        this.editorYAxisLeftPanel.rangeAutomaticRadio.name = "leftaxis_range";
+        this.editorYAxisLeftPanel.rangeAutomaticPerChartRadio.id = "leftaxis_range_automatic_per_chart";
         this.editorYAxisLeftPanel.scaleCombo.id = "leftaxis_scale";
-        this.editorYAxisLeftPanel.rangeMinNumberField.name = "leftaxis_rangemin";
-        this.editorYAxisLeftPanel.rangeMaxNumberField.name = "leftaxis_rangemax";
-        this.editorYAxisLeftPanel.labelTextField.name = "left-axis-label-textfield";
 
         this.editorYAxisRightPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
+            inputPrefix: "right",
+            multipleCharts: this.chartInfo.chartLayout != "single",
             axis: this.chartInfo.axis[rightAxisIndex] ? this.chartInfo.axis[rightAxisIndex] : {side: "right"},
             defaultLabel: this.editorMeasurePanel.getDefaultLabel("right"),
             bubbleEvents: ['closeOptionsWindow'],
@@ -292,16 +293,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             }
         });
-        //Set radio/textfield names to aid with TimeChartTest.
+        //Set radio/textfield cls/IDs to aid with TimeChartTest.
         this.editorYAxisRightPanel.labelResetButton.cls = "revertrightAxisLabel";
         this.editorYAxisRightPanel.rangeManualRadio.id = "rightaxis_range_manual";
-        this.editorYAxisRightPanel.rangeManualRadio.name = "rightaxis_range";
         this.editorYAxisRightPanel.rangeAutomaticRadio.id = "rightaxis_range_automatic";
-        this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
+        this.editorYAxisRightPanel.rangeAutomaticPerChartRadio.id = "rightaxis_range_automatic_per_chart";
         this.editorYAxisRightPanel.scaleCombo.id = "rightaxis_scale";
-        this.editorYAxisRightPanel.rangeMinNumberField.name = "rightaxis_rangemin";
-        this.editorYAxisRightPanel.rangeMaxNumberField.name = "rightaxis_rangemax";        
-        this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
 
         this.editorGroupingPanel = Ext4.create('LABKEY.vis.GroupingOptionsPanel', {
             chartLayout: this.chartInfo.chartLayout,
@@ -326,6 +323,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         this.filtersPanel.expand();
                     else
                         this.setOptionsForGroupLayout(groupLayoutSelected);
+                },
+                'numChartsSelectionChanged': function(multipleCharts) {
+                    this.editorYAxisLeftPanel.setRangeAutomaticOptions(multipleCharts);
+                    this.editorYAxisRightPanel.setRangeAutomaticOptions(multipleCharts);
+                    this.editorXAxisPanel.setRangeAutomaticOptions(multipleCharts);
                 }
             }
         });
@@ -1192,10 +1194,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 };
             }
 
-            if(!this.chartInfo.axis[xAxisIndex].range.min){
+            if (!this.chartInfo.axis[xAxisIndex].range.min && this.chartInfo.axis[xAxisIndex].range.type != 'automatic_per_chart')
+            {
                 this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
             }
-            if(!this.chartInfo.axis[xAxisIndex].range.max){
+            if (!this.chartInfo.axis[xAxisIndex].range.max && this.chartInfo.axis[xAxisIndex].range.type != 'automatic_per_chart')
+            {
                 this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
             }
 
@@ -1231,7 +1235,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     };
                 }
 
-                if(!this.chartInfo.axis[leftAxisIndex].range.min){
+                if(!this.chartInfo.axis[leftAxisIndex].range.min && this.chartInfo.axis[leftAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < leftMeasures.length; i++){
                         tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
                                 leftAccessorMin ? leftAccessorMin : leftAccessor);
@@ -1240,7 +1244,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.chartInfo.axis[leftAxisIndex].range.min = min;
                 }
 
-                if(!this.chartInfo.axis[leftAxisIndex].range.max){
+                if(!this.chartInfo.axis[leftAxisIndex].range.max && this.chartInfo.axis[leftAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < leftMeasures.length; i++){
                         tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
                                 leftAccessorMax ? leftAccessorMax : leftAccessor);
@@ -1269,7 +1273,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     };
                 }
 
-                if(!this.chartInfo.axis[rightAxisIndex].range.min){
+                if(!this.chartInfo.axis[rightAxisIndex].range.min && this.chartInfo.axis[rightAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < rightMeasures.length; i++){
                         tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
                                 rightAccessorMin ? rightAccessorMin : rightAccessor);
@@ -1277,7 +1281,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                     this.chartInfo.axis[rightAxisIndex].range.min = min;
                 }
-                if(!this.chartInfo.axis[rightAxisIndex].range.max){
+                if(!this.chartInfo.axis[rightAxisIndex].range.max && this.chartInfo.axis[rightAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < rightMeasures.length; i++){
                         tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
                                 rightAccessorMax ? rightAccessorMax : rightAccessor);

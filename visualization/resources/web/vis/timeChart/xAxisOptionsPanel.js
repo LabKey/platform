@@ -5,7 +5,7 @@
  */
 Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
-    extend : 'LABKEY.vis.GenericOptionsPanel',
+    extend : 'LABKEY.vis.BaseAxisOptionsPanel',
 
     constructor : function(config){
         //Set time to 'date' if not already set.
@@ -76,6 +76,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.zeroDateCombo.enable();
                         this.intervalCombo.enable();
                         this.rangeAutomaticRadio.enable();
+                        this.rangeAutomaticPerChartRadio.enable();
                         this.rangeManualRadio.enable();
                         if(this.rangeManualRadio.getValue()){
                             this.rangeMaxNumberField.enable();
@@ -106,6 +107,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.zeroDateCombo.disable();
                         this.intervalCombo.disable();
                         this.rangeAutomaticRadio.disable();
+                        this.rangeAutomaticPerChartRadio.disable();
                         this.rangeManualRadio.disable();
                         this.rangeMaxNumberField.disable();
                         this.rangeMaxNumberField.setValue('');
@@ -266,7 +268,8 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             labelAlign: 'top',
             inputValue: 'automatic',
             disabled: this.time == "visit",
-            boxLabel: 'Automatic',
+            boxLabel: this.multipleCharts ? 'Automatic across charts' : 'Automatic',
+            width: 200,
             checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
@@ -281,6 +284,28 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         });
         columnTwoItems.push({xtype: 'container', height: 10}); // vertical separator
         columnTwoItems.push(this.rangeAutomaticRadio);
+
+        this.rangeAutomaticPerChartRadio = Ext4.create('Ext.form.field.Radio', {
+            id: 'xaxis_range_automatic_per_chart', // for selenium testing
+            name: 'xaxis_range',
+            inputValue: 'automatic_per_chart',
+            disabled: this.time == "visit",
+            boxLabel: 'Automatic within chart',
+            checked: this.axis.range.type == "automatic_per_chart",
+            width: 200,
+            hidden: !this.multipleCharts,
+            listeners: {
+                scope: this,
+                'change': function(field, checked){
+                    // if checked, remove any manual axis min/max values
+                    if(checked) {
+                        this.setRangeMinMaxDisplay('automatic_per_chart');
+                        this.hasChanges = true;
+                    }
+                }
+            }
+        });
+        columnTwoItems.push(this.rangeAutomaticPerChartRadio);
 
         this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
             id: 'xaxis_range_manual', // for selenium testing
@@ -308,7 +333,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             selectOnFocus: true,
             enableKeyEvents: true,
             flex: 1,
-            disabled: this.axis.range.type == "automatic" || this.time == "visit",
+            disabled: this.axis.range.type != "manual" || this.time == "visit",
             value: this.axis.range.min,
             hideTrigger: true,
             mouseWheelEnabled: false,
@@ -327,7 +352,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             selectOnFocus: true,
             enableKeyEvents: true,
             flex: 1,
-            disabled: this.axis.range.type == "automatic" || this.time == "visit",
+            disabled: this.axis.range.type != "manual" || this.time == "visit",
             value: this.axis.range.max,
             hideTrigger: true,
             mouseWheelEnabled: false,
@@ -380,26 +405,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         }];
 
         this.callParent();
-    },
-
-    applyChangesButtonClicked: function() {
-        // check to make sure that, if set, the max value is >= to min
-        var maxVal = this.rangeMaxNumberField.getValue();
-        var minVal = this.rangeMinNumberField.getValue();
-        if (this.rangeManualRadio.checked && typeof minVal == "number" && typeof maxVal == "number" && maxVal < minVal)
-        {
-            Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
-                this.rangeMaxNumberField.focus();
-            }, this);
-            return;
-        }
-
-        this.fireEvent('closeOptionsWindow', false);
-        this.checkForChangesAndFireEvents();
-    },
-
-    cancelChangesButtonClicked: function(){
-        this.fireEvent('closeOptionsWindow', true);
     },
 
     newZeroDateStore: function() {
@@ -485,23 +490,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         this.zeroDateCombo.bindStore(newZStore);
     },
 
-    setRangeMinMaxDisplay: function(type){
-        if (type == 'manual')
-        {
-            this.rangeMinNumberField.enable();
-            this.rangeMaxNumberField.enable();
-            this.rangeMinNumberField.focus();
-        }
-        else if (type == 'automatic')
-        {
-            this.rangeMinNumberField.disable();
-            this.rangeMinNumberField.setValue("");
-
-            this.rangeMaxNumberField.disable();
-            this.rangeMaxNumberField.setValue("");
-        }
-    },
-
     resetLabel : function() {
         if (!this.userEditedLabel)
         {
@@ -557,7 +545,9 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         var axisValues = {
             name : "x-axis",
             range : {
-                type : this.rangeAutomaticRadio.checked ? this.rangeAutomaticRadio.inputValue : this.rangeManualRadio.inputValue
+                type : (this.rangeAutomaticRadio.checked ? this.rangeAutomaticRadio.inputValue
+                        : (this.rangeAutomaticPerChartRadio.checked ? this.rangeAutomaticPerChartRadio.inputValue
+                        : this.rangeManualRadio.inputValue))
             },
             label : this.labelTextField.getValue()
         };
@@ -594,16 +584,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 this.labelTextField.setValue(initValues.axis.label);
             if (initValues.axis.hasOwnProperty("range") && initValues.axis.range.hasOwnProperty("type"))
             {
-                if (initValues.axis.range.type == 'automatic')
-                    this.rangeAutomaticRadio.setValue(true);
-                else if (initValues.axis.range.type == 'manual')
-                {
-                    this.rangeManualRadio.setValue(true);
-                    if (initValues.axis.range.hasOwnProperty("min"))
-                        this.rangeMinNumberField.setValue(initValues.axis.range.min);
-                    if (initValues.axis.range.hasOwnProperty("max"))
-                        this.rangeMaxNumberField.setValue(initValues.axis.range.max);
-                }
+                this.restoreRangeRadioValues(initValues.axis.range);
             }
         }
 

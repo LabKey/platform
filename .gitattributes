@@ -3858,6 +3858,7 @@ visualization/resources/web/vis/genericOptionsPanel.js -text
 visualization/resources/web/vis/mainTitleOptionsPanel.js -text
 visualization/resources/web/vis/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/aestheticOptionsPanel.js -text
+visualization/resources/web/vis/timeChart/baseAxisOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/groupSelector.js -text
 visualization/resources/web/vis/timeChart/groupingOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/initialMeasurePanel.js -text

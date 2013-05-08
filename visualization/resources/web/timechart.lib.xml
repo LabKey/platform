@@ -8,6 +8,7 @@
 
         <script path="vis/timeChart/initialMeasurePanel.js"/>
         <script path="vis/timeChart/measureOptionsPanel.js"/>
+        <script path="vis/timeChart/baseAxisOptionsPanel.js"/>
         <script path="vis/timeChart/yAxisOptionsPanel.js"/>
         <script path="vis/timeChart/xAxisOptionsPanel.js"/>
         <script path="vis/timeChart/groupingOptionsPanel.js"/>

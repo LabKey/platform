@@ -20,6 +20,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         this.addEvents(
                 'chartDefinitionChanged',
                 'groupLayoutSelectionChanged',
+                'numChartsSelectionChanged',
                 'closeOptionsWindow'
         );
     },
@@ -28,6 +29,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         // track if the panel has changed in a way that would require a chart/data refresh
         this.hasChanges = false;
         this.subjectSelectionChange = false;
+        this.numChartSelectionChange = false;
         this.requireDataRefresh = false;
 
         var colOneItems = [];
@@ -328,6 +330,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
     chartPerRadioChecked: function(field, checked){
         this.chartLayout = field.inputValue;
+        this.numChartSelectionChange = true;
         this.hasChanges = true;
         this.requireDataRefresh = true;
     },
@@ -376,6 +379,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
         this.hasChanges = false;
         this.subjectSelectionChange = false;
+        this.numChartSelectionChange = false;
         this.requireDataRefresh = false;
     },
 
@@ -384,12 +388,15 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         {
             if (this.subjectSelectionChange)
                 this.fireEvent('groupLayoutSelectionChanged', this.getChartSubjectSelection() == "groups");
+            if (this.numChartSelectionChange)
+                this.fireEvent('numChartsSelectionChanged', this.chartLayout != "single");
             this.fireEvent('chartDefinitionChanged', this.requireDataRefresh);
         }
 
         // reset the changes flags
         this.requireDataRefresh = false;
         this.subjectSelectionChange = false;
+        this.numChartSelectionChange = false;
         this.hasChanges = false;
     }
 });
