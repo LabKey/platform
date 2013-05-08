@@ -549,7 +549,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public String getGlobalTempTablePrefix()
     {
-        return "##";
+        return "temp.";
     }
 
 

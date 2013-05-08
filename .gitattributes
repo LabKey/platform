@@ -429,6 +429,7 @@ core/resources/schemas/dbscripts/sqlserver/core-12.32-12.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.33-12.34.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.34-12.35.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.10-13.11.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-13.12-13.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
