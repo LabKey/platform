@@ -125,7 +125,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             }],
             listeners: {
                 scope: this,
-                'afterrender': function(listView){
+                'viewready': function(listView){
                     // select the last measure in the list
                     if (listView.getStore().getCount() > 0)
                         listView.getSelectionModel().select(listView.getStore().getCount()-1, false, false);
@@ -145,7 +145,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         this.measureDateCombo.setValue(this.measures[this.getSelectedMeasureIndex()].dateCol.name);
 
                         // set the value of the yAxisValue comboBox.
-                        this.yAxisSide.setValue(this.measures[this.getSelectedMeasureIndex()].measure.yAxis);
+                        this.setYAxisSide(this.getSelectedMeasureIndex());
                     }
                 }
             }

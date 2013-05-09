@@ -1073,6 +1073,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     {
         this.maskAndRemoveCharts();
 
+        // add a delay to make sure the loading mask shows before next charts start to render
+        new Ext4.util.DelayedTask(function(){
+            this._renderLineChart(force);
+        }, this).delay(100);
+    },
+
+    _renderLineChart: function(force)
+    {
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
 
