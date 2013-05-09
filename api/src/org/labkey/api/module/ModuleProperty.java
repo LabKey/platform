@@ -207,4 +207,21 @@ public class ModuleProperty
 
         return value;
     }
+
+    public String getValueContainerSpecific(Container c)
+    {
+        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
+
+        String value;
+        if(isCanSetPerContainer())
+            value = PropertyManager.getProperty(properyUser, c, getCategory(), getName());
+        else
+            value = PropertyManager.getProperty(properyUser, ContainerManager.getRoot(), getCategory(), getName());
+
+        if(value == null)
+            value = getDefaultValue();
+
+        return value;
+    }
+
 }

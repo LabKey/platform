@@ -65,6 +65,8 @@ public class DefaultFolderType implements FolderType
     protected boolean menubarEnabled = false;
     protected List<FolderTab> _folderTabs = null;
 
+    public static String DEFAULT_DASHBOARD = "DefaultDashboard";
+
     public DefaultFolderType(String name, String description)
     {
         this.name = name;
@@ -92,7 +94,7 @@ public class DefaultFolderType implements FolderType
     {
         if (null == _folderTabs)
         {
-            FolderTab tab = new FolderTab.PortalPage("DefaultDashboard", name + " Dashboard")
+            FolderTab tab = new FolderTab.PortalPage(DEFAULT_DASHBOARD, name + " Dashboard")
             {
                 @Override
                 public ActionURL getURL(Container container, User user)

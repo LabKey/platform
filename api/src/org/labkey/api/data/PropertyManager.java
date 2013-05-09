@@ -195,7 +195,7 @@ public class PropertyManager
         return map;
     }
 
-    private static String getProperty(User user, Container container, String category, String name)
+    public static String getProperty(User user, Container container, String category, String name)
     {
         Map<String, String> props = PropertyManager.getProperties(user, container, category);
         return props.get(name);
