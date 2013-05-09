@@ -1234,7 +1234,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
+        List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
 
         // default grid view stays at the top level. The default will have a getName == null, but a custom default views
         // may have an alternate label defined in the .qview.xml file.
@@ -1243,7 +1243,10 @@ public class QueryView extends WebPartView<Object>
         {
             if (view.getName() == null)
             {
-                defaultLabel = view.getLabel();
+                if (view.getLabel() != null)
+                {
+                    defaultLabel = view.getLabel();
+                }
                 break;
             }
         }
