@@ -712,25 +712,67 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 columns: 'dataSetId, name, label, category, description',
                 sort: 'label'
             }),
+            title : 'Datasets',
             viewConfig: {forceFit: true, scrollOffset: 0},
             loadMask:{msg:"Loading, please wait..."},
             enableFilters: true,
             editable: false,
             stripeRows: true,
             pageSize: 300000,
+            height : 180,
             cls: 'studyWizardDatasetList',
-            flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
         });
+
+        var hiddenGrid = new LABKEY.ext.EditorGridPanel({
+            store: new LABKEY.ext.Store({
+                schemaName: 'study',
+                queryName: 'Datasets',
+                filterArray: [ LABKEY.Filter.create('ShowByDefault', false) ],
+                columns: 'dataSetId, name, label, category, description',
+                sort: 'label',
+                listeners :   {
+                    load : function(store)
+                    {
+                        if(store.data.items.length == 0)
+                        {
+                            grid.setHeight(360);
+                            hiddenGrid.hide();
+                            items.doLayout();
+                        }
+                    }
+                }
+            }),
+            title : 'Hidden Datasets',
+            viewConfig: {forceFit: true, scrollOffset: 0},
+            loadMask:{msg:"Loading, please wait..."},
+            enableFilters: true,
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            height : 180,
+            cls: 'studyWizardHiddenDatasetList',
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
         items.push(grid);
+        items.push(hiddenGrid);
+
         grid.on('render', function(cmp){
             //This is to hide the background color of the bbar/tbar.
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        hiddenGrid.on('render', function(cmp){
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
+        hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
+        hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
 
         var syncTip = '' +
             '<div>' +
@@ -1507,6 +1549,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             for (var i=0; i < this.info.datasets.length; i++)
             {
                 var ds = this.info.datasets[i];
+                var id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
+            }
+        }
+        if(this.info.hiddenDatasets)
+        {
+            for (var i=0; i < this.info.hiddenDatasets.length; i++)
+            {
+                var ds = this.info.hiddenDatasets[i];
                 var id = Ext.id();
                 hiddenFields.push(id);
                 this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
