@@ -40,7 +40,6 @@ import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -66,14 +65,28 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
+public class OntologyListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
+    public static TableInfo getIndexTable(ListDefinition.KeyType keyType)
+    {
+        switch (keyType)
+        {
+            case Integer:
+            case AutoIncrementInteger:
+                return OntologyManager.getTinfoIndexInteger();
+            case Varchar:
+                return OntologyManager.getTinfoIndexVarchar();
+            default:
+                return null;
+        }
+    }
+
     private final ListDefinition _list;
     private final List<FieldKey> _defaultVisibleColumns;
 
-    public ListTable(ListQuerySchema schema, ListDefinition listDef)
+    public OntologyListTable(ListQuerySchema schema, ListDefinition listDef)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain(), ListSchema.getInstance().getSchema()));
+        super(getIndexTable(listDef.getKeyType()), schema);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -171,7 +184,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
     }
-    
+
 
     private ColumnInfo addColumn(String name, boolean hidden)
     {
@@ -244,7 +257,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return null; //new ListQueryUpdateService(this, getList());
+        return new ListQueryUpdateService(this, getList());
     }
 
     // UpdateableTableInfo

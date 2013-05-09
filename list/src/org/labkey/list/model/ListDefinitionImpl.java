@@ -86,6 +86,7 @@ import static org.labkey.api.util.GUID.makeGUID;
 public class ListDefinitionImpl implements ListDefinition
 {
     protected static final String NAMESPACE_PREFIX = "List";
+    public static final boolean ONTOLOGY_BASED_LISTS = true;
 
     static public ListDefinitionImpl of(ListDef def)
     {
@@ -561,265 +562,6 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
-/*
-    public int insertListItemsOld(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
-    {
-        Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
-
-        for (DomainProperty property : getDomain().getProperties())
-            if (property.isMvEnabled())
-                mvIndicatorColumnNames.add(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-
-        Map<String, DomainProperty> propertiesByName = getDomain().createImportMap(true);
-        Map<String, DomainProperty> foundProperties = new CaseInsensitiveHashMap<DomainProperty>();
-        ColumnDescriptor cdKey = null;
-        DomainProperty dpKey = null;
-
-        Object errorValue = new Object(){@Override public String toString(){return "~ERROR VALUE~";}};
-
-        // We know the types, so don't infer them.  Instead, read the header line and create a ColumnDescriptor array
-        // that tells the loader all the types.
-        String[][] firstLine = loader.getFirstNLines(1);
-
-        if (firstLine.length == 0)
-        {
-            errors.addRowError(new ValidationException("The header line cannot be blank"));
-            return 0;
-        }
-
-        ArrayList<ColumnDescriptor> columnList = new ArrayList<ColumnDescriptor>(firstLine.length);
-
-        for (String columnHeader : firstLine[0])
-        {
-            columnHeader = StringUtils.trimToEmpty(columnHeader);
-            ColumnDescriptor descriptor;
-
-            if (getKeyName().equalsIgnoreCase(columnHeader))
-            {
-                descriptor = new ColumnDescriptor(columnHeader, getKeyType().getPropertyType().getJavaType());
-            }
-            else
-            {
-                DomainProperty prop = propertiesByName.get(columnHeader);
-
-                if (null == prop)
-                    descriptor = new ColumnDescriptor(columnHeader, String.class); // We're going to ignore this column... just claim it's a string
-                else
-                    descriptor = new ColumnDescriptor(columnHeader, prop.getPropertyDescriptor().getPropertyType().getJavaType());
-            }
-
-            columnList.add(descriptor);
-        }
-
-        ColumnDescriptor[] columns = columnList.toArray((new ColumnDescriptor[columnList.size()]));
-        loader.setColumns(columns);
-
-        int colIdx = 0; //used to report the column number to the user for errors, 1-based
-        for (ColumnDescriptor cd : columns)
-        {
-            colIdx++;
-            String columnName = cd.name;
-            DomainProperty property = propertiesByName.get(columnName);
-            cd.errorValues = errorValue;
-
-            boolean isKeyField = getKeyName().equalsIgnoreCase(cd.name) || null != property && getKeyName().equalsIgnoreCase(property.getName());
-
-            if (property == null && !isKeyField)
-            {
-                errors.addRowError(new ValidationException(!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers (Column " + colIdx + ")"));
-                continue;
-            }
-
-            if (isKeyField)
-            {
-                if (cdKey != null)
-                {
-                    errors.addRowError(new ValidationException("The field '" + getKeyName() + "' appears more than once."));
-                }
-                else
-                {
-                    cdKey = cd;
-                    dpKey = property;
-                }
-            }
-            else
-            {
-                // Special handling for MV indicators -- they don't have real property descriptors.
-                if (mvIndicatorColumnNames.contains(columnName))
-                {
-                    cd.name = property.getPropertyURI();
-                    cd.clazz = String.class;
-                    cd.setMvIndicator(getContainer());
-                }
-                else
-                {
-                    cd.clazz = property.getPropertyDescriptor().getPropertyType().getJavaType();
-
-                    if (foundProperties.containsKey(columnName))
-                    {
-                        errors.addRowError(new ValidationException("The field '" + property.getName() + "' appears more than once."));
-                    }
-                    if (foundProperties.containsValue(property) && !property.isMvEnabled())
-                    {
-                        errors.addRowError(new ValidationException("The fields '" + property.getName() + "' and '" + property.getPropertyDescriptor().getNonBlankCaption() + "' refer to the same property."));
-                    }
-                    foundProperties.put(columnName, property);
-                    cd.name = property.getPropertyURI();
-                    if (property.isMvEnabled())
-                    {
-                        cd.setMvEnabled(getContainer());
-                    }
-                }
-            }
-        }
-
-        if (cdKey == null && getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
-        {
-            errors.addRowError(new ValidationException("There must be a field with the name '" + getKeyName() + "'"));
-        }
-
-        if (errors.hasErrors())
-            return 0;
-
-        List<Map<String, Object>> rows = loader.load();
-
-        if (null != progress)
-            progress.setTotalRows(rows.size());
-
-        Set<Object> keyValues = new HashSet<Object>();
-        Set<String> missingValues = new HashSet<String>();
-        Set<String> wrongTypes = new HashSet<String>();
-        Set<String> noUpload = new HashSet<String>();
-
-		DomainProperty[] domainProperties = getDomain().getProperties();
-
-        //this is the user-friendly row#, 1-based.
-        // we could potentially start on 2 which would match excel's row# (assuming we have a header), but i dont know if that is a safe assumption
-        int idx = 1;
-
-        for (Map<String, Object> row : rows)
-        {
-            row = new CaseInsensitiveHashMap<Object>(row);
-            for (DomainProperty domainProperty : domainProperties)
-            {
-                if (dpKey == domainProperty)
-                    continue;
-                Object o = row.get(domainProperty.getPropertyURI());
-                boolean valueMissing;
-                if (o == null)
-                {
-                    valueMissing = true;
-                }
-                else if (o instanceof MvFieldWrapper)
-                {
-                    MvFieldWrapper mvWrapper = (MvFieldWrapper)o;
-                    if (mvWrapper.isEmpty())
-                        valueMissing = true;
-                    else
-                    {
-                        valueMissing = false;
-                        if (!MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), getContainer()))
-                        {
-                            String columnName = domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX;
-                            wrongTypes.add(columnName);
-                            errors.addRowError(new ValidationException("Row " + idx + ": " + columnName + " must be a valid MV indicator."));
-                        }
-                    }
-                }
-                else
-                {
-                    valueMissing = o.toString().length() == 0;
-                }
-                
-                if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
-                {
-                    missingValues.add(domainProperty.getName());
-                    errors.addRowError(new ValidationException("Row " + idx + ": The field \"" + domainProperty.getName() + "\" is required."));
-                }
-                else if (domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && null == attachmentDir && !valueMissing && !noUpload.contains(domainProperty.getName()))
-                {
-                    noUpload.add(domainProperty.getName());
-                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + "."));
-                }
-                else if (!valueMissing && o == errorValue && !wrongTypes.contains(domainProperty.getName()))
-                {
-                    wrongTypes.add(domainProperty.getName());
-                    errors.addRowError(new ValidationException("Row " + idx + ": The field \"" + domainProperty.getName() + "\" must be of type " + domainProperty.getType().getLabel() + "."));
-                }
-            }
-
-            if (cdKey != null)
-            {
-                Object key = row.get(cdKey.name);
-                if (null == key)
-                {
-                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Blank values are not allowed in field " + cdKey.name));
-                    return 0;
-                }
-                else if (!getKeyType().isValidKey(key))
-                {
-                    // Ideally, we'd display the value we failed to convert and/or the row... but key.toString() is currently "~ERROR VALUE~".  See #10475.
-                    // TODO: Fix this
-                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel()));
-                    return 0;
-                }
-                else if (!keyValues.add(key))
-                {
-                    errors.addRowError(new ValidationException("Row " + idx + ": " + "The key field \"" + cdKey.name + "\" cannot have duplicate values.  The duplicate is: \"" + row.get(cdKey.name) + "\""));
-                    return 0;
-                }
-            }
-
-            idx++;
-        }
-
-        if (errors.hasErrors())
-            return 0;
-
-        Domain domain = getDomain();
-        Map<String,DomainProperty> properties = foundProperties;
-        try
-        {
-            ExperimentService.get().ensureTransaction();
-
-            // There's a disconnect here between the PropertyService api and OntologyManager...
-            ArrayList<DomainProperty> used = new ArrayList<DomainProperty>(properties.size());
-            for (DomainProperty dp : domain.getProperties())
-                if (properties.containsKey(dp.getPropertyURI()))
-                    used.add(dp);
-            ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey, attachmentDir, progress);
-
-            // our map of properties can have duplicates due to MV indicator columns (different columns, same URI)
-            Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>();
-            for (DomainProperty domainProperty : properties.values())
-            {
-                propSet.add(domainProperty.getPropertyDescriptor());
-            }
-
-            PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);
-            List<String> inserted = OntologyManager.insertTabDelimited(getContainer(), user, null, helper, pds, rows, true);
-            addAuditEvent(user, "Bulk inserted " + inserted.size() + " rows to list.");
-
-            ExperimentService.get().commitTransaction();
-
-            return inserted.size();
-        }
-        catch (ValidationException ve)
-        {
-            errors.addRowError(ve);
-        }
-        catch (SQLException se)
-        {
-            errors.addRowError(new ValidationException(se.getMessage()));
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
-        }
-        return 0;
-    }
-*/
-
     public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
         ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
@@ -1041,12 +783,21 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setLastIndexed(modified);
     }
 
-    /** NOTE consider using ListSchema.getTable(), unless you have a good reason */
+    /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
-        ListTable ret = new ListTable(new ListSchema(user, getContainer()), this);
-        ret.afterConstruct();
-        return ret;
+        if (ONTOLOGY_BASED_LISTS)
+        {
+            OntologyListTable ret = new OntologyListTable(new ListQuerySchema(user, getContainer()), this);
+            ret.afterConstruct();
+            return ret;
+        }
+        else
+        {
+            ListTable ret = new ListTable(new ListQuerySchema(ListQuerySchema.HDNAME, ListQuerySchema.HDDESCR, user, getContainer(), ListSchema.getInstance().getSchema()), this);
+            ret.afterConstruct();
+            return ret;
+        }
     }
 
     public ActionURL urlShowDefinition()

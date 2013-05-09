@@ -108,7 +108,7 @@ import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListQueryUpdateService;
-import org.labkey.list.model.ListSchema;
+import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListWriter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -450,7 +450,7 @@ public class ListController extends SpringActionController
                         catch (ConversionException cex)
                         {
                             ValidationException vex = new ValidationException(cex.getMessage(), column.getName());
-                            vex.setSchemaName(ListSchema.NAME);
+                            vex.setSchemaName(ListQuerySchema.NAME);
                             vex.setQueryName(list.getName());
                             vex.setRow(newValues);
                             vex.setRowNumber(0);
@@ -464,7 +464,7 @@ public class ListController extends SpringActionController
                 }
                 catch (ValidationException vex)
                 {
-                    batchErrors.addRowError(vex.fillIn(ListSchema.NAME, list.getName(), newValues, 0));
+                    batchErrors.addRowError(vex.fillIn(ListQuerySchema.NAME, list.getName(), newValues, 0));
                 }
                 
                 table.fireBatchTrigger(getContainer(), triggerType, false, batchErrors, null);

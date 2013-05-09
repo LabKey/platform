@@ -152,13 +152,13 @@ public class ListManager implements SearchService.DocumentProvider
             if (!old.getName().equals(ret.getName()))
             {
                 QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<String>(
-                    QueryService.get().getUserSchema(user, c, ListSchema.NAME).getQueryDefForTable(ret.getName()),
+                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(ret.getName()),
                     QueryChangeListener.QueryProperty.Name,
                     old.getName(),
                     ret.getName()
                 );
 
-                QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListSchema.NAME),
+                QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
 
@@ -689,8 +689,8 @@ public class ListManager implements SearchService.DocumentProvider
 
         for (TableInfo ti : new TableInfo[]{
                 getTinfoList(),
-                ListTable.getIndexTable(ListDefinition.KeyType.Integer),
-                ListTable.getIndexTable(ListDefinition.KeyType.Varchar)
+                OntologyListTable.getIndexTable(ListDefinition.KeyType.Integer),
+                OntologyListTable.getIndexTable(ListDefinition.KeyType.Varchar)
             })
         {
             executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");

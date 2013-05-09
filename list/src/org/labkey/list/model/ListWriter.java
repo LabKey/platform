@@ -35,7 +35,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -120,7 +119,7 @@ public class ListWriter
             // Insert standard comment explaining where the data lives, who exported it, and when
             XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
-            ListSchema schema = new ListSchema(user, c);
+            ListQuerySchema schema = new ListQuerySchema(user, c);
 
             for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
             {

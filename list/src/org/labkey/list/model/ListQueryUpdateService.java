@@ -26,7 +26,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
@@ -56,7 +55,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
 {
     ListDefinition _list = null;
 
-    public ListQueryUpdateService(ListTable queryTable, ListDefinition list)
+    public ListQueryUpdateService(OntologyListTable queryTable, ListDefinition list)
     {
         super(queryTable);
         _list = list;

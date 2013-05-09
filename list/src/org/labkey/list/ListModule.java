@@ -34,9 +34,11 @@ import org.labkey.list.model.FolderListImporter;
 import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListDef;
+import org.labkey.list.model.ListDefinitionImpl;
+import org.labkey.list.model.ListDomainKind;
 import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
-import org.labkey.list.model.ListSchema;
+import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListWebPart;
@@ -56,13 +58,13 @@ public class ListModule extends DefaultModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     // Note: ExperimentModule handles the list schema
     public boolean hasScripts()
     {
-        return false;
+        return true;
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -77,8 +79,11 @@ public class ListModule extends DefaultModule
     {
         addController("list", ListController.class);
         ListService.setInstance(new ListServiceImpl());
-        ListSchema.register();
-        PropertyService.get().registerDomainKind(new ListDomainType());
+        ListQuerySchema.register();
+        if (ListDefinitionImpl.ONTOLOGY_BASED_LISTS)
+            PropertyService.get().registerDomainKind(new ListDomainType());
+        else
+            PropertyService.get().registerDomainKind(new ListDomainKind());
     }
 
     public void doStartup(ModuleContext moduleContext)
@@ -128,4 +133,11 @@ public class ListModule extends DefaultModule
         }
         return null;
     }
+
+//    @NotNull
+//    @Override
+//    public Set<String> getSchemaNames()
+//    {
+//        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
+//    }
 }

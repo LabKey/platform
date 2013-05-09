@@ -22,7 +22,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
-import org.labkey.list.model.ListSchema;
+import org.labkey.list.model.ListQuerySchema;
 
 public class ListQueryForm extends QueryForm
 {
@@ -31,7 +31,7 @@ public class ListQueryForm extends QueryForm
 
     public ListQueryForm()
     {
-        super(ListSchema.NAME, null);
+        super(ListQuerySchema.NAME, null);
     }
 
     public ListQueryForm(int listId, ViewContext context)
