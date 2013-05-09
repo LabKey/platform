@@ -881,6 +881,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             SimpleFilter f = new SimpleFilter();
             TransformJob tj = (TransformJob) job;
             TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
+            f.addCondition(new FieldKey(null, "rowid"), tj.getTransformRunId(), CompareType.EQUAL);
 
             for (int i = 0; i < NUM_TRIES; i++)
             {
