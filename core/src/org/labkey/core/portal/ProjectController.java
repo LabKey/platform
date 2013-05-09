@@ -36,6 +36,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileUrls;
+import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -367,7 +368,7 @@ public class ProjectController extends SpringActionController
             // Figure out title
             Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
             FolderTab folderTab = null;
-            if (!"DefaultDashboard".equalsIgnoreCase(pageId))
+            if (!DefaultFolderType.DEFAULT_DASHBOARD.equalsIgnoreCase(pageId))
                 folderTab = Portal.getFolderTabFromId(getViewContext(), pageId);
             if (null != portalPage && null != portalPage.getCaption())
             {
