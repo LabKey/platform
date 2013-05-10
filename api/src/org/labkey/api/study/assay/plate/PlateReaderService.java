@@ -79,7 +79,7 @@ public class PlateReaderService
         if (readerList == null)
         {
             Container lookupContainer = c.getProject();
-            readerList = ListService.get().createList(lookupContainer, provider.getPlateReaderListName());
+            readerList = ListService.get().createList(lookupContainer, provider.getPlateReaderListName(), ListDefinition.KeyType.Varchar);
 
             DomainProperty nameProperty = addProperty(readerList.getDomain(), PLATE_READER_PROPERTY, PropertyType.STRING, null);
             nameProperty.setPropertyURI(readerList.getDomain().getTypeURI() + "#" + PLATE_READER_PROPERTY);
@@ -88,7 +88,6 @@ public class PlateReaderService
 
             try {
                 readerList.setKeyName(nameProperty.getName());
-                readerList.setKeyType(ListDefinition.KeyType.Varchar);
                 readerList.setTitleColumn(PLATE_READER_PROPERTY);
 
                 readerList.save(user);
