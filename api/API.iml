@@ -624,7 +624,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/mail.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/tomcat/mail.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
