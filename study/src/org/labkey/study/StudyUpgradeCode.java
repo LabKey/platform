@@ -199,19 +199,10 @@ public class StudyUpgradeCode implements UpgradeCode
             return;
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             renameDataSetParticipantSequenceKey(ContainerManager.getRoot());
-            scope.commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            ModuleUpgrader.getLogger().error("An error occurred renaming ParticipantSequenceKey on DataSets: ", e);
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 

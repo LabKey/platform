@@ -843,26 +843,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void ensureTransaction()
     {
-        try
-        {
-            getExpSchema().getScope().ensureTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        getExpSchema().getScope().ensureTransaction();
     }
 
     public void commitTransaction()
     {
-        try
-        {
-            getExpSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        getExpSchema().getScope().commitTransaction();
     }
 
     public void closeTransaction()

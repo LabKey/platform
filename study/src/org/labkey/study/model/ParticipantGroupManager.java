@@ -657,8 +657,8 @@ public class ParticipantGroupManager
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try {
-            scope.ensureTransaction();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             ParticipantCategoryImpl ret;
             List<Throwable> errors;
 
@@ -680,7 +680,7 @@ public class ParticipantGroupManager
                 case cohort:
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
-            scope.commitTransaction();
+            transaction.commit();
             DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
 
             //Reselect
@@ -698,21 +698,14 @@ public class ParticipantGroupManager
             }
             return ret;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
     }
 
     private void addGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToAdd) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try {
+        try
+        {
             scope.ensureTransaction();
 
             if (group.isNew())

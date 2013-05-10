@@ -111,6 +111,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,6 +127,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
     private static Logger _log = Logger.getLogger(DataSetDefinition.class);
+
+    private final ReentrantLock _lock = new ReentrantLock();
 
     private StudyImpl _study;
     private int _dataSetId;
@@ -475,8 +478,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     /** why do some datasets have a typeURI, but no domain? */
-    private synchronized Domain ensureDomain()
+    private Domain ensureDomain()
     {
+        assert _lock.isHeldByCurrentThread();
+
         if (null == getTypeURI())
             throw new IllegalStateException();
         Domain d = getDomain();
@@ -496,55 +501,62 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private synchronized TableInfo loadStorageTableInfo()
+    private TableInfo loadStorageTableInfo()
     {
         if (null == getTypeURI())
             return null;
 
-        Domain d = ensureDomain();
-
-        // create table may set storageTableName() so uncache _domain
-        if (null == d.getStorageTableName())
-            _domain = null;
-
-        TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema());
-
-        TableInfo template = getTemplateTableInfo();
-
-        for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
+        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            ColumnInfo c = ti.getColumn(pss.getName());
-            ColumnInfo t = template.getColumn(pss.getName());
-            // The column may be null if the dataset is being deleted in the background
-            if (null != t && c != null)
+            Domain d = ensureDomain();
+
+            // create table may set storageTableName() so uncache _domain
+            if (null == d.getStorageTableName())
+                _domain = null;
+
+            TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema());
+
+            TableInfo template = getTemplateTableInfo();
+
+            for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
             {
-                c.setExtraAttributesFrom(t);
+                ColumnInfo c = ti.getColumn(pss.getName());
+                ColumnInfo tCol = template.getColumn(pss.getName());
+                // The column may be null if the dataset is being deleted in the background
+                if (null != tCol && c != null)
+                {
+                    c.setExtraAttributesFrom(tCol);
 
-                // When copying a column, the hidden bit is not propagated, so we need to do it manually
-                if (t.isHidden())
-                    c.setHidden(true);
+                    // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                    if (tCol.isHidden())
+                        c.setHidden(true);
+                }
             }
+            t.commit();
+            return ti;
         }
-
-        return ti;
     }
 
 
     /**
      *  just a wrapper for StorageProvisioner.create()
      */
-    public synchronized void provisionTable()
+    public void provisionTable()
     {
-        _domain = null;
-        if (null == getTypeURI())
+        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            DataSetDefinition d = this.createMutable();
-            d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
-            d.save(null);
+            _domain = null;
+            if (null == getTypeURI())
+            {
+                DataSetDefinition d = this.createMutable();
+                d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
+                d.save(null);
+            }
+            ensureDomain();
+            loadStorageTableInfo();
+            StudyManager.getInstance().uncache(this);
+            t.commit();
         }
-        ensureDomain();
-        loadStorageTableInfo();
-        StudyManager.getInstance().uncache(this);
     }
 
 
@@ -1340,13 +1352,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     Domain _domain = null;
 
     @Transient
-    public synchronized Domain getDomain()
+    public Domain getDomain()
     {
-        if (null == getTypeURI())
-            return null;
-        if (null == _domain)
-            _domain = PropertyService.get().getDomain(getContainer(), getTypeURI());
-        return _domain;
+        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
+        {
+            if (null != getTypeURI() && null == _domain)
+                _domain = PropertyService.get().getDomain(getContainer(), getTypeURI());
+            t.commit();
+            return _domain;
+        }
     }
 
 

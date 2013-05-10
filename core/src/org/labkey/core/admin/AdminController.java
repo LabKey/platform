@@ -5684,16 +5684,11 @@ public class AdminController extends SpringActionController
             page.setIndex(newIndex);
 
             DbScope scope = Portal.getSchema().getScope();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
                 Portal.updatePortalPage(getContainer(), nextPage);
                 Portal.updatePortalPage(getContainer(), page);
-                scope.commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
+                transaction.commit();
             }
 
             return nextPage;
@@ -5719,9 +5714,9 @@ public class AdminController extends SpringActionController
                 Portal.updatePortalPage(getContainer(), page);
                 scope.commitTransaction();
             }
-            catch (SQLException x)
+            finally
             {
-                throw new RuntimeSQLException(x);
+                scope.closeConnection();
             }
 
             return prevPage;

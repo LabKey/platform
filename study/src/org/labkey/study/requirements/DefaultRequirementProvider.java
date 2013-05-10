@@ -172,24 +172,13 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     {
         R[] requirements = getRequirements(owner);
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             for (R requirement : requirements)
                 requirement.delete();
 
-            scope.commitTransaction();
+            transaction.commit();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
-
     }
 
     public R[] getRequirements(RequirementOwner owner)

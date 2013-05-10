@@ -384,9 +384,8 @@ public class ParticipantGroupController extends BaseStudyController
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
-
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
                 {
                     int rowId = NumberUtils.toInt(survey);
@@ -395,15 +394,7 @@ public class ParticipantGroupController extends BaseStudyController
                     if (category != null)
                         ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);
                 }
-                scope.commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
             return true;
         }
@@ -1101,10 +1092,6 @@ public class ParticipantGroupController extends BaseStudyController
                         ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
                 }
                 scope.commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
             }
             finally
             {

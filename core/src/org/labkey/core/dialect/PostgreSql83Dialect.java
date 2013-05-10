@@ -1315,9 +1315,10 @@ class PostgreSql83Dialect extends SqlDialect
     {
         try
         {
-            Connection connection = scope.ensureTransaction();
+            Connection connection = scope.ensureTransaction().getConnection();
             scope.getSqlDialect().configureToDisableJdbcCaching(connection);
             closure.execute();
+            scope.commitTransaction();
         }
         finally
         {

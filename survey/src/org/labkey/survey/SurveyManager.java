@@ -338,9 +338,8 @@ public class SurveyManager
     {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
-        try {
-            scope.ensureTransaction();
-
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             SurveySchema s = SurveySchema.getInstance();
             SqlExecutor executor = new SqlExecutor(s.getSchema());
 
@@ -353,15 +352,7 @@ public class SurveyManager
             deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyDesignId);
             executor.execute(deleteSurveyDesignsSql);
 
-            scope.commitTransaction();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 

@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -137,10 +137,8 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void addRuns(User user, ExpRun... newRuns)
     {
-        try
+        try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
         {
-            ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction();
-
             ExpRun[] existingRuns = getRuns();
             Set<Integer> existingRunIds = new HashSet<Integer>();
             for (ExpRun run : newRuns)
@@ -168,15 +166,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 }
             }
 
-            ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 
@@ -187,52 +177,39 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void delete(User user)
     {
-        try
+        if (!getContainer().hasPermission(user, DeletePermission.class))
         {
-            if (!getContainer().hasPermission(user, DeletePermission.class))
-            {
-                throw new IllegalStateException("Not permitted");
-            }
-
-            try
-            {
-                ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction();
-
-                // If we're a batch, delete all the runs too
-                if (_object.getBatchProtocolId() != null)
-                {
-                    for (ExpRunImpl expRun : getRuns())
-                    {
-                        expRun.delete(user);
-                    }
-                }
-
-                SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
-
-                SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
-                        + " WHERE ExperimentId IN ("
-                        + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                        + " WHERE E.RowId = " + getRowId()
-                        + " AND E.Container = ? )", getContainer());
-                executor.execute(sql);
-
-                OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
-
-                sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
-                        + " WHERE RowId = " + getRowId()
-                        + " AND Container = ?", getContainer());
-                executor.execute(sql);
-
-                ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
-            }
-            finally
-            {
-                ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
-            }
+            throw new IllegalStateException("Not permitted");
         }
-        catch (SQLException e)
+
+        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
         {
-            throw new RuntimeSQLException(e);
+            // If we're a batch, delete all the runs too
+            if (_object.getBatchProtocolId() != null)
+            {
+                for (ExpRunImpl expRun : getRuns())
+                {
+                    expRun.delete(user);
+                }
+            }
+
+            SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
+
+            SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
+                    + " WHERE ExperimentId IN ("
+                    + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                    + " WHERE E.RowId = " + getRowId()
+                    + " AND E.Container = ? )", getContainer());
+            executor.execute(sql);
+
+            OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
+
+            sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
+                    + " WHERE RowId = " + getRowId()
+                    + " AND Container = ?", getContainer());
+            executor.execute(sql);
+
+            t.commit();
         }
     }
 

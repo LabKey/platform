@@ -975,23 +975,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
-
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
                 {
                     int rowId = NumberUtils.toInt(survey);
                     SurveyManager.get().deleteSurvey(getContainer(), getUser(), rowId);
                 }
-                scope.commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             return true;
@@ -1032,10 +1023,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     SurveyManager.get().deleteSurveyDesign(getContainer(), getUser(), rowId, true);
                 }
                 scope.commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
             }
             finally
             {

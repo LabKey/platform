@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -433,10 +434,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         DbSchema schema = AuditSchema.getInstance().getSchema();
 
-        try
+        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
-            schema.getScope().ensureTransaction();
-
             event = addEvent(event);
             if (event != null)
             {
@@ -450,17 +449,9 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
                 addEventProperties(parentLsid, domainURI, dataMap);
             }
-            schema.getScope().commitTransaction();
+            transaction.commit();
 
             return event;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            schema.getScope().closeConnection();
         }
     }
 

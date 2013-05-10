@@ -260,16 +260,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                 list.setKeyPropertyName(newKey.getName());
         }
 
-        try
-        {
-            scope.ensureTransaction();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
-
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             List<String> errors = super.updateDomainDescriptor(orig, dd);
             if (errors != null && !errors.isEmpty())
@@ -289,15 +280,11 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                     throw new ListImportException("The name '" + def.getName() + "' is already in use.");
                 throw x;
             }
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (SQLException x)
         {
 
-        }
-        finally
-        {
-            scope.closeConnection();
         }
 
         // schedules a scan (doesn't touch db)
