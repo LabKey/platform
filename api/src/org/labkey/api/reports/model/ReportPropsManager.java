@@ -222,9 +222,9 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
                 {
                     domain.delete(user);
                 }
-                catch (Exception e)
+                catch (DomainNotFoundException ignored)
                 {
-                    _log.error(e);
+                    // OK, it's already gone
                 }
             }
         }

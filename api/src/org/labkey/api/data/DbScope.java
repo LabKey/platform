@@ -46,6 +46,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,19 +60,36 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
 
 /**
+ * Class that wraps a data source and is shared amongst that data source's DbSchemas.
+ *
+ * Allows "nested" transactions, implemented via a reference-counting style approach. Each (potentially nested)
+ * set of code should call ensureTransaction(). This will either start a new transaction, or join an existing one.
+ * Once the outermost caller calls commit(), the WHOLE transaction will be committed at once.
+ *
+ * The most common usage scenario looks something like:
+ *
+ * DbScope scope = dbSchemaInstance.getScope();
+ * try (DbScope.Transaction transaction = scope.ensureTransaction())
+ * {
+ *     // Do the real work
+ *     transaction.commit();
+ * }
+ *
+ * The DbScope.Transaction class implements AutoClosable, so it will be cleaned up automatically by JDK 7's try {}
+ * resource handling.
+ *
  * User: migra
  * Date: Nov 16, 2005
  * Time: 10:20:54 AM
  */
-
-// Class that wraps a data source and is shared amongst that data source's DbSchemas
 public class DbScope
 {
     private static final Logger _log = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
-    private static final Map<String, DbScope> _scopes = new LinkedHashMap<String, DbScope>();
+    private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static DbScope _labkeyScope = null;
 
     private final String _dsName;
@@ -84,9 +102,9 @@ public class DbScope
     private final String _driverVersion;
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
-    private final Map<Thread, Transaction> _transaction = new WeakHashMap<Thread, Transaction>();
+    private final Map<Thread, TransactionImpl> _transaction = new WeakHashMap<>();
 
-    private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<Thread, Thread>();
+    private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
 
     private SqlDialect _dialect;
 
@@ -219,43 +237,63 @@ public class DbScope
     }
 
 
-    public Connection ensureTransaction() throws SQLException
+    /**
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
+    public Transaction ensureTransaction(Lock... locks)
     {
-        return ensureTransaction(Connection.TRANSACTION_READ_COMMITTED);
+        return ensureTransaction(Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
 
-    public Connection ensureTransaction(int isolationLevel) throws SQLException
+    /**
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
+    public Transaction ensureTransaction(int isolationLevel, Lock... locks)
     {
         if (isTransactionActive())
         {
-            Transaction transaction = getCurrentTransaction();
+            TransactionImpl transaction = getCurrentTransactionImpl();
             assert null != transaction;
-            transaction._count++;
+            transaction.increment(locks);
             Connection conn = transaction.getConnection();
 //            if (conn.getTransactionIsolation() < isolationLevel)
 //                conn.setTransactionIsolation(isolationLevel);
-            return conn;
+            return transaction;
         }
         else
         {
-            return beginTransaction(isolationLevel);
+            return beginTransaction(isolationLevel, locks);
         }
     }
 
 
-    public Connection beginTransaction() throws SQLException
+    /**
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
+    public Transaction beginTransaction(Lock... locks)
     {
-        return beginTransaction(Connection.TRANSACTION_READ_COMMITTED);
+        return beginTransaction(Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
-
-    public Connection beginTransaction(int isolationLevel) throws SQLException
+    /**
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
+    public Transaction beginTransaction(int isolationLevel, Lock... locks)
     {
         if (isTransactionActive())
             throw new IllegalStateException("Existing transaction");
 
         Connection conn = null;
+        TransactionImpl result = null;
 
         // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
         try
@@ -267,46 +305,58 @@ public class DbScope
             //conn.setTransactionIsolation(isolationLevel);
             conn.setAutoCommit(false);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             if (null != conn)
             {
                 synchronized (_transaction)
                 {
-                    _transaction.put(getEffectiveThread(), new Transaction(conn));
+                    result = new TransactionImpl(conn, locks);
+                    _transaction.put(getEffectiveThread(), result);
                 }
             }
         }
 
-        return conn;
+        return result;
     }
 
 
-    public void commitTransaction() throws SQLException
+    public void commitTransaction()
     {
-        Transaction t = getCurrentTransaction();
+        TransactionImpl t = getCurrentTransactionImpl();
         if (t == null)
         {
             throw new IllegalStateException("No transaction is associated with this thread");
         }
         if (t._aborted)
         {
-            throw new SQLException("Transaction has already been rolled back");
+            throw new IllegalStateException("Transaction has already been rolled back");
         }
 
         t._closesToIgnore++;
-        if (t.decrementCount())
+        if (t.decrement())
         {
             Connection conn = t.getConnection();
-            conn.commit();
-            conn.setAutoCommit(true);
-//            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-            conn.close();
-            synchronized (_transaction)
+            try
             {
-                _transaction.remove(getEffectiveThread());
+                conn.commit();
+                conn.setAutoCommit(true);
+    //            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                conn.close();
+                synchronized (_transaction)
+                {
+                    _transaction.remove(getEffectiveThread());
+                }
+                t.runCommitTasks();
             }
-            t.runCommitTasks();
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 
@@ -333,12 +383,16 @@ public class DbScope
 
     public @Nullable Transaction getCurrentTransaction()
     {
+        return getCurrentTransactionImpl();
+    }
+
+    /* package */ @Nullable TransactionImpl getCurrentTransactionImpl()
+    {
         synchronized (_transaction)
         {
             return _transaction.get(getEffectiveThread());
         }
     }
-
 
     public Connection getConnection() throws SQLException
     {
@@ -543,12 +597,12 @@ public class DbScope
 
     public void closeConnection()
     {
-        Transaction t = getCurrentTransaction();
+        TransactionImpl t = getCurrentTransactionImpl();
         if (null != t)
         {
             if (t._closesToIgnore == 0)
             {
-                if (!t.decrementCount())
+                if (!t.decrement())
                 {
                     t._aborted = true;
                 }
@@ -629,7 +683,7 @@ public class DbScope
             else
                 rs = dbmd.getSchemas();
 
-            Collection<String> schemaNames = new LinkedList<String>();
+            Collection<String> schemaNames = new LinkedList<>();
 
             while (rs.next())
                 schemaNames.add(rs.getString(1).trim());
@@ -710,7 +764,7 @@ public class DbScope
                 labkeyDsName = "cpasDataSource";
 
             // Put labkey data source first, followed by all others in alphabetical order
-            Set<String> dsNames = new LinkedHashSet<String>();
+            Set<String> dsNames = new LinkedHashSet<>();
             dsNames.add(labkeyDsName);
 
             for (String dsName : dataSources.keySet())
@@ -914,7 +968,7 @@ public class DbScope
     {
         synchronized (_scopes)
         {
-            return new ArrayList<DbScope>(_scopes.values());
+            return new ArrayList<>(_scopes.values());
         }
     }
 
@@ -924,7 +978,7 @@ public class DbScope
         {
             for (DbScope scope : _scopes.values())
             {
-                Transaction t = scope.getCurrentTransaction();
+                TransactionImpl t = scope.getCurrentTransactionImpl();
                 if (t != null)
                 {
                     try
@@ -980,7 +1034,7 @@ public class DbScope
 
     static ConnectionMap newConnectionMap()
     {
-        final _WeakestLinkMap<Connection, Integer> m = new _WeakestLinkMap<Connection,Integer>();
+        final _WeakestLinkMap<Connection, Integer> m = new _WeakestLinkMap<>();
 
         return new ConnectionMap() {
             public synchronized Integer get(Connection c)
@@ -1000,8 +1054,8 @@ public class DbScope
     private static class _WeakestLinkMap<K, V>
     {
         int _max = 1000;
-        final ReferenceQueue<K> _q = new ReferenceQueue<K>();
 
+        final ReferenceQueue<K> _q = new ReferenceQueue<>();
         LinkedHashMap<_IdentityWrapper, V> _map = new LinkedHashMap<_IdentityWrapper, V>()
         {
             protected boolean removeEldestEntry(Map.Entry<_IdentityWrapper, V> eldest)
@@ -1063,9 +1117,9 @@ public class DbScope
 
     public static void test()
     {
-        _WeakestLinkMap<String,Integer> m = new _WeakestLinkMap<String,Integer>(10);
+        _WeakestLinkMap<String,Integer> m = new _WeakestLinkMap<>(10);
         //noinspection MismatchedQueryAndUpdateOfCollection
-        Set<String> save = new HashSet<String>();
+        Set<String> save = new HashSet<>();
         
         for (int i = 0 ; i < 100000; i++)
         {
@@ -1077,21 +1131,30 @@ public class DbScope
         }
     }
 
+    public interface Transaction extends AutoCloseable
+    {
+        public void addCommitTask(Runnable runnable);
+        public Connection getConnection();
+        public void close();
+        public void commit();
+    }
+
     // Represents a single database transaction.  Holds onto the Connection, the temporary caches to use during that
     // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
-    static class Transaction
+    protected class TransactionImpl implements Transaction
     {
         private final Connection _conn;
-        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<DatabaseCache<?>, StringKeyCache<?>>(20);
+        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
         // A set so that we can coalesce identical tasks and avoid duplicating the effort
-        private final Set<Runnable> _commitTasks = new LinkedHashSet<Runnable>();
-        private int _count = 1;
+        private final Set<Runnable> _commitTasks = new LinkedHashSet<>();
+        private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
 
-        Transaction(Connection conn)
+        TransactionImpl(Connection conn, Lock... extraLocks)
         {
             _conn = conn;
+            increment(extraLocks);
         }
 
         <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
@@ -1104,7 +1167,7 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        void addCommitTask(Runnable task)
+        public void addCommitTask(Runnable task)
         {
             boolean added = _commitTasks.add(task);
 
@@ -1112,7 +1175,7 @@ public class DbScope
                 _log.debug("Skipping duplicate runnable: " + task.toString());
         }
 
-        private Connection getConnection()
+        public Connection getConnection()
         {
             return _conn;
         }
@@ -1121,6 +1184,18 @@ public class DbScope
         {
             _commitTasks.clear();
             closeCaches();
+        }
+
+        @Override
+        public void close()
+        {
+            DbScope.this.closeConnection();
+        }
+
+        @Override
+        public void commit()
+        {
+            DbScope.this.commitTransaction();
         }
 
         private void runCommitTasks()
@@ -1141,16 +1216,21 @@ public class DbScope
                 cache.close();
         }
 
-        /** @return whether we've reach zero and should therefore commit if that's the request, or false if we should defer to a future call*/
-        public boolean decrementCount()
+        /** @return whether we've reached zero and should therefore commit if that's the request, or false if we should defer to a future call*/
+        public boolean decrement()
         {
-            _count--;
-            if (_count < 0)
+            if (_locks.isEmpty())
             {
-                throw new IllegalStateException("Transaction count should not be negative but is " + _count);
+                throw new IllegalStateException("No transactions remain, can't decrement!");
+            }
+            List<Lock> locks= _locks.remove(_locks.size() - 1);
+            for (Lock lock : locks)
+            {
+                // Release all the locks
+                lock.unlock();
             }
 
-            return _count == 0;
+            return _locks.isEmpty();
         }
 
         private void closeConnection()
@@ -1170,6 +1250,15 @@ public class DbScope
 
             closeCaches();
             clearCommitTasks();
+        }
+
+        public void increment(Lock... extraLocks)
+        {
+            for (Lock extraLock : extraLocks)
+            {
+                extraLock.lock();
+            }
+            _locks.add(Arrays.asList(extraLocks));
         }
     }
 
@@ -1242,12 +1331,12 @@ public class DbScope
         @Test
         public void test() throws SQLException
         {
-            List<TableInfo> tablesToTest = new LinkedList<TableInfo>();
+            List<TableInfo> tablesToTest = new LinkedList<>();
 
             for (DbScope scope : DbScope.getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
-                Collection<String> schemaNames = new LinkedList<String>();
+                Collection<String> schemaNames = new LinkedList<>();
 
                 for (String schemaName : scope.getSchemaNames())
                     if (!dialect.isSystemSchema(schemaName))
@@ -1258,7 +1347,7 @@ public class DbScope
 
                 DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
                 Collection<String> tableNames = schema.getTableNames();
-                List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+                List<TableInfo> tables = new ArrayList<>(tableNames.size());
 
                 for (String name : tableNames)
                 {

@@ -230,10 +230,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             boolean saveBatchProps = forceSaveBatchProps;
-            scope.ensureTransaction();
 
             // Save the batch first
             if (batch == null)
@@ -312,7 +311,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 });
             }
 
-            scope.commitTransaction();
+            transaction.commit();
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
@@ -329,14 +328,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
 
             return batch;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

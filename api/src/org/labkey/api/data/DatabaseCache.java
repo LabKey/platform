@@ -74,7 +74,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
     private StringKeyCache<ValueType> getCache()
     {
-        DbScope.Transaction t = _scope.getCurrentTransaction();
+        DbScope.TransactionImpl t = _scope.getCurrentTransactionImpl();
 
         if (null != t)
         {
@@ -82,7 +82,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
             if (null == transactionCache)
             {
-                transactionCache = new StringKeyCacheWrapper<ValueType>(new TransactionCache<String, ValueType>(_sharedCache, createTemporaryCache(_sharedCache)));
+                transactionCache = new StringKeyCacheWrapper<>(new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache)));
                 t.addCache(this, transactionCache);
             }
 
@@ -313,7 +313,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         private static class MyScope extends DbScope
         {
             private Boolean overrideTransactionActive = null;
-            private Transaction overrideTransaction = null;
+            private TransactionImpl overrideTransaction = null;
             
             private MyScope()
             {
@@ -353,14 +353,14 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            public @Nullable Transaction getCurrentTransaction()
+            public @Nullable TransactionImpl getCurrentTransactionImpl()
             {
                 if (null != overrideTransactionActive)
                 {
                     return overrideTransaction;
                 }
 
-                return super.getCurrentTransaction();
+                return super.getCurrentTransactionImpl();
             }
 
             private void setOverrideTransactionActive(@Nullable Boolean override)
@@ -373,7 +373,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 }
                 else
                 {
-                    overrideTransaction = new Transaction(null);
+                    overrideTransaction = new TransactionImpl(null);
                 }
             }
         }

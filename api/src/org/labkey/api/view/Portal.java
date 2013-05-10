@@ -27,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -401,21 +402,15 @@ public class Portal
 
     public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
     {
-        try
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            getSchema().getScope().ensureTransaction();
-            ArrayList<PortalPage> existing = new ArrayList<PortalPage>(getPages(c).values());
+            ArrayList<PortalPage> existing = new ArrayList<>(getPages(c).values());
             for (FolderTab tab : tabs)
                 ensurePage(c, tab, existing, resetIndexes);
-            getSchema().getScope().commitTransaction();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            transaction.commit();
         }
         finally
         {
-            getSchema().getScope().closeConnection();
             WebPartCache.remove(c);
         }
     }

@@ -190,24 +190,21 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropTable);
 
-        Connection con = null;
-        try
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            con = scope.getConnection();
+            Connection con = transaction.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
                 log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
+            transaction.commit();
         }
         catch (SQLException e)
         {
             log.warn(String.format("Failed to drop table in schema %s for domain %s - %s",
                     schemaName, domain.getName(), e.getMessage()), e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
         }
     }
 

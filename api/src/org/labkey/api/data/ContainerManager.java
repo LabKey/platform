@@ -334,25 +334,15 @@ public class ContainerManager
             if (errorStrings.isEmpty() && !containersBecomingTabs.isEmpty())
             {
                 // Make containers tab container; Folder tab will find them by name
-                try
+                try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction())
                 {
-                    CORE.getSchema().getScope().ensureTransaction();
-
                     synchronized (DATABASE_QUERY_LOCK)
                     {
                         for (Container container : containersBecomingTabs)
                             updateType(container, Container.TYPE.tab.toString(), user);
 
-                        CORE.getSchema().getScope().commitTransaction();
+                        transaction.commit();
                     }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-                finally
-                {
-                    CORE.getSchema().getScope().closeConnection();
                 }
             }
         }

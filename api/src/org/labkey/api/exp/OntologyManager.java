@@ -795,9 +795,9 @@ public class OntologyManager
             return;
         }
 
-        try
+        try (DbScope.Transaction t = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
+
 
             // until we set a domain on objects themselves, we need to create a list of objects to
             // delete based on existing entries in ObjectProperties before we delete the objectProperties
@@ -874,15 +874,7 @@ public class OntologyManager
             }
             // whew!
             clearCaches();
-            getExpSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
+            t.commit();
         }
     }
 
@@ -1755,10 +1747,6 @@ public class OntologyManager
             domainPropertiesCache.clear();
             dbScope.commitTransaction();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             dbScope.closeConnection();
@@ -2040,10 +2028,6 @@ public class OntologyManager
 
             getExpSchema().getScope().commitTransaction();
 		}
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
 		{
             getExpSchema().getScope().closeConnection();

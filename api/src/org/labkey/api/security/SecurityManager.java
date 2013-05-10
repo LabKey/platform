@@ -745,10 +745,8 @@ public class SecurityManager
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             if (createLogin && !status.isLdapEmail())
             {
                 String verification = SecurityManager.createLogin(email);
@@ -832,19 +830,11 @@ public class SecurityManager
             if (null == newUser)
                 throw new UserManagementException(email, "Couldn't create user.");
 
-            scope.commitTransaction();
+            transaction.commit();
 
             status.setUser(newUser);
 
             return status;
-        }
-        catch (SQLException e)
-        {
-            throw new UserManagementException(email, "Unable to create user.", e);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
