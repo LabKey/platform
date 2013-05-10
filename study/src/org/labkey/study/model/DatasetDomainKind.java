@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -60,23 +61,23 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
-    protected final static PropertyStorageSpec DATE_PROPERTY = new PropertyStorageSpec(DATE, Types.TIMESTAMP);
+    protected final static PropertyStorageSpec DATE_PROPERTY = new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP);
 
     static
     {
         PropertyStorageSpec[] props =
         {
-            new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR, 32),
-            new PropertyStorageSpec(LSID, Types.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKey),
-            new PropertyStorageSpec(SEQUENCENUM, Types.NUMERIC),
-            new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
-            new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
-            new PropertyStorageSpec(QCSTATE, Types.INTEGER),
-            new PropertyStorageSpec(PARTICIPANTSEQUENCENUM, Types.VARCHAR, 200),
-            new PropertyStorageSpec("created", Types.TIMESTAMP),
-            new PropertyStorageSpec("modified", Types.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", Types.INTEGER),
-            new PropertyStorageSpec("modifiedBy", Types.INTEGER)
+            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
+            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKey),
+            new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
+            new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(_KEY, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(QCSTATE, JdbcType.INTEGER),
+            new PropertyStorageSpec(PARTICIPANTSEQUENCENUM, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
+            new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
+            new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
+            new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER)
         };
 
         BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));

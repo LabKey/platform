@@ -1,8 +1,7 @@
 package org.labkey.list.model;
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-
-import java.sql.Types;
 
 /**
  * User: Nick
@@ -23,6 +22,6 @@ public class VarcharListDomainKind extends ListDomainKind
     @Override
     PropertyStorageSpec getKeyProperty(String keyColumnName)
     {
-        return new PropertyStorageSpec(keyColumnName, Types.VARCHAR);
+        return new PropertyStorageSpec(keyColumnName, JdbcType.VARCHAR);
     }
 }

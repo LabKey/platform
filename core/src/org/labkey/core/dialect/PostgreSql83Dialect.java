@@ -1045,9 +1045,9 @@ class PostgreSql83Dialect extends SqlDialect
         List<String> colSpec = new ArrayList<>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlType(prop));
-        if (prop.getSqlTypeInt() == Types.VARCHAR)
+        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
             colSpec.add("(" + prop.getSize() + ")");
-        else if (prop.getSqlTypeInt() == Types.NUMERIC)
+        else if (prop.getJdbcType().sqlType == Types.NUMERIC)
             colSpec.add("(15,4)");
         if (prop.isPrimaryKey())
             colSpec.add("NOT NULL");
@@ -1065,18 +1065,29 @@ class PostgreSql83Dialect extends SqlDialect
     {
         if (prop.isAutoIncrement())
         {
-            if (prop.getSqlTypeInt() == Types.INTEGER)
+            if (prop.getJdbcType().sqlType == Types.INTEGER)
             {
                 return "SERIAL";
             }
             else
             {
-                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getSqlTypeInt() + " (" + sqlTypeNameFromSqlType(prop.getSqlTypeInt()) + ")");
+                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+            }
+        }
+        else if (prop.isEntityId())
+        {
+            if (prop.getJdbcType().sqlType == Types.VARCHAR)
+            {
+                return SqlDialect.GUID_TYPE;
+            }
+            else
+            {
+                throw new IllegalArgumentException("EntityId is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
             }
         }
         else
         {
-            return sqlTypeNameFromSqlType(prop.getSqlTypeInt());
+            return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
         }
     }
 

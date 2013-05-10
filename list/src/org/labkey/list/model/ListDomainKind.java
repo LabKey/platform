@@ -3,6 +3,7 @@ package org.labkey.list.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
@@ -11,13 +12,11 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
-import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,14 +37,17 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     static
     {
+        PropertyStorageSpec entityId = new PropertyStorageSpec("entityId", JdbcType.VARCHAR);
+        entityId.setEntityId(true);
+
         PropertyStorageSpec[] props =
         {
-            new PropertyStorageSpec("created", Types.TIMESTAMP),
-            new PropertyStorageSpec("modified", Types.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", Types.INTEGER),
-            new PropertyStorageSpec("modifiedBy", Types.INTEGER),
-            new PropertyStorageSpec("entityId", Types.VARCHAR),
-            new PropertyStorageSpec("lastIndexed", Types.TIMESTAMP)
+            new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
+            new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
+            new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
+            new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
+            entityId,
+            new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP)
         };
 
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
