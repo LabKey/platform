@@ -99,7 +99,7 @@ public class TableChange
     {
         if (type != ChangeType.DropColumns)
             throw new IllegalStateException();
-        PropertyStorageSpec p = new PropertyStorageSpec(name, Types.VARCHAR);
+        PropertyStorageSpec p = new PropertyStorageSpec(name, JdbcType.VARCHAR);
         p.setExactName(true);
         columns.add(p);
     }

@@ -32,17 +32,18 @@ import org.labkey.api.exp.PropertyDescriptor;
 public class PropertyStorageSpec
 {
     String name;
-    int sqlTypeInt;
+    JdbcType jdbcType;
     boolean primaryKey = false;
     boolean nullable = true;
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
+    boolean entityId = false;
     Integer size = 4000;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
     {
         setName(propertyDescriptor.getName());
-        setSqlTypeInt(propertyDescriptor.getSqlTypeInt());
+        setJdbcType(propertyDescriptor.getJdbcType());
         setNullable(propertyDescriptor.isNullable());
         setAutoIncrement(propertyDescriptor.isAutoIncrement());
         setMvEnabled(propertyDescriptor.isMvEnabled());
@@ -51,23 +52,23 @@ public class PropertyStorageSpec
     /**
      * bare mininum storage specification
      */
-    public PropertyStorageSpec(String name, int sqlTypeInt)
+    public PropertyStorageSpec(String name, JdbcType jdbcType)
     {
         this.name = name;
-        this.sqlTypeInt = sqlTypeInt;
+        this.jdbcType = jdbcType;
     }
 
-    public PropertyStorageSpec(String name, int sqlTypeInt, int size)
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size)
     {
-        this.sqlTypeInt = sqlTypeInt;
+        this.jdbcType = jdbcType;
         this.name = name;
         this.size = size;
     }
 
-    public PropertyStorageSpec(String name, int sqlTypeInt, int size, Special specialness)
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness)
     {
         this.name = name;
-        this.sqlTypeInt = sqlTypeInt;
+        this.jdbcType = jdbcType;
         this.primaryKey = specialness == Special.PrimaryKey;
         this.size = size;
     }
@@ -82,22 +83,14 @@ public class PropertyStorageSpec
         this.name = name;
     }
 
-    /**
-     *
-     * @return a java.sql.Types.x
-     */
-    public int getSqlTypeInt()
+    public JdbcType getJdbcType()
     {
-        return sqlTypeInt;
+        return jdbcType;
     }
 
-    /**
-     *
-     * @param sqlTypeInt - a java.sql.Types.x
-     */
-    public void setSqlTypeInt(int sqlTypeInt)
+    public void setJdbcType(JdbcType jdbcType)
     {
-        this.sqlTypeInt = sqlTypeInt;
+        this.jdbcType = jdbcType;
     }
 
     public boolean isPrimaryKey()
@@ -134,11 +127,28 @@ public class PropertyStorageSpec
 
     /**
      * defaults false if not set
+     * Assumes that the JdbcType is JdbcType.INTEGER. Enforced in dialect.
      */
     public void setAutoIncrement(boolean autoIncrement)
     {
         this.autoIncrement = autoIncrement;
     }
+
+
+    public boolean isEntityId()
+    {
+        return entityId;
+    }
+
+    /**
+     * defaults false if not set
+     * Assumes that the JdbcType is JdbcType.VARCHAR. Enforced in dialect.
+     */
+    public void setEntityId(boolean entityId)
+    {
+        this.entityId = entityId;
+    }
+
 
     /**
      *

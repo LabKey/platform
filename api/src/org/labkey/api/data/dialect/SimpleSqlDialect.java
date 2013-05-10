@@ -145,11 +145,11 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
         if (prop.isAutoIncrement())
         {
-            throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getSqlTypeInt() + " (" + sqlTypeNameFromSqlType(prop.getSqlTypeInt()) + ")");
+            throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
         }
         else
         {
-            return sqlTypeNameFromSqlType(prop.getSqlTypeInt());
+            return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
         }
     }
 

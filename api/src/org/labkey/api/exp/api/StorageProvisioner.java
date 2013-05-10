@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -161,7 +162,7 @@ public class StorageProvisioner
 
     private static PropertyStorageSpec makeMvColumn(DomainProperty property)
     {
-        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, Types.VARCHAR, 50);
+        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR, 50);
     }
 
 

@@ -18,13 +18,12 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.sql.Types;
 import java.util.Set;
 
 /**
@@ -48,10 +47,10 @@ public class AssayResultDomainKind extends AssayDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        PropertyStorageSpec dataIdSpec = new PropertyStorageSpec(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, Types.INTEGER);
+        PropertyStorageSpec dataIdSpec = new PropertyStorageSpec(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, JdbcType.INTEGER);
         dataIdSpec.setNullable(false);
 
-        PropertyStorageSpec rowIdSpec = new PropertyStorageSpec(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, Types.INTEGER);
+        PropertyStorageSpec rowIdSpec = new PropertyStorageSpec(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, JdbcType.INTEGER);
         rowIdSpec.setAutoIncrement(true);
         rowIdSpec.setPrimaryKey(true);
 

@@ -152,7 +152,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
         // Add a column to temporarily hold the objectId
         TableChange addColumnChange = new TableChange(toTable.getSchema().getName(), toTable.getName(), TableChange.ChangeType.AddColumns);
-        PropertyStorageSpec objectIdSpec = new PropertyStorageSpec(OBJECT_ID_UPGRADE, Types.INTEGER);
+        PropertyStorageSpec objectIdSpec = new PropertyStorageSpec(OBJECT_ID_UPGRADE, JdbcType.INTEGER);
         addColumnChange.addColumn(objectIdSpec);
         for (String sql : toTable.getSqlDialect().getChangeStatements(addColumnChange))
         {
