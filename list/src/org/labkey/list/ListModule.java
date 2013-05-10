@@ -32,14 +32,14 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.list.model.FolderListImporter;
 import org.labkey.list.model.FolderListWriter;
+import org.labkey.list.model.IntegerListDomainKind;
 import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListDef;
-import org.labkey.list.model.ListDefinitionImpl;
-import org.labkey.list.model.ListDomainKind;
 import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListServiceImpl;
+import org.labkey.list.model.VarcharListDomainKind;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
@@ -80,10 +80,9 @@ public class ListModule extends DefaultModule
         addController("list", ListController.class);
         ListService.setInstance(new ListServiceImpl());
         ListQuerySchema.register();
-        if (ListDefinitionImpl.ONTOLOGY_BASED_LISTS)
-            PropertyService.get().registerDomainKind(new ListDomainType());
-        else
-            PropertyService.get().registerDomainKind(new ListDomainKind());
+        PropertyService.get().registerDomainKind(new ListDomainType());
+        PropertyService.get().registerDomainKind(new IntegerListDomainKind());
+        PropertyService.get().registerDomainKind(new VarcharListDomainKind());
     }
 
     public void doStartup(ModuleContext moduleContext)
@@ -133,7 +132,7 @@ public class ListModule extends DefaultModule
         }
         return null;
     }
-
+//
 //    @NotNull
 //    @Override
 //    public Set<String> getSchemaNames()

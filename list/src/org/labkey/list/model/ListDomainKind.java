@@ -17,6 +17,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -24,12 +27,28 @@ import java.util.Set;
  * Date: 5/8/13
  * Time: 4:12 PM
  */
-public class ListDomainKind extends AbstractDomainKind
+public abstract class ListDomainKind extends AbstractDomainKind
 {
-    @Override
-    public String getKindName()
+    private String KEY_FIELD = "Key";
+
+    /*
+     * the columns common to all lists
+     */
+    private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+
+    static
     {
-        return ListDefinitionImpl.NAMESPACE_PREFIX;
+        PropertyStorageSpec[] props =
+        {
+            new PropertyStorageSpec("created", Types.TIMESTAMP),
+            new PropertyStorageSpec("modified", Types.TIMESTAMP),
+            new PropertyStorageSpec("createdBy", Types.INTEGER),
+            new PropertyStorageSpec("modifiedBy", Types.INTEGER),
+            new PropertyStorageSpec("entityId", Types.VARCHAR),
+            new PropertyStorageSpec("lastIndexed", Types.TIMESTAMP)
+        };
+
+        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
     }
 
     @Override
@@ -64,21 +83,28 @@ public class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Priority getPriority(String domainURI)
     {
-        return PageFlowUtil.set("ObjectId", "EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed");
+        Lsid lsid = new Lsid(domainURI);
+        return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
-    @Override
-    public Priority getPriority(String object)
-    {
-        return Priority.MEDIUM; // TODO: Figure out what this does
-    }
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        return super.getBaseProperties();
+        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
+        specs.add(getKeyProperty(KEY_FIELD));
+        specs.addAll(super.getBaseProperties());
+        return specs;
+    }
+
+    abstract PropertyStorageSpec getKeyProperty(String keyColumnName);
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        return PageFlowUtil.set(KEY_FIELD, "EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed"); // ObjectId?
     }
 
     @Override
@@ -93,9 +119,30 @@ public class ListDomainKind extends AbstractDomainKind
         return ListSchema.getInstance().getSchema().getScope();
     }
 
-    public static Lsid generateDomainURI(String name, Container c, String entityId)
+    public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)
     {
-        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
+        String type;
+        if (ListDefinitionImpl.ontologyBased())
+        {
+            type = ListDefinitionImpl.NAMESPACE_PREFIX;
+        }
+        else
+        {
+            switch (keyType)
+            {
+                case Integer:
+                case AutoIncrementInteger:
+                    type = IntegerListDomainKind.NAMESPACE_PREFIX;
+                    break;
+                case Varchar:
+                    type = VarcharListDomainKind.NAMESPACE_PREFIX;
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+
+        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + type + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
         //bug 13131.  uniqueify the lsid for situations where a preexisting list was renamed
         int i = 1;
         String uniqueURI = typeURI;
@@ -105,15 +152,4 @@ public class ListDomainKind extends AbstractDomainKind
         }
         return new Lsid(uniqueURI);
     }
-
-    public static Lsid generateDomainURI(String name, Container container)
-    {
-        return generateDomainURI(name, container, "");
-    }
-
-    public String generateDomainURI(String schemaName, String name, Container container, User user)
-    {
-        return generateDomainURI(name, container).toString();
-    }
-
 }

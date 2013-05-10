@@ -63,6 +63,12 @@ public class ListQuerySchema extends UserSchema
 //        });
     }
 
+//    @Override
+//    public DbSchema getDbSchema()
+//    {
+//        return ListSchema.getInstance().getSchema();
+//    }
+
     public ListQuerySchema(User user, Container container)
     {
         this(NAME, DESCR, user, container);

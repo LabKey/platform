@@ -257,7 +257,7 @@ public class OntologyListTable extends FilteredTable<ListQuerySchema> implements
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new ListQueryUpdateService(this, getList());
+        return new OntologyListQueryUpdateService(this, getList());
     }
 
     // UpdateableTableInfo

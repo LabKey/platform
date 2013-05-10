@@ -188,9 +188,8 @@ public class ListImporter
 
         KeyType pkType = getKeyType(listXml, keyName);
 
-        ListDefinition list = ListService.get().createList(c, listName);
+        ListDefinition list = ListService.get().createList(c, listName, pkType);
         list.setKeyName(keyName);
-        list.setKeyType(pkType);
         list.setDescription(listXml.getDescription());
 
         if (listXml.isSetTitleColumn())

@@ -90,7 +90,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
         try
         {
-            ListDefinition definition = ListService.get().createList(getContainer(), list.getName());
+            ListDefinition definition = ListService.get().createList(getContainer(), list.getName(), KeyType.valueOf(list.getKeyPropertyType()));
             update(definition, list);
             definition.save(getUser());
             return getList(definition.getListId());

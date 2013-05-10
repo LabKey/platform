@@ -1201,8 +1201,7 @@ public class Query
             ListService.Interface s = ListService.get();
             QueryUpdateService qus;
 
-            ListDefinition R = s.createList(c, "R");
-            R.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
@@ -1213,8 +1212,7 @@ public class Query
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
-            ListDefinition S = s.createList(qtest, "S");
-            S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition S = s.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);

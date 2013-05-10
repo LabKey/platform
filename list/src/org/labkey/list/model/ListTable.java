@@ -22,10 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -37,13 +34,9 @@ import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -55,7 +48,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
 
 import java.sql.Connection;
@@ -73,80 +65,96 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
     public ListTable(ListQuerySchema schema, ListDefinition listDef)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain(), ListSchema.getInstance().getSchema()));
+        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()));
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        addCondition(getRealTable().getColumn("ListId"), listDef.getRowId());
         List<ColumnInfo> defaultColumnsCandidates = new LinkedList<>();
 
-        // All columns visible by default, except for auto-increment integer
-        ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
-        colKey.setKeyField(true);
-        colKey.setInputType("text");
-        colKey.setInputLength(-1);
-        colKey.setWidth("180");
+//        // All columns visible by default, except for auto-increment integer
+//        ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
+//        colKey.setKeyField(true);
+//        colKey.setInputType("text");
+//        colKey.setInputLength(-1);
+//        colKey.setWidth("180");
+//
+//        if (listDef.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
+//        {
+//            colKey.setUserEditable(false);
+//            colKey.setAutoIncrement(true);
+//            colKey.setHidden(true);
+//        }
+//
+//        addColumn(colKey);
+//        defaultColumnsCandidates.add(colKey);
 
-        if (listDef.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
+        for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
-            colKey.setUserEditable(false);
-            colKey.setAutoIncrement(true);
-            colKey.setHidden(true);
+            ColumnInfo col = wrapColumn(baseColumn);
+
+            if ("Key".equalsIgnoreCase(baseColumn.getName()))
+            {
+                col.setName(_list.getKeyName());
+            }
+            else if ("EntityId".equalsIgnoreCase(baseColumn.getName()))
+            {
+                col.setHidden(true);
+            }
+            else if ("CreatedBy".equalsIgnoreCase(baseColumn.getName()) || "ModifiedBy".equalsIgnoreCase(baseColumn.getName()))
+            {
+                UserIdQueryForeignKey.initColumn(schema.getUser(), listDef.getContainer(), col, true);
+            }
+
+            addColumn(col);
         }
 
-        addColumn(colKey);
-        defaultColumnsCandidates.add(colKey);
+        // TODO: Possibly iterate over using getRealTable().getColumns()
+//        for (DomainProperty property : listDef.getDomain().getProperties())
+//        {
+//            if (property.getName().equalsIgnoreCase(colKey.getName()))
+//            {
+//                colKey.setExtraAttributesFrom(column);
+//                continue;
+//            }
+//
+//            column.setParentIsObjectId(true);
+//            column.setReadOnly(false);
+//            column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
+//            safeAddColumn(column);
+//            defaultColumnsCandidates.add(column);
+//
+//            if (property.isMvEnabled())
+//            {
+//                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
+//            }
+//
+//            // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
+//            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+//            {
+//                column.setDisplayColumnFactory(new DisplayColumnFactory() {
+//                    public DisplayColumn createRenderer(final ColumnInfo colInfo)
+//                    {
+//                        return new AttachmentDisplayColumn(colInfo);
+//                    }
+//                });
+//            }
+//        }
 
-        ColumnInfo colObjectId = wrapColumn(getRealTable().getColumn("ObjectId"));
-
-        for (DomainProperty property : listDef.getDomain().getProperties())
-        {
-            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, listDef.getContainer(), _userSchema.getUser(), false);
-
-            if (property.getName().equalsIgnoreCase(colKey.getName()))
-            {
-                colKey.setExtraAttributesFrom(column);
-                continue;
-            }
-
-            column.setParentIsObjectId(true);
-            column.setReadOnly(false);
-            column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
-            safeAddColumn(column);
-            defaultColumnsCandidates.add(column);
-
-            if (property.isMvEnabled())
-            {
-                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
-            }
-
-            // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
-            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-            {
-                column.setDisplayColumnFactory(new DisplayColumnFactory() {
-                    public DisplayColumn createRenderer(final ColumnInfo colInfo)
-                    {
-                        return new AttachmentDisplayColumn(colInfo);
-                    }
-                });
-            }
-        }
-
-        boolean auto = (null == listDef.getTitleColumn());
-        setTitleColumn(findTitleColumn(listDef, colKey), auto);
+//        boolean auto = (null == listDef.getTitleColumn());
+//        setTitleColumn(findTitleColumn(listDef, colKey), auto);
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
-        addColumn("EntityId", true);
-        addColumn("LastIndexed", true);
+//        addColumn("EntityId", true);
+//        addColumn("LastIndexed", true);
 
         // Make standard created & modified columns available.
-        addColumn("Created", false);
-        ColumnInfo createdBy = addColumn("CreatedBy", false);
-        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), createdBy, true);
-        addColumn("Modified", false);
-        ColumnInfo modifiedBy = addColumn("ModifiedBy", false);
-        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), modifiedBy, true);
+//        addColumn("Created", false);
+//        ColumnInfo createdBy = addColumn("CreatedBy", false);
+//        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), createdBy, true);
+//        addColumn("Modified", false);
+//        ColumnInfo modifiedBy = addColumn("ModifiedBy", false);
+//        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), modifiedBy, true);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -171,15 +179,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
     }
-    
-
-    private ColumnInfo addColumn(String name, boolean hidden)
-    {
-        ColumnInfo column = wrapColumn(getRealTable().getColumn(name));
-        column.setHidden(hidden);
-        return addColumn(column);
-    }
-
 
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
@@ -244,7 +243,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return null; //new ListQueryUpdateService(this, getList());
+        return new ListQueryUpdateService(this, getList());
     }
 
     // UpdateableTableInfo

@@ -107,7 +107,7 @@ import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
-import org.labkey.list.model.ListQueryUpdateService;
+import org.labkey.list.model.OntologyListQueryUpdateService;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListWriter;
 import org.springframework.validation.BindException;
@@ -403,7 +403,7 @@ public class ListController extends SpringActionController
                     item = list.getListItem(tableForm.getPkVal());
                     if (item == null)
                         throw new NotFoundException("The existing list item was not found.");
-                    oldValues = ListQueryUpdateService.toMap(list, item);
+                    oldValues = OntologyListQueryUpdateService.toMap(list, item);
                     triggerType = UPDATE;
                 }
                 Object oldKey = item.getKey();
@@ -460,7 +460,7 @@ public class ListController extends SpringActionController
                     if (!errors.hasErrors() && !batchErrors.hasErrors())
                         item.save(getUser());
 
-                    table.fireRowTrigger(getContainer(), triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues, null);
+                    table.fireRowTrigger(getContainer(), triggerType, false, 0, OntologyListQueryUpdateService.toMap(list, item), oldValues, null);
                 }
                 catch (ValidationException vex)
                 {

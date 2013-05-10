@@ -86,7 +86,11 @@ import static org.labkey.api.util.GUID.makeGUID;
 public class ListDefinitionImpl implements ListDefinition
 {
     protected static final String NAMESPACE_PREFIX = "List";
-    public static final boolean ONTOLOGY_BASED_LISTS = true;
+
+    public static boolean ontologyBased()
+    {
+        return true;
+    }
 
     static public ListDefinitionImpl of(ListDef def)
     {
@@ -108,15 +112,15 @@ public class ListDefinitionImpl implements ListDefinition
         _def = def;
     }
 
-    public ListDefinitionImpl(Container container, String name)
+    public ListDefinitionImpl(Container container, String name, KeyType keyType)
     {
         _new = true;
         _def = new ListDef();
         _def.setContainer(container.getId());
         _def.setName(name);
-        String guid = makeGUID();
-        _def.setEntityId(guid);
-        Lsid lsid = ListDomainType.generateDomainURI(name, container, guid);
+        _def.setEntityId(makeGUID());
+        _def.setKeyType(keyType.toString());
+        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
     }
 
@@ -564,7 +568,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
-        ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
+        OntologyListQueryUpdateService lqus = (OntologyListQueryUpdateService)getTable(user).getUpdateService();
 
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
@@ -786,7 +790,7 @@ public class ListDefinitionImpl implements ListDefinition
     /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
-        if (ONTOLOGY_BASED_LISTS)
+        if (ontologyBased())
         {
             OntologyListTable ret = new OntologyListTable(new ListQuerySchema(user, getContainer()), this);
             ret.afterConstruct();

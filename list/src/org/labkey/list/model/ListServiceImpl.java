@@ -46,9 +46,9 @@ public class ListServiceImpl implements ListService.Interface
         return lists != null && lists.length > 0;
     }
 
-    public ListDefinition createList(Container container, String name)
+    public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)
     {
-        return new ListDefinitionImpl(container, name);
+        return new ListDefinitionImpl(container, name, keyType);
     }
 
     public ListDefinition getList(Container container, int listId)
