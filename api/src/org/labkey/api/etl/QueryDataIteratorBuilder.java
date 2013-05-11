@@ -1,0 +1,124 @@
+package org.labkey.api.etl;
+
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Map;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: matthew
+ * Date: 5/11/13
+ * Time: 7:31 AM
+ */
+public class QueryDataIteratorBuilder implements DataIteratorBuilder
+{
+    final Container _container;
+    final User _user;
+    final SchemaKey _schemaKey;
+    final QuerySchema _schema;
+
+    final Map<String,Object> _parameters = new CaseInsensitiveHashMap<>();
+    final String _queryName;
+    final String _sql;
+    final SimpleFilter _filter;
+
+
+    public QueryDataIteratorBuilder(Container c, User u, SchemaKey schema, String query, String sql, SimpleFilter f)
+    {
+        if (null != query && null != sql)
+            throw new IllegalArgumentException("Specify SQL or query name not both");
+
+        _container = c;
+        _user = u;
+        _schemaKey = schema;
+        _schema = null;
+
+        _queryName = query;
+        _sql = sql;
+        _filter = f;
+    }
+
+
+    public QueryDataIteratorBuilder(QuerySchema schema, String query, String sql, SimpleFilter f)
+    {
+        if (null != query && null != sql)
+            throw new IllegalArgumentException("Specify SQL or query name not both");
+
+        _schema = schema;
+        _container = _schema.getContainer();
+        _user = _schema.getUser();
+        _schemaKey = ((UserSchema)_schema).getSchemaPath();
+
+        _queryName = query;
+        _sql = sql;
+        _filter = f;
+    }
+
+
+    void setParameters(Map<String,Object> p)
+    {
+        _parameters.putAll(p);
+    }
+
+
+
+    @Override
+    public DataIterator getDataIterator(DataIteratorContext context)
+    {
+        QuerySchema s = null!=_schema ? _schema : DefaultSchema.get(_user,_container, _schemaKey);
+        if (null == s || null == s.getDbSchema())
+        {
+            context.getErrors().addRowError(new ValidationException("Schema not found: " + _schemaKey));
+            return null;
+        }
+
+        String sql;
+        if (null != _queryName)
+            sql = "SELECT * FROM " + s.getDbSchema().getSqlDialect().quoteIdentifier(_queryName);
+        else
+            sql = _sql;
+
+        QueryService qs = QueryService.get();
+        QueryDefinition qd = qs.createQueryDef(_user, _container, (UserSchema)_schema, "source");
+        qd.setSql(sql);
+        ArrayList<QueryException> qerrors = new ArrayList<>();
+        TableInfo t = qd.getTable(qerrors, true);
+
+        if (!qerrors.isEmpty())
+        {
+            context.getErrors().addRowError(new ValidationException(qerrors.get(0).getMessage()));
+            return null;
+        }
+
+        try
+        {
+            ResultSet rs = qs.select(t, t.getColumns(), _filter, null, _parameters);
+            return new ResultSetDataIterator(rs, context);
+        }
+        catch (QueryParseException x)
+        {
+            context.getErrors().addRowError(new ValidationException("Error parsing query: ", x.getMessage()));
+        }
+        catch (SQLException x)
+        {
+            context.getErrors().addRowError(new ValidationException("Schema not found: " + _schema.toString()));
+        }
+        return null;
+    }
+}
