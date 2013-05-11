@@ -18,13 +18,12 @@ package org.labkey.di.steps;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.ResultSetDataIterator;
+import org.labkey.api.etl.QueryDataIteratorBuilder;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -206,12 +205,10 @@ public class SimpleQueryTransformStep extends TransformTask
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
             TableInfo t = sourceSchema.getTable(meta.getSourceQuery());
             FilterStrategy filterStrategy = getFilterStrategy();
-            Filter f = filterStrategy.getFilter(getVariableMap());
+            SimpleFilter f = filterStrategy.getFilter(getVariableMap());
 
-            TableSelector ts = new TableSelector(t, f, null);
-            ResultSet rs = ts.getResults(false);
-
-            return new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context));
+            DataIteratorBuilder source = new QueryDataIteratorBuilder(sourceSchema, meta.getSourceQuery(), null, f);
+            return source;
         }
         catch (QueryParseException x)
         {
@@ -224,9 +221,9 @@ public class SimpleQueryTransformStep extends TransformTask
     static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source)
     {
         QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
-        if (null == querySchema)
+        if (null == querySchema || null == querySchema.getDbSchema())
         {
-            context.getErrors().addRowError(new ValidationException("Could not create schema: " + meta.getTargetSchema()));
+            context.getErrors().addRowError(new ValidationException("Could not find schema: " + meta.getTargetSchema()));
             return -1;
         }
         TableInfo targetTableInfo = querySchema.getTable(meta.getTargetQuery());
