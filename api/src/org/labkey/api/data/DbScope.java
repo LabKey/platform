@@ -313,9 +313,11 @@ public class DbScope
         {
             if (null != conn)
             {
+                // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
+                // to the current thread
+                result = new TransactionImpl(conn, locks);
                 synchronized (_transaction)
                 {
-                    result = new TransactionImpl(conn, locks);
                     _transaction.put(getEffectiveThread(), result);
                 }
             }
