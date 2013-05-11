@@ -22,12 +22,18 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
@@ -35,6 +41,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -194,4 +201,90 @@ public class CoreUpgradeCode implements UpgradeCode
             executor.execute(updateSql, GUID.makeGUID(), p.getContainer().toString(), p.getPageId());
         }
     }
+
+    /* called at 13.11->13.12 */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setPortalPageUniqueIndexes(ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+            return;
+
+        DbSchema schema = CoreSchema.getInstance().getSchema();
+        Collection<String> containers = new SqlSelector(schema, "SELECT EntityId FROM core.Containers").getCollection(String.class);
+        for (String c : containers)
+        {
+            resetPageIndexes(schema, c);
+        }
+    }
+
+    public static class PortalUpgradePage
+    {
+        private GUID containerId;
+        private String pageId;
+        private int index;
+
+        public GUID getContainer()
+        {
+            return containerId;
+        }
+
+        public void setContainer(GUID containerId)
+        {
+            this.containerId = containerId;
+        }
+
+        public String getPageId()
+        {
+            return pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            this.pageId = pageId;
+        }
+
+        public int getIndex()
+        {
+            return index;
+        }
+
+        public void setIndex(int index)
+        {
+            this.index = index;
+        }
+    }
+
+    private static void resetPageIndexes(DbSchema schema, String containerEntityId)
+    {
+        Filter filter = new SimpleFilter(FieldKey.fromString("Container"), containerEntityId);
+        Sort sort = new Sort("Index");
+        TableInfo portalTable = schema.getTable("PortalPages");
+        Set<String> columnNames = new HashSet<>(3);
+        columnNames.add("Container");
+        columnNames.add("Index");
+        columnNames.add("PageId");
+        TableSelector ts = new TableSelector(portalTable, columnNames, filter, sort);
+        Collection<PortalUpgradePage> pages = ts.getCollection(PortalUpgradePage.class);
+        if (pages.size() > 0)
+        {
+            try
+            {
+                int validPageIndex = 1;
+                for (PortalUpgradePage page : pages)
+                {
+                    if (validPageIndex != page.getIndex())
+                    {
+                        page.setIndex(validPageIndex);
+                        Table.update(null, portalTable, page, new Object[] {page.getContainer(), page.getPageId()});
+                    }
+                    validPageIndex++;
+                }
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+    }
+
 }

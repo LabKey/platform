@@ -5678,19 +5678,7 @@ public class AdminController extends SpringActionController
             }
 
             Portal.PortalPage nextPage = pagesList.get(visibleIndex + 1);
-            int newIndex = nextPage.getIndex();
-
-            nextPage.setIndex(page.getIndex());
-            page.setIndex(newIndex);
-
-            DbScope scope = Portal.getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
-            {
-                Portal.updatePortalPage(getContainer(), nextPage);
-                Portal.updatePortalPage(getContainer(), page);
-                transaction.commit();
-            }
-
+            Portal.swapPageIndexes(getContainer(), page, nextPage);
             return nextPage;
         }
         else
@@ -5701,24 +5689,7 @@ public class AdminController extends SpringActionController
             }
 
             Portal.PortalPage prevPage = pagesList.get(visibleIndex - 1);
-            int newIndex = prevPage.getIndex();
-
-            prevPage.setIndex(page.getIndex());
-            page.setIndex(newIndex);
-
-            DbScope scope = Portal.getSchema().getScope();
-            try
-            {
-                scope.ensureTransaction();
-                Portal.updatePortalPage(getContainer(), prevPage);
-                Portal.updatePortalPage(getContainer(), page);
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
-            }
-
+            Portal.swapPageIndexes(getContainer(), page, prevPage);
             return prevPage;
         }
     }
