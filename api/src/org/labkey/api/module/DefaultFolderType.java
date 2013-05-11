@@ -189,9 +189,8 @@ public class DefaultFolderType implements FolderType
 
         if (hasConfigurableTabs())
         {
-            // Find or create pages for all default tabs; then ensure the indexes don't conflict
+            // Find or create pages for all default tabs
             resetDefaultTabs(c);
-            Portal.ensureIndexesDontConflict(c);
         }
 
         for (FolderTab folderTab : getDefaultTabs())

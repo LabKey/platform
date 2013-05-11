@@ -400,22 +400,6 @@ public class Portal
     }
 
 
-    public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
-    {
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
-        {
-            ArrayList<PortalPage> existing = new ArrayList<>(getPages(c).values());
-            for (FolderTab tab : tabs)
-                ensurePage(c, tab, existing, resetIndexes);
-            transaction.commit();
-        }
-        finally
-        {
-            WebPartCache.remove(c);
-        }
-    }
-
-
     public static List<WebPart> getParts(Container c, String pageId)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
@@ -600,62 +584,24 @@ public class Portal
     }
 
 
-    private static FolderTab findFolderTab(Container c, String pageId)
-    {
-        FolderType ft = c.getFolderType();
-        if (null == ft)
-            return null;
-        List<FolderTab> list = ft.getDefaultTabs();
-        if (null == list)
-            return null;
-        for (FolderTab tab : list)
-        {
-            if (StringUtils.equals(tab.getName(),pageId))
-                return tab;
-        }
-        for (FolderTab tab : list)
-        {
-            if (null != tab.getLegacyNames())
-            {
-                for (String name : tab.getLegacyNames())
-                    if (StringUtils.equals(name,pageId))
-                        return tab;
-            }
-        }
-        return null;
-    }
-
-
     private static void ensurePage(Container c, String pageId)
     {
         assert getSchema().getScope().isTransactionActive();
-
-        PortalPage find = WebPartCache.getPortalPage(c, pageId);
+        PortalPage find = Portal.getPortalPage(c, pageId);
         if (null != find)
         {
             _setHidden(find, false);
             return;
         }
 
-        int index = 0;
-        for (PortalPage p : WebPartCache.getPages(c,true).values())
-            index = Math.max(p.getIndex()+1,index);
-
-        PortalPage p = new PortalPage();
-        p.setEntityId(new GUID());
-        p.setContainer(new GUID(c.getId()));
-        p.setPageId(pageId);
-        p.setIndex(index);
-        p.setType("portal");
-        FolderTab tab = findFolderTab(c, pageId);
-        if (null != tab)
-        {
-            // TODO get any additional configuration info here???
-        }
+        Map<String, PortalPage> pages = Portal.getPages(c, true);
+        int index = pages.size() + 1;           // new index must be at least this big
+        for (PortalPage p : pages.values())
+            index = Math.max(p.getIndex()+1, index);
 
         try
         {
-            Table.insert(null, getTableInfoPortalPages(), p);
+            insertPortalPage(c, pageId, index, null);
         }
         catch (SQLException x)
         {
@@ -663,129 +609,144 @@ public class Portal
         }
     }
 
-
-    /* existing is used to optmize inserting multiple pages */
-    private static void ensurePage(Container c, FolderTab tab, List<PortalPage> existing, boolean resetIndexes)
+    public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
     {
-        assert getSchema().getScope().isTransactionActive();
+        Map<String, PortalPage> pageMap = new HashMap<>(Portal.getPages(c, true));
+        int maxOriginalIndex = 0;
+        for (PortalPage p : pageMap.values())
+            maxOriginalIndex = Math.max(maxOriginalIndex, p.getIndex());
 
-        PortalPage find = WebPartCache.getPortalPage(c, tab.getName());
-        if (null != find)
-        {
-            _setHidden(find, false);
-            if (resetIndexes)
-            {
-                try
-                {
-                    find.setIndex(tab.getDefaultIndex());
-                    if (null != tab.getCaption(null))
-                        find.setCaption(tab.getCaption(null));
-                    Table.update(null, getTableInfoPortalPages(), find, new Object[] {find.getContainer(), find.getPageId()});
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
-            }
-            return;
-        }
-
-        int index = 0;
         if (resetIndexes)
         {
-            index = tab.getDefaultIndex();
-        }
-        else
-        {
-            boolean available = 0 <= tab.getDefaultIndex();
-            int nextAvailableIndex = tab.getDefaultIndex();
-            for (PortalPage p : existing)
+            // Indexes only matter relative to each other
+            // Sort tabs (often tabDefaultIndex is -1; sort will not change order of equal elements)
+            Collections.sort(tabs, new Comparator<FolderTab>()
             {
-                if (p.getIndex() == tab.getDefaultIndex())
-                    available = false;
-                nextAvailableIndex = Math.max(p.getIndex()+1,nextAvailableIndex);
+                public int compare(FolderTab w1, FolderTab w2)
+                {
+                    return w1.getDefaultIndex() - w2.getDefaultIndex();
+                }
+            });
+        }
+
+        ArrayList<PortalPage> allPages = new ArrayList<>();
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        {
+            // First add pages for all tabs to allPages
+            int tabIndex = 1;
+            int newIndex = maxOriginalIndex;
+            for (FolderTab tab : tabs)
+            {
+                PortalPage find = Portal.getPortalPage(c, tab.getName());   // Portal uses CaseInsensitiveHashMap, which is important
+                if (null != find)
+                {
+                    pageMap.remove(tab.getName());
+
+                    if (resetIndexes)
+                    {   // Leave hiddenness as is
+                        find.setIndex(tabIndex++);
+                        if (null != tab.getCaption(null))
+                            find.setCaption(tab.getCaption(null));
+                    }
+                    else
+                    {
+                        find.setHidden(false);
+                    }
+
+                    allPages.add(find);
+                }
+                else
+                {
+                    assert !resetIndexes;       // Only called from PageImporter who has already done saveParts on tab pages
+                    newIndex += 1;
+                    PortalPage p = new PortalPage();
+                    p.setPageId(tab.getName());
+                    p.setIndex(tab.getDefaultIndex() > 0 ? tab.getDefaultIndex() : newIndex);
+                    allPages.add(p);
+                }
             }
-            index = available ? tab.getDefaultIndex() : nextAvailableIndex;
-            index = Math.max(0,index);
-        }
-        PortalPage p = new PortalPage();
-        p.setEntityId(new GUID());
-        p.setContainer(new GUID(c.getId()));
-        p.setPageId(tab.getName());
-        p.setIndex(index);
-        p.setType("portal");
 
-        if (null != tab && resetIndexes)
-        {
-            if (null != tab.getCaption(null))
-                p.setCaption(tab.getCaption(null));
-        }
+            // Sort what we found by their existing indexes so they remain in order
+            Collections.sort(allPages, new Comparator<PortalPage>()
+            {
+                public int compare(PortalPage w1, PortalPage w2)
+                {
+                    return w1.getIndex() - w2.getIndex();
+                }
+            });
 
-        try
-        {
-            Table.insert(null, getTableInfoPortalPages(), p);
-            existing.add(p);
+            // Next add all other pages to allPages (includes custom pages)
+            ArrayList<PortalPage> pagesLeft = new ArrayList<>(pageMap.values());
+            Collections.sort(pagesLeft, new Comparator<PortalPage>()
+            {
+                public int compare(PortalPage w1, PortalPage w2)
+                {
+                    return w1.getIndex() - w2.getIndex();
+                }
+            });
+            allPages.addAll(pagesLeft);
+
+            // Now set indexes of all pages by walking in reverse order, assigning indexes down
+            Collections.reverse(allPages);
+
+            // We have to insure that the already set page with the highest index will get reset before that index is used
+            int validPageIndex = maxOriginalIndex + allPages.size();
+            TableInfo portalTable = getTableInfoPortalPages();
+            for (PortalPage p : allPages)
+            {
+                p.setIndex(validPageIndex);
+                if (null != Portal.getPortalPage(c, p.getPageId()))
+                    Table.update(null, portalTable, p, new Object[] {p.getContainer(), p.getPageId()});
+                else
+                    insertPortalPage(c, p);
+                validPageIndex -= 1;
+            }
+
+            transaction.commit();
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
+        finally
+        {
+            WebPartCache.remove(c);
+        }
     }
 
-    public static void ensureIndexesDontConflict(Container c)
+    private static PortalPage insertPortalPage(Container c, String pageId, int index, @Nullable String caption) throws SQLException
     {
-        ArrayList<Portal.PortalPage> pages = new ArrayList<Portal.PortalPage>(Portal.getPages(c).values());
-        Collections.sort(pages, new Comparator<Portal.PortalPage>()
+        PortalPage p = new PortalPage();
+        p.setPageId(pageId);
+        p.setIndex(index);
+        if (null != caption)
+            p.setCaption(caption);
+        return insertPortalPage(c, p);
+    }
+
+    private static PortalPage insertPortalPage(Container c, PortalPage p) throws SQLException
+    {
+        p.setEntityId(new GUID());
+        p.setContainer(new GUID(c.getId()));
+        p.setType("portal");
+        Table.insert(null, getTableInfoPortalPages(), p);
+        return p;
+    }
+
+    public static void swapPageIndexes(Container c, PortalPage page1, PortalPage page2)
+    {
+        int newIndex = page2.getIndex();
+        int oldIndex = page1.getIndex();
+
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            public int compare(Portal.PortalPage w1, Portal.PortalPage w2)
-            {
-                return w1.getIndex() - w2.getIndex();
-            }
-        });
-
-        if (pages.size() > 0)
-        {
-            boolean clearCache = false;
-            try
-            {
-                getSchema().getScope().ensureTransaction();
-                Portal.PortalPage firstPage = pages.get(0);
-                if (firstPage.getIndex() <= 0)
-                {
-                    firstPage.setIndex(1);      // Make sure no index is 0
-                    Table.update(null, getTableInfoPortalPages(), firstPage, new Object[] {firstPage.getContainer(), firstPage.getPageId()});
-                    clearCache = true;
-                }
-                for (int i = 1; i < pages.size(); i += 1)
-                {
-                    Portal.PortalPage page = pages.get(i);
-                    if (page.getIndex() <= 0)
-                    {
-                        page.setIndex(pages.get(i-1).getIndex());   // Make sure no index is 0
-                    }
-                    int increment = pages.get(i-1).getIndex() - page.getIndex() + 1;
-                    if (increment > 0)
-                    {
-                        // Previous page's index is same or greate; need to bump current page's index
-                        page.setIndex(page.getIndex() + increment);
-                        Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
-                        clearCache = true;
-                    }
-                }
-                getSchema().getScope().commitTransaction();
-
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                getSchema().getScope().closeConnection();
-            }
-
-            if (clearCache)
-                WebPartCache.remove(c);
+            page2.setIndex(-1);
+            Portal.updatePortalPage(c, page2);
+            page1.setIndex(newIndex);
+            Portal.updatePortalPage(c, page1);
+            page2.setIndex(oldIndex);
+            Portal.updatePortalPage(c, page2);
+            transaction.commit();
         }
     }
 
@@ -1230,7 +1191,7 @@ public class Portal
 
         try
         {
-            if (page.isCustomTab())
+            if (page.isCustomTab() && hidden)
             {
                 // Custom (portal page) tab; Do actual delete
                 TableInfo tableInfo = getTableInfoPortalWebParts();
@@ -1262,7 +1223,7 @@ public class Portal
     {
         PortalPage page = WebPartCache.getPortalPage(c,pageId);
         if (null != page)
-            _setHidden(page,true);
+            _setHidden(page, true);
     }
 
 
@@ -1270,17 +1231,20 @@ public class Portal
     {
         PortalPage page = WebPartCache.getPortalPage(c,pageId);
         if (null != page)
-            _setHidden(page,false);
+            _setHidden(page, false);
     }
 
 
     public static void hidePage(Container c, int index)
     {
-        Map<String, PortalPage> pages = WebPartCache.getPages(c,true);
+        Map<String, PortalPage> pages = WebPartCache.getPages(c, true);
         for (PortalPage page : pages.values())
         {
             if (page.getIndex() == index)
-                _setHidden(page,true);
+            {
+                _setHidden(page, true);
+                break;
+            }
         }
         return;
     }

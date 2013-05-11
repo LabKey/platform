@@ -171,21 +171,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
         });
 
-        // Make sure no page index is 0
-        if (sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0)
-        {
-            Portal.ensureIndexesDontConflict(container);        // This fixes up the indexes; then we need to re-get the pages
-            portalPages = Portal.getPages(container, false);
-            sortedPages = new ArrayList<Portal.PortalPage>(portalPages.values());
-            Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
-            {
-                @Override
-                public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-                {
-                    return o1.getIndex() - o2.getIndex();
-                }
-            });
-        }
+        // No page index should be 0
+        assert !(sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0);
+
         _activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
         List<NavTree> buttons = new ArrayList<NavTree>();
