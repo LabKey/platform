@@ -1539,12 +1539,13 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters) throws SQLException
+    @Override
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache) throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
-		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
+		ResultSet rs = Table.executeQuery(table.getSchema(), sql, cache, cache);
         return new ResultsImpl(rs, columns);       // TODO: If ResultsImpl() throws, rs is never closed
     }
 

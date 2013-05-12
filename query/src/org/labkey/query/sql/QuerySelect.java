@@ -1789,15 +1789,25 @@ groupByLoop:
             QExpr expr = getResolvedField();
 
             // NOTE SqlServer does not like predicates (A=B) in select list, try to help out
-            boolean wrapWithCast = false;
-            if (expr instanceof QMethodCall && expr.getSqlType() == JdbcType.BOOLEAN)
-                wrapWithCast = b.getDialect().isSqlServer();
-
-            if (wrapWithCast)
+            if (expr instanceof QMethodCall && expr.getSqlType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer())
+            {
                 b.append("CASE WHEN (");
-            expr.appendSql(b);
-            if (wrapWithCast)
+                expr.appendSql(b);
                 b.append(") THEN 1 ELSE 0 END");
+                return b;
+            }
+
+            // avoid org.postgresql.util.PSQLException: ERROR: failed to find conversion function from unknown to text
+            if (expr instanceof QString && b.getDialect().isPostgreSQL())
+            {
+                int len = ((QString)expr).getValue().length();
+                b.append("CAST(");
+                expr.appendSql(b);
+                b.append(" AS VARCHAR(").append(len).append("))");
+                return b;
+            }
+
+            expr.appendSql(b);
             return b;
         }
 

@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.AsyncDataIterator;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -63,6 +64,8 @@ public class SimpleQueryTransformStep extends TransformTask
     // or else you'll get a cast exception.
     int _recordsInserted = -1;
     int _recordsDeleted = -1;
+
+    boolean _useAsynchrousQuery = false;
 
     public SimpleQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
@@ -208,6 +211,8 @@ public class SimpleQueryTransformStep extends TransformTask
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
 
             DataIteratorBuilder source = new QueryDataIteratorBuilder(sourceSchema, meta.getSourceQuery(), null, f);
+            if (_useAsynchrousQuery)
+                source = new AsyncDataIterator.Builder(source);
             return source;
         }
         catch (QueryParseException x)

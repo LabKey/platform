@@ -761,7 +761,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                 var val    = _editor.eal.getValue(_editor.editorId);
                 var valArr = val.split('\n');
                 var _s = -1;
-                if (error && error.line && error.line > 1) {
+                if (error && error.line && error.line > 1 && error.line <= valArr.length) {
                     if (RegExp) {
                         _s = valArr[error.line-1].search(RegExp.quote(error.errorStr));
                     }

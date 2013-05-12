@@ -124,7 +124,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private String _moduleName;
 
     // steps
-    private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<SimpleQueryTransformStepMeta>();
+    private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<>();
     private CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
 
 
