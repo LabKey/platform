@@ -1525,7 +1525,7 @@ public class UserController extends SpringActionController
                         Map<String, Object> params = Collections.emptyMap();
                         TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
                         Results results = QueryService.get().select(table, table.getColumns(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()),
-                                null, params);
+                                null, params, true);
                         ResultSet rs = results.getResultSet();
 
                         try {
