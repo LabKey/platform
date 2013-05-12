@@ -258,7 +258,7 @@ class StatementDataIterator extends AbstractDataIterator
                 {
                     _currentStmt.execute();
                 }
-                if (_useAsynchronousExecute && _stmts.length > 1)
+                else if (_useAsynchronousExecute && _stmts.length > 1)
                 {
                     _currentStmt = _queue.swapFullForEmpty(_currentStmt);
                     _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
