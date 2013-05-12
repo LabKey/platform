@@ -2,13 +2,9 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,6 +17,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AsyncDataIterator implements DataIterator
 {
+    public static class Builder implements DataIteratorBuilder
+    {
+        final DataIteratorBuilder _in;
+        public Builder(DataIteratorBuilder in)
+        {
+            _in = in;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator it = _in.getDataIterator(context);
+            if (null == it)
+                return null;
+            return new AsyncDataIterator(it,context);
+        }
+    }
+
     // DataIterator instances are not usually thread safe, so use a lock for pass through calls
     Object _itLock;
     DataIterator _it;
@@ -87,7 +101,7 @@ public class AsyncDataIterator implements DataIterator
 
     private void start()
     {
-        _reader = new Thread(new ReadRunnable());
+        _reader = new Thread(new ReadRunnable(), "AsyncDataIterator");
         _reader.start();
     }
 
@@ -117,7 +131,8 @@ public class AsyncDataIterator implements DataIterator
             {
             }
             try { _queue.put(eof); } catch (InterruptedException x) { }
-            try {_it.close(); } catch (IOException x) {}
+            // don't close _it from background thread, this causes DbScope/Transaction problems
+            // try {_it.close(); } catch (IOException x) {}
         }
     }
 
@@ -221,15 +236,6 @@ public class AsyncDataIterator implements DataIterator
                 try {_reader.join();} catch (InterruptedException x) {}
                 _it.close();
             }
-        }
-    }
-
-
-    public static class Builder extends DataIteratorBuilder.Wrapper
-    {
-        public Builder(Set<String> colNames, List<Map<String,Object>> rows)
-        {
-            super(new ListofMapsDataIterator(colNames, rows));
         }
     }
 }

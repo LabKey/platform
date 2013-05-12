@@ -16,7 +16,9 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
@@ -25,22 +27,31 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.ResultSetUtil;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 class StatementDataIterator extends AbstractDataIterator
 {
-    protected Parameter.ParameterMap _stmt;
+    Parameter.ParameterMap[] _stmts;
+    Triple[][] _bindings = null;
+
+    Parameter.ParameterMap _currentStmt;
+    Triple[] _currentBinding;
+
+    // coordinate asynchronous statement execution
+    boolean _useAsynchronousExecute = false;
+    SwapQueue<Parameter.ParameterMap> _queue = new SwapQueue<>();
+    Thread _asyncThread = null;
+    AtomicReference<Exception> _backgroundException = new AtomicReference<>();
+
     DataIterator _data;
 
-    Triple[] _bindings = null;
 
     // NOTE all columns are pass through to the source iterator, except for key columns
     ArrayList<ColumnInfo> _keyColumnInfo;
@@ -56,14 +67,12 @@ class StatementDataIterator extends AbstractDataIterator
     {
         super(context);
 
-        if (context.getInsertOption().batch && 0==1)
-            _data = new AsyncDataIterator(data, context);
-        else
-            _data = data;
-        _stmt = map;
+        _data = data;
 
-        _keyColumnInfo = new ArrayList<ColumnInfo>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
-        _keyValues = new ArrayList<Object>(Collections.nCopies(data.getColumnCount()+1,null));
+        _stmts = new Parameter.ParameterMap[] {map};
+
+        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
+        _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
     }
 
     // configure columns returned by statement, e.g. rowid
@@ -81,6 +90,7 @@ class StatementDataIterator extends AbstractDataIterator
         _rowIdIndex = index;
     }
 
+
     void setObjectIdColumn(int index, ColumnInfo col)
     {
         if (-1 == index)
@@ -93,31 +103,47 @@ class StatementDataIterator extends AbstractDataIterator
         _objectIdIndex = index;
     }
 
+
     void init()
     {
-        // map from source to target
-        ArrayList<Triple> bindings = new ArrayList<Triple>(_stmt.size());
-        // by name
-        for (int i=1 ; i<=_data.getColumnCount() ; i++)
+        _bindings = new Triple[_stmts.length][];
+
+        for (int set=0 ; set<_stmts.length ; set++)
         {
-            ColumnInfo col = _data.getColumnInfo(i);
-            Parameter to = null;
-            if (to == null && null != col.getPropertyURI())
-                to = _stmt.getParameter(col.getPropertyURI());
-            if (to == null)
-                to = _stmt.getParameter(col.getName());
-            if (null != to)
+            Parameter.ParameterMap stmt = _stmts[0];
+            // map from source to target
+            ArrayList<Triple> bindings = new ArrayList<Triple>(stmt.size());
+            // by name
+            for (int i=1 ; i<=_data.getColumnCount() ; i++)
             {
-                FieldKey mvName = col.getMvColumnName();
-                Parameter mv = null==mvName ? null : _stmt.getParameter(mvName.getName());
-                bindings.add(new Triple(i, to, mv));
+                ColumnInfo col = _data.getColumnInfo(i);
+                Parameter to = null;
+                if (null != col.getPropertyURI())
+                    to = stmt.getParameter(col.getPropertyURI());
+                if (to == null)
+                    to = stmt.getParameter(col.getName());
+                if (null != to)
+                {
+                    FieldKey mvName = col.getMvColumnName();
+                    Parameter mv = null==mvName ? null : stmt.getParameter(mvName.getName());
+                    bindings.add(new Triple(i, to, mv));
+                }
             }
+            _bindings[set] = bindings.toArray(new Triple[bindings.size()]);
         }
-        _bindings = bindings.toArray(new Triple[bindings.size()]);
+        _currentStmt = _stmts[0];
+        _currentBinding = _bindings[0];
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
             _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
+
+        if (_stmts.length > 1)
+        {
+            _asyncThread = new Thread(new _Runnable(_stmts[1]), "StatementDataIterator executor");
+            _asyncThread.start();
+        }
     }
+
 
     private static class Triple
     {
@@ -154,8 +180,34 @@ class StatementDataIterator extends AbstractDataIterator
         init();
     }
 
+
+
     @Override
     public boolean next() throws BatchValidationException
+    {
+        boolean ret = false;
+        try
+        {
+            ret = _next();
+        }
+        finally
+        {
+            if (ret == false)
+            {
+                _queue.close();
+                if (null != _asyncThread)
+                {
+                    try {_asyncThread.join();} catch (InterruptedException x) {}
+                    _asyncThread = null;
+                }
+                checkBackgroundException();
+            }
+        }
+        return ret;
+    }
+
+
+    private boolean _next() throws BatchValidationException
     {
         if (_firstNext)
         {
@@ -164,61 +216,67 @@ class StatementDataIterator extends AbstractDataIterator
             assert _elapsed.start();
         }
 
-        ResultSet rs = null;
+        boolean hasNextRow;
+
         try
         {
-            if (!_data.next())
+            hasNextRow = _data.next();
+
+            if (hasNextRow)
             {
-                if (_currentBatchSize > 0)
+                _currentStmt.clearParameters();
+                for (Triple binding : _currentBinding)
                 {
-                    assert _execute.start();
-                    _stmt.executeBatch();
-                    assert _execute.stop();
-                    assert _elapsed.stop();
+                    Object value = _data.get(binding.fromIndex);
+                    if (null == value)
+                        continue;
+                    if (value instanceof MvFieldWrapper)
+                    {
+                        if (null != binding.mv)
+                            binding.mv.setValue(((MvFieldWrapper) value).getMvIndicator());
+                        binding.to.setValue(((MvFieldWrapper) value).getValue());
+                    }
+                    else
+                    {
+                        binding.to.setValue(value);
+                    }
                 }
-                return false;
+
+                checkShouldCancel();
+
+                if (_batchSize > 1)
+                    _currentStmt.addBatch();
+                _currentBatchSize++;
             }
 
-            _stmt.clearParameters();
-            for (Triple binding : _bindings)
-            {
-                Object value = _data.get(binding.fromIndex);
-                if (null == value)
-                    continue;
-                if (value instanceof MvFieldWrapper)
-                {
-                    if (null != binding.mv)
-                        binding.mv.setValue(((MvFieldWrapper) value).getMvIndicator());
-                    binding.to.setValue(((MvFieldWrapper) value).getValue());
-                }
-                else
-                {
-                    binding.to.setValue(value);
-                }
-            }
-
-            checkShouldCancel();
-
-            if (_batchSize > 1)
-                _stmt.addBatch();
-            _currentBatchSize++;
-            if (_currentBatchSize == _batchSize)
+            if (_currentBatchSize == _batchSize || !hasNextRow && _currentBatchSize > 0)
             {
                 _currentBatchSize = 0;
                 assert _execute.start();
-                if (_batchSize > 1)
-                    _stmt.executeBatch();
+
+                if (_batchSize == 1)
+                {
+                    _currentStmt.execute();
+                }
+                if (_useAsynchronousExecute && _stmts.length > 1)
+                {
+                    _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+                    _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
+                }
                 else
-                    _stmt.execute();
+                {
+                    _currentStmt.executeBatch();
+                }
                 assert _execute.stop();
             }
 
             if (null != _rowIdIndex)
-                _keyValues.set(_rowIdIndex, _stmt.getRowId());
+                _keyValues.set(_rowIdIndex, _currentStmt.getRowId());
             if (null != _objectIdIndex)
-                _keyValues.set(_objectIdIndex, _stmt.getObjectId());
+                _keyValues.set(_objectIdIndex, _currentStmt.getObjectId());
 
-            return true;
+            checkBackgroundException();
+            return hasNextRow;
         }
         catch (SQLException x)
         {
@@ -232,9 +290,19 @@ class StatementDataIterator extends AbstractDataIterator
             }
             throw new RuntimeSQLException(x);
         }
-        finally
+    }
+
+
+    private void checkBackgroundException() throws BatchValidationException
+    {
+        Exception bkg = _backgroundException.getAndSet(null);
+        if (null != bkg)
         {
-            ResultSetUtil.close(rs);
+            if (bkg instanceof RuntimeException)
+                throw (RuntimeException)bkg;
+            if (bkg instanceof BatchValidationException)
+                throw (BatchValidationException)bkg;
+            throw new RuntimeException(bkg);
         }
     }
 
@@ -252,18 +320,78 @@ class StatementDataIterator extends AbstractDataIterator
     public void close() throws IOException
     {
         _data.close();
-        if (_stmt != null)
+        _queue.close();
+        SQLException sqlx = null;
+        if (_asyncThread != null)
+        {
+            try {_asyncThread.join();}catch(InterruptedException x){}
+            _asyncThread = null;
+        }
+        for (Parameter.ParameterMap stmt : _stmts)
+        {
+            if (stmt != null)
+            {
+                try
+                {
+                    stmt.close();
+                }
+                catch (SQLException x)
+                {
+                    sqlx = x;
+                }
+            }
+        }
+        _stmts = new Parameter.ParameterMap[0];
+        if (null != sqlx)
+            throw new RuntimeSQLException(sqlx);
+    }
+
+
+
+    class _Runnable implements Runnable
+    {
+        Parameter.ParameterMap _firstEmpty;
+
+        _Runnable(@NotNull Parameter.ParameterMap empty)
+        {
+            _firstEmpty = empty;
+        }
+
+        @Override
+        public void run()
         {
             try
             {
-                _stmt.close();
+                executeStatmentsInBackground();
             }
-            catch (SQLException x)
+            catch (Exception x)
             {
-                throw new RuntimeSQLException(x);
+                _backgroundException.set(x);
             }
         }
-        _stmt = null;
-    }
 
+        void executeStatmentsInBackground() throws BatchValidationException
+        {
+            Parameter.ParameterMap m = _firstEmpty;
+
+            while (null != (m = _queue.swapEmptyForFull(m)))
+            {
+                try
+                {
+                    m.executeBatch();
+                }
+                catch (SQLException x)
+                {
+                    if (x instanceof BatchUpdateException && null != x.getNextException())
+                        x = x.getNextException();
+                    if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
+                    {
+                        getRowError().addGlobalError(x);
+                        _context.checkShouldCancel();
+                    }
+                    throw new RuntimeSQLException(x);
+                }
+            }
+        }
+    }
 }

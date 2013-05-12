@@ -180,6 +180,18 @@ public class Parameter
         _indexes = indexes;
     }
 
+
+    public Parameter copy(PreparedStatement stmt)
+    {
+        Parameter copy = new Parameter(this._name, this._uri, this._indexes, this._type);
+        // not actually using constant parameters yet, if we were we'd have to remember the value so we could copy it
+        if (_constant)
+            throw new IllegalStateException("Copying constant parameters is not yet implemented");
+        copy._stmt = stmt;
+        return copy;
+    }
+
+
     public void setName(String name)
     {
         _name = name;
@@ -195,11 +207,11 @@ public class Parameter
         return _type;
     }
 
-    public void setValue(Object in, boolean constant) throws SQLException
-    {
-        setValue(in);
-        _constant = constant;
-    }
+//    public void setValue(Object in, boolean constant) throws SQLException
+//    {
+//        setValue(in);
+//        _constant = constant;
+//    }
 
     public void setValue(@Nullable Object in) throws SQLException
     {
@@ -358,31 +370,6 @@ public class Parameter
 
 
 
-//    @Nullable
-//    public String getVariableName()
-//    {
-//        return _variable;
-//    }
-//
-//
-//    public void setVariableName(@Nullable String variable)
-//    {
-//        _variable = variable;
-//    }
-//
-//
-//    public int getLength()
-//    {
-//        return _length;
-//    }
-//
-//
-//    public void setLength(int length)
-//    {
-//        _length = length;
-//    }
-
-
     public String toString()
     {
         return "[" + (null==_indexes?"":Ints.join(",", _indexes)) + (null==_name?"":":"+_name) + "]";
@@ -391,39 +378,82 @@ public class Parameter
 
     public static class ParameterMap
     {
+        SQLFragment _sqlf;
         PreparedStatement _stmt;
         boolean _selectRowId = false;
         Integer _selectObjectIdIndex = null;
         Integer _rowId;
         Integer _objectId;
-        CaseInsensitiveHashMap<Parameter> _map;
+        CaseInsensitiveHashMap<Integer> _map;
         Parameter[] _parameters;
         DbScope _scope;
+        Connection _conn;       // only used for copy()
         SqlDialect _dialect;
+
 
         public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
         {
             this(scope, stmt, parameters, null);
         }
 
+
         public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
             init(scope, stmt, parameters, remap);
         }
-        
+
+
+        public ParameterMap copy() throws SQLException
+        {
+            if (null == _sqlf || null == _conn)
+                throw new IllegalStateException("Copy can only be used on ParameterMap constructed with SQL");
+            return new ParameterMap(this);
+        }
+
+
+        private ParameterMap(ParameterMap from) throws SQLException
+        {
+            _sqlf = from._sqlf;
+            _scope = from._scope;
+            _conn = from._conn;
+            if (_sqlf.getSQL().startsWith("{call"))
+                _stmt = _conn.prepareCall(_sqlf.getSQL());
+            else
+                _stmt= _conn.prepareStatement(_sqlf.getSQL());
+
+            _selectRowId = from._selectRowId;
+            _selectObjectIdIndex = from._selectObjectIdIndex;
+            _rowId = from._rowId;
+            _objectId = from._objectId;
+            _dialect = from._dialect;
+            _map = from._map;
+            _parameters = new Parameter[from._parameters.length];
+            for (int i=0 ; i<from._parameters.length ; i++)
+                _parameters[i] = from._parameters[i].copy(_stmt);
+        }
+
+
+        public ParameterMap(DbScope scope, SQLFragment sql, Map<String, String> remap) throws SQLException
+        {
+            this(scope, scope.getConnection(), sql, remap);
+        }
+
+
         /**
          *  sql bound to constants or Parameters, compute the index array for each named Parameter
          */
         public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
         {
+            _sqlf = sql;
+            _conn = conn;
             PreparedStatement stmt;
-            if (sql.getSQL().startsWith("{call"))
-                stmt = conn.prepareCall(sql.getSQL());
+            if (_sqlf.getSQL().startsWith("{call"))
+                stmt = conn.prepareCall(_sqlf.getSQL());
             else
-                stmt= conn.prepareStatement(sql.getSQL());
+                stmt= conn.prepareStatement(_sqlf.getSQL());
 
             IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
-            List<Object> paramList = sql.getParams();
+            List<Object> paramList = _sqlf.getParams();
             List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
 
             for (int i = 0; i < paramList.size(); i++)
@@ -452,14 +482,15 @@ public class Parameter
 
         private void init(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
-            if (stmt instanceof StatementWrapper)
-                _debugSql = ((StatementWrapper)stmt).getDebugSql();
-
             _scope = scope;
             _dialect = scope.getSqlDialect();
-            _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
-            for (Parameter p : parameters)
+            _map = new CaseInsensitiveHashMap<>(parameters.size() * 2);
+            _parameters = parameters.toArray(new Parameter[parameters.size()]);
+            _stmt = stmt;
+
+            for (int i=0 ; i<_parameters.length ; i++)
             {
+                Parameter p = _parameters[i];
                 if (null == p._name)
                     throw new IllegalStateException();
                 p._stmt = stmt;
@@ -468,7 +499,7 @@ public class Parameter
                     name = remap.get(name);
                 if (_map.containsKey(name))
                     throw new IllegalArgumentException("duplicate parameter name: " + name);
-                _map.put(name, p);
+                _map.put(name, i);
                 if (null != p._uri)
                 {
                     String uri = p._uri;
@@ -476,11 +507,9 @@ public class Parameter
                         uri = remap.get(uri);
                     if (_map.containsKey(uri))
                         throw new IllegalArgumentException("duplicate property uri: " + uri);
-                    _map.put(uri, p);
+                    _map.put(uri, i);
                 }
             }
-            _parameters = parameters.toArray(new Parameter[parameters.size()]);
-            _stmt = stmt;
         }
 
 
@@ -518,7 +547,8 @@ public class Parameter
 
         public Parameter getParameter(String name)
         {
-            return _map.get(name);
+            Integer i = _map.get(name);
+            return null==i ? null : _parameters[i];
         }
         
 
@@ -644,7 +674,7 @@ public class Parameter
         {
             try
             {
-                Parameter p = _map.get(name);
+                Parameter p = getParameter(name);
                 if (null == p)
                     throw new IllegalArgumentException("parameter not found: " + name);
                 if (p._constant)
@@ -670,7 +700,7 @@ public class Parameter
             {
                 for (Map.Entry<String,Object> e : values.entrySet())
                 {
-                    Parameter p = _map.get(e.getKey());
+                    Parameter p = getParameter(e.getKey());
                     if (null != p)
                         p.setValue(e.getValue());
                 }
@@ -716,11 +746,18 @@ public class Parameter
         }
 
 
+
+
+
         String _debugSql;
 
         public String getDebugSql()
         {
-            return _debugSql;
+            if (null != _debugSql)
+                return _debugSql;
+            if (_stmt instanceof StatementWrapper)
+                return ((StatementWrapper)_stmt).getDebugSql();
+            return null!=_sqlf ? _sqlf.toString() : null;
         }
 
         public void setDebugSql(String sql)

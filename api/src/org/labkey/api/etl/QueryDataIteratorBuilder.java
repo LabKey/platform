@@ -108,7 +108,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         try
         {
-            ResultSet rs = qs.select(t, t.getColumns(), _filter, null, _parameters);
+            ResultSet rs = qs.select(t, t.getColumns(), _filter, null, _parameters, false);
             return new ResultSetDataIterator(rs, context);
         }
         catch (QueryParseException x)

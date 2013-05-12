@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
@@ -134,10 +135,16 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
 
+            Parameter.ParameterMap stmt;
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
-                _stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+                stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
             else
-                _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false);
+                stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false);
+
+            if (_useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex)
+                _stmts = new Parameter.ParameterMap[] {stmt, stmt.copy()};
+            else
+                _stmts = new Parameter.ParameterMap[] {stmt};
 
             super.init();
             if (_selectIds)
