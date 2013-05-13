@@ -21,6 +21,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -278,10 +279,27 @@ public abstract class ApiResponseWriter
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
-        String exception = null;
-        JSONArray jsonErrors = new JSONArray();
-        for (ObjectError error : (List<ObjectError>) errors.getAllErrors())
+        Pair<String, JSONArray> pair = convertToJSON(errors, errorResponseStatus);
+
+        JSONObject root = new JSONObject();
+        root.put("exception", pair.getKey());
+        root.put("errors", pair.getValue());
+        writeJsonObj(root);
+    }
+
+    /**
+     * Converts the errors to JSON-friendly client responses. Starts at the specified index, skipping any prior
+     * errors in the collection
+     * @return a Pair with the message from the first error, and the JSONArray of the full error information
+     */
+    public static Pair<String, JSONArray> convertToJSON(Errors errors, int startingErrorIndex)
+    {
+        String exceptionMessage = null;
+        JSONArray errorsArray = new JSONArray();
+        List<ObjectError> allErrors = (List<ObjectError>) errors.getAllErrors();
+        for (int i = startingErrorIndex; i < allErrors.size(); i++)
         {
+            ObjectError error = allErrors.get(i);
             String msg = error.getDefaultMessage();
             String key = error.getObjectName();
 
@@ -299,16 +317,12 @@ public abstract class ApiResponseWriter
             jsonError.put("field", key);
             jsonError.put("message", msg);
 
-            if (null == exception)
-                exception = msg;
+            if (null == exceptionMessage)
+                exceptionMessage = msg;
 
-            jsonErrors.put(jsonError);
+            errorsArray.put(jsonError);
         }
-
-        JSONObject root = new JSONObject();
-        root.put("exception", exception);
-        root.put("errors", jsonErrors);
-        writeJsonObj(root);
+        return new Pair<>(exceptionMessage, errorsArray);
     }
 
     //stream oriented methods

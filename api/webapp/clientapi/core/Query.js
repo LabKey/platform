@@ -671,17 +671,33 @@ LABKEY.Query = new function()
         * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * The extraContext at the command-level will be merged with the extraContext at the top-level of the config.
         * @param {Function} config.success Function called when the "saveRows" function executes successfully.
-        	    Will be called with arguments:
-                an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request),
-                the XMLHttpRequest object and (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
+        	    Called with arguments:
+                <ul>
+                    <li>an object with the following properties:
+                    <ul>
+                        <li><strong>result</strong>: an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request)
+                        <li><strong>errorCount</strong>: an integer, with the total number of errors encountered during the operation
+                        <li><strong>committed</strong>: a boolean, indicating if the changes were actually committed to the database
+                    </ul>
+                    <li>the XMLHttpRequest object</li>
+                    <li>(optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions})</li>
+                </ul>
         * @param {Function} [config.failure] Function called if execution of the "saveRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {String} [config.containerPath] The container path in which the changes are to be performed.
         *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+        * @param {Double} [config.apiVersion] Version of the API. If this is 13.2 or higher, a request that fails
+        * validation will be returned as a successful response. Use the 'errorCount' and 'committed' properties in the
+        * response to fell if it committed or not. If this is 13.1 or lower (or unspecified), the failure callback
+        * will be invoked instead in the event of a validation failure.
         * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
+        * @param {boolean} [config.validateOnly] Whether or not the server should attempt proceed through all of the
+        * commands, but not actually commit them to the database. Useful for scenarios like giving incremental
+        * validation feedback as auser fills out a UI form, but not actually save anything until they explicitly request
+        * a save.
         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
@@ -1393,11 +1409,13 @@ LABKEY.Query = new function()
            "queryName": "API Test List"
            "rowsAffected": 1,
            "command": "insert",
+           "errors": [],
            "rows": [{ Key: 3, StringField: 'NewValue'}]
         } </pre></code>
 * @see LABKEY.Query.updateRows
 * @see LABKEY.Query.insertRows
 * @see LABKEY.Query.deleteRows
+* @see LABKEY.Query.saveRows
 */
 
 /**#@+
@@ -1421,6 +1439,13 @@ LABKEY.Query = new function()
 * @name    command
 * @description   Will be "update", "insert", or "delete" depending on the API called.
 * @type    String
+*/
+
+/**
+* @name    errors
+* @description   Objects will contain the properties 'id' (the field to which the error is related, if any),
+*                and 'msg' (the error message itself).
+* @type    Array
 */
 
 /**

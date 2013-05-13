@@ -150,12 +150,12 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
             //if we had binding or validation errors,
             //return them without calling execute.
-            if(null != errors && errors.hasErrors())
+            if(isFailure(errors))
                 createResponseWriter().write((Errors)errors);
             else
             {
                 ApiResponse response = execute(form, errors);
-                if (null != errors && errors.hasErrors())
+                if (isFailure(errors))
                     createResponseWriter().write((Errors)errors);
                 else if (null != response)
                     createResponseWriter().write(response);
@@ -210,6 +210,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return null;
     } //handleRequest()
 
+    protected boolean isFailure(BindException errors)
+    {
+        return null != errors && errors.hasErrors();
+    }
 
     protected double getApiVersion()
     {
@@ -343,9 +347,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     public ApiResponseWriter createResponseWriter() throws IOException
     {
-        //for now, always return a JSON writer.
-        //in the future, look at the posted content-type, or a query string param
-        //to determine which format to create
+        // Let the response format dictate how we write the response. Typically JSON, but not always.
         return _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride());
     }
 
