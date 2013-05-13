@@ -2776,13 +2776,13 @@ public class QueryController extends SpringActionController
 
             int rowsAffected = 0;
 
-            List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
             // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
-            RowMapFactory f = null;
+            RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
-                f = new RowMapFactory();
+                f = new RowMapFactory<>();
 
             for (int idx = 0; idx < rows.length(); ++idx)
             {
@@ -2797,7 +2797,7 @@ public class QueryController extends SpringActionController
                 }
                 if (null != jsonObj)
                 {
-                    Map<String,Object> rowMap = null == f ? new CaseInsensitiveHashMap<Object>() : f.getRowMap();
+                    Map<String,Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     rowMap.putAll(jsonObj);
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -2842,6 +2842,17 @@ public class QueryController extends SpringActionController
                 //Issue 14294: improve handling of ConversionException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
+            catch (BatchValidationException e)
+            {
+                if (isSuccessOnValidationError())
+                {
+                    e.addToErrors(errors);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
             finally
             {
                 if (transacted)
@@ -2851,6 +2862,11 @@ public class QueryController extends SpringActionController
             response.put("rowsAffected", rowsAffected);
 
             return response;
+        }
+
+        protected boolean isSuccessOnValidationError()
+        {
+            return getRequestedApiVersion() >= 13.2;
         }
 
         @NotNull
@@ -2920,6 +2936,12 @@ public class QueryController extends SpringActionController
         public static final String PROP_OLD_KEYS = "oldKeys";
 
         @Override
+        protected boolean isFailure(BindException errors)
+        {
+            return !isSuccessOnValidationError() && super.isFailure(errors);
+        }
+
+        @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
             JSONObject json = apiSaveRowsForm.getJsonObject();
@@ -2927,7 +2949,7 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("Empty request");
 
             JSONArray commands = (JSONArray)json.get("commands");
-            JSONArray result = new JSONArray();
+            JSONArray resultArray = new JSONArray();
             if (commands == null || commands.length() == 0)
             {
                 throw new NotFoundException("Empty request");
@@ -2935,7 +2957,14 @@ public class QueryController extends SpringActionController
 
             Map<String, Object> extraContext = json.optJSONObject("extraContext");
 
-            boolean transacted = json.optBoolean("transacted", true);
+            boolean validateOnly = json.optBoolean("validateOnly", false);
+            // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
+            // respect the client's request.
+            boolean transacted = validateOnly || json.optBoolean("transacted", true);
+
+            // Keep track of whether we end up committing or not
+            boolean committed = false;
+
             DbScope scope = null;
             if (transacted)
             {
@@ -2960,6 +2989,7 @@ public class QueryController extends SpringActionController
                 scope.ensureTransaction();
             }
 
+            int startingErrorIndex = 0;
             try
             {
                 for (int i = 0; i < commands.length(); i++)
@@ -2973,7 +3003,7 @@ public class QueryController extends SpringActionController
                     CommandType command = CommandType.valueOf(commandName);
 
                     // Copy the top-level 'extraContext' and merge in the command-level extraContext.
-                    Map<String, Object> commandExtraContext = new HashMap<String, Object>();
+                    Map<String, Object> commandExtraContext = new HashMap<>();
                     if (extraContext != null)
                         commandExtraContext.putAll(extraContext);
                     if (commandObject.has("extraContext"))
@@ -2983,13 +3013,33 @@ public class QueryController extends SpringActionController
                     commandObject.put("extraContext", commandExtraContext);
 
                     JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
-                    if (commandResponse == null || errors.hasErrors())
+                    // Bail out immediately if we're going to return a failure-type response message
+                    if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
-                    result.put(commandResponse);
+
+                    // If we encountered errors with this particular command and the client requested that don't treat
+                    // the whole request as a failure (non-200 HTTP status code), stash the errors for this particular
+                    // command in its response section.
+                    if (errors.getErrorCount() > startingErrorIndex && isSuccessOnValidationError())
+                    {
+                        commandResponse.put("errors", ApiResponseWriter.convertToJSON(errors, startingErrorIndex).getValue());
+                        startingErrorIndex = errors.getErrorCount();
+                    }
+                    resultArray.put(commandResponse);
                 }
-                if (transacted)
+
+                // Don't commit if we had errors or if the client requested that we only validate (and not commit)
+                if (transacted && !errors.hasErrors() && !validateOnly)
                 {
                     scope.commitTransaction();
+                    committed = true;
+                }
+
+                if (!transacted && !errors.hasErrors())
+                {
+                    // We're not transacting so we didn't explicitly call commit(). Check if we had any errors
+                    // as a way to see if it was successful or not
+                    committed = true;
                 }
             }
             finally
@@ -2999,7 +3049,11 @@ public class QueryController extends SpringActionController
                     scope.closeConnection();
                 }
             }
-            return new ApiSimpleResponse("result", result);
+            JSONObject result = new JSONObject();
+            result.put("result", resultArray);
+            result.put("committed", committed);
+            result.put("errorCount", errors.getErrorCount());
+            return new ApiSimpleResponse(result);
         }
     }
 
@@ -3024,7 +3078,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
            setHelpTopic(new HelpTopic("externalSchemas"));
-           return new JspView<QueryForm>(getClass(), "admin.jsp", form, errors);
+           return new JspView<>(getClass(), "admin.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3092,7 +3146,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("linkedSchema"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3107,7 +3161,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3273,7 +3327,7 @@ public class QueryController extends SpringActionController
             LinkedSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("linkedSchemas"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
+            return new JspView<>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3295,7 +3349,7 @@ public class QueryController extends SpringActionController
             ExternalSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
+            return new JspView<>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3311,7 +3365,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<ExternalSchemaBean>(QueryController.class, "multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>(QueryController.class, "multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
         public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
@@ -3393,10 +3447,10 @@ public class QueryController extends SpringActionController
         protected final Container _c;
         protected final T _def;
         protected final boolean _insert;
-        protected final Map<String, String> _help = new HashMap<String, String>();
+        protected final Map<String, String> _help = new HashMap<>();
 
-        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemas = new LinkedHashMap<DataSourceInfo, Collection<String>>();
-        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemasIncludingSystem = new LinkedHashMap<DataSourceInfo, Collection<String>>();
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemas = new LinkedHashMap<>();
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemasIncludingSystem = new LinkedHashMap<>();
 
         public BaseExternalSchemaBean(Container c, T def, boolean insert)
         {
@@ -3487,7 +3541,7 @@ public class QueryController extends SpringActionController
             MultiMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
             Set<Container> adminContainers = ContainerManager.getContainerSet(containerTree, user, AdminPermission.class);
 
-            SortedSet<Container> sortedContainers = new TreeSet<Container>(new Comparator<Container>() {
+            SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>() {
                     public int compare(Container o1, Container o2)
                     {
                         return o1.getPath().compareTo(o2.getPath());
@@ -3500,7 +3554,7 @@ public class QueryController extends SpringActionController
 
             for (Container c : sortedContainers)
             {
-                Collection<String> schemaNames = new LinkedList<String>();
+                Collection<String> schemaNames = new LinkedList<>();
                 //Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
 
                 DefaultSchema defaultSchema = DefaultSchema.get(user, c);
@@ -3543,8 +3597,8 @@ public class QueryController extends SpringActionController
 
                 try
                 {
-                    Collection<String> schemaNames = new LinkedList<String>();
-                    Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
+                    Collection<String> schemaNames = new LinkedList<>();
+                    Collection<String> schemaNamesIncludingSystem = new LinkedList<>();
 
                     for (String schemaName : scope.getSchemaNames())
                     {
@@ -3615,8 +3669,8 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(GetTablesForm form, BindException errors) throws Exception
         {
-            List<Map<String, Object>> rows = new LinkedList<Map<String, Object>>();
-            List<String> tableNames = new ArrayList<String>();
+            List<Map<String, Object>> rows = new LinkedList<>();
+            List<String> tableNames = new ArrayList<>();
 
             if (null != form.getSchemaName())
             {
@@ -3649,12 +3703,12 @@ public class QueryController extends SpringActionController
 
             for (String tableName : tableNames)
             {
-                Map<String, Object> row = new LinkedHashMap<String, Object>();
+                Map<String, Object> row = new LinkedHashMap<>();
                 row.put("table", tableName);
                 rows.add(row);
             }
 
-            Map<String, Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<>();
             properties.put("rows", rows);
 
             return new ApiSimpleResponse(properties);
@@ -3994,7 +4048,7 @@ public class QueryController extends SpringActionController
                 sql = PageFlowUtil.getStreamContentsAsString(getViewContext().getRequest().getInputStream());
             ErrorsDocument ret = ErrorsDocument.Factory.newInstance();
             org.labkey.query.design.Errors xbErrors = ret.addNewErrors();
-            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            List<QueryParseException> errors = new ArrayList<>();
             try
             {
                 (new SqlParser()).parseExpr(sql, errors);
