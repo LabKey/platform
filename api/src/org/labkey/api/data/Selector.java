@@ -43,22 +43,22 @@ public interface Selector
 
     boolean exists();
 
-    <K> K[] getArray(Class<K> clazz);
+    <T> T[] getArray(Class<T> clazz);
 
     // Convenience method that avoids "unchecked assignment" warnings
     Map<String, Object>[] getMapArray();
 
-    <K> Collection<K> getCollection(Class<K> clazz);
+    <E> Collection<E> getCollection(Class<E> clazz);
 
-    <K> ArrayList<K> getArrayList(Class<K> clazz);
+    <E> ArrayList<E> getArrayList(Class<E> clazz);
 
-    <K> K getObject(Class<K> clazz);
+    <T> T getObject(Class<T> clazz);
 
     void forEach(ForEachBlock<ResultSet> block);
 
     void forEachMap(ForEachBlock<Map<String, Object>> block);
 
-    <K> void forEach(ForEachBlock<K> block, Class<K> clazz);
+    <T> void forEach(ForEachBlock<T> block, Class<T> clazz);
 
     // Return a new map from a two-column query; the first column is the key, the second column is the value.
     <K, V> Map<K, V> getValueMap();
@@ -66,8 +66,8 @@ public interface Selector
     // Populate an existing map from a two-column query; the first column is the key, the second column is the value.
     <K, V> Map<K, V> fillValueMap(Map<K, V> map);
 
-    interface ForEachBlock<K>
+    interface ForEachBlock<T>
     {
-        void exec(K object) throws SQLException;
+        void exec(T object) throws SQLException;
     }
 }

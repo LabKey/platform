@@ -18,8 +18,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
+import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -66,8 +66,17 @@ public class SqlExecutor extends JdbcCommand
 
     public <T> T executeWithResults(SQLFragment sql, ResultSetHandler<T> handler)
     {
-        ResultsHandlingStatementExecutor<T> resultsExecutor = new ResultsHandlingStatementExecutor<T>();
+        ResultsHandlingStatementExecutor<T> resultsExecutor = new ResultsHandlingStatementExecutor<>();
         return execute(sql, resultsExecutor, handler);
+    }
+
+    // Provides the ability to execute a SQL statement that returns multiple result sets. The method prepares the
+    // statement, passes it into the StatementHandler for execution and result set handling, and then closes
+    // the statement.
+    public <T> T executeWithMultipleResults(SQLFragment sql, StatementHandler<T> handler)
+    {
+        StatementHandlingStatementExecutor<T> statementExecutor = new StatementHandlingStatementExecutor<>();
+        return execute(sql, statementExecutor, handler);
     }
 
     public <T, C> T execute(SQLFragment sql, StatementExecutor<T, C> statementExecutor, @Nullable C context)
@@ -90,7 +99,7 @@ public class SqlExecutor extends JdbcCommand
         }
     }
 
-    // StatementExecutor is a bit convoluted, but these classes allow normal and results-returning executions
+    // StatementExecutor is a bit convoluted, but the implementations allow normal and results-returning executions
     // to share the same code path.
     private static interface StatementExecutor<T, C>
     {
@@ -104,32 +113,31 @@ public class SqlExecutor extends JdbcCommand
         {
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
-            Statement stmt = null;
 
-            try
+            if (parameters.isEmpty())
             {
-                if (parameters.isEmpty())
+                try (Statement stmt = conn.createStatement())
                 {
-                    stmt = conn.createStatement();
                     if (stmt.execute(sql))
                         return -1;
                     else
                         return stmt.getUpdateCount();
                 }
-                else
+            }
+            else
+            {
+                try (PreparedStatement stmt = conn.prepareStatement(sql))
                 {
-                    stmt = conn.prepareStatement(sql);
-                    Table.setParameters((PreparedStatement) stmt, parameters);
-                    if (((PreparedStatement)stmt).execute())
+                    Table.setParameters(stmt, parameters);
+                    if (stmt.execute())
                         return -1;
                     else
                         return stmt.getUpdateCount();
                 }
-            }
-            finally
-            {
-                ResultSetUtil.close(stmt);
-                Table.closeParameters(parameters);
+                finally
+                {
+                    Table.closeParameters(parameters);
+                }
             }
         }
     }
@@ -141,21 +149,39 @@ public class SqlExecutor extends JdbcCommand
         {
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
-            PreparedStatement stmt = null;
-            ResultSet rs = null;
 
-            try
+            try (PreparedStatement stmt =  conn.prepareStatement(sql))
             {
-                stmt = conn.prepareStatement(sql);
                 Table.setParameters(stmt, parameters);
 
-                rs = dialect.executeWithResults(stmt);
-                return handler.handle(rs, conn);
+                try (ResultSet rs = dialect.executeWithResults(stmt))
+                {
+                    return handler.handle(rs, conn);
+                }
             }
             finally
             {
-                ResultSetUtil.close(rs);
-                ResultSetUtil.close(stmt);
+                Table.closeParameters(parameters);
+            }
+        }
+    }
+
+    private static class StatementHandlingStatementExecutor<T> implements StatementExecutor<T, BaseSelector.StatementHandler<T>>
+    {
+        @Override
+        public T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, BaseSelector.StatementHandler<T> handler) throws SQLException
+        {
+            List<Object> parameters = sqlFragment.getParams();
+            String sql = sqlFragment.getSQL();
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql))
+            {
+                Table.setParameters(stmt, parameters);
+
+                return handler.handle(stmt, conn);
+            }
+            finally
+            {
                 Table.closeParameters(parameters);
             }
         }

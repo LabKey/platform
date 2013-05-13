@@ -257,6 +257,13 @@ public class SQLFragment implements Appendable, CharSequence
         getStringBuilder().insert(index, str);
     }
 
+    // Insert this SQLFragment's SQL and parameters at the start of the existing SQL and parameters
+    public void prepend(SQLFragment sql)
+    {
+        insert(0, sql.getSqlCharSequence().toString());
+        getModfiableParams().addAll(0, sql.getParams());
+    }
+
     public int indexOf(String str)
     {
         return getStringBuilder().indexOf(str);

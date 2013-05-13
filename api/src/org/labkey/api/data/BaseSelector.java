@@ -22,6 +22,7 @@ import org.labkey.api.collections.RowMap;
 
 import java.lang.reflect.Array;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -53,11 +54,11 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     // No implementation of getResultSet(), getRowCount(), or exists() here since implementations will differ widely.
 
     @Override
-    public <K> K[] getArray(Class<K> clazz)
+    public <E> E[] getArray(Class<E> clazz)
     {
-        ArrayList<K> list = getArrayList(clazz);
+        ArrayList<E> list = getArrayList(clazz);
         //noinspection unchecked
-        return list.toArray((K[]) Array.newInstance(clazz, list.size()));
+        return list.toArray((E[]) Array.newInstance(clazz, list.size()));
     }
 
     // Convenience method that avoids "unchecked assignment" warnings
@@ -69,20 +70,20 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public <K> Collection<K> getCollection(Class<K> clazz)
+    public <E> Collection<E> getCollection(Class<E> clazz)
     {
         return getArrayList(clazz);
     }
 
     @Override
-    public <K> ArrayList<K> getArrayList(Class<K> clazz)
+    public <E> ArrayList<E> getArrayList(Class<E> clazz)
     {
         return getArrayList(clazz, getStandardResultSetFactory());
     }
 
-    protected <K> ArrayList<K> getArrayList(final Class<K> clazz, ResultSetFactory factory)
+    protected <E> ArrayList<E> getArrayList(final Class<E> clazz, ResultSetFactory factory)
     {
-        final ArrayList<K> list;
+        final ArrayList<E> list;
         final Table.Getter getter = Table.Getter.forClass(clazz);
 
         // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
@@ -94,35 +95,35 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
                 public void exec(ResultSet rs) throws SQLException
                 {
                     //noinspection unchecked
-                    list.add((K)getter.getObject(rs));
+                    list.add((E)getter.getObject(rs));
                 }
             }, factory);
         }
         // If not, we're generating maps or beans
         else
         {
-            list = handleResultSet(factory, new ResultSetHandler<ArrayList<K>>()
+            list = handleResultSet(factory, new ResultSetHandler<ArrayList<E>>()
             {
                 @Override
-                public ArrayList<K> handle(ResultSet rs, Connection conn) throws SQLException
+                public ArrayList<E> handle(ResultSet rs, Connection conn) throws SQLException
                 {
                     if (Map.class == clazz)
                     {
                         // We will consume the result set and close it immediately, so no need to cache meta data
                         CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(rs, false, Table.ALL_ROWS, null);
                         //noinspection unchecked
-                        K[] arrayListMaps = (K[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
+                        E[] arrayListMaps = (E[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                         copy.close();
 
                         // TODO: Not very efficient...
-                        ArrayList<K> list = new ArrayList<>(arrayListMaps.length);
+                        ArrayList<E> list = new ArrayList<>(arrayListMaps.length);
                         //noinspection unchecked
                         Collections.addAll(list, arrayListMaps);
                         return list;
                     }
                     else
                     {
-                        ObjectFactory<K> factory = getObjectFactory(clazz);
+                        ObjectFactory<E> factory = getObjectFactory(clazz);
 
                         return factory.handleArrayList(rs);
                     }
@@ -133,17 +134,17 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return list;
     }
 
-    public <K> K getObject(Class<K> clazz)
+    public <T> T getObject(Class<T> clazz)
     {
         return getObject(getArrayList(clazz), clazz);
     }
 
-    protected <K> K getObject(Class<K> clazz, ResultSetFactory factory)
+    protected <T> T getObject(Class<T> clazz, ResultSetFactory factory)
     {
         return getObject(getArrayList(clazz, factory), clazz);
     }
 
-    protected <K> K getObject(List<K> list, Class<K> clazz)
+    protected <T> T getObject(List<T> list, Class<T> clazz)
     {
         if (list.size() == 1)
             return list.get(0);
@@ -192,12 +193,17 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         });
     }
 
-    public interface ResultSetHandler<K>
+    public interface ResultSetHandler<T>
     {
-        K handle(ResultSet rs, Connection conn) throws SQLException;
+        T handle(ResultSet rs, Connection conn) throws SQLException;
     }
 
-    protected <K> K handleResultSet(ResultSetFactory factory, ResultSetHandler<K> handler)
+    public interface StatementHandler<T>
+    {
+        T handle(PreparedStatement stmt, Connection conn) throws SQLException;
+    }
+
+    protected <T> T handleResultSet(ResultSetFactory factory, ResultSetHandler<T> handler)
     {
         boolean success = false;
         Connection conn = null;
@@ -208,7 +214,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
             conn = getConnection();
             rs = factory.getResultSet(conn);
 
-            K ret = handler.handle(rs, conn);
+            T ret = handler.handle(rs, conn);
             success = true;
 
             return ret;
@@ -228,7 +234,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz)
+    public <T> void forEach(final ForEachBlock<T> block, Class<T> clazz)
     {
         final Table.Getter getter = Table.Getter.forClass(clazz);
 
@@ -240,13 +246,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
                 public void exec(ResultSet rs) throws SQLException
                 {
                     //noinspection unchecked
-                    block.exec((K)getter.getObject(rs));
+                    block.exec((T)getter.getObject(rs));
                 }
             });
         }
         else
         {
-            final ObjectFactory<K> factory = getObjectFactory(clazz);
+            final ObjectFactory<T> factory = getObjectFactory(clazz);
 
             ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
                 @Override
@@ -260,9 +266,9 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         }
     }
 
-    protected <K> ObjectFactory<K> getObjectFactory(Class<K> clazz)
+    protected <T> ObjectFactory<T> getObjectFactory(Class<T> clazz)
     {
-        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
+        ObjectFactory<T> factory = ObjectFactory.Registry.getFactory(clazz);
 
         if (null == factory)
             throw new IllegalArgumentException("Could not find object factory for " + clazz.getSimpleName() + ".");

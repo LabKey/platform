@@ -23,10 +23,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
+import org.labkey.api.data.BaseSelector.StatementHandler;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
@@ -40,13 +43,32 @@ import java.util.concurrent.TimeUnit;
 public class DbSequenceManager
 {
     // This handler expects to always return a single integer value
-    private static final ResultSetHandler<Integer> INTEGER_RETURNING_HANDLER = new ResultSetHandler<Integer>()
+    private static final ResultSetHandler<Integer> INTEGER_RETURNING_RESULTSET_HANDLER = new ResultSetHandler<Integer>()
     {
         @Override
         public Integer handle(ResultSet rs, Connection conn) throws SQLException
         {
             rs.next();
             return rs.getInt(1);
+        }
+    };
+
+    // Statement handler for the multiple statement case
+    private static final StatementHandler<Integer> INTEGER_RETURNING_STATEMENT_HANDLER = new StatementHandler<Integer>()
+    {
+        @Override
+        public Integer handle(PreparedStatement stmt, Connection conn) throws SQLException
+        {
+            stmt.execute();
+
+            // Skip and close the first ResultSet
+            stmt.getMoreResults();
+
+            try (ResultSet rs = stmt.getResultSet())
+            {
+                rs.next();
+                return rs.getInt(1);
+            }
         }
     };
 
@@ -169,22 +191,11 @@ public class DbSequenceManager
     static int next(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        boolean isPostgreSQL = tinfo.getSqlDialect().isPostgreSQL();
 
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ");
 
-        if (isPostgreSQL)
-        {
-            // Adding this sub-select with FOR UPDATE locks the row to ensure a true atomic update
-            sql.append("(SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE)");
-            sql.add(sequence.getContainer());
-            sql.add(sequence.getRowId());
-        }
-        else
-        {
-            sql.append("Value");
-        }
+        boolean multiline = addValueSql(sql, tinfo, sequence);
 
         sql.append(" + 1 WHERE Container = ? AND RowId = ?");
         sql.add(sequence.getContainer());
@@ -196,7 +207,7 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        return executeAndReturnInteger(tinfo, sql);
+        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInteger(tinfo, sql);
     }
 
 
@@ -207,28 +218,54 @@ public class DbSequenceManager
     }
 
 
+    private static boolean addValueSql(SQLFragment sql, TableInfo tinfo, DbSequence sequence)
+    {
+        SqlDialect dialect = tinfo.getSqlDialect();
+        boolean multiline = false;
+
+        if (dialect.isPostgreSQL())
+        {
+            // SELECT with FOR UPDATE locks the row to ensure a true atomic update
+            SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE");
+            selectForUpdate.add(sequence.getContainer());
+            selectForUpdate.add(sequence.getRowId());
+
+            // Using FOR UPDATE inside a sub-select is cleaner, but doesn't work on PostgreSQL 8.4, so implement multi-line version on 8.4
+            if (dialect.getDatabaseVersion() < 93)     // TODO
+            {
+                sql.append("Value");
+
+                selectForUpdate.append(";\n");
+                sql.prepend(selectForUpdate);
+                multiline = true;
+            }
+            else
+            {
+                sql.append("(").append(selectForUpdate).append(")");
+            }
+        }
+        else
+        {
+            sql.append("Value");
+        }
+
+        return multiline;
+    }
+
+
     // Sets the sequence value to requested minimum, if it's currently less than this value
     static void ensureMinimum(DbSequence sequence, int minimum)
     {
         TableInfo tinfo = getTableInfo();
-        boolean isPostgreSQL = tinfo.getSqlDialect().isPostgreSQL();
 
         SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND ");
         sql.add(minimum);
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
-        if (isPostgreSQL)
-        {
-            // Adding this sub-select with FOR UPDATE locks the row to ensure a true atomic update
-            sql.append("(SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE)");
-            sql.add(sequence.getContainer());
-            sql.add(sequence.getRowId());
-        }
-        else
-        {
-            sql.append("Value");
-        }
+        // We don't care about the ResultSet(s) that are returned from the statement, which means we execute single- and
+        // multi-line statemnets the same way, which means we can ignore the return value
+        addValueSql(sql, tinfo, sequence);
 
         sql.append(" < ?");
         sql.add(minimum);
@@ -269,7 +306,24 @@ public class DbSequenceManager
 
         try (Connection conn = scope.getPooledConnection())
         {
-            return new SqlExecutor(scope, conn).executeWithResults(sql, INTEGER_RETURNING_HANDLER);
+            return new SqlExecutor(scope, conn).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    //
+    // Executes in a separate connection that does NOT participate in the current transaction
+    private static int executeMultipleStatementsAndReturnInteger(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlExecutor(scope, conn).executeWithMultipleResults(sql, INTEGER_RETURNING_STATEMENT_HANDLER);
         }
         catch (SQLException e)
         {
