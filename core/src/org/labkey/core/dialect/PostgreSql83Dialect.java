@@ -27,6 +27,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -1047,7 +1048,7 @@ class PostgreSql83Dialect extends SqlDialect
         colSpec.add(sqlTypeNameFromSqlType(prop));
         if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
             colSpec.add("(" + prop.getSize() + ")");
-        else if (prop.getJdbcType().sqlType == Types.NUMERIC)
+        else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
         if (prop.isPrimaryKey())
             colSpec.add("NOT NULL");

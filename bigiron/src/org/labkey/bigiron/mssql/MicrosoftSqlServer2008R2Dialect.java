@@ -23,6 +23,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -924,7 +925,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
         if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
             colSpec.add("(" + prop.getSize() + ")");
-        else if (prop.getJdbcType().sqlType == Types.NUMERIC)
+        else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
 
         if (prop.isPrimaryKey())
