@@ -160,7 +160,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         ArrayList<FolderTab> tabs = new ArrayList<FolderTab>();
         Set<String> tabNames = new CaseInsensitiveHashSet();
 
-        int idx = 0;
+        int idx = 1;        // Must start with 1, not 0
         for (FolderTabDocument.FolderTab tab : references)
         {
             if (tabNames.add(tab.getName()))
