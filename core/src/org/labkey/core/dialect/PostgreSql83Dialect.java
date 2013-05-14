@@ -939,7 +939,7 @@ class PostgreSql83Dialect extends SqlDialect
                 sql.add("DROP TABLE " + makeTableIdentifier(change));
                 break;
             case AddColumns:
-                sql.add(getAddColumnsStatement(change));
+                sql.addAll(getAddColumnsStatements(change));
                 break;
             case DropColumns:
                 sql.add(getDropColumnsStatement(change));
@@ -991,15 +991,32 @@ class PostgreSql83Dialect extends SqlDialect
     // TODO if there are cases where user-defined columns need indices, this method will need to support
     // creating indices like getCreateTableStatement does.
 
-    private String getAddColumnsStatement(TableChange change)
+    private List<String> getAddColumnsStatements(TableChange change)
     {
+        List<String> statements = new ArrayList<>();
         List<String> sqlParts = new ArrayList<>();
+        String pkColumn = null;
+
         for (PropertyStorageSpec prop : change.getColumns())
         {
             sqlParts.add("ADD COLUMN " + getSqlColumnSpec(prop));
+            if (prop.isPrimaryKey())
+            {
+                assert null == pkColumn : "no more than one primary key defined";
+                pkColumn = prop.getName();
+            }
         }
 
-        return String.format("ALTER TABLE %s %s", makeTableIdentifier(change), StringUtils.join(sqlParts, ", "));
+        statements.add(String.format("ALTER TABLE %s %s", makeTableIdentifier(change), StringUtils.join(sqlParts, ", ")));
+        if (null != pkColumn)
+        {
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
+                    makeTableIdentifier(change),
+                    change.getTableName() + "_pk",
+                    pkColumn));
+        }
+
+        return statements;
     }
 
     private List<String> getCreateTableStatements(TableChange change)

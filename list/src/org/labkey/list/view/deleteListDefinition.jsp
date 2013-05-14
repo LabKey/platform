@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
-<%@ page import="org.labkey.list.view.ListController" %>
+<%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="org.labkey.list.view.ListDefinitionForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>

@@ -32,7 +32,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.list.view.ListController;
+import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListQueryView;
 import org.springframework.validation.BindException;
 
@@ -94,9 +94,16 @@ public class ListQuerySchema extends UserSchema
         ListDefinition def = ListService.get().getLists(getContainer()).get(name);
         if (def != null)
         {
-            // don't call def.getTable(),
-            // UserSchema will call afterConstruct()
-            return new OntologyListTable(this, def);
+            if (ListDefinitionImpl.ontologyBased())
+            {
+                // don't call def.getTable(),
+                // UserSchema will call afterConstruct()
+                return new OntologyListTable(this, def);
+            }
+            else
+            {
+                return new ListTable(this, def);
+            }
         }
         return null;
     }

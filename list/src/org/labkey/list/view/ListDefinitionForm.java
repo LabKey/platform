@@ -24,6 +24,7 @@ import org.labkey.api.view.URLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.list.controllers.ListController;
 
 import java.net.URISyntaxException;
 

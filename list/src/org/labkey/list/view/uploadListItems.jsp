@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.list.view.ListController" %>
+<%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="org.labkey.list.view.UploadListItemsForm" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>

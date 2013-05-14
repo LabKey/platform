@@ -2,6 +2,7 @@ package org.labkey.list.model;
 
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.list.ListDefinition;
 
 /**
  * User: Nick
@@ -20,8 +21,10 @@ public class VarcharListDomainKind extends ListDomainKind
 
 
     @Override
-    PropertyStorageSpec getKeyProperty(String keyColumnName)
+    PropertyStorageSpec getKeyProperty(ListDefinition list)
     {
-        return new PropertyStorageSpec(keyColumnName, JdbcType.VARCHAR);
+        PropertyStorageSpec key = new PropertyStorageSpec(list.getKeyName(), JdbcType.VARCHAR);
+        key.setPrimaryKey(true);
+        return key;
     }
 }

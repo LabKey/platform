@@ -40,7 +40,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.list.view.ListController;
+import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;

@@ -8,6 +8,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -18,6 +19,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,7 +30,7 @@ import java.util.Set;
  */
 public abstract class ListDomainKind extends AbstractDomainKind
 {
-    private String KEY_FIELD = "Key";
+    public static String KEY_FIELD = "Key";
 
     /*
      * the columns common to all lists
@@ -96,17 +98,33 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
-        specs.add(getKeyProperty(KEY_FIELD));
         specs.addAll(super.getBaseProperties());
         return specs;
     }
 
-    abstract PropertyStorageSpec getKeyProperty(String keyColumnName);
+    @Override
+    public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
+    {
+        ListDefinition list = ListService.get().getList(domain);
+        if (null != list)
+        {
+            if (pd.getName().equalsIgnoreCase(list.getKeyName()))
+            {
+                PropertyStorageSpec key = this.getKeyProperty(list);
+                assert key.isPrimaryKey();
+                return key;
+            }
+            return new PropertyStorageSpec(pd);
+        }
+        return null;
+    }
+
+    abstract PropertyStorageSpec getKeyProperty(ListDefinition list);
 
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return PageFlowUtil.set(KEY_FIELD, "EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed"); // ObjectId?
+        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed"); // ObjectId?
     }
 
     @Override
@@ -119,6 +137,13 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public DbScope getScope()
     {
         return ListSchema.getInstance().getSchema().getScope();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        // return PageFlowUtil.set(new PropertyStorageSpec.Index(false, ListDomainKind.KEY_FIELD));
+        return Collections.emptySet(); // TODO: Allow this to return the Key Column
     }
 
     public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)

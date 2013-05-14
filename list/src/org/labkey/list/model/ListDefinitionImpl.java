@@ -64,7 +64,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
-import org.labkey.list.view.ListController;
+import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -77,8 +77,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.GUID.makeGUID;
@@ -430,10 +432,15 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ListItem getListItem(Object key)
     {
-        // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
-        Object typedKey = getKeyType().convertKey(key);
+        if (ListDefinitionImpl.ontologyBased())
+        {
+            // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
+            Object typedKey = getKeyType().convertKey(key);
 
-        return getListItem(new SimpleFilter("Key", typedKey));
+            return getListItem(new SimpleFilter("Key", typedKey));
+        }
+
+        return null;
     }
 
     public ListItem getListItemForEntityId(String entityId)

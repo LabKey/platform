@@ -23,6 +23,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.list.controllers.ListController;
 
 import java.io.PrintWriter;
 

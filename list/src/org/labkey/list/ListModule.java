@@ -30,6 +30,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.list.controllers.ListController;
 import org.labkey.list.model.FolderListImporter;
 import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.IntegerListDomainKind;
@@ -40,7 +41,6 @@ import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.VarcharListDomainKind;
-import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 

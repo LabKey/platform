@@ -32,6 +32,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewContext;
+import org.labkey.list.controllers.ListController;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;

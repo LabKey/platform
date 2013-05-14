@@ -190,42 +190,42 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                 if (isVisibleByDefault(column))
                     defaultVisibleCols.add(FieldKey.fromParts(column.getName()));
             }
-            else if (getRealTable().getColumn(baseColumn.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX) != null)
+            else if (getRealTable().getColumn(name + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX) != null)
             {
                 // If this is the value column that goes with an OORIndicator, add the special OOR options
-                OORDisplayColumnFactory.addOORColumns(this, baseColumn, getRealTable().getColumn(baseColumn.getName() +
+                OORDisplayColumnFactory.addOORColumns(this, baseColumn, getRealTable().getColumn(name +
                         OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX));
                 if (isVisibleByDefault(baseColumn))
-                    defaultVisibleCols.add(FieldKey.fromParts(baseColumn.getName()));
+                    defaultVisibleCols.add(FieldKey.fromParts(name));
             }
-            else if (baseColumn.getName().toLowerCase().endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
-                    getRealTable().getColumn(baseColumn.getName().substring(0, baseColumn.getName().length() - OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.length())) != null)
+            else if (name.toLowerCase().endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
+                    getRealTable().getColumn(name.substring(0, name.length() - OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.length())) != null)
             {
                 // If this is an OORIndicator and there's a matching value column in the same table, don't add this column
             }
-            else if (baseColumn.getName().equalsIgnoreCase("Created") || baseColumn.getName().equalsIgnoreCase("Modified") ||
-                baseColumn.getName().equalsIgnoreCase("CreatedBy") || baseColumn.getName().equalsIgnoreCase("ModifiedBy")
+            else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
+                    name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
             )
             {
                 ColumnInfo c = addWrapColumn(baseColumn);
-                if (baseColumn.getName().equalsIgnoreCase("CreatedBy") || baseColumn.getName().equalsIgnoreCase("ModifiedBy"))
+                if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
                 c.setUserEditable(false);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
             }
-            else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _userSchema.getStudy().getTimepointType() != TimepointType.VISIT)
+            else if (name.equalsIgnoreCase("SequenceNum") && _userSchema.getStudy().getTimepointType() != TimepointType.VISIT)
             {
                 // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
                 // for date-based studies can be quite large (e.g., 20091014).
                 addWrapColumn(baseColumn).setFormat("#");
                 //Don't add to visible cols...
             }
-            else if (baseColumn.getName().equalsIgnoreCase("VisitRowId")||baseColumn.getName().equalsIgnoreCase("Dataset"))
+            else if (name.equalsIgnoreCase("VisitRowId")||name.equalsIgnoreCase("Dataset"))
             {
                 addWrapColumn(baseColumn);
             }
-            else if (baseColumn.getName().equalsIgnoreCase(QCSTATE_ID_COLNAME))
+            else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
                 ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
                 qcStateColumn.setFk(new LookupForeignKey("RowId")

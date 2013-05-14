@@ -178,22 +178,25 @@ public class ListManager implements SearchService.DocumentProvider
     // Index all lists in this container
     public void enumerateDocuments(@Nullable SearchService.IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
-
-        Runnable r = new Runnable()
+        if (ListDefinitionImpl.ontologyBased())
         {
-            public void run()
+            final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+
+            Runnable r = new Runnable()
             {
-                Map<String, ListDefinition> lists = ListService.get().getLists(c);
-
-                for (ListDefinition list : lists.values())
+                public void run()
                 {
-                    indexList(task, list);
-                }
-            }
-        };
+                    Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
-        task.addRunnable(r, SearchService.PRIORITY.group);
+                    for (ListDefinition list : lists.values())
+                    {
+                        indexList(task, list);
+                    }
+                }
+            };
+
+            task.addRunnable(r, SearchService.PRIORITY.group);
+        }
     }
 
     public void indexList(final ListDefinition def)
@@ -475,109 +478,112 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list)
     {
-        if (!list.getEntireListIndex())
+        if (ListDefinitionImpl.ontologyBased())
         {
-            // TODO: Shouldn't be necessary
-            deleteIndexedEntireListDoc(list);
-            return;
-        }
-
-        ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
-        String documentId = getDocumentId(list);
-
-        // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
-        boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
-
-        // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
-        if (!needToIndex && setting.indexItemData())
-            needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
-
-        if (!needToIndex)
-            return;
-
-        StringBuilder body = new StringBuilder();
-        Map<String, Object> props = new HashMap<String, Object>();
-
-        // Use standard title if that setting is chosen or template is null/whitespace
-        String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
-
-        props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-        props.put(SearchService.PROPERTY.title.toString(), title);
-
-        if (!StringUtils.isEmpty(list.getDescription()))
-            body.append(list.getDescription()).append("\n");
-
-        String sep = "";
-
-        if (setting.indexMetaData())
-        {
-            String comma = "";
-            for (DomainProperty property : list.getDomain().getProperties())
+            if (!list.getEntireListIndex())
             {
-                String n = StringUtils.trimToEmpty(property.getName());
-                String l = StringUtils.trimToEmpty(property.getLabel());
-                if (n.equals(l))
-                    l = "";
-                body.append(comma).append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
-                comma = ",";
-                sep = "\n";
+                // TODO: Shouldn't be necessary
+                deleteIndexedEntireListDoc(list);
+                return;
             }
-        }
 
-        if (setting.indexItemData())
-        {
-            TableInfo ti = list.getTable(User.getSearchUser());
-            FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
-            StringBuilder data = new StringBuilder();
+            ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
+            String documentId = getDocumentId(list);
 
-            try
+            // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
+            boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
+
+            // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
+            if (!needToIndex && setting.indexItemData())
+                needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
+
+            if (!needToIndex)
+                return;
+
+            StringBuilder body = new StringBuilder();
+            Map<String, Object> props = new HashMap<String, Object>();
+
+            // Use standard title if that setting is chosen or template is null/whitespace
+            String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
+
+            props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+            props.put(SearchService.PROPERTY.title.toString(), title);
+
+            if (!StringUtils.isEmpty(list.getDescription()))
+                body.append(list.getDescription()).append("\n");
+
+            String sep = "";
+
+            if (setting.indexMetaData())
             {
-                Results results = null;
+                String comma = "";
+                for (DomainProperty property : list.getDomain().getProperties())
+                {
+                    String n = StringUtils.trimToEmpty(property.getName());
+                    String l = StringUtils.trimToEmpty(property.getLabel());
+                    if (n.equals(l))
+                        l = "";
+                    body.append(comma).append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+                    comma = ",";
+                    sep = "\n";
+                }
+            }
+
+            if (setting.indexItemData())
+            {
+                TableInfo ti = list.getTable(User.getSearchUser());
+                FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+                StringBuilder data = new StringBuilder();
 
                 try
                 {
-                    results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
+                    Results results = null;
 
-                    while (results.next())
+                    try
                     {
-                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                        data.append(template.eval(map)).append("\n");
+                        results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
+
+                        while (results.next())
+                        {
+                            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                            data.append(template.eval(map)).append("\n");
+                        }
+                    }
+                    finally
+                    {
+                        if (null != results)
+                            results.close();
                     }
                 }
-                finally
+                catch (SQLException e)
                 {
-                    if (null != results)
-                        results.close();
+                    throw new RuntimeSQLException(e);
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
+
+                body.append(sep);
+                body.append(data);
             }
 
-            body.append(sep);
-            body.append(data);
+            ActionURL url = list.urlShowData();
+            url.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+
+            SimpleDocumentResource r = new SimpleDocumentResource(
+                    new Path(documentId),
+                    documentId,
+                    list.getContainer().getId(),
+                    "text/plain",
+                    body.toString().getBytes(),
+                    url,
+                    props) {
+                @Override
+                public void setLastIndexed(long ms, long modified)
+                {
+                    ListManager.get().setLastIndexed(list, ms);
+                }
+            };
+
+            task.addResource(r, SearchService.PRIORITY.item);
         }
-
-        ActionURL url = list.urlShowData();
-        url.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-
-        SimpleDocumentResource r = new SimpleDocumentResource(
-                new Path(documentId),
-                documentId,
-                list.getContainer().getId(),
-                "text/plain",
-                body.toString().getBytes(),
-                url,
-                props) {
-            @Override
-            public void setLastIndexed(long ms, long modified)
-            {
-                ListManager.get().setLastIndexed(list, ms);
-            }
-        };
-
-        task.addResource(r, SearchService.PRIORITY.item);
     }
 
 
@@ -685,15 +691,18 @@ public class ListManager implements SearchService.DocumentProvider
 
     public void indexDeleted() throws SQLException
     {
-        SqlExecutor executor = new SqlExecutor(getSchema());
-
-        for (TableInfo ti : new TableInfo[]{
-                getTinfoList(),
-                OntologyListTable.getIndexTable(ListDefinition.KeyType.Integer),
-                OntologyListTable.getIndexTable(ListDefinition.KeyType.Varchar)
-            })
+        if (ListDefinitionImpl.ontologyBased())
         {
-            executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
+            SqlExecutor executor = new SqlExecutor(getSchema());
+
+            for (TableInfo ti : new TableInfo[]{
+                    getTinfoList(),
+                    OntologyListTable.getIndexTable(ListDefinition.KeyType.Integer),
+                    OntologyListTable.getIndexTable(ListDefinition.KeyType.Varchar)
+            })
+            {
+                executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
+            }
         }
     }
 }

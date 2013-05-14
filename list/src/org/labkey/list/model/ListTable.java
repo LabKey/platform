@@ -48,12 +48,12 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.list.view.ListController;
+import org.labkey.list.controllers.ListController;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -69,43 +69,66 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        List<ColumnInfo> defaultColumnsCandidates = new LinkedList<>();
-
-//        // All columns visible by default, except for auto-increment integer
-//        ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
-//        colKey.setKeyField(true);
-//        colKey.setInputType("text");
-//        colKey.setInputLength(-1);
-//        colKey.setWidth("180");
-//
-//        if (listDef.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
-//        {
-//            colKey.setUserEditable(false);
-//            colKey.setAutoIncrement(true);
-//            colKey.setHidden(true);
-//        }
-//
-//        addColumn(colKey);
-//        defaultColumnsCandidates.add(colKey);
+        List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
 
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
-            ColumnInfo col = wrapColumn(baseColumn);
+            String name = baseColumn.getName();
+            if (listDef.getKeyName().equalsIgnoreCase(name))
+            {
+                ColumnInfo column = wrapColumn(baseColumn);
+                column.setKeyField(true);
+                column.setInputType("text");
+                column.setInputLength(-1);
+                column.setWidth("180");
 
-            if ("Key".equalsIgnoreCase(baseColumn.getName()))
-            {
-                col.setName(_list.getKeyName());
-            }
-            else if ("EntityId".equalsIgnoreCase(baseColumn.getName()))
-            {
-                col.setHidden(true);
-            }
-            else if ("CreatedBy".equalsIgnoreCase(baseColumn.getName()) || "ModifiedBy".equalsIgnoreCase(baseColumn.getName()))
-            {
-                UserIdQueryForeignKey.initColumn(schema.getUser(), listDef.getContainer(), col, true);
-            }
+                // TODO : Can this somehow be asked of the Domain/Kind?
+                if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
+                {
+                    column.setAutoIncrement(true);
+                    column.setUserEditable(false);
+                    column.setHidden(true);
+                }
 
-            addColumn(col);
+                // TODO: column.setFK()?
+
+                addColumn(column);
+                defaultColumnsCandidates.add(column);
+
+                boolean auto = (null == listDef.getTitleColumn());
+                setTitleColumn(findTitleColumn(listDef, column), auto);
+            }
+            else if (name.equalsIgnoreCase("EntityId"))
+            {
+                ColumnInfo column = wrapColumn(baseColumn);
+                column.setHidden(true);
+                addColumn(column);
+            }
+            else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
+                    name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
+                    )
+            {
+                ColumnInfo c = wrapColumn(baseColumn);
+                if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
+                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                c.setUserEditable(false);
+                c.setShownInInsertView(false);
+                c.setShownInUpdateView(false);
+                addColumn(c);
+            }
+            else if (name.equalsIgnoreCase("LastIndexed"))
+            {
+                ColumnInfo column = wrapColumn(baseColumn);
+                column.setHidden(true);
+                column.setUserEditable(false);
+                addColumn(column);
+            }
+            else
+            {
+                ColumnInfo column = wrapColumn(baseColumn);
+                safeAddColumn(column);
+                defaultColumnsCandidates.add(column);
+            }
         }
 
         // TODO: Possibly iterate over using getRealTable().getColumns()
@@ -140,21 +163,10 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 //            }
 //        }
 
-//        boolean auto = (null == listDef.getTitleColumn());
-//        setTitleColumn(findTitleColumn(listDef, colKey), auto);
-
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
 //        addColumn("EntityId", true);
 //        addColumn("LastIndexed", true);
-
-        // Make standard created & modified columns available.
-//        addColumn("Created", false);
-//        ColumnInfo createdBy = addColumn("CreatedBy", false);
-//        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), createdBy, true);
-//        addColumn("Modified", false);
-//        ColumnInfo modifiedBy = addColumn("ModifiedBy", false);
-//        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), modifiedBy, true);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -243,10 +255,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new ListQueryUpdateService(this, getList());
+        return new ListQueryUpdateService(this, this.getRealTable(), getList());
     }
-
-    // UpdateableTableInfo
 
     @Override
     public boolean insertSupported()
@@ -257,13 +267,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public boolean updateSupported()
     {
-        return false;
+        return true;
     }
 
     @Override
     public boolean deleteSupported()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -292,10 +302,10 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
-        if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase("key"))
+        if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase(ListDomainKind.KEY_FIELD))
         {
             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
-            m.put("key", _list.getKeyName());
+            m.put(ListDomainKind.KEY_FIELD, _list.getKeyName());
             return m;
         }
         return null;

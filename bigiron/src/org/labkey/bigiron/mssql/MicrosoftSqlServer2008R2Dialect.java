@@ -814,7 +814,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
                 break;
             case AddColumns:
-                sql.add(getAddColumnsStatement(change));
+                sql.addAll(getAddColumnsStatements(change));
                 break;
             case DropColumns:
                 sql.add(getDropColumnsStatement(change));
@@ -906,15 +906,32 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return String.format("ALTER TABLE %s DROP COLUMN %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
     }
 
-    private String getAddColumnsStatement(TableChange change)
+    private List<String> getAddColumnsStatements(TableChange change)
     {
+        List<String> statements = new ArrayList<>();
         List<String> sqlParts = new ArrayList<>();
+        String pkColumn = null;
+
         for (PropertyStorageSpec prop : change.getColumns())
         {
             sqlParts.add(getSqlColumnSpec(prop));
+            if (prop.isPrimaryKey())
+            {
+                assert null == pkColumn : "no more than one primary key defined";
+                pkColumn = prop.getName();
+            }
         }
 
-        return String.format("ALTER TABLE %s ADD %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
+        statements.add(String.format("ALTER TABLE %s ADD %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n")));
+        if (null != pkColumn)
+        {
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
+                    makeTableIdentifier(change),
+                    change.getTableName() + "_pk",
+                    pkColumn));
+        }
+
+        return statements;
     }
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
