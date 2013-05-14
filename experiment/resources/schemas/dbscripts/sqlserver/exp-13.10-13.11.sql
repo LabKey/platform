@@ -39,5 +39,5 @@ GO
 -- ...and create the new PK (Container, ListId)
 ALTER TABLE exp.List ADD CONSTRAINT PK_List PRIMARY KEY (Container, ListId);
 
--- Use Java code create & populate sequences, initializing each current value to the maximum list ID in each folder
+-- Use Java code to create & populate sequences, initializing each current value to the maximum list ID in each folder
 EXEC core.executeJavaUpgradeCode 'createListSequences';

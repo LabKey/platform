@@ -17,24 +17,7 @@ package org.labkey.core;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DeferredUpgrade;
-import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScriptManager;
-import org.labkey.api.data.SqlScriptRunner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -51,6 +34,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -202,7 +186,8 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
-    /* called at 13.11->13.12 */
+
+    // invoked by core-13.13-13.14.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void setPortalPageUniqueIndexes(ModuleContext moduleContext)
     {
@@ -287,4 +272,34 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
+
+    // invoked by core-13.14-13.15.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void populateWorkbookSortOrderAndName(ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+            return;
+
+        final DbSchema schema = CoreSchema.getInstance().getSchema();
+        final String updateSql = "UPDATE core.Containers SET SortOrder = ?, Name = ? WHERE Parent = ? AND RowId = ?";
+        final SqlExecutor updateExecutor = new SqlExecutor(schema);
+
+        String selectSql = "SELECT Parent, RowId FROM core.Containers WHERE Type = 'workbook' ORDER BY Parent, RowId";
+
+        new SqlSelector(schema, selectSql).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                Container parent = ContainerManager.getForId(rs.getString(1));
+
+                if (null != parent)
+                {
+                    int rowId = rs.getInt(2);
+                    int sortOrder = DbSequenceManager.get(parent, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
+                    updateExecutor.execute(updateSql, sortOrder, String.valueOf(sortOrder), parent, rowId);
+                }
+            }
+        });
+    }
 }
