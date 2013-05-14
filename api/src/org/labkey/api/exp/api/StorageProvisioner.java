@@ -126,7 +126,11 @@ public class StorageProvisioner
                     continue;
                 }
 
-                change.addColumn(property.getPropertyDescriptor());
+                PropertyStorageSpec spec = kind.getPropertySpec(property.getPropertyDescriptor(), domain);
+                if (null != spec)
+                {
+                    change.addColumn(spec);
+                }
                 if (property.isMvEnabled())
                 {
                     change.addColumn(makeMvColumn(property));
@@ -242,7 +246,11 @@ public class StorageProvisioner
                 log.warn("StorageProvisioner ignored property with name of build-in column: " + prop.getPropertyURI());
                 continue;
             }
-            change.addColumn(prop.getPropertyDescriptor());
+            PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
+            if (null != spec)
+            {
+                change.addColumn(spec);
+            }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));

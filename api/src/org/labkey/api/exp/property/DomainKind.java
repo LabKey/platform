@@ -119,4 +119,6 @@ abstract public class DomainKind implements Handler<String>
      * @return
      */
     abstract public Set<String> getNonProvisionedTableNames();
+
+    abstract public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain);
 }

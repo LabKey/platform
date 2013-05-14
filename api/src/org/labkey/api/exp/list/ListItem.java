@@ -16,7 +16,6 @@
 
 package org.labkey.api.exp.list;
 
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;

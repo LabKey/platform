@@ -196,4 +196,10 @@ public abstract class AbstractDomainKind extends DomainKind
     {
         return Collections.emptySet();
     }
+
+    @Override
+    public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
+    {
+        return new PropertyStorageSpec(pd);
+    }
 }
