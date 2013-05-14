@@ -278,6 +278,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         // This is in the Last group because when a container is deleted,
         // the Experiment listener needs to be called after the Study listener,
         // because Study needs the metadata held by Experiment to delete properly.
+        // but it should be before the CoreContainerListener
         ContainerManager.ContainerListener.Order.Last);
 
         SystemProperty.registerProperties();
