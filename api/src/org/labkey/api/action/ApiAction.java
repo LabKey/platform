@@ -166,31 +166,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             createResponseWriter().write((Errors)e);
         }
         //don't log exceptions that result from bad inputs
-        catch (BatchValidationException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (ValidationException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (QueryException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (IllegalArgumentException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (NotFoundException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (InvalidKeyException e)
-        {
-            createResponseWriter().write(e);
-        }
-        catch (ApiUsageException e)
+        catch (BatchValidationException | ValidationException | QueryException | IllegalArgumentException |
+                NotFoundException | InvalidKeyException | ApiUsageException e)
         {
             createResponseWriter().write(e);
         }

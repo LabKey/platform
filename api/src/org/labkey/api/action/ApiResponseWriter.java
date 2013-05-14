@@ -279,7 +279,7 @@ public abstract class ApiResponseWriter
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
-        Pair<String, JSONArray> pair = convertToJSON(errors, errorResponseStatus);
+        Pair<String, JSONArray> pair = convertToJSON(errors, 0);
 
         JSONObject root = new JSONObject();
         root.put("exception", pair.getKey());
