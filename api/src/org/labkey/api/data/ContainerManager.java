@@ -1748,7 +1748,14 @@ public class ContainerManager
         while(iter.hasPrevious())
             combined.add(iter.previous());
 
-        combined.addAll(_laterListeners);
+        // Copy to guarantee consistency between .listIterator() and .size()
+        // Add elements from the laterList in reverse order so that Core is fired last
+        List<ContainerListener> laterCopy = new ArrayList<>(_laterListeners);
+        ListIterator<ContainerListener> laterIter = laterCopy.listIterator(laterCopy.size());
+
+        // Iterate in reverse
+        while(laterIter.hasPrevious())
+            combined.add(laterIter.previous());
 
         return combined;
     }
