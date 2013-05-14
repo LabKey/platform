@@ -224,7 +224,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         // Partition dataMaps by targetStudy.
-        Map<Container, List<Map<String, Object>>> partitionedDataMaps = new HashMap<Container, List<Map<String, Object>>>();
+        Map<Container, List<Map<String, Object>>> partitionedDataMaps = new HashMap<>();
         for (Map<String, Object> dataMap : dataMaps)
         {
             Container targetStudy = targetContainer;
@@ -235,7 +235,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             List<Map<String, Object>> maps = partitionedDataMaps.get(targetStudy);
             if (maps == null)
             {
-                maps = new ArrayList<Map<String, Object>>(dataMap.size());
+                maps = new ArrayList<>(dataMap.size());
                 partitionedDataMaps.put(targetStudy, maps);
             }
             maps.add(dataMap);
