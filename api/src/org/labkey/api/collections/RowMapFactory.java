@@ -54,17 +54,17 @@ public class RowMapFactory<V>
 
     public RowMap<V> getRowMap()
     {
-        return new RowMap<V>(_findMap);
+        return new RowMap<>(_findMap);
     }
 
     public RowMap<V> getRowMap(List<V> row)
     {
-        return new RowMap<V>(_findMap, row);
+        return new RowMap<>(_findMap, row);
     }
 
     public RowMap<V> getRowMap(V[] row)
     {
-        return new RowMap<V>(_findMap, Arrays.asList(row));      // TODO: Pass through actual array?  Different class?  Static factory?
+        return new RowMap<>(_findMap, Arrays.asList(row));      // TODO: Pass through actual array?  Different class?  Static factory?
     }
 
     /**

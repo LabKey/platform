@@ -413,8 +413,7 @@ public class ContainerManager
     @NotNull
     public static FolderType getFolderType(Container c)
     {
-        Map props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
-        String name = (String) props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
+        String name = getFolderTypeName(c);
         FolderType folderType;
 
         if (null != name)
@@ -439,6 +438,18 @@ public class ContainerManager
             folderType = FolderType.NONE;
 
         return folderType;
+    }
+
+    /**
+     * Most code should call getFolderType() instead.
+     * Useful for finding the name of the folder type BEFORE startup is complete, so the FolderType itself
+     * may not be available.
+     */
+    @Nullable
+    public static String getFolderTypeName(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        return props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
     }
 
 

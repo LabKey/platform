@@ -161,7 +161,7 @@ public class ModuleProperty
         return ret;
     }
 
-    public void saveValue(User u, Container c, @Nullable String value)
+    public void saveValue(@Nullable User user, Container c, @Nullable String value)
     {
         if (!isCanSetPerContainer() && !c.isRoot())
             throw new IllegalArgumentException("This property can not be set for this container.  It can only be set site-wide, which means it must be set on the root container.");
@@ -169,14 +169,18 @@ public class ModuleProperty
 //        if (!isCanSetPerUser() && userIdToSave != 0)
 //            throw new IllegalArgumentException("This property can not be set on a per user basis.  Use a userId of zero");
 
-        //properties provide their edit permissions, so we only enforce read on the container
-        if (!c.hasPermission(u, ReadPermission.class))
-            throw new UnauthorizedException("The user does not have read permission on this container");
-
-        for (Class<? extends Permission> p : getEditPermissions())
+        // Don't bother checking permissions if we don't have a user
+        if (user != null)
         {
-            if (!c.hasPermission(u, p))
-                throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
+            //properties provide their edit permissions, so we only enforce read on the container
+            if (!c.hasPermission(user, ReadPermission.class))
+                throw new UnauthorizedException("The user does not have read permission on this container");
+
+            for (Class<? extends Permission> p : getEditPermissions())
+            {
+                if (!c.hasPermission(user, p))
+                    throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
+            }
         }
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(PropertyManager.SHARED_USER, c, getCategory(), true);

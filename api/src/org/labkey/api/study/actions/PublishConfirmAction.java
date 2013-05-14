@@ -35,7 +35,6 @@ import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HelpTopic;
@@ -197,14 +196,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         ViewContext context = getViewContext();
         _protocol = publishConfirmForm.getProtocol();
         AssayProvider provider = publishConfirmForm.getProvider();
-        Set<Integer> selectedObjects = new HashSet<Integer>(getCheckboxIds());
+        Set<Integer> selectedObjects = new HashSet<>(getCheckboxIds());
         Integer[] allObjectsArray = publishConfirmForm.getObjectId();
 
         List<Integer> allObjects;
         if (allObjectsArray != null) // On first post, this is empty, so use the current selection
             allObjects = Arrays.asList(allObjectsArray);
         else
-            allObjects = new ArrayList<Integer>(selectedObjects);
+            allObjects = new ArrayList<>(selectedObjects);
 
         // Check if a single target study was posted for the entire run (the common case)
         Container targetStudy = null;
@@ -235,10 +234,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
         if (publishConfirmForm.isAttemptPublish() && publishConfirmForm.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
-            postedVisits = new HashMap<Object, String>();
-            postedDates = new HashMap<Object, String>();
-            postedPtids = new HashMap<Object, String>();
-            postedTargetStudies = new HashMap<Object, String>();
+            postedVisits = new HashMap<>();
+            postedDates = new HashMap<>();
+            postedPtids = new HashMap<>();
+            postedTargetStudies = new HashMap<>();
             attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
         }
 
@@ -255,7 +254,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
-        List<ActionButton> buttons = new ArrayList<ActionButton>();
+        List<ActionButton> buttons = new ArrayList<>();
         ReturnURLString returnURL;
         if (publishConfirmForm.getReturnUrl() != null)
         {
@@ -298,7 +297,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
 
         queryView.setButtons(buttons);
-        return new VBox(new JspView<PublishConfirmBean>("/org/labkey/api/study/actions/publishHeader.jsp",
+        return new VBox(new JspView<>("/org/labkey/api/study/actions/publishHeader.jsp",
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
 
@@ -312,13 +311,13 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                              Map<Object, String> postedPtids)
             throws RedirectException
     {
-        Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
+        Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<>();
         String[] participantIds = publishConfirmForm.getParticipantId();
         String[] visitIds = publishConfirmForm.getVisitId();
         String[] dates = publishConfirmForm.getDate();
         String[] targetStudies = publishConfirmForm.getTargetStudy();
 
-        Map<Object, Container> resolvedStudies = new HashMap<Object, Container>();
+        Map<Object, Container> resolvedStudies = new HashMap<>();
 
         boolean missingPtid = false;
         boolean missingVisitId = false;
@@ -445,7 +444,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
-            List<String> publishErrors = new ArrayList<String>();
+            List<String> publishErrors = new ArrayList<>();
             ActionURL successURL  = provider.copyToStudy(context.getUser(), context.getContainer(), _protocol, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
