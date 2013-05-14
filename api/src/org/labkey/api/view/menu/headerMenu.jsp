@@ -42,7 +42,7 @@
         if (helpMenu.hasChildren())
         {
             if (needSeparator)
-                out.write(" | ");
+                out.write(" &nbsp; ");
             include(helpMenu, out);
             needSeparator = true;
         }
@@ -50,13 +50,13 @@
         if (null != user && !user.isGuest())
         {
             if (needSeparator)
-                out.write(" | ");
+                out.write(" &nbsp; ");
             include(new PopupUserView(currentContext), out);
         }
         else if (pageConfig.shouldIncludeLoginLink())
         {
             if (needSeparator)
-                out.write(" | ");
+                out.write(" &nbsp; ");
 
             String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
 
@@ -64,7 +64,7 @@
                 out.print(authLogoHtml + "&nbsp;");
 
     %>
-    <a class="labkey-menu-text-link" href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a>
+    <a class="labkey-nomenu-text-link" href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a>
     <%
         }
     %>
