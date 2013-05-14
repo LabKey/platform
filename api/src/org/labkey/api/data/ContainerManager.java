@@ -195,27 +195,33 @@ public class ContainerManager
         return createContainer(parent, name, null, null, Container.TYPE.normal, null);
     }
 
+    public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
+
     // TODO: Pass in folder type and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, Container.TYPE type, User user)
     {
         if (CORE.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
-        boolean createWorkbookName = false;
+        int sortOrder;
+
         if (Container.TYPE.workbook == type)
         {
             //parent must be normal
             if (Container.TYPE.normal != parent.getType())
                 throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
 
+            sortOrder = DbSequenceManager.get(parent, WORKBOOK_DBSEQUENCE_NAME).next();
+
             if (name == null)
             {
-                //default workbook names are simply "workbook-<rowid>" but since we can't know the rowid until
-                //we create the container, use a GUID for the name during the initial create
-                //and then set the name and title
-                createWorkbookName = true;
-                name = GUID.makeGUID();
+                //default workbook names are simply "<sortorder>"
+                name = String.valueOf(sortOrder);
             }
+        }
+        else
+        {
+            sortOrder = getNewChildSortOrder(parent);
         }
 
         //parent must be normal (not workbook or container tab)
@@ -239,7 +245,7 @@ public class ContainerManager
             m.put("Parent", parent.getId());
             m.put("Name", name);
             m.put("Title", title);
-            m.put("SortOrder", getNewChildSortOrder(parent));
+            m.put("SortOrder", sortOrder);
             if (null != description)
                 m.put("Description", description);
             m.put("Type", type);
@@ -255,6 +261,7 @@ public class ContainerManager
         _clearChildrenFromCache(parent);
 
         Container c = insertMap == null ? null  : getForId((String) insertMap.get("EntityId"));
+
         if (null == c)
         {
             if (null != sqlx)
@@ -263,32 +270,7 @@ public class ContainerManager
                 throw new RuntimeException("Container for path '" + path + "' was not created properly.");
         }
 
-        if (createWorkbookName)
-        {
-            name = "workbook-" + c.getRowId();
-
-            try
-            {
-                StringBuilder sql = new StringBuilder("UPDATE ");
-                sql.append(CORE.getTableInfoContainers());
-                sql.append(" SET Name=? WHERE RowID=?");
-                Table.execute(CORE.getSchema(), sql.toString(), name, c.getRowId());
-
-                _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
-                path = makePath(parent, name);
-                c = getForPath(path);
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
-
-        // Maybe this will help track down issues like #13813
-        if (null == c)
-            throw new RuntimeException("Container for path '" + path + "' was not created properly.");
-
-        //workbooks  inherit perms from their parent so don't create a policy if this is a workbook     TODO; and container tabs???
+        //workbooks inherit perms from their parent so don't create a policy if this is a workbook     TODO; and container tabs???
         if (Container.TYPE.normal == type)
             SecurityManager.setAdminOnlyPermissions(c);
 
