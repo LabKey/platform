@@ -17,6 +17,7 @@ package org.labkey.announcements;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.notification.EmailMessage;
@@ -24,6 +25,7 @@ import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.HttpView;
@@ -44,8 +46,14 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +244,14 @@ public class EmailServiceImpl implements EmailService.I
         @Override
         public void setFiles(List<File> files)
         {
+            for (File file : files)
+            {
+                if(!file.exists())
+                    throw new IllegalArgumentException("All files must exist.");
+                if(!file.isFile())
+                    throw new IllegalArgumentException("All file objects must actually be files.");
+            }
+
             _files = files;
         }
 
@@ -372,6 +388,91 @@ public class EmailServiceImpl implements EmailService.I
                     _log.error("Unable to send email.", ex);
                 }
             }
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String PROTOCOL_ATTACHMENT_NAME = "Protocol.txt";
+        private static final String NON_EXISTANT_ATTACHMENT_NAME = "fake_file.txt";
+        private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
+
+        @org.junit.Test
+        public void testEmailAttachments() throws MessagingException, IOException
+        {
+            EmailMessage msg = getBaseMessage();
+            File attachment = getAttachment(PROTOCOL_ATTACHMENT_NAME);
+
+            if(attachment == null)
+                return;
+
+            assertTrue("Couldn't find " + attachment, attachment.isFile());
+
+            List<String> lines = Files.readAllLines(Paths.get(attachment.toURI()), Charset.defaultCharset());
+            msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
+
+
+            String message = convertMessageToString(msg);
+
+            assertTrue("Message did not contain attachment with name " + attachment.getName(),
+                    message.contains("Content-Disposition: attachment; filename=" + attachment.getName()));
+
+            for(String line : lines)
+            {
+                assertTrue("Message did not contain entirety of attachment. Missing line: " + line,
+                        message.contains(line));
+            }
+        }
+
+        @org.junit.Test(expected = IllegalArgumentException.class)
+        public void testNonExistantFileAttachments() throws MessagingException, IOException
+        {
+            EmailMessage msg = getBaseMessage();
+            File attachment = getAttachment(NON_EXISTANT_ATTACHMENT_NAME);
+
+            if (attachment == null)
+                return;
+
+            msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
+        }
+
+        @org.junit.Test(expected = IllegalArgumentException.class)
+        public void testDirectoryAttachment() throws MessagingException, IOException
+        {
+            EmailMessage msg = getBaseMessage();
+            File attachment = getAttachment(FAKE_DIRECTORY_NAME);
+
+            if (attachment == null)
+                return;
+
+            msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
+        }
+
+        private EmailMessage getBaseMessage()
+        {
+            return EmailService.get().createMessage("test@example.com",
+                    new String[]{"to@example.com"},
+                    "JUnit Test Email",
+                    "This is a test email.");
+        }
+
+        private File getAttachment(String fileName)
+        {
+            AppProps.Interface props = AppProps.getInstance();
+            if (!props.isDevMode()) // We can only run the test if we're in dev mode and have access to sampledata
+                return null;
+
+            String projectRootPath = props.getProjectRoot();
+            return Paths.get(projectRootPath).resolve("sampledata/study").resolve(fileName).toFile();
+        }
+
+        private String convertMessageToString(EmailMessage msg) throws MessagingException, IOException
+        {
+            MimeMessage mimeMsg = msg.createMessage();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            mimeMsg.writeTo(baos);
+
+            return baos.toString();
         }
     }
 }

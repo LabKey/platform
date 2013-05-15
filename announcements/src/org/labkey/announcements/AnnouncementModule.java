@@ -219,7 +219,10 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(AnnouncementManager.TestCase.class));
+        return new HashSet<Class>(Arrays.asList(
+                AnnouncementManager.TestCase.class,
+                EmailServiceImpl.TestCase.class
+        ));
     }
 
     @Override
