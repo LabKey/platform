@@ -25,6 +25,8 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExternalSchemaCustomizer;
+import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -43,6 +45,7 @@ import org.labkey.query.persist.ExternalSchemaDef;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,8 +85,7 @@ public class ExternalSchema extends SimpleUserSchema
     protected final AbstractExternalSchemaDef _def;
     protected final TemplateSchemaType _template;
     protected final Map<String, TableType> _metaDataMap;
-    protected final NamedFiltersType[] _namedFilters;
-
+    protected final Map<String, NamedFiltersType> _namedFilters;
 
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
@@ -92,10 +94,12 @@ public class ExternalSchema extends SimpleUserSchema
 
         NamedFiltersType[] namedFilters = null;
         TableType[] tableTypes = null;
+        Collection<UserSchemaCustomizer> schemaCustomizers = null;
         if (tablesType != null)
         {
             namedFilters = tablesType.getFiltersArray();
             tableTypes = tablesType.getTableArray();
+            schemaCustomizers = UserSchemaCustomizer.Factory.create(tablesType.getSchemaCustomizerArray());
         }
 
         final DbSchema schema = getDbSchema(def, template);
@@ -112,22 +116,33 @@ public class ExternalSchema extends SimpleUserSchema
         Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
         Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-        return new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, availableTables, hiddenTables);
+
+        ExternalSchema ret = new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables);
+        return ret;
     }
 
 
     protected ExternalSchema(User user, Container container, AbstractExternalSchemaDef def, TemplateSchemaType template, DbSchema schema,
                              Map<String, TableType> metaDataMap,
                              NamedFiltersType[] namedFilters,
+                             Collection<UserSchemaCustomizer> schemaCustomizers,
                              Collection<String> availableTables, Collection<String> hiddenTables)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
-                user, container, schema, availableTables, hiddenTables);
+                user, container, schema, schemaCustomizers, availableTables, hiddenTables);
 
         _def = def;
         _template = template;
         _metaDataMap = metaDataMap;
-        _namedFilters = namedFilters;
+
+        // Create the SimpleFilters and give customizers a change to augment them.
+        Map<String, NamedFiltersType> filters = new HashMap<>();
+        if (namedFilters != null)
+        {
+            for (NamedFiltersType namedFilter : namedFilters)
+                filters.put(namedFilter.getName(), namedFilter);
+        }
+        _namedFilters = fireCustomizeNamedFilters(filters);
     }
 
     private static DbSchema getDbSchema(ExternalSchemaDef def, TemplateSchemaType template)
@@ -344,5 +359,16 @@ public class ExternalSchema extends SimpleUserSchema
     {
         // If more than 100 tables then don't try to render the list in the Query menu
         return getTableNames().size() <= 100;
+    }
+
+    protected Map<String, NamedFiltersType> fireCustomizeNamedFilters(Map<String, NamedFiltersType> filters)
+    {
+        if (_schemaCustomizers != null)
+        {
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                if (customizer instanceof ExternalSchemaCustomizer)
+                    ((ExternalSchemaCustomizer)customizer).customizeNamedFilters(filters);
+        }
+        return filters;
     }
 }

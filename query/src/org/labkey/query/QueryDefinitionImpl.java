@@ -482,7 +482,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         // First, apply metadata associated with the query (e.g., .query.xml files)
         TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
         NamedFiltersType[] xmlFilters = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getFiltersArray();
-        applyQueryMetadata(schema, errors, xmlTable, xmlFilters, ret);
+
+        Map<String, NamedFiltersType> namedFilters = new HashMap<>();
+        if (xmlFilters != null)
+            for (NamedFiltersType xmlFilter : xmlFilters)
+                namedFilters.put(xmlFilter.getName(), xmlFilter);
+
+        applyQueryMetadata(schema, errors, xmlTable, namedFilters, ret);
 
         // Finally, lookup any XML metadata that has been stored in the database, which won't have been applied
         // if this is a file-based custom query
@@ -491,9 +497,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ret;
     }
 
-    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, NamedFiltersType[] xmlFilters, AbstractTableInfo ret)
+    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, Map<String, NamedFiltersType> namedFilters, AbstractTableInfo ret)
     {
-        ret.loadFromXML(schema, xmlTable, xmlFilters, errors);
+        ret.loadFromXML(schema, xmlTable, namedFilters, errors);
     }
 
     @Nullable

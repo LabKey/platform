@@ -23,8 +23,10 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.LinkedSchemaCustomizer;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -48,7 +50,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -115,12 +117,15 @@ public class LinkedSchema extends ExternalSchema
 
         NamedFiltersType[] namedFilters = null;
         TableType[] tableTypes = null;
+        Collection<UserSchemaCustomizer> schemaCustomizers = null;
         if (tablesType != null)
         {
             namedFilters = tablesType.getFiltersArray();
             tableTypes = tablesType.getTableArray();
+            schemaCustomizers = UserSchemaCustomizer.Factory.create(tablesType.getSchemaCustomizerArray());
         }
 
+        // CONSIDER: Customize metadata and parameters once before construct?
         Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
         Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
 
@@ -133,7 +138,8 @@ public class LinkedSchema extends ExternalSchema
 
         Collection<String> availableQueries = getAvailableQueries(def, template, tableSource);
 
-        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables, availableQueries);
+        LinkedSchema ret = new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables, availableQueries);
+        return ret;
     }
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, String sourceSchemaName, Container sourceContainer, User user)
@@ -154,11 +160,12 @@ public class LinkedSchema extends ExternalSchema
     private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,
                          Map<String, TableType> metaDataMap,
                          NamedFiltersType[] namedFilters,
+                         Collection<UserSchemaCustomizer> schemaCustomizers,
                          Collection<String> availableTables,
                          Collection<String> hiddenTables,
                          Collection<String> availableQueries)
     {
-        super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, namedFilters, availableTables, hiddenTables);
+        super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables);
 
         _sourceSchema = sourceSchema;
         _availableQueries = availableQueries;
@@ -231,7 +238,13 @@ public class LinkedSchema extends ExternalSchema
         assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
 
         TableType metaData = getXbTable(name);
-        QueryDefinition queryDef = createQueryDef(name, sourceTable, metaData);
+        LocalOrRefFiltersType xmlFilters = metaData != null ? metaData.getFilters() : null;
+        Collection<QueryService.ParameterDecl> parameterDecls = new ArrayList<>();
+
+        // UNDONE: Need to also customize filters, but can't let the filters be mutated
+        parameterDecls = fireCustomizeParameters(name, sourceTable, xmlFilters, parameterDecls);
+
+        QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlFilters, parameterDecls);
 
         ArrayList<QueryException> errors = new ArrayList<QueryException>();
         TableInfo tableInfo = queryDef.getTable(errors, true);
@@ -249,25 +262,43 @@ public class LinkedSchema extends ExternalSchema
 
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
 
+        // Apply metadata and the <filter> style filters.  The <where> style filters were applied in .createQueryDef().
         linkedTableInfo.loadFromXML(this, metaData, _namedFilters, errors);
 
         return linkedTableInfo;
     }
 
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
-    private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable TableType xmlTable)
+    private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
     {
-        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
-        StringBuilder sql = new StringBuilder("SELECT\n");
-        String sep = "";
+        StringBuilder sql = new StringBuilder();
+
+        if (parameterDecls != null && !parameterDecls.isEmpty())
+        {
+            String paramSep = "";
+            sql.append("PARAMETERS (\n");
+            for (QueryService.ParameterDecl decl : parameterDecls)
+            {
+                sql.append(paramSep);
+                sql.append("  \"").append(decl.getName()).append("\" ").append(decl.getType().name());
+                if (decl.getDefault() != null)
+                    sql.append(" DEFAULT ").append(decl.getDefault());
+                paramSep = ",\n";
+            }
+            sql.append(")\n");
+        }
+
+        sql.append("SELECT\n");
+
+        String columnSep = "";
         for (ColumnInfo col : sourceTable.getColumns())
         {
-            sql.append(sep);
+            sql.append(columnSep);
             sql.append("\"").append(col.getName()).append("\"");
             if (col.isHidden())
                 sql.append(" @hidden");
 
-            sep = ", ";
+            columnSep = ", ";
         }
         sql.append(" FROM \"");
         sql.append(_sourceSchema.getContainer().getPath());
@@ -277,45 +308,69 @@ public class LinkedSchema extends ExternalSchema
         sql.append(sourceTable.getName());
         sql.append("\"\n");
 
-        if (xmlTable != null && xmlTable.isSetFilters())
+        // Apply LabKey sql <where> style filters.  The <filter> style filters will be applied in .loadFromXML().
+        if (xmlFilters != null)
         {
-            String separator = " WHERE ";
+            String filterSep = " WHERE ";
 
-            LocalOrRefFiltersType filters = xmlTable.getFilters();
-            if (filters.isSetRef())
+            if (xmlFilters.isSetRef())
             {
                 // Add the WHERE from the referenced, shared filter
-                for (NamedFiltersType namedFiltersType : _namedFilters)
+                NamedFiltersType filter = _namedFilters.get(xmlFilters.getRef());
+                if (filter != null && filter.sizeOfWhereArray() > 0)
                 {
-                    if (namedFiltersType.getName().equals(filters.getRef()))
+                    for (String whereClause : filter.getWhereArray())
                     {
-                        for (String whereClause : namedFiltersType.getWhereArray())
-                        {
-                            sql.append(separator);
-                            separator = " AND ";
-                            sql.append("(");
-                            sql.append(whereClause);
-                            sql.append(")");
-                        }
+                        sql.append(filterSep);
+                        filterSep = " AND ";
+                        sql.append("(");
+                        sql.append(whereClause);
+                        sql.append(")");
                     }
                 }
             }
-
-            // Add the filters that are specific to this table
-            for (String whereClause : filters.getWhereArray())
+            else
             {
-                sql.append(separator);
-                separator = " AND ";
-                sql.append("(");
-                sql.append(whereClause);
-                sql.append(")");
+                // Add the filters that are specific to this table
+                for (String whereClause : xmlFilters.getWhereArray())
+                {
+                    sql.append(filterSep);
+                    filterSep = " AND ";
+                    sql.append("(");
+                    sql.append(whereClause);
+                    sql.append(")");
+                }
             }
         }
 
+        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
         queryDef.setSql(sql.toString());
         return queryDef;
     }
 
+    protected Collection<QueryService.ParameterDecl> fireCustomizeParameters(String name, TableInfo table, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
+    {
+        parameterDecls = new ArrayList<>(parameterDecls);
+        if (_schemaCustomizers != null)
+        {
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                if (customizer instanceof LinkedSchemaCustomizer)
+                    parameterDecls.addAll(((LinkedSchemaCustomizer)customizer).customizeParameters(name, table, xmlFilters));
+        }
+        return parameterDecls;
+    }
+
+    protected Map<String, Object> fireCustomizeParameterValues(LinkedTableInfo table)
+    {
+        Map<String, Object> paramValues = new HashMap<>();
+        if (_schemaCustomizers != null)
+        {
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                if (customizer instanceof LinkedSchemaCustomizer)
+                    paramValues.putAll(((LinkedSchemaCustomizer) customizer).customizeParamValues(table));
+        }
+        return paramValues;
+    }
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {

@@ -49,6 +49,7 @@ import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
 * User: kevink
@@ -162,12 +163,10 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         // LinkedTableInfos only adds columns from the source table and has no Domain columns.
     }
 
-    private static final NamedFiltersType[] NO_FILTERS = new NamedFiltersType[0];
-
     @Override
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
     {
-        filtersArray = filtersArray == null ? NO_FILTERS : filtersArray;
+        namedFilters = namedFilters == null ? Collections.<String, NamedFiltersType>emptyMap() : namedFilters;
 
         if (xmlTable != null && xmlTable.isSetFilters())
         {
@@ -175,67 +174,66 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
             if (xmlFilters.isSetRef())
             {
                 String refId = xmlFilters.getRef();
-                if (!findMatchingFilters(filtersArray, refId))
+                if (!addMatchingFilters(namedFilters, refId))
                 {
                     errors.add(new QueryException("Could not find filter with id '" + refId + "'"));
                 }
             }
-
-            addFilters(xmlFilters.getFilterArray());
+            else
+            {
+                addFilters(xmlFilters.getFilterArray());
+            }
         }
 
-        super.loadAllButCustomizerFromXML(schema, xmlTable, filtersArray, errors);
+        super.loadAllButCustomizerFromXML(schema, xmlTable, namedFilters, errors);
     }
 
     /** @return true if match was found, false if it's not in the array */
-    private boolean findMatchingFilters(NamedFiltersType[] filtersArray, String refId)
+    private boolean addMatchingFilters(Map<String, NamedFiltersType> namedFilters, String refId)
     {
-        for (NamedFiltersType namedFiltersType : filtersArray)
+        NamedFiltersType filtersType = namedFilters.get(refId);
+        if (filtersType != null)
         {
-            if (namedFiltersType.getName().equals(refId))
-            {
-                addFilters(namedFiltersType.getFilterArray());
-                return true;
-            }
+            addFilters(filtersType.getFilterArray());
+            return true;
         }
         return false;
     }
 
     private void addFilters(FilterType[] xmlFilters)
     {
-        for (FilterType xmlFilter : xmlFilters)
-        {
-            SimpleFilter filter = null;
-            for (CompareType compareType : CompareType.values())
-            {
-                if (compareType.getUrlKeys().contains(xmlFilter.getOperator().toString()))
-                {
-                    Object value = xmlFilter.getValue();
-                    FieldKey fieldKey = FieldKey.fromString(xmlFilter.getColumn());
-                    // If we can resolve the column, try converting the value type
-                    ColumnInfo col = getColumn(fieldKey);
-                    if (col != null)
-                    {
-                        try
-                        {
-                            filter = new SimpleFilter(fieldKey, ConvertUtils.convert((String)value, col.getJavaObjectClass()), compareType);
-                        }
-                        catch (ConversionException ignored) { /* Fall through to try as a string */ }
-                    }
-                    else
-                    {
-                        // Just treat it as a string and hope the database can do any conversion required
-                        filter = new SimpleFilter(fieldKey, value, compareType);
-                    }
-                    break;
-                }
-            }
-            if (filter == null)
-            {
-                throw new IllegalArgumentException("Unsupported filter type: " + xmlFilter.getOperator());
-            }
+        SimpleFilter filter = SimpleFilter.fromXml(xmlFilters);
+        if (filter != null)
             addCondition(filter);
-        }
     }
 
+
+    @NotNull
+    @Override
+    public Collection<QueryService.ParameterDecl> getNamedParameters()
+    {
+        // LinkedTableInfo only exposes named parameters defined in the original TableInfo
+        // and removes named parameters that are added to the generated LinkedSchema.createQueryDef() query.
+        //return super.getNamedParameters();
+        return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        SQLFragment frag = super.getFromSQL(alias);
+
+        // Bind named parameters added to the generated LinkedSchema.createQueryDef() query. .. looks like these are bound second after URL parameters.
+        Map<String, Object> paramValues = fireCustomizeParameterValues();
+
+        QueryService.get().bindNamedParameters(frag, paramValues);
+
+        return frag;
+    }
+
+    protected Map<String, Object> fireCustomizeParameterValues()
+    {
+        return getUserSchema().fireCustomizeParameterValues(this);
+    }
 }
