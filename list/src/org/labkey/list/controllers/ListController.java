@@ -886,7 +886,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>(this.getClass(), "/org/labkey/list/view/importLists.jsp", null, errors);
+            return new JspView<>("/org/labkey/list/view/importLists.jsp", null, errors);
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception
