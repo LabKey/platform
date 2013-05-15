@@ -5,7 +5,9 @@
         elementFormDefault="qualified"
         attributeFormDefault="unqualified">
 
+
     <element name="etl" type="etl:EtlType"/>
+
 
     <complexType name="EtlType">
         <all>
@@ -13,8 +15,10 @@
             <element name="description" type="string" maxOccurs="1" />
             <element name="transforms" type="etl:TransformsType" maxOccurs="1" />
             <element name="schedule" type="etl:ScheduleType" maxOccurs="1" />
+            <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1" />
         </all>
     </complexType>
+
 
     <complexType name="SchemaQueryType">
         <attribute name="schemaName" type="string" use="required" />
@@ -24,11 +28,13 @@
         <attribute name="targetOption" type="string" use="optional" />
     </complexType>
 
+
     <complexType name="TransformsType">
         <sequence minOccurs="0" maxOccurs="unbounded">
             <element name="transform" type="etl:TransformType"/>
         </sequence>
     </complexType>
+
 
     <complexType name="TransformType">
         <all>
@@ -43,15 +49,19 @@
         <attribute name="streaming" type="boolean" default="true" />
     </complexType>
 
+
     <complexType name="PropertiesType">
         <all>
             <element name="property" type="string" minOccurs="0" />
         </all>
     </complexType>
 
+
     <complexType name="PropertyType">
         <attribute name="name" type="string" use="required" />
+        <attribute name="value" type="string" use="required" />
     </complexType>
+
 
     <complexType name="ScheduleType">
         <all>
@@ -59,12 +69,29 @@
         </all>
     </complexType>
 
+
     <complexType name="PollType">
         <all>
             <element name="interval" type="int" minOccurs="0" />
         </all>
-        <attribute name="updateTimeColumn" type="string" use="required" />
-        <attribute name="createTimeColumn" type="string" use="required" />
+    </complexType>
+
+
+    <complexType name="FilterType">
+        <all>
+            <element name="properties" type="etl:PropertiesType"/>
+        </all>
+
+        <attribute name="className" type="string" use="optional" />
+        <attribute name="selectAll" type="boolean" use="optional" />
+
+        <!-- org.labkey.di.filters.ModifiedSinceFilterStrategy -->
+        <attribute name="timestampColumnName" type="string" use="optional" />
+
+        <!-- org.labkey.di.filters.RunFilterStrategy -->
+        <attribute name="runTable" type="string" use="optional" />
+        <attribute name="pkColumnName" type="string" use="optional" />
+        <attribute name="fkColumnName" type="string" use="optional" />
     </complexType>
 
 </schema>

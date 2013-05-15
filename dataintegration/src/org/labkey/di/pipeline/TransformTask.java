@@ -15,7 +15,9 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -79,9 +81,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             // Only add entries from the variable map if they were added
             // with a property descriptor.  If the variable does not have
             // a descriptor then we do not want to persist it
-            PropertyDescriptor pd = _variableMap.getDescriptor(key);
+            ParameterDescription pd = _variableMap.getDescriptor(key);
             if (pd != null)
-                action.addProperty(pd, _variableMap.get(key));
+            {
+                Object value = _variableMap.get(key);
+                if (pd instanceof SystemProperty)
+                    action.addProperty(((SystemProperty)pd).getPropertyDescriptor(), value);
+                if (pd instanceof PropertyDescriptor)
+                    action.addProperty((PropertyDescriptor)pd, value);
+            }
         }
     }
 

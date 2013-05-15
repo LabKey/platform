@@ -17,17 +17,32 @@ package org.labkey.di.filters;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.di.VariableMap;
+import org.labkey.di.pipeline.TransformJobContext;
+import org.labkey.di.steps.StepMeta;
 
 /**
  * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 4/22/13
  * Time: 11:55 AM
+ *
+ *
+ * The Filter strategy combines two pieces of funcitonality.
+ *
+ * 1) checker: determines whether there is incremental work to perform
+ * 2) filter: select a subset of rows to process
+ *
  */
 public interface FilterStrategy
 {
+    interface Factory
+    {
+        FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta);
+        boolean checkStepsSeparately();
+    }
+
     boolean hasWork();
 
-    /* Side effect of setting parameters */
+    /* Has side effect of setting parameters */
     SimpleFilter getFilter(VariableMap variables);
 }

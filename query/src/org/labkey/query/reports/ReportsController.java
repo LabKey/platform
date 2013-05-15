@@ -1535,10 +1535,8 @@ public class ReportsController extends SpringActionController
         {
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-            try
+            try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
-
                 ViewCategory category = null;
 
                 // save the category information then the report
@@ -1577,7 +1575,7 @@ public class ReportsController extends SpringActionController
 
                 afterReportSave(form, report);
 
-                scope.commitTransaction();
+                tx.commit();
 
                 ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
@@ -1586,11 +1584,8 @@ public class ReportsController extends SpringActionController
 
                 return true;
             }
-            finally
-            {
-                scope.closeConnection();
-            }
         }
+
 
         abstract protected R initializeReportForSave(F form) throws Exception;
 

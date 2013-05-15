@@ -48,7 +48,7 @@ public class DataIntegrationDbSchema extends UserSchema
             _name = name;
         }
 
-        String getColumnName()
+        public String getColumnName()
         {
             return _name;
         }

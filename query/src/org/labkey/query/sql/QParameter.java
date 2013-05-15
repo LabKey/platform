@@ -57,7 +57,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     }
 
     @Override
-    public JdbcType getType()
+    public JdbcType getJdbcType()
     {
         return _type.type;
     }

@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.AsyncDataIterator;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -40,6 +41,7 @@ import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
+import org.labkey.di.pipeline.BaseQueryTransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
@@ -263,7 +265,14 @@ public class SimpleQueryTransformStep extends TransformTask
     {
         if (null == _filterStrategy)
         {
-            _filterStrategy = new ModifiedSinceFilterStrategy(_context, _meta);
+            FilterStrategy.Factory factory = null;
+            ScheduledPipelineJobDescriptor jd = _context.getJobDescriptor();
+            if (jd instanceof BaseQueryTransformDescriptor)
+                factory = ((BaseQueryTransformDescriptor)jd).getDefaultFilterFactory();
+            if (null == factory)
+                factory = new ModifiedSinceFilterStrategy.Factory(jd);
+
+            _filterStrategy = factory.getFilterStrategy(_context, _meta);
         }
 
         return _filterStrategy;

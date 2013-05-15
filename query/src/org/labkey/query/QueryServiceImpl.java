@@ -1520,8 +1520,8 @@ public class QueryServiceImpl extends QueryService
                 continue; // maybe someone else will bind it....
             }
 
-            Object converted = p.getType().convert(value);
-            list.set(i, new Parameter.TypedValue(converted, p.getType()));
+            Object converted = p.getJdbcType().convert(value);
+            list.set(i, new Parameter.TypedValue(converted, p.getJdbcType()));
         }
     }
 

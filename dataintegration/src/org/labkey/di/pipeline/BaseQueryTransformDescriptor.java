@@ -27,13 +27,13 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -57,23 +57,23 @@ import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.di.ScheduledPipelineJobContext;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.di.DataIntegrationDbSchema;
-import org.labkey.di.DataIntegrationModule;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
+import org.labkey.di.filters.FilterStrategy;
+import org.labkey.di.filters.ModifiedSinceFilterStrategy;
+import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
+import org.labkey.etl.xml.FilterType;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
@@ -124,6 +124,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private String _moduleName;
 
     // steps
+    private FilterStrategy.Factory _defaultFactory = null;
     private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<>();
     private CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
 
@@ -157,8 +158,16 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
             _name = etlXML.getName();
             _description = etlXML.getDescription();
+
+            // handle default transform
+            FilterType ft = etlXML.getIncrementalFilter();
+            if (null != ft)
+                _defaultFactory = createFilterFactory(ft);
+            if (null == _defaultFactory)
+                _defaultFactory = new ModifiedSinceFilterStrategy.Factory(this, null);
+
             TransformsType transforms = etlXML.getTransforms();
-            if (transforms != null)
+            if (null != transforms)
             {
                 TransformType[] transformTypes = transforms.getTransformArray();
                 for (TransformType t : transformTypes)
@@ -174,6 +183,20 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
     }
+
+
+    private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
+    {
+        String className = StringUtils.defaultString(filterTypeXML.getClassName(), ModifiedSinceFilterStrategy.class.getName());
+        if (!className.contains("."))
+            className = "org.labkey.di.filters." + className;
+        if (className.equals(ModifiedSinceFilterStrategy.class.getName()))
+            return new ModifiedSinceFilterStrategy.Factory(this, filterTypeXML);
+        else if (className.equals(RunFilterStrategy.class.getName()))
+            return new RunFilterStrategy.Factory(this, filterTypeXML);
+        throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
+    }
+
 
     private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML) throws XmlException
     {
@@ -291,12 +314,26 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return _id;
     }
 
+
     public int getVersion()
     {
         checkForUpdates();
         // TODO - add config for real version number
         return 1;
     }
+
+
+    public FilterStrategy.Factory getDefaultFilterFactory()
+    {
+        return _defaultFactory;
+    }
+
+
+    public void setDefaultFilterFactory(FilterStrategy.Factory defaultFactory)
+    {
+        _defaultFactory = defaultFactory;
+    }
+
 
     private void checkForUpdates()
     {

@@ -15,7 +15,7 @@
  */
 package org.labkey.di;
 
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.property.SystemProperty;
 
 import java.util.Set;
@@ -28,9 +28,15 @@ import java.util.Set;
 */
 public interface VariableMap
 {
+    enum Scope { global, local, parent }
+
     Object get(String key);
+
     Object put(String key, Object value);
-    Object put(SystemProperty p, Object value);
-    PropertyDescriptor getDescriptor(String key);
+    Object put(String key, Object value, Enum scope);
+    Object put(ParameterDescription p, Object value);
+    Object put(ParameterDescription p, Object value, Enum scope);
+
+    ParameterDescription getDescriptor(String key);
     Set<String> keySet();
 }

@@ -280,7 +280,7 @@ public class LinkedSchema extends ExternalSchema
             for (QueryService.ParameterDecl decl : parameterDecls)
             {
                 sql.append(paramSep);
-                sql.append("  \"").append(decl.getName()).append("\" ").append(decl.getType().name());
+                sql.append("  \"").append(decl.getName()).append("\" ").append(decl.getJdbcType().name());
                 if (decl.getDefault() != null)
                     sql.append(" DEFAULT ").append(decl.getDefault());
                 paramSep = ",\n";

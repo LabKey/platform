@@ -1876,15 +1876,11 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            try
+            try (DbScope.Transaction tx =  dbSchema.getScope().ensureTransaction())
             {
-                dbSchema.getScope().ensureTransaction();
-
                 updateService.deleteRows(getUser(), getContainer(), keyValues, null);
-
-                dbSchema.getScope().commitTransaction();
-
                 _url = forward;
+                tx.commit();
             }
             catch (SQLException x)
             {
@@ -1901,10 +1897,6 @@ public class QueryController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
                 ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-            }
-            finally
-            {
-                dbSchema.getScope().closeConnection();
             }
 
             return true;
@@ -3972,10 +3964,9 @@ public class QueryController extends SpringActionController
                     throw new UnauthorizedException();
             }
 
-            try
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+            try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                QueryManager.get().getDbSchema().getScope().ensureTransaction();
-
                 // Delete the session view.  The view will be restored if an exception is thrown.
                 view.delete(getUser(), getViewContext().getRequest());
 
@@ -4018,7 +4009,7 @@ public class QueryController extends SpringActionController
                     existingView.save(getUser(), getViewContext().getRequest());
                 }
 
-                QueryManager.get().getDbSchema().getScope().commitTransaction();
+                tx.commit();
                 return new ApiSimpleResponse("success", true);
             }
             catch (Exception e)
@@ -4029,12 +4020,9 @@ public class QueryController extends SpringActionController
                 
                 throw e;
             }
-            finally
-            {
-                QueryManager.get().getDbSchema().getScope().closeConnection();
-            }
         }
     }
+
 
     @RequiresNoPermission
     public class CheckSyntaxAction extends SimpleViewAction

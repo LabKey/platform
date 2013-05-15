@@ -22,6 +22,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -30,13 +31,13 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
+import org.labkey.etl.xml.FilterType;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created with IntelliJ IDEA.
@@ -125,8 +126,8 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
             incrementalEndDate = incrementalStartTimestamp;
         f.addCondition(_tsCol.getFieldKey(), incrementalEndDate, CompareType.LTE);
 
-        variables.put(TransformProperty.IncrementalStartTimestamp, incrementalStartTimestamp);
-        variables.put(TransformProperty.IncrementalEndTimestamp, incrementalEndDate);
+        variables.put(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor(), incrementalStartTimestamp);
+        variables.put(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor(), incrementalEndDate);
         return f;
     }
 
@@ -142,5 +143,35 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
                 return (Date) map.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
         }
         return null;
+    }
+
+
+    public static class Factory implements FilterStrategy.Factory
+    {
+        ScheduledPipelineJobDescriptor _jobDescriptor;
+        FilterType _filterType;
+
+        public Factory(ScheduledPipelineJobDescriptor jobDescriptor)
+        {
+            _jobDescriptor = jobDescriptor;
+        }
+
+        public Factory(ScheduledPipelineJobDescriptor jobDescriptor, FilterType ft)
+        {
+            _jobDescriptor = jobDescriptor;
+            _filterType = ft;
+        }
+
+        @Override
+        public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
+        {
+            return new ModifiedSinceFilterStrategy(context, stepMeta);
+        }
+
+        @Override
+        public boolean checkStepsSeparately()
+        {
+            return true;
+        }
     }
 }

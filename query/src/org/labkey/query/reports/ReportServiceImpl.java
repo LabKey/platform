@@ -513,19 +513,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         DbScope scope = getTable().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             report.beforeDelete(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
             _deleteReport(context.getContainer(), reportId.getRowId());
             SecurityPolicyManager.deletePolicy(descriptor);
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            tx.commit();
         }
     }
 
@@ -598,9 +593,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
     {
         DbScope scope = getTable().getSchema().getScope();
-        try
+        try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             report.getDescriptor().setContainer(context.getContainer().getId());
             report.beforeSave(context);
 
@@ -612,13 +606,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                 validateReportPermissions(context, report);
 
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
-            scope.commitTransaction();
+            tx.commit();
             _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
             return r;
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

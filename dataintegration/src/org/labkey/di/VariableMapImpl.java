@@ -18,14 +18,16 @@ package org.labkey.di;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.di.data.TransformProperty;
 
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.di.VariableMap.Scope.*;
 
 
 /**
@@ -37,7 +39,7 @@ import java.util.Set;
 public class VariableMapImpl implements VariableMap
 {
     final VariableMap _outer;
-    final CaseInsensitiveHashMap<PropertyDescriptor> declarations = new CaseInsensitiveHashMap<>();
+    final CaseInsensitiveHashMap<ParameterDescription> declarations = new CaseInsensitiveHashMap<>();
     final CaseInsensitiveHashMap<Object> values = new CaseInsensitiveHashMap<>();
 
     // No-args constructor to support de-serialization in Java 7
@@ -47,10 +49,12 @@ public class VariableMapImpl implements VariableMap
         _outer = null;
     }
 
+
     public VariableMapImpl(VariableMap parentScope)
     {
         _outer = parentScope;
     }
+
 
     public VariableMapImpl(VariableMap parentScope, Map<String, ObjectProperty> propertyMap)
     {
@@ -59,7 +63,7 @@ public class VariableMapImpl implements VariableMap
         {
             for (ObjectProperty property : propertyMap.values())
             {
-                put(property.getName(), property.value());
+                put(property.getName(), property.value(), local);
             }
         }
     }
@@ -77,19 +81,56 @@ public class VariableMapImpl implements VariableMap
     @Override
     public Object put(String key, Object value)
     {
-        PropertyDescriptor pd = declarations.get(key);
-        if (null != pd)
-            value = pd.getJdbcType().convert(value);
-        return values.put(key,value);
+        return put(key, value, local);
     }
 
 
-    public Object put(SystemProperty prop, Object value)
+    @Override
+    public Object put(String key, Object value, Enum scope)
     {
-        PropertyDescriptor pd = prop.getPropertyDescriptor();
-        declarations.put(pd.getName(), pd);
-        return put(pd.getName(), value);
+        if (local == scope || null == _outer)
+        {
+            ParameterDescription pd = declarations.get(key);
+            if (null != pd)
+                value = pd.getJdbcType().convert(value);
+            return values.put(key,value);
+        }
+        else
+        {
+            declarations.remove(key);
+            values.remove(key);
+            if (Scope.parent == scope)
+                scope = local;
+            return _outer.put(key, value, scope);
+        }
     }
+
+
+
+    @Override
+    public Object put(ParameterDescription prop, Object value)
+    {
+        return put(prop, value, local);
+    }
+
+
+    public Object put(ParameterDescription prop, Object value, Enum scope)
+    {
+        if (local == scope)
+        {
+            declarations.put(prop.getName(), prop);
+            return put(prop.getName(), value, scope);
+        }
+        else
+        {
+            declarations.remove(prop.getName());
+            values.remove(prop.getName());
+            if (Scope.parent == scope)
+                scope = local;
+            return _outer.put(prop, value, scope);
+        }
+    }
+
 
     @Override
     public Set<String> keySet()
@@ -98,8 +139,9 @@ public class VariableMapImpl implements VariableMap
         return values.keySet();
     }
 
+
     @Override
-    public PropertyDescriptor getDescriptor(String key)
+    public ParameterDescription getDescriptor(String key)
     {
         if (null == _outer || declarations.containsKey(key))
             return declarations.get(key);
@@ -126,11 +168,11 @@ public class VariableMapImpl implements VariableMap
             VariableMap vmap = new VariableMapImpl();
 
             // test that our known system properties are available
-            vmap.put(TransformProperty.IncrementalStartTimestamp, startTimestamp);
-            vmap.put(TransformProperty.IncrementalEndTimestamp, endTimestamp);
-            vmap.put(TransformProperty.RecordsDeleted, recordDeleted);
-            vmap.put(TransformProperty.RecordsInserted, recordsInserted1);
-            vmap.put(TransformProperty.RecordsModified, recordsModified);
+            vmap.put(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor(), startTimestamp, local);
+            vmap.put(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor(), endTimestamp, local);
+            vmap.put(TransformProperty.RecordsDeleted.getPropertyDescriptor(), recordDeleted, local);
+            vmap.put(TransformProperty.RecordsInserted.getPropertyDescriptor(), recordsInserted1, local);
+            vmap.put(TransformProperty.RecordsModified.getPropertyDescriptor(), recordsModified, local);
 
             // spot check  that a variable added as a system property is put in both
             // the declarations and values maps using the property descriptor's name
@@ -140,8 +182,8 @@ public class VariableMapImpl implements VariableMap
 
             // add a non-system property
             // verify that this "transient" property is not in the descriptors map
-            vmap.put(greetingKey1, greeting1);
-            vmap.put(greetingKey2, greeting2);
+            vmap.put(greetingKey1, greeting1, local);
+            vmap.put(greetingKey2, greeting2, local);
             verifyProp(vmap, greetingKey1, greeting1);
             assert (null == vmap.getDescriptor(greetingKey1));
 
@@ -150,12 +192,12 @@ public class VariableMapImpl implements VariableMap
 
             // ensure child system prop overrides parent prop when accessed through child map
             // but doesn't affect parent map value
-            vmapChild.put(TransformProperty.RecordsInserted, recordsInserted2);
+            vmapChild.put(TransformProperty.RecordsInserted.getPropertyDescriptor(), recordsInserted2, local);
             verifyProp(vmapChild, TransformProperty.RecordsInserted, recordsInserted2);
             verifyProp(vmap, TransformProperty.RecordsInserted, recordsInserted1);
 
             // ditto for non-system props
-            vmapChild.put(greetingKey1, greeting2);
+            vmapChild.put(greetingKey1, greeting2, local);
             verifyProp(vmapChild, greetingKey1, greeting2);
             verifyProp(vmap, greetingKey1, greeting1);
 

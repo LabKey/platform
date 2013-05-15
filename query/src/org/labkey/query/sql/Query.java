@@ -698,7 +698,7 @@ public class Query
                 QParameter to = map.get(p.getName());
                 if (null == to)
                     _parameters.add(p);
-                else if (to.getType() != p.getType())
+                else if (to.getJdbcType() != p.getJdbcType())
                     parseError(_parseErrors, "Parameter is declared with different types: " + p.getName(), to);
             }
         }

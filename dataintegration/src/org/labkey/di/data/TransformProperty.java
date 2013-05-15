@@ -27,6 +27,7 @@ public abstract class TransformProperty
     static public final SystemProperty RecordsModified = new SystemProperty(PROPERTY_BASE + "RecordsModified", PropertyType.INTEGER);
     static public final SystemProperty IncrementalStartTimestamp = new SystemProperty(PROPERTY_BASE + "IncrementalStartTimestamp", PropertyType.DATE_TIME);
     static public final SystemProperty IncrementalEndTimestamp = new SystemProperty(PROPERTY_BASE + "IncrementalEndTimestamp", PropertyType.DATE_TIME);
+    static public final SystemProperty IncrementalRunId = new SystemProperty(PROPERTY_BASE + "IncrementalRunId", PropertyType.INTEGER);
 
     public static void register()
     {
