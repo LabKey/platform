@@ -18,7 +18,6 @@ package org.labkey.api.exp;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -76,6 +75,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -1393,28 +1393,28 @@ public class OntologyManager
         if (pdIn.getPropertyId() != 0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
             colDiffs.add("PropertyId");
 
-        if (ObjectUtils.equals(pdIn.getName(), pd.getName()))
+        if (Objects.equals(pdIn.getName(), pd.getName()))
             colDiffs.add("Name");
 
-        if (ObjectUtils.equals(pdIn.getConceptURI(), pd.getConceptURI()))
+        if (Objects.equals(pdIn.getConceptURI(), pd.getConceptURI()))
             colDiffs.add("ConceptURI");
 
-        if (ObjectUtils.equals(pdIn.getDescription(), pd.getDescription()))
+        if (Objects.equals(pdIn.getDescription(), pd.getDescription()))
             colDiffs.add("Description");
 
-        if (ObjectUtils.equals(pdIn.getFormat(), pd.getFormat()))
+        if (Objects.equals(pdIn.getFormat(), pd.getFormat()))
             colDiffs.add("Format");
 
-        if (ObjectUtils.equals(pdIn.getLabel(), pd.getLabel()))
+        if (Objects.equals(pdIn.getLabel(), pd.getLabel()))
             colDiffs.add("Label");
 
-        if (ObjectUtils.equals(pdIn.getOntologyURI(), pd.getOntologyURI()))
+        if (Objects.equals(pdIn.getOntologyURI(), pd.getOntologyURI()))
             colDiffs.add("OntologyURI");
 
-        if (ObjectUtils.equals(pdIn.getSearchTerms(), pd.getSearchTerms()))
+        if (Objects.equals(pdIn.getSearchTerms(), pd.getSearchTerms()))
             colDiffs.add("SearchTerms");
 
-        if (ObjectUtils.equals(pdIn.getSemanticType(), pd.getSemanticType()))
+        if (Objects.equals(pdIn.getSemanticType(), pd.getSemanticType()))
             colDiffs.add("SemanticType");
 
         if (pdIn.isHidden() != pd.isHidden())
@@ -1423,13 +1423,13 @@ public class OntologyManager
         if (pdIn.isMvEnabled() != pd.isMvEnabled())
             colDiffs.add("IsMvEnabled");
 
-        if (ObjectUtils.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
+        if (Objects.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
             colDiffs.add("LookupContainer");
 
-        if (ObjectUtils.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
+        if (Objects.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
             colDiffs.add("LookupSchema");
 
-        if (ObjectUtils.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
+        if (Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
 
         return colDiffs;

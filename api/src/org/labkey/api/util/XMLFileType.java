@@ -16,7 +16,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.namespace.QName;
@@ -27,6 +26,7 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 
 /**
  * Convenience class for creating <code>FileType</code>s for xml files.
@@ -99,7 +99,7 @@ public class XMLFileType extends FileType
 
     private boolean isQNameMatch(QName name)
     {
-        return ObjectUtils.equals(_namespace, name.getNamespaceURI()) &&
+        return Objects.equals(_namespace, name.getNamespaceURI()) &&
                _rootElements.contains(name.getLocalPart());
     }
 }

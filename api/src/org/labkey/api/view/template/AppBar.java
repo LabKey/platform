@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -27,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /*
 * User: Mark Igra
@@ -197,14 +197,14 @@ public class AppBar extends NavTree
                 if (!stopLooking)
                 {
                     // First check the folder title's link
-                    if (ObjectUtils.equals(getHref(), link))
+                    if (Objects.equals(getHref(), link))
                     {
                         foundMatch = true;
                     }
                     // Then look at all of the tabs
                     for (NavTree button : buttons)
                     {
-                        if (ObjectUtils.equals(button.getHref(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
+                        if (Objects.equals(button.getHref(), link) || (actionURL != null && Objects.equals(actionURL.getLocalURIString(), link)))
                         {
                             foundMatch = true;
                         }

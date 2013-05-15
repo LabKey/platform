@@ -16,13 +16,12 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by IntelliJ IDEA.
@@ -79,7 +78,7 @@ public class ChartReportDescriptor extends ReportDescriptor
 
     public String getChartType()
     {
-        return ObjectUtils.toString(getProperty(Prop.chartType), CHART_XY);
+        return Objects.toString(getProperty(Prop.chartType), CHART_XY);
     }
 
     public void setWidth(int width)

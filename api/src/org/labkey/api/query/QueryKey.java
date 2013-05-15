@@ -15,7 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
@@ -24,6 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Base class of FieldKey and SchemaKey.
@@ -163,12 +163,12 @@ import java.util.List;
             return false;
         QueryKey that = (QueryKey) other;
         return strEqualsIgnoreCase(this._name, that._name) &&
-                ObjectUtils.equals(this._parent, that._parent);
+                Objects.equals(this._parent, that._parent);
     }
 
     public int hashCode()
     {
-        return _name.toLowerCase().hashCode() ^ ObjectUtils.hashCode(_parent);
+        return _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
     }
 
     public List<String> getParts()

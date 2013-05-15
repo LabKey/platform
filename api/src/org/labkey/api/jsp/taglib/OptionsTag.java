@@ -16,13 +16,12 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class OptionsTag extends SimpleTagBase
@@ -36,7 +35,7 @@ public class OptionsTag extends SimpleTagBase
         if (_value instanceof Collection)
             return ((Collection)_value).contains(test);
         else
-            return ObjectUtils.equals(test, _value);
+            return Objects.equals(test, _value);
     }
 
     public void doTag() throws JspException, IOException

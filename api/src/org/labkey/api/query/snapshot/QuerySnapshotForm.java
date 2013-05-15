@@ -15,7 +15,6 @@
  */
 package org.labkey.api.query.snapshot;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
@@ -23,6 +22,7 @@ import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 /*
  * User: Karl Lum
  * Date: Jul 18, 2008
@@ -89,7 +89,7 @@ public class QuerySnapshotForm extends QueryForm
 
     public void setUpdateDelay(int updateDelay)
     {
-        String type = ObjectUtils.toString(getViewContext().get("updateType"), "");
+        String type = Objects.toString(getViewContext().get("updateType"), "");
         if (type.equals("manual"))
             _updateDelay = 0;
         else

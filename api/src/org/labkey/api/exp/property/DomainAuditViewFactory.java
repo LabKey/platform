@@ -16,7 +16,6 @@
 
 package org.labkey.api.exp.property;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -150,7 +150,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
             }
 
             if (_defaultName != null)
-                out.write(ObjectUtils.defaultIfNull(PageFlowUtil.filter(_defaultName.getValue(ctx)), "&nbsp;").toString());
+                out.write(Objects.toString(PageFlowUtil.filter(_defaultName.getValue(ctx)), "&nbsp;").toString());
             else
                 out.write("&nbsp;");
         }

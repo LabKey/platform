@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
@@ -123,6 +122,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
@@ -2322,7 +2322,7 @@ public class PageFlowUtil
         {
             Object value = itValue.next();
             String label = itLabel.next();
-            boolean selected = !found && ObjectUtils.equals(current, value);
+            boolean selected = !found && Objects.equals(current, value);
             ret.append("\n<option value=\"");
             ret.append(h(value));
             ret.append("\"");

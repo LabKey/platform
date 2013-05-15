@@ -16,16 +16,17 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+
+import java.util.Objects;
 
 public class UserIdRenderer extends DataColumn
 {
     static public boolean isGuestUserId(Object value)
     {
-        return ObjectUtils.equals(value, 0);
+        return Objects.equals(value, 0);
     }
 
     static public class GuestAsBlank extends DataColumn

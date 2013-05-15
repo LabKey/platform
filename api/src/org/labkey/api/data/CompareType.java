@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +41,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -1079,8 +1079,8 @@ public enum CompareType
 
         protected LikeClause(FieldKey fieldKey, CompareType compareType, Object value)
         {
-            super(fieldKey, compareType, escapeLikePattern(ObjectUtils.toString(value)));
-            _unescapedValue = ObjectUtils.toString(value);
+            super(fieldKey, compareType, escapeLikePattern(Objects.toString(value, "")));
+            _unescapedValue = Objects.toString(value, "");
         }
 
         static private String escapeLikePattern(String value)

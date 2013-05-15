@@ -16,11 +16,10 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.Objects;
 
 public class RadioTag extends SimpleTagBase
 {
@@ -71,6 +70,6 @@ public class RadioTag extends SimpleTagBase
 
     public boolean isChecked()
     {
-        return ObjectUtils.equals(_value, _currentValue);
+        return Objects.equals(_value, _currentValue);
     }
 }

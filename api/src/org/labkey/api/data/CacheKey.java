@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
@@ -25,6 +24,8 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Objects;
 
 
 public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<String, T[]>
@@ -97,7 +98,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
         if (value != null)
         {
             _toString.append("=");
-            _toString.append(PageFlowUtil.encode(ObjectUtils.toString(value)));
+            _toString.append(PageFlowUtil.encode(Objects.toString(value, "")));
         }
     }
 

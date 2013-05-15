@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import junit.framework.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -37,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * User: jeckels
@@ -154,7 +154,7 @@ public class ReplacedRunFilter
             {
                 Boolean b1 = (Boolean)ConvertUtils.convert(paramValue, Boolean.class);
                 Boolean b2 = (Boolean)ConvertUtils.convert(url.getParameter(paramName), Boolean.class);
-                if (ObjectUtils.equals(b1, b2))
+                if (Objects.equals(b1, b2))
                 {
                     return new ReplacedRunFilter(type);
                 }

@@ -16,10 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 
 /**
  * User: arauch
@@ -112,7 +111,7 @@ public class GroupedResultSet extends ResultSetImpl
         while (rs.next())
         {
             // Look for the group number changing
-            if (!ObjectUtils.equals(getObject(_columnIndex), value))
+            if (!Objects.equals(getObject(_columnIndex), value))
             {
                 _groupCount++;
                 value = getObject(_columnIndex);
@@ -193,7 +192,7 @@ public class GroupedResultSet extends ResultSetImpl
             }
             currentValue = getObject(_columnIndex);
         }
-        while (ObjectUtils.equals(currentValue, previousValue));
+        while (Objects.equals(currentValue, previousValue));
 
         if (_lastRow != 0)
         {
