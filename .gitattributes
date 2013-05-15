@@ -1533,7 +1533,6 @@ list/src/org/labkey/list/view/UploadListItemsForm.java -text
 list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
-list/src/org/labkey/list/view/historyDetail.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text

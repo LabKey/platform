@@ -631,30 +631,6 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class HistoryDetailAction extends SimpleViewAction<ListDefinitionForm>
-    {
-        private ListDefinition _list;
-
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
-        {
-            _list = form.getList();
-            int id = NumberUtils.toInt((String)getViewContext().get("eventId"));
-            AuditLogEvent event = AuditLogService.get().getEvent(id);
-
-            if (event != null)
-                return new JspView<AuditLogEvent>(this.getClass(), "/org/labkey/list/view/historyDetail.jsp", event);
-            else
-                throw new NotFoundException("Unable to find the audit history detail for this event");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, "Audit History Detail");
-        }
-    }
-
-
-    @RequiresPermissionClass(ReadPermission.class)
     public class ListItemDetailsAction extends SimpleViewAction
     {
         private ListDefinition _list;
