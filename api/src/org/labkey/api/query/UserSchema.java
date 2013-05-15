@@ -16,18 +16,14 @@
 
 package org.labkey.api.query;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -52,7 +48,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,18 +61,20 @@ abstract public class UserSchema extends AbstractSchema
     protected String _description;
     protected boolean _cacheTableInfos = false;
     protected boolean _restricted = false;      // restricted schemas will return null from getSchema()
+    protected final Collection<UserSchemaCustomizer> _schemaCustomizers;
 
     public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
-        this(SchemaKey.fromParts(name), description, user, container, dbSchema);
+        this(SchemaKey.fromParts(name), description, user, container, dbSchema, null);
     }
 
-    public UserSchema(SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema)
+    public UserSchema(SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema, Collection<UserSchemaCustomizer> schemaCustomizers)
     {
         super(dbSchema, user, container);
         _name = path.getName();
         _path = path;
         _description = description;
+        _schemaCustomizers = schemaCustomizers;
     }
 
     public String getName()
@@ -180,6 +177,7 @@ abstract public class UserSchema extends AbstractSchema
             // should just be !forWrite, but exp schema is still a problem
             if (useCache)
                 table.setLocked(true);
+            fireAfterConstruct(table);
             torq = table;
         }
         else
@@ -192,11 +190,12 @@ abstract public class UserSchema extends AbstractSchema
                 def.setMetadataXml(null);
             }
 
+            fireAfterConstruct(def);
             torq = def;
         }
 
-      if (false && useCache)
-         cache.put(key,torq);
+        if (false && useCache)
+           cache.put(key,torq);
 
         assert MemTracker.put(torq);
         return torq;
@@ -218,145 +217,14 @@ abstract public class UserSchema extends AbstractSchema
     }
 
     /**
-     * NOTE: This is an experimental API and may change.
-     * Gets a topologically sorted list of TableInfos within this schema.
+     * Get a topologically sorted list of TableInfos within this schema.
      * Not all existing schemas are supported yet since their FKs don't expose the query tableName they join to or they contain loops.
      * 
      * @throws IllegalStateException if a loop is detected.
      */
     public List<TableInfo> getSortedTables()
     {
-        if (getTableNames().isEmpty())
-        {
-            return Collections.emptyList();
-        }
-        
-        String schemaName = getName();
-        Set<String> tableNames = new HashSet<String>(getTableNames());
-        Map<String, TableInfo> tables = new CaseInsensitiveHashMap<TableInfo>();
-        for (String tableName : tableNames)
-            tables.put(tableName, getTable(tableName));
-
-        // Find all tables with no incoming FKs
-        Set<String> startTables = new CaseInsensitiveHashSet();
-        startTables.addAll(tableNames);
-        for (String tableName : tableNames)
-        {
-            TableInfo table = tables.get(tableName);
-            for (ColumnInfo column : table.getColumns())
-            {
-                // Skip calculated columns (e.g., ExprColumn)
-                if (column.isCalculated())
-                    continue;
-
-                ForeignKey fk = column.getFk();
-
-                // Skip fake FKs that just wrap the RowId
-                if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
-                    continue;
-
-                // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-                TableInfo t = null;
-                try
-                {
-                    t = fk.getLookupTableInfo();
-                }
-                catch (QueryParseException qpe)
-                {
-                    // ignore and try to continue
-                    String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
-                            fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
-                    Logger.getLogger(UserSchema.class).warn(msg, qpe);
-                }
-
-                // Skip lookups to other schemas
-                if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
-                    continue;
-
-                // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
-                String lookupTableName = fk.getLookupTableName();
-                if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
-                    lookupTableName = t.getName();
-
-                // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
-                    continue;
-
-                // Remove the lookup table from the set of tables with no incoming FK
-                startTables.remove(lookupTableName);
-            }
-        }
-
-        if (startTables.isEmpty())
-            throw new IllegalArgumentException("No tables without incoming FKs found");
-
-        // Depth-first topological sort of the tables starting with the startTables
-        Set<TableInfo> visited = new HashSet<TableInfo>(tableNames.size());
-        List<TableInfo> sorted = new ArrayList<TableInfo>(tableNames.size());
-        for (String tableName : startTables)
-            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<TableInfo>(), sorted);
-        
-        return sorted;
-    }
-
-    private void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<TableInfo> visiting, List<TableInfo> sorted)
-    {
-        // NOTE: loops exist in current schemas
-        //   core.Containers has a self join to parent Container
-        //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
-        if (visiting.contains(table))
-            throw new IllegalStateException("loop detected");
-
-        if (visited.contains(table))
-            return;
-
-        visiting.addFirst(table);
-        visited.add(table);
-
-        for (ColumnInfo column : table.getColumns())
-        {
-            // Skip calculated columns (e.g., ExprColumn)
-            if (column.isCalculated())
-                continue;
-
-            ForeignKey fk = column.getFk();
-
-            // Skip fake FKs that just wrap the RowId
-            if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
-                continue;
-
-            // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-            TableInfo t = null;
-            try
-            {
-                t = fk.getLookupTableInfo();
-            }
-            catch (QueryParseException qpe)
-            {
-                // We've already reported this error once; ignore and try to continue
-            }
-
-            // Skip lookups to other schemas
-            if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
-                continue;
-
-            // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
-            String lookupTableName = fk.getLookupTableName();
-            if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
-                lookupTableName = t.getName();
-
-            // Skip self-referencing FKs
-            if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
-                continue;
-
-            // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
-            TableInfo lookupTable = tables.get(lookupTableName);
-            if (lookupTable != null)
-                depthFirstWalk(schemaName, tables, lookupTable, visited, visiting, sorted);
-        }
-
-        sorted.add(table);
-        visiting.removeFirst();
+        return TableSorter.sort(this);
     }
 
     public Container getContainer()
@@ -436,7 +304,7 @@ abstract public class UserSchema extends AbstractSchema
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        // HACK: until I figure out a better way to create QueryView subclasses based upon TableInfo type
+//        // HACK: until I figure out a better way to create QueryView subclasses based upon TableInfo type
         QueryDefinition qdef = settings.getQueryDef(this);
         if (qdef != null)
         {
@@ -681,4 +549,30 @@ abstract public class UserSchema extends AbstractSchema
     {
         return Collections.singleton(ReportUtil.getReportKey(getSchemaName(), queryName));
     }
+
+    //
+    // UserSchemaCustomizer methods
+    //
+
+    protected void fireAfterConstruct()
+    {
+        if (_schemaCustomizers != null)
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                customizer.afterConstruct(this);
+    }
+
+    protected void fireAfterConstruct(QueryDefinition def)
+    {
+        if (_schemaCustomizers != null)
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                customizer.afterConstruct(this, def);
+    }
+
+    protected void fireAfterConstruct(TableInfo table)
+    {
+        if (_schemaCustomizers != null)
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                customizer.afterConstruct(this, table);
+    }
+
 }
