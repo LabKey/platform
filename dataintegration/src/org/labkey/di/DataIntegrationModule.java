@@ -130,21 +130,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
 
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        if(DbSchema.get("hipcdb").getSqlDialect().isSqlServer())
-        {
-            return PageFlowUtil.set(DbSchema.get(DataIntegrationDbSchema.SCHEMA_NAME));
-        }
-        else
-        {
-            return Collections.emptySet();
-        }
-    }
-
-
     /** web parts **/
 
     protected Collection<WebPartFactory> createWebPartFactories()
