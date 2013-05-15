@@ -76,7 +76,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     public double getVersion()
     {
-        return 13.12;
+        return 13.13;
     }
 
     protected void init()
@@ -128,6 +128,22 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
                 BaseQueryTransformDescriptor.TestCase.class
         ));
     }
+
+
+    @Override
+    @NotNull
+    public Set<DbSchema> getSchemasToTest()
+    {
+        if(DbSchema.get("hipcdb").getSqlDialect().isSqlServer())
+        {
+            return PageFlowUtil.set(DbSchema.get(DataIntegrationDbSchema.SCHEMA_NAME));
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
+    }
+
 
     /** web parts **/
 
