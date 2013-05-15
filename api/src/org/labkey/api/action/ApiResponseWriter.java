@@ -186,6 +186,16 @@ public abstract class ApiResponseWriter
     {
         int status;
 
+        if (e instanceof BatchValidationException)
+        {
+            write((BatchValidationException)e);
+            return;
+        }
+        if (e instanceof ValidationException)
+        {
+            write((ValidationException)e);
+            return;
+        }
         if (e instanceof NotFoundException)
             status = HttpServletResponse.SC_NOT_FOUND;
         else

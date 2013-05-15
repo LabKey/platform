@@ -96,6 +96,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     }
     
     
+    @SuppressWarnings("TryWithIdenticalCatches")
     public ModelAndView handlePost() throws Exception
     {
         getViewContext().getResponse().setHeader("X-Robots-Tag", "noindex");
@@ -166,7 +167,15 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             createResponseWriter().write((Errors)e);
         }
         //don't log exceptions that result from bad inputs
-        catch (BatchValidationException | ValidationException | QueryException | IllegalArgumentException |
+        catch (BatchValidationException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (ValidationException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (QueryException | IllegalArgumentException |
                 NotFoundException | InvalidKeyException | ApiUsageException e)
         {
             createResponseWriter().write(e);

@@ -142,7 +142,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         {
             for (Map.Entry<String, Object> entry : obj.entrySet())
             {
-                _xmlWriter.writeStartElement(entry.getKey());
+                _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
                 writeObject(entry.getValue());
                 _xmlWriter.writeEndElement();
             }
@@ -187,7 +187,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         assert (null != state) : "startResponse will start the root-level map!";
         try
         {
-            _xmlWriter.writeStartElement(name);
+            _xmlWriter.writeStartElement(escapeElementName(name));
         }
         catch (XMLStreamException e)
         {
@@ -214,7 +214,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         StreamState state = _streamStack.peek();
         try
         {
-            _xmlWriter.writeStartElement(name);
+            _xmlWriter.writeStartElement(escapeElementName(name));
             writeObject(value);
             _xmlWriter.writeEndElement();
         }
@@ -229,7 +229,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         StreamState state = _streamStack.peek();
         try
         {
-            _xmlWriter.writeStartElement(name);
+            _xmlWriter.writeStartElement(escapeElementName(name));
         }
         catch (XMLStreamException e)
         {
@@ -237,6 +237,12 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
 
         _streamStack.push(new StreamState(name, state.getLevel() + 1));
+    }
+
+    /** Replace characters that aren't valid in XML element names */
+    private String escapeElementName(String s)
+    {
+        return s.replace('/', '_').replace('<', '_').replace('>', '_').replace('"', '_').replace('\'', '_');
     }
 
     public void endList() throws IOException
