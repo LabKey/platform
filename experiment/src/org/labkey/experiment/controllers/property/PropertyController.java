@@ -187,7 +187,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
         public ApiResponse execute(GetForm form, BindException errors) throws Exception
