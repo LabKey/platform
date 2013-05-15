@@ -122,7 +122,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
             ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
             props.put("typeURI", _domain.getTypeURI());
@@ -171,7 +171,7 @@ public class PropertyController extends SpringActionController
 
             // Convert JSONObject to a Map, unpacking JSONArray as we go.
             // XXX: There must be utility for this somewhere?
-            Map<String, Object> options = new HashMap<String, Object>();
+            Map<String, Object> options = new HashMap<>();
             for (String key : jsOptions.keySet())
             {
                 Object value = jsOptions.get(key);
@@ -576,7 +576,7 @@ public class PropertyController extends SpringActionController
         domain.setDescription(jsonDomain.optString("description", null));
 
         JSONArray jsonFields = jsonDomain.getJSONArray("fields");
-        List<GWTPropertyDescriptor> props = new ArrayList<GWTPropertyDescriptor>();
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
         for (int i=0; i<jsonFields.length(); i++)
         {
             JSONObject jsonProp = jsonFields.getJSONObject(i);
