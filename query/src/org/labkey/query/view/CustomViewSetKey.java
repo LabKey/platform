@@ -16,7 +16,6 @@
 
 package org.labkey.query.view;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
@@ -29,6 +28,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class CustomViewSetKey implements Serializable
 {
@@ -52,14 +52,14 @@ public class CustomViewSetKey implements Serializable
         if (!(other instanceof CustomViewSetKey))
             return false;
         CustomViewSetKey that = (CustomViewSetKey) other;
-        return ObjectUtils.equals(this._containerId, that._containerId) &&
-                ObjectUtils.equals(this._queryName, that._queryName);
+        return Objects.equals(this._containerId, that._containerId) &&
+                Objects.equals(this._queryName, that._queryName);
     }
 
     public int hashCode()
     {
-        return ObjectUtils.hashCode(_containerId) ^
-                ObjectUtils.hashCode(_queryName);
+        return Objects.hashCode(_containerId) ^
+                Objects.hashCode(_queryName);
     }
 
     static private Map<CustomViewSetKey, Map<String, CstmView>> getMap(@NotNull HttpServletRequest request)

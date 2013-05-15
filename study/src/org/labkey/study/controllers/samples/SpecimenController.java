@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers.samples;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -199,6 +198,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -578,7 +578,7 @@ public class SpecimenController extends BaseStudyController
             String firstVisit = visitIt.next().getValue();
             while (visitIt.hasNext())
             {
-                if (!ObjectUtils.equals(firstVisit, visitIt.next().getValue()))
+                if (!Objects.equals(firstVisit, visitIt.next().getValue()))
                     return false;
             }
             return true;
@@ -3588,7 +3588,7 @@ public class SpecimenController extends BaseStudyController
                     _mixedFlagState = _mixedFlagState || currentFlagState != previousFlagState;
                     String currentCommentString = comment != null ? comment.getComment() : null;
                     String previousCommentString = prevComment != null ? prevComment.getComment() : null;
-                    _mixedComments = _mixedComments || !ObjectUtils.equals(previousCommentString, currentCommentString);
+                    _mixedComments = _mixedComments || !Objects.equals(previousCommentString, currentCommentString);
                     prevComment = comment;
                 }
                 if (!_mixedComments && prevComment != null)

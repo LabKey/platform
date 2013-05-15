@@ -17,7 +17,6 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.*;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.DataType;
@@ -479,7 +478,7 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null && (deleteExistingRuns || !ObjectUtils.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.canonicalFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.canonicalFile(_xarSource.getRoot()))))
+            if (existingRun != null && (deleteExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.canonicalFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.canonicalFile(_xarSource.getRoot()))))
             {
                 getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
                 existingRun.delete(getUser());

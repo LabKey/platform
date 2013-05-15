@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
@@ -598,7 +597,7 @@ public class DotGraph
 
         public void addNode(DotNode newnode)
         {
-            assert (ObjectUtils.equals(gMap.get(gMap.firstKey()).type, newnode.type));
+            assert (Objects.equals(gMap.get(gMap.firstKey()).type, newnode.type));
             gMap.put(newnode.id, newnode);
         }
 

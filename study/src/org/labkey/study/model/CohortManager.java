@@ -15,7 +15,6 @@
  */
 package org.labkey.study.model;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -52,6 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -510,7 +510,7 @@ public class CohortManager
                 if (study.isAdvancedCohorts())
                 {
                     // if this ptid/visit isn't already assigned to this cohort visit, we need to make the assignment now:
-                    if (!ObjectUtils.equals(newCohortId, assignedCohortId))
+                    if (!Objects.equals(newCohortId, assignedCohortId))
                     {
                         List<Object> params = new ArrayList<Object>();
                         addCohortIdParameter(params, newCohortId);

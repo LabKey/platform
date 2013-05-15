@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -32,6 +31,7 @@ import org.springframework.validation.BindException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: adam
@@ -74,7 +74,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                     Cohort cohort = def.getCohort();
                     String oldCohortLabel = null != cohort ? cohort.getLabel() : null;
 
-                    if (!ObjectUtils.equals(oldCohortLabel, props.getCohort()))
+                    if (!Objects.equals(oldCohortLabel, props.getCohort()))
                     {
                         CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
                         def = def.createMutable();

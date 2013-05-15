@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.*;
@@ -29,13 +28,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.query.ValidationException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 import java.io.Serializable;
+import java.util.Objects;
 
 abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
@@ -91,7 +89,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         {
             // sometimes multiple threads attempt to set the same comment.
             // Don't throw an exception if the comment was actually set to the correct value.
-            if (ObjectUtils.equals(comment, getComment()))
+            if (Objects.equals(comment, getComment()))
             {
                 return;
             }

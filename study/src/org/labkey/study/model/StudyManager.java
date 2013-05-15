@@ -19,7 +19,6 @@ package org.labkey.study.model;
 import com.extjs.gxt.ui.client.dnd.Insert;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -160,6 +159,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -440,7 +440,7 @@ public class StudyManager
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
 
-        if (oldStudy.getTimepointType() == TimepointType.DATE && !ObjectUtils.equals(study.getStartDate(), oldStartDate))
+        if (oldStudy.getTimepointType() == TimepointType.DATE && !Objects.equals(study.getStartDate(), oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);

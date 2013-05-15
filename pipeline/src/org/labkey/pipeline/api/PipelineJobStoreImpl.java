@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Objects;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Container;
@@ -74,7 +74,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             PipelineService.get().getPipelineQueue().addJob(job);
 
             job.getLogger().info("Retrying job. Old Job ID: " + oldJobId +
-                    (ObjectUtils.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
+                    (Objects.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (ConversionException e)
         {

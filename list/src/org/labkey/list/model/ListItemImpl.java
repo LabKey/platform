@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ListItemImpl implements ListItem
 {
@@ -267,7 +268,7 @@ public class ListItemImpl implements ListItem
                     ObjectProperty newProperty = entry.getValue();
                     ObjectProperty oldProperty = _oldProperties.get(entry.getKey());
 
-                    if (ObjectUtils.equals(oldProperty, newProperty))
+                    if (Objects.equals(oldProperty, newProperty))
                     {
                         continue;
                     }
@@ -527,7 +528,7 @@ public class ListItemImpl implements ListItem
             }
             // audit key changes if they are not auto-increment
             if (keyValue != null && !_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
-                recordChangedMap.put(_list.getKeyName(), ObjectUtils.toString(keyValue, ""));
+                recordChangedMap.put(_list.getKeyName(), Objects.toString(keyValue, ""));
 
             if (!recordChangedMap.isEmpty())
                 return ListAuditViewFactory.encodeForDataMap(recordChangedMap, true);
@@ -577,11 +578,11 @@ public class ListItemImpl implements ListItem
                 if (_oldProperties != null)
                 {
                     _appendChange(sb, prop.getName(),
-                            ObjectUtils.toString(_oldProperties.get(entry.getKey()).value(), ""),
-                            ObjectUtils.toString(newValue, ""));
+                            Objects.toString(_oldProperties.get(entry.getKey()).value(), ""),
+                            Objects.toString(newValue, ""));
                 }
                 else
-                    _appendChange(sb, prop.getName(), ObjectUtils.toString(newValue, ""), null);
+                    _appendChange(sb, prop.getName(), Objects.toString(newValue, ""), null);
             }
         }
         sb.append("</table>");

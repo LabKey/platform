@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -31,6 +30,7 @@ import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * User: adam
@@ -83,7 +83,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
                 String oldCohortLabel = null != visit.getCohort() ? visit.getCohort().getLabel() : null;
 
-                if (!ObjectUtils.equals(oldCohortLabel, record.getCohort()))
+                if (!Objects.equals(oldCohortLabel, record.getCohort()))
                 {
                     CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
                     VisitImpl mutable = visit.createMutable();

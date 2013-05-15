@@ -1,7 +1,6 @@
 package org.labkey.list.controllers;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentService;
@@ -48,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.data.TableInfo.TriggerType.INSERT;
 import static org.labkey.api.data.TableInfo.TriggerType.UPDATE;
@@ -219,7 +219,7 @@ public abstract class InsertUpdateAction extends FormViewAction<ListDefinitionFo
             _returnURL = form.getReturnURLHelper();
 
             // If user changed the PK then change returnURL to match
-            if (!ObjectUtils.equals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
+            if (!Objects.equals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
                 _returnURL.replaceParameter("pk", item.getKey().toString());
 
             if (isInsert())

@@ -17,7 +17,6 @@
 package org.labkey.query.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -161,6 +160,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: Karl Lum
@@ -1090,7 +1090,7 @@ public class ReportsController extends SpringActionController
                 addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
                 for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())
                 {
-                    addRow(out, PageFlowUtil.filter(prop.getKey()), PageFlowUtil.filter(ObjectUtils.toString(prop.getValue())));
+                    addRow(out, PageFlowUtil.filter(prop.getKey()), PageFlowUtil.filter(Objects.toString(prop.getValue(), "")));
                 }
                 out.write("<table>");
             }

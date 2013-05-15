@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -162,7 +163,7 @@ Click the Save button at any time to accept the current settings and continue.</
         <select name="administratorContactEmail">
         <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
         for (Pair<Integer,String> member : members) { %>
-              <option value="<%=h(member.getValue())%>" <%= org.apache.commons.lang3.ObjectUtils.equals(member.getValue(), appProps.getAdministratorContactEmail()) ? "selected" : "" %>><%=h(member.getValue())%></option>
+              <option value="<%=h(member.getValue())%>" <%= Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()) ? "selected" : "" %>><%=h(member.getValue())%></option>
         <% } %>
         </select>
     </td>

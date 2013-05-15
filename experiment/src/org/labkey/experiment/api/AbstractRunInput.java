@@ -15,8 +15,9 @@
  */
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 /**
  * User: jeckels
@@ -69,7 +70,7 @@ public abstract class AbstractRunInput
         AbstractRunInput input = (AbstractRunInput) o;
 
         return getInputKey() == input.getInputKey() &&
-            ObjectUtils.equals(_role, input._role) &&
+            Objects.equals(_role, input._role) &&
             _targetApplicationId == input._targetApplicationId;
     }
 

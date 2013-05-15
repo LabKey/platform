@@ -15,13 +15,11 @@
  */
 package org.labkey.study.query;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -46,6 +44,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /*
@@ -281,7 +280,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // Check if the visit has changed, but only if we don't already know we need to resync
             Object oldSequenceNum = oldRow.get("SequenceNum");
             Object newSequenceNum = row.get("SequenceNum");
-            if (!ObjectUtils.equals(oldSequenceNum, newSequenceNum))
+            if (!Objects.equals(oldSequenceNum, newSequenceNum))
             {
                 _participantVisitResyncRequired = true;
             }

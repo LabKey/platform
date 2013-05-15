@@ -18,7 +18,6 @@ package org.labkey.issue;
 
 import org.apache.commons.collections15.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -143,6 +142,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class IssuesController extends SpringActionController
@@ -1968,7 +1968,7 @@ public class IssuesController extends SpringActionController
         {
             sb.append("<span>");
 
-            if (!ObjectUtils.equals(status, currentStatus))
+            if (!Objects.equals(status, currentStatus))
             {
                 sb.append("<a href=\"");
 

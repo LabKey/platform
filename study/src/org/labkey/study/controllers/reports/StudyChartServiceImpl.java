@@ -19,7 +19,6 @@ package org.labkey.study.controllers.reports;
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
@@ -58,6 +57,7 @@ import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -74,7 +74,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
     {
         super(context);
 
-        _isParticipantChart = BooleanUtils.toBoolean(ObjectUtils.toString(context.get("isParticipantChart")));
+        _isParticipantChart = BooleanUtils.toBoolean(Objects.toString(context.get("isParticipantChart"), ""));
     }
 
     public GWTChart getChart(int id)

@@ -16,7 +16,6 @@
 
 package org.labkey.list.controllers;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -123,6 +122,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 
 /**
@@ -780,7 +780,7 @@ public class ListController extends SpringActionController
             for (Map.Entry<String, String> entry : prevProps.entrySet())
             {
                 String newValue = newProps.remove(entry.getKey());
-                if (!ObjectUtils.equals(newValue, entry.getValue()))
+                if (!Objects.equals(newValue, entry.getValue()))
                 {
                     out.write("<tr><td class=\"labkey-form-label\">");
                     out.write(PageFlowUtil.filter(entry.getKey()));
@@ -789,7 +789,7 @@ public class ListController extends SpringActionController
                     modified++;
                     out.write(PageFlowUtil.filter(entry.getValue()));
                     out.write("&nbsp;&raquo;&nbsp;");
-                    out.write(PageFlowUtil.filter(ObjectUtils.toString(newValue, "")));
+                    out.write(PageFlowUtil.filter(Objects.toString(newValue, "")));
                     out.write("</td></tr>\n");
                 }
                 else
@@ -810,7 +810,7 @@ public class ListController extends SpringActionController
                 out.write("</td><td>");
 
                 out.write("&nbsp;&raquo;&nbsp;");
-                out.write(PageFlowUtil.filter(ObjectUtils.toString(entry.getValue(), "")));
+                out.write(PageFlowUtil.filter(Objects.toString(entry.getValue(), "")));
                 out.write("</td></tr>\n");
             }
             out.write("<tr><td/>\n");

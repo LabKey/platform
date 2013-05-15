@@ -16,7 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.QNameSet;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlString;
@@ -28,6 +27,7 @@ import org.labkey.query.design.DgQuery;
 
 import javax.xml.namespace.QName;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 public class QWhere extends QNode
@@ -121,7 +121,7 @@ public class QWhere extends QNode
                 {
                     return false;
                 }
-                sb.append(ObjectUtils.toString(((IConstant) child).getValue()));
+                sb.append(Objects.toString(((IConstant) child).getValue()));
             }
             comp.setLiteral(sb.toString());
             return true;
@@ -134,7 +134,7 @@ public class QWhere extends QNode
             {
                 return false;
             }
-            value = ObjectUtils.toString(((IConstant) operand).getValue());
+            value = Objects.toString(((IConstant) operand).getValue());
         }
 
         CompareType ctOp;

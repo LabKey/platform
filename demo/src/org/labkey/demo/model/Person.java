@@ -16,9 +16,10 @@
 
 package org.labkey.demo.model;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Entity;
+
+import java.util.Objects;
 
 /**
  * User: brittp
@@ -89,9 +90,9 @@ public class Person extends Entity
         if (!(obj instanceof Person))
             return false;
         Person p = (Person)obj;
-        
-        return StringUtils.equals(_firstName, p.getFirstName()) &&
-                StringUtils.equals(_lastName, p.getLastName()) &&
-                ObjectUtils.equals(_age, p.getAge());
+
+        return Objects.equals(_firstName, p.getFirstName()) &&
+                Objects.equals(_lastName, p.getLastName()) &&
+                Objects.equals(_age, p.getAge());
     }
 }

@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.ObjectUtils"%>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.DeleteThreadAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
@@ -35,6 +33,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -181,35 +180,35 @@ if (0 < announcementModel.getResponses().size())
                 %>&nbsp;<%=h(DateUtil.formatDateTime(r.getCreated()))%></td>
             </tr><%
 
-            if (settings.hasMemberList() && !StringUtils.equals(r.getEmailList(), prev.getEmailList()))
+            if (settings.hasMemberList() && !Objects.equals(r.getEmailList(), prev.getEmailList()))
             { %>
             <tr>
                 <td colspan="2">Members: <%=h(r.getEmailList())%></td>
             </tr><%
             }
 
-            if (settings.hasStatus() && !StringUtils.equals(r.getStatus(), prev.getStatus()))
+            if (settings.hasStatus() && !Objects.equals(r.getStatus(), prev.getStatus()))
             { %>
             <tr>
                 <td colspan="2">Status: <%=h(r.getStatus())%></td>
             </tr><%
             }
 
-            if (settings.hasExpires() && !ObjectUtils.equals(r.getExpires(), prev.getExpires()))
+            if (settings.hasExpires() && !Objects.equals(r.getExpires(), prev.getExpires()))
             { %>
             <tr>
                 <td colspan="2">Expires: <%=h(DateUtil.formatDate(r.getExpires()))%></td>
             </tr><%
             }
 
-            if (settings.hasAssignedTo() && !ObjectUtils.equals(r.getAssignedTo(), prev.getAssignedTo()))
+            if (settings.hasAssignedTo() && !Objects.equals(r.getAssignedTo(), prev.getAssignedTo()))
             { %>
             <tr>
                 <td colspan="2">Assigned&nbsp;To: <%=h(r.getAssignedToName(user))%></td>
             </tr><%
             }
 
-            if (null != r.getTitle() && !StringUtils.equals(r.getTitle(), prev.getTitle()))
+            if (null != r.getTitle() && !Objects.equals(r.getTitle(), prev.getTitle()))
             { %>
             <tr>
                 <td colspan="2">Title: <%=h(r.getTitle())%></td>
