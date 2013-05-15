@@ -246,6 +246,7 @@ api/src/org/labkey/api/data/ExceptionFramework.java -text
 api/src/org/labkey/api/data/ExecutingSelector.java -text
 api/src/org/labkey/api/data/ExpDataFileConverter.java -text
 api/src/org/labkey/api/data/ExportWriter.java -text
+api/src/org/labkey/api/data/ExternalSchemaCustomizer.java -text
 api/src/org/labkey/api/data/FileSqlScriptProvider.java -text
 api/src/org/labkey/api/data/Filter.java -text
 api/src/org/labkey/api/data/FilterInfo.java -text
@@ -267,6 +268,7 @@ api/src/org/labkey/api/data/LegacySelector.java -text
 api/src/org/labkey/api/data/LegacySqlExecutor.java -text
 api/src/org/labkey/api/data/LegacySqlSelector.java -text
 api/src/org/labkey/api/data/LegacyTableSelector.java -text
+api/src/org/labkey/api/data/LinkedSchemaCustomizer.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
@@ -288,6 +290,7 @@ api/src/org/labkey/api/data/Ownable.java -text
 api/src/org/labkey/api/data/PanelButton.java -text
 api/src/org/labkey/api/data/Parameter.java -text
 api/src/org/labkey/api/data/ParameterDescription.java -text
+api/src/org/labkey/api/data/ParameterDescriptionImpl.java -text
 api/src/org/labkey/api/data/ParameterMarkerInClauseGenerator.java -text
 api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
@@ -349,6 +352,7 @@ api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UpgradeUtils.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
 api/src/org/labkey/api/data/UserDefinedButtonConfig.java -text
+api/src/org/labkey/api/data/UserSchemaCustomizer.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
 api/src/org/labkey/api/data/WrappedColumn.java -text
 api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text

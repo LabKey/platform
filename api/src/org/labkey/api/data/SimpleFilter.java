@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -197,6 +198,18 @@ public class SimpleFilter implements Filter
             result = 31 * result + (_negated ? 1 : 0);
             return result;
         }
+
+        public static FilterClause fromXml(FilterType xmlFilter)
+        {
+            CompareType compareType = CompareType.getByURLKey(xmlFilter.getOperator().toString());
+            if (compareType == null)
+                throw new IllegalArgumentException("Unsupported operator type: " + xmlFilter.getOperator());
+
+            Object value = xmlFilter.getValue();
+            FieldKey fieldKey = FieldKey.fromString(xmlFilter.getColumn());
+            return compareType.createFilterClause(fieldKey, value);
+        }
+
     }
 
     @Override
@@ -1356,6 +1369,17 @@ public class SimpleFilter implements Filter
         }
     }
 
+    public static SimpleFilter fromXml(FilterType[] xmlFilters)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        for (FilterType xmlFilter : xmlFilters)
+        {
+            SimpleFilter.FilterClause clause = SimpleFilter.FilterClause.fromXml(xmlFilter);
+            if (clause != null)
+                filter.addClause(clause);
+        }
+        return filter;
+    }
 
     public static class FilterTestCase extends Assert
     {

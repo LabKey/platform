@@ -26,6 +26,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -241,6 +242,41 @@ abstract public class QueryService
     {
         Object getDefault();
         boolean isRequired();
+    }
+
+    public static class ParameterDeclaration extends ParameterDescriptionImpl implements ParameterDecl
+    {
+        protected final Object _defaultValue;
+        protected final boolean _required;
+
+        public ParameterDeclaration(@NotNull String name, @NotNull JdbcType type)
+        {
+            this(name, type, null, null, false);
+        }
+
+        public ParameterDeclaration(@NotNull String name, @NotNull JdbcType type, @Nullable String uri)
+        {
+            this(name, type, uri, null, false);
+        }
+
+        public ParameterDeclaration(@NotNull String name, @NotNull JdbcType type, @Nullable String uri, @Nullable Object defaultValue, boolean required)
+        {
+            super(name, type, uri);
+            _defaultValue = defaultValue;
+            _required = required;
+        }
+
+        @Override
+        public Object getDefault()
+        {
+            return _defaultValue;
+        }
+
+        @Override
+        public boolean isRequired()
+        {
+            return _required;
+        }
     }
 
 

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -65,11 +66,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.queryCustomView.FilterType;
-import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import javax.script.ScriptException;
@@ -781,11 +781,11 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
 
-    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
     {
         checkLocked();
 
-        loadAllButCustomizerFromXML(schema, xmlTable, filtersArray, errors);
+        loadAllButCustomizerFromXML(schema, xmlTable, namedFilters, errors);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
@@ -795,7 +795,7 @@ abstract public class AbstractTableInfo implements TableInfo
         }
     }
 
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
     {
         if (xmlTable == null)
             return;
@@ -944,17 +944,31 @@ abstract public class AbstractTableInfo implements TableInfo
         }
     }
 
-    protected void configureViaTableCustomizer(Collection<QueryException> errors, String className)
+    protected void configureViaTableCustomizer(Collection<QueryException> errors, CustomizerType xmlCustomizer)
     {
+        String className = xmlCustomizer.getClass1();
         if (className == null)
         {
-            return;
+            // For backwards compatibility with <13.2, check the text contents.
+            XmlCursor cur = xmlCustomizer.newCursor();
+            try
+            {
+                XmlCursor.TokenType tok = cur.toFirstContentToken();
+                if (tok == XmlCursor.TokenType.TEXT)
+                    className = cur.getTextValue();
+            }
+            finally
+            {
+                if (cur != null) cur.dispose();
+            }
         }
+
+        if (className == null)
+            return;
+
         className = className.trim();
         if (className.isEmpty())
-        {
             return;
-        }
 
         try
         {
@@ -971,11 +985,7 @@ abstract public class AbstractTableInfo implements TableInfo
                     TableCustomizer customizer = customizerClass.newInstance();
                     customizer.customize(this);
                 }
-                catch (InstantiationException e)
-                {
-                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
-                }
-                catch (IllegalAccessException e)
+                catch (InstantiationException | IllegalAccessException e)
                 {
                     addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
                 }
@@ -1111,7 +1121,7 @@ abstract public class AbstractTableInfo implements TableInfo
     @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

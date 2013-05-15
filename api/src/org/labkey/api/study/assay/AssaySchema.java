@@ -45,7 +45,7 @@ public abstract class AssaySchema extends UserSchema
 
     protected AssaySchema(SchemaKey path, String description, User user, Container container, DbSchema dbSchema, @Nullable Container targetStudy)
     {
-        super(path, description, user, container, dbSchema);
+        super(path, description, user, container, dbSchema, null);
         _targetStudy = targetStudy;
     }
 

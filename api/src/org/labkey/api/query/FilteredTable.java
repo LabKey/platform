@@ -32,6 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
@@ -109,11 +110,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     }
 
     @Override
-    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
     {
         if (_rootTable instanceof SchemaTableInfo)
         {
-            String parentJavaCustomizer = ((SchemaTableInfo)_rootTable).getJavaCustomizer();
+            CustomizerType parentJavaCustomizer = ((SchemaTableInfo)_rootTable).getJavaCustomizer();
             if (parentJavaCustomizer != null)
             {
                 // Before we do our own customization, apply customization from the SchemaTableInfo
@@ -121,7 +122,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
             }
         }
 
-        super.loadFromXML(schema, xmlTable, filtersArray, errors);
+        super.loadFromXML(schema, xmlTable, namedFilters, errors);
     }
 
     @Override

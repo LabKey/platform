@@ -36,6 +36,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.TableInsertDataIterator;
@@ -82,9 +83,14 @@ public class SimpleUserSchema extends UserSchema
     }
 
     // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
-    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, Collection<String> availableTables, @Nullable Collection<String> hiddenTables)
+    public SimpleUserSchema(String name, String description,
+                            User user, Container container,
+                            DbSchema dbschema,
+                            Collection<UserSchemaCustomizer> schemaCustomizers,
+                            Collection<String> availableTables,
+                            @Nullable Collection<String> hiddenTables)
     {
-        super(name, description, user, container, dbschema);
+        super(SchemaKey.fromParts(name), description, user, container, dbschema, schemaCustomizers);
         _available.addAll(availableTables);
         _visible = new CaseInsensitiveTreeSet();
         _visible.addAll(availableTables);
