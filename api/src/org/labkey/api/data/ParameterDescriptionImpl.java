@@ -35,7 +35,7 @@ public class ParameterDescriptionImpl implements ParameterDescription
     }
 
     @Override
-    public JdbcType getType()
+    public JdbcType getJdbcType()
     {
         return _type;
     }

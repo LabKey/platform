@@ -31,6 +31,7 @@ import org.quartz.JobExecutionContext;
  */
 public class ScheduledPipelineJobContext implements ContainerUser
 {
+    private ScheduledPipelineJobDescriptor _jobDescriptor;
     String _key;
     private String _containerId = null;
     private int _userId = 0;
@@ -42,10 +43,21 @@ public class ScheduledPipelineJobContext implements ContainerUser
 
     public ScheduledPipelineJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
+        _jobDescriptor = descriptor;
         _containerId = container.getId();
         if (null != user)
             _userId = user.getUserId();
         _key = container.getRowId() + "/" + descriptor.getId();
+    }
+
+    public ScheduledPipelineJobDescriptor getJobDescriptor()
+    {
+        return _jobDescriptor;
+    }
+
+    public void setJobDescriptor(ScheduledPipelineJobDescriptor jobDescriptor)
+    {
+        _jobDescriptor = jobDescriptor;
     }
 
     public Container getContainer()

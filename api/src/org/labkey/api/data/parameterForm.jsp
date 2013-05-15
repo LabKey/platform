@@ -44,9 +44,9 @@ var decl = [
             value = p.getDefault();
         %><%=COMMA%><%
         %>{name:<%=q(p.getName())%><%
-        %>,jdbctype:<%=q(p.getType().name())%><%
-        %>,jsontype:<%=q(p.getType().json)%><%
-        %>,xtype:<%=q(p.getType().xtype)%><%
+        %>,jdbctype:<%=q(p.getJdbcType().name())%><%
+        %>,jsontype:<%=q(p.getJdbcType().json)%><%
+        %>,xtype:<%=q(p.getJdbcType().xtype)%><%
         %>,defaultValue:<%=q(ConvertUtils.convert(p.getDefault()))%><%
         %>,value:<%=q(ConvertUtils.convert(value))%><%
         %>}<%

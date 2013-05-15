@@ -33,7 +33,7 @@ import java.util.Map;
  * Date: Aug 15, 2005
  * Time: 2:41:47 PM
  */
-public class PropertyDescriptor extends ColumnRenderProperties implements Serializable, Cloneable
+public class PropertyDescriptor extends ColumnRenderProperties implements ParameterDescription, Serializable, Cloneable
 {                           
     private String name;
     private int propertyId;
@@ -429,6 +429,15 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public boolean isAutoIncrement()
     {
         return false;
+    }
+
+
+    // ParameterDescription
+
+    @Override
+    public String getURI()
+    {
+        return getPropertyURI();
     }
 }
 

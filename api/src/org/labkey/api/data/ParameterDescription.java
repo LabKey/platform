@@ -26,5 +26,5 @@ public interface ParameterDescription
 {
     String getName();
     String getURI();
-    JdbcType getType();
+    JdbcType getJdbcType();
 }

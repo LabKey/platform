@@ -274,6 +274,16 @@ public class SimpleFilter implements Filter
         }
     }
 
+
+    public static class FalseClause extends SQLClause
+    {
+        public FalseClause()
+        {
+            super("0=1", null);
+        }
+    }
+
+
     public abstract static class OperationClause extends FilterClause
     {
         private List<FilterClause> _clauses;
