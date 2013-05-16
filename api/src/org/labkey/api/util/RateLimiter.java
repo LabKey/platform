@@ -253,6 +253,8 @@ public class RateLimiter
 
     public static class TestCase extends Assert
     {
+        private static final double DELTA = 1E-8;
+
         long _end = 0;
 
         @org.junit.Test
@@ -261,7 +263,7 @@ public class RateLimiter
             final RateLimiter l = new RateLimiter("test",new Rate(1,TimeUnit.MILLISECONDS),10000,500);
             l.minPause = 1;
             assertEquals("RateLimiter:test 1/MILLISECOND", l.toString());
-            assertEquals(1000.0, l.getTarget().getRate(TimeUnit.SECONDS));
+            assertEquals(1000.0, l.getTarget().getRate(TimeUnit.SECONDS), DELTA);
 
             Runnable run = new Runnable()
             {

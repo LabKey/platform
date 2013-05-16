@@ -2149,7 +2149,7 @@ public class SecurityManager
             String newName  = groupB.getName() + "new";
             int oldGroupId = getGroupId(project, groupB.getName());
             SecurityManager.renameGroup(groupB, newName, null);
-            assertEquals(oldGroupId, getGroupId(project, newName));
+            assertEquals(oldGroupId, getGroupId(project, newName).intValue());
             groupB.setName(newName);
         }
 

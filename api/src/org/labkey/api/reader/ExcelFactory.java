@@ -527,6 +527,8 @@ public class ExcelFactory
 
     public static class ExcelFactoryTestCase extends Assert
     {
+        private static final double DELTA = 1E-8;
+
         @Test
         public void testCreateFromArray() throws IOException, InvalidFormatException
         {
@@ -604,11 +606,11 @@ public class ExcelFactory
             assertEquals("Col1Header", sheet2Values.getJSONArray(0).getJSONObject(0).getString("value"));
             assertEquals("Col2Header", sheet2Values.getJSONArray(0).getJSONObject(1).getString("value"));
 
-            assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"));
+            assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("1,000.50", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
             assertEquals("0,000.00", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formatString"));
 
-            assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"));
+            assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("2,000.60", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
             assertEquals("0,000.00", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formatString"));
 
@@ -742,12 +744,12 @@ public class ExcelFactory
             assertEquals("Number of columns - row 0", sheet2Rows.getJSONArray(0).length(), 1);
 
             assertEquals("NumberColumn", sheet2Rows.getJSONArray(0).getJSONObject(0).getString("value"));
-            assertEquals(55.44, sheet2Rows.getJSONArray(1).getJSONObject(0).getDouble("value"));
+            assertEquals(55.44, sheet2Rows.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("$55.44", sheet2Rows.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
             assertEquals("$#,##0.00", sheet2Rows.getJSONArray(1).getJSONObject(0).getString("formatString"));
-            assertEquals(100.34, sheet2Rows.getJSONArray(2).getJSONObject(0).getDouble("value"));
+            assertEquals(100.34, sheet2Rows.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("100.34", sheet2Rows.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
-            assertEquals(-1.0, sheet2Rows.getJSONArray(3).getJSONObject(0).getDouble("value"));
+            assertEquals(-1.0, sheet2Rows.getJSONArray(3).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("-1", sheet2Rows.getJSONArray(3).getJSONObject(0).getString("formattedValue"));
             assertEquals("61.00", sheet2Rows.getJSONArray(4).getJSONObject(0).getString("formattedValue"));
             assertEquals("56+5", sheet2Rows.getJSONArray(4).getJSONObject(0).getString("formula"));
@@ -755,9 +757,9 @@ public class ExcelFactory
             assertEquals("jeckels:\nA comment about the value 61\n", sheet2Rows.getJSONArray(4).getJSONObject(0).getString("comment"));
             assertEquals("#DIV/0!", sheet2Rows.getJSONArray(5).getJSONObject(0).getString("value"));
             assertTrue(sheet2Rows.getJSONArray(5).getJSONObject(0).getBoolean("error"));
-            assertEquals(4.325E-4, sheet2Rows.getJSONArray(6).getJSONObject(0).getDouble("value"));
+            assertEquals(4.325E-4, sheet2Rows.getJSONArray(6).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("4.32E-04", sheet2Rows.getJSONArray(6).getJSONObject(0).getString("formattedValue"));
-            assertEquals(2550.00064, sheet2Rows.getJSONArray(7).getJSONObject(0).getDouble("value"));
+            assertEquals(2550.00064, sheet2Rows.getJSONArray(7).getJSONObject(0).getDouble("value"), DELTA);
             assertEquals("2.55E+03", sheet2Rows.getJSONArray(7).getJSONObject(0).getString("formattedValue"));
         }
     }

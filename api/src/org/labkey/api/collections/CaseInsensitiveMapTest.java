@@ -127,7 +127,7 @@ public class CaseInsensitiveMapTest extends Assert
 
         for (Future<Integer> future : futures)
         {
-            assertEquals(0, future.get());
+            assertEquals(0, future.get().intValue());
         }
     }
 }

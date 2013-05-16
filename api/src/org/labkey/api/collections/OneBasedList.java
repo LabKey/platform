@@ -17,6 +17,7 @@ package org.labkey.api.collections;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,17 +101,22 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
                 assertEquals(zeroBasedList.get(i - 1), list.get(i));
         }
 
-        @Test(expected=IndexOutOfBoundsException.class)
+        @org.junit.Rule
+        public ExpectedException exception = ExpectedException.none();
+
+        @Test
         public void testGetOutOfBounds()
         {
             List<String> list = getTestList();
+            exception.expect(IndexOutOfBoundsException.class);
             list.get(0);
         }
 
-        @Test(expected=IndexOutOfBoundsException.class)
+        @Test
         public void testAddOutOfBounds()
         {
             List<String> list = getTestList();
+            exception.expect(IndexOutOfBoundsException.class);
             list.add(0, "Foo");
         }
 
