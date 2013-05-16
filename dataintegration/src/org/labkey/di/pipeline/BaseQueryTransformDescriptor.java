@@ -730,6 +730,9 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 map.put(TestTask.FailStep, d._stepMetaDatas.get(failStep).getId());
             }
 
+            // put in a property we want persisted at the job level
+            map.put(TransformProperty.RecordsInserted.getPropertyDescriptor(), TestTask.recordsInsertedJob);
+
             PipelineService.get().queueJob(job);
             waitForJobToFinish(job);
 
@@ -787,6 +790,17 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             //
             assert expRun.getJobId() == transformRun.getJobId();
             assert expRun.getName().equalsIgnoreCase(TransformJob.ETL_PREFIX + d.getDescription());
+
+            //
+            // verify custom propeties
+            //
+            Map<String, ObjectProperty> mapProps = expRun.getObjectProperties();
+            assert mapProps.size() == 1;
+            ObjectProperty prop = mapProps.get(TransformProperty.RecordsInserted.getPropertyDescriptor().getPropertyURI());
+            assert TestTask.recordsInsertedJob ==  prop.getFloatValue();
+
+            // verify the variable map generated is correct from the TransformManagager helper function
+            verifyVariableMap(TransformManager.get().getVariableMapForTransformJob(transformRun.getExpRunId()), mapProps);
 
             //
             // verify data inputs: test job has two source inputs

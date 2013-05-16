@@ -32,9 +32,12 @@ import java.net.URISyntaxException;
  */
 public class TestTask extends TransformTask
 {
+    // used to test step-level properties are persisted
     public static final int recordsInserted = 3;
     public static final int recordsModified = 2;
     public static final int recordsDeleted = 1;
+    // used to test to job-level propeties are persisted
+    public static final int recordsInsertedJob = 777;
     public static final long duration = 42; // in milliseconds
 
     //

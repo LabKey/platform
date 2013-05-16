@@ -38,6 +38,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
@@ -451,6 +452,13 @@ public class TransformManager implements DataIntegrationService
 
         return null;
    }
+
+    public VariableMap getVariableMapForTransformJob(Integer expRunId)
+    {
+        ExpRun run = ExperimentService.get().getExpRun(expRunId);
+        return new VariableMapImpl(null, run.getObjectProperties());
+    }
+
 
     public VariableMap getVariableMapForTransformStep(Integer expRunId, String transformStepId)
     {

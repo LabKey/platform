@@ -15,14 +15,17 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -38,6 +41,7 @@ import org.labkey.di.data.TransformProperty;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +49,7 @@ import java.util.Set;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformJob extends PipelineJob implements TransformJobSupport
+public class TransformJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport
 {
     private final BaseQueryTransformDescriptor _etlDescriptor;
     private int _runId;
@@ -158,6 +162,30 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     {
         return _transformJobContext;
     }
+
+    //
+    // PropertiesJobSupport
+    //
+    public Map<PropertyDescriptor, Object> getProps()
+    {
+        Map<PropertyDescriptor, Object> propMap = new LinkedHashMap<PropertyDescriptor, Object>();
+        Set<String> keys = _variableMap.keySet();
+        for(String key : keys)
+        {
+
+            ParameterDescription pd = _variableMap.getDescriptor(key);
+            if (null != pd)
+            {
+                if (pd instanceof SystemProperty)
+                    propMap.put(((SystemProperty)pd).getPropertyDescriptor(), _variableMap.get(key));
+                if (pd instanceof PropertyDescriptor)
+                    propMap.put((PropertyDescriptor)pd, _variableMap.get(key));
+            }
+        }
+
+        return propMap;
+    }
+
 
     //
     // Called by the ExpGeneratorTask after it has finished

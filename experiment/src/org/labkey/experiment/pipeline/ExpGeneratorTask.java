@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -23,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
@@ -30,6 +32,7 @@ import org.labkey.api.util.FileType;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Creates an experiment run to represent the work that the task's job has done so far.
@@ -94,6 +97,13 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
         {
             // Keep track of all of the runs that have been created by this task
             ExpRun run = ExpGeneratorHelper.insertRun(getJob(), null, null);
+
+            // save any job-level custom properties from the run
+            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
+            for (Map.Entry<PropertyDescriptor, Object> prop : jobSupport.getProps().entrySet())
+            {
+                run.setProperty(getJob().getUser(), prop.getKey(), prop.getValue());
+            }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database
             PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile());
