@@ -1265,9 +1265,8 @@ public class SampleManager implements ContainerManager.ContainerListener
                     if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
                         throw new IllegalStateException("Mismatched containers.");
 
-                    Integer[] requestIds = getRequestIdsForSpecimen(specimen, true);
-                    if (requestIds.length > 0)
-                        throw new IllegalStateException("Specimen " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0]);
+                    if (!specimen.isAvailable())
+                        throw new IllegalStateException(RequestabilityManager.makeSpecimenUnavailableMessage(specimen, null));
                 }
 
                 for (Specimen specimen : specimens)

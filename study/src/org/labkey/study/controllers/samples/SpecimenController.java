@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.samples;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -1766,12 +1767,10 @@ public class SpecimenController extends BaseStudyController
                         Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
                         if (specimen != null)
                         {
-
-                            Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen, true);
-                            if (requestIds != null && requestIds.length > 0)
+                            boolean isAvailable = specimen.isAvailable();
+                            if (!isAvailable)
                             {
-                                errors.reject(null, "Vial " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0] +
-                                ".  This sample has been removed from the list below.");
+                                errors.reject(null, RequestabilityManager.makeSpecimenUnavailableMessage(specimen, "This sample has been removed from the list below."));
                             }
                             else
                                 samples.add(specimen);
@@ -5415,9 +5414,7 @@ public class SpecimenController extends BaseStudyController
                         {
                             if (!s.isAvailable()) // || s.isLockedInRequest())
                             {
-                                errorList.add(String.format("Specimen %s not available%s",
-                                        s.getGlobalUniqueId(),
-                                        s.getAvailabilityReason() != null ? s.getAvailabilityReason().replaceFirst("This vial is unavailable", "") : ""));
+                                errorList.add(RequestabilityManager.makeSpecimenUnavailableMessage(s, null));
                             }
                         }
 

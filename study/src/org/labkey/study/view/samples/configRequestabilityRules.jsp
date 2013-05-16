@@ -284,9 +284,9 @@
                         ruleName += ", view " + viewName;
                     var testUrl = getSelectedURL(viewName ? viewCombo : queryCombo);
                     var markRequestable = actionCombo.getValue() == '<%= h(RequestabilityManager.MarkType.AVAILABLE.getLabel()) %>';
-                    var ruleData = schemaCombo.getValue() + "<%= RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR %>" +
-                                   queryCombo.getValue() + "<%= RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR %>" +
-                                   viewName + "<%= RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR %>" +
+                    var ruleData = schemaCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
+                                   queryCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
+                                   viewName + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
                                    markRequestable;
                     if (addRule(grid, type, ruleName, actionCombo.getValue(), testUrl, ruleData))
                         win.close();
@@ -436,28 +436,25 @@
                 boolean first = true;
                 for (RequestabilityManager.RuleType type : RequestabilityManager.RuleType.values())
                 {
-                    if (type != RequestabilityManager.RuleType.LOCKED_IN_REQUEST)
-                    {
-                        ActionURL defaultTestURL = type.getDefaultTestURL(context.getContainer());
-                        RequestabilityManager.MarkType defaultMarkType = type.getDefaultMarkType();
+                    ActionURL defaultTestURL = type.getDefaultTestURL(context.getContainer());
+                    RequestabilityManager.MarkType defaultMarkType = type.getDefaultMarkType();
                 %>
-                        <%= !first ? "," : "" %>new Ext.menu.Item({
-                                    id: 'add_<%= type.name() %>',
-                                    text:'<%= h(type.getName()) %>',
-                                    listeners:{
-                                        click:function(button, event) {
-                                            LABKEY.setDirty(true);
-                                            addRule(rulesGrid,
-                                               '<%= type.name() %>', // type enum
-                                               '<%= h(type.getName()) %>', // friendly name
-                                               '<%= defaultMarkType != null ? h(defaultMarkType.getLabel()) : "" %>', // default mark type
-                                               '<%= defaultTestURL != null ? h(defaultTestURL.getLocalURIString()) : "" %>'); // default mark type
-                                        }
+                    <%= text(!first ? "," : "") %>new Ext.menu.Item({
+                                id: 'add_<%= h(type.name()) %>',
+                                text:'<%= h(type.getName()) %>',
+                                listeners:{
+                                    click:function(button, event) {
+                                        LABKEY.setDirty(true);
+                                        addRule(rulesGrid,
+                                           '<%= h(type.name()) %>', // type enum
+                                           '<%= h(type.getName()) %>', // friendly name
+                                           '<%= h(defaultMarkType != null ? defaultMarkType.getLabel() : "") %>', // default mark type
+                                           '<%= h(defaultTestURL != null ? defaultTestURL.getLocalURIString() : "") %>'); // default mark type
                                     }
-                                })
+                                }
+                            })
                 <%
-                        first = false;
-                    }
+                    first = false;
                 }
             %>
         ];
@@ -546,10 +543,10 @@
         for (RequestabilityManager.RequestableRule rule : RequestabilityManager.getInstance().getRules(context.getContainer()))
         {
         %>
-            <%= !first ? "," : "" %>
-            ['<%= rule.getType().name() %>', '<%= h(rule.getRuleData()) %>', '<%= h(rule.getName()) %>',
+            <%= text(!first ? "," : "") %>
+            ['<%= h(rule.getType().name()) %>', '<%= h(rule.getRuleData()) %>', '<%= h(rule.getName()) %>',
                 '<%= h(rule.getMarkType().getLabel()) %>',
-            '<%= h(rule.getTestURL(context.getUser()).getLocalURIString()) %>'
+            '<%= h(null != rule.getTestURL(context.getUser()) ? rule.getTestURL(context.getUser()).getLocalURIString() : "") %>'
             ]
         <%
             first = false;
@@ -560,14 +557,7 @@
         var rowSelectionModel = new Ext.grid.RowSelectionModel({singleSelect: true});
         rowSelectionModel.on("rowselect", function(model, rowIndex, record)
         {
-            var lockedInRequestSelected = record.data.type == '<%= RequestabilityManager.RuleType.LOCKED_IN_REQUEST.name() %>';
-            if (lockedInRequestSelected)
-            {
-                moveUpButton.disable();
-                moveDownButton.disable();
-                removeButton.disable();
-            }
-            else if (rowIndex == rulesGrid.getStore().getCount() - 2)
+            if (rowIndex == rulesGrid.getStore().getCount() - 1)
             {
                 moveUpButton.enable();
                 moveDownButton.disable();
@@ -644,8 +634,9 @@
     <tr><td><i>Whether a given vial is requestable is determined by running a series of configurable rules.  Each
     rule may change the requestability state of any vial(s).  Rules are run in order, so a vial's final state will be
         determined by the last rule to affect that vial.<br><br>
-        Note: the <%= h(RequestabilityManager.RuleType.LOCKED_IN_REQUEST.getName()) %> cannot be removed,
-        and must always be the last check performed.  This ensures that a single vial can never be part of two simultaneous requests.</i></td>
+        Note: if present, the <%= h(RequestabilityManager.RuleType.LOCKED_IN_REQUEST.getName()) %>
+        ensures that a single vial can never be part of two simultaneous requests.
+        </i></td>
     </tr>
     <tr><td>&nbsp;</td></tr>
 </table>

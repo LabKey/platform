@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -262,6 +263,38 @@ public class RequestabilityManager
                         return testURL;
 
                     }},
+        LOCKED_WHILE_PROCESSING
+                {
+                    @Override
+                    public RequestableRule createRule(Container container, String ruleData)
+                    {
+                        return new LockedWhileProcessingRule(container);
+                    }
+
+                    @Override
+                    public String getName()
+                    {
+                        return "Locked While Processing Check";
+                    }
+
+                    @Override
+                    public String getDescription()
+                    {
+                        return "Marks vials unavailable if they are being processed.";
+                    }
+
+                    @Override
+                    public MarkType getDefaultMarkType()
+                    {
+                        return MarkType.UNAVAILABLE;
+                    }
+
+                    @Override
+                    public ActionURL getDefaultTestURL(Container container)
+                    {
+                        return null;
+
+                    }},
         CUSTOM_QUERY
                 {
                     @Override
@@ -302,6 +335,7 @@ public class RequestabilityManager
 
         public abstract MarkType getDefaultMarkType();
 
+        @Nullable
         public abstract ActionURL getDefaultTestURL(Container container);
     }
 
@@ -363,14 +397,21 @@ public class RequestabilityManager
             if (specimens != null && specimens.length > 0)
             {
                 sql.append("GlobalUniqueId IN (");
-                String sep = "";
-                for (Specimen specimen : specimens)
-                {
-                    sql.append(sep).append("?");
-                    sep = ", ";
-                    sql.add(specimen.getGlobalUniqueId());
-                }
+                sql.append(getSpecimenGlobalUniqueIdSet(specimens));
                 sql.append(")");
+            }
+            return sql;
+        }
+
+        protected SQLFragment getSpecimenGlobalUniqueIdSet(Specimen[] specimens)
+        {
+            SQLFragment sql = new SQLFragment();
+            String sep = "";
+            for (Specimen specimen : specimens)
+            {
+                sql.append(sep).append("?");
+                sep = ", ";
+                sql.add(specimen.getGlobalUniqueId());
             }
             return sql;
         }
@@ -389,6 +430,7 @@ public class RequestabilityManager
 
         public abstract RuleType getType();
 
+        @Nullable
         public ActionURL getTestURL(User user)
         {
             return getType().getDefaultTestURL(_container);
@@ -609,6 +651,44 @@ public class RequestabilityManager
         }
     }
 
+    private static class LockedWhileProcessingRule extends RequestableRule
+    {
+        public LockedWhileProcessingRule(Container container)
+        {
+            super(container);
+        }
+
+        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        {
+            SQLFragment sql = new SQLFragment();
+            if (specimens != null && specimens.length > 0)
+                sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
+
+            sql.append("FALSE IN (")
+               .append("SELECT FinalState FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() + " WHERE RowId IN (")
+               .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
+               .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
+            sql.add(container.getId());
+            if (specimens != null && specimens.length > 0)
+                sql.append(" AND SpecimenGlobalUniqueId IN (").append(getSpecimenGlobalUniqueIdSet(specimens)).append(")");
+
+            sql.append(")))");
+            return sql;
+        }
+
+        @Override
+        public RuleType getType()
+        {
+            return RuleType.LOCKED_WHILE_PROCESSING;
+        }
+
+        @Override
+        public String getAvailabilityReason()
+        {
+            return "This vial is unavailable because it is being processed.";
+        }
+    }
+
     public static RequestabilityManager getInstance()
     {
         return _instance;
@@ -722,13 +802,17 @@ public class RequestabilityManager
         updateRequestability(container, user, true, null, specimens);
     }
 
-    public void updateRequestability(Container container, User user) throws InvalidRuleException
-    {
-        updateRequestability(container, user, true, null, null);
-    }
-
     public void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger) throws InvalidRuleException
     {
         updateRequestability(container, user, resetToAvailable, logger, null);
+    }
+
+    public static String makeSpecimenUnavailableMessage(Specimen specimen, @Nullable String additionalText)
+    {
+        String message = String.format("Specimen %s%s%s",
+                specimen.getGlobalUniqueId(),
+                null != specimen.getAvailabilityReason() ? specimen.getAvailabilityReason().replaceFirst("This vial", "") : " is not available.",
+                null != additionalText ? " " + additionalText : "");
+        return message;
     }
 }
