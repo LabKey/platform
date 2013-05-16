@@ -50,16 +50,6 @@
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<script type="text/javascript">
-
-    function loginStatusChanged()
-    {
-        return LABKEY.user.sessionid != LABKEY.Utils.getCookie("JSESSIONID");
-    }
-    if (loginStatusChanged())
-        window.location.reload(true);
-    
-</script>
 <%
     JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
     SearchForm form = me.getModelBean();
@@ -70,12 +60,18 @@
     Path contextPath = Path.parse(contextPathStr);
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
-    List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
+    List<String> q = new ArrayList<>(Arrays.asList(form.getQ()));
     SearchResultTemplate template = form.getSearchResultTemplate();
     SearchScope scope = (null == template.getSearchScope() ? form.getSearchScope() : template.getSearchScope());
+    String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
+    String queryString = form.getQueryString();
 
     SearchController.SearchConfiguration searchConfig = form.getConfig();
     boolean showAdvancedUI = !form.isWebPart() && searchConfig.includeAdvancedUI() && template.includeAdvanceUI();
+
+    // if login status changes, cookie will change, and we want to not cache this page
+    if (!StringUtils.isEmpty(queryString))
+        response.setHeader("Vary", "Cookie");
 
     if (showAdvancedUI)
     { %>
@@ -102,9 +98,6 @@
         %>&nbsp;&nbsp;&nbsp;<%=SearchUtils.getHelpTopic().getLinkHtml("help")%><%
     }
         
-    String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
-    String queryString = form.getQueryString();
-
     if (showAdvancedUI)
     {
         %>
@@ -370,7 +363,7 @@ List<NavTree> parseNavTrail(String s)
             return null;
 
         int length = a.length();
-        ArrayList<NavTree> list = new ArrayList<NavTree>(length);
+        ArrayList<NavTree> list = new ArrayList<>(length);
         for (int i=0 ; i<length ; i++)
         {
             JSONObject o = a.getJSONObject(i);

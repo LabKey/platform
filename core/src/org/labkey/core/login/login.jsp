@@ -35,7 +35,7 @@
 
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("clientapi/core"));
       return resources;
   }
@@ -63,7 +63,7 @@
     <table><%
     if (null != form.getErrorHtml() && form.getErrorHtml().length() > 0)
     { %>
-        <tr><td colspan=2><b><%=form.getErrorHtml()%></b></td></tr>
+        <tr><td colspan=2><b><%=text(form.getErrorHtml())%></b></td></tr>
         <tr><td colspan=2>&nbsp;</td></tr><%
     }
     if (!user.isGuest())
@@ -83,9 +83,9 @@
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200px;"></td></tr>
         <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:200px;"></td></tr>
-        <tr><td></td><td><input type=checkbox name="remember" id="remember" <%=bean.remember ? "checked" : ""%>><label for="remember">Remember my email address</label></td></tr>
+        <tr><td></td><td><input type=checkbox name="remember" id="remember"<%=checked(bean.remember)%>><label for="remember">Remember my email address</label></td></tr>
         <tr><td></td><td><a href="<%=buildURL(LoginController.ResetPasswordAction.class)%>">Forgot your password?</a></td></tr>
-        <% if (!StringUtils.isBlank(props.getSupportEmail())) { %><tr><td></td><td><a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%= StringUtils.isBlank(props.getShortName()) ? "" : " for " + h(props.getShortName()) %>">Request an account</a></td></tr><% }
+        <% if (!StringUtils.isBlank(props.getSupportEmail())) { %><tr><td></td><td><a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a></td></tr><% }
     }
 
     if (null != bean.termsOfUseHTML)
@@ -93,7 +93,7 @@
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td></td><td><strong>Terms of Use</strong></td></tr>
         <tr><td></td><td><%=text(bean.termsOfUseHTML)%></td></tr>
-        <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
+        <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=checked(bean.termsOfUseChecked)%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
         <tr><td></td><td height="50px">
             <%=generateReturnUrlFormField(returnURL)%><%

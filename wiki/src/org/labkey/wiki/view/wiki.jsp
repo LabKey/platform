@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.model.BaseWikiView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
-<%@ page import="javax.servlet.http.HttpServletResponse" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
@@ -87,7 +86,7 @@ if (!view.hasContent)
     else
     {
         // No page here, so set the response code to 404
-        context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
+//        context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
 
         if (!view.folderHasWikis && null != view.insertURL)
         {%>
