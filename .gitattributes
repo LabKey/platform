@@ -687,6 +687,7 @@ api/src/org/labkey/api/pipeline/PipelineStatusFile.java -text
 api/src/org/labkey/api/pipeline/PipelineStatusUrls.java -text
 api/src/org/labkey/api/pipeline/PipelineUrls.java -text
 api/src/org/labkey/api/pipeline/PipelineValidationException.java -text
+api/src/org/labkey/api/pipeline/PropertiesJobSupport.java -text
 api/src/org/labkey/api/pipeline/RecordedAction.java -text
 api/src/org/labkey/api/pipeline/RecordedActionSet.java -text
 api/src/org/labkey/api/pipeline/TaskFactory.java -text
