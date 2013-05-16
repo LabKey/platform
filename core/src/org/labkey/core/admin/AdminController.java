@@ -668,10 +668,11 @@ public class AdminController extends SpringActionController
         return new HtmlView(
             "<table>" +
             "<tr><td class='labkey-form-label'>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Name</td><td>" + c.getName() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Name</td><td>" + PageFlowUtil.filter(c.getName()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>EntityId</td><td>" + c.getId() + "</td></tr>" +
             "<tr><td class='labkey-form-label'>RowId</td><td>" + c.getRowId() + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>FolderType</td><td>" + c.getFolderType().getName() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>FolderType</td><td>" + PageFlowUtil.filter(c.getFolderType().getName()) + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Description</td><td>" + PageFlowUtil.filter(c.getDescription()) + "</td></tr>" +
             "</table>"
         );
     }

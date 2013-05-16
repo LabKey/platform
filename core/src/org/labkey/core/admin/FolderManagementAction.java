@@ -949,65 +949,47 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         public HttpView getTabView(String tabId) throws Exception
         {
-            if ("folderTree".equals(tabId))
+            switch (tabId)
             {
-                assert !_container.isRoot() : "No folder tree for the root folder";
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/manageFolders.jsp", _form, _errors);
-            }
-            else if ("folderType".equals(tabId))
-            {
-                assert !_container.isRoot() : "No folder type settings for the root folder";
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
-            }
-            else if ("mvIndicators".equals(tabId))
-            {
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
-            }
-            else if ("fullTextSearch".equals(tabId))
-            {
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
-            }
-            else if ("files".equals(tabId))
-            {
-                HttpView view = new JspView<FolderManagementForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
+                case "folderTree":
+                    assert !_container.isRoot() : "No folder tree for the root folder";
+                    return new JspView<>("/org/labkey/core/admin/manageFolders.jsp", _form, _errors);
+                case "folderType":
+                    assert !_container.isRoot() : "No folder type settings for the root folder";
+                    return new JspView<>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
+                case "mvIndicators":
+                    return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
+                case "fullTextSearch":
+                    return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
+                case "files":
+                    HttpView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
 
-                try
-                {
-                    FolderManagementAction.setConfirmMessage(getViewContext(), _form);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                }
+                    try
+                    {
+                        FolderManagementAction.setConfirmMessage(getViewContext(), _form);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    }
 
-                return view;
-            }
-            else if ("messages".equals(tabId))
-            {
-                return getMessageTabView();
-            }
-            else if ("export".equals(tabId))
-            {
-                assert !_container.isRoot() : "No export for the root folder";
-                _form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
-            }
-            else if ("import".equals(tabId))
-            {
-                assert !_container.isRoot() : "No import for the root folder";
-                return new JspView<FolderManagementForm>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
-            }
-            else if ("info".equals(tabId))
-            {
-                return AdminController.getContainerInfoView(_container);
-            }
-            else if ("props".equals(tabId))
-            {
-                return new JspView<FolderManagementForm>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
-            }
-            else
-            {
-                return null; // tabstrip.jsp will handle display for unknown tabIds
+                    return view;
+                case "messages":
+                    return getMessageTabView();
+                case "export":
+                    assert !_container.isRoot() : "No export for the root folder";
+                    _form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
+                    return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
+                case "import":
+                    assert !_container.isRoot() : "No import for the root folder";
+                    return new JspView<>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
+                case "info":
+                    return AdminController.getContainerInfoView(_container);
+                case "props":
+                    return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
+                default:
+                    return null; // tabstrip.jsp will handle display for unknown tabIds
+
             }
         }
 
