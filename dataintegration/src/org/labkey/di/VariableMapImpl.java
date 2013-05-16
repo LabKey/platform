@@ -116,7 +116,7 @@ public class VariableMapImpl implements VariableMap
 
     public Object put(ParameterDescription prop, Object value, Enum scope)
     {
-        if (local == scope)
+        if (local == scope || null == _outer)
         {
             declarations.put(prop.getName(), prop);
             return put(prop.getName(), value, scope);

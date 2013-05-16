@@ -166,7 +166,7 @@ public class RunFilterStrategy implements FilterStrategy
         Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
         if (null != expRunId)
         {
-            VariableMap map = TransformManager.get().getVariableMapForTransformStep(expRunId, _config.getId());
+            VariableMap map = TransformManager.get().getVariableMapForTransformJob(expRunId);
             if (null != map)
             {
                 Object o = map.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
