@@ -61,6 +61,12 @@ public interface Module extends Comparable<Module>
         DISPLAY_FOLDER_TYPE
     }
 
+    public enum SupportedDatabase
+    {
+        mssql, pgsql
+    }
+
+
     /**
      * Perform any post-constructor initialization
      */
@@ -198,6 +204,8 @@ public interface Module extends Comparable<Module>
      */
     @NotNull
     public Set<String> getSchemaNames();
+
+    public Set<SupportedDatabase> getSupportedDatabasesSet();
 
     public Resolver getModuleResolver();
     public Resource getModuleResource(String path);

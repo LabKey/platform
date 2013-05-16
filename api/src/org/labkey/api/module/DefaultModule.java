@@ -537,6 +537,45 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
+
+    public final static Set<SupportedDatabase> supportAllDatabases = new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql));
+    public final static Set<SupportedDatabase> supportPostgresDatabase = new HashSet<>(Arrays.asList(SupportedDatabase.pgsql));
+    public final static Set<SupportedDatabase> supportSqlServerDatabase = new HashSet<>(Arrays.asList(SupportedDatabase.mssql));
+
+    Set<SupportedDatabase> _supportedDatabases = supportAllDatabases;
+
+
+    @Override
+    public Set<SupportedDatabase> getSupportedDatabasesSet()
+    {
+        return _supportedDatabases;
+    }
+
+
+    public String getSupportedDatabases()
+    {
+        Set<SupportedDatabase> set = getSupportedDatabasesSet();
+        return StringUtils.join(set,",");
+    }
+
+
+    public void setSupportedDatabases(String list)
+    {
+        Set<SupportedDatabase> supported = new HashSet<>();
+        String[] dbs = StringUtils.split(list,',');
+        for (String db : dbs)
+        {
+            if (StringUtils.isEmpty(db))
+                continue;
+            supported.add(SupportedDatabase.valueOf(db));
+        }
+        if (supported.isEmpty())
+            _supportedDatabases = supportAllDatabases;
+        else
+            _supportedDatabases = supported;
+    }
+
+
     @Override
     public String getName()
     {

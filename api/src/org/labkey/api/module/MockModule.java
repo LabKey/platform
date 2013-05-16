@@ -361,4 +361,9 @@ public class MockModule implements Module
         return new LinkedHashSet<ClientDependency>();
     }
 
+    @Override
+    public Set<SupportedDatabase> getSupportedDatabasesSet()
+    {
+        return DefaultModule.supportAllDatabases;
+    }
 }

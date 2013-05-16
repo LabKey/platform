@@ -183,6 +183,19 @@ public class SimpleModule extends SpringModule
         return _schemaNames;
     }
 
+
+    @NotNull
+    @Override
+    public Set<DbSchema> getSchemasToTest()
+    {
+        SupportedDatabase db = CoreSchema.getInstance().getSqlDialect().isSqlServer() ?
+                SupportedDatabase.mssql : SupportedDatabase.pgsql;
+        if (getSupportedDatabasesSet().contains(db))
+            return super.getSchemasToTest();
+        return Collections.emptySet();
+    }
+
+
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
