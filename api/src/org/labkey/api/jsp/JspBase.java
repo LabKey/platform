@@ -69,7 +69,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     ViewContext _viewContext;
-    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public ViewContext getViewContext()
     {
@@ -498,13 +498,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
-    IdentityHashMap<ObjectError,String> _returnedErrors = new IdentityHashMap<ObjectError,String>();
+    IdentityHashMap<ObjectError,String> _returnedErrors = new IdentityHashMap<>();
 
     // For extra credit, return list of errors not returned by formatErrorsForPath() or formatErrorForPath()
     public List<ObjectError> getMissedErrors(String bean)
     {
         Errors errors = getErrors(bean);
-        ArrayList<ObjectError> missed = new ArrayList<ObjectError>();
+        ArrayList<ObjectError> missed = new ArrayList<>();
 
         if (null != errors)
         {

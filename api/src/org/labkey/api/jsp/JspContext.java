@@ -15,11 +15,9 @@
  */
 package org.labkey.api.jsp;
 
+import org.apache.jasper.runtime.HttpJspBase;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
-
-import javax.servlet.http.HttpServlet;
-import javax.servlet.jsp.HttpJspPage;
 
 /**
  * User: adam
@@ -28,7 +26,7 @@ import javax.servlet.jsp.HttpJspPage;
  */
 
 // Trivially simple base class for JSP templates that aren't rendering HTML (see JspTemplate)
-public abstract class JspContext extends HttpServlet implements HttpJspPage
+public abstract class JspContext extends HttpJspBase
 {
     protected JspContext()
     {
