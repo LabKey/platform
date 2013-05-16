@@ -3902,6 +3902,8 @@ public class StudyManager
         }
 
 
+        private static final double DELTA = 1E-8;
+
         @Test
         public void test() throws Throwable
         {
@@ -4362,7 +4364,7 @@ public class StudyManager
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
-                    assertEquals(1.0, rs.getDouble("SequenceNum"));
+                    assertEquals(1.0, rs.getDouble("SequenceNum"), DELTA);
                     rs.close(); rs = null;
 
                     // insert one row w/o visit
@@ -4375,10 +4377,10 @@ public class StudyManager
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
                     if ("A2".equals(rs.getString("SubjectId")))
-                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"), DELTA);
                     assertTrue(rs.next());
                     if ("A2".equals(rs.getString("SubjectId")))
-                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"), DELTA);
                     rs.close(); rs = null;
                 }
                 else
@@ -4522,6 +4524,8 @@ public class StudyManager
 
     public static class VisitCreationTestCase extends Assert
     {
+        private static final double DELTA = 1E-8;
+
         @Test
         public void testExistingVisitBased()
         {
@@ -4667,8 +4671,8 @@ public class StudyManager
                 assertNotSame("Should be a new visit", newVisit, existingVisit);
             }
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
-            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMin());
-            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMax());
+            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMin(), DELTA);
+            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMax(), DELTA);
         }
     }
 }

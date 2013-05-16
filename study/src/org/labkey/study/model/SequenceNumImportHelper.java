@@ -278,6 +278,8 @@ translateToDouble:
 
     public static class SequenceNumTest extends Assert
     {
+        private static final double DELTA = 1E-8;
+    
         @Test
         public void testEpoch()
         {
@@ -302,20 +304,20 @@ translateToDouble:
                     );
             assertEquals(null, h.translateSequenceNum(null,null));
             assertEquals(null, h.translateSequenceNum(null, parseDateTime("1 Jan 2010")));
-            assertEquals(1.0, h.translateSequenceNum(1.0,null));
-            assertEquals(1.0, h.translateSequenceNum("Enrollment",null));
-            assertEquals(9999.0000, h.translateSequenceNum("SR",null));
-            assertEquals(9999.0000, h.translateSequenceNum(9999.0000,null));
-            assertEquals(9999.0000, h.translateSequenceNum("9999.0000",null));
-            assertEquals(9999.0001, h.translateSequenceNum("9999.0001",parseDateTime("1 Jan 2001")));
-            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000")));
-            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000 01:00")));
-            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000 23:00")));
-            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000")));
-            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000 01:00")));
-            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000 23:00")));
-            assertEquals(9999.0365, h.translateSequenceNum("SR",parseDateTime("31 Dec 2000 23:59:59")));
-            assertEquals(9999.0366, h.translateSequenceNum("SR",parseDateTime("1 Jan 2001")));
+            assertEquals(1.0, h.translateSequenceNum(1.0,null), DELTA);
+            assertEquals(1.0, h.translateSequenceNum("Enrollment",null), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("SR",null), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum(9999.0000,null), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("9999.0000",null), DELTA);
+            assertEquals(9999.0001, h.translateSequenceNum("9999.0001",parseDateTime("1 Jan 2001")), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000")), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000 01:00")), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("SR",parseDateTime("1 Jan 2000 23:00")), DELTA);
+            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000")), DELTA);
+            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000 01:00")), DELTA);
+            assertEquals(9999.0001, h.translateSequenceNum("SR",parseDateTime("2 Jan 2000 23:00")), DELTA);
+            assertEquals(9999.0365, h.translateSequenceNum("SR",parseDateTime("31 Dec 2000 23:59:59")), DELTA);
+            assertEquals(9999.0366, h.translateSequenceNum("SR",parseDateTime("1 Jan 2001")), DELTA);
         }
 
         @Test
@@ -331,11 +333,11 @@ translateToDouble:
                     map,
                     new TestSequenceVisitMap()
                     );
-            assertEquals(42.0000, h.translateSequenceNum(null,null));
-            assertEquals(42.0000, h.translateSequenceNum(null, parseDateTime("1 Jan 2010")));
-            assertEquals(1.0, h.translateSequenceNum(1.0,null));
-            assertEquals(1.0, h.translateSequenceNum("Enrollment",null));
-            assertEquals(9999.0000, h.translateSequenceNum("SR",null));
+            assertEquals(42.0000, h.translateSequenceNum(null,null), DELTA);
+            assertEquals(42.0000, h.translateSequenceNum(null, parseDateTime("1 Jan 2010")), DELTA);
+            assertEquals(1.0, h.translateSequenceNum(1.0,null), DELTA);
+            assertEquals(1.0, h.translateSequenceNum("Enrollment",null), DELTA);
+            assertEquals(9999.0000, h.translateSequenceNum("SR",null), DELTA);
         }
 
 
@@ -351,11 +353,11 @@ translateToDouble:
                     map,
                     new TestSequenceVisitMap()
                     );
-            assertEquals(-1.0, h.translateSequenceNum(null,null));
-            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010")));
-            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010 1:00")));
-            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010 23:00")));
-            assertEquals(20100203.0, h.translateSequenceNum(20100203.0,null));
+            assertEquals(-1.0, h.translateSequenceNum(null,null), DELTA);
+            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010")), DELTA);
+            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010 1:00")), DELTA);
+            assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010 23:00")), DELTA);
+            assertEquals(20100203.0, h.translateSequenceNum(20100203.0,null), DELTA);
         }
     }
 }

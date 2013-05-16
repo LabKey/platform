@@ -357,12 +357,6 @@ abstract public class QNode implements Cloneable
             return node;
         }
 
-        private void assertNotEquals(Object a, Object b)
-        {
-            assertFalse(a.equals(b));
-        }
-        
-
         private void test(String t)
         {
             test(t,t);

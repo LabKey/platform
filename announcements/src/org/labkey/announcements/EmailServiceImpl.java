@@ -18,6 +18,7 @@ package org.labkey.announcements;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.notification.EmailMessage;
@@ -393,6 +394,9 @@ public class EmailServiceImpl implements EmailService.I
 
     public static class TestCase extends Assert
     {
+        @org.junit.Rule
+        public ExpectedException exception = ExpectedException.none();
+
         private static final String PROTOCOL_ATTACHMENT_NAME = "Protocol.txt";
         private static final String NON_EXISTANT_ATTACHMENT_NAME = "fake_file.txt";
         private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
@@ -424,7 +428,7 @@ public class EmailServiceImpl implements EmailService.I
             }
         }
 
-        @org.junit.Test(expected = IllegalArgumentException.class)
+        @org.junit.Test
         public void testNonExistantFileAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
@@ -433,10 +437,13 @@ public class EmailServiceImpl implements EmailService.I
             if (attachment == null)
                 return;
 
-            msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
+            List<File> attachementList = new ArrayList<>(Arrays.asList(attachment));
+
+            exception.expect(IllegalArgumentException.class);
+            msg.setFiles(attachementList);
         }
 
-        @org.junit.Test(expected = IllegalArgumentException.class)
+        @org.junit.Test
         public void testDirectoryAttachment() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
@@ -445,7 +452,10 @@ public class EmailServiceImpl implements EmailService.I
             if (attachment == null)
                 return;
 
-            msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
+            List<File> attachementList = new ArrayList<>(Arrays.asList(attachment));
+
+            exception.expect(IllegalArgumentException.class);
+            msg.setFiles(attachementList);
         }
 
         private EmailMessage getBaseMessage()

@@ -828,7 +828,7 @@ public class SampleMindedTransformTask
             Map<String, Integer> labs = new HashMap<String, Integer>();
             _task.parseLabs(labs, new BufferedReader(new StringReader("Location Number\tLocation Name\n501\tLab AA\n502\tLab BB\n503\tLab CC")));
             assertEquals("Wrong number of labs", 3, labs.size());
-            assertEquals("Wrong lab name", 501, labs.get("Lab AA"));
+            assertEquals("Wrong lab name", 501, labs.get("Lab AA").intValue());
         }
 
         @Test
@@ -878,7 +878,7 @@ public class SampleMindedTransformTask
                     "5\t\t\tOTJD (02)\t\t\t\t\t\n" +
                     "21\t\t\tVCXF (19)\t\t\t\t\t")));
             assertEquals("Wrong number of labs", 6, labs.size());
-            assertEquals("Wrong lab name", 23, labs.get("FAKE (12)"));
+            assertEquals("Wrong lab name", 23, labs.get("FAKE (12)").intValue());
         }
 
 

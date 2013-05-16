@@ -2603,7 +2603,7 @@ public class SpecimenImporter
             assertNotNull(pair);
             assertEquals(pair.first.size(), cols.size());
             assertEquals(3, pair.second.intValue());
-            assertEquals(3, counter[0]);
+            assertEquals(3, counter[0].intValue());
 
             Table.TableResultSet rs = selectValues();
             try
@@ -2639,7 +2639,7 @@ public class SpecimenImporter
             pair = importer.mergeTable(_schema, c, _tableName, cols, values, idCol);
             assertEquals(pair.first.size(), cols.size());
             assertEquals(3, pair.second.intValue());
-            assertEquals(4, counter[0]);
+            assertEquals(4, counter[0].intValue());
 
             rs = selectValues();
             try
