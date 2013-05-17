@@ -66,6 +66,7 @@ public class RunFilterStrategy implements FilterStrategy
             throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
         _context = context;
         _config = (CopyConfig)stepMeta;
+        _runTableSchema = runTableSchema;
         _runTableName = runTableName;
         _pkColumnName = pkRunColumnName;
         _fkDefaultColumnName = fkRunColumnName;
@@ -205,8 +206,8 @@ public class RunFilterStrategy implements FilterStrategy
         public Factory(ScheduledPipelineJobDescriptor jobDescriptor, FilterType ft)
         {
             _jobDescriptor = jobDescriptor;
-            // TODO
-//            _runSchemaName = ft.getRunSchemaName();
+            if (null != ft.getRunTableSchema())
+                _runTableSchema = SchemaKey.decode(ft.getRunTableSchema());
             _runTableName = ft.getRunTable();
             _pkColumnName = ft.getPkColumnName();
             _fkColumnName = ft.getFkColumnName();

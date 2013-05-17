@@ -66,14 +66,18 @@
     <complexType name="ScheduleType">
         <all>
             <element name="poll" type="etl:PollType" minOccurs="0" />
+            <element name="cron" type="etl:CronType" minOccurs="0" />
         </all>
     </complexType>
 
 
     <complexType name="PollType">
-        <all>
-            <element name="interval" type="int" minOccurs="0" />
-        </all>
+        <attribute name="interval" type="string" use="required" />
+    </complexType>
+
+
+    <complexType name="CronType">
+        <attribute name="expression" type="string" use="required" />
     </complexType>
 
 
@@ -89,6 +93,7 @@
         <attribute name="timestampColumnName" type="string" use="optional" />
 
         <!-- org.labkey.di.filters.RunFilterStrategy -->
+        <attribute name="runTableSchema" type="string" use="optional" />
         <attribute name="runTable" type="string" use="optional" />
         <attribute name="pkColumnName" type="string" use="optional" />
         <attribute name="fkColumnName" type="string" use="optional" />

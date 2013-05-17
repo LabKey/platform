@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
+import org.jfree.data.DataUtilities;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -77,8 +78,11 @@ import org.labkey.etl.xml.FilterType;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
+import org.quartz.CronExpression;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.core.QuartzScheduler;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,6 +90,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -123,6 +128,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private String _description;
     private String _moduleName;
 
+    // schedule
+    private Long _interval = null;
+    private CronExpression _cron = null;
+
     // steps
     private FilterStrategy.Factory _defaultFactory = null;
     private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<>();
@@ -137,6 +146,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         _id = "{" + moduleName + "}/" + _resourcePath.toString();
         parse();
     }
+
 
     private void parse() throws IOException, XmlException
     {
@@ -165,6 +175,30 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 _defaultFactory = createFilterFactory(ft);
             if (null == _defaultFactory)
                 _defaultFactory = new ModifiedSinceFilterStrategy.Factory(this, null);
+
+            // schedule
+            if (null != etlXML.getSchedule())
+            {
+                if (null != etlXML.getSchedule().getPoll())
+                {
+                    String s = etlXML.getSchedule().getPoll().getInterval();
+                    if (StringUtils.isNumeric(s))
+                        _interval = Long.parseLong(s) * 60 * 1000;
+                    else
+                        _interval = DateUtil.parseDuration(s);
+                }
+                else if (null != etlXML.getSchedule().getCron())
+                {
+                    try
+                    {
+                        _cron = new CronExpression(etlXML.getSchedule().getCron().getExpression());
+                    }
+                    catch (ParseException x)
+                    {
+                        throw new XmlException("Could not parse cron expression: " + etlXML.getSchedule().getCron().getExpression(), x);
+                    }
+                }
+            }
 
             TransformsType transforms = etlXML.getTransforms();
             if (null != transforms)
@@ -369,20 +403,35 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     public ScheduleBuilder getScheduleBuilder()
     {
-        return SimpleScheduleBuilder.simpleSchedule()
-                              .withIntervalInMilliseconds(getInterval())
+        if (null != _interval)
+        {
+            return SimpleScheduleBuilder.simpleSchedule()
+                              .withIntervalInMilliseconds(_interval)
                               .repeatForever();
-    }
-
-    public long getInterval()
-    {
-        return TimeUnit.MINUTES.toMillis(1);
+        }
+        else if (null != _cron)
+        {
+            return CronScheduleBuilder.cronSchedule(_cron);
+        }
+        else
+        {
+            return SimpleScheduleBuilder.repeatHourlyForever();
+        }
     }
 
 
     public String getScheduleDescription()
     {
-        return DateUtil.formatDuration(getInterval());
+        if (null != _interval)
+        {
+            return DateUtil.formatDuration(_interval);
+        }
+        else if (null != _cron)
+        {
+            return _cron.getCronExpression();
+        }
+        else
+            return "1h";
     }
 
 
@@ -630,6 +679,17 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
             d = checkValidSyntax(getFile(FOUR_TASKS));
             assert d._stepMetaDatas.size() == 4;
+
+            d = checkValidSyntax(getFile("interval1sec.xml"));
+            assertEquals("1s", d.getScheduleDescription());
+            d = checkValidSyntax(getFile("interval2.xml"));
+            assertEquals("2m", d.getScheduleDescription());
+            d = checkValidSyntax(getFile("interval5m.xml"));
+            assertEquals("5m", d.getScheduleDescription());
+            d = checkValidSyntax(getFile("cron5m.xml"));
+            assertEquals("0 0/5 * * * ?", d.getScheduleDescription());
+            d = checkValidSyntax(getFile("cron1h.xml"));
+            assertEquals("0 0 * * * ?", d.getScheduleDescription());
 
             checkInvalidSyntax(getFile(NO_ID), BaseQueryTransformDescriptor.ID_REQUIRED);
             checkInvalidSyntax(getFile(DUP_ID), BaseQueryTransformDescriptor.DUPLICATE_ID);
