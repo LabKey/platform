@@ -231,7 +231,7 @@ public class DbSequenceManager
             selectForUpdate.add(sequence.getRowId());
 
             // Using FOR UPDATE inside a sub-select is cleaner, but doesn't work on PostgreSQL 8.4, so implement multi-line version on 8.4
-            if (dialect.getDatabaseVersion() < 93)     // TODO
+            if (dialect.getDatabaseVersion() < 90)
             {
                 sql.append("Value");
 
