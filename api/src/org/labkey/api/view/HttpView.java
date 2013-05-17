@@ -57,7 +57,7 @@ import java.util.Stack;
 public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View, HasViewContext
 {
     private static final int _debug = Debug.getLevel(HttpView.class);
-    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     private static final ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
     {
@@ -272,7 +272,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public void setView(String name, ModelAndView view)
     {
         if (null == _views)
-            _views = new HashMap<String, ModelAndView>();
+            _views = new HashMap<>();
         _views.put(name, view);
     }
 
@@ -723,7 +723,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     @NotNull
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.addAll(_clientDependencies);
 
         //include resources of nested views
@@ -755,7 +755,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public void setClientDependencies(Set<ClientDependency> scripts)
     {
-        _clientDependencies = new LinkedHashSet<ClientDependency>(scripts);
+        _clientDependencies = new LinkedHashSet<>(scripts);
     }
 
     public void addClientDepedency(ClientDependency resource)
@@ -773,6 +773,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         if (_views == null)
             return null;
 
-        return new ArrayList<ModelAndView>(_views.values());
+        return new ArrayList<>(_views.values());
     }
 }

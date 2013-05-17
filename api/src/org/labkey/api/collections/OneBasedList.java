@@ -61,7 +61,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
     @Override
     protected OneBasedList<E> wrapList(List<E> list)
     {
-        return new OneBasedList<E>(list);
+        return new OneBasedList<>(list);
     }
 
 
@@ -70,7 +70,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
         @Test
         public void testList()
         {
-            OneBasedList<String> list = new OneBasedList<String>();
+            OneBasedList<String> list = new OneBasedList<>();
             list.add(1, "First");
             list.add("Second");
             list.add(3, "Third");
@@ -122,7 +122,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
 
         private List<String> getTestList()
         {
-            List<String> list = new OneBasedList<String>();
+            List<String> list = new OneBasedList<>();
             list.add("Fee");
             list.add("Fi");
             list.add("Fo");

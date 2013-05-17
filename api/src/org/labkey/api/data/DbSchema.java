@@ -67,7 +67,7 @@ public class DbSchema
     private final boolean _moduleSchema;
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
 
-    private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<TableType>();
+    private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
 
     private ResourceRef _resourceRef = null;
 
@@ -97,7 +97,7 @@ public class DbSchema
 
     public static @NotNull DbSchema createFromMetaData(String requestedSchemaName, DbScope scope) throws SQLException
     {
-        Map<String, String> metaDataTableNames = new CaseInsensitiveHashMap<String>();
+        Map<String, String> metaDataTableNames = new CaseInsensitiveHashMap<>();
 
         String metaDataName = loadMetaData(scope, requestedSchemaName, metaDataTableNames);
 
@@ -322,7 +322,7 @@ public class DbSchema
 
     public static Set<DbSchema> getAllSchemasToTest()
     {
-        Set<DbSchema> schemas = new LinkedHashSet<DbSchema>();
+        Set<DbSchema> schemas = new LinkedHashSet<>();
         List<Module> modules = ModuleLoader.getInstance().getModules();
 
         for (Module module : modules)
@@ -395,7 +395,7 @@ public class DbSchema
 
     public Collection<String> getTableNames()
     {
-        return Collections.unmodifiableCollection(new LinkedList<String>(_metaDataTableNames.keySet()));
+        return Collections.unmodifiableCollection(new LinkedList<>(_metaDataTableNames.keySet()));
     }
 
     public SchemaTableInfo getTable(String tableName)
