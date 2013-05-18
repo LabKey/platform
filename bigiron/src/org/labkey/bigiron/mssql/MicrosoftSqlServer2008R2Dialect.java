@@ -91,6 +91,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
+        sqlTypeNameMap.put("BINARY", Types.BINARY);
         sqlTypeNameMap.put("FLOAT", Types.DOUBLE);
         sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
         sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
@@ -108,6 +109,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
+        sqlTypeIntMap.put(Types.BINARY, "BINARY");
         sqlTypeIntMap.put(Types.BIT, "BIT");
         sqlTypeIntMap.put(Types.BOOLEAN, "BIT");
         sqlTypeIntMap.put(Types.CHAR, "NCHAR");
@@ -120,7 +122,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {

@@ -58,10 +58,10 @@ class SpecimenArchiveWriter implements InternalStudyWriter
         if (groupings.size() > 0)
         {
             StudyDocument.Study.Specimens.SpecimenWebPartGroupings specimenWebPartGroupings = specimens.addNewSpecimenWebPartGroupings();
-            for (int i = 0; i < groupings.size(); i += 1)
+            for (String[] grouping : groupings)
             {
                 StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping specimenWebPartGrouping = specimenWebPartGroupings.addNewGrouping();
-                specimenWebPartGrouping.setGroupByArray(groupings.get(i));
+                specimenWebPartGrouping.setGroupByArray(grouping);
             }
         }
         String archiveName = vf.makeLegalName(study.getShortName() + ".specimens");

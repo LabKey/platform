@@ -168,6 +168,7 @@ class PostgreSql83Dialect extends SqlDialect
         //Added for PostgreSQL, which returns type names like "userid," not underlying type name
         sqlTypeNameMap.put("USERID", Types.INTEGER);
         sqlTypeNameMap.put("SERIAL", Types.INTEGER);
+        sqlTypeNameMap.put("BYTEA", Types.BINARY);
         sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
         sqlTypeNameMap.put("INT2", Types.INTEGER);
         sqlTypeNameMap.put("INT4", Types.INTEGER);
@@ -183,6 +184,7 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
+        sqlTypeIntMap.put(Types.BINARY, "BYTEA");
         sqlTypeIntMap.put(Types.BIT, "BOOLEAN");
         sqlTypeIntMap.put(Types.BOOLEAN, "BOOLEAN");
         sqlTypeIntMap.put(Types.CHAR, "CHAR");
@@ -1079,7 +1081,7 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {
