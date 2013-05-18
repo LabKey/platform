@@ -126,12 +126,15 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         {
             WellGroupTemplateImpl template = templates.get(name);
             Position topLeft = template.getTopLeft();
-            if (col > topLeft.getColumn())
-                return false;
-            if (col == topLeft.getColumn() && row > topLeft.getRow())
-                return false;
-            row = topLeft.getRow();
-            col = topLeft.getColumn();
+            if (topLeft != null)
+            {
+                if (col > topLeft.getColumn())
+                    return false;
+                if (col == topLeft.getColumn() && row > topLeft.getRow())
+                    return false;
+                row = topLeft.getRow();
+                col = topLeft.getColumn();
+            }
         }
         return true;
     }
