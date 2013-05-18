@@ -16,6 +16,7 @@
 package org.labkey.api.reader;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -116,7 +117,7 @@ public class TabLoader extends DataLoader
     private CharSequence _stringData = null;
     private Reader _reader;
     private int _commentLines = 0;
-    private Map<String, String> _comments = new HashMap<String, String>();
+    private Map<String, String> _comments = new HashMap<>();
     private char _chDelimiter = '\t';
     private String _strDelimiter = new String(new char[]{_chDelimiter});
     private String _strQuote = null;
@@ -252,7 +253,7 @@ public class TabLoader extends DataLoader
         return value;
     }
 
-    private ArrayList<String> listParse = new ArrayList<String>(30);
+    private ArrayList<String> listParse = new ArrayList<>(30);
 
 
     private String readLine(BufferedReader r, boolean skipComments)
@@ -428,7 +429,7 @@ public class TabLoader extends DataLoader
         if (null == _mapFilter)
             return iter;
         else
-            return new CloseableFilteredIterator<Map<String, Object>>(iter, _mapFilter);
+            return new CloseableFilteredIterator<>(iter, _mapFilter);
     }
 
 
@@ -457,17 +458,7 @@ public class TabLoader extends DataLoader
     @Override
     public void close()
     {
-        if (_reader != null)
-        {
-            try
-            {
-                _reader.close();
-            }
-            catch (IOException e)
-            {
-                // Ignore
-            }
-        }
+        IOUtils.closeQuietly(_reader);
     }
 
     @Override
@@ -479,11 +470,9 @@ public class TabLoader extends DataLoader
 
     private void readComments() throws IOException
     {
-        BufferedReader reader = getReader();
-
-        try
+        try (BufferedReader reader = getReader())
         {
-            while(true)
+            while (true)
             {
                 String s = reader.readLine();
 
@@ -509,19 +498,13 @@ public class TabLoader extends DataLoader
                 }
             }
         }
-        finally
-        {
-            try { reader.close(); } catch (IOException ignored) {}
-        }
     }
 
     public String[][] getFirstNLines(int n) throws IOException
     {
-        BufferedReader reader = getReader();
-
-        try
+        try (BufferedReader reader = getReader())
         {
-            List<String[]> lineFields = new ArrayList<String[]>(n);
+            List<String[]> lineFields = new ArrayList<>(n);
             int i;
 
             for (i = 0; i < n; i++)
@@ -536,10 +519,6 @@ public class TabLoader extends DataLoader
                 return new String[0][];
 
             return lineFields.toArray(new String[i][]);
-        }
-        finally
-        {
-            try {reader.close();} catch (IOException ioe) {}
         }
     }
 
@@ -562,12 +541,7 @@ public class TabLoader extends DataLoader
         {
             try
             {
-                if (null != reader)
-                    reader.close();
-            }
-            catch (IOException x)
-            {
-                _log.error("Unexpected exception", x);
+                IOUtils.closeQuietly(reader);
             }
             finally
             {
@@ -757,7 +731,7 @@ public class TabLoader extends DataLoader
         public void testObject() throws Exception
         {
             TabLoader tl = new TabLoader(tsvData);
-            CloseableIterator<TestRow> iter = new BeanIterator<TestRow>(tl.iterator(), TestRow.class);
+            CloseableIterator<TestRow> iter = new BeanIterator<>(tl.iterator(), TestRow.class);
 
             assertTrue(iter.hasNext());
             TestRow firstRow = iter.next();

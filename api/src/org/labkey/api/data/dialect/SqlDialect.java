@@ -155,7 +155,6 @@ public abstract class SqlDialect
     {
         _sqlTypeNameMap.put("ARRAY", Types.ARRAY);
         _sqlTypeNameMap.put("BIGINT", Types.BIGINT);
-        _sqlTypeNameMap.put("BINARY", Types.BINARY);
         _sqlTypeNameMap.put("BIT", Types.BIT);
         _sqlTypeNameMap.put("BLOB", Types.BLOB);
         _sqlTypeNameMap.put("BOOLEAN", Types.BOOLEAN);
@@ -192,7 +191,6 @@ public abstract class SqlDialect
     {
         _sqlTypeIntMap.put(Types.ARRAY, "ARRAY");
         _sqlTypeIntMap.put(Types.BIGINT, "BIGINT");
-        _sqlTypeIntMap.put(Types.BINARY, "BINARY");
         _sqlTypeIntMap.put(Types.BLOB, "BLOB");
         _sqlTypeIntMap.put(Types.CLOB, "CLOB");
         _sqlTypeIntMap.put(Types.DATALINK, "DATALINK");
@@ -255,7 +253,7 @@ public abstract class SqlDialect
     }
 
 
-    protected abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
+    public abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
 
 
     protected String getDatabaseMaintenanceSql()

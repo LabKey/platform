@@ -55,6 +55,11 @@ public class SimpleFilter implements Filter
 {
     public static final String SEPARATOR_CHAR = "~";
 
+    public static SimpleFilter getContainerFilter(Container c)
+    {
+        return new SimpleFilter(new FieldKey(null, "Container"), c);
+    }
+
     public static abstract class FilterClause
     {
         protected boolean _urlClause = false;

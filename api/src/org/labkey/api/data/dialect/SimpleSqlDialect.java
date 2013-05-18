@@ -141,7 +141,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {
