@@ -17,21 +17,37 @@ package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,6 +71,16 @@ public class DilutionManager
     public static DbSchema getSchema()
     {
         return DbSchema.get(NAB_DBSCHEMA_NAME);
+    }
+
+    public static TableInfo getTableInfoNAbSpecimen()
+    {
+        return getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
+    }
+
+    public static TableInfo getTableInfoCutoffValue()
+    {
+        return getSchema().getTable(CUTOFF_VALUE_TABLE_NAME);
     }
 
     public void deleteContainerData(Container container) throws SQLException
@@ -138,6 +164,45 @@ public class DilutionManager
             params[i] = paramVals.get(i);
 
         return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
+    }
+
+    public static Set<Double> getCutoffValues(final ExpProtocol protocol)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT Cutoff FROM ");
+        sql.append(DilutionManager.getTableInfoCutoffValue(), "cv");
+        sql.append(", ");
+        sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
+        sql.append(" WHERE ns.RowId = cv.NAbSpecimenID AND ns.ProtocolId = ?");
+        sql.add(protocol.getRowId());
+
+        return Collections.synchronizedSet(new HashSet<Double>(new SqlSelector(getSchema(), sql).getCollection(Double.class)));
+    }
+
+    /**
+     * Clean up the records associated with the specified run data
+     */
+    public void deleteRunData(List<ExpData> datas) throws SQLException
+    {
+        DbScope scope = getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            // Get dataIds that match the ObjectUri and make filter on NabSpecimen
+            List<Integer> dataIDs = new ArrayList<>(datas.size());
+            for (ExpData data : datas)
+            {
+                dataIDs.add(data.getRowId());
+            }
+            SimpleFilter dataIdFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("DataId"), dataIDs));
+
+            // Now delete all rows in CutoffValue table that match those nabSpecimenIds
+            Filter specimenIdFilter = makeCuttoffValueSpecimenClause(dataIdFilter);
+            Table.delete(getTableInfoCutoffValue(), specimenIdFilter);
+
+            // Finally, delete the rows in NASpecimen
+            Table.delete(getTableInfoNAbSpecimen(), dataIdFilter);
+
+            transaction.commit();
+        }
     }
 
     // Class for parsing a Data Property Descriptor name and categorizing it
@@ -295,6 +360,22 @@ public class DilutionManager
         return pdCat;
     }
 
+    public static FieldKey getCalculatedColumn(DilutionManager.PropDescCategory pdCat)
+    {
+        FieldKey fieldKey = null;
+        if (null != pdCat.getCutoffValue())
+        {
+            String cutoffColumnName = pdCat.getCutoffValueColumnName();
+            String columnName = pdCat.getCalculatedColumnName();
+            if (null != columnName)         // cutoffColumn could be null when we're deleting folders
+            {
+                fieldKey = FieldKey.fromParts(cutoffColumnName, columnName);
+            }
+        }
+
+        return fieldKey;
+    }
+
     @Nullable
     private static Integer cutoffValueFromName(String name)
     {
@@ -302,5 +383,46 @@ public class DilutionManager
         if (icIndex >= 0 && icIndex + 4 <= name.length())
             return Integer.valueOf(name.substring(icIndex + 2, icIndex + 4));
         return null;
+    }
+
+    public void getDataPropertiesFromRunData(TableInfo dataTable, String dataRowLsid, Container container,
+                        List<PropertyDescriptor> propertyDescriptors, Map<PropertyDescriptor, Object> dataProperties)
+    {
+        // dataRowLsid is the objectUri column
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("ObjectUri"), dataRowLsid);
+        Map<PropertyDescriptor, FieldKey> fieldKeys = new HashMap<PropertyDescriptor, FieldKey>();
+        for (PropertyDescriptor pd : propertyDescriptors)
+        {
+            PropDescCategory pdCat = getPropDescCategory(pd.getName());
+            FieldKey fieldKey = pdCat.getFieldKey();
+            if (null != fieldKey)
+                fieldKeys.put(pd, fieldKey);
+        }
+
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(dataTable, fieldKeys.values());
+
+        try (Table.TableResultSet resultSet = new TableSelector(dataTable, columns.values(), filter, null).getResultSet())
+        {
+            // We're expecting only 1 row, but there could be 0 in some cases
+            if (resultSet.getSize() > 0)
+            {
+                resultSet.next();
+                Map<String, Object> rowMap = resultSet.getRowMap();
+                for (PropertyDescriptor pd : propertyDescriptors)
+                {
+                    ColumnInfo column = columns.get(fieldKeys.get(pd));
+                    if (null != column)
+                    {
+                        String columnAlias = column.getAlias();
+                        if (null != columnAlias)
+                            dataProperties.put(pd, rowMap.get(columnAlias));
+                    }
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }

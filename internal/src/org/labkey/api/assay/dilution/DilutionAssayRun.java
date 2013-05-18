@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.labkey.api.assay.dilution.query.DilutionProviderSchema;
 import org.labkey.api.assay.nab.Luc5Assay;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.CustomView;
@@ -36,6 +38,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -47,9 +50,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -223,6 +228,43 @@ public abstract class DilutionAssayRun extends Luc5Assay
             _runDisplayProperties = getRunProperties(runTable, fieldKeys, selectCols);
         }
         return Collections.unmodifiableMap(_runDisplayProperties);
+    }
+
+    protected Map<String, DilutionResultProperties> getSampleProperties(ExpData outputData)
+    {
+        Map<String, DilutionResultProperties> samplePropertyMap = new HashMap<String, DilutionResultProperties>();
+
+        Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
+        Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
+        DomainProperty[] sampleDomainProperties = sampleDomain.getProperties();
+
+        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
+        // Do a query to get all the info we need to do the copy
+        TableInfo resultTable = schema.createDataTable(false);
+        DilutionManager mgr = new DilutionManager();
+
+        for (ExpMaterial material : inputs)
+        {
+            Map<PropertyDescriptor, Object> sampleProperties = new TreeMap<PropertyDescriptor, Object>(new PropertyDescriptorComparator());
+            for (DomainProperty dp : sampleDomainProperties)
+            {
+                PropertyDescriptor property = dp.getPropertyDescriptor();
+                sampleProperties.put(property, material.getProperty(property));
+            }
+
+            // in addition to the properties saved on the sample object, we'll add the properties associated with each sample's
+            // "output" data object.
+            Map<PropertyDescriptor, Object> dataProperties = new TreeMap<PropertyDescriptor, Object>(new PropertyDescriptorComparator());
+            String wellGroupName = getWellGroupName(material);
+            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, wellGroupName, sampleProperties).toString();
+            Set<Double> cutoffValues = new HashSet<Double>();
+            for (Integer value : DilutionDataHandler.getCutoffFormats(_protocol, _run).keySet())
+                cutoffValues.add(value.doubleValue());
+            List<PropertyDescriptor> propertyDescriptors = DilutionProviderSchema.getExistingDataProperties(_protocol, cutoffValues);
+            mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
+            samplePropertyMap.put(getSampleKey(material), new DilutionResultProperties(sampleProperties,  dataProperties));
+        }
+        return samplePropertyMap;
     }
 
     protected CustomView getRunsCustomView(ViewContext context)

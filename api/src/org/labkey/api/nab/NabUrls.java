@@ -27,4 +27,7 @@ import org.labkey.api.view.ActionURL;
 public interface NabUrls extends UrlProvider
 {
     ActionURL getSampleXLSTemplateURL(Container container, ExpProtocol protocol);
+    ActionURL urlGraph(Container container);
+    ActionURL urlDownloadDatafile(Container container);
+    ActionURL urlDeleteRun(Container container);
 }

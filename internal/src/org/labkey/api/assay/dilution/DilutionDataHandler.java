@@ -51,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,9 +62,8 @@ import java.util.Map;
 public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 {
     public static final String NAB_PROPERTY_LSID_PREFIX = "NabProperty";
-    public static final String NAB_DATA_ROW_LSID_PREFIX = "AssayRunNabDataRow";
 
-    public static final String NAB_INPUT_MATERIAL_DATA_PROPERTY = "SpecimenLsid";
+    public static final String DILUTION_INPUT_MATERIAL_DATA_PROPERTY = "SpecimenLsid";
     public static final String WELLGROUP_NAME_PROPERTY = "WellgroupName";
     public static final String FIT_ERROR_PROPERTY = "Fit Error";
     public static final String CURVE_IC_PREFIX = "Curve IC";
@@ -74,6 +72,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String pAUC_PREFIX = "PositiveAUC";
     public static final String DATA_ROW_LSID_PROPERTY = "Data Row LSID";
     public static final String AUC_PROPERTY_FORMAT = "0.000";
+
+    private String _dataRowLsidPrefix;
+
+    public DilutionDataHandler(String dataLsidPrefix)
+    {
+        _dataRowLsidPrefix = dataLsidPrefix;
+    }
 
     protected class DilutionDataFileParser
     {
@@ -145,7 +150,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                             dilution, props, assayResults.getRenderedCurveFitType());
                     }
                     props.put(FIT_ERROR_PROPERTY, dilution.getFitError());
-                    props.put(NAB_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
+                    props.put(DILUTION_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
                     props.put(WELLGROUP_NAME_PROPERTY, group.getName());
                 }
                 return results;
@@ -301,7 +306,15 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return assay;
     }
 
-   protected abstract boolean isDilutionDownOrRight();
+    /**
+     * If specimens get more dilute as you move down or right on the plate, return true, else
+     * it is assumed that specimens get more dilute as you move up or left on the plate.
+     * @return
+     */
+    protected boolean isDilutionDownOrRight()
+    {
+        return false;
+    }
 
     protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection)
     {
@@ -337,7 +350,24 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap);
 
-    protected abstract Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Collection<ExpMaterial> sampleInputs) throws ExperimentException;
+    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Collection<ExpMaterial> sampleInputs)throws ExperimentException
+    {
+        Plate plate = plates.get(0);
+        List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
+        Map<String, ExpMaterial> nameToMaterial = new HashMap<String, ExpMaterial>();
+        for (ExpMaterial material : sampleInputs)
+            nameToMaterial.put(material.getName(), material);
+
+        Map<ExpMaterial, List<WellGroup>> mapping = new HashMap<ExpMaterial, List<WellGroup>>();
+        for (WellGroup wellgroup : wellgroups)
+        {
+            ExpMaterial material = nameToMaterial.get(wellgroup.getName());
+            if (material == null)
+                throw new IllegalStateException("Each wellgroup should have a matching input material.");
+            mapping.put(material, Collections.singletonList(wellgroup));
+        }
+        return mapping;
+    }
 
     protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user, List<Integer> sortedCutoffs, DilutionCurve.FitType fit);
 
@@ -390,7 +420,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static boolean isValidDataProperty(String propertyName)
     {
         return DATA_ROW_LSID_PROPERTY.equals(propertyName) ||
-                NAB_INPUT_MATERIAL_DATA_PROPERTY.equals(propertyName) ||
+                DILUTION_INPUT_MATERIAL_DATA_PROPERTY.equals(propertyName) ||
                 WELLGROUP_NAME_PROPERTY.equals(propertyName) ||
                 FIT_ERROR_PROPERTY.equals(propertyName) ||
                 propertyName.startsWith(AUC_PREFIX) ||
@@ -442,7 +472,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public Lsid getDataRowLSID(ExpData data, String wellGroupName, Map<PropertyDescriptor, Object> sampleProperties)
     {
         Lsid dataRowLsid = new Lsid(data.getLSID());
-        dataRowLsid.setNamespacePrefix(NAB_DATA_ROW_LSID_PREFIX);
+        dataRowLsid.setNamespacePrefix(_dataRowLsidPrefix);
         dataRowLsid.setObjectId(dataRowLsid.getObjectId() + "-" + wellGroupName);
         return dataRowLsid;
     }

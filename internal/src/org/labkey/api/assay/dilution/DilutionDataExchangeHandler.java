@@ -44,7 +44,7 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
     @Override
     public Pair<File, Set<File>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
     {
-        DilutionRunUploadForm form = (DilutionRunUploadForm)context;
+        DilutionRunUploadForm<DilutionAssayProvider> form = (DilutionRunUploadForm)context;
 
         Map<String, Map<DomainProperty, String>>props = form.getSampleProperties();
 

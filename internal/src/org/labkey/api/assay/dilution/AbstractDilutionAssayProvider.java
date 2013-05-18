@@ -46,7 +46,7 @@ import java.util.Set;
  * User: klum
  * Date: 5/1/13
  */
-public abstract class AbstractDilutionAssayProvider extends AbstractPlateBasedAssayProvider implements DilutionAssayProvider
+public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRunUploadForm> extends AbstractPlateBasedAssayProvider implements DilutionAssayProvider<FormType>
 {
     public AbstractDilutionAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
@@ -60,7 +60,7 @@ public abstract class AbstractDilutionAssayProvider extends AbstractPlateBasedAs
         return new AssayTableMetadata(
                 this,
                 protocol,
-                FieldKey.fromParts(DilutionDataHandler.NAB_INPUT_MATERIAL_DATA_PROPERTY, "Property"),
+                FieldKey.fromParts(DilutionDataHandler.DILUTION_INPUT_MATERIAL_DATA_PROPERTY, "Property"),
                 FieldKey.fromParts("Run"),
                 FieldKey.fromParts("RowId"));
     }

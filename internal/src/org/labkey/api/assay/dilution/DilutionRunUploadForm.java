@@ -19,6 +19,7 @@ package org.labkey.api.assay.dilution;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
 import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.actions.PlateUploadFormImpl;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.exp.property.DomainProperty;
@@ -39,7 +40,7 @@ import java.io.File;
  * Date: Sep 27, 2007
  * Time: 4:00:02 PM
  */
-public class DilutionRunUploadForm extends AssayRunUploadForm<DilutionAssayProvider> implements PlateUploadForm<DilutionAssayProvider>
+public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> extends PlateUploadFormImpl<Provider>
 {
     private Map<String, Map<DomainProperty, String>> _sampleProperties;
     private PlateSamplePropertyHelper _samplePropertyHelper;

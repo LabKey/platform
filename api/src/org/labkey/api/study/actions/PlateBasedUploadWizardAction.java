@@ -22,6 +22,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 import org.labkey.api.view.InsertView;
 import org.springframework.validation.BindException;
@@ -39,13 +40,8 @@ import java.util.Map;
  */
 
 @RequiresPermissionClass(InsertPermission.class)
-public class PlateBasedUploadWizardAction <FormType extends PlateUploadFormImpl<ProviderType>, ProviderType extends AbstractPlateBasedAssayProvider> extends UploadWizardAction<FormType, ProviderType>
+public abstract class PlateBasedUploadWizardAction <FormType extends PlateUploadFormImpl<ProviderType>, ProviderType extends PlateBasedAssayProvider> extends UploadWizardAction<FormType, ProviderType>
 {
-    public PlateBasedUploadWizardAction()
-    {
-        super(PlateUploadFormImpl.class);
-    }
-
     @Override
     protected InsertView createRunInsertView(FormType form, boolean errorReshow, BindException errors) throws ExperimentException
     {

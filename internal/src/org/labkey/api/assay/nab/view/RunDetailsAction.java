@@ -1,0 +1,118 @@
+package org.labkey.api.assay.nab.view;
+
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.assay.dilution.DilutionAssayProvider;
+import org.labkey.api.assay.dilution.DilutionAssayRun;
+import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.nab.RenderAssayBean;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.ContextualRoles;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.RunDataSetContextualRoles;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.VBox;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: 5/15/13
+ */
+public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends SimpleViewAction<FormType>
+{
+    protected int _runRowId;
+    protected ExpProtocol _protocol;
+
+    public ModelAndView getView(FormType form, BindException errors) throws Exception
+    {
+        _runRowId = form.getRowId();
+        ExpRun run = ExperimentService.get().getExpRun(form.getRowId());
+        if (run == null)
+        {
+            throw new NotFoundException("Run " + form.getRowId() + " does not exist.");
+        }
+        if (!run.getContainer().equals(getContainer()))
+        {
+            // Need to redirect
+            ActionURL newURL = getViewContext().getActionURL().clone();
+            newURL.setContainer(run.getContainer());
+            throw new RedirectException(newURL);
+        }
+
+        // 8128 : NAb should show only print details view if user doesn't have permission to container
+        // Using the permissions annotations, we've already checked that the user has permissions
+        // at this point.  However, if the user can view the dataset but not the container,
+        // lots of links will be broken. The workaround for now is to redirect to a print view.
+        if (!isPrint() && !getContainer().hasPermission(getUser(), ReadPermission.class))
+        {
+            throw new RedirectException(getViewContext().getActionURL().clone().addParameter("_print", true));
+        }
+
+        // If the current user doesn't have ReadPermission to the current container, but the
+        // RunDataSetContextualRoles has granted us permission to this action, we can elevate the user's
+        // permissions as accessed via the NabAssayRun.  This allows access to schemas and queries used by
+        // NabAssayRun even though the original user doesn't have permission to the container.
+        User elevatedUser = getUser();
+        if (!getContainer().hasPermission(getUser(), ReadPermission.class))
+        {
+            User currentUser = getUser();
+            Set<Role> contextualRoles = new HashSet<Role>(currentUser.getStandardContextualRoles());
+            contextualRoles.add(RoleManager.getRole(ReaderRole.class));
+            elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
+        }
+
+        DilutionAssayRun assay = getNabAssayRun(run, form.getFitTypeEnum(), elevatedUser);
+        _protocol = run.getProtocol();
+        AbstractPlateBasedAssayProvider provider = (AbstractPlateBasedAssayProvider) AssayService.get().getProvider(_protocol);
+
+        form.setContext(getViewContext());
+        form.setAssay(assay);
+
+        HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
+        if (!isPrint())
+            view = new VBox(new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId), view);
+
+        return view;
+    }
+
+    protected DilutionAssayRun getNabAssayRun(ExpRun run, DilutionCurve.FitType fit, User user) throws ExperimentException
+    {
+        AssayProvider provider = AssayService.get().getProvider(run.getProtocol());
+        if (provider instanceof DilutionAssayProvider)
+        {
+            return ((DilutionAssayProvider)provider).getDataHandler().getAssayResults(run, user);
+        }
+        return null;
+    }
+
+    protected User getUser()
+    {
+        return getViewContext().getUser();
+    }
+
+    protected Container getContainer()
+    {
+        return getViewContext().getContainer();
+    }
+}

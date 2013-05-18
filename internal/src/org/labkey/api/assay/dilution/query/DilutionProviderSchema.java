@@ -17,10 +17,13 @@ package org.labkey.api.assay.dilution.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.SampleInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
@@ -28,7 +31,11 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayService;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -100,5 +107,32 @@ public class DilutionProviderSchema extends AssayProviderSchema
             return result;
         }
         return super.createTable(name);
+    }
+
+    private static final String[] _fixedRunDataProps = {DilutionDataHandler.DILUTION_INPUT_MATERIAL_DATA_PROPERTY, DilutionDataHandler.FIT_ERROR_PROPERTY, DilutionDataHandler.WELLGROUP_NAME_PROPERTY};
+    private static final String[] _curveFitSuffixes = {"", DilutionDataHandler.PL4_SUFFIX, DilutionDataHandler.PL5_SUFFIX, DilutionDataHandler.POLY_SUFFIX};
+    private static final String[] _aucPrefixes = {DilutionDataHandler.AUC_PREFIX, DilutionDataHandler.pAUC_PREFIX};
+    private static final String[] _oorSuffixes = {"", DilutionDataHandler.OOR_SUFFIX};
+    public static List<PropertyDescriptor> getExistingDataProperties(ExpProtocol protocol, Set<Double> cutoffValues)
+    {
+        List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
+        Map<Integer, String> cutoffFormats = new HashMap<Integer, String>();
+        Container container = protocol.getContainer();
+        for (String fixedProp : _fixedRunDataProps)
+            propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, fixedProp, cutoffFormats));
+
+        for (String prefix : _aucPrefixes)
+            for (String suffix : _curveFitSuffixes)
+                propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, prefix + suffix, cutoffFormats));
+
+        for (Double cutoffValue : cutoffValues)
+            for (String oorSuffix : _oorSuffixes)
+            {
+                propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.POINT_IC_PREFIX + cutoffValue.intValue() + oorSuffix, cutoffFormats));
+                for (String suffix : _curveFitSuffixes)
+                    propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.CURVE_IC_PREFIX + cutoffValue.intValue() + suffix + oorSuffix, cutoffFormats));
+            }
+
+        return propertyDescriptors;
     }
 }
