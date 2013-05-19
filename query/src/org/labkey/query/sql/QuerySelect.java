@@ -864,8 +864,12 @@ groupByLoop:
         if (_declareCalled)
             return;
         _declareCalled = true;
+        _log.debug("declareFields " + this.toStringDebug());
 
-        Set selectAliases = Sets.newCaseInsensitiveHashSet(); 
+        for (Map.Entry<FieldKey,QueryRelation> entry : _tables.entrySet())
+            entry.getValue().declareFields();
+
+        Set selectAliases = Sets.newCaseInsensitiveHashSet();
         if (null != _columns)
         {
             for (SelectColumn column : _columns.values())

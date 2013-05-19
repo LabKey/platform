@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -44,13 +45,15 @@ import java.util.*;
  */
 public class QueryLookupWrapper extends QueryRelation
 {
+    private static final Logger _log = Logger.getLogger(QueryLookupWrapper.class);
+
     final AliasManager _aliasManager;
     QueryRelation _source;
     boolean _hasLookups = false;
 
-    Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<ColumnType>();
-    Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<ColumnType.Fk>();
-    Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<FieldKey, RelationColumn>();
+    Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
+    Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<>();
+    Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<>();
 
 
     QueryLookupWrapper(Query query, QueryRelation relation, @Nullable TableType md)
@@ -80,7 +83,7 @@ public class QueryLookupWrapper extends QueryRelation
     @Override
     void setQuery(Query query)
     {
-        super.setQuery(query);    //To change body of overridden methods use File | Settings | File Templates.
+        super.setQuery(query);
         _source.setQuery(query);
     }
     
@@ -105,6 +108,8 @@ public class QueryLookupWrapper extends QueryRelation
     
     void declareFields()
     {
+        _log.debug("declareFields " + this.toStringDebug());
+
         _source.declareFields();
     }
 

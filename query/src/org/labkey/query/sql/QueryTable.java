@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -53,6 +54,8 @@ import java.util.TreeSet;
 
 public class QueryTable extends QueryRelation
 {
+    private static final Logger _log = Logger.getLogger(QueryTable.class);
+
     final AliasManager _aliasManager;
     final TableInfo _tableInfo;
     final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<FieldKey,TableColumn>();
@@ -82,6 +85,7 @@ public class QueryTable extends QueryRelation
     @Override
     void declareFields()
     {
+        _log.debug("declareFields " + toStringDebug());
     }
 
 

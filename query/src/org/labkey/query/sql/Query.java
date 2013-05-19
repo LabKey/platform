@@ -1127,8 +1127,16 @@ public class Query
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
         new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5)
+        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5),
+
+
+        // misc regression related
+            //17852
+        new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
+        new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
+        new SqlTest("SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1)
     };
+
 
 	static SqlTest[] postgres = new SqlTest[]
 	{
@@ -1137,6 +1145,7 @@ public class Query
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
         new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE),CAST('2001-01-10' AS DATE),CAST('2001-01-05' AS DATE),CAST('2001-01-15' AS DATE))", 1, Rsize)
     };
+
 
 	static SqlTest[] negative = new SqlTest[]
 	{
@@ -1288,7 +1297,7 @@ public class Query
 
 			try
 			{
-				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql);
+				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, true);
 				assertNotNull(sql, rs);
 				return rs;
 			}
