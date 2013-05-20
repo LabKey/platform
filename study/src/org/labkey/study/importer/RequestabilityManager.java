@@ -664,7 +664,7 @@ public class RequestabilityManager
             if (specimens != null && specimens.length > 0)
                 sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
 
-            sql.append("FALSE IN (")
+            sql.append(StudySchema.getInstance().getSqlDialect().getBooleanFALSE()+ " IN (")
                .append("SELECT FinalState FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() + " WHERE RowId IN (")
                .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
                .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
