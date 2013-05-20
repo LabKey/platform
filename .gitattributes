@@ -2332,6 +2332,17 @@ query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
 query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
 query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text
 query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
+query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataSource.java -text
+query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataTransform.java -text
+query/src/org/labkey/query/reports/getdata/AggregateQueryDataTransform.java -text
+query/src/org/labkey/query/reports/getdata/DataRequest.java -text
+query/src/org/labkey/query/reports/getdata/FilterQueryDataTransform.java -text
+query/src/org/labkey/query/reports/getdata/LabKeySQLReportDataSource.java -text
+query/src/org/labkey/query/reports/getdata/QueryReportDataSource.java -text
+query/src/org/labkey/query/reports/getdata/ReportDataRenderer.java -text
+query/src/org/labkey/query/reports/getdata/ReportDataSource.java -text
+query/src/org/labkey/query/reports/getdata/ReportDataTransform.java -text
+query/src/org/labkey/query/reports/getdata/SchemaQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/image.png -text
 query/src/org/labkey/query/reports/pdf.png -text
 query/src/org/labkey/query/reports/presentation.png -text

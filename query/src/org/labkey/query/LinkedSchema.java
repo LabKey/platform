@@ -48,9 +48,11 @@ import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.LinkedSchemaDef;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -138,8 +140,7 @@ public class LinkedSchema extends ExternalSchema
 
         Collection<String> availableQueries = getAvailableQueries(def, template, tableSource);
 
-        LinkedSchema ret = new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables, availableQueries);
-        return ret;
+        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables, availableQueries);
     }
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, String sourceSchemaName, Container sourceContainer, User user)
@@ -198,7 +199,7 @@ public class LinkedSchema extends ExternalSchema
             return super.getQueryDefs();
 
         Map<String, QueryDefinition> queries =_sourceSchema.getQueryDefs();
-        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>(queries.size());
+        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>(queries.size());
 
         for (String key : queries.keySet())
         {
@@ -246,7 +247,7 @@ public class LinkedSchema extends ExternalSchema
 
         QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlFilters, parameterDecls);
 
-        ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo tableInfo = queryDef.getTable(errors, true);
         if (!errors.isEmpty())
         {
@@ -270,6 +271,54 @@ public class LinkedSchema extends ExternalSchema
 
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
     private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
+    {
+        String sql = generateLabKeySQL(sourceTable, new XmlFilterWhereClauseSource(xmlFilters), parameterDecls);
+
+        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
+        queryDef.setSql(sql);
+        return queryDef;
+    }
+
+    public interface SQLWhereClauseSource
+    {
+        List<String> getWhereClauses();
+    }
+
+    private class XmlFilterWhereClauseSource implements SQLWhereClauseSource
+    {
+        private final LocalOrRefFiltersType _xmlFilters;
+
+        private XmlFilterWhereClauseSource(LocalOrRefFiltersType xmlFilters)
+        {
+            _xmlFilters = xmlFilters;
+        }
+
+        @Override
+        public List<String> getWhereClauses()
+        {
+            List<String> result = new ArrayList<>();
+            if (_xmlFilters != null)
+            {
+                if (_xmlFilters.isSetRef())
+                {
+                    // Add the WHERE from the referenced, shared filter
+                    NamedFiltersType filter = _namedFilters.get(_xmlFilters.getRef());
+                    if (filter != null && filter.sizeOfWhereArray() > 0)
+                    {
+                        result.addAll(Arrays.asList(filter.getWhereArray()));
+                    }
+                }
+                else
+                {
+                    // Add the filters that are specific to this table
+                    result.addAll(Arrays.asList(_xmlFilters.getWhereArray()));
+                }
+            }
+            return result;
+        }
+    }
+
+    public static String generateLabKeySQL(TableInfo sourceTable, SQLWhereClauseSource whereClauseSource, Collection<QueryService.ParameterDecl> parameterDecls)
     {
         StringBuilder sql = new StringBuilder();
 
@@ -301,51 +350,30 @@ public class LinkedSchema extends ExternalSchema
             columnSep = ", ";
         }
         sql.append(" FROM \"");
-        sql.append(_sourceSchema.getContainer().getPath());
+        sql.append(sourceTable.getUserSchema().getContainer().getPath());
         sql.append("\".");
-        sql.append(_sourceSchema.getSchemaPath().toSQLString());
+        sql.append(sourceTable.getUserSchema().getSchemaPath().toSQLString());
         sql.append(".\"");
         sql.append(sourceTable.getName());
         sql.append("\"\n");
 
         // Apply LabKey sql <where> style filters.  The <filter> style filters will be applied in .loadFromXML().
-        if (xmlFilters != null)
+        List<String> whereClauses = whereClauseSource.getWhereClauses();
+        if (!whereClauses.isEmpty())
         {
             String filterSep = " WHERE ";
 
-            if (xmlFilters.isSetRef())
+            for (String whereClause : whereClauses)
             {
-                // Add the WHERE from the referenced, shared filter
-                NamedFiltersType filter = _namedFilters.get(xmlFilters.getRef());
-                if (filter != null && filter.sizeOfWhereArray() > 0)
-                {
-                    for (String whereClause : filter.getWhereArray())
-                    {
-                        sql.append(filterSep);
-                        filterSep = " AND ";
-                        sql.append("(");
-                        sql.append(whereClause);
-                        sql.append(")");
-                    }
-                }
-            }
-            else
-            {
-                // Add the filters that are specific to this table
-                for (String whereClause : xmlFilters.getWhereArray())
-                {
-                    sql.append(filterSep);
-                    filterSep = " AND ";
-                    sql.append("(");
-                    sql.append(whereClause);
-                    sql.append(")");
-                }
+                sql.append(filterSep);
+                filterSep = " AND ";
+                sql.append("(");
+                sql.append(whereClause);
+                sql.append(")");
             }
         }
 
-        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
-        queryDef.setSql(sql.toString());
-        return queryDef;
+        return sql.toString();
     }
 
     protected Collection<QueryService.ParameterDecl> fireCustomizeParameters(String name, TableInfo table, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
@@ -355,7 +383,7 @@ public class LinkedSchema extends ExternalSchema
         {
             for (UserSchemaCustomizer customizer : _schemaCustomizers)
                 if (customizer instanceof LinkedSchemaCustomizer)
-                    parameterDecls.addAll(((LinkedSchemaCustomizer)customizer).customizeParameters(name, table, xmlFilters));
+                    parameterDecls.addAll(((LinkedSchemaCustomizer) customizer).customizeParameters(name, table, xmlFilters));
         }
         return parameterDecls;
     }

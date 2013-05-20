@@ -3217,6 +3217,7 @@ public class AdminController extends SpringActionController
 
             getPageConfig().setTemplate(Template.Wizard);
             getPageConfig().setTitle((ModuleLoader.getInstance().isNewInstall() ? "Install" : "Upgrade") + " Modules");
+            getPageConfig().setHelpTopic(new HelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade"));
 
             return vbox;
         }

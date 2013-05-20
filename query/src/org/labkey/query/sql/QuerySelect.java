@@ -1852,7 +1852,13 @@ groupByLoop:
         {
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
-                return ((QField)expr).getRelationColumn().getFk();
+            {
+                RelationColumn relationColumn = ((QField) expr).getRelationColumn();
+                if (relationColumn != null)
+                    return relationColumn.getFk();
+            }
+
+//                return ((QField)expr).getRelationColumn().getFk();
             return null;
         }
 
