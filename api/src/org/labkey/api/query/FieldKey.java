@@ -284,5 +284,13 @@ public class FieldKey extends QueryKey<FieldKey>
             assertEquals("Tilde$TSeparated", FieldKey.fromParts("Tilde~Separated").toString());
             assertEquals("Parent/Tilde$TSeparated", FieldKey.fromParts("Parent", "Tilde~Separated").toString());
         }
+
+        @Test
+        public void testToLabKeySQL()
+        {
+            assertEquals("\"Slash/Separated\"", FieldKey.fromParts("Slash/Separated").toSQLString());
+            assertEquals("\"Parent\".\"Child\"", FieldKey.fromParts("Parent", "Child").toSQLString());
+            assertEquals("\"With\"\"Quote\"", FieldKey.fromParts("With\"Quote").toSQLString());
+        }
     }
 }

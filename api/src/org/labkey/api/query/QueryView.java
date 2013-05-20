@@ -224,7 +224,7 @@ public class QueryView extends WebPartView<Object>
             throw new IllegalStateException();
         _settings = settings;
         _queryDef = settings.getQueryDef(_schema);
-        _customView = settings.getCustomView(getViewContext(), _queryDef);
+        _customView = settings.getCustomView(getViewContext(), getQueryDef());
         //_report = settings.getReportView(getViewContext());
     }
 
@@ -280,8 +280,8 @@ public class QueryView extends WebPartView<Object>
     {
         out.write("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
-        if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
-            out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, _queryDef) + "\">Edit Query</a>");
+        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getContainer()))
+            out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
         out.write("</p>");
 
         Set<String> seen = new HashSet<String>();
@@ -317,25 +317,25 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createQueryPickerButton(String label)
     {
-        String current = _queryDef != null ? _queryDef.getName() : null;
+        String current = getQueryDef() != null ? getQueryDef().getName() : null;
 
         URLHelper target = urlRefreshQuery();
         NavTreeMenuButton button = new NavTreeMenuButton(label);
         NavTree menu = button.getNavTree();
         menu.setId(getDataRegionName() + ".Menu." + label);
 
-        if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
+        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getContainer()))
         {
             NavTree editQueryItem;
-            if (_queryDef.isSqlEditable())
-                editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            if (getQueryDef().isSqlEditable())
+                editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
             else
-                editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, _queryDef));
+                editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
             editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
             button.addMenuItem(editQueryItem);
-            if (_queryDef.isMetadataEditable())
+            if (getQueryDef().isMetadataEditable())
             {
-                NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, _queryDef));
+                NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
                 editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
                 button.addMenuItem(editMetadataItem);
             }
@@ -396,7 +396,7 @@ public class QueryView extends WebPartView<Object>
 
     protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpression expr = _queryDef.urlExpr(action, _schema.getContainer());
+        StringExpression expr = getQueryDef().urlExpr(action, _schema.getContainer());
         if (expr == null)
             return null;
 
@@ -422,7 +422,7 @@ public class QueryView extends WebPartView<Object>
 
     protected ActionURL urlFor(QueryAction action)
     {
-        ActionURL ret = _schema.urlFor(action, _queryDef);
+        ActionURL ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)
         {
@@ -2169,12 +2169,12 @@ public class QueryView extends WebPartView<Object>
     public void setCustomView(String viewName)
     {
         _settings.setViewName(viewName);
-        _customView = _settings.getCustomView(getViewContext(), _queryDef);
+        _customView = _settings.getCustomView(getViewContext(), getQueryDef());
     }
 
     protected TableInfo createTable()
     {
-        return _queryDef != null ? _queryDef.getTable(_schema, _parseErrors, true) : null;
+        return getQueryDef() != null ? getQueryDef().getTable(_schema, _parseErrors, true) : null;
     }
 
     final public TableInfo getTable()
@@ -2521,7 +2521,7 @@ public class QueryView extends WebPartView<Object>
             if (ti == null)
             {
                 List<QueryException> errors = new ArrayList<QueryException>();
-                ti = _queryDef.getTable(errors, true);
+                ti = getQueryDef().getTable(errors, true);
             }
 
             if (ti != null)

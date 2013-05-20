@@ -1321,6 +1321,23 @@ public class SimpleFilter implements Filter
         return sb.toString();
     }
 
+    public String toLabKeySQL(Map<FieldKey, ColumnInfo> columns)
+    {
+        StringBuilder result = new StringBuilder();
+        String separator = "(";
+        for (SimpleFilter.FilterClause filterClause : getClauses())
+        {
+            result.append(separator);
+            separator = ") AND (";
+            result.append(filterClause.getLabKeySQLWhereClause(columns));
+        }
+        if (result.length() > 0)
+        {
+            result.append(")");
+        }
+        return result.toString();
+    }
+
     public String toSQLString(SqlDialect dialect)
     {
         SQLFragment fragment = getSQLFragment(dialect);

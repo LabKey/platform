@@ -249,6 +249,19 @@ public class Aggregate
         return _distinct;
     }
 
+    public String toLabKeySQL()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(_type.name()).append("(");
+        if (_distinct)
+            sb.append("DISTINCT ");
+        sb.append(getFieldKey().toSQLString());
+        // TODO - handle FieldKeys that have parents
+        sb.append(") AS ").append(getAggregateName(getFieldKey().toString()));
+        return sb.toString();
+
+    }
+
     @Nullable
     public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {

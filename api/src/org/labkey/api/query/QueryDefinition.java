@@ -37,7 +37,7 @@ public interface QueryDefinition
     void setName(String name);
     String getTitle();
 
-    @Deprecated // Use .getSchemaPath() instead.
+    @Deprecated /** Use #getSchemaPath() instead. */
     String getSchemaName();
     SchemaKey getSchemaPath();
 
@@ -76,7 +76,6 @@ public interface QueryDefinition
      * @param request If not null, include custom views saved in session state.
      * @param includeHidden If true, include hidden custom views.
      * @param sharedOnly If true, return only shared custom views.
-     * @return
      */
     Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly);
 
@@ -111,10 +110,7 @@ public interface QueryDefinition
     /**
      * Save a new QueryDefinition or update an existing QueryDefinition.
      * TableQueryDefinition and file-based queries cannot be deleted.
-     * Fires the {@link QueryChangeListener#queryChanged(Container, ContainerFilter, SchemaKey, QueryProperty, Collection)} event.
-     *
-     * @param user
-     * @throws SQLException
+     * Fires the {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryProperty, Collection)} event.
      */
     Collection<QueryPropertyChange> save(User user, Container container) throws SQLException;
     Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException;
@@ -122,10 +118,7 @@ public interface QueryDefinition
     /**
      * Delete the QueryDefinition.
      * TableQueryDefinition and file-based queries cannot be deleted.
-     * Fires the {@link QueryChangeListener#queryDeleted(Container, ContainerFilter, SchemaKey, Collection)} event.
-     *
-     * @param user
-     * @throws SQLException
+     * Fires the {@link QueryChangeListener#queryDeleted(User, Container, ContainerFilter, SchemaKey, Collection)} event.
      */
     void delete(User user) throws SQLException;
     void delete(User user, boolean fireChangeEvent) throws SQLException;

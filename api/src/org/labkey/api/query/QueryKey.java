@@ -228,7 +228,7 @@ import java.util.Objects;
         {
             escapedName.append(sep);
             if (needsQuotes(part))
-                escapedName.append("\"").append(part).append("\"");
+                escapedName.append("\"").append(part.replace("\"", "\"\"")).append("\"");
             else
                 escapedName.append(part);
             sep = ".";

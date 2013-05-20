@@ -84,7 +84,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> rowKeys : keys)
         {
             Map<String, Object> row = getRow(user, container, rowKeys);
@@ -112,8 +112,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, context);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
-        return insert;
+        return ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
     }
 
 
@@ -126,9 +125,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> list = new ArrayList<>();
         List<Map<String, Object>> ret;
-        Exception rowException = null;
+        Exception rowException;
 
         try
         {
@@ -253,7 +252,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
-        ArrayList<Map<String,Object>> outputRows = new ArrayList<Map<String, Object>>();
+        ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingETL(user, container, dib, outputRows, context, extraScriptContext);
 
         if (context.getErrors().hasErrors())
@@ -303,7 +302,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
+        List<Map<String, Object>> result = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -360,10 +359,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if(_columnImportMap == null)
         {
-            _columnImportMap = (CaseInsensitiveHashMap)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false);
+            _columnImportMap = (CaseInsensitiveHashMap<ColumnInfo>)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false);
         }
 
-        Map<String, Object> newRow = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
         CaseInsensitiveHashSet columns = new CaseInsensitiveHashSet();
         columns.addAll(row.keySet());
 
@@ -408,7 +407,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Deprecated
     protected Map<String, Object> coerceTypes(Map<String, Object> row)
     {
-        Map<String, Object> result = new CaseInsensitiveHashMap<Object>(row.size());
+        Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
         Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
@@ -447,8 +446,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
-        List<Map<String, Object>> oldRows = new ArrayList<Map<String, Object>>(rows.size());
+        List<Map<String, Object>> result = new ArrayList<>(rows.size());
+        List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
 
         for (int i = 0; i < rows.size(); i++)
         {
@@ -497,7 +496,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (int i = 0; i < keys.size(); i++)
         {
             Map<String, Object> key = keys.get(i);

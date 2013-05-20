@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
@@ -92,7 +93,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
 
     public <T> void putBeanList(String key, List<T> beans, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
-        List<Map> beanMaps = new ArrayList<Map>();
+        List<Map> beanMaps = new ArrayList<>();
         for(Object bean : beans)
             beanMaps.add(getBeanMap(bean, props));
         _json.put(key, beanMaps);
@@ -110,7 +111,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         }
         else
         {
-            Map<String,Object> map = new HashMap<String,Object>(props.length);
+            Map<String,Object> map = new HashMap<>(props.length);
             for(String prop : props)
                 map.put(prop, BeanUtils.getProperty(bean, prop));
             return map;
@@ -162,16 +163,19 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         return _json.containsValue(o);
     }
 
+    @NotNull
     public Set<String> keySet()
     {
         return _json.keySet();
     }
 
+    @NotNull
     public Collection<Object> values()
     {
         return _json.values();
     }
 
+    @NotNull
     public Set<Map.Entry<String, Object>> entrySet()
     {
         return _json.entrySet();
@@ -184,7 +188,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
     }
 
     @Override
-    public void putAll(Map map)
+    public void putAll(@NotNull Map map)
     {
         _json.putAll(map);
     }

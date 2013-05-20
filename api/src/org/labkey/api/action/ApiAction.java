@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
-import java.util.Iterator;
 
 /**
  * Base class for API actions.
@@ -169,10 +168,12 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         //don't log exceptions that result from bad inputs
         catch (BatchValidationException e)
         {
+            // Catch separately to be sure that we call the subclass-specific write() method
             createResponseWriter().write(e);
         }
         catch (ValidationException e)
         {
+            // Catch separately to be sure that we call the subclass-specific write() method
             createResponseWriter().write(e);
         }
         catch (QueryException | IllegalArgumentException |
@@ -258,14 +259,14 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         //unfortunately the json.org classes can't read directly from a stream!
         char[] buf = new char[2048];
         int chars;
-        StringBuffer json = new StringBuffer();
+        StringBuilder json = new StringBuilder();
         BufferedReader reader = getViewContext().getRequest().getReader();
 
         while((chars = reader.read(buf)) > 0)
             json.append(buf, 0, chars);
 
         String jsonString = json.toString();
-        if(null == jsonString || jsonString.length() <= 0)
+        if(jsonString.isEmpty())
             return null;
 
         //deserialize the JSON
@@ -298,15 +299,13 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         private void addPropertyValues(JSONObject jsonObj) throws JSONException
         {
-            Iterator keys = jsonObj.keySet().iterator();
-            while(keys.hasNext())
+            for (String key : jsonObj.keySet())
             {
-                String key = (String)keys.next();
                 Object value = jsonObj.get(key);
 
                 if (value instanceof JSONArray)
                 {
-                    value = ((JSONArray)value).toArray();
+                    value = ((JSONArray) value).toArray();
                 }
                 else if (value instanceof JSONObject)
                     throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");

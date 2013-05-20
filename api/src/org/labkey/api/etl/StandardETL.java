@@ -27,7 +27,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -51,15 +50,12 @@ import java.util.Map;
 
 public class StandardETL implements DataIteratorBuilder
 {
-    protected enum _op {forInsert, forUpdate}
-
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
     boolean _useImportAliases = false;
     DataIteratorContext _context;
     final Container _c;
     final User _user;
-    _op op = _op.forInsert;
 
     ValidatorIterator _it;
 
@@ -115,7 +111,7 @@ public class StandardETL implements DataIteratorBuilder
 
         Domain d = _target.getDomain();
 
-        Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> propertiesMap = new HashMap<>();
         if (null != d)
         {
             for (DomainProperty dp : d.getProperties())
@@ -152,8 +148,8 @@ public class StandardETL implements DataIteratorBuilder
          * Anyway match up the columns and property descriptors and keep them in a set of TranslateHeleprs
          */
         List<ColumnInfo> cols = _target.getColumns();
-        Map<FieldKey, TranslateHelper> unusedCols = new HashMap<FieldKey,TranslateHelper>(cols.size() * 2);
-        Map<String, TranslateHelper> translateHelperMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
+        Map<FieldKey, TranslateHelper> unusedCols = new HashMap<>(cols.size() * 2);
+        Map<String, TranslateHelper> translateHelperMap = new CaseInsensitiveHashMap<>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
@@ -173,7 +169,7 @@ public class StandardETL implements DataIteratorBuilder
         ValidationException setupError = new ValidationException();
         ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target, _useImportAliases, setupError);
 
-        ArrayList<TranslateHelper> targetCols = new ArrayList<TranslateHelper>(input.getColumnCount()+1);
+        ArrayList<TranslateHelper> targetCols = new ArrayList<>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo targetCol = matches.get(i);

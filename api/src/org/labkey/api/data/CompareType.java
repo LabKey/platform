@@ -620,7 +620,7 @@ public enum CompareType
             return dialect.getColumnSelectName(alias) + _comparison.getSql();
         }
 
-        protected String substutiteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
+        protected String substituteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             JdbcType type = getColumnType(columnMap);
             if (type == null)
@@ -642,8 +642,13 @@ public enum CompareType
 
         protected JdbcType getColumnType(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
+            return getColumnType(columnMap, null);
+        }
+
+        protected JdbcType getColumnType(Map<FieldKey, ? extends ColumnInfo> columnMap, JdbcType defaultType)
+        {
             ColumnInfo col = columnMap.get(_fieldKey);
-            return col != null ? col.getJdbcType() : null;
+            return col != null ? col.getJdbcType() : defaultType;
         }
 
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -652,7 +657,7 @@ public enum CompareType
             if (comparisonSql == null)
                 throw new IllegalStateException("This compare type must override getLabKeySQLWhereClause.");
             String sql = getLabKeySQLColName(_fieldKey) + _comparison.getSql();
-            return substutiteLabKeySqlParams(sql, columnMap);
+            return substituteLabKeySqlParams(sql, columnMap);
         }
 
         @Override
@@ -943,7 +948,7 @@ public enum CompareType
         {
             String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " >= ? AND " + selectName + " < ?";
-            return substutiteLabKeySqlParams(sql, columnMap);
+            return substituteLabKeySqlParams(sql, columnMap);
         }
 
         @Override
@@ -978,7 +983,7 @@ public enum CompareType
         {
             String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " < ? OR " + selectName + " >= ?";
-            return substutiteLabKeySqlParams(sql, columnMap);
+            return substituteLabKeySqlParams(sql, columnMap);
         }
 
         @Override
@@ -1137,7 +1142,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return  getLabKeySQLColName(_fieldKey) + " LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
+            return  getLabKeySQLColName(_fieldKey) + " LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'";
         }
 
         @Override
@@ -1164,7 +1169,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'" + ")";
+            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'" + ")";
         }
 
         @Override
@@ -1240,7 +1245,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%')";
+            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')";
         }
 
         @Override
@@ -1267,7 +1272,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%'))";
+            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'))";
         }
 
         @Override
