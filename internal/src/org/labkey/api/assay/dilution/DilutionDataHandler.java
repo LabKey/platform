@@ -38,6 +38,7 @@ import org.labkey.api.study.Plate;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -228,7 +229,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         File dataFile = getDataFile(run);
         if (dataFile == null)
-            throw new MissingDataFileException("Nab data file could not be found for run " + run.getName() + ".  Deleted from file system?");
+            throw new MissingDataFileException(getResourceName(run) +  " data file could not be found for run " + run.getName() + ".  Deleted from file system?");
         return getAssayResults(run, user, dataFile, fit);
     }
 
@@ -238,11 +239,19 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             return null;
         ExpData[] outputDatas = run.getOutputDatas(getDataType());
         if (outputDatas == null || outputDatas.length != 1)
-            throw new IllegalStateException("Nab runs should have a single data output.");
+            throw new IllegalStateException(getResourceName(run) + " runs should have a single data output.");
         File dataFile = outputDatas[0].getFile();
         if (!dataFile.exists())
             return null;
         return dataFile;
+    }
+
+    protected String getResourceName(ExpRun run)
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+
+        return provider != null ? provider.getResourceName() : "Assay";
     }
 
     protected abstract List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException;

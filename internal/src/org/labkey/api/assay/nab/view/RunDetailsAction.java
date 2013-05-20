@@ -4,6 +4,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.nab.RenderAssayBean;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -101,7 +102,13 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         AssayProvider provider = AssayService.get().getProvider(run.getProtocol());
         if (provider instanceof DilutionAssayProvider)
         {
-            return ((DilutionAssayProvider)provider).getDataHandler().getAssayResults(run, user);
+            try {
+                return ((DilutionAssayProvider)provider).getDataHandler().getAssayResults(run, user);
+            }
+            catch (DilutionDataHandler.MissingDataFileException e)
+            {
+                throw new NotFoundException(e.getMessage());
+            }
         }
         return null;
     }
