@@ -212,7 +212,11 @@ public class SimpleFilter implements Filter
 
             Object value = xmlFilter.getValue();
             FieldKey fieldKey = FieldKey.fromString(xmlFilter.getColumn());
-            return compareType.createFilterClause(fieldKey, value);
+            FilterClause filterClause = compareType.createFilterClause(fieldKey, value);
+            // Because the value is coming in as a string in the XML, treat as a URL-clause so that we do type
+            // conversion on it later when we know the actual column type
+            filterClause._urlClause = true;
+            return filterClause;
         }
 
     }
