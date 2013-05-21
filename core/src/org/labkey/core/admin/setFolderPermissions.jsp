@@ -38,6 +38,7 @@
 <script type="text/javascript">
     Ext4.onReady(function(){
         var isProject = <%=h(c.isProject())%>;
+        var hasNext = isProject || <%= h(!c.getFolderType().getExtraSetupSteps(c).isEmpty()) %>;
         var containerNoun = isProject ? 'Project' : 'Folder';
 
         Ext4.FocusManager.enable(false);
@@ -167,7 +168,7 @@
             buttons: [{
                 xtype: 'button',
                 cls: 'labkey-button',
-                text: (isProject ? 'Next' : 'Finish'),
+                text: (hasNext ? 'Next' : 'Finish'),
                 handler: function(btn){
                     var f = btn.up('form').getForm();
                     if(!f.submitInProgress)

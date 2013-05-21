@@ -69,7 +69,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryProfiler;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -4117,7 +4116,7 @@ public class AdminController extends SpringActionController
 
             Container c = getViewContext().getContainer();
 
-            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isRoot()));
+            getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(null, c));
             getPageConfig().setTemplate(Template.Wizard);
 
             if (c.isRoot())
@@ -4267,7 +4266,7 @@ public class AdminController extends SpringActionController
 
             Container c = this.getViewContext().getContainer();
             getPageConfig().setTitle("Users / Permissions");
-            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isProject()));
+            getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
             getPageConfig().setTemplate(Template.Wizard);
 
             return vbox;
@@ -4283,8 +4282,17 @@ public class AdminController extends SpringActionController
             if(c.isProject()){
                 _successURL = new AdminUrlsImpl().getInitialFolderSettingsURL(c);
             }
-            else {
-                _successURL = getContainer().getStartURL(getUser());
+            else
+            {
+                List<NavTree> extraSteps = getContainer().getFolderType().getExtraSetupSteps(getContainer());
+                if (extraSteps.isEmpty())
+                {
+                    _successURL = getContainer().getStartURL(getUser());
+                }
+                else
+                {
+                    _successURL = new ActionURL(extraSteps.get(0).getHref());
+                }
             }
 
             if(permissionType == null){
@@ -4400,14 +4408,13 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
-
             VBox vbox = new VBox();
             Container c = getViewContext().getContainer();
 
             JspView statusView = new JspView<ProjectSettingsForm>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
             vbox.addView(statusView);
 
-            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isProject()));
+            getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
             getPageConfig().setTemplate(Template.Wizard);
 
             String noun = c.isProject() ? "Project": "Folder";
@@ -4446,7 +4453,15 @@ public class AdminController extends SpringActionController
                 service.setFileRoot(c.getProject(), new File(folderRootPath));
             }
 
-            _successURL = getContainer().getStartURL(getUser());
+            List<NavTree> extraSteps = getContainer().getFolderType().getExtraSetupSteps(getContainer());
+            if (extraSteps.isEmpty())
+            {
+                _successURL = getContainer().getStartURL(getUser());
+            }
+            else
+            {
+                _successURL = new ActionURL(extraSteps.get(0).getHref());
+            }
 
             return true;
         }
@@ -4464,17 +4479,6 @@ public class AdminController extends SpringActionController
             String title = "Users / Permissions";
             return appendAdminNavTrail(root, title, this.getClass());
         }
-    }
-
-    public static List<NavTree> getCreateProjectWizardSteps(Boolean isProject)
-    {
-        List<NavTree> navTrail = new ArrayList<NavTree>();
-
-        navTrail.add(new NavTree(isProject ? "Create Project" : "Create Folder"));
-        navTrail.add(new NavTree("Users / Permissions"));
-        if(isProject)
-            navTrail.add(new NavTree("Project Settings"));
-        return navTrail;
     }
 
     // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create

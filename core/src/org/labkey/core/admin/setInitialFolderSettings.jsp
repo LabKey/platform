@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ProjectSettingsForm> me = (JspView<AdminController.ProjectSettingsForm>) HttpView.currentView();
@@ -133,7 +134,7 @@
             buttons: [{
                 xtype: 'button',
                 cls: 'labkey-button',
-                text: 'Finish',
+                text: <%= PageFlowUtil.jsString(getViewContext().getContainer().getFolderType().getExtraSetupSteps(getViewContext().getContainer()).isEmpty() ? "Finish" : "Next") %>,
                 handler: function(btn){
                     var f = btn.up('form').getForm();
                     f.submit();
