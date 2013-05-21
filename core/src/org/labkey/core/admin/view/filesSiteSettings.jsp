@@ -107,11 +107,16 @@
                     xtype: 'treecolumn',
                     header:'Project',
                     width:330,
-                    dataIndex:'name'
+                    dataIndex:'name',
+                    //NOTE: treecolumns do not seem to automatically resolve string->Ext.util.Format methods?
+                    renderer: function(val){
+                        return Ext4.util.Format.htmlEncode(val);
+                    }
                 },{
                     header:'Directory',
                     width:420,
-                    dataIndex:'path'
+                    dataIndex:'path',
+                    renderer: 'htmlEncode'
                 },{
                     header:'Default',
                     width:75,
