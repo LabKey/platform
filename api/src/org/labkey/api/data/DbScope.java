@@ -78,7 +78,7 @@ import java.util.concurrent.locks.Lock;
  *     transaction.commit();
  * }
  *
- * The DbScope.Transaction class implements AutoClosable, so it will be cleaned up automatically by JDK 7's try {}
+ * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically by JDK 7's try {}
  * resource handling.
  *
  * User: migra

@@ -461,4 +461,11 @@ public class DefaultFolderType implements FolderType
     {
 
     }
+
+    @NotNull
+    @Override
+    public List<NavTree> getExtraSetupSteps(Container c)
+    {
+        return Collections.emptyList();
+    }
 }

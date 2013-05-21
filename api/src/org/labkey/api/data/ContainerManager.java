@@ -156,7 +156,7 @@ public class ContainerManager
     {
         try
         {
-            HashMap<String, Object> m = new HashMap<String, Object>();
+            HashMap<String, Object> m = new HashMap<>();
             m.put("Parent", null);
             m.put("Name", "");
             Table.insert(null, CORE.getTableInfoContainers(), m);
@@ -241,7 +241,7 @@ public class ContainerManager
 
         try
         {
-            HashMap<String, Object> m = new HashMap<String, Object>();
+            HashMap<String, Object> m = new HashMap<>();
             m.put("Parent", parent.getId());
             m.put("Name", name);
             m.put("Title", title);
@@ -308,7 +308,7 @@ public class ContainerManager
             return;
 
         // Check for any containers that need to be moved into container tabs
-        List<String> errorStrings = new ArrayList<String>();
+        List<String> errorStrings = new ArrayList<>();
         if (folderType.hasContainerTabs())
         {
             List<Container> containersBecomingTabs = findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
@@ -355,7 +355,7 @@ public class ContainerManager
 
     public static List<Container> findAndCheckContainersMatchingTabs(Container c, FolderType folderType, List<String> errorStrings)
     {
-        List<Container> containersMatchingTabs = new ArrayList<Container>();
+        List<Container> containersMatchingTabs = new ArrayList<>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
         {
             if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
@@ -408,7 +408,7 @@ public class ContainerManager
             return true;
     }
 
-    private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<Container>();
+    private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<>();
 
     @NotNull
     public static FolderType getFolderType(Container c)
@@ -581,7 +581,7 @@ public class ContainerManager
 
     public static List<Container> getChildren(Container parent)
     {
-        return new ArrayList<Container>(getChildrenMap(parent).values());
+        return new ArrayList<>(getChildrenMap(parent).values());
     }
 
 
@@ -592,7 +592,7 @@ public class ContainerManager
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
     {
-        List<Container> children = new ArrayList<Container>();
+        List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
             if (child.hasPermission(u, perm) && (includeWorkbooksAndTabs || !child.isWorkbookOrTab()))
                 children.add(child);
@@ -613,7 +613,7 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
     {
-        List<Container> result = new ArrayList<Container>();
+        List<Container> result = new ArrayList<>();
         Container[] containers = getAllChildren(parent);
 
         for (Container container : containers)
@@ -698,7 +698,7 @@ public class ContainerManager
             return Collections.emptyMap();
 
         // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily alphabetical
-        Map<String, Container> ret = new LinkedHashMap<String, Container>();
+        Map<String, Container> ret = new LinkedHashMap<>();
         for (String id : childIds)
         {
             Container c = ContainerManager.getForId(id);
@@ -747,7 +747,7 @@ public class ContainerManager
                 // No database changes to commit, but need to decrement the counter
                 CORE.getSchema().getScope().commitTransaction();
 
-                if (ret == null || ret.length == 0)
+                if (ret.length == 0)
                     return null;
                 return _addToCache(ret[0]);
             }
@@ -802,7 +802,7 @@ public class ContainerManager
                             "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL",
                             null, Container.class);
 
-                    if (null == ret || ret.length == 0)
+                    if (ret.length == 0)
                         throw new RootContainerException("Root container does not exist");
 
                     if (ret.length > 1)
@@ -1019,9 +1019,9 @@ public class ContainerManager
 
             Arrays.sort(folders);
 
-            Set<Container> containersInTree = new HashSet<Container>();
+            Set<Container> containersInTree = new HashSet<>();
 
-            Map<String, NavTree> m = new HashMap<String, NavTree>();
+            Map<String, NavTree> m = new HashMap<>();
             for (Container f : folders)
             {
                 if (f.isWorkbookOrTab())
@@ -1115,7 +1115,7 @@ public class ContainerManager
      */
     public static List<Container> containersToRootList(Container child)
     {
-        List<Container> containers = new ArrayList<Container>();
+        List<Container> containers = new ArrayList<>();
         Container current = child;
         while (current != null && !current.isRoot())
         {
@@ -1383,7 +1383,7 @@ public class ContainerManager
 
     private static LinkedHashSet<Container> getAllChildrenDepthFirst(Container c)
     {
-        LinkedHashSet<Container> set = new LinkedHashSet<Container>();
+        LinkedHashSet<Container> set = new LinkedHashSet<>();
         getAllChildrenDepthFirst(c, set);
         return set;
     }
@@ -1528,7 +1528,7 @@ public class ContainerManager
     // Retrieve entire container hierarchy
     public static MultiMap<Container, Container> getContainerTree()
     {
-        final MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();
+        final MultiMap<Container, Container> mm = new MultiHashMap<>();
 
         // Get all containers and parents
         SqlSelector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
@@ -1548,7 +1548,7 @@ public class ContainerManager
 
         for (Object key : mm.keySet())
         {
-            List<Container> siblings = new ArrayList<Container>(mm.get(key));
+            List<Container> siblings = new ArrayList<>(mm.get(key));
             Collections.sort(siblings);
         }
 
@@ -1563,7 +1563,7 @@ public class ContainerManager
     public static MultiMap<Container, Container> getContainerTree(Container root)
     {
         //build a multimap of only the container ids
-        final MultiMap<String, String> mmIds = new MultiHashMap<String, String>();
+        final MultiMap<String, String> mmIds = new MultiHashMap<>();
 
         // Get all containers and parents
         Selector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
@@ -1578,12 +1578,12 @@ public class ContainerManager
         });
 
         //now find the root and build a MultiMap of it and its descendants
-        MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();
+        MultiMap<Container, Container> mm = new MultiHashMap<>();
         mm.put(null, root);
         addChildren(root, mmIds, mm);
         for (Object key : mm.keySet())
         {
-            List<Container> siblings = new ArrayList<Container>(mm.get(key));
+            List<Container> siblings = new ArrayList<>(mm.get(key));
             Collections.sort(siblings);
         }
         return mm;
@@ -1611,9 +1611,9 @@ public class ContainerManager
         //noinspection unchecked
         Collection<Container> containers = mm.values();
         if (null == containers)
-            return new HashSet<Container>();
+            return new HashSet<>();
 
-        Set<Container> set = new HashSet<Container>(containers.size());
+        Set<Container> set = new HashSet<>(containers.size());
 
         for (Container c : containers)
         {
@@ -1646,7 +1646,7 @@ public class ContainerManager
     {
         Set<Container> containers = getContainerSet(getContainerTree(), user, perm);
 
-        List<String> ids = new ArrayList<String>(containers.size());
+        List<String> ids = new ArrayList<>(containers.size());
 
         for (Container c : containers)
             ids.add(c.getId());
@@ -1699,8 +1699,8 @@ public class ContainerManager
 
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<ContainerListener>();
-    private static final List<ContainerListener> _laterListeners = new CopyOnWriteArrayList<ContainerListener>();
+    private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<>();
+    private static final List<ContainerListener> _laterListeners = new CopyOnWriteArrayList<>();
 
     // These listeners are executed in the order they are registered, before the "Last" listeners
     public static void addContainerListener(ContainerListener listener)
@@ -1970,11 +1970,30 @@ public class ContainerManager
         return c;
     }
 
+    /**
+     * @param container the container being created. May be null if we haven't actually created it yet
+     * @param parent the parent of the container being created. Used in case the container doesn't actually exist yet.
+     * @return the list of standard steps and any extra ones based on the container's FolderType
+     */
+    public static List<NavTree> getCreateContainerWizardSteps(@Nullable Container container, @NotNull Container parent)
+    {
+        List<NavTree> navTrail = new ArrayList<>();
+
+        boolean isProject = parent.isRoot();
+
+        navTrail.add(new NavTree(isProject ? "Create Project" : "Create Folder"));
+        navTrail.add(new NavTree("Users / Permissions"));
+        if(isProject)
+            navTrail.add(new NavTree("Project Settings"));
+        if(container != null)
+            navTrail.addAll(container.getFolderType().getExtraSetupSteps(container));
+        return navTrail;
+    }
 
     @TestTimeout(120)
     public static class TestCase extends Assert implements ContainerListener
     {
-        Map<Path, Container> _containers = new HashMap<Path, Container>();
+        Map<Path, Container> _containers = new HashMap<>();
         Container _testRoot = null;
 
         @Before
@@ -2028,7 +2047,7 @@ public class ContainerManager
         {
             int count = 20;
             Random random = new Random();
-            MultiMap<String, String> mm = new MultiHashMap<String, String>();
+            MultiMap<String, String> mm = new MultiHashMap<>();
 
             for (int i = 1; i <= count; i++)
             {
@@ -2106,7 +2125,7 @@ public class ContainerManager
         public void testFolderType()
         {
             // Test all folder types
-            List<FolderType> folderTypes = new ArrayList<FolderType>(ModuleLoader.getInstance().getFolderTypes());
+            List<FolderType> folderTypes = new ArrayList<>(ModuleLoader.getInstance().getFolderTypes());
             for (FolderType folderType : folderTypes)
             {
                 testOneFolderType(folderType);
@@ -2260,7 +2279,7 @@ public class ContainerManager
         @Override
         public ArrayList<Container> handleArrayList(ResultSet rs) throws SQLException
         {
-            ArrayList<Container> list = new ArrayList<Container>();
+            ArrayList<Container> list = new ArrayList<>();
             while (rs.next())
             {
                 list.add(handle(rs));

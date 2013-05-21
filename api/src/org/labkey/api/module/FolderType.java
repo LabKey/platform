@@ -177,5 +177,11 @@ public interface FolderType
      * Clear active portal page if there is one
      */
     public void clearActivePortalPage();
+
+    /**
+     * @return any additional setup steps for the container creation wizard.
+     */
+    @NotNull
+    public List<NavTree> getExtraSetupSteps(Container c);
 }
 
