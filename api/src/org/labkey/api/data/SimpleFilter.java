@@ -62,14 +62,19 @@ public class SimpleFilter implements Filter
 
     public static abstract class FilterClause
     {
-        protected boolean _urlClause = false;
+        protected boolean _needsTypeConversion = false;
         protected Object[] _paramVals = new Object[0];   // TODO: _paramVals, getter, and callers should all be @NotNull. Consider List<?> as well
         protected boolean _includeNull = false;
         protected boolean _negated = false;
 
-        public boolean isUrlClause()
+        /**
+         * Whether or not the value needs to be type converted before being sent to the database. This is important
+         * for things like URL-supplied filters, where the value is always going to be a string, while the database
+         * column may be an INT or DATE.
+         */
+        public boolean needsTypeConversion()
         {
-            return _urlClause;
+            return _needsTypeConversion;
         }
 
         public boolean isIncludeNull()
@@ -129,7 +134,7 @@ public class SimpleFilter implements Filter
                 sb.append(sqlf);
         }
 
-        @Deprecated // Use getFieldKeys() instead
+        @Deprecated /** Use getFieldKeys() instead */
         abstract public List<String> getColumnNames();
 
         abstract public List<FieldKey> getFieldKeys();
@@ -186,7 +191,7 @@ public class SimpleFilter implements Filter
 
             if (_includeNull != that._includeNull) return false;
             if (_negated != that._negated) return false;
-            if (_urlClause != that._urlClause) return false;
+            if (_needsTypeConversion != that._needsTypeConversion) return false;
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
             if (!Arrays.equals(_paramVals, that._paramVals)) return false;
             if (!getFieldKeys().equals(that.getFieldKeys())) return false;
@@ -197,7 +202,7 @@ public class SimpleFilter implements Filter
         @Override
         public int hashCode()
         {
-            int result = (_urlClause ? 1 : 0);
+            int result = (_needsTypeConversion ? 1 : 0);
             result = 31 * result + (_paramVals != null ? Arrays.hashCode(_paramVals) : 0);
             result = 31 * result + (_includeNull ? 1 : 0);
             result = 31 * result + (_negated ? 1 : 0);
@@ -213,9 +218,9 @@ public class SimpleFilter implements Filter
             Object value = xmlFilter.getValue();
             FieldKey fieldKey = FieldKey.fromString(xmlFilter.getColumn());
             FilterClause filterClause = compareType.createFilterClause(fieldKey, value);
-            // Because the value is coming in as a string in the XML, treat as a URL-clause so that we do type
+            // Because the value is coming in as a string in the XML, remember that we need to do type
             // conversion on it later when we know the actual column type
-            filterClause._urlClause = true;
+            filterClause._needsTypeConversion = true;
             return filterClause;
         }
 
@@ -247,7 +252,7 @@ public class SimpleFilter implements Filter
 
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
-            _urlClause = false;
+            _needsTypeConversion = false;
             _fragment = fragment;
             if (paramVals == null)
             {
@@ -549,7 +554,7 @@ public class SimpleFilter implements Filter
         {
             super(fieldKey, params);
 
-            _urlClause = urlClause;
+            _needsTypeConversion = urlClause;
             _negated = negated;
         }
 
@@ -593,7 +598,6 @@ public class SimpleFilter implements Filter
             else
                 sb.append(" IS ONE OF (");
 
-            //TODO: if number of values > 10, don't show each one
             if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
             {
                 sb.append("too many values to display)");
@@ -691,7 +695,7 @@ public class SimpleFilter implements Filter
 
             Object[] convertedParams;
 
-            if (null == colInfo || !isUrlClause())
+            if (null == colInfo || !needsTypeConversion())
             {
                 convertedParams = params;
             }
@@ -781,7 +785,7 @@ public class SimpleFilter implements Filter
         {
             super(fieldKey, params);
 
-            _urlClause = urlClause;
+            _needsTypeConversion = urlClause;
             _fieldKey = fieldKey;
             _negated = negated;
         }
@@ -795,12 +799,9 @@ public class SimpleFilter implements Filter
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            //TODO: if nmber of values > 10, dont show each one
             sb.append(formatter.format(getFieldKey()));
-            sb.append(" " +
-                    (isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
+            sb.append(" ").append(isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF (");
 
-            //TODO: if number of values > 10, dont show each one
             if(getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
             {
                 sb.append("too many values to display)");
@@ -818,7 +819,7 @@ public class SimpleFilter implements Filter
             }
 
             if(isIncludeNull())
-                sb.append(sep + "BLANK");
+                sb.append(sep).append("BLANK");
 
             sb.append(")");
         }
@@ -991,7 +992,7 @@ public class SimpleFilter implements Filter
                 try
                 {
                     FilterClause fc = type.createFilterClause(fieldKey, param);
-                    fc._urlClause = true;
+                    fc._needsTypeConversion = true;
                     _clauses.add(fc);
                 }
                 catch (ConversionException e)

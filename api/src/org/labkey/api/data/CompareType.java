@@ -703,7 +703,7 @@ public enum CompareType
             String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
 
             SQLFragment fragment = new SQLFragment(toWhereClause(dialect, alias));
-            if (colInfo == null || !isUrlClause() || getParamVals() == null)
+            if (colInfo == null || !needsTypeConversion() || getParamVals() == null)
             {
                 fragment.addAll(getParamVals());
             }
@@ -1192,7 +1192,7 @@ public enum CompareType
         {
             ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
-            if (isUrlClause())
+            if (needsTypeConversion())
             {
                 Object value = convertParamValue(colInfo, getParamVals()[0]);
                 if (isNull(value))
@@ -1219,7 +1219,7 @@ public enum CompareType
             ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
             Object convertedValue = convertParamValue(colInfo, getParamVals()[0]);
-            if (isUrlClause() && isNull(convertedValue))
+            if (needsTypeConversion() && isNull(convertedValue))
             {
                 // Flip to treat this as an IS NOT NULL comparison request
                 return NONBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);

@@ -90,7 +90,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     // Returns a map from sample wellgroup name to the properties of that sample.
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
-        Map<String, Map<DomainProperty, String>> result = new HashMap<String, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, String>> result = new HashMap<>();
         Map<String, Map<DomainProperty, String>> sampleProperties = getSampleProperties(request);
         if (sampleProperties == null || sampleProperties.isEmpty())
             throw new ExperimentException("Sample metadata must be provided.");
@@ -135,8 +135,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         }
         finally
         {
-            try { if (fos != null) fos.close(); } catch (IOException e) {}
-            try { if (is != null) is.close(); } catch (IOException e) {}
+            try { if (fos != null) fos.close(); } catch (IOException ignored) {}
+            try { if (is != null) is.close(); } catch (IOException ignored) {}
         }
         return _metadataFile;
     }
@@ -149,9 +149,9 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             return false;
         if (first.length != second.length)
             return false;
-        Set<DomainProperty> firstSet = new HashSet<DomainProperty>();
+        Set<DomainProperty> firstSet = new HashSet<>();
         firstSet.addAll(Arrays.asList(first));
-        Set<DomainProperty> secondSet = new HashSet<DomainProperty>();
+        Set<DomainProperty> secondSet = new HashSet<>();
         secondSet.addAll(Arrays.asList(second));
         return firstSet.equals(secondSet);
     }
@@ -182,11 +182,11 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         if (metadataFile == null)
             return null;
 
-        Map<String, Map<DomainProperty, String>> allProperties = new HashMap<String, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, String>> allProperties = new HashMap<>();
         try
         {
             List<WellGroupTemplate> sampleGroups = getSampleWellGroups();
-            Map<String, WellGroupTemplate> sampleGroupNames = new HashMap<String, WellGroupTemplate>(sampleGroups.size());
+            Map<String, WellGroupTemplate> sampleGroupNames = new HashMap<>(sampleGroups.size());
             for (WellGroupTemplate sampleGroup : sampleGroups)
                 sampleGroupNames.put(sampleGroup.getName(), sampleGroup);
 
@@ -216,10 +216,10 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                 }
 
 
-                Map<DomainProperty, String> sampleProperties = allProperties.get(wellgroup);
+                Map<DomainProperty, String> sampleProperties = allProperties.get(wellgroup.getName());
                 if (sampleProperties == null)
                 {
-                    sampleProperties = new HashMap<DomainProperty, String>();
+                    sampleProperties = new HashMap<>();
                     allProperties.put(wellgroup.getName(), sampleProperties);
                 }
                 else
@@ -272,10 +272,10 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         if (errorReshow)
             reshowFile = getMetadataFile();
         else if (defaultValueContext instanceof PlateUploadForm &&
-                ((PlateUploadForm) defaultValueContext).getReRunId() != null &&
+                defaultValueContext.getReRunId() != null &&
                 defaultValueContext.getProvider() instanceof PlateBasedAssayProvider)
         {
-            int reRunId = ((PlateUploadForm) defaultValueContext).getReRunId().intValue();
+            int reRunId = defaultValueContext.getReRunId().intValue();
             reshowFile = ((PlateBasedAssayProvider) defaultValueContext.getProvider()).getSampleMetadataFile(defaultValueContext.getContainer(), reRunId);
         }
         else

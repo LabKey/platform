@@ -23,12 +23,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ContainerFilterable extends TableInfo
 {
-    public boolean supportsContainerFilter();
-
     public void setContainerFilter(@NotNull ContainerFilter containerFilter);
-
-    @NotNull
-    public ContainerFilter getContainerFilter();
 
     public boolean hasDefaultContainerFilter();
 }
