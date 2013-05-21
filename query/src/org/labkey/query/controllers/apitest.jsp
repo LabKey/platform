@@ -57,6 +57,51 @@
     }
 </style>
 
+
+<div id="lblStatus" class="status">Enter a Url in the "Get Url" box and click "Get"</div>
+<table width="100%">
+    <tr>
+        <td width="1%">Get&nbsp;Url:</td>
+        <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
+                               value="" onkeydown="onGetUrlKeyDown(event)"/>
+        </td>
+        <td width="1%">
+            <input type="button" value="Get" id="btnGet" onclick="getUrl()"/>
+        </td>
+    </tr>
+    <tr>
+        <td width="1%">Post&nbsp;Url:</td>
+        <td width="98%"><input type="text" id="txtUrlPost" style="width:100%"
+                               value=""/>
+        </td>
+        <td width="1%">
+            <input type="button" value="Post" id="btnPost" onclick="postUrl()"/>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3" width="100%">Post Body:<br/><textarea id="txtPost" rows="10" cols="80" style="width:100%"></textarea></td>
+    </tr>
+</table>
+<table width="100%">
+    <tr>
+        <td>Response size: <span id="respSize" /></td>
+    </tr>
+    <tr>
+        <td>Response time: <span id="respTime" /></td>
+    </tr>
+    <tr>
+        <td>Response body:</td>
+    </tr>
+    <tr>
+        <td width="100%"><pre id="lblResponse" class="response">&nbsp;</pre></td>
+    </tr>
+    <tr>
+        <td width="100%">
+            <input type="button" id="btnEval" value="Eval" onclick="evalResponse()"/>&nbsp;
+            <input type="button" id="btnSaveTest" value="Record Test" onclick="recordTest()"/></td>
+    </tr>
+</table>
+
 <script type="text/javascript">
     var startTime;
     var responseJSON;
@@ -311,47 +356,7 @@
             getUrl();
     }
 
+    Ext4.onReady(function() {
+        Ext4.EventManager.on('txtPost', 'keydown', handleTabsInTextArea);
+    });
 </script>
-<div id="lblStatus" class="status">Enter a Url in the "Get Url" box and click "Get"</div>
-<table width="100%">
-    <tr>
-        <td width="1%">Get&nbsp;Url:</td>
-        <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
-                               value="" onkeydown="onGetUrlKeyDown(event)"/>
-        </td>
-        <td width="1%">
-            <input type="button" value="Get" id="btnGet" onclick="getUrl()"/>
-        </td>
-    </tr>
-    <tr>
-        <td width="1%">Post&nbsp;Url:</td>
-        <td width="98%"><input type="text" id="txtUrlPost" style="width:100%"
-                               value=""/>
-        </td>
-        <td width="1%">
-            <input type="button" value="Post" id="btnPost" onclick="postUrl()"/>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="3" width="100%">Post Body:<br/><textarea id="txtPost" rows="10" cols="80" style="width:100%"></textarea></td>
-    </tr>
-</table>
-<table width="100%">
-    <tr>
-        <td>Response size: <span id="respSize" /></td>
-    </tr>
-    <tr>
-        <td>Response time: <span id="respTime" /></td>
-    </tr>
-    <tr>
-        <td>Response body:</td>
-    </tr>
-    <tr>
-        <td width="100%"><pre id="lblResponse" class="response">&nbsp;</pre></td>
-    </tr>
-    <tr>
-        <td width="100%">
-            <input type="button" id="btnEval" value="Eval" onclick="evalResponse()"/>&nbsp;
-            <input type="button" id="btnSaveTest" value="Record Test" onclick="recordTest()"/></td>
-    </tr>
-</table>
