@@ -3134,7 +3134,10 @@ study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DatasetImporter.java -text
+study/src/org/labkey/study/importer/DefaultSpecimenImportStrategyFactory.java -text
+study/src/org/labkey/study/importer/FileSystemSpecimenImportFile.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
+study/src/org/labkey/study/importer/IteratorSpecimenImportFile.java -text
 study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/MissingValueImporterFactory.java -text
 study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
@@ -3147,8 +3150,10 @@ study/src/org/labkey/study/importer/SchemaReader.java -text
 study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
+study/src/org/labkey/study/importer/SpecimenImportFile.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
+study/src/org/labkey/study/importer/StandardSpecimenImportStrategy.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text

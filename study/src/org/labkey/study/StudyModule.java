@@ -114,6 +114,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
@@ -337,6 +338,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
+        SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)
@@ -507,7 +509,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/dataViews.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/dataViews.jsp", webPart);
             view.setTitle("Data Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
@@ -562,12 +564,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/studySchedule.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
+            Study study = StudyManager.getInstance().getStudy(c);
             String timepointMenuName;
-            if (StudyManager.getInstance().getStudy(c) != null && StudyManager.getInstance().getStudy(c).getTimepointType() == TimepointType.DATE)
+
+            if (study != null && study.getTimepointType() == TimepointType.DATE)
             {
                 timepointMenuName = "Manage Timepoints";
             }
@@ -576,7 +580,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 timepointMenuName = "Manage Visits";
             }
 
-            if(c.hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
+            if (c.hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
             {
                 NavTree menu = new NavTree();
                 menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));

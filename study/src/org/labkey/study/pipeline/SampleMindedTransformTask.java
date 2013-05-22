@@ -98,7 +98,7 @@ public class SampleMindedTransformTask
 
     static
     {
-        Map<String, Integer> primaryTypes = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> primaryTypes = new LinkedHashMap<>();
         primaryTypes.put("BAL", primaryTypes.size() + 1);
         primaryTypes.put("Blood", primaryTypes.size() + 1);
         primaryTypes.put("Nasal Swab", primaryTypes.size() + 1);
@@ -107,7 +107,7 @@ public class SampleMindedTransformTask
         primaryTypes.put("unknown", primaryTypes.size() + 1);
         STANDARD_PRIMARY_TYPE_IDS = Collections.unmodifiableMap(primaryTypes);
 
-        Map<String, String> mappings = new HashMap<String, String>();
+        Map<String, String> mappings = new HashMap<>();
         mappings.put("BAL", "BAL");
         mappings.put("BAL Pellet", "BAL");
         mappings.put("BAL Supernatant", "BAL");
@@ -123,7 +123,7 @@ public class SampleMindedTransformTask
         mappings.put("Urine Supernatant", "Urine");
         DERIVATIVE_PRIMARY_MAPPINGS = Collections.unmodifiableMap(mappings);
 
-        Map<String, Integer> derivativeTypes = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> derivativeTypes = new LinkedHashMap<>();
         derivativeTypes.put("BAL", derivativeTypes.size() + 1);
         derivativeTypes.put("BAL Pellet", derivativeTypes.size() + 1);
         derivativeTypes.put("BAL Supernatant", derivativeTypes.size() + 1);
@@ -142,9 +142,9 @@ public class SampleMindedTransformTask
 
 
     private final PipelineJob _job;
-    private final Map<String, Integer> _labIds = new LinkedHashMap<String, Integer>();
-    private final Map<String, Integer> _primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
-    private final Map<String, Integer> _derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
+    private final Map<String, Integer> _labIds = new LinkedHashMap<>();
+    private final Map<String, Integer> _primaryIds = new LinkedHashMap<>(STANDARD_PRIMARY_TYPE_IDS);
+    private final Map<String, Integer> _derivativeIds = new LinkedHashMap<>(STANDARD_DERIVATIVE_TYPE_IDS);
     boolean _validate = true;
 
 
@@ -214,14 +214,9 @@ public class SampleMindedTransformTask
             File labsFile = new File(input.getParent(), "labs.txt");
             if (NetworkDrive.exists(labsFile) && labsFile.isFile())
             {
-                FileInputStream fIn = new FileInputStream(labsFile);
-                try
+                try (FileInputStream fIn = new FileInputStream(labsFile))
                 {
                     parseLabs(_labIds, new BufferedReader(new InputStreamReader(fIn)));
-                }
-                finally
-                {
-                    try { fIn.close(); } catch (IOException ignored) {}
                 }
                 info("Parsed " + _labIds.size() + " labs from " + labsFile);
             }
@@ -240,20 +235,14 @@ public class SampleMindedTransformTask
                 error("There are no rows of data");
 
             // Create a ZIP archive with the appropriate TSVs
-            ZipOutputStream zOut = null;
-            try
+            try (ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output)))
             {
-                zOut = new ZipOutputStream(new FileOutputStream(output));
                 writeTSV(zOut, outputRows, "specimens");
 
                 writeLabs(_labIds, zOut);
                 writePrimaries(_primaryIds, zOut);
                 writeDerivatives(_derivativeIds, zOut);
                 writeAdditives(zOut);
-            }
-            finally
-            {
-                if (zOut != null) { try { zOut.close(); } catch (IOException ignored) {} }
             }
         }
         catch (IOException e)
@@ -269,8 +258,8 @@ public class SampleMindedTransformTask
     )
             throws IOException
     {
-        List<Map<String, Object>> outputRows = new ArrayList<Map<String, Object>>(inputRows.size());
-        Set<String> hashes = new HashSet<String>();
+        List<Map<String, Object>> outputRows = new ArrayList<>(inputRows.size());
+        Set<String> hashes = new HashSet<>();
         int rowIndex = 0;
         
         // Crank through all of the input rows
@@ -336,7 +325,7 @@ public class SampleMindedTransformTask
 
     private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
-        Map<String, Object> outputRow = new CaseInsensitiveHashMap<Object>(inputRow);
+        Map<String, Object> outputRow = new CaseInsensitiveHashMap<>(inputRow);
         inputRow = null;
 
         toDate("CollectionDate", outputRow);
@@ -599,7 +588,7 @@ public class SampleMindedTransformTask
 
                 SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
 
-                List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> inputRows = new ArrayList<>();
                 MapDataIterator di = DataIteratorUtil.wrapMap(source, false);
                 while (di.next())
                     inputRows.add(di.getMap());
@@ -638,8 +627,6 @@ public class SampleMindedTransformTask
             }
         }
     }
-
-
 
 
     private String getNonNullValue(Map<String, Object> inputRow, String name)
@@ -737,24 +724,19 @@ public class SampleMindedTransformTask
     {
         file.putNextEntry(new ZipEntry("additives.tsv"));
 
-        PrintWriter writer = new PrintWriter(file);
-        try
+        try (PrintWriter writer = new PrintWriter(file))
         {
             writer.write("# additives\n");
             writer.write("additive_id\tldms_additive_code\tlabware_additive_code\tadditive\n");
-        }
-        finally
-        {
-            writer.close();
         }
     }
 
     private void writePrimaries(Map<String, Integer> primaryIds, ZipOutputStream file) throws IOException
     {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> rows = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : primaryIds.entrySet())
         {
-            Map<String, Object> row = new HashMap<String, Object>();
+            Map<String, Object> row = new HashMap<>();
             // We know the id and the type name
             row.put("primary_type_id", entry.getValue());
             row.put("primary_type", entry.getKey());
@@ -769,10 +751,10 @@ public class SampleMindedTransformTask
 
     private void writeDerivatives(Map<String, Integer> derivatives, ZipOutputStream file) throws IOException
     {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> rows = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : derivatives.entrySet())
         {
-            Map<String, Object> row = new HashMap<String, Object>();
+            Map<String, Object> row = new HashMap<>();
             // We know the id and the name
             row.put("derivative_id", entry.getValue());
             row.put("derivative", entry.getKey());
@@ -787,10 +769,10 @@ public class SampleMindedTransformTask
 
     private void writeLabs(Map<String, Integer> labIds, ZipOutputStream file) throws IOException
     {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> rows = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : labIds.entrySet())
         {
-            Map<String, Object> row = new HashMap<String, Object>();
+            Map<String, Object> row = new HashMap<>();
             // We know the id and the name
             row.put("lab_id", entry.getValue());
             row.put("lab_name", entry.getKey());
@@ -825,7 +807,7 @@ public class SampleMindedTransformTask
         @Test
         public void testParseLabsTSV() throws IOException
         {
-            Map<String, Integer> labs = new HashMap<String, Integer>();
+            Map<String, Integer> labs = new HashMap<>();
             _task.parseLabs(labs, new BufferedReader(new StringReader("Location Number\tLocation Name\n501\tLab AA\n502\tLab BB\n503\tLab CC")));
             assertEquals("Wrong number of labs", 3, labs.size());
             assertEquals("Wrong lab name", 501, labs.get("Lab AA").intValue());
@@ -834,12 +816,12 @@ public class SampleMindedTransformTask
         @Test
         public void testLabLookup() throws IOException
         {
-            Map<String, Integer> labs = new HashMap<String, Integer>();
+            Map<String, Integer> labs = new HashMap<>();
             labs.put("TestLabA", 501);
             labs.put("TestLabB", 502);
 
             // Try a row that uses the lab's ID
-            Map<String, Object> row1 = new ArrayListMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<>();
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "May 5, 2012");
@@ -852,7 +834,7 @@ public class SampleMindedTransformTask
             assertEquals(502, outputRow1.get("lab_id"));
 
             // Try another row that uses the lab's name
-            Map<String, Object> row2 = new ArrayListMap<String, Object>();
+            Map<String, Object> row2 = new ArrayListMap<>();
             row2.put("participant", "ptid1");
             row2.put("barcode", "barcode-1");
             row2.put("collectiondate", "May 5, 2012");
@@ -868,7 +850,7 @@ public class SampleMindedTransformTask
         @Test
         public void testParseWideLabsTSV() throws IOException
         {
-            Map<String, Integer> labs = new HashMap<String, Integer>();
+            Map<String, Integer> labs = new HashMap<>();
             _task.parseLabs(labs, new BufferedReader(new StringReader("# labs\t\t\t\t\t\t\t\t\n" +
                     "lab_id\tldms_lab_code\tlabware_lab_code\tlab_name\tlab_upload_code\tis_sal\tis_repository\tis_clinic\tis_endpoint\n" +
                     "23\t\t\tFAKE (12)\t\t\t\t\t\n" +
@@ -885,9 +867,9 @@ public class SampleMindedTransformTask
         @Test
         public void testDeduplication() throws IOException
         {
-            ArrayListMap<String,Object> template = new ArrayListMap<String,Object>();
+            ArrayListMap<String,Object> template = new ArrayListMap<>();
 
-            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> inputRows = new ArrayList<>();
             ArrayListMap<String, Object> row1 = new ArrayListMap(template.getFindMap());
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
@@ -910,7 +892,7 @@ public class SampleMindedTransformTask
         @Test
         public void testInvalidBarcodeDetection()
         {
-            Map<String, Object> row1 = new ArrayListMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<>();
             row1.put("participant", "ptid1");
             row1.put("collectiondate", "May 5, 2012");
             row1.put("visitname", "Visit 01");
@@ -948,14 +930,14 @@ public class SampleMindedTransformTask
                 oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
 
-            Map<String, Object> row1 = new ArrayListMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<>();
             assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
         }
 
         @Test
         public void testCollectionDateBucketing()
         {
-            Map<String, Object> row = new ArrayListMap<String, Object>();
+            Map<String, Object> row = new ArrayListMap<>();
             row.put("participant", "ptid1");
             row.put("barcode", "barcode");
             String date = "May 5, 2012";
@@ -988,7 +970,7 @@ public class SampleMindedTransformTask
                 oneOf(_job).warn("Skipping data row missing 'collectiondate' value, row number 1");
             }});
 
-            Map<String, Object> row1 = new ArrayListMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<>();
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "");
@@ -1000,10 +982,10 @@ public class SampleMindedTransformTask
         @Test
         public void testPrimaryAndDerivatives() throws IOException
         {
-            ArrayListMap<String,Object> template = new ArrayListMap<String,Object>();
-            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+            ArrayListMap<String,Object> template = new ArrayListMap<>();
+            List<Map<String, Object>> inputRows = new ArrayList<>();
 
-            ArrayListMap<String,Object> row1 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row1 = new ArrayListMap<>(template.getFindMap());
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "May 5 2001");
@@ -1011,32 +993,32 @@ public class SampleMindedTransformTask
             row1.put("specimentype", "PBMC");
             inputRows.add(row1);
 
-            ArrayListMap<String,Object> row2 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row2 = new ArrayListMap<>(template.getFindMap());
             row2.putAll(row1);
             row2.put("specimentype", "Blood");
             inputRows.add(row2);
 
-            ArrayListMap<String,Object> row3 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row3 = new ArrayListMap<>(template.getFindMap());
             row3.putAll(row1);
             row3.put("specimentype", "NewType!");
             inputRows.add(row3);
 
-            ArrayListMap<String,Object> row4 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row4 = new ArrayListMap<>(template.getFindMap());
             row4.putAll(row3);
             row4.put("participant", "ptid2");
             inputRows.add(row4);
 
-            ArrayListMap<String,Object> row5 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row5 = new ArrayListMap<>(template.getFindMap());
             row5.putAll(row3);
             row5.put("specimentype", "Tissue Slide");
             inputRows.add(row5);
 
-            ArrayListMap<String,Object> row6 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row6 = new ArrayListMap<>(template.getFindMap());
             row6.putAll(row3);
             row6.put("specimentype", "Urine Supernatant");
             inputRows.add(row6);
 
-            ArrayListMap<String,Object> row7 = new ArrayListMap<String, Object>(template.getFindMap());
+            ArrayListMap<String,Object> row7 = new ArrayListMap<>(template.getFindMap());
             row7.putAll(row3);
             row7.put("specimentype", "Urine Pellet");
             inputRows.add(row7);

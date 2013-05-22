@@ -19,25 +19,34 @@ package org.labkey.study;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.controllers.samples.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.controllers.samples.AutoCompleteAction;
 
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: brittp
@@ -46,6 +55,8 @@ import java.util.*;
  */
 public class SpecimenServiceImpl implements SpecimenService.Service
 {
+    private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
+
     private class StudyParticipantVisit implements ParticipantVisit
     {
         private Container _studyContainer;
@@ -145,7 +156,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
             Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
             if (matches.length > 0)
             {
-                Set<ParticipantVisit> result = new HashSet<ParticipantVisit>();
+                Set<ParticipantVisit> result = new HashSet<>();
                 for (Specimen match : matches)
                 {
                     result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
@@ -164,7 +175,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
             Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
             if (matches.length > 0)
             {
-                Set<ParticipantVisit> result = new HashSet<ParticipantVisit>();
+                Set<ParticipantVisit> result = new HashSet<>();
                 for (Specimen match : matches)
                 {
                     result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
@@ -191,24 +202,19 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM " +
             StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
 
-        Set<Pair<String, Date>> sampleInfo = new HashSet<Pair<String, Date>>();
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-            while (rs.next())
+        final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String participantId = rs.getString("PTID");
                 Date drawDate = rs.getDate("DrawTimestamp");
                 if (participantId != null && drawDate != null)
-                sampleInfo.add(new Pair<String, Date>(participantId, drawDate));
+                    sampleInfo.add(new Pair<>(participantId, drawDate));
             }
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) {}
-        }
+        });
+
         return sampleInfo;
     }
 
@@ -217,24 +223,19 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM " +
             StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
 
-        Set<Pair<String, Double>> sampleInfo = new HashSet<Pair<String, Double>>();
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-            while (rs.next())
+        final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String participantId = rs.getString("PTID");
-                Double visit = rs.getDouble("VisitValue");
-                if (participantId != null && visit != null)
-                sampleInfo.add(new Pair<String, Double>(participantId, visit));
+                double visit = rs.getDouble("VisitValue");    // Never returns null
+                if (participantId != null)
+                    sampleInfo.add(new Pair<>(participantId, visit));
             }
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) {}
-        }
+        });
+
         return sampleInfo;
     }
 
@@ -250,5 +251,18 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
         rows = importer.fixupSpecimenRows(rows);
         importer.process(user, container, rows, merge);
+    }
+
+    @Override
+    public void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory)
+    {
+        // Insert at the start (we generally want reverse dependency order)
+        _importStrategyFactories.add(0, factory);
+    }
+
+    @Override
+    public Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories()
+    {
+        return _importStrategyFactories;
     }
 }
