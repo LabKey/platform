@@ -213,7 +213,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static final FilenameFilter moduleReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
         {
-            return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION) ||
+            return ModuleRReportDescriptor.accept(name) ||
                    name.toLowerCase().endsWith(ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
         }
     };

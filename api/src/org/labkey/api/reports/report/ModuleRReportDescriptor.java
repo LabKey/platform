@@ -44,6 +44,8 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 {
     public static final String TYPE = "moduleRReportDescriptor";
     public static final String FILE_EXTENSION = ".r";
+    public static final String KNITR_MD_EXTENSION = ".rmd";
+    public static final String KNITR_HTML_EXTENSION = ".rhtml";
 
     private Module _module;
     private Path _reportPath;
@@ -58,11 +60,8 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         _sourceFile = sourceFile;
         _reportPath = reportPath;
 
-        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
-                FILE_EXTENSION.length());
-
         setReportKey(reportKey);
-        setReportName(name);
+        setReportName(makeReportName(sourceFile));
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
         Resource dir = sourceFile.parent();
@@ -73,6 +72,33 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public String getDefaultReportType(String reportKey)
     {
         return RReport.TYPE;
+    }
+
+    public static boolean accept(String name)
+    {
+        return (name.endsWith(FILE_EXTENSION) ||
+                name.endsWith(KNITR_MD_EXTENSION) ||
+                name.endsWith(KNITR_HTML_EXTENSION));
+    }
+
+    public String makeReportName(Resource sourceFile)
+    {
+        String ext = FILE_EXTENSION;
+        String lname = sourceFile.getName().toLowerCase();
+
+        if (lname.endsWith(KNITR_MD_EXTENSION))
+        {
+            setKnitrFormat(KnitrFormat.Markdown);
+            ext = KNITR_MD_EXTENSION;
+        }
+        else
+        if (lname.endsWith(KNITR_HTML_EXTENSION))
+        {
+            setKnitrFormat(KnitrFormat.Html);
+            ext = KNITR_HTML_EXTENSION;
+        }
+
+        return sourceFile.getName().substring(0, lname.length() - ext.length());
     }
 
     @Override

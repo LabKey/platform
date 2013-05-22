@@ -82,22 +82,27 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         {
             // write out the script file to disk using the first extension as the default
             File scriptFile = writeScriptFile(script, context, extensions);
-            String[] params = formatCommand(scriptFile, context);
-            ProcessBuilder pb = new ProcessBuilder(params);
-            pb = pb.directory(getWorkingDir(context));
-
-            StringBuffer output = new StringBuffer();
-
-            int exitCode = runProcess(context, pb, output);
-            if (exitCode != 0)
-            {
-                throw new ScriptException("An error occurred when running the script (exit code: " + exitCode + ").\n" + output.toString());
-            }
-            else
-                return output.toString();
+            return eval(scriptFile, context);
         }
         else
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
+    }
+
+    protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
+    {
+        String[] params = formatCommand(scriptFile, context);
+        ProcessBuilder pb = new ProcessBuilder(params);
+        pb = pb.directory(getWorkingDir(context));
+
+        StringBuffer output = new StringBuffer();
+
+        int exitCode = runProcess(context, pb, output);
+        if (exitCode != 0)
+        {
+            throw new ScriptException("An error occurred when running the script (exit code: " + exitCode + ").\n" + output.toString());
+        }
+        else
+            return output.toString();
     }
 
     public Object eval(Reader reader, ScriptContext context) throws ScriptException

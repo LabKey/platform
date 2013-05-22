@@ -23,11 +23,14 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.RserveScriptEngine;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
@@ -43,8 +46,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewContext;
 
+import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +66,8 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     // consider:  move these Rserve specific items to a separate RserveRReport class
     public static final String DEFAULT_R_MACHINE = "127.0.0.1";
     public static final int DEFAULT_R_PORT = 6311;
+
+    private RReportDescriptor.KnitrFormat _knitrFormat = null;
 
     public String getType()
     {
@@ -159,9 +167,56 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return false;
     }
 
+    public RReportDescriptor.KnitrFormat getKnitrFormat()
+    {
+        if (null == _knitrFormat)
+        {
+            _knitrFormat = RReportDescriptor.KnitrFormat.None;
+            ReportDescriptor d = getDescriptor();
+            Object v = ReportPropsManager.get().getPropertyValue(d.getEntityId(), d.getResourceContainer(), RReportDescriptor.Prop.knitrFormat.name());
+            if (null == v)
+            {
+                // if we don't have the property, then grab the value form the RReportDescriptor.  This may have been
+                // set by a module report
+                if (d instanceof RReportDescriptor)
+                    _knitrFormat = ((RReportDescriptor)d).getKnitrFormat();
+            }
+            else
+            {
+                _knitrFormat = RReportDescriptor.getKnitrFormatFromString(v.toString());
+            }
+        }
+
+        return _knitrFormat;
+    }
+
+   protected String getKnitrBeginChunk()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
+            return "<!--begin.rcode labkey, echo=FALSE\n";
+
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
+            return "```{r labkey, echo=FALSE}\n";
+
+       return "";
+    }
+
+    protected String getKnitrEndChunk()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
+            return "end.rcode-->\n";
+
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
+            return "```\n";
+
+        return "";
+    }
+
     protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
     {
         StringBuilder labkey = new StringBuilder();
+
+        labkey.append(getKnitrBeginChunk());
 
         if (inputFile != null && inputFile.exists())
         {
@@ -240,6 +295,8 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
             labkey.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
             labkey.append("\"\n");
         }
+
+        labkey.append(getKnitrEndChunk());
 
         return labkey.toString();
     }
@@ -351,6 +408,48 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         }
 
         return script;
+    }
+    @Override
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    {
+        ScriptEngine engine = getScriptEngine();
+        if (engine != null)
+        {
+            try
+            {
+                Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
+
+                Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
+
+                if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
+                {
+                    saveConsoleOutput(output, outputSubst);
+                }
+                else
+                {
+                    File knitrOutput = new File((String)bindings.get(RScriptEngine.KNITR_OUTPUT));
+                    saveKnitrOutput(knitrOutput, outputSubst);
+                }
+
+                return output != null ? output.toString() : "";
+            }
+            catch(Exception e)
+            {
+                throw new ScriptException(e);
+            }
+        }
+
+        throw new ScriptException("A script engine implementation was not found for the specified report");
+    }
+
+    private void saveKnitrOutput(File knitrOutput, List<ParamReplacement> outputSubst) throws Exception
+    {
+        KnitrOutput param = new KnitrOutput();
+        param.setName("Knitr");
+        param.setReport(this);
+        param.setFile(knitrOutput);
+        outputSubst.add(param);
     }
 
     private boolean validateSharedPermissions(ViewContext context, Report report)

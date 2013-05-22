@@ -24,6 +24,40 @@ package org.labkey.api.reports.report;
 public class RReportDescriptor extends ScriptReportDescriptor
 {
     public static final String TYPE = "rReportDescriptor";
+    private KnitrFormat _knitrFormat = KnitrFormat.None;
+
+    public enum KnitrFormat
+    {
+        None,
+        Html,
+        Markdown,
+    }
+
+    public enum Prop implements ReportProperty
+    {
+        knitrFormat
+    }
+
+    public static KnitrFormat getKnitrFormatFromString(String s)
+    {
+        if (s.equalsIgnoreCase(KnitrFormat.Html.name()))
+            return KnitrFormat.Html;
+
+        if (s.equalsIgnoreCase(KnitrFormat.Markdown.name()))
+            return KnitrFormat.Markdown;
+
+        return KnitrFormat.None;
+    }
+
+    public KnitrFormat getKnitrFormat()
+    {
+        return _knitrFormat;
+    }
+
+    public void setKnitrFormat(KnitrFormat knitrFormat)
+    {
+        _knitrFormat = knitrFormat;
+    }
 
     public RReportDescriptor()
     {

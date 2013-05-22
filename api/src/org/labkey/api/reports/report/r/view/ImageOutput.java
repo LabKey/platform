@@ -52,6 +52,11 @@ public class ImageOutput extends AbstractParamReplacement
         super(ID);
     }
 
+    public ImageOutput(String id)
+    {
+        super(id);
+    }
+
     public File convertSubstitution(File directory) throws Exception
     {
         if (directory != null)

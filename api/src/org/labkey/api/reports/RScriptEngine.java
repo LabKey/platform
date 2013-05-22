@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2008-2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.reports;
+
+import org.labkey.api.reports.report.RReportDescriptor;
+
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+/*
+* User: dax
+* Date: May 15, 2013
+* Time: 4:33:23 PM
+*/
+public class RScriptEngine extends ExternalScriptEngine
+{
+    public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
+    public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
+    private RReportDescriptor.KnitrFormat _knitrFormat;
+
+    public RScriptEngine(ExternalScriptEngineDefinition def)
+    {
+        super(def);
+    }
+
+    @Override
+    public ScriptEngineFactory getFactory()
+    {
+        return new RScriptEngineFactory(_def);
+    }
+
+    @Override
+    public Object eval(String script, ScriptContext context) throws ScriptException
+    {
+        List<String> extensions = getFactory().getExtensions();
+
+        if (!extensions.isEmpty())
+        {
+            File scriptFile = null;
+            if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
+            {
+                //
+                // If we are using Knitr then we need to write a new R script that calls knitr and passes
+                // the input R script into it
+                //
+
+                // write the incoming script as the input of the preprocessor {ex: script.rhtml}
+                List<String> preprocessExtensions = Arrays.asList(new String[] {getKnitrExtension(context, extensions)});
+                scriptFile = writeScriptFile(script, context, preprocessExtensions);
+
+                // write a new script (the acutal .R script to be run) as the preprocessing script and use
+                // this as the script file we pass to the script engine
+                String preprocessScript = createKnitrScript(context, scriptFile);
+                scriptFile = writeScriptFile(preprocessScript, context, extensions);
+            }
+            else
+            {
+                scriptFile = writeScriptFile(script, context, extensions);
+            }
+
+            return eval(scriptFile, context);
+
+        }
+        else
+            throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
+    }
+
+    protected String getKnitrExtension(ScriptContext context, List<String> extensions)
+    {
+        // consider: make a format class and then just override the specifid html, md, functions
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Html)
+            return extensions.get(0) + "html";
+
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)
+            return extensions.get(0) + "md";
+
+        return null;
+    }
+
+    protected RReportDescriptor.KnitrFormat getKnitrFormat(ScriptContext context)
+    {
+        if (null == _knitrFormat)
+        {
+            Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+
+            if (bindings.containsKey(KNITR_FORMAT))
+                _knitrFormat = ((RReportDescriptor.KnitrFormat)bindings.get(KNITR_FORMAT));
+            else
+                _knitrFormat = RReportDescriptor.KnitrFormat.None;
+        }
+
+        return _knitrFormat;
+    }
+
+    protected void setKnitrOutput(ScriptContext context, String value)
+    {
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        bindings.put(KNITR_OUTPUT, value);
+    }
+
+    protected String createKnitrScript(ScriptContext context, File inputScript)
+    {
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
+            return null;
+
+        // consider adding 'quiet mode' if we don't want knitr processing output
+        // or have a knitr options argument for the R script engine definition
+        StringBuilder sb = new StringBuilder();
+        sb.append("library(knitr)\n");
+
+        //
+        // setup a knitr hook to translate the knitr-generated filename to a parameter
+        // replacement token so that we can fixup the url to the file
+        //
+        sb.append("labkey.makeHref <- function(filename)\n");
+        sb.append("{ return (paste(\"${hrefout:\", filename, \"}\", sep=\"\")) }\n");
+        sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
+
+        //
+        // if the format is markdown then we use a knit2html to combine kint and markdownToHtml functions
+        // and return html to the user
+        //
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)
+        {
+           sb.append("knit2html(");
+        }
+        else
+        {
+            sb.append("knit(");
+        }
+
+        String inputFilename = inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+        sb.append("input=\"");
+        sb.append(inputFilename);
+        sb.append("\")\n");
+
+
+        //
+        // no need to specify the output filename.  Knitr will use the input filename to derive the output
+        // filename.  Note that we always generate html
+        //
+
+        String outputFilename = null;
+        String ext = "html";
+        if (inputFilename.lastIndexOf('.') != -1)
+            outputFilename = inputFilename.substring(0, inputFilename.lastIndexOf('.') + 1) + ext;
+        else
+            outputFilename = inputFilename + "." + ext;
+
+        outputFilename.replaceAll("\\\\", "/");
+        setKnitrOutput(context, outputFilename);
+
+        return sb.toString();
+    }
+}

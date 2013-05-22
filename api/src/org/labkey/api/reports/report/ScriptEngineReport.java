@@ -45,8 +45,10 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.FileOutput;
+import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.reports.report.r.view.HtmlOutput;
 import org.labkey.api.reports.report.r.view.ImageOutput;
+import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.r.view.PdfOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
 import org.labkey.api.reports.report.r.view.ROutputView;
@@ -118,6 +120,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new FileOutput());
         ParamReplacementSvc.get().registerHandler(new PostscriptOutput());
         ParamReplacementSvc.get().registerHandler(new JsonOutput());
+        ParamReplacementSvc.get().registerHandler(new HrefOutput());
+        ParamReplacementSvc.get().registerHandler(new KnitrOutput());
     }
 
     public String getType()

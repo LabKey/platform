@@ -21,6 +21,7 @@ import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -50,6 +51,7 @@ public class ScriptReportBean extends ReportDesignBean
     private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
     private boolean _sourceTabVisible;
     private String _thumbnailType;
+    private String _knitrFormat;
     private LinkedHashSet<ClientDependency> _clientDependencies;
 
     public ScriptReportBean()
@@ -186,6 +188,10 @@ public class ScriptReportBean extends ReportDesignBean
 
         if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
             setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
+
+        if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "knitrFormat") != null)
+            setKnitrFormat(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "knitrFormat").toString());
+
     }
 
     Map<String, Object> getCacheableMap()
@@ -285,5 +291,17 @@ public class ScriptReportBean extends ReportDesignBean
     public void setThumbnailType(String thumbnailType)
     {
         _thumbnailType = thumbnailType;
+    }
+
+    public String getKnitrFormat()
+    {
+        if (_knitrFormat == null)
+            _knitrFormat = RReportDescriptor.KnitrFormat.None.name();
+        return _knitrFormat;
+    }
+
+    public void setKnitrFormat(String knitrFormat)
+    {
+        _knitrFormat = knitrFormat;
     }
 }

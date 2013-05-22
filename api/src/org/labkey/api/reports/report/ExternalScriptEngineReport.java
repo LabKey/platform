@@ -265,104 +265,117 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
-        RConnectionHolder rh = null;
 
         if (engine != null)
         {
             try
             {
-                Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
-
-                if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
-                {
-                    //
-                    // pass along the report temp directory and the pipeline root to the script engine for
-                    // replacement of the file share directories with their remote representation.
-                    //
-                    // for example:  c:\data\fcs -> /volumes/fcs
-                    //
-                    bindings.put(RserveScriptEngine.TEMP_ROOT, getTempRoot(getDescriptor()));
-
-                    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-                    bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
-
-                    //
-                    // See if a valid report session id was passed in
-                    // An empty session id is allowed; we just
-                    // don't do any session sharing in this case
-                    //
-                    String reportSessionId = (String) context.get(renderParam.reportSessionId.name());
-
-                    if (!StringUtils.isEmpty(reportSessionId))
-                    {
-                        rh = (RConnectionHolder) context.getSession().getAttribute(reportSessionId);
-
-                        if (rh != null)
-                        {
-                            synchronized (rh)
-                            {
-                                if (!rh.isInUse())
-                                {
-                                    rh.setInUse(true);
-                                }
-                                else
-                                {
-                                    throw new ScriptException("The report session is currently in use");
-                                }
-                            }
-                            bindings.put(RserveScriptEngine.R_SESSION, rh);
-                        }
-                        else
-                        {
-                            //
-                            // This can happen if the client never called the createSession action or
-                            // if the session expired
-                            //
-                            throw new ScriptException("The report session is invalid");
-                        }
-                    }
-                }
-
-                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
-
-                // render the output into the console
-                if (output != null)
-                {
-                    File console = new File(getReportDir(), CONSOLE_OUTPUT);
-                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console)));
-                    pw.write(output.toString());
-                    pw.close();
-
-                    ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
-                    param.setName("console");
-                    param.setFile(console);
-
-                    outputSubst.add(param);
-                }
-
+                Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
+                saveConsoleOutput(output, outputSubst);
                 return output != null ? output.toString() : "";
             }
             catch(Exception e)
             {
                 throw new ScriptException(e);
             }
-            finally
-            {
-                if (rh != null)
-                {
-                    synchronized (rh)
-                    {
-                        //
-                        // we are done with the R session for this request
-                        //
-                        rh.setInUse(false);
-                    }
-                }
-            }
         }
 
         throw new ScriptException("A script engine implementation was not found for the specified report");
+    }
+
+    protected void saveConsoleOutput(Object output, List<ParamReplacement> outputSubst) throws IOException
+    {
+        if (null != output)
+        {
+            File console = new File(getReportDir(), CONSOLE_OUTPUT);
+            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console)));
+            pw.write(output.toString());
+            pw.close();
+
+            ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
+            param.setName("console");
+            param.setFile(console);
+            outputSubst.add(param);
+        }
+    }
+
+    protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    {
+        RConnectionHolder rh = null;
+        try
+        {
+            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                //
+                // pass along the report temp directory and the pipeline root to the script engine for
+                // replacement of the file share directories with their remote representation.
+                //
+                // for example:  c:\data\fcs -> /volumes/fcs
+                //
+                bindings.put(RserveScriptEngine.TEMP_ROOT, getTempRoot(getDescriptor()));
+
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+                bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
+
+                //
+                // See if a valid report session id was passed in
+                // An empty session id is allowed; we just
+                // don't do any session sharing in this case
+                //
+                String reportSessionId = (String) context.get(renderParam.reportSessionId.name());
+
+                if (!StringUtils.isEmpty(reportSessionId))
+                {
+                    rh = (RConnectionHolder) context.getSession().getAttribute(reportSessionId);
+
+                    if (rh != null)
+                    {
+                        synchronized (rh)
+                        {
+                            if (!rh.isInUse())
+                            {
+                                rh.setInUse(true);
+                            }
+                            else
+                            {
+                                throw new ScriptException("The report session is currently in use");
+                            }
+                        }
+                        bindings.put(RserveScriptEngine.R_SESSION, rh);
+                    }
+                    else
+                    {
+                        //
+                        // This can happen if the client never called the createSession action or
+                        // if the session expired
+                        //
+                        throw new ScriptException("The report session is invalid");
+                    }
+                }
+            }
+
+            return engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
+        }
+        catch(Exception e)
+        {
+            throw new ScriptException(e);
+        }
+        finally
+        {
+            if (rh != null)
+            {
+                synchronized (rh)
+                {
+                    //
+                    // we are done with the R session for this request
+                    //
+                    rh.setInUse(false);
+                }
+            }
+        }
     }
 
     protected void cacheResults(ViewContext context, List<ParamReplacement> replacements)

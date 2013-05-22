@@ -18,6 +18,9 @@ package org.labkey.api.reports.report.r;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.gwt.client.util.StringUtils;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ScriptOutput;
+import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
@@ -40,6 +43,7 @@ public class ParamReplacementSvc
 
     // the default param replacement pattern : ${}
     public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
+    public static final String REPLACEMENT_PARAM_ESC = "\\$%7[bB](.*?)%7[dD]";
     public static final Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
 
     private ParamReplacementSvc(){}
@@ -231,6 +235,37 @@ public class ParamReplacementSvc
                 }
                 outputReplacements.add(param);
                 m.appendReplacement(sb, resultFileName);
+            }
+        }
+        m.appendTail(sb);
+
+        return sb.toString();
+    }
+
+    /**
+     * Finds and processes all replacement parameters for a given script block. The
+     * returned string will have all valid replacement references converted.  Note that for this overload
+     * the files have already been created and we are replacing with a valid URL inline here.
+     *
+     * @param script - the script upon which to replace the Href parameters
+     * @param parentDirectory - the parent directory to create the output files for each param replacement.
+     * @param pattern - the remote reference to this path if specified; may be null
+     */
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory, Pattern pattern) throws Exception
+    {
+        Matcher m = pattern.matcher(script);
+        StringBuffer sb = new StringBuffer();
+
+        while (m.find())
+        {
+            ParamReplacement param = fromToken(m.group(1));
+            if (param != null && HrefOutput.class.isInstance(param))
+            {
+                HrefOutput href = (HrefOutput) param;
+                href.setReport(report);
+                href.setFile(new File(parentDirectory, href.getName()));
+                ScriptOutput o = href.renderAsScriptOutput();
+                m.appendReplacement(sb, o.getValue());
             }
         }
         m.appendTail(sb);

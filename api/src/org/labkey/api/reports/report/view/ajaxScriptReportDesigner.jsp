@@ -37,6 +37,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.reports.report.RReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -610,7 +611,21 @@ function setDisabled(checkbox, label, disabled)
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 } %>
-            <tr><td>&nbsp;</td></tr><%
+            <tr><td>&nbsp;</td></tr>
+            <%
+                if (report instanceof RReport)
+                {
+            %>
+            <tr class="labkey-wp-header"><th align="left" colspan="2">Knitr Options</th></tr>
+            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(bean.getKnitrFormat().equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+                None<%=helpPopup("No preprocessing", "The source is run without going through knitr.")%></td></tr>
+            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(bean.getKnitrFormat().equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+                Html<%=helpPopup("Html", "Use knitr to process html source")%></td></tr>
+            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(bean.getKnitrFormat().equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+                Markdown<%=helpPopup("Markdown", "Use knitr to process markdown source")%></td></tr>
+            <tr><td>&nbsp;</td></tr>
+            <%
+               }
 
                 if (report instanceof DynamicThumbnailProvider)
                 {
@@ -630,10 +645,11 @@ function setDisabled(checkbox, label, disabled)
             %>
             <tr><td>&nbsp;</td></tr><%
                 }
-
-                if (!sharedReports.isEmpty())
+            %>
+            <%
+            if (!sharedReports.isEmpty())
                 {
-    %>
+            %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Shared Scripts</th></tr>
             <tr><td colspan="2"><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr><%
                     for (Report sharedReport : sharedReports)

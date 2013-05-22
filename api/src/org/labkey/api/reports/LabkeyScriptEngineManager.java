@@ -134,18 +134,15 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     {
                         ScriptEngineFactory factory;
 
-                        //
-                        // if enabled, use Rserve for evaluating R scripts
-                        //
-                        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
-                            "r".equalsIgnoreCase(extension))
+                        if (RScriptEngineFactory.isRScriptEngine(def.getExtensions()))
                         {
-                            factory = new RserveScriptEngineFactory(def);
+                            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                                factory = new RserveScriptEngineFactory(def);
+                            else
+                                factory = new RScriptEngineFactory(def);
                         }
                         else
-                        {
                             factory = new ExternalScriptEngineFactory(def);
-                        }
 
                         return factory.getScriptEngine();
                     }
