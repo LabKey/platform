@@ -27,7 +27,7 @@ import java.util.Date;
 @SuppressWarnings("UnusedDeclaration")
 public class TransformRun
 {
-    private int _rowId;
+    private int _transformRunId;
     private Integer _recordCount;
     private String _transformId;
     private int _transformVersion;
@@ -42,14 +42,14 @@ public class TransformRun
     private int _jobId;
     private Integer _expRunId = null;
 
-    public int getRowId()
+    public int getTransformRunId()
     {
-        return _rowId;
+        return _transformRunId;
     }
 
-    public void setRowId(int rowId)
+    public void setTransformRunId(int transformRunId)
     {
-        _rowId = rowId;
+        _transformRunId = transformRunId;
     }
 
     public Integer getRecordCount()

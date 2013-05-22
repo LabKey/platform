@@ -20,7 +20,7 @@
         xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <table tableName="TransformRun" tableDbType="TABLE">
         <columns>
-            <column columnName="RowId"/>
+            <column columnName="TransformRunId"/>
             <column columnName="RecordCount"/>
             <column columnName="Container"/>
             <column columnName="JobId"/>

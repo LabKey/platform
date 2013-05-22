@@ -486,7 +486,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             throw new PipelineJobException(e);
         }
 
-        job.setRunId(run.getRowId());
+        job.setRunId(run.getTransformRunId());
         return job;
     }
 
@@ -810,7 +810,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         {
             int runId = job.getTransformRunId();
             BaseQueryTransformDescriptor d = job.getTransformDescriptor();
-            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), runId), null).getObject(TransformRun.class);
+            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("TransformRunId"), runId), null).getObject(TransformRun.class);
             String status = run.getStatus();
             Integer expId = run.getExpRunId();
             Integer jobId = run.getJobId();
@@ -992,7 +992,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             SimpleFilter f = new SimpleFilter();
             TransformJob tj = (TransformJob) job;
             TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
-            f.addCondition(new FieldKey(null, "rowid"), tj.getTransformRunId(), CompareType.EQUAL);
+            f.addCondition(new FieldKey(null, "transformrunid"), tj.getTransformRunId(), CompareType.EQUAL);
 
             for (int i = 0; i < NUM_TRIES; i++)
             {
