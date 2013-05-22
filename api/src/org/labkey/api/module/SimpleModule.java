@@ -156,16 +156,9 @@ public class SimpleModule extends SpringModule
                                 String schemaName = name.substring(0, name.length() - ".xml".length());
                                 schemaNames.add(schemaName);
                             }
-                            catch (XmlException e)
+                            catch (XmlException | IOException e)
                             {
-                                if(throwOnError)
-                                    throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
-                                else
-                                    _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
-                            }
-                            catch (IOException e)
-                            {
-                                if(throwOnError)
+                                if (throwOnError)
                                     throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
                                 else
                                     _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
@@ -212,14 +205,13 @@ public class SimpleModule extends SpringModule
     {
         for (final String schemaName : getSchemaNames())
         {
-            final DbSchema dbschema = DbSchema.get(schemaName);
-
             DefaultSchema.registerProvider(schemaName, new DefaultSchema.SchemaProvider()
             {
                 public QuerySchema getSchema(final DefaultSchema schema)
                 {
                     if (schema.getContainer().getActiveModules().contains(SimpleModule.this))
                     {
+                        DbSchema dbschema = DbSchema.get(schemaName);
                         return QueryService.get().createSimpleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
                     }
                     return null;

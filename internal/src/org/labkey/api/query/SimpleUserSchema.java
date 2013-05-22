@@ -54,6 +54,7 @@ import org.labkey.api.view.NotFoundException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -132,7 +133,7 @@ public class SimpleUserSchema extends UserSchema
      */
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
-        return new SimpleTable<SimpleUserSchema>(this, sourceTable);
+        return new SimpleTable<>(this, sourceTable).init();
     }
 
     public Set<String> getTableNames()
@@ -176,12 +177,25 @@ public class SimpleUserSchema extends UserSchema
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;
 
+        /**
+         * Create the simple table.
+         * SimpleTable doesn't add columns until .init() has been called to allow derived classes to fully initialize themselves before adding columns.
+         */
         public SimpleTable(SchemaType schema, TableInfo table)
         {
             super(table, schema);
+        }
 
+        /**
+         * Sublcasses may override this to perform initialization after the constructor has been called.
+         * The default implementation will wrap all columns from the base table and set a generic default details URL.
+         * Schemas are responsible for calling .init() immediately after constructing a new SimpleTable instance.
+         */
+        public SimpleTable<SchemaType> init()
+        {
             addColumns();
             addTableURLs();
+            return this;
         }
 
         protected void addTableURLs()
@@ -197,8 +211,12 @@ public class SimpleUserSchema extends UserSchema
         public void addColumns()
         {
             wrapAllColumns();
-            addDomainColumns();
-            setDefaultVisibleColumns(getRealTable().getDefaultVisibleColumns());
+            Collection<FieldKey> domainDefaultCols = addDomainColumns();
+
+            Collection<FieldKey> fieldKeys = new ArrayList<>(getRealTable().getDefaultVisibleColumns());
+            fieldKeys.addAll(domainDefaultCols);
+
+            setDefaultVisibleColumns(fieldKeys);
         }
 
         protected boolean acceptColumn(ColumnInfo col)
@@ -318,8 +336,10 @@ public class SimpleUserSchema extends UserSchema
             }
         }
 
-        protected void addDomainColumns()
+        @NotNull
+        protected Collection<FieldKey> addDomainColumns()
         {
+            Collection<FieldKey> defaultCols = new ArrayList<>();
             Domain domain = getDomain();
             if (domain != null)
             {
@@ -330,10 +350,12 @@ public class SimpleUserSchema extends UserSchema
                     if (getColumn(propColumn.getName()) == null)
                     {
                         addColumn(propColumn);
-                        // XXX: add to list of default visible columns
+                        if (!propColumn.isHidden())
+                            defaultCols.add(propColumn.getFieldKey());
                     }
                 }
             }
+            return defaultCols;
         }
 
         public Iterable<ColumnInfo> getBuiltInColumns()
@@ -364,6 +386,13 @@ public class SimpleUserSchema extends UserSchema
             return _objectUriCol;
         }
 
+        // UNDONE: Domain could live in /Shared, /Project, or current container (or for workbooks in parent container).
+        // UNDONE: Not yet supported.
+        protected Container getDomainContainer()
+        {
+            return getContainer();
+        }
+
         @Override
         public Domain getDomain()
         {
@@ -373,7 +402,7 @@ public class SimpleUserSchema extends UserSchema
             if (_domain == null)
             {
                 String domainURI = getDomainURI();
-                _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                _domain = PropertyService.get().getDomain(getDomainContainer(), domainURI);
             }
 
             return _domain;
@@ -392,7 +421,7 @@ public class SimpleUserSchema extends UserSchema
             if (_objectUriCol == null)
                 return null;
 
-            return SimpleTableDomainKind.getDomainURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
+            return SimpleTableDomainKind.getDomainURI(_userSchema.getName(), getName(), getDomainContainer(), _userSchema.getUser());
         }
 
         public String createObjectURI()
@@ -400,7 +429,7 @@ public class SimpleUserSchema extends UserSchema
             if (_objectUriCol == null)
                 return null;
 
-            return SimpleTableDomainKind.createPropertyURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
+            return SimpleTableDomainKind.createPropertyURI(_userSchema.getName(), getName(), getDomainContainer(), _userSchema.getUser());
         }
 
         @Override
