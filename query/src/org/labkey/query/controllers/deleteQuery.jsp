@@ -24,13 +24,13 @@
 <%
     QueryForm form = (QueryForm) HttpView.currentModel();
     QueryDefinition queryDef = form.getQueryDef();
-    Collection<String> dependents = queryDef.getDependents(getViewContext().getUser());
+    Collection<String> dependents = queryDef == null ? null : queryDef.getDependents(getViewContext().getUser());
 %>
 <labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the query '<%=h(form.getQueryName())%>'?</p>
 
 <%
-    if (dependents.size() > 0)
+    if (dependents != null && dependents.size() > 0)
     {
         %>The following depend upon this query:
         <ul><%
