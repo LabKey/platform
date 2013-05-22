@@ -112,7 +112,14 @@ public enum JdbcType
 
     LONGVARBINARY(Types.LONGVARBINARY, String.class),
 
-    LONGVARCHAR(Types.LONGVARCHAR, String.class),
+    LONGVARCHAR(Types.LONGVARCHAR, String.class)
+        {
+            @Override
+            public Object convert(Object o) throws ConversionException
+            {
+                return VARCHAR.convert(o);
+            }
+        },
 
     REAL(Types.REAL, Float.class, "numberfield")
         {
@@ -179,6 +186,13 @@ public enum JdbcType
 
     VARCHAR(Types.VARCHAR, String.class)
         {
+            @Override
+            public Object convert(Object o) throws ConversionException
+            {
+                String s = (String)super.convert(o);
+                return null==s || s.isEmpty() ? null : s;
+            }
+
             @Override
             protected Object _fromDate(Date d)
             {
