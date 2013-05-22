@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -45,6 +46,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -96,7 +98,10 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         _defaultColumns.add(FieldKey.fromParts("LastLogin"));
         _defaultColumns.add(FieldKey.fromParts("Created"));
 
-        addDomainColumns();
+        Collection<FieldKey> domainDefaultCols = addDomainColumns();
+        _defaultColumns.addAll(domainDefaultCols);
+
+        setDefaultVisibleColumns(_defaultColumns);
 
         // The details action requires admin permission so don't offer the link if they can't see it
         if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -147,9 +152,11 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return !_illegalColumns.contains(col.getName());
     }
 
+    @NotNull
     @Override
-    protected void addDomainColumns()
+    protected Collection<FieldKey> addDomainColumns()
     {
+        Collection<FieldKey> defaultCols = new ArrayList<>();
         Domain domain = getDomain();
         if (domain != null)
         {
@@ -169,19 +176,19 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     {
                         pd.copyTo(col);
                         if (!col.isHidden())
-                            _defaultColumns.add(FieldKey.fromParts(col.getName()));
+                            defaultCols.add(FieldKey.fromParts(col.getName()));
                     }
                 }
                 else if (getColumn(propColumn.getName()) == null)
                 {
                     if (!pd.isHidden())
-                        _defaultColumns.add(FieldKey.fromParts(propColumn.getName()));
+                        defaultCols.add(FieldKey.fromParts(propColumn.getName()));
                     addColumn(propColumn);
                 }
             }
         }
 
-        setDefaultVisibleColumns(_defaultColumns);
+        return defaultCols;
     }
 
     @Override

@@ -157,10 +157,12 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         return super.wrapColumn(col);
     }
 
+    @NotNull
     @Override
-    protected void addDomainColumns()
+    protected Collection<FieldKey> addDomainColumns()
     {
         // LinkedTableInfos only adds columns from the source table and has no Domain columns.
+        return Collections.emptyList();
     }
 
     @Override
