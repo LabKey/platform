@@ -40,21 +40,30 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
     private Container _container;
     private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
 
+    protected TableType _metadata;
+
     public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata)
     {
         super(schema, table);
+        _metadata = metadata;
+    }
+
+    public SimpleUserSchema.SimpleTable<ExternalSchema> init()
+    {
+        super.init();
 
         try
         {
             //create list to avoid NPE if an error occurs
             Collection<QueryException> errors = new ArrayList<QueryException>();
-            loadFromXML(schema, metadata, null, errors);
+            loadFromXML(getUserSchema(), _metadata, null, errors);
         }
         catch (IllegalArgumentException e)
         {
             _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
             //otherwise ignore malformed XML
         }
+        return this;
     }
 
     // Disallow container filtering.  At some point in the future we may introduce a 'inherit' bit on

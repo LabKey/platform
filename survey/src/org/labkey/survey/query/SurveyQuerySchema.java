@@ -20,6 +20,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -58,7 +59,7 @@ public class SurveyQuerySchema extends UserSchema
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(name))
             return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), this);
         if (SURVEYS_TABLE_NAME.equalsIgnoreCase(name))
-            return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), this);
+            return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), this).init();
 
         return null;
     }

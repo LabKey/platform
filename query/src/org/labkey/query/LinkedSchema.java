@@ -262,6 +262,7 @@ public class LinkedSchema extends ExternalSchema
         tableInfo.setDefaultVisibleColumns(sourceTable.getDefaultVisibleColumns());
 
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
+        linkedTableInfo.init();
 
         // Apply metadata and the <filter> style filters.  The <where> style filters were applied in .createQueryDef().
         linkedTableInfo.loadFromXML(this, metaData, _namedFilters, errors);

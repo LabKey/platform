@@ -57,6 +57,11 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public SurveysTable(TableInfo table, SurveyQuerySchema schema)
     {
         super(schema, table);
+    }
+
+    public SimpleUserSchema.SimpleTable<UserSchema> init()
+    {
+        super.init();
 
         List<FieldKey> defaultColumns = new ArrayList<FieldKey>(Arrays.asList(
                 FieldKey.fromParts("Label"),
@@ -69,11 +74,15 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 FieldKey.fromParts("Status")
         ));
         setDefaultVisibleColumns(defaultColumns);
+        return this;
+    }
 
-        ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, schema.getContainer());
+    protected void addTableURLs()
+    {
+        ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, getUserSchema().getContainer());
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
 
-        ActionURL deleteRowsURL = new ActionURL(SurveyController.DeleteSurveysAction.class, schema.getContainer());
+        ActionURL deleteRowsURL = new ActionURL(SurveyController.DeleteSurveysAction.class, getUserSchema().getContainer());
         setDeleteURL(new DetailsURL(deleteRowsURL, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
     }
 
