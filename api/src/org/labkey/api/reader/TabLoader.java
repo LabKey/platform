@@ -70,6 +70,7 @@ public class TabLoader extends DataLoader
     public static final FileType CSV_FILE_TYPE = new TabFileType(Arrays.asList("csv"), "csv");
 
     private static final Logger _log = Logger.getLogger(TabLoader.class);
+    private boolean _closeOnComplete;
 
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
@@ -141,7 +142,7 @@ public class TabLoader extends DataLoader
     {
         super(mvIndicatorContainer);
         setSource(inputFile);
-        init(hasColumnHeaders);
+        init(hasColumnHeaders, true);
     }
 
     // Infer whether there are headers
@@ -158,14 +159,16 @@ public class TabLoader extends DataLoader
             throw new IllegalArgumentException("src cannot be null");
 
         _stringData = src;
-        init(hasColumnHeaders);
+        init(hasColumnHeaders, true);
     }
 
+    // This constructor does NOT close the reader, unless setCloseOnComplete(true) has been called explicitly
     public TabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
     {
         this(reader, hasColumnHeaders, null);
     }
     
+    // This constructor does NOT close the reader, unless setCloseOnComplete(true) has been called explicitly
     public TabLoader(Reader reader, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
         // This constructor doesn't support MV Indicators:
@@ -185,35 +188,78 @@ public class TabLoader extends DataLoader
             throw new RuntimeException(x);
         }
 
-        init(hasColumnHeaders);
+        init(hasColumnHeaders, false);
     }
 
 
-    private void init(Boolean hasColumnHeaders) throws IOException
+    private void init(Boolean hasColumnHeaders, boolean closeOnComplete) throws IOException
     {
         if (null != hasColumnHeaders)
             setHasColumnHeaders(hasColumnHeaders.booleanValue());
+
+        setCloseOnComplete(closeOnComplete);
     }
 
 
-    protected BufferedReader getReader() throws IOException
+    public void setCloseOnComplete(boolean closeOnComplete)
+    {
+        _closeOnComplete = closeOnComplete;
+    }
+
+    // Buffered reader that resets on close()
+    private static class ResetOnCloseBufferedReader extends BufferedReader
+    {
+        private final Reader _reader;
+
+        private ResetOnCloseBufferedReader(Reader reader)
+        {
+            super(reader);
+            _reader = reader;
+        }
+
+        public void close() throws IOException
+        {
+            _reader.reset();
+        }
+    }
+
+    private enum CloseBehavior
+    {
+        Reset
+        {
+            @Override
+            BufferedReader getBufferedReader(Reader reader)
+            {
+                return new ResetOnCloseBufferedReader(reader);
+            }
+        },
+        Close
+        {
+            @Override
+            BufferedReader getBufferedReader(Reader reader)
+            {
+                return new BufferedReader(reader);
+            }
+        };
+
+        abstract BufferedReader getBufferedReader(Reader reader);
+    }
+
+    protected BufferedReader getReader(CloseBehavior behavior) throws IOException
     {
         if (null != _reader)
         {
-            // We don't close handed in readers
-            _reader.reset();
-            return new BufferedReader(_reader)
-            {
-                public void close()
-                {
-                }
-            };
+            // If we're not going to close on complete then always reset, otherwise respect CloseBehavior
+            return (_closeOnComplete ? behavior : CloseBehavior.Reset).getBufferedReader(_reader);
         }
-
-        if (null != _stringData)
+        else if (null != _stringData)
+        {
             return new BufferedReader(new CharSequenceReader(_stringData));
-
-        return new BufferedReader(new FileReader(_file));
+        }
+        else
+        {
+            return new BufferedReader(new FileReader(_file));
+        }
     }
 
     public Map<String, String> getComments() throws IOException
@@ -470,7 +516,7 @@ public class TabLoader extends DataLoader
 
     private void readComments() throws IOException
     {
-        try (BufferedReader reader = getReader())
+        try (BufferedReader reader = getReader(CloseBehavior.Reset))
         {
             while (true)
             {
@@ -502,7 +548,7 @@ public class TabLoader extends DataLoader
 
     public String[][] getFirstNLines(int n) throws IOException
     {
-        try (BufferedReader reader = getReader())
+        try (BufferedReader reader = getReader(CloseBehavior.Reset))
         {
             List<String[]> lineFields = new ArrayList<>(n);
             int i;
@@ -532,7 +578,7 @@ public class TabLoader extends DataLoader
             super(_commentLines + _skipLines, false);
             assert _skipLines != -1;
 
-            reader = getReader();
+            reader = getReader(CloseBehavior.Close);
             for (int i = 0; i < lineNum(); i++)
                 reader.readLine();
         }

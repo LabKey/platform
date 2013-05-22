@@ -24,6 +24,7 @@ import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,10 @@ public class SpecimenService
         Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
 
         void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
+
+        void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
+
+        Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
     }
 
     public static void register(Service serviceImpl)

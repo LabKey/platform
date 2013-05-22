@@ -249,8 +249,7 @@ public class Table
     {
         LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
 
-        //noinspection unchecked
-        return selector.getArray(Map.class);
+        return selector.getMapArray();
     }
 
 
@@ -1345,7 +1344,7 @@ public class Table
             inSQL.append(",?");
         inSQL.append(sql.substring(q + 1));
 
-        Map[] right = new LegacySqlSelector(schema, new SQLFragment(inSQL, keys.toArray())).getArray(Map.class);
+        Map[] right = new LegacySqlSelector(schema, new SQLFragment(inSQL, keys.toArray())).getMapArray();
         return Join.join(left, Arrays.asList(right), key);
     }
 

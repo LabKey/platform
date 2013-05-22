@@ -78,7 +78,7 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
         return _selector.getResultSet(cache, scrollable);
     }
 
-    public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException
+    public <T> void forEach(Selector.ForEachBlock<T> block, Class<T> clazz) throws SQLException
     {
         try
         {
@@ -114,7 +114,7 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
         }
     }
 
-    public <K> K[] getArray(Class<K> clazz) throws SQLException
+    public <E> E[] getArray(Class<E> clazz) throws SQLException
     {
         try
         {
@@ -126,7 +126,19 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
         }
     }
 
-    public <K> Collection<K> getCollection(Class<K> clazz) throws SQLException
+    public Map<String, Object>[] getMapArray() throws SQLException
+    {
+        try
+        {
+            return _selector.getMapArray();
+        }
+        catch (RuntimeSQLException e)
+        {
+            throw e.getSQLException();
+        }
+    }
+
+    public <E> Collection<E> getCollection(Class<E> clazz) throws SQLException
     {
         try
         {
@@ -138,7 +150,7 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
         }
     }
 
-    public <K> K getObject(Class<K> clazz) throws SQLException
+    public <T> T getObject(Class<T> clazz) throws SQLException
     {
         try
         {

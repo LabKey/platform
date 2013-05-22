@@ -55,7 +55,7 @@ public class SimpleFilter implements Filter
 {
     public static final String SEPARATOR_CHAR = "~";
 
-    public static SimpleFilter getContainerFilter(Container c)
+    public static SimpleFilter createContainerFilter(Container c)
     {
         return new SimpleFilter(new FieldKey(null, "Container"), c);
     }
