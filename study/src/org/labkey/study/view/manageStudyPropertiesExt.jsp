@@ -72,7 +72,6 @@ Ext4.QuickTips.init();
 var canEdit = <%=q(canEdit?"true":"false")%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
-var emptyStudy = <%=q(emptyStudy?"true":"false")%>;
 var timepointType = "<%=h(timepointType)%>";
 
 function removeProtocolDocument(name, xid)
@@ -407,7 +406,7 @@ function renderFormPanel(data, editable){
     var timepointTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
         xtype : 'radiogroup',
         fieldLabel : "Timepoint Type",
-        disabled : !emptyStudy,
+        style : 'margin: 0px 5px;',
         labelWidth : 150,
         width : 500,
         columns : 2,
@@ -417,7 +416,7 @@ function renderFormPanel(data, editable){
             xtype: 'radio',
             id : 'visitRadio',
             inputId : 'visit',
-            disabled: !emptyStudy,
+            disabled: <%=!emptyStudy%>,
             boxLabel: 'VISIT',
             inputValue: 'VISIT',
             value: 'VISIT',
@@ -427,7 +426,7 @@ function renderFormPanel(data, editable){
             xtype: 'radio',
             id : 'dateRadio',
             inputId : 'date',
-            disabled: !emptyStudy,
+            disabled: <%=!emptyStudy%>,
             boxLabel: 'DATE',
             inputValue: 'DATE',
             name: 'TimepointType',

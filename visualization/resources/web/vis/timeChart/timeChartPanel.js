@@ -529,6 +529,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.showOptionsWindow(panel, width, pLeft, pTop);
     },
 
+    getClickXY : function(event) {
+        if (event.pageX && event.pageY)
+            return [event.pageX, event.pageY];
+        else
+            return [event.clientX, event.clientY];
+    },
+
     chartElementClicked : function(panel, clickXY, width, height, align) {
         var pLeft = clickXY[0];
         var pTop = clickXY[1];
@@ -553,6 +560,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             pLeft = pLeft + 10;
             pTop = pTop - height/2;
         }
+
+        // Issue 17851: make sure the left or top location are not off the screen
+        if (pLeft < 0) pLeft = this.chart.getEl().getX();
+        if (pTop < 0) pTop = this.chart.getEl().getY();
 
         this.showOptionsWindow(panel, width, pLeft, pTop);
     },
@@ -1794,22 +1805,22 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // functions to call on click of axis labels to open the options panel (need to be closures to correctly handle scoping of this)
         var xAxisLabelClickFn = function(scopedThis){
             return function(event){
-                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, [event.clientX, event.clientY], 800, 250, 'above');
+                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, scopedThis.getClickXY(event), 800, 250, 'above');
             }
         };
         var yAxisLeftLabelClickFn = function(scopedThis){
             return function(event){
-                scopedThis.chartElementClicked(scopedThis.editorYAxisLeftPanel, [event.clientX, event.clientY], 320, 220, 'left');
+                scopedThis.chartElementClicked(scopedThis.editorYAxisLeftPanel, scopedThis.getClickXY(event), 320, 220, 'left');
             }
         };
         var yAxisRightLabelClickFn = function(scopedThis){
             return function(event){
-                scopedThis.chartElementClicked(scopedThis.editorYAxisRightPanel, [event.clientX, event.clientY], 320, 220, 'right');
+                scopedThis.chartElementClicked(scopedThis.editorYAxisRightPanel, scopedThis.getClickXY(event), 320, 220, 'right');
             }
         };
         var mainTitleClickFn = function(scopedThis){
             return function(event){
-                scopedThis.chartElementClicked(scopedThis.editorMainTitlePanel, [event.clientX, event.clientY], 300, 130, 'below');
+                scopedThis.chartElementClicked(scopedThis.editorMainTitlePanel, scopedThis.getClickXY(event), 300, 130, 'below');
             }
         };
 

@@ -66,6 +66,7 @@
         var request = new LABKEY.MultiRequest();
         var folderTypes;
         var moduleTypes;
+        var moduleTypesMap = {};;
         var templateFolders = [];
         <%="var selectedModules = " + modulesOut + ";"%>
         <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
@@ -263,21 +264,21 @@
                             xtype: 'combo',
                             name: 'defaultModule',
                             itemId: 'modulesCombo',
-                            displayField: 'module',
+                            displayField: 'tabName',
                             valueField: 'module',
                             value: (hasLoaded ? defaultTab : 'Portal'),
                             queryMode: 'local',
                             store: {
-                                fields: ['module'],
+                                fields: ['module', 'tabName'],
                                 idIndex: 0,
                                 data: (function(hasLoaded, selectedModules){
                                     var items = [];
                                     if(!hasLoaded)
-                                        return [{module: 'Core'}];
+                                        return [{module: 'Core', tabName: 'Portal'}];
                                     else {
                                         if(selectedModules && selectedModules.length){
                                             items = Ext4.Array.map(selectedModules, function(e){
-                                                return {module: e};
+                                                return {module: e, tabName: moduleTypesMap[e]};
                                             }, this);
                                         }
                                     }
@@ -309,16 +310,16 @@
                                         var records;
                                         if(Ext4.isArray(val.activeModules)){
                                             records = Ext4.Array.map(val.activeModules, function(item){
-                                                return {module: item};
+                                                return {module: item, tabName: moduleTypesMap[item]};
                                             }, this);
                                         }
                                         else {
-                                            records = [{module: val.activeModules}];
+                                            records = [{module: val.activeModules, tabName: moduleTypesMap[val.activeModules]}];
                                         }
                                         store.add(records);
 
                                         if(records.length==1)
-                                            combo.setValue(records[0].get('module'));
+                                            combo.setValue(records[0].module);
                                         else if (oldVal)
                                             combo.setValue(oldVal);
 
@@ -331,6 +332,9 @@
                                 var items = [];
                                 if(moduleTypes){
                                     Ext4.each(moduleTypes.modules, function(m){
+                                        // keep a map from the module name to the display/tab name
+                                        moduleTypesMap[m.name] = m.tabName;
+
                                         //the effect of this is that by default, a new container inherits modules from the parent
                                         //if creating a project, there is nothing to inherit, so we set to Portal below
                                         if(m.active || m.enabled)
