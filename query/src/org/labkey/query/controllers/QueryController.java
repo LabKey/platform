@@ -840,7 +840,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
         {
             ensureQueryExists(queryForm);
-            QueryDefinition queryDef = _form.getQueryDef();
+            QueryDefinition queryDef = queryForm.getQueryDef();
             if (queryDef == null)
                 throw new NotFoundException("Query '" + queryForm.getQueryName() + "' in schema '" + queryForm.getSchemaName() + "' not found");
             return new JspView<QueryForm>(QueryController.class, "deleteQuery.jsp", queryForm, errors);
