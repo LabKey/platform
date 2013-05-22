@@ -1,0 +1,64 @@
+package org.labkey.query.reports.getdata;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.Pair;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * JSON deserialization target for transformation steps for GetData API.
+ *
+ * User: jeckels
+ * Date: 5/21/13
+ */
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value=AggregateQueryDataTransformerBuilder.class)})
+@JsonTypeName("aggregate")
+public class AggregateQueryDataTransformerBuilder
+{
+    private List<FieldKey> _groupBy = Collections.emptyList();
+    private List<FilterClauseBuilder> _filters = Collections.emptyList();
+    private List<Aggregate> _aggregates = Collections.emptyList();
+    private Pair<List<FieldKey>, FieldKey> _pivotBys = null;
+
+    public void setAggregates(List<AggregateBuilder> aggregates)
+    {
+        _aggregates = new ArrayList<>(aggregates.size());
+        for (AggregateBuilder aggregate : aggregates)
+        {
+            _aggregates.add(aggregate.create());
+        }
+    }
+
+    public void setGroupBy(List<List<String>> groupBys)
+    {
+        _groupBy = new ArrayList<>();
+        for (List<String> groupBy : groupBys)
+        {
+            _groupBy.add(FieldKey.fromParts(groupBy));
+        }
+    }
+
+    public void setFilters(List<FilterClauseBuilder> filters)
+    {
+        _filters = filters;
+    }
+
+    public AggregateQueryDataTransform create(QueryReportDataSource source)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        for (FilterClauseBuilder builder : _filters)
+        {
+            builder.append(filter);
+        }
+        return new AggregateQueryDataTransform(source, filter, _aggregates, _groupBy, _pivotBys);
+    }
+}

@@ -16,6 +16,9 @@
 
 package org.labkey.query.controllers;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -108,10 +111,15 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.getdata.AbstractQueryReportDataTransform;
+import org.labkey.query.reports.getdata.AbstractReportDataSourceBuilder;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
+import org.labkey.query.reports.getdata.DataRequest;
 import org.labkey.query.reports.getdata.FilterQueryDataTransform;
 import org.labkey.query.reports.getdata.LabKeySQLReportDataSource;
+import org.labkey.query.reports.getdata.LabKeySQLReportDataSourceBuilder;
+import org.labkey.query.reports.getdata.QueryReportDataSource;
 import org.labkey.query.reports.getdata.SchemaQueryReportDataSource;
+import org.labkey.query.reports.getdata.SchemaQueryReportDataSourceBuilder;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
@@ -2219,89 +2227,20 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetDataAction extends ApiAction<APIQueryForm>
+    public class GetDataAction extends ApiAction<SimpleApiJsonForm>
     {
-        public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            SchemaKey sourceSchema = SchemaKey.fromParts("targetedms");
-//            LabKeySQLReportDataSource source = new LabKeySQLReportDataSource(getUser(), getContainer(), sourceSchema, "SELECT * FROM Precursor");
-            SchemaQueryReportDataSource source = new SchemaQueryReportDataSource(getUser(), getContainer(), sourceSchema, "Precursor");
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+            DataRequest builder = mapper.readValue(form.getJsonObject().toString(), DataRequest.class);
 
-            AbstractQueryReportDataTransform transform = new AggregateQueryDataTransform(source, new SimpleFilter(FieldKey.fromParts("ModifiedSequence"), "LT", CompareType.STARTS_WITH), Collections.singletonList(new Aggregate(FieldKey.fromParts("Charge"), Aggregate.Type.MAX)), Collections.singletonList(FieldKey.fromParts("PeptideId")), null);
-            transform = new FilterQueryDataTransform(transform, new SimpleFilter(FieldKey.fromParts("MAXCharge"), 2));
+            return builder.render(getViewContext(), errors);
 
-            final QueryDefinition queryDefinition = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), sourceSchema.toString(), transform.getLabKeySQL());
-
-            QueryView view = new QueryView(source.getSchema(), new QuerySettings(getViewContext(), "dataregion"))
-            {
-                @Override
-                public QueryDefinition getQueryDef()
-                {
-                    return queryDefinition;
-                }
-            };
-
-            return new ExtendedApiQueryResponse(view, getViewContext(), false, true,
-                    sourceSchema.toString(), queryDefinition.getName(), 0, null,
-                    false, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-
-/*            ensureQueryExists(form);
-
-            // Issue 12233: add implicit maxRows=100k when using client API
-            if (null == form.getLimit()
-                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows)
-                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.showRows))
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(100000);
-            }
-
-            if (form.getLimit() != null)
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(form.getLimit().intValue());
-            }
-            if (form.getStart() != null)
-                form.getQuerySettings().setOffset(form.getStart().intValue());
-            if (form.getContainerFilter() != null)
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                    ContainerFilter.Type.valueOf(form.getContainerFilter());
-                form.getQuerySettings().setContainerFilterName(containerFilterType.name());
-            }
-
-            QueryView view = QueryView.create(form, errors);
-
-            view.setShowPagination(form.isIncludeTotalCount());
-
-            //if viewName was specified, ensure that it was actually found and used
-            //QueryView.create() will happily ignore an invalid view name and just return the default view
-            if (null != StringUtils.trimToNull(form.getViewName()) &&
-                    null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
-            {
-                throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
-            }
-
-            boolean isEditable = isQueryEditable(view.getTable());
-            boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
-
-            //if requested version is >= 9.1, use the extended api query response
-            if (getRequestedApiVersion() >= 9.1)
-            {
-                ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-                response.includeStyle(form.isIncludeStyle());
-                return response;
-            }
-            else
-            {
-                return new ApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-            }
-            */
+//            QueryReportDataSource source = builder.create(getUser(), getContainer());
+//
+//            AbstractQueryReportDataTransform transform = new AggregateQueryDataTransform(source, new SimpleFilter(FieldKey.fromParts("ModifiedSequence"), "LT", CompareType.STARTS_WITH), Collections.singletonList(new Aggregate(FieldKey.fromParts("Charge"), Aggregate.Type.MAX)), Collections.singletonList(FieldKey.fromParts("PeptideId")), null);
+//            transform = new FilterQueryDataTransform(transform, new SimpleFilter(FieldKey.fromParts("MAXCharge"), 2));
         }
     }
 

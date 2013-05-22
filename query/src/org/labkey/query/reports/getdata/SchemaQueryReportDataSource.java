@@ -1,7 +1,10 @@
 package org.labkey.query.reports.getdata;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -15,8 +18,10 @@ import org.labkey.query.LinkedSchema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
+ * Data source for schema/query name combination GetData requests
  * User: jeckels
  * Date: 5/15/13
  */
@@ -25,15 +30,15 @@ public class SchemaQueryReportDataSource extends AbstractQueryReportDataSource
     private final String _queryName;
     private final SimpleFilter _simpleFilter;
 
-    public SchemaQueryReportDataSource(User user, Container container, SchemaKey schemaKey, String queryName)
+    public SchemaQueryReportDataSource(@NotNull User user, @NotNull Container container, @NotNull SchemaKey schemaKey, @NotNull String queryName, @Nullable ContainerFilter containerFilter, @NotNull Map<String, String> parameters)
     {
-        super(user, container, schemaKey);
+        super(user, container, schemaKey, containerFilter, parameters);
         _queryName = queryName;
         _simpleFilter = new SimpleFilter();
     }
 
     @Override
-    public QueryDefinition getQueryDefinition()
+    protected QueryDefinition createBaseQueryDef()
     {
         QueryDefinition result = getSchema().getQueryDefForTable(_queryName);
         if (result == null)
