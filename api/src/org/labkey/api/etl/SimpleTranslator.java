@@ -708,6 +708,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (null == _row)
             _row = new Object[_outputColumns.size()];
         assert _row.length == _outputColumns.size();
+        processNextInput();
 
         for (int i=0 ; i<_row.length ; ++i)
         {
@@ -733,6 +734,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
         checkShouldCancel();
         return true;
+    }
+
+    /**
+     * Allow sublcasses to process the input data before the output column are called.
+     */
+    protected void processNextInput()
+    {
     }
 
     @Override

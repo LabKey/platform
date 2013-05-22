@@ -4971,6 +4971,8 @@ internal/src/org/labkey/api/attachments/ImageServlet.java -text
 internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text
 internal/src/org/labkey/api/data/DropDownList.java -text
+internal/src/org/labkey/api/data/ExtendedTable.java -text
+internal/src/org/labkey/api/data/ExtendedTableUpdateService.java -text
 internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text

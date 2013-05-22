@@ -117,7 +117,7 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
     protected void purgeTable(UserSchema userSchema, TableInfo dbTable, Container c, User u)
             throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
+        SimpleFilter filter = SimpleFilter.getContainerFilter(c);
         if (dbTable.getTableType() == DatabaseTableType.TABLE)
         {
             Table.delete(dbTable, filter);

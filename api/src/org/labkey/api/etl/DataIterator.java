@@ -49,6 +49,7 @@ public interface DataIterator extends Closeable
     /*
      * Iterators should usually just add errors to a shared ValidationException,
      * however, they may throw to force processing to stop.
+     * @return True if there are more items.
      */
     boolean next() throws BatchValidationException;
 

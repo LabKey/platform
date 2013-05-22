@@ -62,9 +62,12 @@ public class ContainerTable extends FilteredTable<UserSchema>
         
         wrapAllColumns(true);
         getColumn("_ts").setHidden(true);
+
         ColumnInfo entityIdColumn = getColumn("EntityId");
         entityIdColumn.setHidden(true);
         entityIdColumn.setKeyField(true);
+        entityIdColumn.setReadOnly(true);
+
         getColumn("RowId").setHidden(true);
 
         ColumnInfo parentColumn = getColumn("Parent");
@@ -98,15 +101,18 @@ public class ContainerTable extends FilteredTable<UserSchema>
         folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
         folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
+        folderTypeColumn.setReadOnly(true);
         addColumn(folderTypeColumn);
 
         SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
         ExprColumn folderDisplayColumn = new ExprColumn(this, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
         addColumn(folderDisplayColumn);
         folderDisplayColumn.setURL(detailsURL);
+        folderDisplayColumn.setReadOnly(true);
         setTitleColumn(folderDisplayColumn.getName());
 
         final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
+        folderPathCol.setReadOnly(true);
         folderPathCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -126,11 +132,13 @@ public class ContainerTable extends FilteredTable<UserSchema>
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
+        containerTypeColumn.setReadOnly(true);
         addColumn(containerTypeColumn);
 
         SQLFragment containerWorkbookSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN " + dialect.getBooleanTRUE() +
                 " ELSE " + dialect.getBooleanFALSE() + " END");
         ExprColumn containerWorkbookColumn = new ExprColumn(this, "Workbook", containerWorkbookSQL, JdbcType.BOOLEAN);
+        containerWorkbookColumn.setReadOnly(true);
         addColumn(containerWorkbookColumn);
 
         SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".Type = 'workbook' " +
@@ -138,9 +146,11 @@ public class ContainerTable extends FilteredTable<UserSchema>
             " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
         ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
         containerDisplayColumn.setURL(detailsURL);
+        containerDisplayColumn.setReadOnly(true);
         addColumn(containerDisplayColumn);
 
         col = getColumn("CreatedBy");
+        col.setReadOnly(true);
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
             public TableInfo getLookupTableInfo()
