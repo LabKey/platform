@@ -2091,7 +2091,7 @@ public class QueryView extends WebPartView<Object>
             return null;
     }
 
-    public void exportToApiResponse(ApiQueryResponse response) throws Exception
+    public void exportToApiResponse(ApiQueryResponse response)
     {
         TableInfo table = getTable();
         if (table != null)

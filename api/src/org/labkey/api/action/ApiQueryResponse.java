@@ -78,7 +78,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
-                            boolean includeDetailsColumn, boolean includeUpdateColumn) throws Exception
+                            boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
         _viewContext = viewContext;
         _schemaEditable = schemaEditable;
