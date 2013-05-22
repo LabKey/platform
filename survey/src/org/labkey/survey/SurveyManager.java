@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright (c) 2012-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -284,7 +285,7 @@ public class SurveyManager
 
     public Survey getSurvey(Container container, User user, String schema, String query, String responsePk)
     {
-        SimpleFilter filter = new SimpleFilter();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container);
         filter.addCondition(FieldKey.fromParts("SurveyDesignId", "SchemaName"), schema);
         filter.addCondition(FieldKey.fromParts("SurveyDesignId", "QueryName"), query);
         filter.addCondition(FieldKey.fromParts("ResponsesPK"), responsePk);

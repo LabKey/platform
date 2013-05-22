@@ -438,6 +438,9 @@ public class CohortFilterFactory
 
     private static FieldKey _normalizeParticipantFieldKey(Study study, String s)
     {
+        if (StringUtils.isEmpty(s))
+            return null;
+
         String subject = study.getSubjectColumnName();
         String subjectVisit = StudyService.get().getSubjectVisitTableName(study.getContainer());
 

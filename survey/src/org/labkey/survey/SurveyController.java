@@ -513,6 +513,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 survey.setStatus(form.getStatus());
             if (form.getSurveyDesignId() != null)
                 survey.setSurveyDesignId(form.getSurveyDesignId());
+            if (form.getResponsesPk() != null)
+                survey.setResponsesPk(form.getResponsesPk());
         }
 
         return survey;
@@ -590,7 +592,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                         }
                         else
                         {
-                            if (!survey.isNew())
+                            if (survey.getResponsesPk() != null)
                             {
                                 Map<String, Object> keys = new HashMap<String, Object>();
 
@@ -614,7 +616,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                             }
                             else
                             {
-                                Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+                                Map<String, Object> row = doInsertUpdate(tvf, errors, survey.getResponsesPk() == null);
 
                                 if (survey.isNew())
                                 {
@@ -677,6 +679,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 _status = String.valueOf(props.get("status"));
             if (props.containsKey("responses"))
                 _responses = (JSONObject)props.get("responses");
+            if (props.containsKey("responsesPk"))
+                _responsesPk = String.valueOf(props.get("responsesPk"));
             if (props.containsKey("submit"))
                 _isSubmitted = Boolean.parseBoolean(String.valueOf(props.get("submit")));
 

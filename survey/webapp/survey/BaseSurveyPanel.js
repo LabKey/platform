@@ -266,6 +266,158 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return {xtype:'displayfield', value: txt};
     },
 
+    addSurveyStartPanel : function() {
+
+        // add an initial panel that has the survey label text field
+        var title = 'Start';
+        var items = [];
+
+        if (this.surveyLayout == 'card')
+            items.push(this.getCardSectionHeader(title));
+
+        items.push({
+            xtype: 'textfield',
+            name: '_surveyLabel_', // for selenium testing
+            itemId: 'surveyLabel',
+            value: this.surveyLabel,
+            submitValue: false, // this field applies to the surveys table not the responses
+            fieldLabel: this.labelCaption + '*',
+            labelStyle: 'font-weight: bold;',
+            labelWidth: this.labelWidth || 350,
+            labelSeparator: '',
+            maxLength: 200,
+            allowBlank: false,
+            readOnly: !this.canEdit,
+            width: 800,
+            listeners: {
+                scope: this,
+                change: function(cmp, newValue) {
+                    this.surveyLabel = newValue == null || newValue.length == 0 ? null : newValue;
+                },
+                validitychange: function(cmp, isValid) {
+                    // this is the only form field that is required before the survey can be saved
+                    this.toggleSaveBtn(isValid, true);
+                }
+            }
+        });
+
+        this.sections.push(Ext4.create('Ext.panel.Panel', {
+            title: title,
+            isDisabled: false,
+            header: false,
+            border: false,
+            minHeight: 60,
+            padding: 10,
+            items: items
+        }));
+    },
+
+    addSurveyEndPanel : function() {
+
+        // add a final panel that has the Save/Submit buttons and required field checks
+        this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;",
+            hidden: !this.isSubmitted,
+            value: "<span style='font-style: italic; font-size: 90%'>"
+                    + (this.submitted && this.submittedBy ? "Submitted by " + this.submittedBy + "<br/>on " + this.submitted + ".<br/><br/>" : "")
+                    + (this.canEdit ? "You are allowed to make changes to this form because you are a project/site administrator.<br/><br/>" : "")
+                    + "</span>"
+        });
+
+        this.saveBtn = Ext4.create('Ext.button.Button', {
+            text: 'Save',
+            disabled: true,
+            width: 150,
+            height: 30,
+            scope: this,
+            handler: function(btn, evt) {
+                this.saveSurvey(btn, evt, false, null, null);
+            }
+        });
+
+        this.saveDisabledInfo = Ext4.create('Ext.form.DisplayField', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;",
+            hidden: this.surveyLabel != null,
+            value: "<span style='font-style: italic; font-size: 90%'>Note: The '" + this.labelCaption + "' field at the"
+                + " beginning of the form must be filled in before you can save the form*.</span>"
+        });
+
+        this.autosaveInfo = Ext4.create('Ext.container.Container', {
+            hideLabel: true,
+            width: 150,
+            style: "text-align: center;"
+        });
+
+        this.submitBtn = Ext4.create('Ext.button.Button', {
+            text: 'Submit completed form',
+            formBind: true,
+            width: 250,
+            height: 30,
+            scope: this,
+            handler: this.submitSurvey
+        });
+
+        this.submitInfo = Ext4.create('Ext.container.Container', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;"
+        });
+
+        this.doneBtn = Ext4.create('Ext.button.Button', {
+            text: 'Done',
+            width: 175,
+            height: 30,
+            handler: function() { this.leavePage(); },
+            scope: this
+        });
+
+        // the set of buttons and text on the end survey page changes based on whether or not the survey was submitted
+        // and whether or not the user can edit a submitted survey (i.e. is project/site admin)
+        var items = [{
+            xtype: 'panel',
+            layout: {type: 'vbox', align: 'center'},
+            items: this.canEdit
+                    ? [this.updateSubmittedInfo, this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
+                    : [this.updateSubmittedInfo, this.doneBtn]
+        }];
+        if (this.canEdit && !this.isSubmitted)
+        {
+            items.push({xtype: 'label', width: 100, value: null});
+            items.push({
+                xtype: 'panel',
+                layout: {type: 'vbox', align: 'center'},
+                items: [this.submitBtn, this.submitInfo]
+            });
+        }
+
+        this.sections.push(Ext4.create('Ext.panel.Panel', {
+            title: this.canEdit ? 'Save / Submit' : 'Done',
+            isDisabled: false,
+            layout: {
+                type: 'hbox',
+                align: 'top',
+                pack: 'center'
+            },
+            header: false,
+            border: false,
+            bodyStyle: 'padding-top: 25px;',
+            defaults: { border: false, width: 250 },
+            items: items
+        }));
+    },
+
+    toggleSaveBtn : function(enable, toggleMsg) {
+
+        this.saveBtn.setDisabled(!enable);
+
+        if (toggleMsg)
+            enable ? this.saveDisabledInfo.hide() : this.saveDisabledInfo.show();
+    },
+
     configureSurveyLayout : function(surveyConfig, initSectionTitle) {
         this.currentStep = this.getInitSection(initSectionTitle || LABKEY.ActionURL.getParameter("sectionTitle"));
 
@@ -406,6 +558,32 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         this.prevBtn.setDisabled(this.currentStep == 0);
         this.nextBtn.setDisabled(this.currentStep == this.sections.length-1);
+    },
+
+    setSubmittedByInfo : function(responseConfig) {
+        this.submitted = responseConfig.submitted ? responseConfig.submitted : null;
+        this.submittedBy = responseConfig.submittedBy ? responseConfig.submittedBy : null;
+    },
+
+    setLabelCaption : function(surveyConfig) {
+        this.labelCaption = 'Survey Label';
+        if (surveyConfig.survey && surveyConfig.survey.labelCaption)
+            this.labelCaption = surveyConfig.survey.labelCaption;
+
+        if (surveyConfig.survey && surveyConfig.survey.labelWidth)
+            this.labelWidth = surveyConfig.survey.labelWidth;
+    },
+
+    setShowCounts : function(surveyConfig) {
+        this.showCounts = false;
+        if (surveyConfig.survey && surveyConfig.survey.showCounts)
+            this.showCounts = surveyConfig.survey.showCounts;
+    },
+
+    setSurveyLayout : function(surveyConfig) {
+        this.surveyLayout = 'auto';
+        if (surveyConfig.survey && surveyConfig.survey.layout)
+            this.surveyLayout = surveyConfig.survey.layout;
     },
 
     configureFieldListeners : function() {
@@ -596,6 +774,24 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
         // default, do nothing
+    },
+
+    submitSurvey : function() {
+        // call the save function with the toSubmit parameter as true
+        this.saveSurvey(null, null, true, null, null);
+    },
+
+    isSurveyDirty : function() {
+        return this.getForm().isDirty();
+    },
+
+    leavePage : function(pageId) {
+        if (this.returnURL)
+            window.location = this.returnURL;
+        else if (pageId)
+            window.location = LABKEY.ActionURL.buildURL('project', 'begin', null, { pageId: pageId });
+        else
+            window.location = LABKEY.ActionURL.buildURL('project', 'begin');
     },
 
     onFailure : function(resp, message, hidePanel) {
