@@ -78,6 +78,7 @@ import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -1223,6 +1224,9 @@ public class ReportsController extends SpringActionController
                     }
                 }
             }
+
+            ReportPropsManager.get().setPropertyValue(report.getEntityId(),getViewContext().getContainer(), RReportDescriptor.Prop.knitrFormat.name(), form.getKnitrFormat());
+
             response.put("success", true);
             response.put("redirect", form.getRedirectUrl());
 

@@ -386,7 +386,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         String lower = path.toString().toLowerCase();
 
         // Create R Report Descriptor
-        if (lower.endsWith(ModuleQueryRReportDescriptor.FILE_EXTENSION))
+        if (ModuleQueryRReportDescriptor.accept(lower))
             return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
 
         // Create JS Report Descriptor
