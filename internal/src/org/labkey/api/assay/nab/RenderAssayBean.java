@@ -19,6 +19,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.nab.NabUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -65,6 +66,7 @@ public class RenderAssayBean extends RenderAssayForm
     private int _maxSamplesPerGraph = 8;
     private int _graphsPerRow = 2;
     private String _sampleNoun = "Sample";
+    private ActionURL _graphURL;
 
     public RenderAssayBean()
     {
@@ -368,5 +370,18 @@ public class RenderAssayBean extends RenderAssayForm
     public void setSampleNoun(String sampleNoun)
     {
         _sampleNoun = sampleNoun;
+    }
+
+    public ActionURL getGraphURL()
+    {
+        if (_graphURL == null && _context != null)
+            _graphURL = PageFlowUtil.urlProvider(NabUrls.class).urlGraph(_context.getContainer());
+
+        return _graphURL;
+    }
+
+    public void setGraphURL(ActionURL graphURL)
+    {
+        _graphURL = graphURL;
     }
 }

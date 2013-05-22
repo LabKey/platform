@@ -29,7 +29,7 @@
     ViewContext context = me.getViewContext();
 %>
 <%
-    ActionURL graphAction = PageFlowUtil.urlProvider(NabUrls.class).urlGraph(context.getContainer());
+    ActionURL graphAction = bean.getGraphURL();
     graphAction.addParameter("rowId", bean.getRunId());
     if (bean.getFitType() != null)
         graphAction.addParameter("fitType", bean.getFitType());
