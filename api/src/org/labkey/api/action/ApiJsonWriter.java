@@ -151,7 +151,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         if (devMode)
         {
-        //    jg.flush();
+            jg.flush();
         }
     }
 
