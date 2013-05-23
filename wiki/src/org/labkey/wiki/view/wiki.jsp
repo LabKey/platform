@@ -86,7 +86,7 @@ if (!view.hasContent)
     else
     {
         // No page here, so set the response code to 404
-//        context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
+        context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
 
         if (!view.folderHasWikis && null != view.insertURL)
         {%>
