@@ -319,9 +319,9 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     ListItem createListItem();
     ListItem getListItem(Object key);
+    ListItem getListItem(Object key, User user);
     ListItem getListItemForEntityId(String entityId);
 
-    int getRowCount();
     int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException;
 
     TableInfo getTable(User user);

@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -37,6 +38,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -148,6 +150,21 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         }
 
         Map<String, Object> values = form.getTypedColumns();
+
+        // Allow for attachment-based columns
+        Map<String, MultipartFile> fileMap = getFileMap();
+        if (null != fileMap)
+        {
+            for (String key : fileMap.keySet())
+            {
+                // Check if the column has already been processed
+                if (!values.containsKey(key))
+                {
+                    SpringAttachmentFile file = new SpringAttachmentFile(fileMap.get(key));
+                    form.setTypedValue(key, file.isEmpty() ? null : file);
+                }
+            }
+        }
 
         QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
