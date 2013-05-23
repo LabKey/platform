@@ -73,6 +73,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String urlEndpoint = null;
         public List<Pair<String, String>> urlExcelTemplates = null;
         public String importMessage = null;
+        public String successMessageSuffix = null;
         public boolean hideTsvCsvCombo = false;
     }
 
@@ -88,6 +89,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _noTableInfo = false;         // No table info; expect importData to be overridden; DERIVED MUST OVERRIDE validatePermissions
     protected boolean _hasColumnHeaders = true;
     protected String _importMessage = null;
+    protected String _successMessageSuffix = "inserted";
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
     protected boolean _hideTsvCsvCombo = false;
 
@@ -123,6 +125,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _hideTsvCsvCombo = hideTsvCsvCombo;
     }
 
+    protected String getSuccessMessageSuffix()
+    {
+        return _successMessageSuffix;
+    }
+
+    protected void setSuccessMessageSuffix(String successMessageSuffix)
+    {
+        this._successMessageSuffix = successMessageSuffix;
+    }
+
     public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
     {
         ActionURL url = getViewContext().getActionURL();
@@ -135,6 +147,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         bean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
         bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
         bean.hideTsvCsvCombo = _hideTsvCsvCombo;
+        bean.successMessageSuffix = _successMessageSuffix;
 
         if (null == bean.urlReturn)
         {

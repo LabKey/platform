@@ -88,6 +88,7 @@
     var endpoint = <%=q(bean.urlEndpoint)%>;
     var cancelUrl = <%=q(bean.urlCancel)%>;
     var returnUrl = <%=q(bean.urlReturn)%>;
+    var successMessageSuffix = <%=q(bean.successMessageSuffix)%>;
     var importTsvForm;
     var uploadFileForm;
 
@@ -144,7 +145,7 @@
                 else if ("rowCount" in action.result)
                 {
                     var rowCount = action.result.rowCount;
-                    msg = rowCount + " row" + (rowCount!=1?"s":"") + " inserted.";
+                    msg = rowCount + " row" + (rowCount!=1?"s":"") + " " + successMessageSuffix + ".";
                 }
 
                 if (msg && "rowCount" in action.result && action.result.rowCount > 0)
