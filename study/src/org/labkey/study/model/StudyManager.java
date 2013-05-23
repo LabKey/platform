@@ -2487,7 +2487,7 @@ public class StudyManager
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId," + ALTERNATEID_COLUMN_NAME + "," + DATEOFFSET_COLUMN_NAME);
+            SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId, " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
             rs = Table.executeQuery(schema, sql);
 
             Map<String, ParticipantInfo> alternateIdMap = new HashMap<String, ParticipantInfo>();
@@ -2567,7 +2567,7 @@ public class StudyManager
         String [] participantIds = getParticipantIds(study);
 
         for (String participantId : participantIds)
-            clearAlternateId(study, participantId);
+            setAlternateId(study, participantId, null);
     }
 
     public void generateNeededAlternateParticipantIds(Study study)
@@ -2691,27 +2691,19 @@ public class StudyManager
         return rows.size();
     }
 
-    private void clearAlternateId(Study study, String participantId)
-    {
-        SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId=NULL WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, participantId),
-                study.getContainer().getId());
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-    }
-
     private void setAlternateId(Study study, String participantId, String alternateId)
     {
         SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId='%s' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, participantId),
-                study.getContainer().getId());
+                "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", _tableInfoParticipant.getSelectName()),
+                alternateId, study.getContainer(), participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
     private void setAlternateIdAndDateOffset(Study study, String participantId, String alternateId, int dateOffset)
     {
         SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId='%s', DateOffset='%d' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, dateOffset, participantId),
-                study.getContainer().getId());
+                "UPDATE %s SET AlternateId = ?, DateOffset = ? WHERE Container = ? AND ParticipantId = ?", _tableInfoParticipant.getSelectName()),
+                alternateId, dateOffset, study.getContainer(),  participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
