@@ -135,7 +135,7 @@ public class ListItemImpl implements ListItem
             filter.addCondition("ListId", _itm.getListId());
             Table.delete(_list.getIndexTable(), filter);
             deleteListItemContents(_itm, c, user);
-            ListManager.get().deleteItem(_list, this);
+            ListManager.get().deleteItemIndex(_list, getEntityId());
 
             ExperimentService.get().commitTransaction();
         }

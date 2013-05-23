@@ -1536,6 +1536,7 @@ list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
+list/src/org/labkey/list/view/migrate.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-10.20.sql -text

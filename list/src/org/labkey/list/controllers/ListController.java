@@ -95,6 +95,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditViewFactory;
+import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
@@ -117,7 +118,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -194,6 +194,40 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Available Lists");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MigrateAction extends FormViewAction
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/list/view/migrate.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            ListManager.get().upgradeListDefinitions(getUser(), 13.11);
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -327,6 +361,7 @@ public class ListController extends SpringActionController
     }
 
 
+    @Deprecated
     @RequiresPermissionClass(InsertPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
@@ -365,6 +400,7 @@ public class ListController extends SpringActionController
     }
 
 
+    @Deprecated
     @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateAction extends InsertUpdateAction
     {
@@ -474,7 +510,11 @@ public class ListController extends SpringActionController
             setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion());
 
             VBox view = new VBox();
-            ListItem item = _list.getListItem(tableForm.getPkVal());
+            ListItem item;
+            if (ListDefinitionImpl.ontologyBased())
+                item = _list.getListItem(tableForm.getPkVal());
+            else
+                item = _list.getListItem(tableForm.getPkVal(), getUser());
 
             if (null == item)
                 throw new NotFoundException("List item '" + tableForm.getPkVal() + "' does not exist");

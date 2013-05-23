@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -37,6 +38,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -59,10 +61,12 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ListManager implements SearchService.DocumentProvider
@@ -348,9 +352,8 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-
     // Delete a single list item from the index after item delete
-    public void deleteItem(final ListDefinition list, final ListItem item)
+    public void deleteItemIndex(final ListDefinition list, @NotNull final String entityId)
     {
         if (!list.getEntireListIndex() && !list.getEachItemIndex())
             return;
@@ -361,13 +364,12 @@ public class ListManager implements SearchService.DocumentProvider
         {
             public void run()
             {
-                ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, item.getEntityId()));
+                ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, entityId));
             }
         };
 
         task.addRunnable(r, SearchService.PRIORITY.delete);
     }
-
 
     private String getDocumentId(ListDefinition list)
     {
@@ -704,5 +706,49 @@ public class ListManager implements SearchService.DocumentProvider
                 executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
             }
         }
+    }
+
+    public void upgradeListDefinitions(User user, double targetVersion)
+    {
+        Container root = ContainerManager.getRoot();
+
+        // Recurse through the children
+        for (Container child : ContainerManager.getAllChildren(root))
+        {
+            migrateToHardTable(user, child);
+        }
+    }
+
+    private void migrateToHardTable(User user, Container container)
+    {
+        Map<String, ListDefinition> definitionMap = ListService.get().getLists(container);
+        ListQuerySchema schema = new ListQuerySchema(ListQuerySchema.HDNAME, ListQuerySchema.HDDESCR, user, container, ListSchema.getInstance().getSchema());
+
+        for (ListDefinition listDef : definitionMap.values())
+        {
+            // First wrap the list definition to ensure the correct domain kind
+            ListDefinitionImpl hardListDef = new ListDefinitionImpl(container, listDef.getName(), listDef.getKeyType());
+
+            TableInfo toTable = StorageProvisioner.createTableInfo(hardListDef.getDomain(), schema.getDbSchema());
+
+            @SuppressWarnings({"deprecation"})
+            OntologyListTable fromTable = new OntologyListTable(schema, listDef);
+
+            // Build up a list of all the columns we need from the source table
+            List<FieldKey> selectFKs = new ArrayList<>();
+            for (ColumnInfo col : fromTable.getColumns())
+            {
+                // Include all the base columns
+                selectFKs.add(col.getFieldKey());
+            }
+            int x = 1;
+        }
+//        ListDef[] definitions = ListManager.get().getTinfoList();
+
+//        for (ListDef listDef : definitions)
+//        {
+//            // Create the hard table
+//            TableInfo toTable = StorageProvisioner.createTableInfo(listDef.getDom)
+//        }
     }
 }

@@ -56,6 +56,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
     {
         PropertyStorageSpec entityId = new PropertyStorageSpec("entityId", JdbcType.VARCHAR);
         entityId.setEntityId(true);
+        entityId.setNullable(false);
 
         PropertyStorageSpec[] props =
         {

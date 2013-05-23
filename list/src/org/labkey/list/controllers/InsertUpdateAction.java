@@ -109,14 +109,11 @@ public abstract class InsertUpdateAction extends FormViewAction<ListDefinitionFo
 
     public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
     {
-        if (ListDefinitionImpl.ontologyBased())
-            return handleOntologyPost(form, errors);
-        return handleHardTablePost(form, errors);
-    }
+        if (!ListDefinitionImpl.ontologyBased())
+        {
+            throw new IllegalStateException("The List InsertUpdateAction cannot be used for hard table lists.");
+        }
 
-
-    private boolean handleOntologyPost(ListDefinitionForm form, BindException errors) throws Exception
-    {
         if (errors.hasErrors())
             return false;
 
@@ -283,54 +280,6 @@ public abstract class InsertUpdateAction extends FormViewAction<ListDefinitionFo
         }
 
         return false;
-    }
-
-    private boolean handleHardTablePost(ListDefinitionForm form, BindException errors) throws Exception
-    {
-        final Container c = getContainer();
-        final User user = getUser();
-
-        TableInfo listTable = _list.getTable(user);
-        ListQueryUpdateForm updateForm = new ListQueryUpdateForm(listTable, getViewContext(), _list, errors);
-
-        if (errors.hasErrors())
-            return false;
-
-        QueryUpdateService qus = listTable.getUpdateService();
-        assert qus != null;
-
-        DbSchema schema = listTable.getSchema();
-        boolean result = true;
-
-        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
-        {
-            Map<String, Object> data = updateForm.getTypedColumns();
-
-            if (isInsert())
-            {
-                BatchValidationException batchErrors = new BatchValidationException();
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), batchErrors, null);
-                if (batchErrors.hasErrors())
-                    throw batchErrors;
-                if (insertedRows.size() == 0)
-                    result = false;
-            }
-            else
-            {
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                        Collections.singletonList(Collections.<String, Object>singletonMap(_list.getKeyName(), _list.getKeyName())), null);
-                if (updatedRows.size() == 0)
-                    result = false;
-            }
-
-            if (errors.hasErrors())
-                result = false;
-
-            if (result)
-                transaction.commit();
-        }
-
-        return result;
     }
 
     private void handleSqlException (SQLException e, BindException errors, ListItem item)

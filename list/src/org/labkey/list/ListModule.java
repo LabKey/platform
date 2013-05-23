@@ -19,6 +19,7 @@ package org.labkey.list;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
@@ -139,4 +140,13 @@ public class ListModule extends DefaultModule
 //    {
 //        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
 //    }
+
+    public static class ListUpgradeCode implements UpgradeCode
+    {
+        /** called at 13.11->13.12 */
+        public void upgradeListDomains(final ModuleContext moduleContext)
+        {
+            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser(), 13.11);
+        }
+    }
 }

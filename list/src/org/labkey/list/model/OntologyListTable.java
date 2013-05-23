@@ -65,7 +65,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class OntologyListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
+@Deprecated
+/* package */ class OntologyListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     public static TableInfo getIndexTable(ListDefinition.KeyType keyType)
     {

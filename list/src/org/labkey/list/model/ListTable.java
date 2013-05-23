@@ -22,6 +22,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.StatementUtils;
@@ -34,9 +36,11 @@ import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -49,6 +53,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
+import org.labkey.list.view.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -56,7 +61,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
@@ -128,6 +132,30 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 ColumnInfo column = wrapColumn(baseColumn);
                 safeAddColumn(column);
                 defaultColumnsCandidates.add(column);
+
+                for (DomainProperty property : listDef.getDomain().getProperties())
+                {
+                    if (property.getName().equalsIgnoreCase(column.getName()))
+                    {
+//                        if (property.isMvEnabled())
+//                        {
+//                            MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
+//                        }
+
+                        if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+                        {
+                            column.setDisplayColumnFactory(new DisplayColumnFactory()
+                            {
+                                @Override
+                                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                                {
+                                    return new AttachmentDisplayColumn(colInfo);
+                                }
+                            });
+                            column.setInputType("file");
+                        }
+                    }
+                }
             }
         }
 
@@ -163,19 +191,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 //            }
 //        }
 
-        // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
-        // Do this late so the column doesn't get selected as title column, etc.
-//        addColumn("EntityId", true);
-//        addColumn("LastIndexed", true);
-
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
-
-        DetailsURL insertURL = new DetailsURL(_list.urlFor(ListController.InsertAction.class), Collections.<String, String>emptyMap());
-        setInsertURL(insertURL);
-
-        DetailsURL updateURL = new DetailsURL(_list.urlUpdate(null, null), Collections.singletonMap("pk", _list.getKeyName()));
-        setUpdateURL(updateURL);
 
         DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
@@ -296,7 +313,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public String getObjectIdColumnName()
     {
-        return "objectid";
+        return null;
     }
 
     @Override
@@ -335,7 +352,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         DataIteratorContext _context;
         final DataIteratorBuilder _in;
-        final ListItemImpl.KeyIncrementer _keyIncrementer = ListItemImpl._keyIncrementer;
 
         _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
@@ -372,21 +388,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 int out = it.addColumn(c);
                 if (keyColumnInput==c)
                     keyColumnOutput = out;
-            }
-
-            if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
-            {
-                ColumnInfo keyCol = new ColumnInfo(_list.getKeyName(), JdbcType.INTEGER);
-                final int inputKeyColumn = keyColumnInput;
-                keyColumnOutput = it.addColumn(keyCol, new Callable()
-                {
-                    @Override
-                    public Object call() throws Exception
-                    {
-                        Object keyValue = (_context.getInsertOption().batch && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
-                        return null != keyValue ? keyValue : _keyIncrementer.getNextKey((ListDefinitionImpl)_list);
-                    }
-                });
             }
 
 // handled as constant in StatementUtils.createStatement()

@@ -55,6 +55,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
@@ -77,10 +78,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.GUID.makeGUID;
@@ -430,17 +429,32 @@ public class ListDefinitionImpl implements ListDefinition
         return new ListItemImpl(this);
     }
 
+    public ListItem getListItem(Object key, User user)
+    {
+        // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
+        Object typedKey = getKeyType().convertKey(key);
+
+        ListItm itm = new TableSelector(getTable(user), new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), null).getObject(ListItm.class);
+
+        if (itm == null)
+            return null;
+
+        return new ListItemImpl(this, itm);
+    }
+
     public ListItem getListItem(Object key)
     {
+        // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
+        Object typedKey = getKeyType().convertKey(key);
+
         if (ListDefinitionImpl.ontologyBased())
         {
-            // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
-            Object typedKey = getKeyType().convertKey(key);
-
             return getListItem(new SimpleFilter("Key", typedKey));
         }
-
-        return null;
+        else
+        {
+            return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey));
+        }
     }
 
     public ListItem getListItemForEntityId(String entityId)
@@ -450,15 +464,20 @@ public class ListDefinitionImpl implements ListDefinition
 
     private ListItem getListItem(SimpleFilter filter)
     {
-        filter.addCondition("ListId", getRowId());
-        ListItm itm = new TableSelector(getIndexTable(), filter, null).getObject(ListItm.class);
-
-        if (itm == null)
+        if (ListDefinitionImpl.ontologyBased())
         {
-            return null;
+            filter.addCondition("ListId", getRowId());
+            ListItm itm = new TableSelector(getIndexTable(), filter, null).getObject(ListItm.class);
+
+            if (itm == null)
+            {
+                return null;
+            }
+
+            return new ListItemImpl(this, itm);
         }
 
-        return new ListItemImpl(this, itm);
+        return null;
     }
 
     public void deleteListItems(User user, Collection keys) throws SQLException
@@ -747,12 +766,6 @@ public class ListDefinitionImpl implements ListDefinition
 
             AuditLogService.get().addEvent(event);
         }
-    }
-
-
-    public int getRowCount()
-    {
-        return 0;
     }
 
     public String getDescription()
