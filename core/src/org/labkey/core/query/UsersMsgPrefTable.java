@@ -57,6 +57,12 @@ public class UsersMsgPrefTable extends UsersTable
     public UsersMsgPrefTable(UserSchema schema, TableInfo tInfo)
     {
         super(schema, tInfo);
+    }
+
+    @Override
+    public void addColumns()
+    {
+        super.addColumns();
 
         ColumnInfo msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
         msgCol.setDisplayColumnFactory(new DisplayColumnFactory(){
@@ -80,7 +86,7 @@ public class UsersMsgPrefTable extends UsersTable
 
         for (User user : UserManager.getActiveUsers())
         {
-            if (schema.getContainer().hasPermission(user, ReadPermission.class))
+            if (getUserSchema().getContainer().hasPermission(user, ReadPermission.class))
                 userIds.add(user.getUserId());
         }
 
