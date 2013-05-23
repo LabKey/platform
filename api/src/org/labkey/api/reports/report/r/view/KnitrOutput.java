@@ -45,7 +45,7 @@ public class KnitrOutput extends HtmlOutput
 
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
-        HtmlOutputView view = new HtmlOutputView(this, getLabel());
+        KnitrOutputView view = new KnitrOutputView(this, getLabel());
         String html = view.renderInternalAsString();
 
         if (null != html)
