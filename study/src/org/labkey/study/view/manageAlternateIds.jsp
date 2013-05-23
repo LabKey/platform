@@ -121,6 +121,10 @@
                         handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "exportParticipantTransforms");}
                     },{
                         xtype: 'button',
+                        text: 'Import Alternate Id Mapping',
+                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "importAlternateIdMapping.view");}
+                    },{
+                        xtype: 'button',
                         text: 'Done',
                         handler: function() {window.location = LABKEY.ActionURL.buildURL('study', 'manageStudy.view', null, null);}
                     }]

@@ -2620,6 +2620,77 @@ public class StudyManager
         }
     }
 
+    public int setImportedAlternateParticipantIds(Study study, DataLoader dl, BatchValidationException errors) throws IOException
+    {
+        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, true, true);
+
+        CaseInsensitiveHashSet usedIds = new CaseInsensitiveHashSet();
+        for (ParticipantInfo participantInfo : participantInfos.values())
+        {
+            String alternateId = participantInfo.getAlternateId();
+            if (alternateId != null)
+            {
+                usedIds.add(alternateId);
+            }
+        }
+
+        dl.setHasColumnHeaders(true);
+        List<Map<String, Object>> rows = dl.load();
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
+        {
+            for (Map<String, Object> row : rows)
+            {
+                String participantId = Objects.toString(row.get("ParticipantId"), null);
+                if (null == participantId)
+                {
+                    errors.addRowError(new ValidationException("Malformed input data."));
+                    break;
+                }
+
+                String alternateId = Objects.toString(row.get("AlternateId"), null);
+                if (null == alternateId)
+                {
+                    errors.addRowError(new ValidationException("Malformed input data."));
+                    break;
+                }
+
+                Object dateOffsetObj = row.get("DateOffset");
+                if (null == dateOffsetObj || !(dateOffsetObj instanceof Integer))
+                {
+                    errors.addRowError(new ValidationException("Malformed input data."));
+                    break;
+                }
+                Integer dateOffset = (Integer)dateOffsetObj;
+
+                ParticipantInfo participantInfo = participantInfos.get(participantId);
+                if (null != participantInfo)
+                {
+                    String currentAlternateId = participantInfo.getAlternateId();
+                    if (!alternateId.equalsIgnoreCase(currentAlternateId) || dateOffset != participantInfo.getDateOffset())
+                    {
+                        if (!alternateId.equalsIgnoreCase(currentAlternateId) && usedIds.contains(alternateId))
+                        {
+                            errors.addRowError(new ValidationException("Two participants may not share the same Alternate ID."));
+                            break;
+                        }
+
+                        setAlternateIdAndDateOffset(study, participantId, alternateId, dateOffset);
+                        if (null != currentAlternateId)
+                            usedIds.remove(currentAlternateId);       // Remove id that is no longer used
+                        usedIds.add(alternateId);                 // Add new id
+                    }
+                }
+            }
+
+            transaction.commit();
+        }
+
+        if (errors.hasErrors())
+            return 0;
+
+        return rows.size();
+    }
+
     private void clearAlternateId(Study study, String participantId)
     {
         SQLFragment sql = new SQLFragment(String.format(
@@ -2632,6 +2703,14 @@ public class StudyManager
     {
         SQLFragment sql = new SQLFragment(String.format(
                 "UPDATE %s SET AlternateId='%s' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, participantId),
+                study.getContainer().getId());
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+    }
+
+    private void setAlternateIdAndDateOffset(Study study, String participantId, String alternateId, int dateOffset)
+    {
+        SQLFragment sql = new SQLFragment(String.format(
+                "UPDATE %s SET AlternateId='%s', DateOffset='%d' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, dateOffset, participantId),
                 study.getContainer().getId());
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }

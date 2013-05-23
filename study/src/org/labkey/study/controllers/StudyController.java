@@ -62,6 +62,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
@@ -8267,4 +8268,69 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(ManageStudyPermission.class)
+    public class ImportAlternateIdMappingAction extends AbstractQueryImportAction<IdForm>
+    {
+        private Study _study;
+        private int _requestId = -1;
+
+        public ImportAlternateIdMappingAction()
+        {
+            super(IdForm.class);
+        }
+
+        @Override
+        protected void initRequest(IdForm form) throws ServletException
+        {
+            _requestId = form.getId();
+            setHasColumnHeaders(true);
+            if (null != getStudy())
+            {
+                _study = getStudy();
+                setImportMessage("Upload a mapping of " + _study.getSubjectNounPlural() + " to Alternate IDs and date offsets from a TXT, CSV or Excel file or paste the mapping directly into the text box below. " +
+                    "There must be three columns and a header row with headings, ParticipantId, AlternateId and DateOffset.");
+            }
+            setNoTableInfo();
+            setHideTsvCsvCombo(true);
+            setSuccessMessageSuffix("uploaded");
+        }
+
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
+        {
+            _study = getStudy();
+            if (_study == null)
+                throw new NotFoundException("No study exists in this folder.");
+
+            initRequest(form);
+            return getDefaultImportView(form, errors);
+        }
+
+        @Override
+        protected void validatePermission(User user, BindException errors)
+        {
+            checkPermissions();
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        {
+            if (null == _study)
+                return 0;
+            return StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Upload " + _study.getSubjectNounSingular() + " Mapping");
+            return root;
+        }
+
+        @Override
+        protected ActionURL getSuccessURL(IdForm form)
+        {
+            ActionURL actionURL = new ActionURL(ManageAlternateIdsAction.class, getContainer());
+            return actionURL;
+        }
+
+    }
 }
