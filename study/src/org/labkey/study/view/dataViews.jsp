@@ -76,4 +76,19 @@
 
         Ext4.onReady(initPanel);
     }
+
+    /**
+     * Called when edit icon is clicked. Enables related UI components to edit reports/datasets/etc. NOTE: The panel
+     * must be set to allow customization See LABKEY.ext4.DataViewsPanel.isCustomizable()
+     */
+    function editDataViews(webpartId) {
+        var enableEdit = function (){
+
+            var panel = Ext4.getCmp('data-views-panel-' + webpartId);
+
+            if (panel) { panel.edit(); }
+        };
+
+        Ext4.onReady(enableEdit);
+    }
 </script>

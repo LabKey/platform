@@ -307,7 +307,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'thumbnailType'},
             {name : 'href', mapping : 'runUrl'},
             {name : 'allowCustomThumbnail'},
-            {name : 'status'}
+            {name : 'status'},
+            {name : 'reportId'}
         ];
 
         // define Models
@@ -343,12 +344,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.callParent([config]);
 
         if (this.isCustomizable())
-            this.addEvents('enableCustomMode', 'disableCustomMode');
+            this.addEvents(
+                    'enableCustomMode',
+                    'disableCustomMode',
+                    'enableEditMode',
+                    'disableEditMode'
+            );
     },
 
     initComponent : function() {
 
         this.customMode = false;
+        this.editMode = false;
         this.searchVal = "";
         this._height = null;
 
@@ -694,11 +701,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : false,
             menuDisabled : true,
             renderer : function(view, meta, rec) {
-                if (!this._inCustomMode()) {
+                if (!this.editMode) {
                     meta.style = 'display: none;';  // what a nightmare
                 }
 
-                // an item need an edit info interface to be editable
+                // an item needs an edit info interface to be editable
                 if (!this.editInfo[rec.data.dataType]) {
                     return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>';
                 }
@@ -917,6 +924,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
         this.on('disableCustomMode', this.onDisableCustomMode, this);
+        this.on('enableEditMode', this.onEnableEditMode, this);
+        this.on('disableEditMode', this.onDisableEditMode, this);
 
         return customPanel;
     },
@@ -1015,10 +1024,24 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.customMode = false;
 
-        // hide edit column
-        this._getEditColumn().hide();
-
         this.hiddenFilter();
+    },
+
+    edit : function(){
+        if(!this.isCustomizable())
+            return false;
+
+        this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
+    },
+
+    onEnableEditMode : function(){
+        this.editMode = true;
+        this._getEditColumn().show();
+    },
+
+    onDisableEditMode : function(){
+        this.editMode = false;
+        this._getEditColumn().hide();
     },
 
     // private
@@ -1029,9 +1052,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // panel might already exist
         if (this.customPanel && this.customPanel.items.length > 0) {
-
-            // show edit column
-            this._getEditColumn().show();
 
             this.hiddenFilter();
 
@@ -1191,9 +1211,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         });
 
-        // show edit column
-        this._getEditColumn().show();
-
         this.hiddenFilter();
 
         this.customPanel.add(panel);
@@ -1229,6 +1246,85 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             value : record.data.dataType
         });
 
+        var buttons = [{
+            text: 'Save',
+            formBind: true,
+            handler : function(btn) {
+                var form = btn.up('form').getForm();
+                if (form.isValid())
+                {
+                    editWindow.getEl().mask("Saving...");
+                    if (!form.getValues().category) {
+                        // In order to clear the category
+                        form.setValues({category: 0});
+                    }
+                    form.submit({
+                        url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                        method : 'POST',
+                        success : function(){
+                            this.onEditSave();
+                            editWindow.getEl().unmask();
+                            editWindow.close();
+                        },
+                        failure : function(response){
+                            editWindow.getEl().unmask();
+                            Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                        },
+                        scope : this
+                    });
+                }
+            },
+            scope: this
+        }];
+
+        if (record.data.dataType == 'reports')
+        {
+            var gpStore = this.gridPanel.getStore(); // Need because for some reason this.gridPanel is not in scope
+            // in the successCallback below.
+            buttons.push({
+                text: 'Delete Report',
+                scope: this,
+                handler: function ()
+                {
+                    var msg = 'Are you sure you want to delete "' + record.data.name + '"';
+                    var successCallback = function (response)
+                    {
+                        var jsonResp = Ext4.JSON.decode(response.responseText);
+                        console.log(jsonResp);
+                        editWindow.close();
+                        // Refresh the store, so deleted reports go away.
+                        gpStore.load();
+                    };
+                    var failureCallback = function (response)
+                    {
+                        var jsonResp = Ext4.JSON.decode(response.responseText);
+                        console.error(jsonResp);
+                        Ext4.MessageBox.alert('Error Deleting Report', 'There was an error deleting the report "' + record.data.name + '"');
+                        editWindow.close();
+                    };
+                    var confirmCallback = function (choice)
+                    {
+                        if (choice == "yes")
+                        {
+                            editWindow.close();
+                            var deleteURL = LABKEY.ActionURL.buildURL('reports', 'manageViewsDeleteReports', null, {
+                                reportId: record.data.reportId
+                            });
+                            console.log(deleteURL);
+                            Ext4.Ajax.request({
+                                url: deleteURL,
+                                method: 'POST',
+                                success: successCallback,
+                                failure: failureCallback
+                            });
+                        }
+                    };
+
+                    Ext4.MessageBox.confirm('Delete Report?', msg, confirmCallback, this);
+                }
+            });
+        }
+
         var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             record          : record,
             extraItems      : formItems,
@@ -1246,36 +1342,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 modified    : true,
                 customThumbnail : editInfo['customThumbnail']
             },
-            buttons     : [{
-                text : 'Save',
-                formBind: true,
-                handler : function(btn) {
-                    var form = btn.up('form').getForm();
-                    if (form.isValid())
-                    {
-                        editWindow.getEl().mask("Saving...");
-                        if (!form.getValues().category) {
-                            // In order to clear the category
-                            form.setValues({category: 0});
-                        }
-                        form.submit({
-                            url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
-                            method : 'POST',
-                            success : function(){
-                                this.onEditSave();
-                                editWindow.getEl().unmask();
-                                editWindow.close();
-                            },
-                            failure : function(response){
-                                editWindow.getEl().unmask();
-                                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                            },
-                            scope : this
-                        });
-                    }
-                },
-                scope   : this
-            }]
+            buttons     : buttons
         });
 
         var editWindow = Ext4.create('Ext.window.Window', {

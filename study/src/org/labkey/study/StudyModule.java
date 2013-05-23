@@ -526,12 +526,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (portalCtx.hasPermission(AdminPermission.class))
             {
                 NavTree customize = new NavTree("");
-                String script = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
 
-                customize.setScript(script);
+                String customizeScript = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
+
+                customize.setScript(customizeScript);
                 view.setCustomize(customize);
 
-                NavTree edit = new NavTree("Edit", "javascript:" + script, portalCtx.getContextPath() + "/_images/partedit.png");
+                String editScript = "editDataViews(" + webPart.getRowId() + ");";
+                NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
                 view.addCustomMenu(edit);
 
                 menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
