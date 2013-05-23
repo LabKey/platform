@@ -95,7 +95,7 @@ public abstract class ApiResponseWriter
             @Override
             public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
             {
-                return new ApiJsonWriter(response, contentTypeOverride);
+                return new ApiJsonWriter(response, contentTypeOverride, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
             }
         },
         XML
@@ -104,6 +104,14 @@ public abstract class ApiResponseWriter
             public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
             {
                 return new ApiXmlWriter(response, contentTypeOverride);
+            }
+        },
+        JSON_COMPACT
+        {
+            @Override
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            {
+                return new ApiJsonWriter(response, contentTypeOverride, false);
             }
         };
 

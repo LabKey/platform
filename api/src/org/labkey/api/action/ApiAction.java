@@ -144,6 +144,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             {
                 _respFormat = ApiResponseWriter.Format.XML;
             }
+            else if ("json_compact".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
+            {
+                _respFormat = ApiResponseWriter.Format.JSON_COMPACT;
+            }
 
             //validate the form
             validate(form, errors);
