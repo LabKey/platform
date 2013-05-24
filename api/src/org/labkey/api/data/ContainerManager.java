@@ -990,7 +990,7 @@ public class ContainerManager
                 ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
 
                 if (project.equals(getHomeContainer()))
-                    list.addChild(0, new NavTree("Home", startURL));
+                    list.addChild(new NavTree("Home", startURL));
                 else
                     list.addChild(project.getName(), startURL);
             }
