@@ -242,7 +242,13 @@ public class LinkedSchema extends ExternalSchema
         LocalOrRefFiltersType xmlFilters = metaData != null ? metaData.getFilters() : null;
         Collection<QueryService.ParameterDecl> parameterDecls = new ArrayList<>();
 
-        // UNDONE: Need to also customize filters, but can't let the filters be mutated
+        // UNDONE: Don't let the filters be mutated -- use a filter type instead of xmlbeans
+        xmlFilters = fireCustomizeFilters(name, sourceTable, xmlFilters);
+        if (metaData == null && xmlFilters != null)
+        {
+            metaData = TableType.Factory.newInstance();
+            metaData.setFilters(xmlFilters);
+        }
         parameterDecls = fireCustomizeParameters(name, sourceTable, xmlFilters, parameterDecls);
 
         QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlFilters, parameterDecls);
@@ -375,6 +381,17 @@ public class LinkedSchema extends ExternalSchema
         }
 
         return sql.toString();
+    }
+
+    protected LocalOrRefFiltersType fireCustomizeFilters(String name, TableInfo table, @Nullable LocalOrRefFiltersType xmlFilters)
+    {
+        if (_schemaCustomizers != null)
+        {
+            for (UserSchemaCustomizer customizer : _schemaCustomizers)
+                if (customizer instanceof LinkedSchemaCustomizer)
+                    xmlFilters = ((LinkedSchemaCustomizer) customizer).customizeFilters(name, table, xmlFilters);
+        }
+        return xmlFilters;
     }
 
     protected Collection<QueryService.ParameterDecl> fireCustomizeParameters(String name, TableInfo table, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
