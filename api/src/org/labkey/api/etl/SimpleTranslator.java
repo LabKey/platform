@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
@@ -28,6 +29,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -42,6 +44,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -369,6 +372,46 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    // CONSIDER: Add JdbcType or PropertyType for array types instead of handling conversion here.
+    private class MultiValueConvertColumn extends SimpleConvertColumn
+    {
+        private final SimpleConvertColumn _c;
+
+        MultiValueConvertColumn(SimpleConvertColumn c)
+        {
+            super(c.fieldName, c.index, c.type);
+            _c = c;
+        }
+
+        @Override
+        protected Object convert(Object o)
+        {
+            Collection<Object> values = new ArrayList<>();
+            if (o instanceof Object[])
+            {
+                for (Object o1 : (Object[])o)
+                    values.add(_c.convert(o1));
+            }
+            else if (o instanceof Collection)
+            {
+                for (Object o1 : (Collection)o)
+                    values.add(_c.convert(o1));
+            }
+            else if (o instanceof JSONArray)
+            {
+                // Only supports array of simple values right now.
+                for (Object o1 : ((JSONArray)o).toArray())
+                    values.add(_c.convert(o1));
+            }
+            else
+            {
+                values.add(_c.convert(o));
+            }
+
+            return values;
+        }
+
+    }
 
     protected class RemapColumn implements Callable
     {
@@ -495,18 +538,39 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConvertColumn(ColumnInfo col, int fromIndex, boolean mv)
     {
+        SimpleConvertColumn c;
         if (mv)
-            return addColumn(col, new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
+            c = new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType());
         else
-            return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
+            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
+
+        boolean multiValue = col.getFk() instanceof MultiValuedForeignKey;
+        if (multiValue)
+        {
+            // convert input into Collection of jdbcType values
+            c = new MultiValueConvertColumn(c);
+        }
+
+        return addColumn(col, c);
     }
 
     public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, boolean mv)
     {
+
+        SimpleConvertColumn c;
         if (mv)
-            return addColumn(col, new MissingValueConvertColumn(col.getName(), fromIndex, mvIndex, col.getJdbcType()));
+            c = new MissingValueConvertColumn(col.getName(), fromIndex, mvIndex, col.getJdbcType());
         else
-            return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
+            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
+
+        boolean multiValue = col.getFk() instanceof MultiValuedForeignKey;
+        if (multiValue)
+        {
+            // convert input into Collection of jdbcType values
+            c = new MultiValueConvertColumn(c);
+        }
+
+        return addColumn(col, c);
     }
 
     public int addAliasColumn(String name, int aliasIndex)

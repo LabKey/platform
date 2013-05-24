@@ -200,8 +200,9 @@ public class ContainerManager
     // TODO: Pass in folder type and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, Container.TYPE type, User user)
     {
-        if (CORE.getSchema().getScope().isTransactionActive())
-            throw new IllegalStateException("Transaction should not be active");
+        // NOTE: Running outside a tx doesn't seem to be necessary.
+//        if (CORE.getSchema().getScope().isTransactionActive())
+//            throw new IllegalStateException("Transaction should not be active");
 
         int sortOrder;
 
@@ -461,8 +462,9 @@ public class ContainerManager
 
     public static Container ensureContainer(Path path)
     {
-        if (CORE.getSchema().getScope().isTransactionActive())
-            throw new IllegalStateException("Transaction should not be active");
+        // NOTE: Running outside a tx doesn't seem to be necessary.
+//        if (CORE.getSchema().getScope().isTransactionActive())
+//            throw new IllegalStateException("Transaction should not be active");
 
         Container c = null;
 
@@ -494,8 +496,9 @@ public class ContainerManager
 
     public static Container ensureContainer(Container parent, String name)
     {
-        if (CORE.getSchema().getScope().isTransactionActive())
-            throw new IllegalStateException("Transaction should not be active");
+        // NOTE: Running outside a tx doesn't seem to be necessary.
+//        if (CORE.getSchema().getScope().isTransactionActive())
+//            throw new IllegalStateException("Transaction should not be active");
 
         Container c = null;
 

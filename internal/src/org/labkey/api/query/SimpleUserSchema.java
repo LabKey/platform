@@ -208,6 +208,9 @@ public class SimpleUserSchema extends UserSchema
             }
         }
 
+        /**
+         * Subclasses may override this to add columns to the table after calling super.addColumns().
+         */
         public void addColumns()
         {
             wrapAllColumns();

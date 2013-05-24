@@ -16,11 +16,13 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.StringWrapperDynaClass;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.beanutils.DynaBean;
 
+import java.lang.reflect.Array;
 import java.util.Map;
 
 public class QueryWrapperDynaClass extends StringWrapperDynaClass
@@ -30,16 +32,26 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
     {
         _form = form;
 
-        Map<String, Class> propMap = new CaseInsensitiveHashMap<Class>();
+        // CONSIDER: Handle MultiValueFK in column.getJavaClass() directly
+        Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo column : _form.getTable().getColumns())
         {
-            propMap.put(_form.getFormFieldName(column), column.getJavaClass());
+            boolean multiValued = column.getFk() instanceof MultiValuedForeignKey;
+            if (multiValued)
+                propMap.put(_form.getFormFieldName(column), arrayClass(column.getJavaClass()));
+            else
+                propMap.put(_form.getFormFieldName(column), column.getJavaClass());
         }
 
         init("className", propMap);
 
     }
 
+    private static <K> Class<? extends Object[]> arrayClass(Class<K> k)
+    {
+        K[] ks = (K[]) Array.newInstance(k, 0);
+        return ks.getClass();
+    }
     
 
     public DynaBean newInstance() throws IllegalAccessException, InstantiationException

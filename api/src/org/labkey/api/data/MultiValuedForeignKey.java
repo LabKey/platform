@@ -118,7 +118,12 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
-        return _fk.getSelectList(ctx);
+        NamedObjectList ret = new NamedObjectList();
+        TableInfo lookupTable = getLookupTableInfo();
+        if (lookupTable == null)
+            return ret;
+
+        return lookupTable.getSelectList(getLookupColumnName());
     }
 
     @Override

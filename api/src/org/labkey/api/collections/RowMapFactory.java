@@ -16,6 +16,7 @@
 package org.labkey.api.collections;
 
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
@@ -42,6 +43,18 @@ public class RowMapFactory<V>
     public RowMapFactory(ArrayListMap.FindMap<String> findMap)
     {
         _findMap = findMap;
+    }
+
+    public RowMapFactory(Collection<String> keys)
+    {
+        this(keys.size());
+
+        int i = 0;
+        for (String key : keys)
+        {
+            _findMap.put(key, i);
+            i++;
+        }
     }
 
     public RowMapFactory(String... keys)

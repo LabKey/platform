@@ -184,7 +184,8 @@ public class StandardETL implements DataIteratorBuilder
                 unusedCols.remove(to.target.getFieldKey());
                 to.indexFrom = i;
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());
-                to.indexMv = null==indexMv ? 0 : indexMv.intValue();                targetCols.add(to);
+                to.indexMv = null==indexMv ? 0 : indexMv.intValue();
+                targetCols.add(to);
             }
             else
             {

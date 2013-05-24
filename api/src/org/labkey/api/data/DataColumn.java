@@ -82,7 +82,13 @@ public class DataColumn extends DisplayColumn
         try
         {
             if (null != _displayColumn && _boundColumn != _displayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
-                _inputType = "select";
+            {
+                if (_boundColumn.getFk() instanceof MultiValuedForeignKey)
+                    _inputType = "select.multiple";
+                else
+                    _inputType = "select";
+            }
+
         }
         catch (QueryParseException qpe)
         {
@@ -517,7 +523,7 @@ public class DataColumn extends DisplayColumn
                 out.write(PageFlowUtil.filter(strVal));
             }
         }
-        else if (_inputType.equalsIgnoreCase("select"))
+        else if (_inputType.toLowerCase().startsWith("select"))
         {
             NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
             NamedObject[] entries = entryList.toArray();
@@ -527,6 +533,8 @@ public class DataColumn extends DisplayColumn
             outputName(ctx, out, formFieldName);
             if (disabledInput)
                 out.write(" DISABLED");
+            if (_inputType.equalsIgnoreCase("select.multiple"))
+                out.write(" multiple");
             out.write(">\n");
             out.write("<option value=\"\"></option>");
             for (NamedObject entry : entries)

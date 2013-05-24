@@ -588,10 +588,25 @@ public class ConvertHelper implements PropertyEditorRegistrar
     // see bug 5340 : Spring Data binding bizarreness. Crash when edit visit in study with exactly one dataset
     public static class StringArrayConverter implements Converter
     {
+        private org.apache.commons.beanutils.converters.StringArrayConverter _nested =
+                new org.apache.commons.beanutils.converters.StringArrayConverter();
+
         public Object convert(Class type, Object value)
         {
             if (value == null)
                 return null;
+            if (value instanceof String[])
+                return value;
+            if (value instanceof String)
+            {
+                // If the value is wrapped with { and }, let the beanutils converter tokenize the values.
+                // This let's us handle Issue 5340 while allowing multi-value strings to be parsed.
+                String s = (String)value;
+                if (s.startsWith("{") && s.endsWith("}"))
+                    return _nested.convert(type, value);
+            }
+
+            // Otherwise, treat it as a single element string array.
             return new String[] {String.valueOf(value)};
         }
     }

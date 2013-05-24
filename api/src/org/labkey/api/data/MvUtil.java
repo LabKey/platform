@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -45,7 +46,7 @@ public class MvUtil
 
     private MvUtil() {}
 
-    public static Set<String> getMvIndicators(Container c)
+    public static Set<String> getMvIndicators(@NotNull Container c)
     {
         assert c != null : "Attempt to get missing value indicators without a container";
         return getIndicatorsAndLabels(c).keySet();
@@ -54,19 +55,19 @@ public class MvUtil
     /**
      * Allows nulls and ""
      */
-    public static boolean isValidMvIndicator(String indicator, Container c)
+    public static boolean isValidMvIndicator(String indicator, @NotNull Container c)
     {
         if (indicator == null || "".equals(indicator))
             return true;
         return isMvIndicator(indicator, c);
     }
 
-    public static boolean isMvIndicator(String indicator, Container c)
+    public static boolean isMvIndicator(String indicator, @NotNull Container c)
     {
         return new CaseInsensitiveHashSet(getMvIndicators(c)).contains(indicator);
     }
 
-    public static String getMvLabel(String mvIndicator, Container c)
+    public static String getMvLabel(String mvIndicator, @NotNull Container c)
     {
         Map<String, String> map = getIndicatorsAndLabels(c);
         String label = map.get(mvIndicator);
@@ -79,12 +80,12 @@ public class MvUtil
      * Given a container, this returns the container in which the MV indicators are defined.
      * It may be the container itself, or a parent container or project, or the root container.
      */
-    public static Container getDefiningContainer(Container c)
+    public static Container getDefiningContainer(@NotNull Container c)
     {
         return getIndicatorsAndLabelsWithContainer(c).getKey();
     }
 
-    public static Map<String, String> getIndicatorsAndLabels(Container c)
+    public static Map<String, String> getIndicatorsAndLabels(@NotNull Container c)
     {
         return getIndicatorsAndLabelsWithContainer(c).getValue();
     }
@@ -92,7 +93,7 @@ public class MvUtil
     /**
      * Return the Container in which these indicators are defined, along with the indicators.
      */
-    public static Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(Container c)
+    public static Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(@NotNull Container c)
     {
         String cacheKey = getCacheKey(c);
 
@@ -127,12 +128,12 @@ public class MvUtil
      * parent container, project, or site, whichever
      * in the hierarchy first has mv indicators.
      */
-    public static void inheritMvIndicators(Container c) throws SQLException
+    public static void inheritMvIndicators(@NotNull Container c) throws SQLException
     {
         deleteMvIndicators(c);
     }
 
-    private static void deleteMvIndicators(Container c) throws SQLException
+    private static void deleteMvIndicators(@NotNull Container c) throws SQLException
     {
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
@@ -144,7 +145,7 @@ public class MvUtil
      * Sets the indicators and labels for this container.
      * Map should be value -> label.
      */
-    public static void assignMvIndicators(Container c, String[] indicators, String[] labels) throws SQLException
+    public static void assignMvIndicators(@NotNull Container c, @NotNull String[] indicators, @NotNull String[] labels) throws SQLException
     {
         assert indicators.length > 0 : "No indicators provided";
         assert indicators.length == labels.length : "Different number of indicators and labels provided";
@@ -162,7 +163,7 @@ public class MvUtil
         clearCache(c);
     }
 
-    private static Map<String, String> getFromDb(Container c)
+    private static Map<String, String> getFromDb(@NotNull Container c)
     {
         Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
 
@@ -182,7 +183,7 @@ public class MvUtil
         return indicatorsAndLabels;
     }
 
-    private static String getCacheKey(Container c)
+    private static String getCacheKey(@NotNull Container c)
     {
         return CACHE_PREFIX + c.getId();
     }
@@ -192,12 +193,12 @@ public class MvUtil
         return CacheManager.getSharedCache();
     }
 
-    public static void containerDeleted(Container c) throws SQLException
+    public static void containerDeleted(@NotNull Container c) throws SQLException
     {
         deleteMvIndicators(c);
     }
 
-    public static void clearCache(Container c)
+    public static void clearCache(@NotNull Container c)
     {
         getCache().removeUsingPrefix(getCacheKey(c));
     }

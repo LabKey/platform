@@ -610,7 +610,19 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public void set(String arg0, Object arg1)
     {
-        _stringValues.put(arg0, arg1 == null ? null : arg1.toString());
+        String v;
+        if (arg1 == null)
+            v = null;
+        else if (arg1 instanceof Object[])
+        {
+            // HACK: This is annoying, but TableViewForm insists on converting values to Strings before letting populateValues() bind.
+            // Doubly annoying is we need to work around StringArrayConverter's poor parsing of single string values as seen in Issue 5340.
+            // Convert into stringified array that org.apache.commons.beanutils.converters.StringArrayConverter can parse.
+            v = "{" + StringUtils.join((Object[])arg1, ",") + "}";
+        }
+        else
+            v = arg1.toString();
+        _stringValues.put(arg0, v);
         _values = null;
     }
 
@@ -762,12 +774,24 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         for (PropertyValue pv : params.getPropertyValues())
         {
-            if (pv.getValue() instanceof String)
-                set(pv.getName(), pv.getValue());
+            Object value = pv.getValue();
+            if (value instanceof String || value instanceof String[])
+                set(pv.getName(), value);
         }
 
         validateBind(errors);
         return errors;
+    }
+
+    public static class StringArrayHolder
+    {
+        private String[] _s;
+
+        public StringArrayHolder(String[] s)
+        {
+            _s = s;
+        }
+
     }
 }
 

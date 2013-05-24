@@ -25,13 +25,20 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.web.servlet.mvc.Controller;
@@ -44,6 +51,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -227,5 +235,45 @@ public class SimpleModule extends SpringModule
     public ActionURL getTabURL(Container c, User user)
     {
         return SimpleController.getBeginViewUrl(this, c);
+    }
+
+    @Override
+    public Collection<String> getSummary(Container c)
+    {
+        Collection<String> summary = new LinkedList<>();
+
+        User user = HttpView.currentContext().getUser();
+
+        Filter containerFilter = SimpleFilter.createContainerFilter(c);
+        Filter folderFilter = new SimpleFilter(new FieldKey(null, "Folder"), c);
+
+        for (String schemaName : getSchemaNames())
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+            if (schema != null && !schema.isHidden())
+            {
+                for (String tableName : schema.getVisibleTableNames())
+                {
+                    TableInfo table = schema.getTable(tableName, false);
+                    if (table != null)
+                    {
+                        Filter filter = null;
+                        if (table.getColumn("Container") != null)
+                            filter = containerFilter;
+                        else if (table.getColumn("Folder") != null)
+                            filter = folderFilter;
+
+                        if (filter != null)
+                        {
+                            long count = new TableSelector(table, containerFilter, null).getRowCount();
+                            if (count > 0)
+                                summary.add(String.format("%d %s from %s.%s", count, (count == 1 ? "row" : "rows"), schema.getSchemaPath().toDisplayString(), table.getName()));
+                        }
+                    }
+                }
+            }
+        }
+
+        return summary;
     }
 }
