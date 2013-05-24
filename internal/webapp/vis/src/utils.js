@@ -84,6 +84,34 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     return groupedData;
 };
 
+LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList){
+    /*
+        Groups data by the groupAccessor passed in. Also, checks for the existance of any series data for that groupAccessor.
+        Returns an object where each attribute will be a groupAccessor with an array of data rows and a boolean for hasSeriesData
+    */
+    var groupedData = {};
+    for (var i = 0; i < data.length; i++)
+    {
+        var value = groupAccessor(data[i]);
+        if (!groupedData[value])
+        {
+            groupedData[value] = {data: [], hasSeriesData: false};
+        }
+        groupedData[value].data.push(data[i]);
+
+        for (var j = 0; j < seriesList.length; j++)
+        {
+            var seriesAlias = seriesList[j].aliasLookupInfo.alias;
+            if (seriesAlias && data[i][seriesAlias] && data[i][seriesAlias].value)
+            {
+                groupedData[value].hasSeriesData = true;
+                break;
+            }
+        }
+    }
+    return groupedData;
+}
+
 LABKEY.vis.isValid = function(value){
     return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
 };
