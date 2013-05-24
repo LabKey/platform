@@ -103,24 +103,42 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            // Support ID, RowId, or EntityId to identify a row
+            Filter filter = null;
+
+            // Support ID, RowId, or EntityId, or Container to identify a row
             String id = keys.get("ID") == null ? null : keys.get("ID").toString();
             if (id == null)
-            {
                 id = keys.get("RowId") == null ? null : keys.get("RowId").toString();
-            }
-            if (id == null)
+
+            if (id != null)
             {
-                String entityId = keys.get("EntityId") == null ? null : keys.get("EntityId").toString();
-                if (entityId != null)
+                try
                 {
-                    return new TableSelector(getQueryTable(), new SimpleFilter("EntityId", entityId), null).getObject(Map.class);
+                    filter = new SimpleFilter("ID", Integer.valueOf(id));
                 }
+                catch (NumberFormatException ex)
+                {
+                    return null;
+                }
+            }
+            else if (keys.get("EntityId") != null)
+            {
+                String entityId = keys.get("EntityId").toString();
+                filter = new SimpleFilter("EntityId", entityId);
+            }
+            else if (keys.get("Container") != null)
+            {
+                String entityId = keys.get("Container").toString();
+                filter = new SimpleFilter("EntityId", entityId);
+            }
+            else
+            {
                 return null;
             }
+
             try
             {
-                return new TableSelector(getQueryTable(), new SimpleFilter("ID", new Integer(id)), null).getObject(Map.class);
+                return new TableSelector(getQueryTable(), filter, null).getObject(Map.class);
             }
             catch (NumberFormatException e)
             {
@@ -390,6 +408,16 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             // UNDONE: add all other container/workbook columns
         }
 
+        @Override
+        public boolean isScrollable()
+        {
+            // Inserts into container table on .next() so can't be scrolled.
+            return false;
+        }
+
+        /**
+         * Performs the actual insert into container table via ContainerManager and sets folder type.
+         */
         @Override
         protected void processNextInput()
         {
