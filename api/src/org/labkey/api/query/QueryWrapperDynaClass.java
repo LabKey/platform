@@ -47,10 +47,10 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
 
     }
 
-    private static <K> Class<? extends Object[]> arrayClass(Class<K> k)
+    private static <K> Class<?> arrayClass(Class<K> k)
     {
-        K[] ks = (K[]) Array.newInstance(k, 0);
-        return ks.getClass();
+        Object o = Array.newInstance(k, 0);
+        return o.getClass();
     }
     
 
