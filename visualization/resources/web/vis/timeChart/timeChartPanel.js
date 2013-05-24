@@ -1356,14 +1356,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
 
                 var accessor = this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn);
-                var dataPerParticipant = LABKEY.vis.groupData(this.individualData.rows, function(row){return row[accessor].value});
+                var dataPerParticipant = LABKEY.vis.groupDataWithSeriesCheck(this.individualData.rows, function(row){return row[accessor].value}, seriesList);
                 for (var participant in dataPerParticipant)
                 {
+                    // skip the group if there is no data for it
+                    if (!dataPerParticipant[participant].hasSeriesData)
+                        continue;
+
                     this.plotConfigInfoArr.push({
                         title: this.concatChartTitle(this.chartInfo.title, participant),
                         series: seriesList,
-                        individualData: dataPerParticipant[participant],
-                        height: this.chartInfo.subject.values.length > 1 ? 380 : 600,
+                        individualData: dataPerParticipant[participant].data,
                         style: this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
                         applyClipRect: applyClipRect
                     });
@@ -1389,21 +1392,21 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // Display aggregate lines
                 var groupedAggregateData = null;
                 if (this.aggregateData)
-                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.UniqueId.displayValue});
+                    groupedAggregateData = LABKEY.vis.groupDataWithSeriesCheck(this.aggregateData.rows, function(row){return row.UniqueId.displayValue}, seriesList);
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
                     // skip the group if there is no data for it
-                    if (!((groupedIndividualData != null && groupedIndividualData[group.label]) || (groupedAggregateData != null && groupedAggregateData[group.label])))
+                    if ((groupedIndividualData != null && !groupedIndividualData[group.label])
+                        || (groupedAggregateData != null && (!groupedAggregateData[group.label] || !groupedAggregateData[group.label].hasSeriesData)))
                         continue;
 
                     this.plotConfigInfoArr.push({
                         title: this.concatChartTitle(this.chartInfo.title, group.label),
                         series: seriesList,
                         individualData: groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
-                        aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label] : null,
-                        height: this.chartInfo.subject.groups.length > 1 ? 380 : 600,
+                        aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label].data : null,
                         style: this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null,
                         applyClipRect: applyClipRect
                     });
@@ -1425,7 +1428,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.plotConfigInfoArr.push({
                         title: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
                         series: [seriesList[i]],
-                        height: seriesList.length > 1 ? 380 : 600,
                         style: seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null,
                         applyClipRect: applyClipRect
                     });
@@ -1451,7 +1453,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             {
                 var newChart = this.generatePlot(
                         configIndex,
-                        this.plotConfigInfoArr[configIndex].height,
+                        this.plotConfigInfoArr[configIndex].height || (this.plotConfigInfoArr.length > 1 ? 380 : 600),
                         this.plotConfigInfoArr[configIndex].style,
                         false // forExport param
                     );
