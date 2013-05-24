@@ -99,7 +99,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         super.applyQueryMetadata(sourceSchema, errors, query, ret);
 
         // Third, remove column URLs and some lookups using LinkedTableInfo
-        ret = new LinkedTableInfo(_schema, ret);
+        ret = new LinkedTableInfo(_schema, ret).init();
         ret.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
 
         // Fourth, apply linked schema metadata (either from template or from the linked schema instance)
