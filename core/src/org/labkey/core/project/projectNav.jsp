@@ -15,35 +15,33 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.HashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     String contextPath = ctx.getContextPath();
-    User user = ctx.getUser();
 
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
-    List<Container> projects = ContainerManager.getAllChildren(ContainerManager.getRoot(), user);
+    NavTree projects = ContainerManager.getProjectList(ctx);
 
     // Based on the number of projects calculate a rectangle with a column number of MAX_COLS
     int MAX_COLS = 4;
 
-    int numProjects = projects.size();
+    int numProjects = projects.getChildCount();
     int rowsPerCol = numProjects / MAX_COLS;
     int cols = 1;
     int remainder = numProjects - (rowsPerCol * MAX_COLS);
@@ -82,9 +80,10 @@
     // Based on how these are displayed we have to walk to list/array by offset in order to display
     // the proper order to the user
     int c; int r;
+    List<NavTree> children = projects.getChildList();
     Set<Integer> duplicates = new HashSet<>();
 
-    if (projects.size() > 0)
+    if (projects.hasChildren())
     {
 %>
 <div class="project-nav">
@@ -119,23 +118,23 @@
                     idx = (rowsPerCol * c) + r;
                 }
 
-                if (idx < projects.size() && !duplicates.contains(Integer.valueOf(idx)))
+                if (idx < children.size() && !duplicates.contains(Integer.valueOf(idx)))
                 {
                     duplicates.add(Integer.valueOf(idx));
-                    Container p = projects.get(idx);
+                    NavTree p = children.get(idx);
 
                     %><li>
                         <%
-                            if (null != p.getStartURL(user))
+                            if (null != p.getHref())
                             {
                         %>
-                        <a title="<%=h(p.getName())%>" href="<%=PageFlowUtil.filter(p.getStartURL(user))%>"><%=h(p.getName())%></a>
+                        <a title="<%=h(p.getText())%>" href="<%=PageFlowUtil.filter(p.getHref())%>"><%=h(p.getText())%></a>
                         <%
                             }
                             else
                             {
                         %>
-                        <span><%=h(p.getName())%></span>
+                        <span><%=h(p.getText())%></span>
                         <%
                             }
                         %>
