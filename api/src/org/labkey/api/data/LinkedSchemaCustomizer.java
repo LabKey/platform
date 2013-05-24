@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public interface LinkedSchemaCustomizer extends ExternalSchemaCustomizer
 {
+    LocalOrRefFiltersType customizeFilters(String name, TableInfo table, LocalOrRefFiltersType xmlFilters);
+
     Collection<QueryService.ParameterDecl> customizeParameters(String name, TableInfo table, LocalOrRefFiltersType xmlFilters);
 
     Map<String, Object> customizeParamValues(TableInfo table);
