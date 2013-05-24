@@ -2,6 +2,7 @@ package org.labkey.query.reports.getdata;
 
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.ReportingApiQueryResponse;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -31,8 +32,8 @@ public class JSONReportDataRenderer implements ReportDataRenderer
             }
         };
 
-        return new ExtendedApiQueryResponse(view, context, false, true,
-                source.getSchema().getSchemaName(), queryDefinition.getName(), 0, null,
+        return new ReportingApiQueryResponse(view, context, false, true,
+                source.getSchema().getSchemaPath(), queryDefinition.getName(), 0, null,
                 false, false, false);
     }
 }
