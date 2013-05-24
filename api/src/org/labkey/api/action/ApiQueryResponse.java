@@ -60,19 +60,19 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private static final String URL_COL_PREFIX = "_labkeyurl_";
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;
-    private long _rowCount = 0;
-    private RenderContext _ctx = null;
+    protected long _rowCount = 0;
+    protected RenderContext _ctx = null;
     private ViewContext _viewContext;
     private boolean _schemaEditable = false;
     private boolean _includeLookupInfo = true;
     private String _schemaName = null;
-    private String _queryName = null;
-    private long _offset = 0;                   //starting offset row number
-    private long _numRespRows = 0;              //number of response rows
+    protected String _queryName = null;
+    protected long _offset = 0;                   //starting offset row number
+    protected long _numRespRows = 0;              //number of response rows
     private List<FieldKey> _fieldKeys = null;
-    private boolean _metaDataOnly = false;
-    private Map<String, Object> _extraReturnProperties;
-    private DataRegion _dataRegion;
+    protected boolean _metaDataOnly = false;
+    protected Map<String, Object> _extraReturnProperties;
+    protected DataRegion _dataRegion;
     private boolean _includeDetailsColumn;
     private boolean _includeUpdateColumn;
 
@@ -193,7 +193,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         {
             if (dc instanceof MVDisplayColumn)
             {
-                Map<String, String> mvInfo = new HashMap<String, String>();
+                Map<String, String> mvInfo = new HashMap<>();
                 Set<String> mvIndicators = MvUtil.getMvIndicators(_viewContext.getContainer());
                 for (String mvIndicator : mvIndicators)
                 {
@@ -217,7 +217,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     // see Ext.data.JsonReader (response.metaData)
     protected Map<String, Object> getMetaData() throws Exception
     {
-        Map<String, Object> metaData = new HashMap<String,Object>();
+        Map<String, Object> metaData = new HashMap<>();
 
         // see Ext.data.Field
         ArrayList<Map<String, Object>> fields = getFieldsMetaData(_displayColumns, _includeLookupInfo);
@@ -240,7 +240,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                     dir = sort.charAt(0) == '-' ? "DESC" : "ASC";
                     sort = sort.substring(1);
                 }
-                Map<String, String> sortInfo = new HashMap<String, String>();
+                Map<String, String> sortInfo = new HashMap<>();
                 sortInfo.put("field", sort);
                 sortInfo.put("direction", dir);
                 array.put(array.length(), sortInfo);
@@ -420,7 +420,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return row;
     }
 
-    private boolean includeColumnInResponse(DisplayColumn dc)
+    protected boolean includeColumnInResponse(DisplayColumn dc)
     {
         return dc.isQueryColumn() || (dc instanceof DetailsColumn && _includeDetailsColumn) || (dc instanceof UpdateColumn && _includeUpdateColumn);
     }

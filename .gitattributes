@@ -57,6 +57,7 @@ api/src/org/labkey/api/action/NullSafeBindException.java -text
 api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
 api/src/org/labkey/api/action/RedirectAction.java -text
+api/src/org/labkey/api/action/ReportingApiQueryResponse.java -text
 api/src/org/labkey/api/action/ReturnUrlForm.java -text
 api/src/org/labkey/api/action/SimpleApiJsonForm.java -text
 api/src/org/labkey/api/action/SimpleErrorView.java -text
@@ -300,6 +301,7 @@ api/src/org/labkey/api/data/QueryProfiler.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
+api/src/org/labkey/api/data/ReportingWriter.java -text
 api/src/org/labkey/api/data/ResultSetFactory.java -text
 api/src/org/labkey/api/data/ResultSetImpl.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
