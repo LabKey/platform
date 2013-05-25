@@ -35,15 +35,24 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class StudyQuerySchema extends UserSchema
 {
@@ -70,15 +79,6 @@ public class StudyQuerySchema extends UserSchema
         _mustCheckPermissions = mustCheckPermissions;
     }
 
-    // Quick fix for all the places that don't bother to check if the study exists... throw NotFound instead of NPE
-    private static StudyImpl throwIfNull(StudyImpl study)
-    {
-        if (null == study)
-            throw new NotFoundException("This folder does not contain a study");
-
-        return study;
-    }
-
     /**
      * This c-tor is for schemas that have no study defined -- _study is null!
      */
@@ -99,7 +99,7 @@ public class StudyQuerySchema extends UserSchema
     // TODO remove this when UserSchema implements caching
     // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=14369
     // we're not quite ready for general table caching, so just cache BaseSpecimenPivotTable
-    Map<Pair<String,Boolean>,Object> pivotCache = new HashMap<Pair<String, Boolean>, Object>();
+    Map<Pair<String,Boolean>,Object> pivotCache = new HashMap<>();
 
     @Override
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
@@ -152,7 +152,7 @@ public class StudyQuerySchema extends UserSchema
 
     private Set<String> getTableNames(boolean visible)
     {
-        Set<String> ret = new LinkedHashSet<String>();
+        Set<String> ret = new LinkedHashSet<>();
 
         // Always add StudyProperties, even if we have no study
         ret.add("StudyProperties");
@@ -218,7 +218,7 @@ public class StudyQuerySchema extends UserSchema
 
     public Map<String, DataSetDefinition> getDataSetDefinitions()
     {
-        Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
+        Map<String, DataSetDefinition> ret = new LinkedHashMap<>();
         assert _study != null : "Attempt to get datasets without a study";
         if (_study != null)
         {
@@ -491,7 +491,7 @@ public class StudyQuerySchema extends UserSchema
 
                     if (null != aliasColumn && null != sourceColumn)
                     {
-                        FilteredTable aliasTable = new FilteredTable<StudyQuerySchema>(datasetTable, this);
+                        FilteredTable aliasTable = new FilteredTable<>(datasetTable, this);
 
                         aliasTable.addWrapColumn(datasetTable.getColumn(study.getSubjectColumnName()));
                         aliasTable.addWrapColumn(aliasColumn);

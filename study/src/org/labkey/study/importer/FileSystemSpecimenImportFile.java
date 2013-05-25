@@ -64,9 +64,8 @@ public class FileSystemSpecimenImportFile implements SpecimenImportFile
     @Override
     public TabLoader getDataLoader() throws IOException
     {
-        Reader reader = new BufferedReader(new InputStreamReader(getInputStream()));
-        TabLoader loader = new TabLoader(reader, true);
-        loader.setCloseOnComplete(true);
+        Reader reader = new InputStreamReader(getInputStream());
+        TabLoader loader = new TabLoader(reader, true, null, true);   // Close on complete
 
         Filter<Map<String, Object>> filter = getStrategy().getImportFilter();
 

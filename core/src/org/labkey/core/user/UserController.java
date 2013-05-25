@@ -467,7 +467,7 @@ public class UserController extends SpringActionController
             if (bean.getUsers().size() == 0)
                 throw new RedirectException(bean.getRedirUrl().getLocalURIString());
 
-            return new JspView<DeactivateUsersBean>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
 
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
@@ -555,7 +555,7 @@ public class UserController extends SpringActionController
             if (bean.getUsers().size() == 0)
                 throw new RedirectException(siteUsersUrl);
 
-            return new JspView<DeleteUsersBean>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
         }
 
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
@@ -672,7 +672,7 @@ public class UserController extends SpringActionController
             users.setTitle("Users");
             users.setFrame(WebPartView.FrameType.PORTAL);
 
-            JspView<ShowUsersForm> toggleInactiveView = new JspView<ShowUsersForm>("/org/labkey/core/user/toggleInactive.jsp", form);
+            JspView<ShowUsersForm> toggleInactiveView = new JspView<>("/org/labkey/core/user/toggleInactive.jsp", form);
 
             users.addView(toggleInactiveView);
             users.addView(createQueryView(form, errors, false, "Users"));
@@ -1036,7 +1036,7 @@ public class UserController extends SpringActionController
             _userPrincipal = userPrincipal;
             _depth = depth;
 
-            Map<String, List<Group>> accessGroups = new TreeMap<String, List<Group>>();
+            Map<String, List<Group>> accessGroups = new TreeMap<>();
             for (Role role : roles)
                 accessGroups.put(role.getName(), new ArrayList<Group>());
             _accessGroups = accessGroups;
@@ -1087,7 +1087,7 @@ public class UserController extends SpringActionController
             if (null == _accessGroups || _accessGroups.size() == 0)
                 return Collections.emptyList();
 
-            List<Group> allGroups = new ArrayList<Group>();
+            List<Group> allGroups = new ArrayList<>();
             for (List<Group> groups : _accessGroups.values())
             {
                 allGroups.addAll(groups);
@@ -1135,7 +1135,7 @@ public class UserController extends SpringActionController
 
         for (Container child : children)
         {
-            Map<String, List<Group>> childAccessGroups = new TreeMap<String, List<Group>>();
+            Map<String, List<Group>> childAccessGroups = new TreeMap<>();
 
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(child);
             Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
@@ -1242,17 +1242,17 @@ public class UserController extends SpringActionController
             accessForm.setShowAll(form.getShowAll());
             accessForm.setShowCaption("show all folders");
             accessForm.setHideCaption("hide unassigned folders");
-            view.addView(new JspView<SecurityController.FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
+            view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
 
-            List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
-            Set<Container> containersInList = new HashSet<Container>();
+            List<AccessDetailRow> rows = new ArrayList<>();
+            Set<Container> containersInList = new HashSet<>();
             Container c = getContainer();
             MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
-            Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
+            Map<Container, Group[]> projectGroupCache = new HashMap<>();
             buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, containersInList, requestedUser, 0, projectGroupCache, form.getShowAll());
             AccessDetail details = new AccessDetail(rows);
             details.setActive(requestedUser.isActive());
-            JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", details);
+            JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/userAccess.jsp", details);
             view.addView(accessView);
 
             if (c.isRoot())
@@ -1387,7 +1387,7 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction(ChangeEmailAction.class);
+                ActionURL changeEmailURL = getChangeEmailAction(c, detailsUser);
                 ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
                 changeEmail.setActionType(ActionButton.Action.LINK);
                 bb.add(changeEmail);
@@ -1407,7 +1407,7 @@ public class UserController extends SpringActionController
 
             if (isProjectAdminOrBetter)
             {
-                ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction(UserAccessAction.class);
+                ActionURL viewPermissionsURL = new UserUrlsImpl().getUserAccessURL(c, _detailsUserId);
                 ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
                 bb.add(viewPermissions);
@@ -1508,7 +1508,7 @@ public class UserController extends SpringActionController
             {
                 try {
 
-                    List<String> requiredFields = new ArrayList<String>();
+                    List<String> requiredFields = new ArrayList<>();
                     for (DomainProperty prop : domain.getProperties())
                     {
                         if (prop.isRequired())
@@ -1578,6 +1578,16 @@ public class UserController extends SpringActionController
         }
     }
 
+
+    private static ActionURL getChangeEmailAction(Container c, User user)
+    {
+        ActionURL url = new ActionURL(ChangeEmailAction.class, c);
+        url.addParameter("userId", user.getUserId());
+
+        return url;
+    }
+
+
     @RequiresSiteAdmin @CSRF
     public class ChangeEmailAction extends FormViewAction<UserForm>
     {
@@ -1591,7 +1601,7 @@ public class UserController extends SpringActionController
         {
             _userId = form.getUserId();
 
-            return new JspView<ChangeEmailBean>("/org/labkey/core/user/changeEmail.jsp", new ChangeEmailBean(_userId, form.getMessage()), errors);
+            return new JspView<>("/org/labkey/core/user/changeEmail.jsp", new ChangeEmailBean(_userId, form.getMessage()), errors);
         }
 
         public boolean handlePost(UserForm form, BindException errors) throws Exception
@@ -1844,7 +1854,7 @@ public class UserController extends SpringActionController
             response.put("container", container.getPath());
 
             Collection<User> users;
-            List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> userResponseList = new ArrayList<>();
 
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
@@ -1898,7 +1908,7 @@ public class UserController extends SpringActionController
                     //according to the docs, startsWith will return true even if nameFilter is empty string
                     if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
                     {
-                        Map<String,Object> userInfo = new HashMap<String,Object>();
+                        Map<String,Object> userInfo = new HashMap<>();
                         userInfo.put(PROP_USER_ID, user.getUserId());
 
                         //force sanitize of the display name, even for logged-in users
@@ -1941,7 +1951,7 @@ public class UserController extends SpringActionController
             {
                 // Filter to project users
                 List<User> projectUsers = SecurityManager.getProjectUsers(c);
-                emails = new ArrayList<String>(projectUsers.size());
+                emails = new ArrayList<>(projectUsers.size());
 
                 // Can't impersonate yourself, so remove current user
                 for (User member : projectUsers)

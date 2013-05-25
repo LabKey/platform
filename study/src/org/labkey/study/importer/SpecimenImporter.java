@@ -17,7 +17,6 @@
 package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -97,6 +96,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -757,7 +757,7 @@ public class SpecimenImporter
 
             // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
             if (loadInfo.getRowCount() > 0)
-                populateSpecimenTables(loadInfo, specimenFile, merge);
+                populateSpecimenTables(loadInfo, merge);
             else
                 info("Specimens: 0 rows found in input");
 
@@ -814,7 +814,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimenTables(SpecimenLoadInfo info, SpecimenImportFile specimenFile, boolean merge) throws SQLException, IOException, ValidationException
+    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException, ValidationException
     {
         if (!merge)
         {
@@ -831,7 +831,7 @@ public class SpecimenImporter
         }
 
         populateMaterials(info, merge);
-        populateSpecimens(info, specimenFile, merge);
+        populateSpecimens(info, merge);
         populateVials(info, merge);
         populateVialEvents(info, merge);
 
@@ -845,23 +845,6 @@ public class SpecimenImporter
     }
 
     private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
-
-    // TODO: Replace with Objects.equals()
-    private static boolean safeIntegerEqual(Integer a, Integer b)
-    {
-        if (a == null && b == null)
-            return true;
-        return !(a == null || b == null) && a.intValue() == b.intValue();
-    }
-
-    // TODO: Replace with Objects.equals()
-    private static <T> boolean safeObjectEquals(T a, T b)
-    {
-        if (a == null && b == null)
-            return true;
-        return !(a == null || b == null) && a.equals(b);
-    }
-
 
     private static Set<String> getConflictingEventColumns(SpecimenEvent[] events)
     {
@@ -883,7 +866,7 @@ public class SpecimenImporter
                         SpecimenEvent nextEvent = events[i + 1];
                         Object currentValue = PropertyUtils.getProperty(event, propName);
                         Object nextValue = PropertyUtils.getProperty(nextEvent, propName);
-                        if (!safeObjectEquals(currentValue, nextValue))
+                        if (!Objects.equals(currentValue, nextValue))
                         {
                             conflicts.add(col.getDbColumnName());
                         }
@@ -1175,24 +1158,24 @@ public class SpecimenImporter
                 // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
                 SpecimenEvent lastEvent = SampleManager.getInstance().getLastEvent(dateOrderedEvents);
 
-                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
-                    !safeIntegerEqual(processingLocation, specimen.getProcessingLocation()) ||
-                    !safeObjectEquals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
+                if (!Objects.equals(currentLocation, specimen.getCurrentLocation()) ||
+                    !Objects.equals(processingLocation, specimen.getProcessingLocation()) ||
+                    !Objects.equals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
                     atRepository != specimen.isAtRepository() ||
-                    !safeObjectEquals(specimen.getLatestComments(), lastEvent.getComments()) ||
-                    !safeObjectEquals(specimen.getLatestQualityComments(), lastEvent.getQualityComments()) ||
-                    !safeObjectEquals(specimen.getLatestDeviationCode1(), lastEvent.getDeviationCode1()) ||
-                    !safeObjectEquals(specimen.getLatestDeviationCode2(), lastEvent.getDeviationCode2()) ||
-                    !safeObjectEquals(specimen.getLatestDeviationCode3(), lastEvent.getDeviationCode3()) ||
-                    !safeObjectEquals(specimen.getLatestConcentration(), lastEvent.getConcentration()) ||
-                    !safeObjectEquals(specimen.getLatestIntegrity(), lastEvent.getIntegrity()) ||
-                    !safeObjectEquals(specimen.getLatestRatio(), lastEvent.getRatio()) ||
-                    !safeObjectEquals(specimen.getLatestYield(), lastEvent.getYield()) ||
-                    !safeObjectEquals(specimen.getFreezer(), lastEvent.getFreezer()) ||
-                    !safeObjectEquals(specimen.getFr_container(), lastEvent.getFr_container()) ||
-                    !safeObjectEquals(specimen.getFr_position(), lastEvent.getFr_position()) ||
-                    !safeObjectEquals(specimen.getFr_level1(), lastEvent.getFr_level1()) ||
-                    !safeObjectEquals(specimen.getFr_level2(), lastEvent.getFr_level2()))
+                    !Objects.equals(specimen.getLatestComments(), lastEvent.getComments()) ||
+                    !Objects.equals(specimen.getLatestQualityComments(), lastEvent.getQualityComments()) ||
+                    !Objects.equals(specimen.getLatestDeviationCode1(), lastEvent.getDeviationCode1()) ||
+                    !Objects.equals(specimen.getLatestDeviationCode2(), lastEvent.getDeviationCode2()) ||
+                    !Objects.equals(specimen.getLatestDeviationCode3(), lastEvent.getDeviationCode3()) ||
+                    !Objects.equals(specimen.getLatestConcentration(), lastEvent.getConcentration()) ||
+                    !Objects.equals(specimen.getLatestIntegrity(), lastEvent.getIntegrity()) ||
+                    !Objects.equals(specimen.getLatestRatio(), lastEvent.getRatio()) ||
+                    !Objects.equals(specimen.getLatestYield(), lastEvent.getYield()) ||
+                    !Objects.equals(specimen.getFreezer(), lastEvent.getFreezer()) ||
+                    !Objects.equals(specimen.getFr_container(), lastEvent.getFr_container()) ||
+                    !Objects.equals(specimen.getFr_position(), lastEvent.getFr_position()) ||
+                    !Objects.equals(specimen.getFr_level1(), lastEvent.getFr_level1()) ||
+                    !Objects.equals(specimen.getFr_level2(), lastEvent.getFr_level2()))
                 {
                     List<Object> params = new ArrayList<>();
                     params.add(currentLocation);
@@ -1570,7 +1553,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info, SpecimenImportFile file, boolean merge) throws IOException, SQLException, ValidationException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException, ValidationException
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
@@ -1811,15 +1794,12 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        DataLoader loader = loadTsv(file);
-
-        try
+        try (DataLoader loader = loadTsv(file))
         {
             mergeTable(schema, container, type.getTableName(), type.getColumns(), loader, entityIdCol);
         }
         finally
         {
-            loader.close();
             file.getStrategy().close();
         }
     }
@@ -2087,15 +2067,12 @@ public class SpecimenImporter
                 computedColumnsMap.put(cc.getName(), cc);
 
         StringBuilder insertSql = new StringBuilder();
-
         List<List<Object>> rows = new ArrayList<>();
         int rowCount = 0;
 
         Collection<T> columns = (Collection<T>)file.getTableType().getColumns();
 
-        CloseableIterator<Map<String, Object>> iter = loadTsv(file).iterator();
-
-        try
+        try (CloseableIterator<Map<String, Object>> iter = loadTsv(file).iterator())
         {
             while (iter.hasNext())
             {
@@ -2159,7 +2136,6 @@ public class SpecimenImporter
         }
         finally
         {
-            IOUtils.closeQuietly(iter);
             file.getStrategy().close();
         }
         assert cpuMergeTable.stop();
@@ -2168,7 +2144,7 @@ public class SpecimenImporter
     }
 
 
-    private <T extends ImportableColumn> DataLoader loadTsv(@NotNull SpecimenImportFile importFile) throws IOException
+    private DataLoader loadTsv(@NotNull SpecimenImportFile importFile) throws IOException
     {
         assert null != importFile;
 

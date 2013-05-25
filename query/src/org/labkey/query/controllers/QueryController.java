@@ -263,7 +263,8 @@ public class QueryController extends SpringActionController
     {
         try
         {
-            return form.getSchema() != null && form.getSchema().getTable(form.getQueryName()) != null;
+            UserSchema schema = form.getSchema();
+            return schema != null && schema.getTable(form.getQueryName()) != null;
         }
         catch (QueryParseException x)
         {
@@ -306,6 +307,9 @@ public class QueryController extends SpringActionController
         {
             throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' doesn't exist.");
         }
+
+        // If the above checks succeed then QueryDef should be non-null. TODO: Remove null != getQueryDef() checks from callers of ensureQueryExists()
+        assert null != form.getQueryDef();
     }
 
 
@@ -317,7 +321,7 @@ public class QueryController extends SpringActionController
         {
             ExternalSchemaDef[] allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
-            MultiMap<String, ExternalSchemaDef> byDataSourceName = new MultiHashMap<String, ExternalSchemaDef>();
+            MultiMap<String, ExternalSchemaDef> byDataSourceName = new MultiHashMap<>();
 
             for (ExternalSchemaDef def : allDefs)
                 byDataSourceName.put(def.getDataSource(), def);
@@ -369,12 +373,12 @@ public class QueryController extends SpringActionController
 
                 if (null != dsDefs)
                 {
-                    MultiMap<String, ExternalSchemaDef> byContainerPath = new MultiHashMap<String, ExternalSchemaDef>();
+                    MultiMap<String, ExternalSchemaDef> byContainerPath = new MultiHashMap<>();
 
                     for (ExternalSchemaDef def : dsDefs)
                         byContainerPath.put(def.getContainerPath(), def);
 
-                    TreeSet<String> paths = new TreeSet<String>(byContainerPath.keySet());
+                    TreeSet<String> paths = new TreeSet<>(byContainerPath.keySet());
                     QueryUrlsImpl urls = new QueryUrlsImpl();
 
                     for (String path : paths)
@@ -447,7 +451,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<Object>(QueryController.class, "browse.jsp", null);
+            return new JspView<>(QueryController.class, "browse.jsp", null);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -461,7 +465,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new JspView<QueryForm>(QueryController.class, "browse.jsp", form);
+            return new JspView<>(QueryController.class, "browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -484,7 +488,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<QueryForm>(QueryController.class, "browse.jsp", form);
+            return new JspView<>(QueryController.class, "browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -548,7 +552,7 @@ public class QueryController extends SpringActionController
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
             setHelpTopic(new HelpTopic("customSQL"));
-            return new JspView<NewQueryForm>(QueryController.class, "newQuery.jsp", form, errors);
+            return new JspView<>(QueryController.class, "newQuery.jsp", form, errors);
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -684,7 +688,7 @@ public class QueryController extends SpringActionController
                 Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<SourceForm>(QueryController.class, "sourceQuery.jsp", form, errors);
+            return new JspView<>(QueryController.class, "sourceQuery.jsp", form, errors);
         }
 
         public boolean handlePost(SourceForm form, BindException errors) throws Exception
@@ -713,7 +717,7 @@ public class QueryController extends SpringActionController
                 {
                     query.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
-                    ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
+                    ArrayList<QueryException> qerrors = new ArrayList<>();
                     TableInfo t = query.getTable(qerrors, false);
                     if (null != t && qerrors.isEmpty())
                     {
@@ -786,7 +790,7 @@ public class QueryController extends SpringActionController
                 {
                     query.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
-                    ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
+                    ArrayList<QueryException> qerrors = new ArrayList<>();
                     try
                     {
                         TableInfo t = query.getTable(qerrors, false);
@@ -843,7 +847,7 @@ public class QueryController extends SpringActionController
             QueryDefinition queryDef = queryForm.getQueryDef();
             if (queryDef == null)
                 throw new NotFoundException("Query '" + queryForm.getQueryName() + "' in schema '" + queryForm.getSchemaName() + "' not found");
-            return new JspView<QueryForm>(QueryController.class, "deleteQuery.jsp", queryForm, errors);
+            return new JspView<>(QueryController.class, "deleteQuery.jsp", queryForm, errors);
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
@@ -1480,7 +1484,7 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
             _form = form;
             _query = _form.getQueryDef();
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
             props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
@@ -1657,7 +1661,7 @@ public class QueryController extends SpringActionController
             }
         }
 
-        Map<String, Object> ret = new HashMap<String, Object>();
+        Map<String, Object> ret = new HashMap<>();
         ret.put("redirect", returnURL);
         if (view != null)
             ret.put("view", CustomViewUtil.toMap(view, getViewContext().getUser(), true));
@@ -1702,10 +1706,10 @@ public class QueryController extends SpringActionController
             if (queryDef == null)
                 throw new NotFoundException("query not found");
 
-            Map<String, Object> response = new HashMap<String, Object>();
+            Map<String, Object> response = new HashMap<>();
             response.put(QueryParam.schemaName.toString(), schemaName);
             response.put(QueryParam.queryName.toString(), queryName);
-            List<Map<String, Object>> views = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> views = new ArrayList<>();
             response.put("views", views);
 
             ActionURL redirect = null;
@@ -1785,7 +1789,7 @@ public class QueryController extends SpringActionController
             setHelpTopic(new HelpTopic("customSQL"));
             _queryName = form.getQueryName();
 
-            return new JspView<PropertiesForm>(QueryController.class, "propertiesQuery.jsp", form, errors);
+            return new JspView<>(QueryController.class, "propertiesQuery.jsp", form, errors);
         }
 
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
@@ -1876,7 +1880,7 @@ public class QueryController extends SpringActionController
             int numPks = pks.size();
 
             //normalize the pks to arrays of correctly-typed objects
-            List<Map<String, Object>> keyValues = new ArrayList<Map<String, Object>>(ids.size());
+            List<Map<String, Object>> keyValues = new ArrayList<>(ids.size());
             for (String id : ids)
             {
                 String[] stringValues;
@@ -1889,7 +1893,7 @@ public class QueryController extends SpringActionController
                 else
                     stringValues = new String[]{id};
 
-                Map<String, Object> rowKeyValues = new HashMap<String, Object>();
+                Map<String, Object> rowKeyValues = new HashMap<>();
                 for (int idx = 0; idx < numPks; ++idx)
                 {
                     ColumnInfo keyColumn = pks.get(idx);
@@ -2518,7 +2522,7 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
 
             QueryDefinition query = form.getQueryDef();
-            List<QueryException> qpe = new ArrayList<QueryException>();
+            List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
                 throw qpe.get(0);
@@ -2677,8 +2681,8 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
-                List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
-                List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> newRows = new ArrayList<>();
+                List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
                     //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
@@ -2693,10 +2697,10 @@ public class QueryController extends SpringActionController
                 if (errors.hasErrors())
                     throw errors;
                 updatedRows = qus.getRows(user, container, updatedRows);
-                List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
-                    Map<String, Object> result = new HashMap<String, Object>();
+                    Map<String, Object> result = new HashMap<>();
                     result.put(SaveRowsAction.PROP_VALUES, updatedRows.get(i));
                     result.put(SaveRowsAction.PROP_OLD_KEYS, oldKeys.get(i));
                     results.add(result);
@@ -2718,8 +2722,8 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
-                List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
-                List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> newRows = new ArrayList<>();
+                List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
                     // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
@@ -2732,10 +2736,10 @@ public class QueryController extends SpringActionController
                 }
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, extraContext);
                 updatedRows = qus.getRows(user, container, updatedRows);
-                List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
-                    Map<String, Object> result = new HashMap<String, Object>();
+                    Map<String, Object> result = new HashMap<>();
                     result.put(SaveRowsAction.PROP_VALUES, updatedRows.get(i));
                     result.put(SaveRowsAction.PROP_OLD_KEYS, oldKeys.get(i));
                     results.add(result);
@@ -4115,7 +4119,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<QueryForm>(QueryController.class, "manageViews.jsp", form, errors);
+            return new JspView<>(QueryController.class, "manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4132,7 +4136,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
         {
-            return new JspView<InternalViewForm>(QueryController.class, "internalDeleteView.jsp", form, errors);
+            return new JspView<>(QueryController.class, "internalDeleteView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
@@ -4167,7 +4171,7 @@ public class QueryController extends SpringActionController
             form.ff_hidden = QueryManager.get().isHidden(view.getFlags());
             form.ff_columnList = view.getColumns();
             form.ff_filter = view.getFilter();
-            return new JspView<InternalSourceViewForm>(QueryController.class, "internalSourceView.jsp", form, errors);
+            return new JspView<>(QueryController.class, "internalSourceView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
@@ -4216,7 +4220,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<InternalNewViewForm>(QueryController.class, "internalNewView.jsp", form, errors);
+            return new JspView<>(QueryController.class, "internalNewView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalNewViewForm form, BindException errors) throws Exception
@@ -4382,7 +4386,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
-            List<String> selection = new ArrayList<String>();
+            List<String> selection = new ArrayList<>();
             if (ids != null)
             {
                 for (String id : ids)
@@ -4579,7 +4583,7 @@ public class QueryController extends SpringActionController
 
             response.put("schemaName", form.getSchemaName());
 
-            List<Map<String, Object>> qinfos = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> qinfos = new ArrayList<>();
 
             //user-defined queries
             if (form.isIncludeUserQueries())
@@ -4618,7 +4622,7 @@ public class QueryController extends SpringActionController
 
         protected Map<String, Object> getQueryProps(String name, String description, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
         {
-            Map<String, Object> qinfo = new HashMap<String, Object>();
+            Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("name", name);
             qinfo.put("isUserDefined", isUserDefined);
             if (null != description)
@@ -4637,10 +4641,10 @@ public class QueryController extends SpringActionController
                     if (includeColumns)
                     {
                         //enumerate the columns
-                        List<Map<String, Object>> cinfos = new ArrayList<Map<String, Object>>();
+                        List<Map<String, Object>> cinfos = new ArrayList<>();
                         for(ColumnInfo col : table.getColumns())
                         {
-                            Map<String, Object> cinfo = new HashMap<String, Object>();
+                            Map<String, Object> cinfo = new HashMap<>();
                             cinfo.put("name", col.getName());
                             if (null != col.getLabel())
                                 cinfo.put("caption", col.getLabel());
@@ -4741,7 +4745,7 @@ public class QueryController extends SpringActionController
             if (null == views)
                 views = Collections.emptyMap();
 
-            Map<FieldKey, Map<String, Object>> columnMetadata = new HashMap<FieldKey, Map<String, Object>>();
+            Map<FieldKey, Map<String, Object>> columnMetadata = new HashMap<>();
 
             List<Map<String, Object>> viewInfos = Collections.emptyList();
             if (getViewContext().getBindPropertyValues().contains("viewName"))
@@ -4762,7 +4766,7 @@ public class QueryController extends SpringActionController
             else
             {
                 boolean foundDefault = false;
-                viewInfos = new ArrayList<Map<String, Object>>(views.size());
+                viewInfos = new ArrayList<>(views.size());
                 for (CustomView view : views.values())
                 {
                     if (view.getName() == null)
@@ -4897,9 +4901,9 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            List<QueryParseException> qpe = new ArrayList<QueryParseException>();
+            List<QueryParseException> qpe = new ArrayList<>();
             String expr = getViewContext().getRequest().getParameter("q");
-            ArrayList<String> html = new ArrayList<String>();
+            ArrayList<String> html = new ArrayList<>();
             html.add("<html><body><form method=GET><textarea cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input type=submit onclick='Ext.getBody().mask();'></form>");
 
             QNode e = null;
@@ -5185,7 +5189,7 @@ public class QueryController extends SpringActionController
             if (reshow && !errors.hasErrors())
                 return null;
             
-            return new JspView<ExportTablesForm>("/org/labkey/query/controllers/exportTables.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/controllers/exportTables.jsp", form, errors);
         }
 
         @Override
@@ -5220,7 +5224,7 @@ public class QueryController extends SpringActionController
         {
             BindException errors;
             errors = new NullSafeBindException(this, "form");
-            _schemas = new HashMap<String, ArrayList<String>>();
+            _schemas = new HashMap<>();
 
             for (PropertyValue value : values.getPropertyValues())
             {
@@ -5231,7 +5235,7 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "At least one query must be specified for each schema.");
                 }
 
-                _schemas.put(value.getName(), new ArrayList<String>(Arrays.asList(queries)));
+                _schemas.put(value.getName(), new ArrayList<>(Arrays.asList(queries)));
             }
 
             return errors;

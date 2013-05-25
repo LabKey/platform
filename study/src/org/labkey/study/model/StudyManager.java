@@ -184,7 +184,7 @@ public class StudyManager
     private final QueryHelper<LocationImpl> _locationHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
-    private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<String, Resource>();
+    private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<>();
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -229,7 +229,7 @@ public class StudyManager
             }
         };
 
-        _visitHelper = new QueryHelper<VisitImpl>(new TableInfoGetter()
+        _visitHelper = new QueryHelper<>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
@@ -237,7 +237,7 @@ public class StudyManager
                 }
             }, VisitImpl.class);
 
-        _locationHelper = new QueryHelper<LocationImpl>(new TableInfoGetter()
+        _locationHelper = new QueryHelper<>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
@@ -245,7 +245,7 @@ public class StudyManager
                 }
             }, LocationImpl.class);
 
-        _cohortHelper = new QueryHelper<CohortImpl>(new TableInfoGetter()
+        _cohortHelper = new QueryHelper<>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
@@ -268,7 +268,6 @@ public class StudyManager
         _datasetHelper = new DatasetHelper(dataSetGetter);
         _tableInfoVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
         _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
-        //_tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData(null);
         _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
@@ -282,7 +281,7 @@ public class StudyManager
             super(tableGetter, DataSetDefinition.class);
         }
 
-        private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<Container, PropertyDescriptor[]>();
+        private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<>();
 
         public PropertyDescriptor[] getSharedProperties(Container c)
         {
@@ -292,7 +291,7 @@ public class StudyManager
                 Container sharedContainer = ContainerManager.getSharedContainer();
                 assert c != sharedContainer;
 
-                Set<PropertyDescriptor> set = new LinkedHashSet<PropertyDescriptor>();
+                Set<PropertyDescriptor> set = new LinkedHashSet<>();
                 DataSetDefinition[] defs = get(c);
                 if (defs == null)
                 {
@@ -401,7 +400,7 @@ public class StudyManager
     public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
         StudyImpl[] studies = getAllStudies();
-        List<Study> result = new ArrayList<Study>(studies.length);
+        List<Study> result = new ArrayList<>(studies.length);
         for (StudyImpl study : studies)
         {
             if (study.getContainer().hasPermission(user, perm) &&
@@ -570,7 +569,7 @@ public class StudyManager
 
             if (!old.getName().equals(dataSetDefinition.getName()))
             {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<String>(
+                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
                     QueryService.get().getUserSchema(user, dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dataSetDefinition.getName()),
                     QueryChangeListener.QueryProperty.Name,
                     old.getName(),
@@ -858,7 +857,7 @@ public class StudyManager
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
         Visit[] visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : new Visit[0];
 
-        Map<String, Double> map = new CaseInsensitiveHashMap<Double>((customMapping.size() + visits.length) * 3 / 4);
+        Map<String, Double> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.length) * 3 / 4);
 
 //        // allow prepended "visit"
 //        for (Visit visit : visits)
@@ -904,7 +903,7 @@ public class StudyManager
     // num for display purposes.  Include VisitAliases that won't be used, but mark them as overridden.
     public Collection<VisitAlias> getStandardVisitImportMapping(Study study)
     {
-        List<VisitAlias> list = new LinkedList<VisitAlias>();
+        List<VisitAlias> list = new LinkedList<>();
         Set<String> labels = new CaseInsensitiveHashSet();
         Map<String, Double> customMap = getVisitImportMap(study, false);
 
@@ -1100,7 +1099,7 @@ public class StudyManager
     public List<LocationImpl> getValidRequestingLocations(Container container)
     {
         Study study = getStudy(container);
-        List<LocationImpl> validLocations = new ArrayList<LocationImpl>();
+        List<LocationImpl> validLocations = new ArrayList<>();
         LocationImpl[] locations = getSites(container);
         for (LocationImpl location : locations)
         {
@@ -1337,7 +1336,7 @@ public class StudyManager
 
     private Map<String, VisitImpl> getVisitsForDataRows(Container container, int datasetId, Collection<String> dataLsids)
     {
-        Map<String, VisitImpl> visits = new HashMap<String, VisitImpl>();
+        Map<String, VisitImpl> visits = new HashMap<>();
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
@@ -1392,7 +1391,7 @@ public class StudyManager
 
     public List<VisitImpl> getVisitsForDataset(Container container, int datasetId)
     {
-        List<VisitImpl> visits = new ArrayList<VisitImpl>();
+        List<VisitImpl> visits = new ArrayList<>();
 
         DataSetDefinition def = getDataSetDefinition(getStudy(container), datasetId);
         TableInfo ds = def.getTableInfo(null, false);
@@ -1430,10 +1429,10 @@ public class StudyManager
         if (rows.length == 0)
             return;
 
-        Map<String, String> oldQCStates = new HashMap<String, String>();
-        Map<String, String> newQCStates = new HashMap<String, String>();
+        Map<String, String> oldQCStates = new HashMap<>();
+        Map<String, String> newQCStates = new HashMap<>();
 
-        Set<String> updateLsids = new HashSet<String>();
+        Set<String> updateLsids = new HashSet<>();
         for (Map<String, Object> row : rows)
         {
             String lsid = (String) row.get("lsid");
@@ -1515,7 +1514,7 @@ public class StudyManager
             event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
             event.setComment(auditComment);
 
-            Map<String, Object> dataMap = new HashMap<String, Object>();
+            Map<String, Object> dataMap = new HashMap<>();
             dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
             dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
             AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
@@ -1639,7 +1638,7 @@ public class StudyManager
     {
         try
         {
-            List<Object> params = new ArrayList<Object>();
+            List<Object> params = new ArrayList<>();
             params.add(cohort.getContainer().getId());
 
             StringBuilder cols = new StringBuilder("(");
@@ -1856,7 +1855,7 @@ public class StudyManager
                 if (!rs.next())
                     return null;
                 else
-                    return new Pair<String, Integer>(rs.getString(1), rs.getInt(2));
+                    return new Pair<>(rs.getString(1), rs.getInt(2));
             }
             catch (SQLException x)
             {
@@ -1901,7 +1900,7 @@ public class StudyManager
         @SuppressWarnings("unchecked")
         Map<String,Object>[] data = Table.select(tInfo, select, new SimpleFilter(), null, Map.class);
         
-        List<String> lsids = new ArrayList<String>(data.length);
+        List<String> lsids = new ArrayList<>(data.length);
         for (Map<String,Object> row : data)
         {
             lsids.add(row.get("lsid").toString());
@@ -1929,7 +1928,7 @@ public class StudyManager
         {
         ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT DatasetId, VisitRowId, Required FROM " + tableVisitMap + " WHERE Container=?",
                 new Object[] { study.getContainer() });
-        HashMap<VisitMapKey,Boolean> map = new HashMap<VisitMapKey, Boolean>();
+        HashMap<VisitMapKey,Boolean> map = new HashMap<>();
         while (rs.next())
             map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3));
         rs.close();
@@ -1964,7 +1963,7 @@ public class StudyManager
         {
             ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
                     new Object[] { visit.getContainer().getId(), visit.getRowId() });
-            List<VisitDataSet> visitDataSets = new ArrayList<VisitDataSet>();
+            List<VisitDataSet> visitDataSets = new ArrayList<>();
             while (rs.next())
             {
                 int dataSetId = rs.getInt("DataSetId");
@@ -1987,7 +1986,7 @@ public class StudyManager
         {
             ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
                     new Object[]{dataSet.getContainer().getId(), dataSet.getDataSetId()});
-            List<VisitDataSet> visitDataSets = new ArrayList<VisitDataSet>();
+            List<VisitDataSet> visitDataSets = new ArrayList<>();
             while (rs.next())
             {
                 int visitRowId = rs.getInt("VisitRowId");
@@ -2026,7 +2025,7 @@ public class StudyManager
         else if ((VisitDataSetType.OPTIONAL == type && vds.isRequired()) ||
                  (VisitDataSetType.REQUIRED == type && !vds.isRequired()))
         {
-            Map<String,Object> required = new HashMap<String, Object>(1);
+            Map<String,Object> required = new HashMap<>(1);
             required.put("Required", VisitDataSetType.REQUIRED == type ? Boolean.TRUE : Boolean.FALSE);
             Table.update(user, _tableInfoVisitMap, required,
                     new Object[]{container.getId(), visitId, dataSetId});
@@ -2182,7 +2181,7 @@ public class StudyManager
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        Set<TableInfo> deletedTables = new HashSet<TableInfo>();
+        Set<TableInfo> deletedTables = new HashSet<>();
         SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
 
         try
@@ -2368,7 +2367,7 @@ public class StudyManager
 
         try
         {
-            List<ParticipantDataset> pds = new ArrayList<ParticipantDataset>();
+            List<ParticipantDataset> pds = new ArrayList<>();
             TableInfo sdti = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
             rs = Table.select(sdti, Table.ALL_COLUMNS, filter, new Sort("DatasetId"));
             DataSetDefinition dataset = null;
@@ -2413,10 +2412,10 @@ public class StudyManager
         //delete that group's role assignments in all dataset policies
         Role restrictedReader = RoleManager.getRole(RestrictedReaderRole.class);
 
-        Set<SecurableResource> resources = new HashSet<SecurableResource>();
+        Set<SecurableResource> resources = new HashSet<>();
         resources.addAll(Arrays.asList(getDataSetDefinitions(study)));
 
-        Set<UserPrincipal> principals = new HashSet<UserPrincipal>();
+        Set<UserPrincipal> principals = new HashSet<>();
 
         for (RoleAssignment ra : newPolicy.getAssignments())
         {
@@ -2481,33 +2480,24 @@ public class StudyManager
         }
     }
 
-    public Map<String, ParticipantInfo> getParticipantInfos(Study study, boolean isShiftDates, boolean isAlternateIds)
+    public Map<String, ParticipantInfo> getParticipantInfos(Study study, final boolean isShiftDates, final boolean isAlternateIds)
     {
-        Table.TableResultSet rs = null;
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId, " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
-            rs = Table.executeQuery(schema, sql);
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId, " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
+        final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
-            Map<String, ParticipantInfo> alternateIdMap = new HashMap<String, ParticipantInfo>();
-            while (rs.next())
+        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String participantId = rs.getString("ParticipantId");
                 String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
                 int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
                 alternateIdMap.put(participantId, new ParticipantInfo(alternateId, dateOffset));
             }
-            return alternateIdMap;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);    // TODO: Try to move population of map and RS cleanup into Table
-        }
+        });
+
+        return alternateIdMap;
     }
 
     private SQLFragment getSQLFragmentForParticipantIds(Study study, int participantGroupId, int rowLimit, DbSchema schema, String columns)
@@ -2582,7 +2572,7 @@ public class StudyManager
         if (numDigits < ALTERNATEID_DEFAULT_NUM_DIGITS)
             numDigits = ALTERNATEID_DEFAULT_NUM_DIGITS;       // Should not happen, but be safe
 
-        HashSet<Integer> usedNumbers = new HashSet<Integer>();
+        HashSet<Integer> usedNumbers = new HashSet<>();
         for (ParticipantInfo participantInfo : participantInfos.values())
         {
             String alternateId = participantInfo.getAlternateId();
@@ -2709,7 +2699,7 @@ public class StudyManager
 
     private int nextRandom(Random random, HashSet<Integer> usedNumbers, int firstRandom, int maxRandom)
     {
-        int newId = 0;
+        int newId;
         do
         {
             newId = random.nextInt(maxRandom) + firstRandom;
@@ -2730,7 +2720,7 @@ public class StudyManager
         // so this needs to be case-insensitive
         if (!(columnMap instanceof CaseInsensitiveHashMap))
         {
-            columnMap = new CaseInsensitiveHashMap<String>(columnMap);
+            columnMap = new CaseInsensitiveHashMap<>(columnMap);
         }
 
         // StandardETL will handle most aliasing, HOWEVER, ...
@@ -2846,9 +2836,9 @@ public class StudyManager
         if (mapsImport.isEmpty())
             return true;
 
-        List<String> importErrors = new LinkedList<String>();
+        List<String> importErrors = new LinkedList<>();
         final Container c = study.getContainer();
-        final Map<String, DataSetDefinitionEntry> dataSetDefEntryMap = new HashMap<String, DataSetDefinitionEntry>();
+        final Map<String, DataSetDefinitionEntry> dataSetDefEntryMap = new HashMap<>();
 
         // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
         DomainURIFactory factory = new DomainURIFactory() {
@@ -2901,8 +2891,8 @@ public class StudyManager
         }
 
         // now that we actually have datasets, create/update the domains
-        Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<Domain>();
-        Map<String, List<DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<List<DomainProperty>>();
+        Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
+        Map<String, List<DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
         for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
         {
             Domain d = domainsMap.get(ipd.domainURI);
@@ -2914,7 +2904,7 @@ public class StudyManager
                 domainsMap.put(d.getTypeURI(), d);
                 // add all the properties that exist for the domain
                 DomainProperty[] existingProperties = d.getProperties();
-                List<DomainProperty> l = new ArrayList<DomainProperty>(existingProperties.length);
+                List<DomainProperty> l = new ArrayList<>(existingProperties.length);
                 for (DomainProperty p : existingProperties)
                 {
                     l.add(p);
@@ -2975,7 +2965,7 @@ public class StudyManager
     public String getDomainURI(Container c, User u, DataSet def)
     {
         if (null == def)
-            return getDomainURI(c, u, (String)null, (String)null);
+            return getDomainURI(c, u, null, null);
         else
             return getDomainURI(c, u, def.getName(), def.getEntityId());
     }
@@ -3172,7 +3162,7 @@ public class StudyManager
             SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
             Participant[] participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
                     filter, new Sort("ParticipantId")).getArray(Participant.class);
-            participantMap = new LinkedHashMap<String, Participant>();
+            participantMap = new LinkedHashMap<>();
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
             DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, CacheManager.HOUR);
@@ -3202,7 +3192,7 @@ public class StudyManager
             return null;
 
         Set<Module> activeModules = study.getContainer().getActiveModules();
-        Set<String> activeModuleNames = new HashSet<String>();
+        Set<String> activeModuleNames = new HashSet<>();
         for (Module module : activeModules)
             activeModuleNames.add(module.getName());
         for (Map.Entry<String, Resource> entry : _moduleParticipantViews.entrySet())
@@ -3263,14 +3253,14 @@ public class StudyManager
     {
         StudyImpl study = getStudy(container);
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
-            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "participantData.jsp", config, errors);
+            return new BaseStudyController.StudyJspView<>(study, "participantData.jsp", config, errors);
         else
-            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "participantAll.jsp", config, errors);
+            return new BaseStudyController.StudyJspView<>(study, "participantAll.jsp", config, errors);
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantDemographicsView(Container container, ParticipantViewConfig config, BindException errors)
     {
-        return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
+        return new BaseStudyController.StudyJspView<>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }
 
     /**
@@ -3386,7 +3376,7 @@ public class StudyManager
         String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDataSetId())).toString();
 
         StringBuilder body = new StringBuilder();
-        Map<String, Object> props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<>();
 
         props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
@@ -3462,7 +3452,7 @@ public class StudyManager
         final int BATCH_SIZE = 500;
         if (null != ptids && ptids.size() > BATCH_SIZE)
         {
-            ArrayList<String> list = new ArrayList<String>(BATCH_SIZE);
+            ArrayList<String> list = new ArrayList<>(BATCH_SIZE);
             for (String ptid : ptids)
             {
                 list.add(ptid);
@@ -3473,7 +3463,7 @@ public class StudyManager
                         indexParticipantView(task, c, l);
                     }};
                     task.addRunnable(r, SearchService.PRIORITY.bulk);
-                    list = new ArrayList<String>(BATCH_SIZE);
+                    list = new ArrayList<>(BATCH_SIZE);
                 }
             }
             indexParticipantView(task, c, list);
@@ -3528,7 +3518,7 @@ public class StudyManager
                 if (!aliasMap.isEmpty())
                     uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
 
-                Map<String, Object> props = new HashMap<String,Object>();
+                Map<String, Object> props = new HashMap<>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.title.toString(), displayTitle);
                 props.put(SearchService.PROPERTY.indentifiersHi.toString(), uniqueIds);
@@ -3579,7 +3569,7 @@ public class StudyManager
     // CONSIDER: add some facility like this to SearchService??
     // NOTE: this needs to be reviewed if we use modifiedSince
 
-    final static WeakHashMap<Container,Runnable> _lastEnumerate = new WeakHashMap<Container,Runnable>();
+    final static WeakHashMap<Container,Runnable> _lastEnumerate = new WeakHashMap<>();
 
     public static void _enumerateDocuments(SearchService.IndexTask t, final Container c)
     {
@@ -4026,7 +4016,7 @@ public class StudyManager
 
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
                 Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
-                List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> rows = new ArrayList<>();
 
                 // insert one row
                 rows.clear(); errors.clear();
@@ -4154,13 +4144,13 @@ public class StudyManager
                 // let's try to update a row
                 rows.clear(); errors.clear();
                 assertTrue(firstRowMap.containsKey("Value"));
-                CaseInsensitiveMap<Object> row = new CaseInsensitiveMap<Object>();
+                CaseInsensitiveMap<Object> row = new CaseInsensitiveMap<>();
                 row.putAll(firstRowMap);
                 row.put("Value", 3.14159);
                 // TODO why is Number==null OK on insert() but not update()?
                 row.put("Number", 1.0);
                 rows.add(row);
-                List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> keys = new ArrayList<>();
                 keys.add(PageFlowUtil.mapInsensitive("lsid", lsidFirstRow));
                 ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, null);
                 assert(ret.size() == 1);
@@ -4175,7 +4165,7 @@ public class StudyManager
         private void _import(DataSet def, final List<Map<String, Object>> rows, List<String> errors) throws Exception
         {
             DataLoader dl = new MapLoader(rows);
-            Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
+            Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
 
             StudyManager.getInstance().importDatasetData(
                     _studyDateBased, _context.getUser(),
@@ -4186,56 +4176,43 @@ public class StudyManager
 
         private void _testImportDatasetDataAllowImportGuid(Study study) throws Throwable
         {
-            ResultSet rs = null;
             int sequenceNum = 0;
 
-            try
-            {
-                StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
-                DataSet def = createDataset(study, "GU", DatasetType.OPTIONAL_GUID);
-                TableInfo tt = ss.getTable(def.getName());
+            StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+            DataSet def = createDataset(study, "GU", DatasetType.OPTIONAL_GUID);
+            TableInfo tt = ss.getTable(def.getName());
 
+            Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
+            Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+            List<Map<String, Object>> rows = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
 
-                Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
-                Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
-                List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
-                List<String> errors = new ArrayList<String>();
+            String guid = "GUUUUID";
+            Map map = PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
+            importRowVerifyGuid(null, def,  map, tt);
 
-                String guid = "GUUUUID";
-                Map map = PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
-                importRowVerifyGuid(null, def,  map, tt);
+            // duplicate row
+            // Issue 12985
+            rows.add(map);
+            _import(def, rows, errors);
+            assertTrue("Expected one error", errors.size() == 1);
+            assertTrue("Unexpected error", errors.get(0).contains("duplicate key"));
+            assertTrue("Unexpected error", errors.get(0).contains("All rows must have unique SubjectID/Date/GUID values."));
 
-                // duplicate row
-                // Issue 12985
-                rows.add(map);
-                _import(def, rows, errors);
-                assertTrue("Expected one error", errors.size() == 1);
-                assertTrue("Unexpected error", errors.get(0).contains("duplicate key"));
-                assertTrue("Unexpected error", errors.get(0).contains("All rows must have unique SubjectID/Date/GUID values."));
-
-                //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
+            //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
 
-                //same participant, guid, different sequenceNum
-                importRowVerifyGuid((String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt);
+            //same participant, guid, different sequenceNum
+            importRowVerifyGuid((String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt);
 
-                //  same GUID,sequenceNum, different different participant
-                importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt);
+            //  same GUID,sequenceNum, different different participant
+            importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt);
 
-                //same subject, sequenceNum, GUID not provided
-                importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
+            //same subject, sequenceNum, GUID not provided
+            importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
 
-                //repeat:  should still work
-                importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
-
-
-
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-
+            //repeat:  should still work
+            importRowVerifyGuid( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
         }
 
         private void _testImportDatasetData(Study study) throws Throwable
@@ -4251,7 +4228,7 @@ public class StudyManager
 
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
                 Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
-                List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> rows = new ArrayList<>();
                 List<String> errors = new ArrayList<String>(){
                     @Override
                     public boolean add(String s)
@@ -4393,7 +4370,7 @@ public class StudyManager
         private void importRow(String[] expectedErrors, DataSet def, Map map)  throws Exception
         {
             List rows = new ArrayList();
-            List<String> errors = new ArrayList<String>();
+            List<String> errors = new ArrayList<>();
 
             rows.add(map);
             _import(def, rows, errors);
@@ -4423,7 +4400,7 @@ public class StudyManager
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
                 Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
                 List rows = new ArrayList();
-                List<String> errors = new ArrayList<String>();
+                List<String> errors = new ArrayList<>();
 
                 TimepointType time = study.getTimepointType();
 
@@ -4515,7 +4492,7 @@ public class StudyManager
 
                 // query the study.participant table to verify that the dateoffset and alternateID were generated for the ptid row inserted into the dataset
                 TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
-                List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+                List<ColumnInfo> cols = new ArrayList<>();
                 cols.add(participantTableInfo.getColumn("participantid"));
                 cols.add(participantTableInfo.getColumn("dateoffset"));
                 cols.add(participantTableInfo.getColumn("alternateid"));
@@ -4541,7 +4518,7 @@ public class StudyManager
                 rs.close(); rs = null;
 
                 // test "exporting" the dataset data using the date shited values and alternate IDs
-                Collection<ColumnInfo> datasetCols = new LinkedHashSet<ColumnInfo>(datasetTI.getColumns());
+                Collection<ColumnInfo> datasetCols = new LinkedHashSet<>(datasetTI.getColumns());
                 DatasetWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
                 DatasetWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
                 rs = QueryService.get().select(datasetTI, datasetCols, null, null);
