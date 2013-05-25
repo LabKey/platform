@@ -20,14 +20,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -101,29 +98,14 @@ public class UpgradeUtils
         if (ignoreNulls)
             filter.addCondition(col, null, CompareType.NONBLANK);
 
+        // First, grab all the existing values so when we have to change a value we don't collide with another existing value.
         Set<String> existingValues = getSet(caseSensitive);
-        Results results = null;
-
-        try
-        {
-            // First, grab all the existing values so when we have to change a value we don't collide with another existing value.
-            results = Table.select(table, selectColumns, filter, null);
-
-            while (results.next())
-            {
-                String value = results.getString(1);
-                existingValues.add(value);
-            }
-        }
-        finally
-        {
-            ResultSetUtil.close(results);
-        }
+        existingValues.addAll(new TableSelector(table, selectColumns, filter, null).getCollection(String.class));
 
         // Now enumerate the rows in the specified order and fix up the duplicates.  Use selectForDisplay to ensure PKs are selected.
         TableSelector selector = new TableSelector(table, selectColumns, filter, sort).setForDisplay(true);
 
-        Map<String, Object>[] maps = selector.getArray(Map.class);
+        Map<String, Object>[] maps = selector.getMapArray();
         Set<String> newValues = getSet(caseSensitive);
 
         for (Map<String, Object> map : maps)
@@ -148,7 +130,7 @@ public class UpgradeUtils
 
                 value = candidateValue;
 
-                ArrayList<Object> pkVals = new ArrayList<Object>(table.getPkColumnNames().size());
+                ArrayList<Object> pkVals = new ArrayList<>(table.getPkColumnNames().size());
 
                 for (String pkName : table.getPkColumnNames())
                     pkVals.add(map.get(pkName));
@@ -164,7 +146,7 @@ public class UpgradeUtils
     private static Set<String> getSet(boolean caseSensitive)
     {
         if (caseSensitive)
-            return new HashSet<String>();
+            return new HashSet<>();
         else
             return new CaseInsensitiveHashSet();
     }
@@ -195,21 +177,6 @@ public class UpgradeUtils
         sql.append(groupBy);
         sql.append(" HAVING COUNT(*) > 1");
 
-        List<String> list = new LinkedList<String>();
-        ResultSet rs = null;
-
-        try
-        {
-            rs = Table.executeQuery(table.getSchema(), sql);
-
-            while (rs.next())
-                list.add(rs.getString(1));
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-
-        return list;
+        return new SqlSelector(table.getSchema(), sql).getArrayList(String.class);
     }
 }

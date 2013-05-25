@@ -271,7 +271,7 @@ public class Table
     }
 
 
-    // 35 usages
+    // 33 usages
     @Deprecated /** Use TableSelector */
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -279,7 +279,7 @@ public class Table
     }
 
 
-    // 16 usages
+    // 14 usages
     @Deprecated /** Use TableSelector */
     public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -345,21 +345,21 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
-    // 62 usages
+    // 54 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
     }
 
-    // 41 usages
+    // 30 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet();
     }
 
-    // 10 usages
+    // 8 usages
     @Deprecated /** Use SqlSelector */
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
     {

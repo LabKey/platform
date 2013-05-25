@@ -16,11 +16,7 @@
 
 package org.labkey.api.etl;
 
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
-
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-05-17
  * Time: 1:47 PM

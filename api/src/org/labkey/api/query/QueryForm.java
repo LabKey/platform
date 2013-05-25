@@ -17,14 +17,13 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -32,8 +31,6 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
-
-import javax.servlet.ServletException;
 
 
 /**
@@ -194,36 +191,32 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return null;
     }
 
-    protected UserSchema createSchema()
+    protected @Nullable UserSchema createSchema()
     {
         // Don't side-effect until all URL parameters have been bound.
         if (_bindState == BindState.BINDING)
             return null;
-        UserSchema ret = null;
-        String schemaName = getSchemaName();
 
-        if (null != schemaName)
+        String schemaName = getSchemaName();
+        UserSchema baseSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
+
+        if (baseSchema == null)
         {
-            UserSchema baseSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
-            if (baseSchema == null)
-            {
-                return null;
-            }
-            QuerySettings settings = createQuerySettings(baseSchema);
-            QueryView view = baseSchema.createView(getViewContext(), settings);
-            // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
-            // on some other schema or query name. Therefore, remember the correct names so that we're using them
-            // consistently within this request
-            _schemaName = view.getSchema().getSchemaPath();
-            // Will be null in the case of executing LabKey SQL directly without a saved custom query
-            if (view.getQueryDef() != null)
-            {
-                _queryName = view.getQueryDef().getName();
-            }
-            return view.getSchema();
+            return null;
         }
 
-        return ret;
+        QuerySettings settings = createQuerySettings(baseSchema);
+        QueryView view = baseSchema.createView(getViewContext(), settings);
+        // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
+        // on some other schema or query name. Therefore, remember the correct names so that we're using them
+        // consistently within this request
+        _schemaName = view.getSchema().getSchemaPath();
+        // Will be null in the case of executing LabKey SQL directly without a saved custom query
+        if (view.getQueryDef() != null)
+        {
+            _queryName = view.getQueryDef().getName();
+        }
+        return view.getSchema();
     }
 
 
@@ -286,7 +279,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _schemaName == null ? "" : _schemaName.toString();
     }
 
-    public UserSchema getSchema()
+    public @Nullable UserSchema getSchema()
     {
         if (_schema == null)
         {
@@ -320,8 +313,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         }
         if (_queryDef == null)
         {
-            if (null != getSchema().getTable(getQueryName()))
-                _queryDef = getSchema().getQueryDefForTable(getQueryName());
+            UserSchema schema = getSchema();
+            if (null != schema && null != schema.getTable(getQueryName()))
+                _queryDef = schema.getQueryDefForTable(getQueryName());
         }
         return _queryDef;
     }

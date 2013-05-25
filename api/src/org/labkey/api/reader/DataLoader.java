@@ -41,6 +41,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -60,7 +61,7 @@ import java.util.Set;
  */
 
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
-public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder
+public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder, Closeable
 {
     public static DataLoaderService.I get()
     {
@@ -179,11 +180,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     protected void setSource(File inputFile) throws IOException
     {
+        verifyFile(inputFile);
         _file = inputFile;
-        if (!_file.exists())
-            throw new FileNotFoundException(_file.getPath());
-        if (!_file.canRead())
-            throw new IOException("Can't read file: " + _file.getPath());
+    }
+
+    protected static void verifyFile(File inputFile) throws IOException
+    {
+        if (!inputFile.exists())
+            throw new FileNotFoundException(inputFile.getPath());
+        if (!inputFile.canRead())
+            throw new IOException("Can't read file: " + inputFile.getPath());
     }
 
     /**
