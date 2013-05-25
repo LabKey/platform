@@ -293,7 +293,7 @@ var f_scope<%=text(uid)%> = new (function() {
     function addKnitrFormat(url)
     {
         var knitrFormat = document.getElementsByName("<%=ScriptReportDescriptor.Prop.knitrFormat%>");
-        if (knitrFormat)
+        if (knitrFormat && knitrFormat.length == 3)
         {
             var v = knitrFormat[0].checked ? knitrFormat[0].value :
                     knitrFormat[1].checked ? knitrFormat[1].value :
