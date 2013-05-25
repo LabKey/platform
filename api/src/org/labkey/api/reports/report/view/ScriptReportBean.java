@@ -143,6 +143,8 @@ public class ScriptReportBean extends ReportDesignBean
 
             descriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
 
+            descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
+
             assert descriptor instanceof ScriptReportDescriptor;
 
             ((ScriptReportDescriptor)descriptor).setIncludedReports(_includedReports);
@@ -163,6 +165,8 @@ public class ScriptReportBean extends ReportDesignBean
             list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
         if (_sourceTabVisible)
             list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.sourceTabVisible.toString(), String.valueOf(_sourceTabVisible)));
+        if (!(getKnitrFormat().equalsIgnoreCase(RReportDescriptor.KnitrFormat.None.name())))
+            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.knitrFormat.toString(), getKnitrFormat()));
 
         list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
@@ -183,15 +187,12 @@ public class ScriptReportBean extends ReportDesignBean
         ScriptReportDescriptor srDescriptor = (ScriptReportDescriptor)descriptor;
 
         setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
+        setKnitrFormat(descriptor.getProperty(ScriptReportDescriptor.Prop.knitrFormat));
         setIncludedReports(srDescriptor.getIncludedReports());
         setClientDependencies(srDescriptor.getClientDependencies());
 
         if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
             setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
-
-        if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "knitrFormat") != null)
-            setKnitrFormat(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "knitrFormat").toString());
-
     }
 
     Map<String, Object> getCacheableMap()

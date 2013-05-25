@@ -88,13 +88,13 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
         if (lname.endsWith(KNITR_MD_EXTENSION))
         {
-            setKnitrFormat(KnitrFormat.Markdown);
+            setProperty(Prop.knitrFormat, KnitrFormat.Markdown.name());
             ext = KNITR_MD_EXTENSION;
         }
         else
         if (lname.endsWith(KNITR_HTML_EXTENSION))
         {
-            setKnitrFormat(KnitrFormat.Html);
+            setProperty(Prop.knitrFormat, KnitrFormat.Html.name());
             ext = KNITR_HTML_EXTENSION;
         }
 

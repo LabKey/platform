@@ -35,7 +35,8 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         scriptExtension,
         includedReports,
         runInBackground,
-        sourceTabVisible
+        sourceTabVisible,
+        knitrFormat
     }
 
     public void setIncludedReports(List<String> reports)

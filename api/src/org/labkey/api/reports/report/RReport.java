@@ -173,18 +173,10 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         {
             _knitrFormat = RReportDescriptor.KnitrFormat.None;
             ReportDescriptor d = getDescriptor();
-            Object v = ReportPropsManager.get().getPropertyValue(d.getEntityId(), d.getResourceContainer(), RReportDescriptor.Prop.knitrFormat.name());
-            if (null == v)
-            {
-                // if we don't have the property, then grab the value form the RReportDescriptor.  This may have been
-                // set by a module report
-                if (d instanceof RReportDescriptor)
-                    _knitrFormat = ((RReportDescriptor)d).getKnitrFormat();
-            }
-            else
-            {
-                _knitrFormat = RReportDescriptor.getKnitrFormatFromString(v.toString());
-            }
+            String value = d.getProperty(ScriptReportDescriptor.Prop.knitrFormat);
+            if (value != null)
+                _knitrFormat = RReportDescriptor.getKnitrFormatFromString(value);
+
         }
 
         return _knitrFormat;

@@ -253,6 +253,7 @@ var f_scope<%=text(uid)%> = new (function() {
 
         url = addIncludeScripts(url);
         url = addRunInBackground(url);
+        url = addKnitrFormat(url);
 
         return url;
     }
@@ -284,6 +285,22 @@ var f_scope<%=text(uid)%> = new (function() {
         for (var i = 0; i < includes.length; i++)
             if (includes[i].checked)
                 url = url + '&<%=ScriptReportDescriptor.Prop.includedReports%>=' + includes[i].value;
+
+        return url;
+    }
+
+    // add knitir format param if present
+    function addKnitrFormat(url)
+    {
+        var knitrFormat = document.getElementsByName("<%=ScriptReportDescriptor.Prop.knitrFormat%>");
+        if (knitrFormat)
+        {
+            var v = knitrFormat[0].checked ? knitrFormat[0].value :
+                    knitrFormat[1].checked ? knitrFormat[1].value :
+                    knitrFormat[2].value;
+
+            url = url + '&<%=ScriptReportDescriptor.Prop.knitrFormat%>=' + v;
+        }
 
         return url;
     }
@@ -617,11 +634,11 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Knitr Options</th></tr>
-            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(bean.getKnitrFormat().equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(bean.getKnitrFormat().equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 None<%=helpPopup("No preprocessing", "The source is run without going through knitr.")%></td></tr>
-            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(bean.getKnitrFormat().equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(bean.getKnitrFormat().equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Html<%=helpPopup("Html", "Use knitr to process html source")%></td></tr>
-            <tr><td><input type="radio" name="<%=RReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(bean.getKnitrFormat().equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(bean.getKnitrFormat().equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Markdown<%=helpPopup("Markdown", "Use knitr to process markdown source")%></td></tr>
             <tr><td>&nbsp;</td></tr>
             <%
