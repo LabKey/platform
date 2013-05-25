@@ -1225,8 +1225,6 @@ public class ReportsController extends SpringActionController
                 }
             }
 
-            ReportPropsManager.get().setPropertyValue(report.getEntityId(),getViewContext().getContainer(), RReportDescriptor.Prop.knitrFormat.name(), form.getKnitrFormat());
-
             response.put("success", true);
             response.put("redirect", form.getRedirectUrl());
 

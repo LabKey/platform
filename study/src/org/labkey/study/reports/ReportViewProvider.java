@@ -90,7 +90,6 @@ public class ReportViewProvider implements DataViewProvider
         ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
         ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
         ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
-        ReportPropsManager.get().ensureProperty(c, user, RReportDescriptor.Prop.knitrFormat.name(), RReportDescriptor.Prop.knitrFormat.name(), PropertyType.STRING);
     }
 
     @Override
