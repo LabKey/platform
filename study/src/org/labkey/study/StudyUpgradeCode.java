@@ -29,6 +29,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ExperimentException;
@@ -144,7 +145,7 @@ public class StudyUpgradeCode implements UpgradeCode
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudy();
         String sql = "UPDATE " + tinfo + " SET ProtocolDocumentEntityId = ? WHERE Container = ?";
-        Map<String, Object>[] rows = Table.selectMaps(tinfo, Collections.singleton("Container"), null, null);
+        Map<String, Object>[] rows = new TableSelector(tinfo, Collections.singleton("Container")).getMapArray();
         for (Map<String, Object> row : rows)
         {
             String container = (String)row.get("Container");

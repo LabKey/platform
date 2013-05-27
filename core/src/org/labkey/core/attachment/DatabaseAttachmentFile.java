@@ -20,6 +20,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.util.ResultSetUtil;
 import org.apache.commons.io.IOUtils;
@@ -118,7 +119,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, false);
+            _rs = new SqlSelector(core.getSchema(), _sqlDocument, _attachment.getParent(), _attachment.getName()).getResultSet(false);
 
             if (!_rs.next())
                 throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());

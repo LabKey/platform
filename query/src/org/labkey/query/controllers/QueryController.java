@@ -841,13 +841,11 @@ public class QueryController extends SpringActionController
     {
         QueryForm _form;
 
-        public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
+        public ModelAndView getConfirmView(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(queryForm);
-            QueryDefinition queryDef = queryForm.getQueryDef();
-            if (queryDef == null)
-                throw new NotFoundException("Query '" + queryForm.getQueryName() + "' in schema '" + queryForm.getSchemaName() + "' not found");
-            return new JspView<>(QueryController.class, "deleteQuery.jsp", queryForm, errors);
+            ensureQueryExists(form);
+
+            return new JspView<>(QueryController.class, "deleteQuery.jsp", form, errors);
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
@@ -885,12 +883,6 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
 
             _form = form;
-
-            QueryDefinition query = form.getQueryDef();
-            if (null == query)
-            {
-                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
-            }
 
             QueryView queryView = QueryView.create(form, errors);
             if (isPrint())
@@ -938,12 +930,6 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
 
             _form = form;
-
-            QueryDefinition query = form.getQueryDef();
-            if (null == query)
-            {
-                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
-            }
 
             QueryView queryView = QueryView.create(form, errors);
             TableInfo ti = queryView.getTable();

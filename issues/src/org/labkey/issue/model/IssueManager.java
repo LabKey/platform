@@ -199,7 +199,7 @@ public class IssueManager
             if (!ViewServlet.validChars(comment.getComment()))
                 throw new ConversionException("comment has invalid characters");
 
-            Map<String, Object> m = new HashMap<String, Object>();
+            Map<String, Object> m = new HashMap<>();
             m.put("issueId", issue.getIssueId());
             m.put("comment", comment.getComment());
             m.put("entityId", comment.getEntityId());
@@ -211,7 +211,7 @@ public class IssueManager
 
     public static Map<ColumnType, String> getAllDefaults(Container container) throws SQLException
     {
-        final Map<ColumnType, String> defaults = new HashMap<ColumnType, String>();
+        final Map<ColumnType, String> defaults = new HashMap<>();
         SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
@@ -393,12 +393,12 @@ public class IssueManager
             else if (pickList instanceof String)
                 pickListColumnNames = Collections.singleton((String)pickList);
             else
-                pickListColumnNames = new HashSet<String>((List<String>)pickList);
+                pickListColumnNames = new HashSet<>((List<String>)pickList);
 
             List<String> perms = context.getList("permissions");
             // Should have one for each string column (we don't support permissions on int columns yet)
             assert perms.size() == 5;
-            Map<String, Class<? extends Permission>> permMap = new HashMap<String, Class<? extends Permission>>();
+            Map<String, Class<? extends Permission>> permMap = new HashMap<>();
 
             for (int i = 0; i < 5; i++)
             {
@@ -407,7 +407,7 @@ public class IssueManager
                 permMap.put("string" + (i + 1), perm);
             }
 
-            Map<String, CustomColumn> ccMap = new HashMap<String, CustomColumn>();
+            Map<String, CustomColumn> ccMap = new HashMap<>();
 
             for (String columnName : COLUMN_NAMES)
             {
@@ -437,7 +437,7 @@ public class IssueManager
 
         public Collection<CustomColumn> getCustomColumns(User user)
         {
-            List<CustomColumn> list = new LinkedList<CustomColumn>();
+            List<CustomColumn> list = new LinkedList<>();
 
             for (CustomColumn customColumn : _map.values())
                 if (customColumn.hasPermission(user))
@@ -476,7 +476,7 @@ public class IssueManager
         // TODO: If we need this, then pre-compute it
         public Map<String, String> getColumnCaptions()
         {
-            Map<String, String> map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
 
             for (CustomColumn cc : _map.values())
                 map.put(cc.getName(), cc.getCaption());
@@ -514,7 +514,7 @@ public class IssueManager
 
             if (createdByUser != null && !createdByUser.isGuest() && createdByUser.isActive() && !initialAssignedTo.contains(createdByUser))
             {
-                Set<User> modifiedAssignedTo = new TreeSet<User>(USER_COMPARATOR);
+                Set<User> modifiedAssignedTo = new TreeSet<>(USER_COMPARATOR);
                 modifiedAssignedTo.addAll(initialAssignedTo);
                 modifiedAssignedTo.add(createdByUser);
                 return Collections.unmodifiableSet(modifiedAssignedTo);
@@ -525,7 +525,7 @@ public class IssueManager
     }
 
 
-    private static final StringKeyCache<Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<Set<User>>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
+    private static final StringKeyCache<Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
@@ -537,7 +537,7 @@ public class IssueManager
             @Override
             public Set<User> load(String key, @Nullable Object argument)
             {
-                Set<User> initialAssignedTo = new TreeSet<User>(USER_COMPARATOR);
+                Set<User> initialAssignedTo = new TreeSet<>(USER_COMPARATOR);
                 Group group = getAssignedToGroup(c);
 
                 if (null != group)
@@ -708,7 +708,7 @@ public class IssueManager
 
     public static List<ValidEmail> getSubscribedUserEmails(Container c)
     {
-        List<ValidEmail> emails = new ArrayList<ValidEmail>();
+        List<ValidEmail> emails = new ArrayList<>();
 
         SqlSelector ss = new SqlSelector(_issuesSchema.getSchema().getScope(), new SQLFragment("SELECT UserId FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container = ? and (EmailOption & ?) = ?", c.getId(), NOTIFY_SUBSCRIBE, NOTIFY_SUBSCRIBE));
         Integer[] userIds = ss.getArray(Integer.class);
@@ -954,15 +954,13 @@ public class IssueManager
         f.append(")\n");
         f.append("ORDER BY I.issueid, C.created");
 
-        ResultSet rs = null;
-        try
+        try (ResultSet rs = new SqlSelector(_issuesSchema.getSchema(), f).getResultSet(false))
         {
-            rs = Table.executeQuery(_issuesSchema.getSchema(), f, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             int currentIssueId = -1;
 
-            Map<String,Object> m = null;
-            ArrayList<Issue.Comment> comments = new ArrayList<Issue.Comment>();
+            Map<String, Object> m = null;
+            ArrayList<Issue.Comment> comments = new ArrayList<>();
 
             while (rs.next())
             {
@@ -970,7 +968,7 @@ public class IssueManager
                 if (id != currentIssueId)
                 {
                     queueIssue(task, currentIssueId, m, comments);
-                    comments = new ArrayList<Issue.Comment>();
+                    comments = new ArrayList<>();
                     m = factory.getRowMap(rs);
                     currentIssueId = id;
                 }
@@ -981,10 +979,6 @@ public class IssueManager
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
         }
     }
 
@@ -1013,8 +1007,8 @@ public class IssueManager
             return;
         String title = String.valueOf(m.get("title"));
         m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
-        m.put("comment",null);
-        m.put("_row",null);
+        m.put("comment", null);
+        m.put("_row", null);
         task.addResource(new IssueResource(id, m, comments), SearchService.PRIORITY.item);
     }
 

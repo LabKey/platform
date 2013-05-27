@@ -235,7 +235,7 @@ public class SchemaTsvReader implements SchemaReader
 
     public SchemaTsvReader(Study study, VirtualFile root, String tsvFileName, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
-        this(study, new TabLoader(new BufferedReader(new InputStreamReader(root.getInputStream(tsvFileName))), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
+        this(study, new TabLoader(new InputStreamReader(root.getInputStream(tsvFileName)), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
     public List<Map<String, Object>> getImportMaps()

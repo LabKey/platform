@@ -33,7 +33,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -49,11 +48,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 10/17/12
  * Time: 3:18 PM
- * To change this template use File | Settings | File Templates.
  */
 public class MenuViewFactory
 {
@@ -118,8 +115,8 @@ public class MenuViewFactory
                         };
 
                         RenderContext renderContext = new RenderContext(actualContext);
-                        Results results = getResults(ShowRows.PAGINATED);
-                        try
+
+                        try (Results results = getResults(ShowRows.PAGINATED))
                         {
                             renderContext.setResults(results);
                             ResultSet rs = results.getResultSet();
@@ -128,7 +125,7 @@ public class MenuViewFactory
                                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
                                 // To do columns, we'll write each cell into a StringBuilder, then we have the count and can go from there
-                                ArrayList<StringBuilder> cellStrings = new ArrayList<StringBuilder>();
+                                ArrayList<StringBuilder> cellStrings = new ArrayList<>();
                                 while (rs.next())
                                 {
                                     StringBuilder stringBuilder = new StringBuilder();
@@ -141,11 +138,6 @@ public class MenuViewFactory
 
                                 writeCells(cellStrings, out);
                             }
-
-                        }
-                        finally
-                        {
-                            ResultSetUtil.close(results);
                         }
                     }
                     if (!seenAtLeastOne)
@@ -207,13 +199,13 @@ public class MenuViewFactory
         }
         else
         {
-            containersTemp = new ArrayList<Container>();
+            containersTemp = new ArrayList<>();
         }
 
         if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
         {
             // If user doesn't have Admin permission, don't show "_" containers
-            List<Container> adjustedContainers = new ArrayList<Container>();
+            List<Container> adjustedContainers = new ArrayList<>();
             for (Container container : containersTemp)
             {
                 if (!container.getName().startsWith("_"))
@@ -247,14 +239,14 @@ public class MenuViewFactory
 
                 boolean seenAtLeastOne = false;
                 out.write("<table style='width:50'>");
-                ArrayList<StringBuilder> cells = new ArrayList<StringBuilder>();
+                ArrayList<StringBuilder> cells = new ArrayList<>();
                 for (Container container : containers)
                 {
                     if (null == StringUtils.trimToNull(filterFolderName) ||
                             "[all]".equals(filterFolderName) ||
                             container.getFolderType().getName().equals(filterFolderName))
                     {
-                        ActionURL actionURL = null;
+                        ActionURL actionURL;
                         if (null != expr)
                         {
                             actionURL = new ActionURL(expr.getSource());

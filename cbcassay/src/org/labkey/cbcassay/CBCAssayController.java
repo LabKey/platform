@@ -30,6 +30,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -309,14 +310,14 @@ public class CBCAssayController extends SpringActionController
         private List<DisplayColumn> getUpdateableColumns(QueryView queryView)
         {
             // Issue 12280: Get columns from the table's default visible list rather than the default view's columns.
-            List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
+            List<DisplayColumn> displayColumns = new ArrayList<>();
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(queryView.getTable(), queryView.getTable().getDefaultVisibleColumns());
             for (ColumnInfo col : columnMap.values())
             {
                 displayColumns.add(col.getRenderer());
             }
 
-            List<DisplayColumn> ret = new ArrayList<DisplayColumn>(displayColumns.size());
+            List<DisplayColumn> ret = new ArrayList<>(displayColumns.size());
             for (DisplayColumn column : displayColumns)
             {
                 if (column.getColumnInfo() != null && !column.getColumnInfo().isShownInUpdateView())
@@ -369,12 +370,12 @@ public class CBCAssayController extends SpringActionController
             {
                 ExperimentService.get().ensureTransaction();
 
-                List<FieldKey> visibleColumns = new ArrayList<FieldKey>(quf.getTable().getDefaultVisibleColumns());
+                List<FieldKey> visibleColumns = new ArrayList<>(quf.getTable().getDefaultVisibleColumns());
                 visibleColumns.add(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
                 Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(quf.getTable(), visibleColumns);
 
                 // map column -> posted form value
-                Map<FieldKey, Object> formValues = new HashMap<FieldKey, Object>();
+                Map<FieldKey, Object> formValues = new HashMap<>();
                 for (FieldKey key : visibleColumns)
                 {
                     String field = key.toString();
@@ -394,11 +395,11 @@ public class CBCAssayController extends SpringActionController
 
                 // Get the oldValues directly instead of using the quf.getOldValues().
                 // r13966 changed .oldValues to not include any FieldKey lookups.
-                Map[] maps = Table.select(quf.getTable(), columns.values(), new PkFilter(quf.getTable(), quf.getPkVals()), null, Map.class);
+                Map<String, Object>[] maps = new TableSelector(quf.getTable(), columns.values(), new PkFilter(quf.getTable(), quf.getPkVals()), null).getMapArray();
                 if (maps == null || maps.length != 1)
                     throw new RuntimeException("Didn't find existing row for '" + form.getDataRowId() + "'");
-                Map<String, Object> oldValues = (Map<String, Object>)maps[0];
-                Map<String, Object> newValues = new CaseInsensitiveHashMap<Object>(oldValues);
+                Map<String, Object> oldValues = maps[0];
+                Map<String, Object> newValues = new CaseInsensitiveHashMap<>(oldValues);
 
                 for (FieldKey key : formValues.keySet())
                 {

@@ -692,9 +692,9 @@ public class WikiManager implements WikiService
             }
             rs = Table.executeQuery(comm.getSchema(), f, false, false);
 
-            HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
+            HashMap<String, AttachmentParent> ids = new HashMap<>();
             // AGGH wiki doesn't have a title!
-            HashMap<String, String> titles = new HashMap<String,String>();
+            HashMap<String, String> titles = new HashMap<>();
             
             while (rs.next())
             {
@@ -720,7 +720,7 @@ public class WikiManager implements WikiService
                     body = "";
                 WikiRendererType rendererType = WikiRendererType.valueOf(rs.getString("renderertype"));
 
-                Map<String, Object> props = new HashMap<String, Object>();
+                Map<String, Object> props = new HashMap<>();
                 props.put(SearchService.PROPERTY.title.toString(), wikiTitle);
                 props.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
 
@@ -803,7 +803,7 @@ public class WikiManager implements WikiService
     public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
     public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.TEXT_WITH_LINKS;
 
-    private Map<String, MacroProvider> providers = new HashMap<String, MacroProvider>();
+    private Map<String, MacroProvider> providers = new HashMap<>();
 
     public String getHtml(Container c, String name)
     {
@@ -969,7 +969,7 @@ public class WikiManager implements WikiService
     public List<String> getNames(Container c)
     {
         List<HString> l = WikiSelectManager.getPageNames(c);
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         for (HString h : l)
             ret.add(h.getSource());
         return ret;

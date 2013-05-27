@@ -906,6 +906,7 @@ public class SearchController extends SpringActionController
             SearchService ss = ServiceRegistry.get(SearchService.class);
             final CountDownLatch latch = new CountDownLatch(1);
 
+            // TODO: This doesn't seem quite right... doon't we need to wait for _itemQueue and _indexQueue as well?
             SearchService.IndexTask task = ss.defaultTask();
             task.addRunnable(new Runnable() {
                 @Override

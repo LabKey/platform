@@ -55,7 +55,7 @@ public class CBCData
     public static CBCData fromObjectId(int objectId, ExpData data, ExpProtocol protocol, User user) throws SQLException
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        List<FieldKey> fieldKeys = new ArrayList<>();
         Domain dataDomain = provider.getResultsDomain(protocol);
         for (DomainProperty property : dataDomain.getProperties())
         {
@@ -66,26 +66,21 @@ public class CBCData
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
         SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, objectId);
 
-        Map<String, Object>[] dataRows = Table.select(tableInfo, columns.values(), filter, null, Map.class);
-        if (dataRows.length == 0)
-        {
+        Map<String, Object> map = new TableSelector(tableInfo, columns.values(), filter, null).getMap();
+
+        if (null == map)
             return null;
-        }
-        if (dataRows.length > 1)
-        {
-            throw new IllegalStateException("Expected zero or one results, but got " + dataRows.length);
-        }
 
         // fetch metadata using the column PropertyDescriptors
-        Map<String, CBCDataProperty> meta = new CaseInsensitiveHashMap<CBCDataProperty>();
-        Map<String, Object> values = new HashMap<String, Object>();
+        Map<String, CBCDataProperty> meta = new CaseInsensitiveHashMap<>();
+        Map<String, Object> values = new HashMap<>();
 
         for (ColumnInfo column : columns.values())
         {
             DomainProperty property = dataDomain.getPropertyByName(column.getName());
             // XXX: check it has min/max/units properties
             meta.put(property.getName(), new CBCDataProperty(property.getPropertyDescriptor()));
-            Object value = column.getValue(dataRows[0]);
+            Object value = column.getValue(map);
             values.put(property.getName(), value);
             values.put(property.getPropertyURI(), value);
         }

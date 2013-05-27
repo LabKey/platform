@@ -379,7 +379,7 @@ public class IssuesController extends SpringActionController
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            return new JspView<IssuePage>("/org/labkey/issue/detailView.jsp", page);
+            return new JspView<>("/org/labkey/issue/detailView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -421,7 +421,7 @@ public class IssuesController extends SpringActionController
             if (issueIds.isEmpty())
             {
                 ResultSet rs = null;
-                issueIds = new LinkedHashSet<String>();
+                issueIds = new LinkedHashSet<>();
                 try
                 {
                     rs = getIssuesResultSet();
@@ -439,7 +439,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
-            JspView v = new JspView<IssuePage>(IssuesController.class, "detailList.jsp", page);
+            JspView v = new JspView<>(IssuesController.class, "detailList.jsp", page);
 
             page.setIssueIds(issueIds);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
@@ -500,7 +500,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
+            JspView v = new JspView<>(IssuesController.class, "updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -828,7 +828,7 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<IssuePage>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -854,7 +854,7 @@ public class IssuesController extends SpringActionController
 
     private Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
     {
-        final Set<String> editable = new HashSet<String>(20);
+        final Set<String> editable = new HashSet<>(20);
 
         editable.add("title");
         editable.add("assignedTo");
@@ -921,7 +921,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
+            JspView v = new JspView<>(IssuesController.class, "updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -964,7 +964,7 @@ public class IssuesController extends SpringActionController
             _issue.close(user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<>(IssuesController.class, "updateView.jsp",page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1009,7 +1009,7 @@ public class IssuesController extends SpringActionController
             _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<>(IssuesController.class, "updateView.jsp",page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1134,7 +1134,7 @@ public class IssuesController extends SpringActionController
     private void validateNotifyList(Issue issue, IssuesForm form, Errors errors)
     {
         String[] rawEmails = StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n");
-        List<String> invalidEmails = new ArrayList<String>();
+        List<String> invalidEmails = new ArrayList<>();
         List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
         for (String rawEmail : invalidEmails)
@@ -1175,7 +1175,7 @@ public class IssuesController extends SpringActionController
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
 
             boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
             List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getViewContext().getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
@@ -1317,7 +1317,7 @@ public class IssuesController extends SpringActionController
 
             int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
             int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
-            return new JspView<EmailPrefsBean>(IssuesController.class, "emailPreferences.jsp",
+            return new JspView<>(IssuesController.class, "emailPreferences.jsp",
                 new EmailPrefsBean(emailPrefs, errors, _message, issueId));
         }
 
@@ -1601,7 +1601,7 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            HashSet<String> uniqueCaptions = new HashSet<String>(captions.values());
+            HashSet<String> uniqueCaptions = new HashSet<>(captions.values());
             if (captions.size() > uniqueCaptions.size())
             {
                 errors.reject(ERROR_MSG, "Custom field names must be unique.");
@@ -1646,7 +1646,7 @@ public class IssuesController extends SpringActionController
 
         private void checkPickLists(ConfigureIssuesForm form, Errors errors)
         {
-            ArrayList<HString> newRequiredFields = new ArrayList<HString>();
+            ArrayList<HString> newRequiredFields = new ArrayList<>();
              /**
              * You have to make the required fields all lower case to compare them to the STRING_#_STRING constants.
              * I made the mistake of trying to make the field use lowercase names but it ruins the camelcasing when
@@ -1735,7 +1735,7 @@ public class IssuesController extends SpringActionController
                 String filteredURLString = PageFlowUtil.filter(url);
                 String detailsURLString = filteredURLString.substring(0, filteredURLString.length() - 1);
 
-                WebPartView v = new JspView<RssBean>("/org/labkey/issue/rss.jsp", new RssBean(issues, detailsURLString));
+                WebPartView v = new JspView<>("/org/labkey/issue/rss.jsp", new RssBean(issues, detailsURLString));
                 v.setFrame(WebPartView.FrameType.NOT_HTML);
 
                 return v;
@@ -1781,7 +1781,7 @@ public class IssuesController extends SpringActionController
         if (limit == 0)
             limit = 20;
 
-        List<Issue.Comment> result = new ArrayList<Issue.Comment>(limit);
+        List<Issue.Comment> result = new ArrayList<>(limit);
         ResultSet rs = null;
         try
         {
@@ -1793,7 +1793,7 @@ public class IssuesController extends SpringActionController
             Sort sort = new Sort("-Created");
 
             // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
-            List<FieldKey> fields = new ArrayList<FieldKey>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
+            List<FieldKey> fields = new ArrayList<>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
             fields.add(containerFieldKey);
 
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
@@ -1804,7 +1804,7 @@ public class IssuesController extends SpringActionController
 
             ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
 
-            Map<Integer, Issue> issuesIds = new HashMap<Integer, Issue>();
+            Map<Integer, Issue> issuesIds = new HashMap<>();
             for (Map<String, Object> comment : comments)
             {
                 Integer issueId = (Integer)comment.get("issueid");
@@ -2260,7 +2260,7 @@ public class IssuesController extends SpringActionController
             keywordView.addKeywordPicker(ColumnType.STRING4);
             keywordView.addKeywordPicker(ColumnType.STRING5);
 
-            Set<String> columnNames = new LinkedHashSet<String>();
+            Set<String> columnNames = new LinkedHashSet<>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
 
             for (CustomColumn cc : IssueManager.getCustomColumnConfiguration(c).getCustomColumns())
@@ -2310,7 +2310,7 @@ public class IssuesController extends SpringActionController
     public static class KeywordAdminView extends JspView<List<KeywordPicker>>
     {
         private Container _c;
-        private List<KeywordPicker> _keywordPickers = new LinkedList<KeywordPicker>();
+        private List<KeywordPicker> _keywordPickers = new LinkedList<>();
         public CustomColumnConfiguration _ccc;
 
         public KeywordAdminView(Container c, CustomColumnConfiguration ccc)
@@ -2458,7 +2458,7 @@ public class IssuesController extends SpringActionController
 
         private static Map<String, Class> extraProps()
         {
-            Map<String, Class> map = new LinkedHashMap<String, Class>();
+            Map<String, Class> map = new LinkedHashMap<>();
             map.put("action", HString.class);
             map.put("comment", HString.class);
             map.put("callbackURL", ReturnURLString.class);

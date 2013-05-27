@@ -110,7 +110,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public List<DomainProperty> getIdCols()
     {
-        List<DomainProperty> result = new ArrayList<DomainProperty>();
+        List<DomainProperty> result = new ArrayList<>();
         if (hasNameAsIdCol())
             return result;
 
@@ -235,28 +235,21 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public ExpProtocol[] getProtocols(User user)
     {
-        try
+        TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
+        ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
+        ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(colSampleLSID, getLSID());
+        List<ColumnInfo> selectColumns = new ArrayList<>();
+        selectColumns.addAll(tinfoProtocol.getColumns());
+        selectColumns.add(colSampleLSID);
+        Protocol[] protocols = new TableSelector(tinfoProtocol, selectColumns, filter, null).getArray(Protocol.class);
+        ExpProtocol[] ret = new ExpProtocol[protocols.length];
+        for (int i = 0; i < protocols.length; i ++)
         {
-            TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
-            ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
-            ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
-            SimpleFilter filter = new SimpleFilter();
-			filter.addCondition(colSampleLSID, getLSID());
-            List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>();
-            selectColumns.addAll(tinfoProtocol.getColumns());
-            selectColumns.add(colSampleLSID);
-            Protocol[] protocols = Table.select(tinfoProtocol, selectColumns, filter, null, Protocol.class);
-            ExpProtocol[] ret = new ExpProtocol[protocols.length];
-            for (int i = 0; i < protocols.length; i ++)
-            {
-                ret[i] = new ExpProtocolImpl(protocols[i]);
-            }
-            return ret;
+            ret[i] = new ExpProtocolImpl(protocols[i]);
         }
-        catch (SQLException e)
-        {
-            return new ExpProtocol[0];
-        }
+        return ret;
     }
 
     public void onSamplesChanged(User user, List<Material> materials) throws SQLException

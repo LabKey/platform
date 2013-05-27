@@ -19,10 +19,9 @@ package org.labkey.study.pipeline;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
@@ -33,7 +32,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
@@ -96,7 +94,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         {
             loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_tsvName))), true);
 
-            CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
+            CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<>();
             for (ColumnDescriptor c : loader.getColumns())
                 columnMap.put(c.name, c);
 

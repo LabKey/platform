@@ -42,9 +42,11 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider;
@@ -72,14 +74,13 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -107,6 +108,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -461,7 +463,7 @@ public class VisualizationController extends SpringActionController
     {
         public ApiResponse execute(Form form, BindException errors) throws Exception
         {
-            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
@@ -520,7 +522,7 @@ public class VisualizationController extends SpringActionController
 
         protected List<Map<String, Object>> getColumnResponse(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> cols)
         {
-            List<Map<String, Object>> measuresJSON = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> measuresJSON = new ArrayList<>();
             int count = 1;
             for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
             {
@@ -544,7 +546,7 @@ public class VisualizationController extends SpringActionController
 
         protected Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query)
         {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
 
             props.put("name", fieldKey.toString());
             props.put("label", col.getLabel());
@@ -568,7 +570,7 @@ public class VisualizationController extends SpringActionController
 
         private String getQueryName(QueryDefinition query, boolean asLabel)
         {
-            List<QueryException> errors = new ArrayList<QueryException>();
+            List<QueryException> errors = new ArrayList<>();
             TableInfo table = query.getTable(errors, false);
             String queryName = query.getName();
             if (table instanceof DataSetTable && errors.isEmpty())
@@ -618,7 +620,7 @@ public class VisualizationController extends SpringActionController
             if (form.getName() != null && form.getSchemaName() != null && form.getQueryName() != null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
-                List<Map<String, String>> values = new ArrayList<Map<String, String>>();
+                final List<Map<String, String>> values = new ArrayList<>();
 
                 if (schema != null)
                 {
@@ -629,32 +631,30 @@ public class VisualizationController extends SpringActionController
                         FieldKey dimensionKey = FieldKey.fromString(form.getName());
                         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(dimensionKey));
                         ColumnInfo col = cols.get(dimensionKey);
+
                         if (col != null)
                         {
-                            Table.TableResultSet rs = null;
-                            try {
-                                SimpleFilter filter = null;
-                                String filterUrlString = form.getFilterUrl();
-                                if (filterUrlString != null)
-                                {
-                                    ActionURL filterUrl = new ActionURL(filterUrlString);
-                                    filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
-                                }
-                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                            SimpleFilter filter = null;
+                            String filterUrlString = form.getFilterUrl();
+                            if (filterUrlString != null)
+                            {
+                                ActionURL filterUrl = new ActionURL(filterUrlString);
+                                filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
+                            }
 
-                                rs = Table.executeQuery(schema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
+                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                            SQLFragment distinctSql = new SQLFragment(sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParams());
 
-                                while (rs.next())
+                            new SqlSelector(schema.getDbSchema(), distinctSql).forEach(new Selector.ForEachBlock<ResultSet>()
+                            {
+                                @Override
+                                public void exec(ResultSet rs) throws SQLException
                                 {
                                     Object o = rs.getObject(1);
                                     if (o != null)
                                         values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
                                 }
-                            }
-                            finally
-                            {
-                                ResultSetUtil.close(rs);
-                            }
+                            });
                         }
                     }
                 }
@@ -673,7 +673,7 @@ public class VisualizationController extends SpringActionController
     {
         Map<String, Object> getBaseTypeProperties(Study study)
         {
-            Map<String, Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<>();
             properties.put("subjectColumn", StudyService.get().getSubjectColumnName(getContainer()));
             properties.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             properties.put("subjectNounPlural", StudyService.get().getSubjectNounPlural(getContainer()));
@@ -687,7 +687,7 @@ public class VisualizationController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
 
-            List<Map<String, Object>> types = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> types = new ArrayList<>();
 /*  NOT SUPPORTED FOR 10.3
             // motion chart
             Map<String, Object> motion = getBaseTypeProperties();
@@ -708,7 +708,7 @@ public class VisualizationController extends SpringActionController
             line.put("label", "Time Chart");
             line.put("icon", getViewContext().getContextPath() + "/reports/output_linechart.jpg");
 
-            List<Map<String, String>> lineAxis = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> lineAxis = new ArrayList<>();
             lineAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select the date measurement for the x-axis", "multiSelect", "false", "timeAxis", "true"));
             lineAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
             line.put("axis", lineAxis);
@@ -737,7 +737,7 @@ public class VisualizationController extends SpringActionController
             data.put("label", "Data Grid (Time)");
             data.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
 
-            List<Map<String, String>> dataAxis = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> dataAxis = new ArrayList<>();
             dataAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select the date measurement for the x-axis", "multiSelect", "false", "timeAxis", "true"));
             dataAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
             data.put("axis", dataAxis);
@@ -752,7 +752,7 @@ public class VisualizationController extends SpringActionController
             dataScatter.put("label", "Data Grid (X/Y)");
             dataScatter.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
 
-            List<Map<String, String>> dataScatterAxis = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> dataScatterAxis = new ArrayList<>();
             dataScatterAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
             dataScatterAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
             dataScatter.put("axis", dataScatterAxis);
@@ -802,7 +802,7 @@ public class VisualizationController extends SpringActionController
             ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, sqlGenerator.isMetaDataOnly(), sqlGenerator.getSort(), errors);
 
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
-            Map<String, Object> extraProperties = new HashMap<String, Object>();
+            Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
             extraProperties.put("visitMap", getVisitMetaData());
@@ -816,13 +816,13 @@ public class VisualizationController extends SpringActionController
 
         private Map<String, Map<String, Object>> getVisitMetaData()
         {
-            Map<String, Map<String, Object>> metaData = new HashMap<String, Map<String, Object>>();
+            Map<String, Map<String, Object>> metaData = new HashMap<>();
             Study study = StudyService.get().getStudy(getContainer());
 
             int i=1;
             for (Visit visit : study.getVisits(Visit.Order.DISPLAY))
             {
-                Map<String, Object> visitInfo = new HashMap<String, Object>();
+                Map<String, Object> visitInfo = new HashMap<>();
 
                 visitInfo.put("displayOrder", i++);
                 visitInfo.put("displayName", visit.getDisplayString());
@@ -871,7 +871,7 @@ public class VisualizationController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
@@ -1380,7 +1380,7 @@ public class VisualizationController extends SpringActionController
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
             form.setAllowToggleMode(true);
-            JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
+            JspView timeChartWizard = new JspView<>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
             timeChartWizard.setTitle(TITLE);
             timeChartWizard.setFrame(WebPartView.FrameType.NONE);
@@ -1428,7 +1428,7 @@ public class VisualizationController extends SpringActionController
             if (_renderType != null)
             {
                 form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
-                JspView view = new JspView<GenericReportForm>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
+                JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
 
                 view.setTitle(_renderType.getName() + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
@@ -1471,7 +1471,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public void validateForm(GenericReportForm form, Errors errors)
         {
-            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+            List<ValidationError> reportErrors = new ArrayList<>();
 
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "A report name is required");
@@ -1604,7 +1604,7 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            HashSet<String> columns = new HashSet<String>();
+            HashSet<String> columns = new HashSet<>();
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
            if(schema != null)
@@ -1620,7 +1620,7 @@ public class VisualizationController extends SpringActionController
                     if (study != null)
                     {
                         // We need the subject info from the study in order to set up the sort order for measure choices.
-                        Map<String, String> subjectInfo = new HashMap<String, String>();
+                        Map<String, String> subjectInfo = new HashMap<>();
                         subjectInfo.put("nounSingular", study.getSubjectNounSingular());
                         subjectInfo.put("nounPlural", study.getSubjectNounPlural());
                         subjectInfo.put("column", study.getSubjectColumnName());

@@ -21,18 +21,23 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AuditModule extends DefaultModule
 {
@@ -95,7 +100,8 @@ public class AuditModule extends DefaultModule
     {
         DbSchema schema = AuditSchema.getInstance().getSchema();
 
-        try {
+        try
+        {
             schema.getScope().ensureTransaction();
 
             Container objectContainer = ContainerManager.getSharedContainer();
@@ -107,7 +113,7 @@ public class AuditModule extends DefaultModule
                 Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer, event.getLsid());
                 if (dataMap != null)
                 {
-                    Map<String, Object> newDataMap = new HashMap<String, Object>();
+                    Map<String, Object> newDataMap = new HashMap<>();
 
                     for (ObjectProperty prop : dataMap.values())
                     {
@@ -127,10 +133,6 @@ public class AuditModule extends DefaultModule
             }
 
             schema.getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         finally
         {

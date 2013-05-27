@@ -161,7 +161,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
             while (null != (line = br.readLine()))
                 sb.append(p.matcher(line).replaceAll("0")).append("\n");
 
-            TabLoader loader = new TabLoader(new StringReader(sb.toString()), true);
+            TabLoader loader = new TabLoader(sb, true);
             for (ColumnDescriptor column : loader.getColumns())
             {
                 String columnName = column.name.toLowerCase();

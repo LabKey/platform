@@ -391,16 +391,10 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort)
     {
-        try {
-            if (LogManager.get().getTinfoAuditLog().getTableType() != DatabaseTableType.NOT_IN_DB)
-                return Arrays.asList(LogManager.get().getEvents(filter, sort));
+        if (LogManager.get().getTinfoAuditLog().getTableType() != DatabaseTableType.NOT_IN_DB)
+            return LogManager.get().getEvents(filter, sort);
 
-            return Collections.emptyList();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return Collections.emptyList();
     }
 
     public AuditLogEvent getEvent(int rowId)

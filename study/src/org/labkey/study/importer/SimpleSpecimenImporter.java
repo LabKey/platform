@@ -20,15 +20,15 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -309,24 +310,26 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         private void getKeyMap(TableInfo table, Container c) throws SQLException
         {
-            List<Map<String, Object>> missingExternalId = new ArrayList<>();
+            final List<Map<String, Object>> missingExternalId = new ArrayList<>();
             Filter filter = SimpleFilter.createContainerFilter(c);
-            Map<String, Object>[] maps = Table.selectMaps(table, Sets.newCaseInsensitiveHashSet(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId"));
-
-            for (Map<String, Object> map : maps)
+            new TableSelector(table, PageFlowUtil.set(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId")).forEachMap(new ForEachBlock<Map<String, Object>>()
             {
-                Integer id = (Integer)map.get(dbIdCol);
-                if (id == null)
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
                 {
-                    missingExternalId.add(map);
+                    Integer id = (Integer)map.get(dbIdCol);
+                    if (id == null)
+                    {
+                        missingExternalId.add(map);
+                    }
+                    else
+                    {
+                        existingKeyMap.put((String)map.get(dbLabelCol), id);
+                        minId = Math.min(minId, id);
+                        lastId = Math.max(lastId, id);
+                    }
                 }
-                else
-                {
-                    existingKeyMap.put((String)map.get(dbLabelCol), id);
-                    minId = Math.min(minId, id);
-                    lastId = Math.max(lastId, id);
-                }
-            }
+            });
 
             // UNDONE: Temporary fix for 11.1: Create fake ExternalId for rows with null ExternalId
             for (Map<String, Object> map : missingExternalId)

@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.audit.AuditSchema;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: Karl Lum
@@ -63,9 +64,9 @@ public class LogManager
         return new TableSelector(getTinfoAuditLog(), filter, null).getObject(AuditLogEvent.class);
     }
 
-    public AuditLogEvent[] getEvents(Filter filter, Sort sort) throws SQLException
+    public List<AuditLogEvent> getEvents(Filter filter, Sort sort)
     {
-        return Table.select(getTinfoAuditLog(), Table.ALL_COLUMNS, filter, sort, AuditLogEvent.class);
+        return new TableSelector(getTinfoAuditLog(), filter, sort).getArrayList(AuditLogEvent.class);
     }
 
     /**

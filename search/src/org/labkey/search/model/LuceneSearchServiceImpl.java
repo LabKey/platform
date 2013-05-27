@@ -1018,6 +1018,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
+            _log.debug("Committing index");
             _indexManager.commit();
         }
         catch (Throwable t)

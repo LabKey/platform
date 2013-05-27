@@ -162,10 +162,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
-    private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<ExperimentRunTypeSource>();
-    private Set<ExperimentDataHandler> _dataHandlers = new HashSet<ExperimentDataHandler>();
-    protected Map<String, DataType> _dataTypes = new HashMap<String, DataType>();
-    protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<String, ProtocolImplementation>();
+    private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<>();
+    private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
+    protected Map<String, DataType> _dataTypes = new HashMap<>();
+    protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
     private static final Object XAR_IMPORT_LOCK = new Object();
 
@@ -173,7 +173,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (materialSourceCache == null)
         {
-            materialSourceCache = new DatabaseCache<MaterialSource>(getExpSchema().getScope(), 300, "Material source");
+            materialSourceCache = new DatabaseCache<>(getExpSchema().getScope(), 300, "Material source");
         }
         return materialSourceCache;
     }
@@ -193,7 +193,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public HttpView createRunExportView(Container container, String defaultFilenamePrefix)
     {
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
-        return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
+        return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
 
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
@@ -211,7 +211,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunFilesAction.class, container);
-        return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
+        return new JspView<>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
@@ -304,7 +304,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (rowids.length == 0)
             return null;
-        Collection<Integer> ids = new ArrayList<Integer>(rowids.length);
+        Collection<Integer> ids = new ArrayList<>(rowids.length);
         for (int rowid : rowids)
             ids.add(rowid);
         return getExpDatas(ids);
@@ -514,14 +514,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
         Map<String, Object>[] queryResults = new SqlSelector(getSchema(), sql).getArray(Map.class);
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<String, ExpSampleSet>();
+        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
         ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
         if (defaultSampleSet != null)
         {
             lsidToSampleSet.put(defaultSampleSet.getLSID(), defaultSampleSet);
         }
 
-        Map<String, ExpSampleSet> result = new LinkedHashMap<String, ExpSampleSet>();
+        Map<String, ExpSampleSet> result = new LinkedHashMap<>();
         for (Map<String, Object> queryResult : queryResults)
         {
             ExpSampleSet sampleSet = null;
@@ -925,7 +925,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(" WHERE ");
         sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
         sql.append("))");
-        return new TreeSet<String>(new SqlSelector(getSchema(), sql).getCollection(String.class));
+        return new TreeSet<>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
 
 
@@ -1125,7 +1125,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
     {
-        List<String> containerIds = new ArrayList<String>();
+        List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
         if (includeProjectAndShared && user == null)
         {
@@ -1223,15 +1223,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private Map<String, List<Material>> getRunInputMaterial(Map<String, Object>[] maps)
     {
-        Map<String, List<Material>> outputMap = new HashMap<String, List<Material>>();
-        BeanObjectFactory<Material> f = new BeanObjectFactory<Material>(Material.class);
+        Map<String, List<Material>> outputMap = new HashMap<>();
+        BeanObjectFactory<Material> f = new BeanObjectFactory<>(Material.class);
         for (Map<String, Object> map : maps)
         {
             String runLSID = (String) map.get("RunLSID");
             List<Material> list = outputMap.get(runLSID);
             if (null == list)
             {
-                list = new ArrayList<Material>();
+                list = new ArrayList<>();
                 outputMap.put(runLSID, list);
             }
             Material m = f.fromMap(map);
@@ -1292,7 +1292,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public Map<String, ProtocolParameter> getProtocolParameters(int protocolRowId)
     {
         ProtocolParameter[] params = new TableSelector(getTinfoProtocolParameter(), Table.ALL_COLUMNS, new SimpleFilter("ProtocolId", protocolRowId), null).getArray(ProtocolParameter.class);
-        Map<String, ProtocolParameter> result = new HashMap<String, ProtocolParameter>();
+        Map<String, ProtocolParameter> result = new HashMap<>();
         for (ProtocolParameter param : params)
         {
             result.put(param.getOntologyEntryURI(), param);
@@ -1430,17 +1430,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private int[] getRelatedProtocolIds(int[] selectedProtocolIds)
     {
-        Set<Integer> allIds = new HashSet<Integer>();
+        Set<Integer> allIds = new HashSet<>();
         for (int selectedProtocolId : selectedProtocolIds)
         {
             allIds.add(selectedProtocolId);
         }
 
-        Set<Integer> idsToCheck = new HashSet<Integer>(allIds);
+        Set<Integer> idsToCheck = new HashSet<>(allIds);
         while (!idsToCheck.isEmpty())
         {
             String idsString = StringUtils.join(idsToCheck.iterator(), ", ");
-            idsToCheck = new HashSet<Integer>();
+            idsToCheck = new HashSet<>();
 
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId IN (");
@@ -1851,14 +1851,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         try
         {
-            Map<ExperimentDataHandler, List<ExpData>> handlers = new HashMap<ExperimentDataHandler, List<ExpData>>();
+            Map<ExperimentDataHandler, List<ExpData>> handlers = new HashMap<>();
             for (ExpData data : datas)
             {
                 ExperimentDataHandler handler = data.findDataHandler();
                 List<ExpData> list = handlers.get(handler);
                 if (list == null)
                 {
-                    list = new ArrayList<ExpData>();
+                    list = new ArrayList<>();
                     handlers.put(handler, list);
                 }
                 list.add(data);
@@ -1892,7 +1892,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return Collections.emptyList();
         }
 
-        List<Integer> ids = new LinkedList<Integer>();
+        List<Integer> ids = new LinkedList<>();
         for (ExpData data : datas)
             ids.add(data.getRowId());
 
@@ -1932,7 +1932,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public List<ExpRun> runsDeletedWithInput(ExpRun[] runs)
     {
-        List<ExpRun> ret = new ArrayList<ExpRun>();
+        List<ExpRun> ret = new ArrayList<>();
         for (ExpRun run : runs)
         {
             ExpProtocol protocol = run.getProtocol();
@@ -1991,13 +1991,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new ExperimentException("Trying to delete a SampleSet from a different container");
         }
+
         try
         {
             getExpSchema().getScope().ensureTransaction();
 
             // Delete all Materials from the SampleSet
             SimpleFilter materialFilter = new SimpleFilter("CpasType", source.getLSID());
-            int[] materialIds = ArrayUtils.toPrimitive(Table.executeArray(ExperimentServiceImpl.get().getTinfoMaterial(), "RowId", materialFilter, null, Integer.class));
+            int[] materialIds = ArrayUtils.toPrimitive(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getArray(Integer.class));
             deleteMaterialByRowIds(user, c, materialIds);
 
             //Delete everything the ontology knows about this
@@ -2021,10 +2022,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             getExpSchema().getScope().commitTransaction();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             getExpSchema().getScope().closeConnection();
@@ -2036,15 +2033,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         //todo cache populated runs
         try
         {
-            Map<Integer, ExpMaterialImpl> outputMaterialMap = new HashMap<Integer, ExpMaterialImpl>();
-            Map<Integer, ExpDataImpl> outputDataMap = new HashMap<Integer, ExpDataImpl>();
+            Map<Integer, ExpMaterialImpl> outputMaterialMap = new HashMap<>();
+            Map<Integer, ExpDataImpl> outputDataMap = new HashMap<>();
 
             int runId = expRun.getRowId();
             SimpleFilter filt = new SimpleFilter("RunId", runId);
             Sort sort = new Sort("ActionSequence, RowId");
-            ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort, ProtocolApplication.class));
+            ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArray(ProtocolApplication.class));
             expRun.setProtocolApplications(protocolSteps);
-            Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<Integer, ExpProtocolApplicationImpl>(protocolSteps.length);
+            Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.length);
             for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
             {
                 protStepMap.put(protocolStep.getRowId(), protocolStep);
@@ -2056,8 +2053,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             sort = new Sort("RowId");
 
-            ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort, Material.class));
-            Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<Integer, ExpMaterialImpl>(materials.length);
+            ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArray(Material.class));
+            Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.length);
             for (ExpMaterialImpl mat : materials)
             {
                 runMaterialMap.put(mat.getRowId(), mat);
@@ -2068,8 +2065,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 mat.markAsPopulated(protStepMap.get(srcAppId));
             }
 
-            ExpDataImpl[] datas = ExpDataImpl.fromDatas(Table.select(getTinfoData(), getTinfoData().getColumns(), filt, sort, Data.class));
-            Map<Integer, ExpDataImpl> runDataMap = new HashMap<Integer, ExpDataImpl>(datas.length);
+            ExpDataImpl[] datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArray(Data.class));
+            Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.length);
             for (ExpDataImpl dat : datas)
             {
                 runDataMap.put(dat.getRowId(), dat);
@@ -2098,7 +2095,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             materials = ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(), materialSQL, params, Material.class));
             MaterialInput[] materialInputs = Table.executeQuery(getExpSchema(), materialInputSQL, params, MaterialInput.class);
             assert materials.length == materialInputs.length;
-            Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<Integer, ExpMaterialImpl>(materials.length);
+            Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<>(materials.length);
             int index = 0;
             for (ExpMaterialImpl mat : materials)
             {
@@ -2125,7 +2122,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + "  ORDER BY DataId;";
             datas = ExpDataImpl.fromDatas(Table.executeQuery(getExpSchema(), dataSQL, params, Data.class));
             DataInput[] dataInputs = Table.executeQuery(getExpSchema(), dataInputSQL, params, DataInput.class);
-            Map<Integer, ExpDataImpl> startingDataMap = new HashMap<Integer, ExpDataImpl>(datas.length);
+            Map<Integer, ExpDataImpl> startingDataMap = new HashMap<>(datas.length);
             index = 0;
             for (ExpDataImpl dat : datas)
             {
@@ -2261,7 +2258,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (outputDataMap.keySet().size() > 0)
             {
-                List<Integer> dataIds = new ArrayList<Integer>(outputDataMap.keySet());
+                List<Integer> dataIds = new ArrayList<>(outputDataMap.keySet());
                 int batchSize = 200;
                 for (int i = 0; i < dataIds.size(); i += batchSize)
                 {
@@ -2487,7 +2484,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     public void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId) throws SQLException {
-        Map<String, Object> mValsPredecessor = new HashMap<String, Object>();
+        Map<String, Object> mValsPredecessor = new HashMap<>();
         mValsPredecessor.put("ActionId", actionRowId);
         mValsPredecessor.put("PredecessorId", predecessorRowId);
 
@@ -2521,7 +2518,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         saveAll(outputDatas, user);
         saveAll(transformedDatas, user);
 
-        List<ExpData> result = new ArrayList<ExpData>();
+        List<ExpData> result = new ArrayList<>();
         if (transformedDatas.isEmpty())
         {
             result.addAll(inputDatas);
@@ -2852,7 +2849,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Set<ExperimentRunType> getExperimentRunTypes(Container container)
     {
-        Set<ExperimentRunType> result = new TreeSet<ExperimentRunType>();
+        Set<ExperimentRunType> result = new TreeSet<>();
         for (ExperimentRunTypeSource runTypeSource : _runTypeSources)
         {
             result.addAll(runTypeSource.getExperimentRunTypes(container));
@@ -2926,14 +2923,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
-        Set<String> lowerReservedNames = new HashSet<String>(reservedNames.size());
+        Set<String> lowerReservedNames = new HashSet<>(reservedNames.size());
         for (String s : reservedNames)
             lowerReservedNames.add(s.toLowerCase());
 
         boolean hasNameProperty = false;
         String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
-        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
-        Set<String> propertyUris = new HashSet<String>();
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
+        Set<String> propertyUris = new HashSet<>();
         for (int i = 0; i < properties.size(); i++)
         {
             GWTPropertyDescriptor pd = properties.get(i);
@@ -3044,9 +3041,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, ProtocolApplication protApp1, User user)
             throws SQLException
     {
-        Set<MaterialInput> existingInputs = new HashSet<MaterialInput>(Arrays.asList(getMaterialInputsForApplication(protApp1.getRowId())));
+        Set<MaterialInput> existingInputs = new HashSet<>(Arrays.asList(getMaterialInputsForApplication(protApp1.getRowId())));
 
-        Set<MaterialInput> desiredInputs = new HashSet<MaterialInput>();
+        Set<MaterialInput> desiredInputs = new HashSet<>();
 
         for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())
         {
@@ -3063,9 +3060,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
             throws SQLException
     {
-        Set<DataInput> existingInputs = new HashSet<DataInput>(Arrays.asList(getDataInputsForApplication(protApp1.getRowId())));
+        Set<DataInput> existingInputs = new HashSet<>(Arrays.asList(getDataInputsForApplication(protApp1.getRowId())));
 
-        Set<DataInput> desiredInputs = new HashSet<DataInput>();
+        Set<DataInput> desiredInputs = new HashSet<>();
 
         for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
         {
@@ -3082,7 +3079,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void syncInputs(User user, Set<? extends AbstractRunInput> existingInputs, Set<? extends AbstractRunInput> desiredInputs, String keyName, TableInfo table)
             throws SQLException
     {
-        Set<AbstractRunInput> inputsToDelete = new HashSet<AbstractRunInput>(existingInputs);
+        Set<AbstractRunInput> inputsToDelete = new HashSet<>(existingInputs);
         inputsToDelete.removeAll(desiredInputs);
         for (AbstractRunInput input : inputsToDelete)
         {
@@ -3091,7 +3088,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Table.delete(table, filter);
         }
 
-        Set<AbstractRunInput> inputsToInsert = new HashSet<AbstractRunInput>(desiredInputs);
+        Set<AbstractRunInput> inputsToInsert = new HashSet<>(desiredInputs);
         inputsToInsert.removeAll(existingInputs);
         for (AbstractRunInput input : inputsToInsert)
         {
@@ -3131,7 +3128,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
                     baseProtocol.setContainer(baseProtocol.getContainer());
 
-                    Map<String, ProtocolParameter> baseParams = new HashMap<String, ProtocolParameter>(wrappedProtocol.getProtocolParameters());
+                    Map<String, ProtocolParameter> baseParams = new HashMap<>(wrappedProtocol.getProtocolParameters());
                     ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
                     baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
                     baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
@@ -3154,7 +3151,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     coreProtocol.setName(baseProtocol.getName() + " - Core");
                     coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
 
-                    List<ProtocolParameter> coreParams = new ArrayList<ProtocolParameter>();
+                    List<ProtocolParameter> coreParams = new ArrayList<>();
                     ProtocolParameter coreLSIDTemplate = new ProtocolParameter();
                     coreLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
                     coreLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
@@ -3177,7 +3174,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
                     outputProtocol.setContainer(baseProtocol.getContainer());
 
-                    List<ProtocolParameter> outputParams = new ArrayList<ProtocolParameter>();
+                    List<ProtocolParameter> outputParams = new ArrayList<>();
                     ProtocolParameter outputLSIDTemplate = new ProtocolParameter();
                     outputLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
                     outputLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
@@ -3241,7 +3238,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      */
     public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
     {
-        Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<String, List<ExpMaterialImpl>>();
+        Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
         ExpSampleSetImpl[] sampleSets = ExperimentServiceImpl.get().getSampleSets(container, user, true);
         for (ExpSampleSetImpl sampleSet : sampleSets)
         {
@@ -3250,7 +3247,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 List<ExpMaterialImpl> matchingSamples = potentialParents.get(expMaterial.getName()); 
                 if (matchingSamples == null)
                 {
-                    matchingSamples = new LinkedList<ExpMaterialImpl>();
+                    matchingSamples = new LinkedList<>();
                     potentialParents.put(expMaterial.getName(), matchingSamples);
                 }
                 matchingSamples.add(expMaterial);
