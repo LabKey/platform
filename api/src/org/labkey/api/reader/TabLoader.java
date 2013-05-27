@@ -114,7 +114,8 @@ public class TabLoader extends DataLoader
     protected static char COMMENT_CHAR = '#';
 
     // source data
-    private final BufferedReader _reader;
+    private final ReaderFactory _readerFactory;
+    private BufferedReader _reader = null;
 
     private int _commentLines = 0;
     private Map<String, String> _comments = new HashMap<>();
@@ -137,15 +138,24 @@ public class TabLoader extends DataLoader
         this(inputFile, hasColumnHeaders, null);
     }
 
-    public TabLoader(File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public TabLoader(final File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
-        this(getReader(inputFile), hasColumnHeaders, mvIndicatorContainer, true);
-    }
-
-    private static Reader getReader(File inputFile) throws IOException
-    {
-        verifyFile(inputFile);
-        return new FileReader(inputFile);
+        this(new ReaderFactory()
+        {
+            @Override
+            public BufferedReader getReader()
+            {
+                try
+                {
+                    verifyFile(inputFile);
+                    return new BufferedReader(new FileReader(inputFile));
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, hasColumnHeaders, mvIndicatorContainer);
     }
 
     // Infer whether there are headers
@@ -155,17 +165,18 @@ public class TabLoader extends DataLoader
     }
 
     // This constructor doesn't support MV Indicators:
-    public TabLoader(CharSequence src, Boolean hasColumnHeaders) throws IOException
+    public TabLoader(final CharSequence src, Boolean hasColumnHeaders) throws IOException
     {
-        this(getReader(src), hasColumnHeaders, null, true);
-    }
+        this(new ReaderFactory() {
+            @Override
+            public BufferedReader getReader()
+            {
+                return new BufferedReader(new CharSequenceReader(src));
+            }
+        }, hasColumnHeaders, null);
 
-    private static Reader getReader(CharSequence src)
-    {
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
-
-        return new CharSequenceReader(src);
     }
 
     // A TabLoader created with this constructor does NOT close the reader
@@ -181,21 +192,40 @@ public class TabLoader extends DataLoader
     }
 
     // A TabLoader created with this constructor closes the reader only if closeOnComplete is true
-    public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer, boolean closeOnComplete) throws IOException
+    public TabLoader(final Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer, final boolean closeOnComplete) throws IOException
+    {
+        this(new ReaderFactory()
+        {
+            private boolean _closed = false;
+
+            @Override
+            public BufferedReader getReader()
+            {
+                if (_closed)
+                    throw new IllegalStateException("Reader is closed");
+
+                // Customize close() behavior to track closing and handle closeOnComplete
+                return new BufferedReader(reader)
+                {
+                    @Override
+                    public void close() throws IOException
+                    {
+                        _closed = true;
+
+                        if (closeOnComplete)
+                            super.close();
+                    }
+                };
+            }
+        }, hasColumnHeaders, mvIndicatorContainer);
+    }
+
+
+    private TabLoader(ReaderFactory factory, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
     {
         super(mvIndicatorContainer);
 
-        // Actual reading requires a BufferedReader (for getLine()).
-        // Customize close() behavior based on closeOnComplete parameter.
-        _reader = closeOnComplete ? new BufferedReader(reader) : new BufferedReader(reader) {
-            @Override
-            public void close() throws IOException
-            {
-            }
-        };
-
-        // BufferedReader always supports mark()
-        _reader.mark(1024 * 1024);
+        _readerFactory = factory;
 
         if (null != hasColumnHeaders)
             setHasColumnHeaders(hasColumnHeaders.booleanValue());
@@ -204,6 +234,12 @@ public class TabLoader extends DataLoader
 
     protected BufferedReader getReader() throws IOException
     {
+        if (null == _reader)
+        {
+            _reader = _readerFactory.getReader();
+            _reader.mark(1024 * 1024);
+        }
+
         return _reader;
     }
 
@@ -450,6 +486,7 @@ public class TabLoader extends DataLoader
     public void close()
     {
         IOUtils.closeQuietly(_reader);
+        _reader = null;
     }
 
     @Override
@@ -544,7 +581,7 @@ public class TabLoader extends DataLoader
         {
             try
             {
-                IOUtils.closeQuietly(reader);
+                TabLoader.this.close();
             }
             finally
             {

@@ -63,6 +63,12 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         this(table, Table.ALL_COLUMNS, null, null);
     }
 
+    // Select specified columns from a table, no filter or sort
+    public TableSelector(TableInfo table, Set<String> columnNames)
+    {
+        this(table, Table.columnInfosList(table, columnNames), null, null);
+    }
+
     // Select all columns from a table
     public TableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
@@ -133,7 +139,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws IOException, SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
         setAsyncRequest(asyncRequest);
 
         return asyncRequest.waitForResult(new Callable<Results>()
@@ -224,7 +230,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
             @Override
             public Map<String, List<Aggregate.Result>> handle(@Nullable ResultSet rs, Connection conn) throws SQLException
             {
-                Map<String, List<Aggregate.Result>> results = new HashMap<String, List<Aggregate.Result>>();
+                Map<String, List<Aggregate.Result>> results = new HashMap<>();
 
                 // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
                 // query wasn't executed. Just return an empty map in this case.
@@ -250,7 +256,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     public Map<String, List<Aggregate.Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response) throws IOException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<Map<String, List<Aggregate.Result>>>(response);
+        AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<>(response);
         setAsyncRequest(asyncRequest);
 
         try
@@ -404,7 +410,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // Make sure the aggregates are selected in the inner query... use QueryService.getColumns() so it works with lookups, etc.
     private static Collection<ColumnInfo> ensureAggregates(TableInfo table, Collection<ColumnInfo> columns, List<Aggregate> aggregates)
     {
-        List<FieldKey> aggFieldKeys = new LinkedList<FieldKey>();
+        List<FieldKey> aggFieldKeys = new LinkedList<>();
 
         for (Aggregate aggregate : aggregates)
             aggFieldKeys.add(aggregate.getFieldKey());

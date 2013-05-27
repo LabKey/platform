@@ -19,10 +19,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,7 +35,6 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -116,7 +114,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
             return null;
 
         Set<String> columnNames = resultsTable.getColumnNameSet();
-        Set<String> datasetColumnNames = new LinkedHashSet<String>();
+        Set<String> datasetColumnNames = new LinkedHashSet<>();
         for (String columnName : columnNames)
         {
             if (columnName.startsWith("dataset"))
@@ -127,20 +125,13 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (datasetColumnNames.size() == 0)
             return null;
 
-        Map<String, Object>[] results = null;
-        try
-        {
-            results = Table.selectMaps(resultsTable, datasetColumnNames, new SimpleFilter("runid", run.getRowId()), null);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter("runid", run.getRowId()), null).getMapArray();
 
-        if (results == null || results.length == 0)
+        if (results.length == 0)
             return null;
 
         List<ColumnInfo> datasetColumns = resultsTable.getColumns(datasetColumnNames.toArray(new String[datasetColumnNames.size()]));
+
         for (Map<String, Object> result : results)
         {
             for (ColumnInfo datasetColumn : datasetColumns)

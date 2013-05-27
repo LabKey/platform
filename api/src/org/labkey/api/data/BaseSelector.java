@@ -26,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +55,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     // No implementation of getResultSet(), getRowCount(), or exists() here since implementations will differ widely.
 
     @Override
-    public <E> E[] getArray(Class<E> clazz)
+    public @NotNull <E> E[] getArray(Class<E> clazz)
     {
         ArrayList<E> list = getArrayList(clazz);
         //noinspection unchecked
@@ -63,25 +64,33 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
 
     // Convenience method that avoids "unchecked assignment" warnings
     @Override
-    public Map<String, Object>[] getMapArray()
+    public @NotNull Map<String, Object>[] getMapArray()
     {
         //noinspection unchecked
         return getArray(Map.class);
     }
 
     @Override
-    public <E> Collection<E> getCollection(Class<E> clazz)
+    public @NotNull <E> Collection<E> getCollection(Class<E> clazz)
     {
         return getArrayList(clazz);
     }
 
+    // Convenience method that avoids "unchecked assignment" warnings
     @Override
-    public <E> ArrayList<E> getArrayList(Class<E> clazz)
+    public @NotNull Collection<Map<String, Object>> getMapCollection()
+    {
+        //noinspection unchecked
+        return Arrays.asList(getMapArray());
+    }
+
+    @Override
+    public @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz)
     {
         return getArrayList(clazz, getStandardResultSetFactory());
     }
 
-    protected <E> ArrayList<E> getArrayList(final Class<E> clazz, ResultSetFactory factory)
+    protected @NotNull <E> ArrayList<E> getArrayList(final Class<E> clazz, ResultSetFactory factory)
     {
         final ArrayList<E> list;
         final Table.Getter getter = Table.Getter.forClass(clazz);
@@ -134,17 +143,18 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return list;
     }
 
-    public <T> T getObject(Class<T> clazz)
+    @Override
+    public @Nullable <T> T getObject(Class<T> clazz)
     {
         return getObject(getArrayList(clazz), clazz);
     }
 
-    protected <T> T getObject(Class<T> clazz, ResultSetFactory factory)
+    protected @Nullable <T> T getObject(Class<T> clazz, ResultSetFactory factory)
     {
         return getObject(getArrayList(clazz, factory), clazz);
     }
 
-    protected <T> T getObject(List<T> list, Class<T> clazz)
+    protected @Nullable <T> T getObject(List<T> list, Class<T> clazz)
     {
         if (list.size() == 1)
             return list.get(0);
@@ -152,6 +162,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
             return null;
         else
             throw new IllegalStateException("Query returned " + list.size() + " " + clazz.getSimpleName() + " objects; expected 1 or 0.");
+    }
+
+    @Override
+    public @Nullable Map<String, Object> getMap()
+    {
+        //noinspection unchecked
+        return getObject(Map.class);
     }
 
     @Override
@@ -277,7 +294,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public <K, V> Map<K, V> fillValueMap(final Map<K, V> fillMap)
+    public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
     {
         // Standard map enumeration ensures that standard type conversion happenes (vs. ResultSet enumeration and rs.getObject())
         forEachMap(new ForEachBlock<Map<String, Object>>()
@@ -295,7 +312,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public <K, V> Map<K, V> getValueMap()
+    public @NotNull <K, V> Map<K, V> getValueMap()
     {
         return fillValueMap(new HashMap<K, V>());
     }

@@ -70,7 +70,7 @@ public class ResultSetSelector extends BaseSelector
     }
 
     @Override
-    public Table.TableResultSet getResultSet() throws SQLException
+    public Table.TableResultSet getResultSet()
     {
         return new ResultSetImpl(_rs);
     }

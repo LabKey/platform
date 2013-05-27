@@ -53,10 +53,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -97,13 +94,13 @@ public class DefaultAssayParser implements AssayParser
 
     protected TabLoader getTabLoader(String contents) throws IOException
     {
-        return new TabLoader(new StringReader(contents), _hasHeaders);
+        return new TabLoader(contents, _hasHeaders);
     }
 
     protected Map<String, PropertyDescriptor> getPropertyMap(Map<String, DomainProperty> importMap)
     {
-        Map<String, PropertyDescriptor> map = new CaseInsensitiveHashMap<PropertyDescriptor>(importMap.size());
-        Set<PropertyDescriptor> seen = new HashSet<PropertyDescriptor>(importMap.size());
+        Map<String, PropertyDescriptor> map = new CaseInsensitiveHashMap<>(importMap.size());
+        Set<PropertyDescriptor> seen = new HashSet<>(importMap.size());
         for (Map.Entry<String, DomainProperty> entry : importMap.entrySet())
         {
             PropertyDescriptor pd = entry.getValue().getPropertyDescriptor();
@@ -535,7 +532,7 @@ public class DefaultAssayParser implements AssayParser
 
     protected Map<String, Map<String, Object>> getTemplateRowMap(ImportContext context, String keyProperty){
         Integer templateId = context.getTemplateIdFromJson();
-        Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
+        Map<String, Map<String, Object>> ret = new HashMap<>();
 
         if (templateId == null)
             return ret;

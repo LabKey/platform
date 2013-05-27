@@ -16,6 +16,9 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -37,22 +40,26 @@ public interface Selector
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    Table.TableResultSet getResultSet() throws SQLException;
+    Table.TableResultSet getResultSet();
 
     long getRowCount();
 
     boolean exists();
 
-    <T> T[] getArray(Class<T> clazz);
+    @NotNull <T> T[] getArray(Class<T> clazz);
 
     // Convenience method that avoids "unchecked assignment" warnings
-    Map<String, Object>[] getMapArray();
+    @NotNull Map<String, Object>[] getMapArray();
 
-    <E> Collection<E> getCollection(Class<E> clazz);
+    @NotNull <E> Collection<E> getCollection(Class<E> clazz);
 
-    <E> ArrayList<E> getArrayList(Class<E> clazz);
+    @NotNull Collection<Map<String, Object>> getMapCollection();
 
-    <T> T getObject(Class<T> clazz);
+    @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz);
+
+    @Nullable <T> T getObject(Class<T> clazz);
+
+    @Nullable Map<String, Object> getMap();
 
     void forEach(ForEachBlock<ResultSet> block);
 
@@ -61,10 +68,10 @@ public interface Selector
     <T> void forEach(ForEachBlock<T> block, Class<T> clazz);
 
     // Return a new map from a two-column query; the first column is the key, the second column is the value.
-    <K, V> Map<K, V> getValueMap();
+    @NotNull <K, V> Map<K, V> getValueMap();
 
     // Populate an existing map from a two-column query; the first column is the key, the second column is the value.
-    <K, V> Map<K, V> fillValueMap(Map<K, V> map);
+    @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
     interface ForEachBlock<T>
     {

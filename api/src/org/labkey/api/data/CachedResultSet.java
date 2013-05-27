@@ -99,7 +99,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public CachedResultSet(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> list = new ArrayList<>();
 
         if (maxRows == Table.ALL_ROWS)
             maxRows = Integer.MAX_VALUE;
@@ -167,7 +167,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
             _maps = maps;
             _isComplete = isComplete;
-            _columns = new HashMap<String, Integer>(_md.getColumnCount() * 2);
+            _columns = new HashMap<>(_md.getColumnCount() * 2);
 
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {

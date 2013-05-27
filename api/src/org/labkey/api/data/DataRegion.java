@@ -73,8 +73,8 @@ import java.util.Set;
 public class DataRegion extends AbstractDataRegion
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);
-    private List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
-    private List<DisplayColumnGroup> _groups = new ArrayList<DisplayColumnGroup>();
+    private List<DisplayColumn> _displayColumns = new ArrayList<>();
+    private List<DisplayColumnGroup> _groups = new ArrayList<>();
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
     private TableInfo _table = null;
@@ -92,7 +92,7 @@ public class DataRegion extends AbstractDataRegion
     private boolean _fixedWidthColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private long _offset = 0;
-    private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<Pair<String, Object>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
+    private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
@@ -113,7 +113,7 @@ public class DataRegion extends AbstractDataRegion
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
-    private List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<ButtonBarConfig>();
+    private List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
 
     public static final int MODE_NONE = 0;
     public static final int MODE_INSERT = 1;
@@ -191,7 +191,7 @@ public class DataRegion extends AbstractDataRegion
 
     public List<String> getDisplayColumnNames()
     {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         for (DisplayColumn dc : getDisplayColumns())
             list.add(dc.getName());
@@ -331,7 +331,7 @@ public class DataRegion extends AbstractDataRegion
         assert Table.checkAllColumns(table, originalColumns, "DataRegion.getSelectColumns() originalColumns");
 
         // allow DataRegion subclass to add columns (yuck)
-        LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
+        LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<>(originalColumns);
         addQueryColumns(columns);
 
         assert Table.checkAllColumns(table, columns, "DataRegion.getSelectColumns() columns");
@@ -520,7 +520,7 @@ public class DataRegion extends AbstractDataRegion
 
         // Non-query display columns can still have query column dependencies (examples: ms2 DeltaScan and Hydrophobicity columns).
         // Last attempt at finding the table: iterate through the display columns and return the parent table of the first query column dependency.
-        Set<ColumnInfo> queryColumns = new HashSet<ColumnInfo>();
+        Set<ColumnInfo> queryColumns = new HashSet<>();
         for (DisplayColumn dc : _displayColumns)
         {
             dc.addQueryColumns(queryColumns);
@@ -646,7 +646,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (countAggregate)
         {
-            List<Aggregate> newAggregates = new LinkedList<Aggregate>();
+            List<Aggregate> newAggregates = new LinkedList<>();
 
             if (ctx.getBaseAggregates() != null)
                 newAggregates.addAll(ctx.getBaseAggregates());
@@ -833,7 +833,7 @@ public class DataRegion extends AbstractDataRegion
         StringBuilder viewMsg = new StringBuilder();
         StringBuilder filterMsg = new StringBuilder();
 
-        Map<String, String> messages = new LinkedHashMap<String, String>();
+        Map<String, String> messages = new LinkedHashMap<>();
 
         if (errorCreatingResults)
         {
@@ -1259,7 +1259,7 @@ public class DataRegion extends AbstractDataRegion
 
             //we also find the set of distinct aggregate labels and output 1 row per label
             Iterator<Map.Entry<String, List<Aggregate.Result>>> it = _aggregateResults.entrySet().iterator();
-            Set<String> aggregateLabels = new HashSet<String>();
+            Set<String> aggregateLabels = new HashSet<>();
 
             while (it.hasNext())
             {
@@ -1714,7 +1714,7 @@ public class DataRegion extends AbstractDataRegion
     private void _renderUpdateForm(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         TableViewForm viewForm = ctx.getForm();
-        Map valueMap = ctx.getRow();
+        Map<String, Object> valueMap = ctx.getRow();
         LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
@@ -1732,7 +1732,7 @@ public class DataRegion extends AbstractDataRegion
             }
             else
             {
-                Map[] maps = Table.select(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null, Map.class);
+                Map<String, Object>[] maps = new TableSelector(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapArray();
                 if (maps.length > 0)
                     valueMap = maps[0];
             }
@@ -1766,7 +1766,7 @@ public class DataRegion extends AbstractDataRegion
             throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
-        Set<String> errors = new HashSet<String>();
+        Set<String> errors = new HashSet<>();
 
         for (DisplayColumn renderer : renderers)
         {
@@ -1800,7 +1800,7 @@ public class DataRegion extends AbstractDataRegion
         TableViewForm viewForm = ctx.getForm();
 
         List<DisplayColumn> renderers = getDisplayColumns();
-        Set<String> renderedColumns = new HashSet<String>();
+        Set<String> renderedColumns = new HashSet<>();
 
         //if user doesn't have read permissions, don't render anything
         if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(InsertPermission.class)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(UpdatePermission.class)))
@@ -2321,7 +2321,7 @@ public class DataRegion extends AbstractDataRegion
     // that's column name -> value and pass it to renderOldValues
     private void renderOldValues(Writer out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap) throws IOException
     {
-        Map<String, Object> map = new HashMap<String, Object>(valueMap.size());
+        Map<String, Object> map = new HashMap<>(valueMap.size());
 
         for (Map.Entry<FieldKey, ColumnInfo> entry : fieldMap.entrySet())
         {
@@ -2352,7 +2352,7 @@ public class DataRegion extends AbstractDataRegion
     public static List<ColumnInfo> colInfosFromMetaData(ResultSetMetaData md) throws SQLException
     {
         int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new LinkedList<ColumnInfo>();
+        List<ColumnInfo> cols = new LinkedList<>();
 
         for (int i = 1; i <= columnCount; i++)
             cols.add(new ColumnInfo(md, i));

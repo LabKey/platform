@@ -80,13 +80,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String RUN_DATA_FILE = "runData.tsv";
     public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
 
-    private Map<String, String> _formFields = new HashMap<String, String>();
-    private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
+    private Map<String, String> _formFields = new HashMap<>();
+    private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<>();
     private static final Logger LOG = Logger.getLogger(TsvDataExchangeHandler.class);
     private DataSerializer _serializer = new TsvDataSerializer();
 
     /** Files that shouldn't be considered part of the run's output, such as the transform script itself */
-    private Set<File> _filesToIgnore = new HashSet<File>();
+    private Set<File> _filesToIgnore = new HashSet<>();
 
     public DataSerializer getDataSerializer()
     {
@@ -105,7 +105,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         try
         {
             // serialize the batch and run properties to a tsv
-            Map<DomainProperty, String> mergedProps = new HashMap<DomainProperty, String>(runProperties);
+            Map<DomainProperty, String> mergedProps = new HashMap<>(runProperties);
             mergedProps.putAll(batchProperties);
             writeRunProperties(context, mergedProps, scriptDir, pw, writer);
 
@@ -139,7 +139,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.println(transformedRunPropsFile.getAbsolutePath());
             _filesToIgnore.add(transformedRunPropsFile);
 
-            return new Pair<File, Set<File>>(runProps, dataFiles);
+            return new Pair<>(runProps, dataFiles);
         }
         finally
         {
@@ -164,17 +164,17 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
      */
     private Set<File> _writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        List<File> dataFiles = new ArrayList<File>();
+        List<File> dataFiles = new ArrayList<>();
 
         dataFiles.addAll(context.getUploadedData().values());
 
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
-        Map<DataType, List<Map<String, Object>>> mergedDataMap = new HashMap<DataType, List<Map<String, Object>>>();
+        Map<DataType, List<Map<String, Object>>> mergedDataMap = new HashMap<>();
 
         // All of the DataTypes that support
-        Set<DataType> transformDataTypes = new HashSet<DataType>();
+        Set<DataType> transformDataTypes = new HashSet<>();
 
         for (File data : dataFiles)
         {
@@ -247,7 +247,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
             pw.append('\n');
         }
-        return new HashSet<File>(dataFiles);
+        return new HashSet<>(dataFiles);
     }
 
     /**
@@ -264,7 +264,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         pw.append(originalFile.getAbsolutePath());
         pw.append('\n');
 
-        Set<File> result = new HashSet<File>();
+        Set<File> result = new HashSet<>();
         result.add(originalFile);
 
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
@@ -332,7 +332,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     private Map<String, String> getContextProperties(AssayRunUploadContext context, File scriptDir)
     {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
         map.put(Props.assayId.name(), StringUtils.defaultString(context.getName()));
         map.put(Props.runComments.name(), StringUtils.defaultString(context.getComments()));
@@ -352,13 +352,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         if (runInfo.exists())
         {
-            List<ValidationError> errors = new ArrayList<ValidationError>();
-            Reader runInfoReader = null;
-            Reader errorReader = null;
+            List<ValidationError> errors = new ArrayList<>();
 
-            try {
-                runInfoReader = new BufferedReader(new FileReader(runInfo));
-                TabLoader loader = new TabLoader(runInfoReader, false);
+            try (TabLoader loader = new TabLoader(runInfo, false))
+            {
                 // Don't unescape file path names on windows (C:\foo\bar.tsv)
                 loader.setUnescapeBackslashes(false);
                 loader.setColumns(new ColumnDescriptor[]{
@@ -379,24 +376,25 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (errorFile != null && errorFile.exists())
                 {
-                    errorReader = new BufferedReader(new FileReader(errorFile));
-                    TabLoader errorLoader = new TabLoader(errorReader, false);
-                    errorLoader.setColumns(new ColumnDescriptor[]{
-                            new ColumnDescriptor("type", String.class),
-                            new ColumnDescriptor("property", String.class),
-                            new ColumnDescriptor("message", String.class)
-                    });
-
-                    for (Map<String, Object> row : errorLoader)
+                    try (TabLoader errorLoader = new TabLoader(errorFile, false))
                     {
-                        if ("error".equalsIgnoreCase(row.get("type").toString()))
-                        {
-                            String propName = mapPropertyName(StringUtils.trimToNull((String)row.get("property")));
+                        errorLoader.setColumns(new ColumnDescriptor[]{
+                                new ColumnDescriptor("type", String.class),
+                                new ColumnDescriptor("property", String.class),
+                                new ColumnDescriptor("message", String.class)
+                        });
 
-                            if (propName != null)
-                                errors.add(new PropertyValidationError(row.get("message").toString(), propName));
-                            else
-                                errors.add(new SimpleValidationError(row.get("message").toString()));
+                        for (Map<String, Object> row : errorLoader)
+                        {
+                            if ("error".equalsIgnoreCase(row.get("type").toString()))
+                            {
+                                String propName = mapPropertyName(StringUtils.trimToNull((String)row.get("property")));
+
+                                if (propName != null)
+                                    errors.add(new PropertyValidationError(row.get("message").toString(), propName));
+                                else
+                                    errors.add(new SimpleValidationError(row.get("message").toString()));
+                            }
                         }
                     }
                 }
@@ -404,11 +402,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             catch (Exception e)
             {
                 throw new ValidationException(e.getMessage());
-            }
-            finally
-            {
-                IOUtils.closeQuietly(errorReader);
-                IOUtils.closeQuietly(runInfoReader);
             }
 
             if (!errors.isEmpty())
@@ -448,7 +441,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
             // create the sample run data
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            List<Map<String, Object>> dataRows = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> dataRows = new ArrayList<>();
 
             Domain runDataDomain = provider.getResultsDomain(protocol);
             if (runDataDomain != null)
@@ -456,7 +449,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 DomainProperty[] properties = runDataDomain.getProperties();
                 for (int i=0; i < SAMPLE_DATA_ROWS; i++)
                 {
-                    Map<String, Object> row = new HashMap<String, Object>();
+                    Map<String, Object> row = new HashMap<>();
                     for (DomainProperty prop : properties)
                         row.put(prop.getName(), getSampleValue(prop));
 
@@ -467,7 +460,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.println(runData.getAbsolutePath());
 
-                getDataSerializer().exportRunData(protocol, new ArrayList<Map<String, Object>>(dataRows), runData);
+                getDataSerializer().exportRunData(protocol, new ArrayList<>(dataRows), runData);
             }
 
             // any additional sample property sets
@@ -508,10 +501,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected List<Map<String, Object>> parseRunInfo(File runInfo) throws IOException
     {
-        Reader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(runInfo));
-            TabLoader loader = new TabLoader(reader, false);
+        try (TabLoader loader = new TabLoader(runInfo, false))
+        {
             // Don't unescape file path names on windows (C:\foo\bar.tsv)
             loader.setUnescapeBackslashes(false);
             loader.setColumns(new ColumnDescriptor[]{
@@ -521,10 +512,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     new ColumnDescriptor("transformedData", String.class)
             });
             return loader.load();
-        }
-        finally
-        {
-            IOUtils.closeQuietly(reader);
         }
     }
 
@@ -575,7 +562,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             Reader runPropsReader = null;
             try {
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
-                Map<String, File> transformedData = new HashMap<String, File>();
+                Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;
                 File runDataUploadedFile = null;
 
@@ -637,7 +624,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (!transformedData.isEmpty())
                 {
                     // found some transformed data, create the ExpData objects and return in the transform result
-                    Map<ExpData, List<Map<String, Object>>> dataMap = new HashMap<ExpData, List<Map<String, Object>>>();
+                    Map<ExpData, List<Map<String, Object>>> dataMap = new HashMap<>();
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {
@@ -660,7 +647,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (transformedRunProps != null && transformedRunProps.exists())
                 {
-                    Map<String, String> transformedProps = new HashMap<String, String>();
+                    Map<String, String> transformedProps = new HashMap<>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
                     {
                         String name = String.valueOf(row.get("name"));
@@ -671,8 +658,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
 
                     // merge the transformed props with the props in the upload form
-                    Map<DomainProperty, String> runProps = new HashMap<DomainProperty, String>();
-                    Map<DomainProperty, String> batchProps = new HashMap<DomainProperty, String>();
+                    Map<DomainProperty, String> runProps = new HashMap<>();
+                    Map<DomainProperty, String> batchProps = new HashMap<>();
                     boolean runPropTransformed = false;
                     boolean batchPropTransformed = false;
                     for (Map.Entry<DomainProperty, String> entry : getRunProperties(context).entrySet())
@@ -756,7 +743,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public Map<DomainProperty, String> getRunProperties() throws ExperimentException
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
-            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
+            Map<DomainProperty, String> runProperties = new HashMap<>();
 
             for (DomainProperty prop : provider.getRunDomain(_protocol).getProperties())
                 runProperties.put(prop, getSampleValue(prop));
@@ -767,7 +754,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public Map<DomainProperty, String> getBatchProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
-            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
+            Map<DomainProperty, String> runProperties = new HashMap<>();
 
             for (DomainProperty prop : provider.getBatchDomain(_protocol).getProperties())
                 runProperties.put(prop, getSampleValue(prop));

@@ -82,7 +82,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         return getThis();
     }
 
-    protected Table.TableResultSet getResultSet(ResultSetFactory factory, boolean cache) throws SQLException
+    protected Table.TableResultSet getResultSet(ResultSetFactory factory, boolean cache)
     {
         if (cache)
         {
@@ -110,12 +110,12 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     }
 
     @Override
-    public Table.TableResultSet getResultSet() throws SQLException
+    public Table.TableResultSet getResultSet()
     {
         return getResultSet(true);
     }
 
-    public Table.TableResultSet getResultSet(boolean cache) throws SQLException
+    public Table.TableResultSet getResultSet(boolean cache)
     {
         return getResultSet(cache, false);
     }
@@ -128,7 +128,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable) throws SQLException
+    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
         boolean closeResultSet = cache;
         SqlFactory sqlFactory = getSqlFactory(true);

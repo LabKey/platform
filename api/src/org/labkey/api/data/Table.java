@@ -142,6 +142,71 @@ public class Table
         return selector.getArray(clss);
     }
 
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated /** Use TableSelector */
+    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
+    {
+        return new LegacyTableSelector(col, filter, sort).getArray(c);
+    }
+
+    @NotNull
+    @Deprecated /** Use TableSelector */
+    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+            throws SQLException
+    {
+        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
+        selector.setForDisplay(true);
+
+        return selector.getArray(clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, filter, sort).getObject(clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(c, pk, clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
+    }
+
+    @NotNull
+    @Deprecated /** Use TableSelector */
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
+    }
+
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
+    @Deprecated /** Use TableSelector */
+    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
+    {
+        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
+    }
+
+    // 6 usages
+    @Deprecated /** Use TableSelector */
+    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
+
+        return selector.getMapArray();
+    }
+
     /**
      * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
@@ -154,13 +219,6 @@ public class Table
             return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
         else
             return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
-    }
-
-    // return a result from a one column resultset. K should be a string or number type
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(col, filter, sort).getArray(c);
     }
 
     // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
@@ -190,15 +248,11 @@ public class Table
         return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
     }
 
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+    @Deprecated /** Use SqlSelector */
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
             throws SQLException
     {
-        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
-        selector.setForDisplay(true);
-
-        return selector.getArray(clss);
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet(cache);
     }
 
     @Deprecated /** Use SqlExecutor */
@@ -207,67 +261,16 @@ public class Table
         return new LegacySqlExecutor(schema).execute(f);
     }
 
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, filter, sort).getObject(clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(c, pk, clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
 
-    // 7 usages
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
-    }
-
-    // 6 usages
-    @Deprecated /** Use TableSelector */
-    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
-
-        return selector.getMapArray();
-    }
-
-
-    // 87 usages
+    // 78 usages
     @NotNull
     @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
-    }
-
-
-    // 10 usages
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
     }
 
 
@@ -311,7 +314,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 192 usages
+    // 189 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -321,7 +324,7 @@ public class Table
 
     // ===== SqlSelector methods below =====
 
-    // 21 usages
+    // 20 usages
     @NotNull
     @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
@@ -329,7 +332,7 @@ public class Table
         return new LegacySqlSelector(schema, sqlf).getArray(clss);
     }
 
-    // 42 usages
+    // 30 usages
     @NotNull
     @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
@@ -337,7 +340,7 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
-    // 82 usages
+    // 72 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
@@ -345,7 +348,7 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
-    // 54 usages
+    // 53 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
@@ -359,19 +362,11 @@ public class Table
         return new LegacySqlSelector(schema, sql).getResultSet();
     }
 
-    // 8 usages
+    // 7 usages
     @Deprecated /** Use SqlSelector */
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
-    }
-
-    // 5 usages
-    @Deprecated /** Use SqlSelector */
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet(cache);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -510,7 +505,7 @@ public class Table
     }
 
 
-    private static Map<Class, Getter> _getterMap = new HashMap<Class, Getter>(10);
+    private static Map<Class, Getter> _getterMap = new HashMap<>(10);
 
     static enum Getter
     {
@@ -659,14 +654,14 @@ public class Table
     protected static Map<String, Object> _getTableData(TableInfo table, Map<String, Object> fields, boolean insert)
     {
         if (!(fields instanceof CaseInsensitiveHashMap))
-            fields = new CaseInsensitiveHashMap<Object>(fields);
+            fields = new CaseInsensitiveHashMap<>(fields);
 
         // special rename case
         if (fields.containsKey("containerId"))
             fields.put("container", fields.get("containerId"));
 
         List<ColumnInfo> columns = table.getColumns();
-        Map<String, Object> m = new CaseInsensitiveHashMap<Object>(columns.size() * 2);
+        Map<String, Object> m = new CaseInsensitiveHashMap<>(columns.size() * 2);
 
         for (ColumnInfo column : columns)
         {
@@ -815,7 +810,7 @@ public class Table
 
         StringBuilder columnSQL = new StringBuilder();
         StringBuilder valueSQL = new StringBuilder();
-        ArrayList<Object> parameters = new ArrayList<Object>();
+        ArrayList<Object> parameters = new ArrayList<>();
         ColumnInfo autoIncColumn = null;
         String comma = "";
 
@@ -948,15 +943,15 @@ public class Table
 
         StringBuilder setSQL = new StringBuilder();
         StringBuilder whereSQL = new StringBuilder();
-        ArrayList<Object> parametersSet = new ArrayList<Object>();
-        ArrayList<Object> parametersWhere = new ArrayList<Object>();
+        ArrayList<Object> parametersSet = new ArrayList<>();
+        ArrayList<Object> parametersWhere = new ArrayList<>();
         String comma = "";
 
         // UNDONE -- rowVersion
         List<ColumnInfo> columnPK = table.getPkColumns();
 
         // Name-value pairs for the PK columns for this row
-        Map<String, Object> keys = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> keys = new CaseInsensitiveHashMap<>();
 
         if (columnPK.size() == 1 && !pkVals.getClass().isArray())
             keys.put(columnPK.get(0).getName(), pkVals);
@@ -1119,7 +1114,7 @@ public class Table
         else
         {
             select = new CaseInsensitiveHashSet(select);
-            List<ColumnInfo> selectList = new ArrayList<ColumnInfo>();      // TODO: Just use selectColumns
+            List<ColumnInfo> selectList = new ArrayList<>();      // TODO: Just use selectColumns
             for (ColumnInfo column : allColumns)
             {
                 if (select != ALL_COLUMNS && !select.contains(column.getName()) && !select.contains(column.getPropertyName()))
@@ -1134,7 +1129,7 @@ public class Table
 
     static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
-        Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
+        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
         ColumnInfo existing;
         for (ColumnInfo column : arrColumns)
         {
@@ -1156,7 +1151,7 @@ public class Table
     public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
-        Set<FieldKey> requiredColumns = new HashSet<FieldKey>();
+        Set<FieldKey> requiredColumns = new HashSet<>();
 
         if (null != filter)
             requiredColumns.addAll(filter.getWhereParamFieldKeys());
@@ -1328,7 +1323,7 @@ public class Table
     public static List<Map> join(List<Map> left, String key, DbSchema schema, String sql) // NYI , Map right)
             throws SQLException
     {
-        TreeSet<Object> keys = new TreeSet<Object>();
+        TreeSet<Object> keys = new TreeSet<>();
         for (Map m : left)
             keys.add(m.get(key));
         int size = keys.size();
@@ -1453,20 +1448,20 @@ public class Table
         @Test
         public void testMapJoin()
         {
-            ArrayList<Map> left = new ArrayList<Map>();
+            ArrayList<Map> left = new ArrayList<>();
             left.add(_quickMap("id=1&A=1"));
             left.add(_quickMap("id=2&A=2"));
             left.add(_quickMap("id=3&A=3"));
             left.add(_quickMap("id=4&A=1"));
             left.add(_quickMap("id=5&A=2"));
             left.add(_quickMap("id=6&A=3"));
-            ArrayList<Map> right = new ArrayList<Map>();
+            ArrayList<Map> right = new ArrayList<>();
             right.add(_quickMap("id=HIDDEN&A=1&B=one"));
             right.add(_quickMap("id=HIDDEN&A=2&B=two"));
             right.add(_quickMap("id=HIDDEN&A=3&B=three"));
 
             Collection<Map> join = Join.join(left, right, "A");
-            Set<String> idSet = new HashSet<String>();
+            Set<String> idSet = new HashSet<>();
             for (Map m : join)
             {
                 idSet.add((String)m.get("id"));
@@ -1566,7 +1561,7 @@ public class Table
         public void testAggregates() throws SQLException
         {
             TableInfo tinfo = CoreSchema.getInstance().getTableInfoContainers();
-            List<Aggregate> aggregates = new LinkedList<Aggregate>();
+            List<Aggregate> aggregates = new LinkedList<>();
 
             // Test no aggregates case
             Map<String, List<Aggregate.Result>> aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
@@ -1649,7 +1644,7 @@ public class Table
 
         private Map<String, String> _quickMap(String q)
         {
-            Map<String, String> m = new HashMap<String, String>();
+            Map<String, String> m = new HashMap<>();
             for (Pair<String, String> p : PageFlowUtil.fromQueryString(q))
                 m.put(p.first, p.second);
             return m;
@@ -1659,7 +1654,7 @@ public class Table
 
     static public Map<FieldKey, ColumnInfo> createColumnMap(@Nullable TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {
-        Map<FieldKey, ColumnInfo> ret = new HashMap<FieldKey, ColumnInfo>();
+        Map<FieldKey, ColumnInfo> ret = new HashMap<>();
         if (columns != null)
         {
             for (ColumnInfo column : columns)
@@ -1694,8 +1689,8 @@ public class Table
     {
         int bad = 0;
 
-        Map<FieldKey, ColumnInfo> mapFK = new HashMap<FieldKey, ColumnInfo>(columns.size()*2);
-        Map<String, ColumnInfo> mapAlias = new HashMap<String, ColumnInfo>(columns.size()*2);
+        Map<FieldKey, ColumnInfo> mapFK = new HashMap<>(columns.size()*2);
+        Map<String, ColumnInfo> mapAlias = new HashMap<>(columns.size()*2);
         ColumnInfo prev;
 
         for (ColumnInfo column : columns)
@@ -1757,7 +1752,7 @@ public class Table
         SqlDialect d = tableDelete.getSqlDialect();
 
         List<ColumnInfo> columnPK = table.getPkColumns();
-        List<Parameter> paramPK = new ArrayList<Parameter>(columnPK.size());
+        List<Parameter> paramPK = new ArrayList<>(columnPK.size());
         for (ColumnInfo pk : columnPK)
             paramPK.add(new Parameter(pk.getName(), null, pk.getJdbcType()));
         Parameter paramContainer = new Parameter("container", null, JdbcType.VARCHAR);

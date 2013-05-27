@@ -16,9 +16,26 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
@@ -31,8 +48,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
-import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -75,23 +93,17 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         TableInfo table = StorageProvisioner.createTableInfo(getResultsDomain(protocol), DbSchema.get(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME));
+        Map<String, Object>[] rows = new TableSelector(table, table.getColumns(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, id), null).getMapArray();
 
-        try
+        for (Map<String, Object> row : rows)
         {
-            Map<String, Object>[] rows = Table.select(table, table.getColumns(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, id), null, Map.class);
-            for (Map<String, Object> row : rows)
+            Number dataId = (Number)row.get(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME);
+            if (dataId != null)
             {
-                Number dataId = (Number)row.get(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME);
-                if (dataId != null)
-                {
-                    return ExperimentService.get().getExpData(dataId.intValue());
-                }
+                return ExperimentService.get().getExpData(dataId.intValue());
             }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
         return null;
     }
 

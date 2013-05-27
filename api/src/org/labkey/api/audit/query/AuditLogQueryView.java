@@ -39,11 +39,11 @@ import java.util.Map;
  */
 public abstract class AuditLogQueryView extends QueryView
 {
-    protected List<String> _columns = new ArrayList<String>();
-    protected List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
+    protected List<String> _columns = new ArrayList<>();
+    protected List<DisplayColumn> _displayColumns = new ArrayList<>();
     protected @Nullable SimpleFilter _filter;
     protected @Nullable Sort _sort;
-    protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap<String, AuditDisplayColumnFactory>();
+    protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap<>();
 
     public AuditLogQueryView(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {

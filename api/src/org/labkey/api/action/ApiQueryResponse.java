@@ -38,7 +38,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -381,13 +380,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.startList("rows");
         if (!_metaDataOnly)
         {
-            Results results = null;
-            try
+            // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
+            // can monitor if the client has stopped listening
+            _dataRegion.setAllowAsync(true);
+
+            try (Results results = _dataRegion.getResultSet(_ctx))
             {
-                // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-                // can monitor if the client has stopped listening
-                _dataRegion.setAllowAsync(true);
-                results = _dataRegion.getResultSet(_ctx);
                 _ctx.setResults(results);
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
                 factory.setConvertBigDecimalToDouble(false);
@@ -399,10 +397,6 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                     ++_numRespRows;
                 }
                 complete = results.isComplete();
-            }
-            finally
-            {
-                if (results != null) { try { results.close(); } catch (SQLException ignored) {} }
             }
         }
         writer.endList();
