@@ -16,6 +16,7 @@
 package org.labkey.api.assay.dilution.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.SampleInfo;
@@ -31,6 +32,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayService;
 
+import javax.activation.DataHandler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -115,22 +117,24 @@ public class DilutionProviderSchema extends AssayProviderSchema
     private static final String[] _oorSuffixes = {"", DilutionDataHandler.OOR_SUFFIX};
     public static List<PropertyDescriptor> getExistingDataProperties(ExpProtocol protocol, Set<Double> cutoffValues)
     {
+        DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
+        DilutionDataHandler dataHandler = provider.getDataHandler();
         List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
         Map<Integer, String> cutoffFormats = new HashMap<Integer, String>();
         Container container = protocol.getContainer();
         for (String fixedProp : _fixedRunDataProps)
-            propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, fixedProp, cutoffFormats));
+            propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, fixedProp, cutoffFormats));
 
         for (String prefix : _aucPrefixes)
             for (String suffix : _curveFitSuffixes)
-                propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, prefix + suffix, cutoffFormats));
+                propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, prefix + suffix, cutoffFormats));
 
         for (Double cutoffValue : cutoffValues)
             for (String oorSuffix : _oorSuffixes)
             {
-                propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.POINT_IC_PREFIX + cutoffValue.intValue() + oorSuffix, cutoffFormats));
+                propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.POINT_IC_PREFIX + cutoffValue.intValue() + oorSuffix, cutoffFormats));
                 for (String suffix : _curveFitSuffixes)
-                    propertyDescriptors.add(DilutionDataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.CURVE_IC_PREFIX + cutoffValue.intValue() + suffix + oorSuffix, cutoffFormats));
+                    propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, DilutionDataHandler.CURVE_IC_PREFIX + cutoffValue.intValue() + suffix + oorSuffix, cutoffFormats));
             }
 
         return propertyDescriptors;

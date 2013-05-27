@@ -47,6 +47,10 @@
         if (fitErrorPair != null)
             sampleProps.put(fitErrorPair.getKey(), fitErrorPair.getValue());
 
+        Pair<PropertyDescriptor, Object> stdDev = bean.getStandardDev(result, context.getContainer());
+        if (stdDev != null)
+            sampleProps.put(stdDev.getKey(), stdDev.getValue());
+
         Pair<PropertyDescriptor, Object> aucPair = bean.getAuc(result, context.getContainer());
         if (aucPair != null)
             sampleProps.put(aucPair.getKey(), aucPair.getValue());

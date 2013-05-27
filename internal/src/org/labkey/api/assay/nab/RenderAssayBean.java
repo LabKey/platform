@@ -5,6 +5,7 @@ import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
+import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.view.DuplicateDataFileRunView;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -29,7 +30,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -66,6 +66,7 @@ public class RenderAssayBean extends RenderAssayForm
     private int _maxSamplesPerGraph = 8;
     private int _graphsPerRow = 2;
     private String _sampleNoun = "Sample";
+    private String _neutralizationAbrev = "Neut.";
     private ActionURL _graphURL;
 
     public RenderAssayBean()
@@ -284,7 +285,7 @@ public class RenderAssayBean extends RenderAssayForm
         {
             Lsid fitErrorURI = new Lsid(DilutionDataHandler.NAB_PROPERTY_LSID_PREFIX, getAssay().getProtocol().getName(), DilutionDataHandler.FIT_ERROR_PROPERTY);
             PropertyDescriptor fitErrorPd =
-                    DilutionDataHandler.getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.FIT_ERROR_PROPERTY, new HashMap<Integer, String>());
+                    _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.FIT_ERROR_PROPERTY, new HashMap<Integer, String>());
             if (null != fitErrorPd)
                 return new Pair<PropertyDescriptor, Object>(fitErrorPd, result.getDilutionSummary().getFitError());
         }
@@ -294,10 +295,22 @@ public class RenderAssayBean extends RenderAssayForm
         return null;
     }
 
+    public Pair<PropertyDescriptor, Object> getStandardDev(DilutionAssayRun.SampleResult result, Container container)
+    {
+        PropertyDescriptor stdDevPd =
+                _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.STD_DEV_PROPERTY_NAME, new HashMap<Integer, String>());
+        if (null != stdDevPd)
+        {
+            DilutionSummary summary = result.getDilutionSummary();
+            return new Pair<PropertyDescriptor, Object>(stdDevPd, summary.getFirstWellGroup().getStdDev());
+        }
+        return null;
+    }
+
     public Pair<PropertyDescriptor, Object> getAuc(DilutionAssayRun.SampleResult result, Container container)
     {
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.AUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.AUC_PREFIX, getFitTypeEnum());
-        PropertyDescriptor aucPD = DilutionDataHandler.getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
+        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
         if (null != aucPD)
             return new Pair<PropertyDescriptor, Object>(aucPD, result.getDataProperty(aucPropertyName));
         return null;
@@ -306,7 +319,7 @@ public class RenderAssayBean extends RenderAssayForm
     public Pair<PropertyDescriptor, Object> getPositiveAuc(DilutionAssayRun.SampleResult result, Container container)
     {
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.pAUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.pAUC_PREFIX, getFitTypeEnum());
-        PropertyDescriptor aucPD = DilutionDataHandler.getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
+        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
         if (null != aucPD)
             return new Pair<PropertyDescriptor, Object>(aucPD, result.getDataProperty(aucPropertyName));
         return null;
@@ -370,6 +383,16 @@ public class RenderAssayBean extends RenderAssayForm
     public void setSampleNoun(String sampleNoun)
     {
         _sampleNoun = sampleNoun;
+    }
+
+    public String getNeutralizationAbrev()
+    {
+        return _neutralizationAbrev;
+    }
+
+    public void setNeutralizationAbrev(String neutralizationAbrev)
+    {
+        _neutralizationAbrev = neutralizationAbrev;
     }
 
     public ActionURL getGraphURL()

@@ -47,7 +47,7 @@
                 </tr>
                 <tr>
                     <td align="right" style="text-decoration:underline"><%= summary.getMethod().getAbbreviation() %></td>
-                    <td align="center" colspan="3"  style="text-decoration:underline">Neut.</td>
+                    <td align="center" colspan="3"  style="text-decoration:underline"><%=h(bean.getNeutralizationAbrev())%></td>
                 </tr>
                 <%
                     List<WellData> dataList = summary.getWellData();

@@ -73,6 +73,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String pAUC_PREFIX = "PositiveAUC";
     public static final String DATA_ROW_LSID_PROPERTY = "Data Row LSID";
     public static final String AUC_PROPERTY_FORMAT = "0.000";
+    public static final String STD_DEV_PROPERTY_NAME = "StandardDeviation";
 
     private String _dataRowLsidPrefix;
 
@@ -153,6 +154,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     props.put(FIT_ERROR_PROPERTY, dilution.getFitError());
                     props.put(DILUTION_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
                     props.put(WELLGROUP_NAME_PROPERTY, group.getName());
+                    props.put(STD_DEV_PROPERTY_NAME, dilution.getStdDev(group));
                 }
                 return results;
             }
@@ -413,7 +415,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
-    public static PropertyDescriptor getPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName, Map<Integer, String> cutoffFormats)
+    public PropertyDescriptor getPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName, Map<Integer, String> cutoffFormats)
     {
         if (isValidDataProperty(propertyName))
         {
@@ -426,7 +428,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
-    public static boolean isValidDataProperty(String propertyName)
+    public boolean isValidDataProperty(String propertyName)
     {
         return DATA_ROW_LSID_PROPERTY.equals(propertyName) ||
                 DILUTION_INPUT_MATERIAL_DATA_PROPERTY.equals(propertyName) ||
@@ -443,7 +445,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         PropertyType type = PropertyType.STRING;
         String format = null;
 
-        if (propertyName.equals(FIT_ERROR_PROPERTY))
+        if (propertyName.equals(FIT_ERROR_PROPERTY) || propertyName.startsWith(STD_DEV_PROPERTY_NAME))
         {
             type = PropertyType.DOUBLE;
             format = "0.0";
