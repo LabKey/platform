@@ -5,9 +5,6 @@
  */
 Ext.namespace("LABKEY.query");
 
-LABKEY.requiresScript("editarea/edit_area_full.js");
-LABKEY.requiresCss("_images/icons.css");
-
 // http://stackoverflow.com/questions/494035/how-do-you-pass-a-variable-to-a-regular-expression-javascript/494122#494122
 if (window.RegExp && !window.RegExp.quote) {
     RegExp.quote = function(str) {
@@ -141,7 +138,8 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         this.editorBoxId = Ext.id();
         
         this.editor = new Ext.Panel({
-            border: false, frame : false,
+            padding : '10px 0 0 0',
+            border  : true, frame : false,
             autoHeight : true,
             items : [
                 {
@@ -159,25 +157,32 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 }
             ],
             listeners : {
-                afterrender : function()
+                afterrender : function(cmp)
                 {
-                    this.eal = editAreaLoader;
-                    var config = {
-                        id     : this.editorId,
-                        syntax : 'sql',
-                        start_highlight: Ext.isIE ? false : true,
-                        is_editable : !this.query.builtIn && this.query.canEditSql,
-                        plugins : "save"
-                    };
-//                    Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
-                    this.eal.init(config);
+                    var code = Ext.get(this.editorId);
+                    var size = cmp.getSize();
+
+                    if (code) {
+
+                        this.codeMirror = CodeMirror.fromTextArea(code.dom, {
+                            mode            : 'text/x-plsql',
+                            lineNumbers     : true,
+                            lineWrapping    : true,
+                            readOnly        : this.query.builtIn || !this.query.canEditSql,
+                            indentUnit      : 3
+                        });
+
+                        this.codeMirror.setSize(null, size.height + 'px');
+                        LABKEY.query.RegisterEditorInstance(this.editorId, this.codeMirror);
+                    }
+
                     this.doLayout(false, true);
                 },
                 resize : function(x)
                 {
                     if (!x)
                     {
-                        var h = this.getHeight() - 160;
+                        var h = this.getHeight() - 100;
                         this.editor.setHeight(h);
                         var box = Ext.getCmp(this.editorBoxId);
                         if (box)
@@ -186,6 +191,9 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                             var _f = Ext.get('frame_' + this.editorId);
                             if (_f)
                                 _f.setHeight(h, false);
+
+                            if (this.codeMirror)
+                                this.codeMirror.setSize(null, h + 'px');
                         }
                         this.doLayout(false, true);
                     }
@@ -194,7 +202,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             },
             scope : this
         });
-        
+
         items.push(this.editor);
 
         this.display = 'query-response-panel';
@@ -231,7 +239,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     focusEditor : function()
     {
-        this.eal.execCommand(this.editorId, 'focus');
+        this.codeMirror.focus();
     },
 
     execute : function(force)
@@ -261,14 +269,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
     onShow : function()
     {
         LABKEY.query.SourceEditorPanel.superclass.onShow.call(this);
-        
-        this.eal.show(this.editorId);
     },
 
     onHide : function()
     {
-        this.eal.hide(this.editorId);
-        
         LABKEY.query.SourceEditorPanel.superclass.onHide.call(this);
     },
 
@@ -283,8 +287,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
      */
     isSaveDirty : function()
     {
+        if (!this.codeMirror)
+            return false;
         // 12607: Prompt to confirm leaving when page isn't dirty -- watch for \s\r\n
-        return this.eal.getValue(this.editorId).toLowerCase().replace(/(\s)/g, '') != this.query.queryText.toLowerCase().replace(/(\s)/g, '');
+        return this.codeMirror.getValue().toLowerCase().replace(/(\s)/g, '') != this.query.queryText.toLowerCase().replace(/(\s)/g, '');
     },
 
     /**
@@ -301,8 +307,8 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
     getValue : function()
     {
         var queryText = this.query.queryText;
-        if (this.eal)
-            queryText = this.eal.getValue(this.editorId);
+        if (this.codeMirror)
+            queryText = this.codeMirror.getValue();
         return queryText;
     }
 });
@@ -375,7 +381,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         this.editorBoxId = Ext.id();
         
         this.editor = new Ext.Panel({
-            border: false, frame : false,
+            border: true, frame : false,
             autoHeight: true,
             items : [
                 {
@@ -394,17 +400,23 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             ],
             listeners :
             {
-                afterrender : function()
+                afterrender : function(cmp)
                 {
-                    this.eal = editAreaLoader;
-                    var config = {
-                        id     : this.editorId,
-                        syntax : 'xml',
-                        start_highlight: Ext.isIE ? false : true,
-                        plugins : "save"
-                    };
-                    Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
-                    this.eal.init(config);
+                    var code = Ext.get(this.editorId);
+                    var size = cmp.getSize();
+
+                    if (code) {
+
+                        this.codeMirror = CodeMirror.fromTextArea(code.dom, {
+                            mode            : 'text/xml',
+                            lineNumbers     : true,
+                            lineWrapping    : true,
+                            indentUnit      : 3
+                        });
+
+                        this.codeMirror.setSize(null, size.height + 'px');
+                        LABKEY.query.RegisterEditorInstance(this.editorId, this.codeMirror);
+                    }
                 },
                 resize : function(x)
                 {
@@ -458,39 +470,6 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         if (id) this.display = id;
     },
 
-    onShow : function()
-    {
-
-        if (Ext.isIE) {
-            // Doing this due to faulty editor when tabbing back
-            this.eal = editAreaLoader;
-            Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
-            this.eal.init({
-                id     : this.editorId,
-                syntax : 'xml',
-                start_highlight: true
-            });
-        }
-
-        LABKEY.query.MetadataXMLEditorPanel.superclass.onShow.call(this);
-
-        if (!Ext.isIE && this.eal)
-            this.eal.show(this.editorId);
-    },
-
-    onHide : function()
-    {
-
-        if (this.eal) {
-            if (Ext.isIE)
-                this.eal.delete_instance(this.editorId);
-            else
-                this.eal.hide(this.editorId);
-        }
-
-        LABKEY.query.MetadataXMLEditorPanel.superclass.onHide.call(this);
-    },
-
     saved : function()
     {
         this.query.metadataText = this.getValue();
@@ -505,9 +484,9 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
     getValue : function()
     {
-        if (this.eal)
+        if (this.codeMirror)
         {
-            return this.eal.getValue(this.editorId);
+            return this.codeMirror.getValue();
         }
         else
         {
@@ -539,7 +518,13 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
     }
 });
 
+LABKEY.query.RegisterEditorInstance = function(id, instance){
 
+    var cm = LABKEY.CodeMirror || {};
+    cm[id] = instance;
+
+    LABKEY.CodeMirror = cm;
+};
 
 LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
@@ -747,53 +732,22 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
     {
         var _editor = error.type == 'xml' ? this.metaEditor : this.sourceEditor;
         this.tabPanel.setActiveTab(_editor);
-        if (_editor && _editor.eal)
+        if (_editor && _editor.codeMirror)
         {
-            var cmd = _editor.eal.execCommand;
-            if (cmd)
-            {
-                // First highlight the line
-                cmd(_editor.editorId, 'resync_highlight', true);
-                if (error && error.line)
-                    cmd(_editor.editorId, 'go_to_line', error.line.toString());
+            var pos = {ch : 0};
+            if (error && error.line)
+                pos.line = error.line-1;
+            if (error && error.col)
+                pos.ch = error.col;
 
-                // calculate string position offset -- 12703
-                var val    = _editor.eal.getValue(_editor.editorId);
-                var valArr = val.split('\n');
-                var _s = -1;
-                if (error && error.line && error.line > 1 && error.line <= valArr.length) {
-                    if (RegExp) {
-                        _s = valArr[error.line-1].search(RegExp.quote(error.errorStr));
-                    }
-                    else {
-                        _s = valArr[error.line-1].search(error.errorStr);
-                    }
+            _editor.codeMirror.setCursor(pos);
+            _editor.codeMirror.scrollIntoView(pos);
 
-                    // calculate string position offset
-                    if (_s >= 0) {
-                        var offset = 0;
-                        Ext.each(valArr.slice(0,error.line-1), function(line){
-                            offset += line.length + 1; // + 1 for \n
-                        });
-                        _s += offset;
-                    }
-                }
-                else  {
-                    if (RegExp) {
-                        _s = val.search(RegExp.quote(error.errorStr));
-                    }
-                    else {
-                        _s = val.search(error.errorStr);
-                    }
-                }
-
-                // Highlight selected text
-                if (_s >= 0 && error.errorStr) {
-                    var end = _s + error.errorStr.length;
-                    _editor.eal.setSelectionRange(_editor.editorId, _s, end);
-                }
-                _editor.eal.getSelectedText(_editor.editorId);
-            }
+            // Highlight selected text
+            if (error && error.errorStr)
+                _editor.codeMirror.setSelection({ch:pos.ch, line:pos.line}, {ch: (pos.ch + error.errorStr.length), line:pos.line});
+            else
+                _editor.codeMirror.setSelection({ch:0, line:pos.line}, pos);
         }
     },
 

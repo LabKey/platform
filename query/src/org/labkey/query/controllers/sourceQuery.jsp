@@ -30,8 +30,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-      resources.add(ClientDependency.fromFilePath("editarea/edit_area_full.js"));
-      resources.add(ClientDependency.fromFilePath("_images/icons.css"));
+      resources.add(ClientDependency.fromFilePath("codemirror"));
       resources.add(ClientDependency.fromFilePath("query/QueryEditorPanel.js"));
       return resources;
   }

@@ -14,5 +14,6 @@
     <dependencies>
         <dependency path="Ext4"/>
         <dependency path="vis/vis"/>
+        <dependency path="codemirror"/>
     </dependencies>
 </libraries>

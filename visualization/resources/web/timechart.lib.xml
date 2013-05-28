@@ -20,5 +20,6 @@
     <dependencies>
         <dependency path="Ext4ClientApi"/>
         <dependency path="vis/vis"/>
+        <dependency path="codemirror"/>
     </dependencies>
 </libraries>

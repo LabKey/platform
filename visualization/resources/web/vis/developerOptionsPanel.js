@@ -3,8 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresScript("/editarea/edit_area_full.js");
-
 Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
@@ -54,18 +52,27 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
                     + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>',
             listeners: {
-                afterrender: function() {
-                    editAreaLoader.init({
-                        id: this.pointClickTextAreaId,
-                        toolbar: "search, go_to_line, |, undo, redo, |, select_font,|, highlight, reset_highlight, word_wrap, |, help",
-                        syntax: "js",
-                        start_highlight: true,
-                        allow_resize: "no",
-                        min_height: 340,
-                        change_callback: "Ext4.ComponentManager.get('" + this.getId() + "').hasChanges = true;" // JavaScript string to eval, NOT a function
-                    });
+                afterrender: function(cmp) {
+                    var code = Ext4.get(this.pointClickTextAreaId);
+                    var size = cmp.getSize();
 
-                    editAreaLoader.setValue(this.pointClickTextAreaId, this.pointClickFn ? this.pointClickFn : null);
+                    if (code) {
+
+                        var me = this;
+                        this.codeMirror = CodeMirror.fromTextArea(code.dom, {
+                            mode            : 'text/javascript',
+                            lineNumbers     : true,
+                            lineWrapping    : true,
+                            indentUnit      : 3,
+                            onChange : function(cmp){
+                                Ext4.ComponentManager.get(me.getId()).hasChanges = true;
+                            }
+                        });
+
+                        this.codeMirror.setSize(null, size.height + 'px');
+                        this.codeMirror.setValue(this.pointClickFn ? this.pointClickFn : '');
+                    }
+
                 },
                 scope: this
             }
@@ -145,7 +152,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     setEditorEnabled: function(editorValue) {
         this.pointClickFn = editorValue;
         this.pointClickTextAreaHtml.enable();
-        editAreaLoader.setValue(this.pointClickTextAreaId, editorValue);
+        this.codeMirror.setValue(editorValue);
         this.pointClickFnBtn.setText('Disable');
     },
 
@@ -154,7 +161,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
 
         this.pointClickFn = null;
-        editAreaLoader.setValue(this.pointClickTextAreaId, null);
+        this.codeMirror.setValue('');
         this.pointClickTextAreaHtml.disable();
         this.pointClickFnBtn.setText('Enable');
     },
@@ -194,7 +201,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         // verify the pointClickFn for JS errors
         if (!this.pointClickTextAreaHtml.isDisabled())
         {
-            var fnText = editAreaLoader.getValue(this.pointClickTextAreaId);
+            var fnText = this.codeMirror.getValue();
             fnText = this.removeLeadingComments(fnText);
 
             if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
@@ -214,7 +221,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 return;
             }
             Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
-            this.pointClickFn = editAreaLoader.getValue(this.pointClickTextAreaId);
+            this.pointClickFn = this.codeMirror.getValue();
         }
 
         this.fireEvent('closeOptionsWindow', false);
