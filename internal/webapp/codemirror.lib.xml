@@ -8,6 +8,8 @@
         <script path="codemirror/mode/python/python.js"/>
         <script path="codemirror/mode/r/r.js"/>
         <script path="codemirror/mode/xml/xml.js"/>
+        <script path="codemirror/mode/mysql/mysql.js"/>
+        <script path="codemirror/mode/plsql/plsql.js"/>
         <script path="codemirror/lib/codemirror.css"/>
     </library>
 </libraries>
