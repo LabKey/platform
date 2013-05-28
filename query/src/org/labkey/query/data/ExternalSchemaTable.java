@@ -85,12 +85,16 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         if (containerId == null)
             return;
 
-        ColumnInfo colContainer = getRealTable().getColumn("container");
+        ColumnInfo realContainerColumn = getRealTable().getColumn("container");
 
-        if (colContainer != null)
+        if (realContainerColumn != null)
         {
-            getColumn("container").setReadOnly(true);
-            addCondition(colContainer, containerId);
+            ColumnInfo wrappedContainerColumn = getColumn("container");
+            if (wrappedContainerColumn != null)
+            {
+                wrappedContainerColumn.setReadOnly(true);
+            }
+            addCondition(realContainerColumn, containerId);
             _container = ContainerManager.getForId(containerId);
         }
     }

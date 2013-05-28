@@ -2153,6 +2153,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static final int DEFAULT_API_MAX_ROWS = 100000;
 
     @ActionNames("selectRows, getQuery")
     @RequiresPermissionClass(ReadPermission.class)
@@ -2169,7 +2170,7 @@ public class QueryController extends SpringActionController
                     && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.showRows))
             {
                 form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(100000);
+                form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);
             }
 
             if (form.getLimit() != null)
@@ -2230,11 +2231,6 @@ public class QueryController extends SpringActionController
             DataRequest builder = mapper.readValue(form.getJsonObject().toString(), DataRequest.class);
 
             return builder.render(getViewContext(), errors);
-
-//            QueryReportDataSource source = builder.create(getUser(), getContainer());
-//
-//            AbstractQueryReportDataTransform transform = new AggregateQueryDataTransform(source, new SimpleFilter(FieldKey.fromParts("ModifiedSequence"), "LT", CompareType.STARTS_WITH), Collections.singletonList(new Aggregate(FieldKey.fromParts("Charge"), Aggregate.Type.MAX)), Collections.singletonList(FieldKey.fromParts("PeptideId")), null);
-//            transform = new FilterQueryDataTransform(transform, new SimpleFilter(FieldKey.fromParts("MAXCharge"), 2));
         }
     }
 

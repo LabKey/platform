@@ -1708,7 +1708,7 @@ public class QueryServiceImpl extends QueryService
 			ColumnInfo sortField = column.getSortField();
 			if (sortField != null)
 			{
-				sort.appendSortColumn(sort.new SortField(sortField.getFieldKey(), column.getSortDirection()));
+				sort.appendSortColumn(sortField.getFieldKey(), column.getSortDirection(), false);
 				return;
 			}
 		}
