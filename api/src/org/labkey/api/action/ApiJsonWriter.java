@@ -2,11 +2,8 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 
@@ -55,7 +52,6 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.useDefaultPrettyPrinter();
         }
-        jg.setCodec(new ObjectMapper());  // makes the generator annotation aware
     }
 
     @Override
@@ -151,7 +147,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         else
         {
-            jg.writeObject(value); // default also correctly serializes SchemaKey & FieldKey by way of @JsonValue annotations.
+            jg.writeString(value.toString());
         }
         if (devMode)
         {
