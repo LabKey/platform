@@ -75,7 +75,28 @@ public class Sort
     private static Logger _log = Logger.getLogger(Sort.class);
     private ArrayList<SortField> _sortList = new ArrayList<SortField>();
 
-    public class SortField
+    public static class SortFieldBuilder
+    {
+        private SortDirection _dir = SortDirection.ASC;
+        private FieldKey _fieldKey = null;
+
+        public void setDir(SortDirection dir)
+        {
+            _dir = dir;
+        }
+
+        public void setFieldKey(FieldKey fieldKey)
+        {
+            _fieldKey = FieldKey.fromParts(fieldKey);
+        }
+
+        public SortField create()
+        {
+            return new SortField(_fieldKey, _dir);
+        }
+    }
+
+    public static class SortField
     {
         SortDirection _dir = SortDirection.ASC;
         FieldKey _fieldKey = null;
@@ -83,8 +104,15 @@ public class Sort
 
         public SortField(FieldKey fieldKey, SortDirection dir)
         {
+            if (fieldKey == null)
+            {
+                throw new NullPointerException("No fieldKey specified");
+            }
             _fieldKey = fieldKey;
-            _dir = dir;
+            if (dir != null)
+            {
+                _dir = dir;
+            }
         }
 
         @Deprecated // Use FieldKey version instead.

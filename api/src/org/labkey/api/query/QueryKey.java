@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
@@ -171,11 +172,12 @@ import java.util.Objects;
         return _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
     }
 
+    @JsonValue
     public List<String> getParts()
     {
         if (_parent == null)
             return Collections.singletonList(_name);
-        List<String> ret = new ArrayList<String>(_parent.getParts());
+        List<String> ret = new ArrayList<>(_parent.getParts());
         ret.add(_name);
         return ret;
     }

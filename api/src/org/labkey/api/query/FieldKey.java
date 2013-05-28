@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,7 +84,8 @@ public class FieldKey extends QueryKey<FieldKey>
     {
         return QueryKey.fromString(FACTORY, DIVIDER, parent, str);
     }
-    
+
+    @JsonCreator
     static public FieldKey fromParts(List<String> parts)
     {
         return QueryKey.fromParts(FACTORY, parts);

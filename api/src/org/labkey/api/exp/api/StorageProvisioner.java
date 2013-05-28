@@ -547,7 +547,6 @@ public class StorageProvisioner
 
     public static boolean repairDomain(Container c, String domainUri, BindException errors)
     {
-        SqlDialect dialect = DbSchema.get("core").getSqlDialect();
         DbScope scope = DbSchema.get("core").getScope();
 
         try
