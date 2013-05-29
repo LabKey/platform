@@ -57,9 +57,9 @@ public interface Selector
 
     @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz);
 
-    @Nullable <T> T getObject(Class<T> clazz);
+    <T> T getObject(Class<T> clazz);
 
-    @Nullable Map<String, Object> getMap();
+    Map<String, Object> getMap();
 
     void forEach(ForEachBlock<ResultSet> block);
 

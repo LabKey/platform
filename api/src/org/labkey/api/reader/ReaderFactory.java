@@ -1,6 +1,7 @@
 package org.labkey.api.reader;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 
 /**
  * User: adam
@@ -9,5 +10,5 @@ import java.io.BufferedReader;
  */
 public interface ReaderFactory
 {
-    public BufferedReader getReader();
+    public BufferedReader getReader() throws IOException;
 }

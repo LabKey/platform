@@ -198,7 +198,6 @@ public class Table
         return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
     }
 
-    // 6 usages
     @Deprecated /** Use TableSelector */
     public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {

@@ -40,8 +40,7 @@ import java.util.Map;
  */
 
 // A partial, base implementation of Selector. This class manipulates result sets but doesn't generate them. Subclasses
-// include ExecutingSelector (which executes SQL to generate a result set) and (in the future) ResultSetSelector, which
-// will take an externally generated ResultSet (e.g., from JDBC metadata calls) and performSelector operations on it.
+// include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector, which takes an externally generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
 public abstract class BaseSelector extends JdbcCommand implements Selector
 {
     protected BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
@@ -144,17 +143,17 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public @Nullable <T> T getObject(Class<T> clazz)
+    public <T> T getObject(Class<T> clazz)
     {
         return getObject(getArrayList(clazz), clazz);
     }
 
-    protected @Nullable <T> T getObject(Class<T> clazz, ResultSetFactory factory)
+    protected <T> T getObject(Class<T> clazz, ResultSetFactory factory)
     {
         return getObject(getArrayList(clazz, factory), clazz);
     }
 
-    protected @Nullable <T> T getObject(List<T> list, Class<T> clazz)
+    protected <T> T getObject(List<T> list, Class<T> clazz)
     {
         if (list.size() == 1)
             return list.get(0);
@@ -165,7 +164,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public @Nullable Map<String, Object> getMap()
+    public Map<String, Object> getMap()
     {
         //noinspection unchecked
         return getObject(Map.class);
@@ -296,7 +295,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
     {
-        // Standard map enumeration ensures that standard type conversion happenes (vs. ResultSet enumeration and rs.getObject())
+        // Using forEachMap() ensures that standard type conversion happenes (vs. ResultSet enumeration and rs.getObject())
         forEachMap(new ForEachBlock<Map<String, Object>>()
         {
             @Override

@@ -107,12 +107,12 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    public Results getResults() throws SQLException
+    public Results getResults()
     {
         return getResults(true);
     }
 
-    public Results getResults(boolean cache) throws SQLException
+    public Results getResults(boolean cache)
     {
         return getResults(cache, false);
     }
@@ -126,7 +126,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
      * you must explicitly start your own transaction and commit it.
      */
 
-    public Results getResults(boolean cache, boolean scrollable) throws SQLException
+    public Results getResults(boolean cache, boolean scrollable)
     {
         boolean closeResultSet = cache;
         TableSqlFactory tableSqlFactory = getSqlFactory(true);

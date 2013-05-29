@@ -143,17 +143,10 @@ public class TabLoader extends DataLoader
         this(new ReaderFactory()
         {
             @Override
-            public BufferedReader getReader()
+            public BufferedReader getReader() throws IOException
             {
-                try
-                {
-                    verifyFile(inputFile);
-                    return new BufferedReader(new FileReader(inputFile));
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                verifyFile(inputFile);
+                return new BufferedReader(new FileReader(inputFile));
             }
         }, hasColumnHeaders, mvIndicatorContainer);
     }
