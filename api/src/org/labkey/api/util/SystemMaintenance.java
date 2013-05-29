@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContextEvent;
 import java.text.ParseException;
@@ -48,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SystemMaintenance extends TimerTask implements ShutdownListener, StatusReportingRunnable
 {
     private static final Object _timerLock = new Object();
-    private static final List<MaintenanceTask> _tasks = new CopyOnWriteArrayList<MaintenanceTask>();
+    private static final List<MaintenanceTask> _tasks = new CopyOnWriteArrayList<>();
 
     private static Timer _timer = null;
     private static SystemMaintenance _timerTask = null;
@@ -198,8 +199,8 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     {
         PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
 
-        Set<String> enabled = new HashSet<String>(enabledTasks);
-        Set<String> disabled = new HashSet<String>();
+        Set<String> enabled = new HashSet<>(enabledTasks);
+        Set<String> disabled = new HashSet<>();
 
         for (MaintenanceTask task : getTasks())
             if (task.canDisable() && !enabled.contains(task.getName()))
@@ -223,7 +224,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
             _systemMaintenanceTime = (null == time ? SystemMaintenance.parseSystemMaintenanceTime("2:00") : time);
 
             String disabled = props.get(DISABLED_TASKS_PROPERTY_NAME);
-            _disabledTasks = (null == disabled ? Collections.<String>emptySet() : new HashSet<String>(Arrays.asList(disabled.split(","))));
+            _disabledTasks = (null == disabled ? Collections.<String>emptySet() : new HashSet<>(Arrays.asList(disabled.split(","))));
         }
 
         public @NotNull Date getSystemMaintenanceTime()
@@ -293,6 +294,12 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
             for (MaintenanceTask task : _tasks)
             {
+                if (ViewServlet.isShuttingDown())
+                {
+                    _log.info("System maintenance is stopping due to server shut down");
+                    break;
+                }
+
                 if (null != _taskName && !_taskName.isEmpty())
                 {
                     // If _taskName is set, then admin has invoked a single task from the UI... skip all the others
