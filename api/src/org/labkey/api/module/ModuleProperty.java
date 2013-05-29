@@ -198,13 +198,13 @@ public class ModuleProperty
      */
     public String getEffectiveValue(Container c)
     {
-        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
+        User propertyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
 
         String value;
         if(isCanSetPerContainer())
-            value = PropertyManager.getCoalecedProperty(properyUser, c, getCategory(), getName());
+            value = PropertyManager.getCoalecedProperty(propertyUser, c, getCategory(), getName());
         else
-            value = PropertyManager.getCoalecedProperty(properyUser, ContainerManager.getRoot(), getCategory(), getName());
+            value = PropertyManager.getCoalecedProperty(propertyUser, ContainerManager.getRoot(), getCategory(), getName());
 
         if(value == null)
             value = getDefaultValue();
@@ -214,13 +214,13 @@ public class ModuleProperty
 
     public String getValueContainerSpecific(Container c)
     {
-        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
+        User propertyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
 
         String value;
         if(isCanSetPerContainer())
-            value = PropertyManager.getProperty(properyUser, c, getCategory(), getName());
+            value = PropertyManager.getProperty(propertyUser, c, getCategory(), getName());
         else
-            value = PropertyManager.getProperty(properyUser, ContainerManager.getRoot(), getCategory(), getName());
+            value = PropertyManager.getProperty(propertyUser, ContainerManager.getRoot(), getCategory(), getName());
 
         if(value == null)
             value = getDefaultValue();
