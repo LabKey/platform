@@ -31,7 +31,7 @@ import java.util.List;
  */
 public interface Study extends StudyEntity
 {
-    Visit[] getVisits(Visit.Order order);
+    List<? extends Visit> getVisits(Visit.Order order);
 
     DataSet getDataSet(int id);
 
@@ -43,9 +43,9 @@ public interface Study extends StudyEntity
 
     List<? extends DataSet> getDataSetsByType(String[] types);
 
-    Location[] getLocations();
+    List<? extends Location> getLocations();
 
-    Cohort[] getCohorts(User user);
+    List<? extends Cohort> getCohorts(User user);
 
     ParticipantCategory[] getParticipantCategories(User user);
 
