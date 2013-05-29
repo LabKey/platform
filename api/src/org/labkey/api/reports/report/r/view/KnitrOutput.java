@@ -73,23 +73,28 @@ public class KnitrOutput extends HtmlOutput
         protected String renderInternalAsString() throws Exception
         {
             String htmlIn = super.renderInternalAsString();
-            String htmlOut = null;
 
             // do post processing on this html to fixup any hrefs
             if (null != htmlIn)
             {
+                StringBuffer htmlOut = new StringBuffer();
                 String pattern = ParamReplacementSvc.REPLACEMENT_PARAM;
 
                 if (_report.getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
                     pattern = ParamReplacementSvc.REPLACEMENT_PARAM_ESC;
 
-                // replace all ${hrefout:<filename>} with the appropriate url
-                htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(_report,
-                        htmlIn, _report.getReportDir(), Pattern.compile(pattern));
+                // wrap with the labkey-wiki class to get consistent styling
+                htmlOut.append("<div class=\"labkey-wiki\">");
 
+                // replace all ${hrefout:<filename>} with the appropriate url
+                htmlOut.append( ParamReplacementSvc.get().processHrefParamReplacement(_report,
+                        htmlIn, _report.getReportDir(), Pattern.compile(pattern)));
+
+                htmlOut.append("</div>");
+                return htmlOut.toString();
             }
 
-            return htmlOut;
+            return null;
         }
 
         @Override

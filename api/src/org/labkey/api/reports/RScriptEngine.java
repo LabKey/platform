@@ -140,7 +140,12 @@ public class RScriptEngine extends ExternalScriptEngine
         //
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)
         {
-           sb.append("knit2html(");
+            //
+            // if we just use the knit2html defaults then it overrides the labkey styles.  So suppress the style
+            // block by specifying no css.  Also, use the default options for knit2html except don't base64 encode
+            // images
+            //
+            sb.append("knit2html(options=c('use_xhtml', 'smartypants', 'mathjax', 'highlight_code'), stylesheet='', ");
         }
         else
         {
@@ -151,7 +156,6 @@ public class RScriptEngine extends ExternalScriptEngine
         sb.append("input=\"");
         sb.append(inputFilename);
         sb.append("\")\n");
-
 
         //
         // no need to specify the output filename.  Knitr will use the input filename to derive the output
