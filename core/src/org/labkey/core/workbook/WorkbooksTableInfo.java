@@ -181,11 +181,13 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             if (null == workbook || !workbook.isWorkbook())
                 throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
 
-            // Only allow description and title to be updated
+            // Only allow description, title, and searchable to be updated
             if (row.containsKey("Description"))
                 ContainerManager.updateDescription(workbook, (String)row.get("Description"), user);
             if (row.containsKey("Title"))
-                ContainerManager.updateTitle(workbook, (String)row.get("Title"), user);
+                ContainerManager.updateTitle(workbook, (String) row.get("Title"), user);
+            if (row.containsKey("Searchable") && row.get("Searchable") instanceof Boolean)
+                ContainerManager.updateSearchable(workbook, (Boolean) row.get("Searchable"), user);
             return row;
         }
 
