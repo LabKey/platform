@@ -92,6 +92,11 @@ public class ContainerTable extends FilteredTable<UserSchema>
             }
         });
         name.setURL(detailsURL);
+        name.setReadOnly(true); // CONSIDER: allow renames via QueryUpdateService api
+
+        ColumnInfo sortOrderCol = getColumn("SortOrder");
+        sortOrderCol.setReadOnly(true);
+        sortOrderCol.setUserEditable(false);
 
         PropertyManager.PropertySchema propertySchema = PropertyManager.PropertySchema.getInstance();
         SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
@@ -123,6 +128,10 @@ public class ContainerTable extends FilteredTable<UserSchema>
         });
         addColumn(folderPathCol);
         folderPathCol.setURL(detailsURL);
+
+        ColumnInfo typeCol = getColumn("Type");
+        typeCol.setReadOnly(true);
+        typeCol.setUserEditable(false);
 
         SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'workbook' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".Type = 'tab' THEN 'tab' " +
