@@ -26,7 +26,7 @@ import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -39,7 +39,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -70,7 +69,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadFactory;
 
 /*
 * User: adam
@@ -80,7 +78,7 @@ import java.util.concurrent.ThreadFactory;
 public class StudyReload
 {
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
-    private static final BlockingQueue<Container> QUEUE = new ArrayBlockingQueue<Container>(100);       // Container IDs instead?
+    private static final BlockingQueue<Container> QUEUE = new ArrayBlockingQueue<>(100);       // Container IDs instead?
     private static final Thread RELOAD_THREAD = new ReloadThread();
 
     private static final String JOB_GROUP_NAME = "org.labkey.study.importer.StudyReload";
@@ -179,25 +177,14 @@ public class StudyReload
         filter.addCondition(FieldKey.fromParts("AllowReload"), true);
         filter.addCondition(FieldKey.fromParts("ReloadInterval"), 0, CompareType.GT);
 
-        ResultSet rs = null;
-
-        try
+        new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null).getResults();
-
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 initializeTimer(rs.getString(1), true, rs.getInt(2));
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
     }
 
 
@@ -415,16 +402,6 @@ public class StudyReload
         public boolean isReloadQueued()
         {
             return _reloadQueued;
-        }
-    }
-
-
-    // Use a factory so we can name the thread something meaningful
-    private static class ReloadThreadFactory implements ThreadFactory
-    {
-        public Thread newThread(Runnable r)
-        {
-            return new Thread(r, "Study Reload Scheduler");
         }
     }
 
