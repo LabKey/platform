@@ -56,7 +56,7 @@ import java.util.Map;
  */
 public class StudySchedule implements CustomApiForm
 {
-    VisitImpl[] _visits;
+    List<VisitImpl> _visits;
     DataSetDefinition[] _datasets;
     Map<String, DataViewInfo> _viewInfo = new HashMap<String, DataViewInfo>();
     Map<Integer, List<VisitDataSet>> _schedule;
@@ -71,7 +71,7 @@ public class StudySchedule implements CustomApiForm
         }
     }
 
-    public void setVisits(VisitImpl[] visits)
+    public void setVisits(List<VisitImpl> visits)
     {
         _visits = visits;
     }
@@ -88,7 +88,7 @@ public class StudySchedule implements CustomApiForm
         return o;
     }
 
-    private JSONArray serializeVisits(User user, VisitImpl[] visits)
+    private JSONArray serializeVisits(User user, List<VisitImpl> visits)
     {
         JSONArray v = new JSONArray();
 
@@ -160,7 +160,7 @@ public class StudySchedule implements CustomApiForm
         return o;
     }
 
-    private JSONArray serializeData(User user, DataSetDefinition[] datasets, VisitImpl[] visits)
+    private JSONArray serializeData(User user, DataSetDefinition[] datasets, List<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
         Map<Integer, VisitImpl> visitMap = new HashMap<Integer, VisitImpl>();

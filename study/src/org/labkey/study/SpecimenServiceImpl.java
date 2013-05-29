@@ -153,8 +153,8 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
-            Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
-            if (matches.length > 0)
+            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
+            if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
                 for (Specimen match : matches)
@@ -172,8 +172,8 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
-            Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
-            if (matches.length > 0)
+            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
+            if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
                 for (Specimen match : matches)

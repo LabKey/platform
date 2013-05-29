@@ -129,7 +129,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     public void deleteAllGroups()
     {
         List<Integer> groupsToDelete = new ArrayList<Integer>();
-        Location[] locations = StudyManager.getInstance().getSites(getContainer());
+        List<? extends Location> locations = StudyManager.getInstance().getSites(getContainer());
         for (Location location : locations)
         {
             Integer id = getGroupId(location, false);

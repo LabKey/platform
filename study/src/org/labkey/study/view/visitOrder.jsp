@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
@@ -85,7 +86,7 @@ function orderModule(listName, hiddenElName, down)
             <td></td>
         </tr>
         <%
-            VisitImpl[] visits = getVisits(Visit.Order.DISPLAY);
+            List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
             boolean displayEnabled = false;
             boolean chronologicalEnabled = false;
             for (VisitImpl visit : visits)
@@ -114,7 +115,7 @@ function orderModule(listName, hiddenElName, down)
         </tr>
         <tr>
             <td>
-                <select multiple name="displayOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= text(displayEnabled ? "" : "DISABLED") %>>
+                <select multiple name="displayOrderItems" size="<%= Math.min(visits.size(), 25) %>" <%= text(displayEnabled ? "" : "DISABLED") %>>
                 <%
                     boolean first = true;
                     StringBuilder orderedList = new StringBuilder();
@@ -145,7 +146,7 @@ function orderModule(listName, hiddenElName, down)
             </td>
 
             <td>
-                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= text(chronologicalEnabled ? "" : "DISABLED") %>>
+                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.size(), 25) %>" <%= text(chronologicalEnabled ? "" : "DISABLED") %>>
                 <%
                     visits = getVisits(Visit.Order.CHRONOLOGICAL);
                     first = true;

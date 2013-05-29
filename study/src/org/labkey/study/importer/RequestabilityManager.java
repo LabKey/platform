@@ -370,7 +370,7 @@ public class RequestabilityManager
 
         public abstract String getAvailabilityReason();
 
-        public int updateRequestability(User user, Specimen[] specimens) throws InvalidRuleException
+        public int updateRequestability(User user, List<Specimen> specimens) throws InvalidRuleException
         {
             String reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() + " SET ");
@@ -391,10 +391,10 @@ public class RequestabilityManager
             return new SQLFragment("Available = ?", type == MarkType.AVAILABLE ? Boolean.TRUE : Boolean.FALSE);
         }
 
-        protected SQLFragment getGlobalUniqueIdInSQL(Specimen[] specimens)
+        protected SQLFragment getGlobalUniqueIdInSQL(List<Specimen> specimens)
         {
             SQLFragment sql = new SQLFragment();
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
             {
                 sql.append("GlobalUniqueId IN (");
                 sql.append(getSpecimenGlobalUniqueIdSet(specimens));
@@ -403,7 +403,7 @@ public class RequestabilityManager
             return sql;
         }
 
-        protected SQLFragment getSpecimenGlobalUniqueIdSet(Specimen[] specimens)
+        protected SQLFragment getSpecimenGlobalUniqueIdSet(List<Specimen> specimens)
         {
             SQLFragment sql = new SQLFragment();
             String sep = "";
@@ -416,7 +416,7 @@ public class RequestabilityManager
             return sql;
         }
 
-        protected abstract SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException;
+        protected abstract SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException;
 
         public MarkType getMarkType()
         {
@@ -502,7 +502,7 @@ public class RequestabilityManager
                     _markRequestable;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SimpleFilter viewFilter = new SimpleFilter();
             if (_viewName != null)
@@ -519,7 +519,7 @@ public class RequestabilityManager
                     throw new InvalidRuleException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
             }
 
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
             {
                 Set<String> globalUniqueIds = new HashSet<String>();
                 for (Specimen specimen : specimens)
@@ -568,10 +568,10 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
             return sql;
         }
@@ -608,10 +608,10 @@ public class RequestabilityManager
             return RuleType.ADMIN_OVERRIDE;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
             return sql;
         }
@@ -630,10 +630,10 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
             return sql;
         }
@@ -658,10 +658,10 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment();
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
                 sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
 
             sql.append(StudySchema.getInstance().getSqlDialect().getBooleanFALSE()+ " IN (")
@@ -669,7 +669,7 @@ public class RequestabilityManager
                .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
                .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
             sql.add(container.getId());
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
                 sql.append(" AND SpecimenGlobalUniqueId IN (").append(getSpecimenGlobalUniqueIdSet(specimens)).append(")");
 
             sql.append(")))");
@@ -749,7 +749,7 @@ public class RequestabilityManager
         }
     }
 
-    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, Specimen[] specimens) throws InvalidRuleException
+    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, List<Specimen> specimens) throws InvalidRuleException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         assert schema.getScope().isTransactionActive() : "Requestability should always be updated within a transaction wrapping the addition/removal of vials.";
@@ -762,7 +762,7 @@ public class RequestabilityManager
                 logger.info("\tResetting vials to default available state.");
             SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() +
                 " SET Available = ?, AvailabilityReason = ? WHERE ", Boolean.TRUE, null);
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
             {
                 updateSQL.append("RowId IN (");
                 String sep = "";
@@ -797,7 +797,7 @@ public class RequestabilityManager
 
     }
 
-    public void updateRequestability(Container container, User user, Specimen[] specimens) throws InvalidRuleException
+    public void updateRequestability(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
     {
         updateRequestability(container, user, true, null, specimens);
     }

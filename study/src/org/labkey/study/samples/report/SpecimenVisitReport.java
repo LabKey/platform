@@ -43,8 +43,8 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 {
     private Collection<Row> _rows;
     protected String _title;
-    private VisitImpl[] _visits;
-    private VisitImpl[] _nonEmptyVisits;
+    private List<VisitImpl> _visits;
+    private List<VisitImpl> _nonEmptyVisits;
     protected Container _container;
     protected SimpleFilter _filter;
     private SpecimenVisitReportParameters _parameters;
@@ -54,7 +54,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private boolean _viewPtidList = false;
     private Map<Integer, Integer> _nonEmptyColumns = new HashMap<Integer, Integer>();
 
-    public SpecimenVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         _visits = visits;
         _filter = filter;
@@ -93,7 +93,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return url;
     }
 
-    public VisitImpl[] getVisits()
+    public List<VisitImpl> getVisits()
     {
         // ensure rows and non-empty columns have been generated
         getRows();
@@ -109,7 +109,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
                     if (_nonEmptyColumns.containsKey(visit.getRowId()))
                         visits.add(visit);
                 }
-                _nonEmptyVisits = visits.toArray(new VisitImpl[visits.size()]);
+                _nonEmptyVisits = new ArrayList<>(visits);
             }
             return _nonEmptyVisits;
         }
@@ -270,7 +270,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             return SpecimenVisitReport.this.getCellExcelText(visit, summary);
         }
 
-        public int getMaxExcelRowHeight(VisitImpl[] visits)
+        public int getMaxExcelRowHeight(List<VisitImpl> visits)
         {
             int max = 1;
             for (VisitImpl visit : visits)

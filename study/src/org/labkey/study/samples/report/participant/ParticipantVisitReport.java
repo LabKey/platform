@@ -38,7 +38,7 @@ import java.sql.SQLException;
 public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitParticipant>
 {
     boolean _showCohorts;
-    public ParticipantVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());

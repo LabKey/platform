@@ -223,7 +223,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         if (null == study)
             throw new IllegalStateException("No study found in this folder.");
 
-        if(study.getVisits(Visit.Order.DISPLAY).length > 0)
+        if(study.getVisits(Visit.Order.DISPLAY).size() > 0)
             throw new IllegalStateException("There are already timepoints in this study.");
 
         if (studyDefinition.getAssaySchedule().getTimepoints().size() == 0)

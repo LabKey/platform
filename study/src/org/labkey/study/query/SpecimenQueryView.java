@@ -341,7 +341,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return createView(context, filter, createDefaultSort(viewType), viewType, false, cohortFilter, false);
     }
 
-    public static SpecimenQueryView createView(ViewContext context, Specimen[] samples, ViewType viewType)
+    public static SpecimenQueryView createView(ViewContext context, List<Specimen> samples, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, samples, viewType);
@@ -487,22 +487,22 @@ public class SpecimenQueryView extends BaseStudyQueryView
             return new Sort(StudyService.get().getSubjectColumnName(getContextContainer()) + ",Visit,PrimaryType,DerivativeType,AdditiveType");
     }
 
-    protected static SimpleFilter addFilterClause(SimpleFilter filter, Specimen[] specimens, ViewType viewType)
+    protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Specimen> specimens, ViewType viewType)
     {
-        if (specimens != null && specimens.length > 0)
+        if (specimens != null && specimens.size() > 0)
         {
             StringBuilder whereClause = new StringBuilder();
             if (viewType.isVialView())
                 whereClause.append("RowId IN (");
             else
                 whereClause.append("SpecimenHash IN (");
-            for (int i = 0; i < specimens.length; i++)
+            for (int i = 0; i < specimens.size(); i++)
             {
                 if (viewType.isVialView())
-                    whereClause.append(specimens[i].getRowId());
+                    whereClause.append(specimens.get(i).getRowId());
                 else
-                    whereClause.append(specimens[i].getSpecimenHash());
-                if (i < specimens.length - 1)
+                    whereClause.append(specimens.get(i).getSpecimenHash());
+                if (i < specimens.size() - 1)
                     whereClause.append(", ");
             }
             whereClause.append(")");

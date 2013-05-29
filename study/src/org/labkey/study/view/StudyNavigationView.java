@@ -86,7 +86,7 @@ public class StudyNavigationView extends JspView<NavTree>
             NavTree ntParticipants = new NavTree(StudyService.get().getSubjectNounPlural(getContextContainer()));
             ntRoot.addChild(ntParticipants);
             ntParticipants.addChild("all", _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDataSetId()));
-            CohortImpl[] cohorts = _study.getCohorts(user);
+            List<CohortImpl> cohorts = _study.getCohorts(user);
             for (CohortImpl cohort : cohorts)
             {
                 NavTree ntCohort = new NavTree(cohort.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDataSetId()).addParameter("cohortId",cohort.getRowId()));

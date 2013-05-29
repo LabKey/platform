@@ -51,12 +51,10 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.writer.StudySerializationRegistryImpl" %>
 <%@ page import="org.labkey.api.admin.FolderSerializationRegistry" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
-<%@ page import="org.labkey.api.admin.FolderImporter" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -64,7 +62,7 @@
 
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
       resources.add(ClientDependency.fromFilePath("reports/rowExpander.js"));
       resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
@@ -87,7 +85,7 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    List<ParticipantGroup> groups = new LinkedList<ParticipantGroup>();
+    List<ParticipantGroup> groups = new LinkedList<>();
 
     for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, user))
     {
@@ -101,7 +99,7 @@
     else
         intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
 
-    Map<String, Container> folders = new HashMap<String, Container>();
+    Map<String, Container> folders = new HashMap<>();
     for (Container child : ContainerManager.getChildren(c))
         folders.put(child.getName(), child);
 
@@ -122,8 +120,8 @@
 
     Collection<FolderWriter> writers = registry.getRegisteredFolderWriters();
 
-    ArrayList<String> studyText = new ArrayList<String>();
-    ArrayList<String> folderText =  new ArrayList<String>();
+    ArrayList<String> studyText = new ArrayList<>();
+    ArrayList<String> folderText =  new ArrayList<>();
 
 
 
@@ -185,7 +183,7 @@
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
         <th align="left"><%= h(visitLabel) %></th>
-        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=h(visitLabel)%></td>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel)%></td>
         <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
     </tr>
     <% } %>
@@ -193,14 +191,14 @@
         <th align="left">Study Schedule</th>
          <td>This study defines <%= numDatasets %> Datasets
              <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-             and <%= getVisits(Visit.Order.DISPLAY).length %> <%=h(visitLabel)%>
+             and <%= getVisits(Visit.Order.DISPLAY).size() %> <%=h(visitLabel)%>
              <% } %>
          </td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Locations</th>
-        <td>This study references <%= getLocations().length %> locations (labs/sites/repositories)</td>
+        <td>This study references <%= getLocations().size() %> locations (labs/sites/repositories)</td>
         <td><%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
     </tr>
     <tr>
@@ -211,7 +209,7 @@
 
     <tr>
         <th align="left">Cohorts</th>
-        <td>This study defines <%= getCohorts(getViewContext().getUser()).length %> cohorts</td>
+        <td>This study defines <%= getCohorts(getViewContext().getUser()).size() %> cohorts</td>
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>
     </tr>
     <tr>
@@ -305,7 +303,7 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Statuses</th>
-        <td>This study defines <%= study.getSampleRequestStatuses(HttpView.currentContext().getUser()).length %> specimen request
+        <td>This study defines <%= study.getSampleRequestStatuses(HttpView.currentContext().getUser()).size() %> specimen request
             statuses</td>
         <td><%= textLink("Manage Request Statuses",
                 new ActionURL(SpecimenController.ManageStatusesAction.class, c)) %></td>

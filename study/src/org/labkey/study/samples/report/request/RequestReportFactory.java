@@ -48,7 +48,7 @@ public class RequestReportFactory extends BaseRequestReportFactory
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         if (isCompletedRequestsOnly())
         {

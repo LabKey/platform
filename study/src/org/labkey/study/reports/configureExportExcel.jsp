@@ -25,12 +25,13 @@
 <%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
     StudyImpl s = view.getModelBean();
     User user = (User)request.getUserPrincipal();
-    LocationImpl[] locations = s.getLocations();
+    List<LocationImpl> locations = s.getLocations();
     boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, AdminPermission.class);
  %>
 
@@ -93,7 +94,7 @@ for (LocationImpl location : locations)
                 if (label == null || label.length() == 0)
                     label = "" + location.getRowId();
                 %>sites['<%=location.getRowId()%>']=<%=PageFlowUtil.jsString(label)%>;<%
-                out.print("\n");
+                out.print(text("\n"));
             }%>
 
         siteId_onChange(document.getElementById("locationId"));

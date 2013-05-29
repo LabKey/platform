@@ -50,6 +50,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -794,7 +795,7 @@ public class SpecimenController extends BaseStudyController
                 ids = toIntArray(DataRegionSelection.getSelected(getViewContext(), true));
 
             // get list of specimens that are not already part of the request: we don't want to double-add
-            Specimen[] currentSpecimens = SampleManager.getInstance().getRequestSpecimens(request);
+            List<Specimen> currentSpecimens = SampleManager.getInstance().getRequestSpecimens(request);
             Set<Integer> currentSpecimenIds = new HashSet<Integer>();
             for (Specimen specimen : currentSpecimens)
                 currentSpecimenIds.add(specimen.getRowId());
@@ -901,13 +902,13 @@ public class SpecimenController extends BaseStudyController
     public abstract static class SamplesViewBean
     {
         protected SpecimenQueryView _specimenQueryView;
-        protected Specimen[] _samples;
+        protected List<Specimen> _samples;
 
-        public SamplesViewBean(ViewContext context, Specimen[] samples, boolean showHistoryLinks,
+        public SamplesViewBean(ViewContext context, List<Specimen> samples, boolean showHistoryLinks,
                                boolean showRecordSelectors, boolean disableLowVialIndicators, boolean restrictRecordSelectors)
         {
             _samples = samples;
-            if (samples != null && samples.length > 0)
+            if (samples != null && samples.size() > 0)
             {
                 _specimenQueryView = SpecimenQueryView.createView(context, samples, SpecimenQueryView.ViewType.VIALS);
                 _specimenQueryView.setShowHistoryLinks(showHistoryLinks);
@@ -922,7 +923,7 @@ public class SpecimenController extends BaseStudyController
             return _specimenQueryView;
         }
 
-        public Specimen[] getSamples()
+        public List<Specimen> getSamples()
         {
             return _samples;
         }
@@ -1023,7 +1024,7 @@ public class SpecimenController extends BaseStudyController
             Integer destinationSiteId = _sampleRequest.getDestinationSiteId();
             if (destinationSiteId != null)
             {
-                LocationImpl[] locations = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
+                List<LocationImpl> locations = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
                 for (LocationImpl location : locations)
                 {
                     if (destinationSiteId.intValue() == location.getRowId())
@@ -1183,7 +1184,7 @@ public class SpecimenController extends BaseStudyController
             return _view;
         }
 
-        public SampleRequestStatus[] getStauses() throws SQLException
+        public List<SampleRequestStatus> getStauses() throws SQLException
         {
             return SampleManager.getInstance().getRequestStatuses(_context.getContainer(), _context.getUser());
         }
@@ -1600,8 +1601,8 @@ public class SpecimenController extends BaseStudyController
         {
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
-            Specimen[] requestedSamples = utils.getSpecimensFromRowIds(getSampleRowIds());
-            if (requestedSamples != null && requestedSamples.length > 0)
+            List<Specimen> requestedSamples = utils.getSpecimensFromRowIds(getSampleRowIds());
+            if (requestedSamples != null && requestedSamples.size() > 0)
                 return new SpecimenUtils.RequestedSpecimens(requestedSamples);
 
             Set<String> ids;
@@ -1961,7 +1962,7 @@ public class SpecimenController extends BaseStudyController
     public static class AddToExistingRequestBean extends SamplesViewBean
     {
         private SpecimenRequestQueryView _requestsGrid;
-        private Location[] _providingLocations;
+        private List<Location> _providingLocations;
 
         public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws ServletException
         {
@@ -2003,7 +2004,7 @@ public class SpecimenController extends BaseStudyController
             return _requestsGrid;
         }
 
-        public Location[] getProvidingLocations()
+        public List<Location> getProvidingLocations()
         {
             return _providingLocations;
         }
@@ -2665,8 +2666,8 @@ public class SpecimenController extends BaseStudyController
 
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
-            Specimen[] specimens = request.getSpecimens();
-            if (specimens != null && specimens.length > 0)
+            List<Specimen> specimens = request.getSpecimens();
+            if (specimens != null && specimens.size() > 0)
             {
                 SampleRequestStatus newStatus = SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), true);
                 request = request.createMutable();
@@ -2848,10 +2849,10 @@ public class SpecimenController extends BaseStudyController
                                 header, event, content.toString(), null, getViewContext())
                         {
                             @Override
-                            protected Specimen[] getSpecimenList() throws SQLException
+                            protected List<Specimen> getSpecimenList()
                             {
                                 SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingLocation, type);
-                                return Table.select(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null, Specimen.class);
+                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null).getArrayList(Specimen.class);
                             }
 
                         };
@@ -3098,7 +3099,7 @@ public class SpecimenController extends BaseStudyController
             if (_specimensBySiteId == null)
             {
                 _specimensBySiteId = new HashMap<Integer, List<Specimen>>();
-                Specimen[] specimens = _sampleRequest.getSpecimens();
+                List<Specimen> specimens = _sampleRequest.getSpecimens();
                 for (Specimen specimen : specimens)
                 {
                     LocationImpl location;
@@ -3566,7 +3567,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _mixedFlagState;
         private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<String, Map<String, Integer>>();
 
-        public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer) throws ServletException
+        public UpdateSpecimenCommentsBean(ViewContext context, List<Specimen> samples, String referrer) throws ServletException
         {
             super(context, samples, false, false, true, true);
             _referrer = referrer;
@@ -3576,10 +3577,10 @@ public class SpecimenController extends BaseStudyController
                 _participantVisitMap = generateParticipantVisitMap(samples, BaseStudyController.getStudy(false, context.getContainer()));
                 _mixedComments = false;
                 _mixedFlagState = false;
-                SpecimenComment prevComment = currentComments.get(samples[0]);
-                for (int i = 1; i < samples.length && (!_mixedFlagState || !_mixedComments); i++)
+                SpecimenComment prevComment = currentComments.get(samples.get(0));
+                for (int i = 1; i < samples.size() && (!_mixedFlagState || !_mixedComments); i++)
                 {
-                    SpecimenComment comment = currentComments.get(samples[i]);
+                    SpecimenComment comment = currentComments.get(samples.get(i));
 
                     // a missing comment indicates a 'false' for history conflict:
                     boolean currentFlagState = comment != null && comment.isQualityControlFlag();
@@ -3600,7 +3601,7 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        protected Map<String, Map<String, Integer>> generateParticipantVisitMap(Specimen[] samples, Study study)
+        protected Map<String, Map<String, Integer>> generateParticipantVisitMap(List<Specimen> samples, Study study)
         {
             Map<String, Map<String, Integer>> pvMap = new TreeMap<String, Map<String, Integer>>();
 
@@ -3663,7 +3664,7 @@ public class SpecimenController extends BaseStudyController
 
         public boolean doAction(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
         {
-            Specimen[] selectedVials = getUtils().getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
+            List<Specimen> selectedVials = getUtils().getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
             if (selectedVials != null)
             {
                 for (Specimen specimen : selectedVials)
@@ -3703,15 +3704,18 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors) throws Exception
         {
-            Specimen[] selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
+            List<Specimen> selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
-            if (selectedVials == null || selectedVials.length == 0)
+            if (selectedVials == null || selectedVials.size() == 0)
             {
                 // are the vial IDs on the URL?
                 int[] rowId = specimenCommentsForm.getRowId();
                 if (rowId != null && rowId.length > 0)
-                    selectedVials = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
-                if (selectedVials == null || selectedVials.length == 0)
+                {
+                    List<Specimen> specimens = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
+                    selectedVials = new ArrayList<>(specimens);
+                }
+                if (selectedVials == null || selectedVials.size() == 0)
                     return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
             }
 
@@ -3723,11 +3727,11 @@ public class SpecimenController extends BaseStudyController
         {
             if (commentsForm.getRowId() == null)
                 return false;
-            List<Specimen> vials = new ArrayList<Specimen>();
+            List<Specimen> vials = new ArrayList<>();
             for (int rowId : commentsForm.getRowId())
                 vials.add(SampleManager.getInstance().getSpecimen(getContainer(), rowId));
 
-            Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
+            Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials);
 
             // copying or moving vial comments to participant level comments
             if (commentsForm.isCopyToParticipant())
@@ -4334,8 +4338,8 @@ public class SpecimenController extends BaseStudyController
             {
                 SampleRequestStatus status = new SampleRequestStatus();
                 status.setLabel(form.getNewLabel());
-                SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
-                status.setSortOrder(statuses.length);
+                List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
+                status.setSortOrder(statuses.size());
                 status.setContainer(getContainer());
                 status.setFinalState(form.isNewFinalState());
                 status.setSpecimensLocked(form.isNewSpecimensLocked());
@@ -4421,7 +4425,7 @@ public class SpecimenController extends BaseStudyController
 
     private Map<Integer, SampleRequestStatus> getIdToRequestStatusMap(Container container) throws SQLException
     {
-        SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(container, getUser());
+        List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(container, getUser());
         Map<Integer, SampleRequestStatus> idToStatus = new HashMap<Integer, SampleRequestStatus>();
         for (SampleRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
@@ -4460,12 +4464,12 @@ public class SpecimenController extends BaseStudyController
 
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
-            SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
+            List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
             SampleRequestStatus status = SampleManager.getInstance().getRequestStatus(getContainer(), form.getId());
             if (status != null)
             {
                 SampleManager.getInstance().deleteRequestStatus(getUser(), status);
-                int[] remainingIds = new int[statuses.length - 1];
+                int[] remainingIds = new int[statuses.size() - 1];
                 int idx = 0;
                 for (SampleRequestStatus remainingStatus : statuses)
                 {
@@ -5401,9 +5405,9 @@ public class SpecimenController extends BaseStudyController
                 try
                 {
                     SampleRequest request = sampleManager.getRequest(getContainer(), _requestId);
-                    Specimen[] specimens = sampleManager.getSpecimens(getContainer(), globalIds);
+                    List<Specimen> specimens = sampleManager.getSpecimens(getContainer(), globalIds);
 
-                    if (specimens != null && specimens.length == globalIds.length)
+                    if (specimens != null && specimens.size() == globalIds.length)
                     {
                         // All the specimens exist;
                         // Check for Availability and then add them to the request.
@@ -5420,8 +5424,8 @@ public class SpecimenController extends BaseStudyController
 
                         if (errorList.size() == 0)
                         {
-                            ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.length);
-                            Collections.addAll(specimenList, specimens);
+                            ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.size());
+                            specimenList.addAll(specimens);
                             sampleManager.createRequestSampleMapping(getUser(), request, specimenList, true, true);
                         }
                     }

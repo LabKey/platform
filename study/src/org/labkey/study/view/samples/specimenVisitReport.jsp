@@ -53,8 +53,8 @@ The request has produced no records.
     {
     for (SpecimenVisitReport report : reports)
     {
-        VisitImpl[] visits = report.getVisits();
-        int colCount = visits.length + report.getLabelDepth();
+        List<VisitImpl> visits = report.getVisits();
+        int colCount = visits.size() + report.getLabelDepth();
 %>
 <div id="<%=tableContainerId%>" style="overflow-x:auto; min-width: 740px">
 <table class="labkey-data-region labkey-show-borders"><colgroup>
@@ -102,7 +102,7 @@ The request has produced no records.
                 SpecimenReportTitle[] currentTitleHierarchy = row.getTitleHierarchy();
                 rowtitles[rowIndex] = new Pair[width];
                 for (int i=0 ; i<width ; i++)
-                    rowtitles[rowIndex][i] = new Pair<SpecimenReportTitle, Integer>(currentTitleHierarchy[i], 1);
+                    rowtitles[rowIndex][i] = new Pair<>(currentTitleHierarchy[i], 1);
             }
 
             for (int row = rows-1 ; row > 0 ; row--)
@@ -120,7 +120,7 @@ The request has produced no records.
             for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
             {
                 rowIndex++;
-                %><tr class="<%=rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row" %>" style="vertical-align:top"><%
+                %><tr class="<%=text(rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row") %>" style="vertical-align:top"><%
                 for (int col = 0; col<width ; col++)
                 {
                     String title = rowtitles[rowIndex][col].first.getDisplayValue();
@@ -131,7 +131,7 @@ The request has produced no records.
                         continue;
                     String className="";
                     String style=col<width-1 ? "background:#FFFFFF" : "";
-                    %><td class="<%=className%>" style="<%=style%>" rowspan="<%=rowspan%>" nowrap>
+                    %><td class="<%=text(className)%>" style="<%=text(style)%>" rowspan="<%=rowspan%>" nowrap>
                         <%= h(title) %>
                     </td><%
                 }
@@ -139,7 +139,7 @@ The request has produced no records.
                 for (VisitImpl visit : visits)
                 {
                     %><td align="center"><%
-                        %><%= row.getCellHtml(visit) %><%
+                        %><%= text(row.getCellHtml(visit)) %><%
                     %></td><%
                 }
                 %></tr><%

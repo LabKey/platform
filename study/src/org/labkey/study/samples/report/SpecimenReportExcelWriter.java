@@ -30,6 +30,7 @@ import jxl.write.Number;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 /*
  * User: brittp
  * Date: May 20, 2008
@@ -107,7 +108,7 @@ public class SpecimenReportExcelWriter
 
         WritableSheet sheet = workbook.createSheet(sheetName, workbook.getNumberOfSheets());
 
-        VisitImpl[] visits = report.getVisits();
+        List<VisitImpl> visits = report.getVisits();
 
         // Merge cells at top of sheet and write the headers
         // One or more embedded tabs split a header into equally spaced columns
@@ -115,8 +116,8 @@ public class SpecimenReportExcelWriter
         WritableCell cell = new Label(0, 0, _parameters.getLabel() + ": " + report.getTitle());
         sheet.addCell(cell);
 
-        for (int i = 0; i < visits.length; i++)
-            sheet.addCell(new Label(i + report.getLabelDepth(), 1, visits[i].getDisplayString(), _headerFormat));
+        for (int i = 0; i < visits.size(); i++)
+            sheet.addCell(new Label(i + report.getLabelDepth(), 1, visits.get(i).getDisplayString(), _headerFormat));
 
         boolean numericData = report.isNumericData();
         Collection<SpecimenVisitReport.Row> rows = (Collection<SpecimenVisitReport.Row>) report.getRows();

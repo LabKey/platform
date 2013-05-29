@@ -29,7 +29,7 @@
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
-    SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
+    List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
 %>
 <labkey:errors />
 <form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>m" enctype="multipart/form-data" method="POST">

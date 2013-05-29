@@ -40,7 +40,7 @@
     ViewContext currentContext = HttpView.currentContext();
     VaccineStudyWebPart.Model bean = (VaccineStudyWebPart.Model) me.getModelBean();
 
-    Map<String, String> params = new HashMap<String,String>();
+    Map<String, String> params = new HashMap<>();
     params.put("studyId", Integer.toString(bean.getStudyId()));
 
     //In the web part we always show the latest revision
@@ -57,7 +57,7 @@
 
     StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
     params.put("canAdmin", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study));
-    params.put("canCreateTimepoints", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study && (study.getVisits(Visit.Order.CHRONOLOGICAL).length < 1)));
+    params.put("canCreateTimepoints", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study && (study.getVisits(Visit.Order.CHRONOLOGICAL).size() < 1)));
 
     params.put("panel", bean.getPanel());  //bean.getPanel());
     if (null != bean.getFinishURL())

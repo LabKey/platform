@@ -158,9 +158,9 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
                 }
                 else
                 {
-                    Specimen[] specimens = request.getSpecimens();
+                    List<Specimen> specimens = request.getSpecimens();
 
-                    if (0 == specimens.length)
+                    if (0 == specimens.size())
                         errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
                     else
                         form.setSpecimens(specimens);
@@ -181,7 +181,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
                         list.add(specimen);
                 }
 
-                form.setSpecimens(list.toArray(new Specimen[list.size()]));
+                form.setSpecimens(list);
             }
         }
     }

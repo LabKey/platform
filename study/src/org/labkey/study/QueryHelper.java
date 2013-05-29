@@ -31,7 +31,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyCachable;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -51,22 +53,22 @@ public class QueryHelper<K extends StudyCachable>
         _objectClass = objectClass;
     }
 
-    public K[] get(Container c)
+    public List<K> get(Container c)
     {
         return get(c, null, null);
     }
 
-    public K[] get(Container c, String sortString)
+    public List<K> get(Container c, String sortString)
     {
         return get(c, null, sortString);
     }
 
-    public K[] get(Container c, SimpleFilter filter)
+    public List<K> get(Container c, SimpleFilter filter)
     {
         return get(c, filter, null);
     }
 
-    public K[] get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
+    public List<K> get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
         if (sortString != null)
@@ -83,20 +85,15 @@ public class QueryHelper<K extends StudyCachable>
                 Sort sort = null;
                 if (sortString != null)
                     sort = new Sort(sortString);
-                try
-                {
-                    StudyCachable[] objs = Table.select(getTableInfo(), Table.ALL_COLUMNS, filter, sort, _objectClass);
-                    for (StudyCachable obj : objs)
-                        obj.lock();
-                    return objs;
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
+                List<? extends StudyCachable> objs = new TableSelector(getTableInfo(), Table.ALL_COLUMNS, filter, sort).getArrayList(_objectClass);
+                // Make both the objects and the list itself immutable so that we don't end up with a corrupted
+                // version in the cache
+                for (StudyCachable obj : objs)
+                    obj.lock();
+                return Collections.unmodifiableList(objs);
             }
         };
-        return (K[])StudyCache.get(getTableInfo(), c, cacheId, loader);
+        return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
     public K get(Container c, double rowId) throws SQLException

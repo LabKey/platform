@@ -28,6 +28,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Visit;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -54,12 +55,12 @@ public class BaseStudyView<T> extends HttpView<T>
     }
 
 
-    private VisitImpl[] _visits;            // display ordered
+    private List<VisitImpl> _visits;            // display ordered
     private HashMap<Integer, VisitImpl> _visitMap = new HashMap<Integer, VisitImpl>();
     private DataSetDefinition[] _datasetDefs;
     private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<Integer, DataSetDefinition>();
 
-    protected VisitImpl[] getVisits()
+    protected List<VisitImpl> getVisits()
     {
         if (null == _visits)
         {

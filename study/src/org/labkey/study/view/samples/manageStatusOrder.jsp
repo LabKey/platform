@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.StudyImpl"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SampleRequestStatus"%>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    SampleRequestStatus[] statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
+    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
 %>
 <labkey:errors/>
 <script type="text/javascript">
@@ -87,14 +87,14 @@ function orderModule(down)
             <td>
                 <%
                 %>
-                <select name="items" size="<%= statuses.length %>">
+                <select name="items" size="<%= statuses.size() %>">
                 <%
                 for (SampleRequestStatus status : statuses)
                 {
                     if (!status.isSystemStatus())
                     {
                     %>
-                    <option value="<%= status.getRowId() %>"><%= status.getLabel() != null ? h(status.getLabel()) : "" %></option>
+                    <option value="<%= status.getRowId() %>"><%= h(status.getLabel() != null ? status.getLabel(): "") %></option>
                     <%
                     }
                 }

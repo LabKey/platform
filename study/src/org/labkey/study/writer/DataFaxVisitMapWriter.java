@@ -46,7 +46,7 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
-        VisitImpl[] visits = study.getVisits(Visit.Order.DISPLAY);
+        List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);

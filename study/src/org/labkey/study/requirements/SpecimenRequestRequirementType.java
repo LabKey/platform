@@ -40,8 +40,8 @@ public enum SpecimenRequestRequirementType implements RequirementType
                 public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
                 {
                     List<SampleRequestRequirement> requirements = new ArrayList<SampleRequestRequirement>();
-                    Specimen[] specimens = owner.getSpecimens();
-                    if (specimens != null && specimens.length > 0)
+                    List<Specimen> specimens = owner.getSpecimens();
+                    if (specimens != null && specimens.size() > 0)
                     {
                         // get a list of all providing and originating sites:
                         Set<Integer> originatingLocationIds = new HashSet<Integer>();
@@ -67,8 +67,8 @@ public enum SpecimenRequestRequirementType implements RequirementType
                 public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
                 {
                     List<SampleRequestRequirement> requirements = new ArrayList<SampleRequestRequirement>();
-                    Specimen[] specimens = owner.getSpecimens();
-                    if (specimens != null && specimens.length > 0)
+                    List<Specimen> specimens = owner.getSpecimens();
+                    if (specimens != null && specimens.size() > 0)
                     {
                         // get a list of all providing and originating sites:
                         Set<Integer> providerLocationIds = new HashSet<Integer>();

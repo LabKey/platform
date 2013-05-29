@@ -57,7 +57,7 @@
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     CohortImpl selectedCohort = null;
-    CohortImpl[] cohorts = null;
+    List<CohortImpl> cohorts = null;
 
     if (showCohorts)
     {
@@ -77,7 +77,7 @@
 
     VisitStatistic[] statisticsToDisplay = bean.stats.toArray(new VisitStatistic[bean.stats.size()]);
 
-    VisitImpl[] visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
+    List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = buildURL(StudyController.OverviewAction.class);
@@ -92,8 +92,8 @@
 &nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
-    for (int i = 0; i < visits.length && !hasHiddenData; i++)
-        hasHiddenData = !visits[i].isShowByDefault();
+    for (int i = 0; i < visits.size() && !hasHiddenData; i++)
+        hasHiddenData = !visits.get(i).isShowByDefault();
     for (int i = 0; i < datasets.length && !hasHiddenData; i++)
         hasHiddenData = !datasets[i].isShowByDefault();
     if (hasHiddenData)
@@ -104,20 +104,20 @@
     }
 %>
 <form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">
-    <input type="hidden" name="showAll" value="<%= bean.showAll ? "1" : "0" %>">
+    <input type="hidden" name="showAll" value="<%= text(bean.showAll ? "1" : "0") %>">
     <br><br>
 <%
     if (showCohorts)
     {
 %>
-    <input type="hidden" name="<%= CohortFilterFactory.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
-    <%= h(subjectNoun) %>'s current cohort: <select name="<%= CohortFilterFactory.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <input type="hidden" name="<%= h(CohortFilterFactory.Params.cohortFilterType.name()) %>" value="<%= h(CohortFilter.Type.PTID_CURRENT.name()) %>">
+    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)
         {
     %>
-    <option value="<%= cohort.getRowId() %>" <%= selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId() ? "SELECTED" : "" %>>
+    <option value="<%= cohort.getRowId() %>" <%= text(selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId() ? "SELECTED" : "") %>>
         <%= h(cohort.getLabel()) %>
     </option>
 <%
@@ -129,12 +129,12 @@
     if (showQCStates)
     {
 %>
-    QC State: <select name="<%= BaseStudyController.SharedFormParameters.QCState.name() %>" onchange="document.changeFilterForm.submit()">
+    QC State: <select name="<%= h(BaseStudyController.SharedFormParameters.QCState.name()) %>" onchange="document.changeFilterForm.submit()">
         <%
             for (QCStateSet set : qcStateSetOptions)
             {
         %>
-        <option value="<%= set.getFormValue() %>" <%= set.equals(selectedQCStateSet) ? "SELECTED" : "" %>>
+        <option value="<%= h(set.getFormValue()) %>" <%= text(set.equals(selectedQCStateSet) ? "SELECTED" : "") %>>
             <%= h(set.getLabel()) %>
         </option>
         <%
@@ -147,26 +147,26 @@
     for (VisitStatistic stat : VisitStatistic.values())
     {
         boolean checked = bean.stats.contains(stat);
-        out.print("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n");
+        out.print(text("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n"));
     }
     %>
 </form>
 <br><br>
 <table id="studyOverview" class="labkey-data-region labkey-show-borders" style="border-collapse:collapse;">
     <tr class="labkey-alternate-row">
-        <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
+        <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=h(contextPath)%>/_.gif"></td>
         <td class="labkey-column-header"><%
             String slash = "";
             for (VisitStatistic v : statisticsToDisplay)
             {
-                %><%=slash%><%
+                %><%=text(slash)%><%
                 if (v == VisitStatistic.ParticipantCount)
                 {
-                    %>All <%=visitsLabel%><%
+                    %>All <%=h(visitsLabel)%><%
                 }
                 else
                 {
-                    %><%=v.getDisplayString(study)%><%
+                    %><%=h(v.getDisplayString(study))%><%
                 }
                 slash = " / ";
             }
@@ -218,7 +218,7 @@
                 category = "Uncategorized";
             if (!category.equals(prevCategory))
             {
-                %><tr><td class="labkey-highlight-cell" align="left" colspan="<%= visits.length + 2%>"><%= h(category) %></td></tr><%
+                %><tr><td class="labkey-highlight-cell" align="left" colspan="<%= visits.size() + 2%>"><%= h(category) %></td></tr><%
             }
             prevCategory = category;
         }
@@ -226,7 +226,7 @@
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
         String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
         %>
-        <tr class="<%= className %>" ><td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
+        <tr class="<%= text(className) %>" ><td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
         if (null != StringUtils.trimToNull(dataSet.getDescription()))
         {
             %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%
@@ -264,11 +264,11 @@
             if (bean.qcStates != null)
                 defaultReportURL.addParameter("QCState", bean.qcStates.getFormValue());
 
-            %><a href="<%= defaultReportURL.getLocalURIString() %>"><%=innerHtml%></a><%
+            %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=text(innerHtml)%></a><%
         }
         else
         {
-            %><%=innerHtml%><%
+            %><%=text(innerHtml)%><%
         }
         %></td><%
 
@@ -309,7 +309,7 @@
                 innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
             }
             
-            %><td align="center" nowrap="true"><%=innerHtml%></td><%
+            %><td align="center" nowrap="true"><%=text(innerHtml)%></td><%
         }
         %></tr>
     <%

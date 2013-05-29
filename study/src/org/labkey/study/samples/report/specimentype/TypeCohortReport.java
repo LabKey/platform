@@ -23,6 +23,8 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 
+import java.util.List;
+
 /**
  * User: brittp
  * Created: Jan 14, 2008 1:37:24 PM
@@ -31,7 +33,7 @@ public class TypeCohortReport extends SpecimenTypeVisitReport
 {
     private CohortFilter _cohortFilter;
 
-    public TypeCohortReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, CohortFilter cohortFilter)
+    public TypeCohortReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, CohortFilter cohortFilter)
     {
         super(titlePrefix, visits, filter, parameters);
         _cohortFilter = cohortFilter;

@@ -160,10 +160,10 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public boolean isSpecimensEmpty(Container container)
     {
-        return (_specimenDetailHelper.get(container).length == 0);
+        return _specimenDetailHelper.get(container).isEmpty();
     }
 
-    public Specimen[] getSpecimens(Container container, String participantId, Double visit)
+    public List<Specimen> getSpecimens(Container container, String participantId, Double visit)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
@@ -212,10 +212,10 @@ public class SampleManager implements ContainerManager.ContainerListener
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
         filter.addCondition("Container", container.getId());
-        Specimen[] matches = _specimenDetailHelper.get(container, filter);
-        if (matches == null || matches.length == 0)
+        List<Specimen> matches = _specimenDetailHelper.get(container, filter);
+        if (matches == null || matches.isEmpty())
             return null;
-        if (matches.length > 1)
+        if (matches.size() > 1)
         {
             // we apparently have two specimens with IDs that differ only in case; do a case sensitive check
             // here to find the right one:
@@ -227,10 +227,10 @@ public class SampleManager implements ContainerManager.ContainerListener
             throw new IllegalStateException("Expected at least one vial to exactly match the specified global unique ID: " + globalUniqueId);
         }
         else
-            return matches[0];
+            return matches.get(0);
     }
 
-    public Specimen[] getSpecimens(Container container, String participantId, Date date)
+    public List<Specimen> getSpecimens(Container container, String participantId, Date date)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
@@ -241,16 +241,16 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _specimenDetailHelper.get(container, filter);
     }
 
-    public SpecimenEvent[] getSpecimenEvents(Specimen sample)
+    public List<SpecimenEvent> getSpecimenEvents(Specimen sample)
     {
         SimpleFilter filter = new SimpleFilter("VialId", sample.getRowId());
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 
-    public SpecimenEvent[] getSpecimenEvents(Specimen[] samples)
+    public List<SpecimenEvent> getSpecimenEvents(List<Specimen> samples)
     {
-        if (samples == null || samples.length == 0)
-            return new SpecimenEvent[0];
+        if (samples == null || samples.size() == 0)
+            return Collections.emptyList();
         Collection<Integer> vialIds = new HashSet<Integer>();
         Container container = null;
         for (Specimen sample : samples)
@@ -334,31 +334,31 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<SpecimenEvent> getDateOrderedEventList(Specimen specimen)
     {
-        List<SpecimenEvent> eventList = new ArrayList<SpecimenEvent>();
-        SpecimenEvent[] events = getSpecimenEvents(specimen);
-        if (events == null || events.length == 0)
+        List<SpecimenEvent> eventList = new ArrayList<>();
+        List<SpecimenEvent> events = getSpecimenEvents(specimen);
+        if (events == null || events.isEmpty())
             return eventList;
-        eventList.addAll(Arrays.asList(events));
+        eventList.addAll(events);
         Collections.sort(eventList, new SpecimenEventDateComparator());
         return eventList;
     }
 
-    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(Specimen[] specimens)
+    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> specimens)
     {
-        SpecimenEvent[] allEvents = getSpecimenEvents(specimens);
-        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<Integer, List<SpecimenEvent>>();
+        List<SpecimenEvent> allEvents = getSpecimenEvents(specimens);
+        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
         for (SpecimenEvent event : allEvents)
         {
             List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
             if (vialEvents == null)
             {
-                vialEvents = new ArrayList<SpecimenEvent>();
+                vialEvents = new ArrayList<>();
                 vialIdToEvents.put(event.getVialId(), vialEvents);
             }
             vialEvents.add(event);
         }
 
-        Map<Specimen, List<SpecimenEvent>> results = new HashMap<Specimen, List<SpecimenEvent>>();
+        Map<Specimen, List<SpecimenEvent>> results = new HashMap<>();
         for (Specimen specimen : specimens)
         {
             List<SpecimenEvent> events = vialIdToEvents.get(specimen.getRowId());
@@ -455,12 +455,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             return null;
     }
 
-    public SampleRequest[] getRequests(Container c)
-    {
-        return getRequests(c, null);
-    }
-
-    public SampleRequest[] getRequests(Container c, User user)
+    public List<SampleRequest> getRequests(Container c, User user)
     {
         SimpleFilter filter = new SimpleFilter("Hidden", Boolean.FALSE);
         if (user != null)
@@ -491,8 +486,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             _requestHelper.update(user, request);
 
             // update specimen states
-            Specimen[] specimens = request.getSpecimens();
-            if (specimens != null && specimens.length > 0)
+            List<Specimen> specimens = request.getSpecimens();
+            if (specimens != null && specimens.size() > 0)
             {
                 SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
@@ -508,7 +503,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     /**
      * Update the lockedInRequest and available field states for the set of specimens.
      */
-    private void updateSpecimenStatus(Specimen[] specimens, User user, boolean lockedInRequest) throws SQLException, RequestabilityManager.InvalidRuleException
+    private void updateSpecimenStatus(List<Specimen> specimens, User user, boolean lockedInRequest) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         for (Specimen specimen : specimens)
         {
@@ -516,18 +511,18 @@ public class SampleManager implements ContainerManager.ContainerListener
             Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId());
         }
         updateRequestabilityAndCounts(specimens, user);
-        if (specimens.length > 0)
+        if (specimens.size() > 0)
             clearCaches(getContainer(specimens));
     }
 
-    private Container getContainer(Specimen[] specimens)
+    private Container getContainer(List<Specimen> specimens)
     {
-        Container container = specimens[0].getContainer();
+        Container container = specimens.get(0).getContainer();
         if (AppProps.getInstance().isDevMode())
         {
-            for (int i = 1; i < specimens.length; i++)
+            for (int i = 1; i < specimens.size(); i++)
             {
-                if (!container.equals(specimens[i].getContainer()))
+                if (!container.equals(specimens.get(i).getContainer()))
                     throw new IllegalStateException("All specimens must be from the same container");
             }
         }
@@ -566,7 +561,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     "WHERE study.Specimen.RowId = VialCounts.SpecimenId";
 
 
-    private void updateSpecimenCounts(Container container, User user, Specimen[] specimens)
+    private void updateSpecimenCounts(Container container, User user, List<Specimen> specimens)
     {
         SQLFragment updateSql = new SQLFragment(UPDATE_SPECIMEN_COUNT_SQL_PREFIX,
                 Boolean.TRUE, // AvailableVolume
@@ -577,9 +572,9 @@ public class SampleManager implements ContainerManager.ContainerListener
                 Boolean.FALSE, // Requestable case of ExpectedAvailableCount
                 container.getId()); // container filter
 
-        if (specimens != null && specimens.length > 0)
+        if (specimens != null && specimens.size() > 0)
         {
-            Set<Integer> specimenIds = new HashSet<Integer>();
+            Set<Integer> specimenIds = new HashSet<>();
             for (Specimen specimen : specimens)
                 specimenIds.add(specimen.getSpecimenId());
 
@@ -602,24 +597,22 @@ public class SampleManager implements ContainerManager.ContainerListener
         updateSpecimenCounts(container, user, null);
     }
 
-    private void updateRequestabilityAndCounts(Specimen[] specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException
+    private void updateRequestabilityAndCounts(List<Specimen> specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException
     {
-        if (specimens.length == 0)
+        if (specimens.size() == 0)
             return;
         Container container = getContainer(specimens);
 
         // update requestable flags before updating counts, since available count could change:
-        for (int start = 0; start < specimens.length; start += 1000)
+        for (int start = 0; start < specimens.size(); start += 1000)
         {
-            Specimen[] subset = new Specimen[Math.min(1000, specimens.length - start)];
-            System.arraycopy(specimens, start, subset, 0, subset.length);
+            List<Specimen> subset = specimens.subList(start, start + Math.min(1000, specimens.size() - start));
             RequestabilityManager.getInstance().updateRequestability(container, user, subset);
         }
 
-        for (int start = 0; start < specimens.length; start += 1000)
+        for (int start = 0; start < specimens.size(); start += 1000)
         {
-            Specimen[] subset = new Specimen[Math.min(1000, specimens.length - start)];
-            System.arraycopy(specimens, start, subset, 0, subset.length);
+            List<Specimen> subset = specimens.subList(start, start + Math.min(1000, specimens.size() - start));
             updateSpecimenCounts(container, user, subset);
         }
     }
@@ -676,7 +669,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _additiveHelper.get(c, rowId);
     }
 
-    public AdditiveType[] getAdditiveTypes(Container c)
+    public List<AdditiveType> getAdditiveTypes(Container c)
     {
         return _additiveHelper.get(c, "ExternalId");
     }
@@ -686,7 +679,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _derivativeHelper.get(c, rowId);
     }
 
-    public DerivativeType[] getDerivativeTypes(Container c)
+    public List<DerivativeType> getDerivativeTypes(Container c)
     {
         return _derivativeHelper.get(c, "ExternalId");
     }
@@ -696,17 +689,17 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _primaryTypeHelper.get(c, rowId);
     }
 
-    public PrimaryType[] getPrimaryTypes(Container c)
+    public List<PrimaryType> getPrimaryTypes(Container c)
     {
         return _primaryTypeHelper.get(c, "ExternalId");
     }
 
-    public SampleRequestStatus[] getRequestStatuses(Container c, User user)
+    public List<SampleRequestStatus> getRequestStatuses(Container c, User user)
     {
-        SampleRequestStatus[] statuses = _requestStatusHelper.get(c, "SortOrder");
+        List<SampleRequestStatus> statuses = _requestStatusHelper.get(c, "SortOrder");
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
-        if (statuses == null || statuses.length == 0 || statuses[0].getSortOrder() != -1)
+        if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
         {
             SampleRequestStatus notYetSubmittedStatus = new SampleRequestStatus();
             notYetSubmittedStatus.setContainer(c);
@@ -729,19 +722,19 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public SampleRequestStatus getRequestShoppingCartStatus(Container c, User user)
     {
-        SampleRequestStatus[] statuses = getRequestStatuses(c, user);
-        if (statuses[0].getSortOrder() != -1)
+        List<SampleRequestStatus> statuses = getRequestStatuses(c, user);
+        if (statuses.get(0).getSortOrder() != -1)
             throw new IllegalStateException("Shopping cart status should be created automatically.");
-        return statuses[0];
+        return statuses.get(0);
     }
 
     public SampleRequestStatus getInitialRequestStatus(Container c, User user, boolean nonCart)
     {
-        SampleRequestStatus[] statuses = getRequestStatuses(c, user);
+        List<SampleRequestStatus> statuses = getRequestStatuses(c, user);
         if (!nonCart && isSpecimenShoppingCartEnabled(c))
-            return statuses[0];
+            return statuses.get(0);
         else
-            return statuses[1];
+            return statuses.get(1);
     }
 
     public boolean hasEditRequestPermissions(User user, SampleRequest request) throws ServletException
@@ -765,8 +758,8 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        SampleRequest[] requests = _requestHelper.get(c);
-        Set<Integer> uniqueStatuses = new HashSet<Integer>();
+        List<SampleRequest> requests = _requestHelper.get(c);
+        Set<Integer> uniqueStatuses = new HashSet<>();
         for (SampleRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
         return uniqueStatuses;
@@ -787,7 +780,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         _requestStatusHelper.delete(status);
     }
 
-    public SampleRequestEvent[] getRequestEvents(Container c)
+    public List<SampleRequestEvent> getRequestEvents(Container c)
     {
         return _requestEventHelper.get(c);
     }
@@ -867,7 +860,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     private void deleteRequestEvents(User user, SampleRequest request) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("RequestId", request.getRowId());
-        SampleRequestEvent[] events = _requestEventHelper.get(request.getContainer(), filter);
+        List<SampleRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
         for (SampleRequestEvent event : events)
         {
             AttachmentService.get().deleteAttachments(event);
@@ -886,10 +879,10 @@ public class SampleManager implements ContainerManager.ContainerListener
             "AND request.Container = map.Container AND map.Container = SpecimenDetail.Container AND " +
             "request.RowId = ? AND request.Container = ?;";
 
-    public Specimen[] getRequestSpecimens(SampleRequest request)
+    public List<Specimen> getRequestSpecimens(SampleRequest request)
     {
         return new SqlSelector(StudySchema.getInstance().getSchema(), REQUEST_SPECIMEN_JOIN,
-                request.getRowId(), request.getContainer()).getArray(Specimen.class);
+                request.getRowId(), request.getContainer()).getArrayList(Specimen.class);
     }
 
     public RepositorySettings getRepositorySettings(Container container)
@@ -1284,7 +1277,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     getRequirementsProvider().generateDefaultRequirements(user, request);
 
                 SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
-                updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user, status.isSpecimensLocked());
+                updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
             }
 
             scope.commitTransaction();
@@ -1295,7 +1288,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    public Specimen[] getSpecimens(Container container, int[] sampleRowIds)
+    public List<Specimen> getSpecimens(Container container, int[] sampleRowIds)
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         Set<Integer> uniqueRowIds = new HashSet<Integer>(sampleRowIds.length);
@@ -1303,8 +1296,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             uniqueRowIds.add(sampleRowId);
         List<Integer> rowIds = new ArrayList<Integer>(uniqueRowIds);
         filter.addInClause("RowId", rowIds);
-        Specimen[] specimens = _specimenDetailHelper.get(container, filter);
-        if (specimens.length != rowIds.size())
+        List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
+        if (specimens.size() != rowIds.size())
             throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
         return specimens;
     }
@@ -1313,7 +1306,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
     }
 
-    public Specimen[] getSpecimens(Container container, String[] globalUniqueIds) throws SpecimenRequestException
+    public List<Specimen> getSpecimens(Container container, String[] globalUniqueIds) throws SpecimenRequestException
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         Set<String> uniqueRowIds = new HashSet<String>(globalUniqueIds.length);
@@ -1321,8 +1314,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             uniqueRowIds.add(globalUniqueId);
         List<String> ids = new ArrayList<String>(uniqueRowIds);
         filter.addInClause("GlobalUniqueId", ids);
-        Specimen[] specimens = _specimenDetailHelper.get(container, filter);
-        if (specimens == null || specimens.length != ids.size())
+        List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
+        if (specimens == null || specimens.size() != ids.size())
             throw new SpecimenRequestException();       // an id has no matching specimen, let caller determine what to report
         return specimens;
     }
@@ -1334,10 +1327,10 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             scope.ensureTransaction();
 
-            Specimen[] specimens = request.getSpecimens();
-            int[] specimenIds = new int[specimens.length];
-            for (int i = 0; i < specimens.length; i++)
-                specimenIds[i] = specimens[i].getRowId();
+            List<Specimen> specimens = request.getSpecimens();
+            int[] specimenIds = new int[specimens.size()];
+            for (int i = 0; i < specimens.size(); i++)
+                specimenIds[i] = specimens.get(i).getRowId();
 
             deleteRequestSampleMappings(user, request, specimenIds, false);
 
@@ -1361,8 +1354,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         if (sampleIds == null || sampleIds.length == 0)
             return;
-        Specimen[] specimens = getSpecimens(request.getContainer(), sampleIds);
-        List<String> globalUniqueIds = new ArrayList<String>(specimens.length);
+        List<Specimen> specimens = getSpecimens(request.getContainer(), sampleIds);
+        List<String> globalUniqueIds = new ArrayList<>(specimens.size());
         List<String> descriptions = new ArrayList<String>();
         for (Specimen specimen : specimens)
         {
@@ -1630,8 +1623,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         if (!getRepositorySettings(container).isEnableRequests())
             return false;
-        SampleRequestStatus[] statuses = _requestStatusHelper.get(container, "SortOrder");
-        return (statuses != null && statuses.length > 1);
+        List<SampleRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
+        return (statuses != null && statuses.size() > 1);
     }
 
     public List<String> getMissingSpecimens(SampleRequest sampleRequest) throws SQLException
@@ -1887,12 +1880,12 @@ public class SampleManager implements ContainerManager.ContainerListener
             clearCaches(study.getContainer());
     }
 
-    public VisitImpl[] getVisitsWithSpecimens(Container container, User user)
+    public List<VisitImpl> getVisitsWithSpecimens(Container container, User user)
     {
         return getVisitsWithSpecimens(container, user, null);
     }
 
-    public VisitImpl[] getVisitsWithSpecimens(Container container, User user, CohortImpl cohort)
+    public List<VisitImpl> getVisitsWithSpecimens(Container container, User user, CohortImpl cohort)
     {
         try
         {
@@ -1930,7 +1923,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             filter.addInClause("RowId", visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), VisitImpl.class);
+            return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
         }
         catch (SQLException e)
         {
@@ -2565,20 +2558,20 @@ public class SampleManager implements ContainerManager.ContainerListener
     }
 
     private static final int GET_COMMENT_BATCH_SIZE = 1000;
-    public Map<Specimen, SpecimenComment> getSpecimenComments(Specimen[] vials) throws SQLException
+    public Map<Specimen, SpecimenComment> getSpecimenComments(List<Specimen> vials) throws SQLException
     {
-        if (vials == null || vials.length == 0)
+        if (vials == null || vials.size() == 0)
             return Collections.emptyMap();
 
-        Container container = vials[0].getContainer();
+        Container container = vials.get(0).getContainer();
         Map<Specimen, SpecimenComment> result = new HashMap<Specimen, SpecimenComment>();
         int offset = 0;
-        while (offset < vials.length)
+        while (offset < vials.size())
         {
             Map<String, Specimen> idToVial = new HashMap<String, Specimen>();
-            for (int current = offset; current < offset + GET_COMMENT_BATCH_SIZE && current < vials.length; current++)
+            for (int current = offset; current < offset + GET_COMMENT_BATCH_SIZE && current < vials.size(); current++)
             {
-                Specimen vial = vials[current];
+                Specimen vial = vials.get(current);
                 idToVial.put(vial.getGlobalUniqueId(), vial);
                 if (!container.equals(vial.getContainer()))
                     throw new IllegalArgumentException("All specimens must be from the same container");

@@ -22,6 +22,8 @@ import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.SampleManager;
 
+import java.util.List;
+
 /**
  * User: brittp
  * Created: Jan 14, 2008 1:37:24 PM
@@ -32,7 +34,7 @@ public class RequestEnrollmentLocationReport extends SpecimenTypeVisitReport
     private boolean _completedRequestsOnly;
 
     public RequestEnrollmentLocationReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters,
-                                           VisitImpl[] visits, int locationId, boolean completedRequestsOnly)
+                                           List<VisitImpl> visits, int locationId, boolean completedRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
         _locationId = locationId;

@@ -22,6 +22,8 @@ import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.SampleManager;
 
+import java.util.List;
+
 /**
  * User: brittp
  * Created: Jan 14, 2008 1:37:24 PM
@@ -30,7 +32,7 @@ public class RequestReport extends SpecimenTypeVisitReport
 {
     private boolean _completedRequestsOnly;
 
-    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits, boolean completedRequestsOnly)
+    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<VisitImpl> visits, boolean completedRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
         _completedRequestsOnly = completedRequestsOnly;

@@ -81,7 +81,7 @@
                 <%
                     if (showMemberSitesId == actor.getRowId())
                     {
-                        if (study.getLocations().length > 0)
+                        if (study.getLocations().size() > 0)
                         {
                     %>
                         <b>Choose Site</b>:<br>
@@ -128,9 +128,9 @@
             <td>&nbsp;</td>
             <td>
                 <%= generateSubmitButton("Save") %>&nbsp;
-                <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
+                <%= text(buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")) %>
                 <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                <%= buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;")%>
+                <%= text(buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;"))%>
                 <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()) %>">
             </td>
             <td>&nbsp;</td>

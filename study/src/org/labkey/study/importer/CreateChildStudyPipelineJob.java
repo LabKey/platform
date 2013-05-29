@@ -229,7 +229,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 else if (null != _form.getSpecimens())
                 {
                     studyCtx.setParticipants(getSpecimenParticipants(_form));
-                    studyCtx.setSpecimens(Arrays.asList(_form.getSpecimens()));
+                    studyCtx.setSpecimens(_form.getSpecimens());
                 }
 
                 ctx.addContext(StudyExportContext.class, studyCtx);

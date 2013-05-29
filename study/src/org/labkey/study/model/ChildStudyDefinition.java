@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import java.util.List;
+
 /**
  * User: klum
  * Date: Aug 25, 2011
@@ -48,7 +50,7 @@ public class ChildStudyDefinition
 
     private Integer _requestId;  // RowId of a specimen request
     private String[] _specimenIds = null;  // List of globally unique specimen IDs
-    private Specimen[] _specimens = null;
+    private List<Specimen> _specimens = null;
     private String _investigator;
 
     public String getName()
@@ -278,12 +280,12 @@ public class ChildStudyDefinition
         _specimenIds = specimenIds;
     }
 
-    public Specimen[] getSpecimens()
+    public List<Specimen> getSpecimens()
     {
         return _specimens;
     }
 
-    public void setSpecimens(Specimen[] specimens)
+    public void setSpecimens(List<Specimen> specimens)
     {
         _specimens = specimens;
     }

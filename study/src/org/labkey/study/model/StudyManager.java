@@ -199,7 +199,7 @@ public class StudyManager
                 }
             }, StudyImpl.class)
         {
-            public StudyImpl[] get(final Container c, final SimpleFilter filterArg, final String sortString)
+            public List<StudyImpl> get(final Container c, final SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null & sortString == null;
                 String cacheId = getCacheId(filterArg);
@@ -211,20 +211,13 @@ public class StudyManager
                     @Override
                     public Object load(String key, Object argument)
                     {
-                        try
-                        {
-                            StudyCachable[] objs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT * FROM study.Study WHERE Container = ?", new Object[]{c}, StudyImpl.class);
-                            for (StudyCachable obj : objs)
-                                obj.lock();
-                            return objs;
-                        }
-                        catch (SQLException x)
-                        {
-                            throw new RuntimeSQLException(x);
-                        }
+                        List<? extends StudyCachable> objs = new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM study.Study WHERE Container = ?", c).getArrayList(StudyImpl.class);
+                        for (StudyCachable obj : objs)
+                            obj.lock();
+                        return objs;
                     }
                 };
-                return (StudyImpl[]) StudyCache.get(getTableInfo(), c, cacheId, loader);
+                return (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
             }
         };
 
@@ -291,7 +284,7 @@ public class StudyManager
                 assert c != sharedContainer;
 
                 Set<PropertyDescriptor> set = new LinkedHashSet<>();
-                DataSetDefinition[] defs = get(c);
+                List<DataSetDefinition> defs = get(c);
                 if (defs == null)
                 {
                     pds = new PropertyDescriptor[0];
@@ -348,13 +341,13 @@ public class StudyManager
 
             while (true)
             {
-                StudyImpl[] studies = _studyHelper.get(c);
-                if (studies == null || studies.length == 0)
+                List<StudyImpl> studies = _studyHelper.get(c);
+                if (studies == null || studies.size() == 0)
                     return null;
-                else if (studies.length > 1)
+                else if (studies.size() > 1)
                     throw new IllegalStateException("Only one study is allowed per container");
                 else
-                    study = studies[0];
+                    study = studies.get(0);
 
                 // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
                 assert(study.getContainer().getId().equals(c.getId()));
@@ -620,7 +613,7 @@ public class StudyManager
     }
 
 
-    public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable VisitImpl[] existingVisits)
+    public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable List<VisitImpl> existingVisits)
     {
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
             throw new VisitCreationException("Visit container does not match study");
@@ -679,7 +672,7 @@ public class StudyManager
 
     public VisitImpl ensureVisit(Study study, User user, double sequencenum, Visit.Type type, boolean saveIfNew)
     {
-        VisitImpl[] visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
         if (saveIfNew && result.getRowId() == 0)
         {
@@ -692,7 +685,7 @@ public class StudyManager
 
     public boolean ensureVisits(Study study, User user, Set<Double> sequencenums, @Nullable Visit.Type type)
     {
-        VisitImpl[] visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         boolean created = false;
         for (double sequencenum : sequencenums)
         {
@@ -707,7 +700,7 @@ public class StudyManager
     }
 
 
-    private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, @Nullable Visit.Type type, VisitImpl[] existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
     {
         // Remember the SequenceNums closest to the requested id in case we need to create one
         double nextVisit = Double.POSITIVE_INFINITY;
@@ -854,9 +847,9 @@ public class StudyManager
     public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
-        Visit[] visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : new Visit[0];
+        List<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.<VisitImpl>emptyList();
 
-        Map<String, Double> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.length) * 3 / 4);
+        Map<String, Double> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
 
 //        // allow prepended "visit"
 //        for (Visit visit : visits)
@@ -906,7 +899,7 @@ public class StudyManager
         Set<String> labels = new CaseInsensitiveHashSet();
         Map<String, Double> customMap = getVisitImportMap(study, false);
 
-        Visit[] visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
+        List<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
 
         for (Visit visit : visits)
         {
@@ -1090,7 +1083,7 @@ public class StudyManager
     }
 
 
-    public LocationImpl[] getSites(Container container)
+    public List<LocationImpl> getSites(Container container)
     {
         return _locationHelper.get(container, "Label");
     }
@@ -1099,7 +1092,7 @@ public class StudyManager
     {
         Study study = getStudy(container);
         List<LocationImpl> validLocations = new ArrayList<>();
-        LocationImpl[] locations = getSites(container);
+        List<LocationImpl> locations = getSites(container);
         for (LocationImpl location : locations)
         {
             if (isSiteValidRequestingLocation(study, location))
@@ -1187,17 +1180,15 @@ public class StudyManager
     }
 
 
-    public VisitImpl[] getVisits(Study study, Visit.Order order)
+    public List<VisitImpl> getVisits(Study study, Visit.Order order)
     {
         return getVisits(study, null, null, order);
     }
 
-    private VisitImpl[] EMPTY_VISIT_ARRAY = new VisitImpl[0];
-
-    public VisitImpl[] getVisits(Study study, @Nullable CohortImpl cohort, @Nullable User user, Visit.Order order)
+    public List<VisitImpl> getVisits(Study study, @Nullable CohortImpl cohort, @Nullable User user, Visit.Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
-            return EMPTY_VISIT_ARRAY;
+            return Collections.emptyList();
 
         SimpleFilter filter = null;
 
@@ -1599,7 +1590,7 @@ public class StudyManager
         }
     }
 
-    public CohortImpl[] getCohorts(Container container, User user)
+    public List<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
         return _cohortHelper.get(container,"Label");
@@ -1626,9 +1617,9 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("Label", label);
 
-        CohortImpl[] cohorts = _cohortHelper.get(container, filter);
-        if (cohorts != null && cohorts.length == 1)
-            return cohorts[0];
+        List<CohortImpl> cohorts = _cohortHelper.get(container, filter);
+        if (cohorts != null && cohorts.size() == 1)
+            return cohorts.get(0);
 
         return null;
     }
@@ -1686,7 +1677,7 @@ public class StudyManager
 
     public VisitImpl getVisitForSequence(Study study, double seqNum)
     {
-        VisitImpl[] visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         for (VisitImpl v : visits)
         {
             if (seqNum >= v.getSequenceNumMin() && seqNum <= v.getSequenceNumMax())
@@ -1720,7 +1711,9 @@ public class StudyManager
                 filter.addInClause("Type", Arrays.asList(types));
             }
         }
-        List<DataSetDefinition> datasets = Arrays.asList(_datasetHelper.get(study.getContainer(), filter, null));
+
+        // Make a copy (it's immutable) so that we can sort it. See issue 17875
+        List<DataSetDefinition> datasets = new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
 
         // sort by display order, category, and dataset ID
         Collections.sort(datasets, new Comparator<DataSetDefinition>(){
@@ -1788,9 +1781,9 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
-        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.length == 1)
-            return defs[0];
+        List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.size() == 1)
+            return defs.get(0);
 
         return null;
     }
@@ -1802,9 +1795,9 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addCondition("EntityId", entityId);
 
-        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.length == 1)
-            return defs[0];
+        List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.size() == 1)
+            return defs.get(0);
 
         return null;
     }
@@ -1816,9 +1809,9 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
 
-        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.length == 1)
-            return defs[0];
+        List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.size() == 1)
+            return defs.get(0);
 
         return null;
     }
@@ -3835,7 +3828,7 @@ public class StudyManager
             }
         }
 
-        private DataSetDefinition[] getDatasetsForCategory(ViewCategory category)
+        private List<DataSetDefinition> getDatasetsForCategory(ViewCategory category)
         {
             if (category != null)
             {
@@ -3848,7 +3841,7 @@ public class StudyManager
                 }
             }
 
-            return new DataSetDefinition[0];
+            return Collections.emptyList();
         }
     }
 
@@ -4638,15 +4631,15 @@ public class StudyManager
             StudyImpl study = new StudyImpl();
             study.setTimepointType(TimepointType.VISIT);
 
-            VisitImpl[] existingVisits = new VisitImpl[3];
-            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
-            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
-            existingVisits[2] = new VisitImpl(null, 2.5, 3.0, null, Visit.Type.BASELINE);
+            List<VisitImpl> existingVisits = new ArrayList<>(3);
+            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 2.5, 3.0, null, Visit.Type.BASELINE));
 
-            assertEquals("Should return existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
-            assertEquals("Should return existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
-            assertEquals("Should return existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 2.5, Visit.Type.BASELINE, existingVisits));
-            assertEquals("Should return existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 3.0, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits.get(0), getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits.get(1), getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 2.5, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 3.0, Visit.Type.BASELINE, existingVisits));
 
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.1, Visit.Type.BASELINE, existingVisits), existingVisits, 1.1, 1.1);
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3.001, Visit.Type.BASELINE, existingVisits), existingVisits, 3.001, 3.001);
@@ -4659,7 +4652,7 @@ public class StudyManager
             StudyImpl study = new StudyImpl();
             study.setTimepointType(TimepointType.VISIT);
 
-            VisitImpl[] existingVisits = new VisitImpl[0];
+            List<VisitImpl> existingVisits = new ArrayList<>();
 
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.1, Visit.Type.BASELINE, existingVisits), existingVisits, 1.1, 1.1);
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3.001, Visit.Type.BASELINE, existingVisits), existingVisits, 3.001, 3.001);
@@ -4672,7 +4665,7 @@ public class StudyManager
             StudyImpl study = new StudyImpl();
             study.setTimepointType(TimepointType.DATE);
 
-            VisitImpl[] existingVisits = new VisitImpl[0];
+            List<VisitImpl> existingVisits = new ArrayList<>();
 
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits), existingVisits, 1, 1);
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -10, Visit.Type.BASELINE, existingVisits), existingVisits, -10, -10);
@@ -4695,23 +4688,23 @@ public class StudyManager
             StudyImpl study = new StudyImpl();
             study.setTimepointType(TimepointType.DATE);
 
-            VisitImpl[] existingVisits = new VisitImpl[3];
-            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
-            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
-            existingVisits[2] = new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE);
+            List<VisitImpl> existingVisits = new ArrayList<>(3);
+            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE));
 
-            assertSame("Should be existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(0), getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(1), getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
 
             study.setDefaultTimepointDuration(7);
-            assertSame("Should be existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
-            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(0), getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(1), getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits.get(2), getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
         }
 
         @Test
@@ -4720,11 +4713,11 @@ public class StudyManager
             StudyImpl study = new StudyImpl();
             study.setTimepointType(TimepointType.DATE);
 
-            VisitImpl[] existingVisits = new VisitImpl[4];
-            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
-            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
-            existingVisits[2] = new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE);
-            existingVisits[3] = new VisitImpl(null, 62, 64, null, Visit.Type.BASELINE);
+            List<VisitImpl> existingVisits = new ArrayList<>(4);
+            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, 62, 64, null, Visit.Type.BASELINE));
 
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 3);
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 14, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 14);
@@ -4765,12 +4758,12 @@ public class StudyManager
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -5, Visit.Type.BASELINE, existingVisits), existingVisits, -5, -5, "Day -5");
         }
 
-        private void validateNewVisit(VisitImpl newVisit, VisitImpl[] existingVisits, double seqNumMin, double seqNumMax, String label)
+        private void validateNewVisit(VisitImpl newVisit, List<VisitImpl> existingVisits, double seqNumMin, double seqNumMax, String label)
         {
             validateNewVisit(newVisit, existingVisits, seqNumMin, seqNumMax);
             assertEquals("Labels don't match", label, newVisit.getLabel());
         }
-        private void validateNewVisit(VisitImpl newVisit, VisitImpl[] existingVisits, double seqNumMin, double seqNumMax)
+        private void validateNewVisit(VisitImpl newVisit, List<VisitImpl> existingVisits, double seqNumMin, double seqNumMax)
         {
             for (VisitImpl existingVisit : existingVisits)
             {

@@ -42,7 +42,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
         Set<LocationImpl> enrollmentLocations;
         if (_enrollmentSiteId == null)

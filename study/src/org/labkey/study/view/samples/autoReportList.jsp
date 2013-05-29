@@ -45,7 +45,7 @@
     User user = me.getViewContext().getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
     Study study = StudyManager.getInstance().getStudy(container);
-    CohortImpl[] cohorts = null;
+    List<CohortImpl> cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
     String optionLabelStyle = "text-align:right";
@@ -101,12 +101,12 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
-    <form action="<%=  new ActionURL(factory.getAction(), container).getLocalURIString() %>" name="<%= formName %>" method="GET">
+    <form action="<%=  h(new ActionURL(factory.getAction(), container).getLocalURIString()) %>" name="<%= h(formName) %>" method="GET">
         <%
             if (bean.isListView())
             {
         %>
-            <div class="<%= rowClass %>">
+            <div class="<%= text(rowClass) %>">
                 <div style="text-align:right"><span class="labkey-strong"><%= h(factory.getLabel())%></span>
                     <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
                     <%= generateSubmitButton("View") %>
@@ -115,9 +115,9 @@ This folder does not contain a study.
         <%
             }
         %>
-        <div class="<%= rowClass %>">
+        <div class="<%= text(rowClass) %>">
             <div>
-                <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
+                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>">
                     <table>
                 <%
                     if (showCohorts && factory.allowsCohortFilter())

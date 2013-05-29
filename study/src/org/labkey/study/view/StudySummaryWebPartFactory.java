@@ -76,7 +76,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return _study;
         }
 
-        public Visit[] getVisits(Visit.Order order)
+        public List<? extends Visit> getVisits(Visit.Order order)
         {
             return getStudy().getVisits(order);
         }
@@ -86,12 +86,12 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getDataSets();
         }
 
-        public Location[] getSites() throws SQLException
+        public List<? extends Location> getSites() throws SQLException
         {
             return getStudy().getLocations();
         }
 
-        public Cohort[] getCohorts(User user) throws SQLException
+        public List<? extends Cohort> getCohorts(User user) throws SQLException
         {
             return getStudy().getCohorts(user);
         }

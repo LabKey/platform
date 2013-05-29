@@ -41,7 +41,7 @@ public abstract class BaseStudyPage extends JspBase
         return _study;
     }
 
-    protected VisitImpl[] getVisits(Visit.Order order)
+    protected List<VisitImpl> getVisits(Visit.Order order)
     {
         return getStudy().getVisits(order);
     }
@@ -51,12 +51,12 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getDataSets();
     }
 
-    protected LocationImpl[] getLocations()
+    protected List<LocationImpl> getLocations()
     {
         return getStudy().getLocations();
     }
 
-    protected CohortImpl[] getCohorts(User user)
+    protected List<CohortImpl> getCohorts(User user)
     {
         return getStudy().getCohorts(user);
     }

@@ -1060,7 +1060,7 @@ public class ReportsController extends BaseStudyController
     public static class CreateCrosstabBean
     {
         private DataSetDefinition[] _datasets;
-        private VisitImpl[] _visits;
+        private List<VisitImpl> _visits;
 
         public CreateCrosstabBean(ViewContext context) throws ServletException
         {
@@ -1074,7 +1074,7 @@ public class ReportsController extends BaseStudyController
             return _datasets;
         }
 
-        public VisitImpl[] getVisits()
+        public List<VisitImpl> getVisits()
         {
             return _visits;
         }

@@ -85,15 +85,15 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                 return Collections.<SpecimenVisitReport>emptyList();
         }
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        Map<Integer, VisitImpl[]> visitListCache = new HashMap<Integer, VisitImpl[]>(); // cohort rowId -> visits
+        Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visits
         boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
-        VisitImpl[] allVisits = null;
+        List<VisitImpl> allVisits = null;
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
             SimpleFilter filter = new SimpleFilter(StudyService.get().getSubjectColumnName(getContainer()), participantId);
             addBaseFilters(filter);
-            VisitImpl[] visits = null;
+            List<VisitImpl> visits = null;
             if (showCohorts)
             {
                 CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);

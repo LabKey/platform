@@ -40,6 +40,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -82,7 +83,7 @@ public class CohortController extends BaseStudyController
     {
         public ActionURL getRedirectURL(Object form) throws Exception
         {
-            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             for (CohortImpl cohort : cohorts)
             {
                 if (!cohort.isInUse())

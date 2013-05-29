@@ -132,7 +132,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         // than a text entry box:
         if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
-            final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
+            final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
             ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
             if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
             {

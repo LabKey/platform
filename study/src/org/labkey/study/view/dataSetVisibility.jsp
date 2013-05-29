@@ -41,7 +41,7 @@
 %>
 
 <%
-    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 
@@ -101,14 +101,14 @@
         <tr>
             <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="label" value="<%= data.label != null ? data.label : "" %>">
+                <input type="text" size="20" name="label" value="<%= h(data.label != null ? data.label : "") %>">
             </td>
             <td>
                 <div id="<%=h(id + "-viewcategory")%>"></div>
             </td>
             <td>
                 <%
-                    if (cohorts == null || cohorts.length == 0)
+                    if (cohorts == null || cohorts.size() == 0)
                     {
                 %>
                     <em>No cohorts defined</em>
@@ -124,7 +124,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= data.cohort != null && data.cohort.intValue() == cohort.getRowId() ? "SELECTED" : ""%>>
+                        <option value="<%= cohort.getRowId()%>" <%= text(data.cohort != null && data.cohort.intValue() == cohort.getRowId() ? "SELECTED" : "") %>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -137,15 +137,15 @@
             </td>
             <td>
                 <select name="statuses">
-                    <option value="" <%=data.status == null || data.status.equals("None") ? "selected=\"selected\"" : "" %>>None</option>
-                    <option value="Draft" <%=data.status != null && data.status.equals("Draft") ? "selected=\"selected\"" : "" %>>Draft</option>
-                    <option value="Final" <%=data.status != null && data.status.equals("Final") ? "selected=\"selected\"" : "" %>>Final</option>
-                    <option value="Locked" <%=data.status != null && data.status.equals("Locked") ? "selected=\"selected\"" : "" %>>Locked</option>
-                    <option value="Unlocked" <%=data.status != null && data.status.equals("Unlocked") ? "selected=\"selected\"" : "" %>>Unlocked</option>
+                    <option value="" <%= text(data.status == null || data.status.equals("None") ? "selected=\"selected\"" : "") %>>None</option>
+                    <option value="Draft" <%= text(data.status != null && data.status.equals("Draft") ? "selected=\"selected\"" : "") %>>Draft</option>
+                    <option value="Final" <%= text(data.status != null && data.status.equals("Final") ? "selected=\"selected\"" : "") %>>Final</option>
+                    <option value="Locked" <%= text(data.status != null && data.status.equals("Locked") ? "selected=\"selected\"" : "") %>>Locked</option>
+                    <option value="Unlocked" <%= text(data.status != null && data.status.equals("Unlocked") ? "selected=\"selected\"" : "") %>>Unlocked</option>
                 </select>
             </td>
             <td align="center">
-                <input type="checkbox" name="visible" <%= data.visible ? "Checked" : "" %> value="<%= id %>">
+                <input type="checkbox" name="visible" <%= text(data.visible ? "Checked" : "") %> value="<%= id %>">
                 <input type="hidden" name="ids" value="<%= id %>">
             </td>
         </tr>

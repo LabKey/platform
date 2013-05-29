@@ -82,9 +82,9 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             ds.setDatasetId(dd.getDataSetId()); // upper/lowercase problem
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != DataSet.KeyManagementType.None);
 
-            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<String, String>();
-            if (cohorts != null && cohorts.length > 0)
+            if (cohorts != null && cohorts.size() > 0)
             {
                 cohortMap.put("All", "");
                 for (CohortImpl cohort : cohorts)

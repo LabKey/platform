@@ -25,12 +25,13 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.StatusSettings" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    SampleRequestStatus[] statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
+    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
     Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
     StatusSettings settings = SampleManager.getInstance().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();
@@ -50,7 +51,7 @@ function showSystemRows(value)
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
             searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
     </tr>
-    <tr><td><input type="checkbox" name="useShoppingCart" <%= settings.isUseShoppingCart() ? "CHECKED" : "" %> onclick='showSystemRows(this.checked);'>
+    <tr><td><input type="checkbox" name="useShoppingCart" <%= text(settings.isUseShoppingCart() ? "CHECKED" : "") %> onclick='showSystemRows(this.checked);'>
         Allow requests to be built over multiple searches before submission</td></tr>
     <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">The specimen request administrator moves requests through states for
@@ -62,7 +63,7 @@ function showSystemRows(value)
         <table>
             <tr>
                 <th>&nbsp;</th>
-                <th><%= statuses != null && statuses.length > 0 ? "Step Number" : "&nbsp;" %></th>
+                <th><%= text(statuses != null && statuses.size()> 0 ? "Step Number" : "&nbsp;") %></th>
                 <th>Status Name</th>
                 <th>Final
                     State<%= helpPopup("Final States", "States are final if they indicate no further processing will occur for a request.  For example, 'Completed', or 'Rejected' could be final states.")%></th>
@@ -70,12 +71,12 @@ function showSystemRows(value)
                     Specimens<%= helpPopup("Locked Specimen States", "Specifies whether specimens should be available for additional requests while in each status.")%></th>
             </tr>
             <%
-            if (statuses != null && statuses.length > 0)
+            if (statuses != null && statuses.size() > 0)
             {
                 for(SampleRequestStatus status : statuses)
                 {
             %>
-                    <tr <%= status.isSystemStatus() ? "id=\"systemStatusRow\"" : "" %> <%= !showSystemStatuses && status.isSystemStatus() ? "style=\"display:none\"" : "" %>>
+                    <tr <%= text(status.isSystemStatus() ? "id=\"systemStatusRow\"" : "") %> <%= text(!showSystemStatuses && status.isSystemStatus() ? "style=\"display:none\"" : "") %>>
                 <%
                     if (status.isSystemStatus() || inUseStatuses.contains(status.getRowId()))
                     {
@@ -102,16 +103,16 @@ function showSystemRows(value)
                                 }
                             %>
                             <input type="text" name="labels" size="40"
-                                   value="<%= status.getLabel() != null ? h(status.getLabel()) : "" %>"
-                                    <%= status.isSystemStatus() ? "DISABLED" : "" %>>
+                                   value="<%= h(status.getLabel() != null ? status.getLabel() : "") %>"
+                                    <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
                         </td>
                         <td align="center"><input type="checkbox" name="finalStateIds"
-                                      value="<%= status.getRowId() %>" <%= status.isFinalState() ? "CHECKED" : ""
-                                      %> <%= status.isSystemStatus() ? "DISABLED" : "" %>>
+                                      value="<%= status.getRowId() %>" <%= text(status.isFinalState() ? "CHECKED" : "")
+                                      %> <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
                         </td>
                         <td align="center"><input type="checkbox" name="specimensLockedIds"
-                                      value="<%= status.getRowId() %>" <%= status.isSpecimensLocked() ? "CHECKED" : ""%>
-                                <%= status.isSystemStatus() ? "DISABLED" : "" %>>
+                                      value="<%= status.getRowId() %>" <%= text(status.isSpecimensLocked() ? "CHECKED" : "")%>
+                                <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
                         </td>
                     </tr>
                     <%
@@ -130,10 +131,10 @@ function showSystemRows(value)
                 <td>&nbsp;</td>
                 <td colspan="3">
                     <%= generateSubmitButton("Save")%>&nbsp;
-                    <%= buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;")%>
+                    <%= text(buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;"))%>
                     <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                    <%= buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getViewContext().getContainer()).getLocalURIString() + "'; return true;")%>
-                    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageStatusesAction.class, getViewContext().getContainer()).getLocalURIString()%>">
+                    <%= text(buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getViewContext().getContainer()).getLocalURIString() + "'; return true;"))%>
+                    <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getViewContext().getContainer()).getLocalURIString())%>">
                 </td>
             </tr>
         </table>

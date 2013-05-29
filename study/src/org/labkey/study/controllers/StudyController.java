@@ -4214,7 +4214,7 @@ public class StudyController extends BaseStudyController
             return order;
         }
 
-        private Map<Integer, Integer> getVisitIdToZeroMap(VisitImpl[] visits) throws ServletException
+        private Map<Integer, Integer> getVisitIdToZeroMap(List<VisitImpl> visits) throws ServletException
         {
             Map<Integer, Integer> order = new HashMap<Integer, Integer>();
             for (VisitImpl visit : visits)
@@ -4226,7 +4226,7 @@ public class StudyController extends BaseStudyController
         {
             Map<Integer, Integer> displayOrder = null;
             Map<Integer, Integer> chronologicalOrder = null;
-            VisitImpl[] visits = StudyManager.getInstance().getVisits(getStudy(), Visit.Order.SEQUENCE_NUM);
+            List<VisitImpl> visits = StudyManager.getInstance().getVisits(getStudy(), Visit.Order.SEQUENCE_NUM);
 
             if (form.isExplicitDisplayOrder())
                 displayOrder = getVisitIdToOrderIndex(form.getDisplayOrder());

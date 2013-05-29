@@ -33,6 +33,7 @@ import org.labkey.study.samples.settings.RequestNotificationSettings;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,8 +66,8 @@ public class DefaultRequestNotification
 
     public final String getSpecimenListHTML(ViewContext context) throws SQLException, IOException
     {
-        Specimen[] specimens = getSpecimenList();
-        if (specimens != null && specimens.length > 0)
+        List<Specimen> specimens = getSpecimenList();
+        if (specimens != null && specimens.size() > 0)
         {
             SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
             view.setDisableLowVialIndicators(true);
@@ -82,8 +83,8 @@ public class DefaultRequestNotification
             RequestNotificationSettings.SpecimensAttachmentEnum.TextAttachment == settings.getSpecimensAttachmentEnum())
         {
             ByteArrayAttachmentFile specimenListFile = null;
-            Specimen[] specimens = getSpecimenList();
-            if (specimens != null && specimens.length > 0)
+            List<Specimen> specimens = getSpecimenList();
+            if (specimens != null && specimens.size() > 0)
             {
                 SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
                 view.setDisableLowVialIndicators(true);
@@ -93,7 +94,7 @@ public class DefaultRequestNotification
                     specimenListFile = view.exportToTsvFile();
                 if (null != specimenListFile)
                 {
-                    List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
+                    List<AttachmentFile> attachments = new ArrayList<>();
                     attachments.add(specimenListFile);
                     AttachmentService.get().addAttachments(_event, attachments, context.getUser());
                 }
@@ -101,7 +102,7 @@ public class DefaultRequestNotification
         }
     }
 
-    protected Specimen[] getSpecimenList() throws SQLException
+    protected List<Specimen> getSpecimenList()
     {
         return _request.getSpecimens();
     }

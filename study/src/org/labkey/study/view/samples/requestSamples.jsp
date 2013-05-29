@@ -36,7 +36,7 @@
     List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
     boolean hasExtendedRequestView = SampleManager.getInstance().getExtendedSpecimenRequestView(context) != null;
-    Specimen[] specimens = bean.getSamples();
+    List<Specimen> specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
 %>
 <span class="labkey-error">
@@ -203,7 +203,7 @@ function setDefaults()
 
 
         <%
-            if (specimens != null && specimens.length > 0)
+            if (specimens != null && specimens.size() > 0)
             {
         %>
             <tr>

@@ -251,7 +251,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        PrimaryType[] primaryTypes = SampleManager.getInstance().getPrimaryTypes(container);
+        List<PrimaryType> primaryTypes = SampleManager.getInstance().getPrimaryTypes(container);
 
         for (PrimaryType type : primaryTypes)
         {

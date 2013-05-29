@@ -42,6 +42,8 @@
 <%@ page import="java.util.BitSet" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -173,10 +175,10 @@ li.ptid a.unhighlight
 
         // cohorts
         final HashMap<Integer,Integer> cohortMap = new HashMap<Integer,Integer>();
-        CohortImpl[] cohorts = new CohortImpl[0];
+        List<CohortImpl> cohorts = Collections.emptyList();
         if (StudyManager.getInstance().showCohorts(container, user))
             cohorts = StudyManager.getInstance().getCohorts(container, user);
-        boolean hasCohorts = cohorts.length > 0;
+        boolean hasCohorts = cohorts.size() > 0;
         boolean hasUnenrolledCohorts = false;
         if (hasCohorts)
         {
@@ -234,7 +236,7 @@ li.ptid a.unhighlight
             memberSets[i] = new BitSet();
         if (hasCohorts)
         {
-            final int nocohort = cohorts.length;
+            final int nocohort = cohorts.size();
             memberSets[nocohort].flip(0,ptidMap.size());
             (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {

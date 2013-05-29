@@ -29,13 +29,14 @@
 <%@ page import="org.labkey.study.model.VisitDataSetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
     StudyController.VisitSummaryBean visitBean = me.getModelBean();
     VisitImpl visit = visitBean.getVisit();
-    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 <labkey:errors/>
 <form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
@@ -81,7 +82,7 @@
             <td class=labkey-form-label>Cohort</td>
             <td>
                 <%
-                    if (cohorts == null || cohorts.length == 0)
+                    if (cohorts == null || cohorts.size() == 0)
                     {
                 %>
                     <em>No cohorts defined</em>

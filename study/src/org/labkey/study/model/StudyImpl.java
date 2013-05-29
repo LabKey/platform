@@ -206,7 +206,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public VisitImpl[] getVisits(Visit.Order order)
+    public List<VisitImpl> getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
     }
@@ -259,12 +259,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ids;
     }
 
-    public LocationImpl[] getLocations()
+    public List<LocationImpl> getLocations()
     {
         return StudyManager.getInstance().getSites(getContainer());
     }
 
-    public CohortImpl[] getCohorts(User user)
+    public List<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
     }
@@ -275,7 +275,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
     }
 
-    public SampleRequestStatus[] getSampleRequestStatuses(User user)
+    public List<SampleRequestStatus> getSampleRequestStatuses(User user)
     {
         return SampleManager.getInstance().getRequestStatuses(getContainer(), user);
     }
@@ -622,7 +622,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
-            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " dataset" +  (getDataSets().size() == 1 ?"" : "s") + "</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).length == 1 ? "" : "s") +
+            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " dataset" +  (getDataSets().size() == 1 ?"" : "s") + "</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " " + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s") +
                 ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
         }
         else
@@ -685,7 +685,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public List<Attachment> getProtocolDocuments()
     {
-        return new ArrayList<Attachment>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
+        return new ArrayList<>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
     }
 
     public String getSourceStudyContainerId()
@@ -725,8 +725,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public boolean isEmptyStudy()
     {
         List<DataSetDefinition> datasets = getDataSets();
-        Visit visits[] = getVisits(Visit.Order.DISPLAY);
-        return visits.length < 1 && datasets.size() < 1;
+        List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
+        return visits.size() < 1 && datasets.size() < 1;
     }
 
     public void removeProtocolDocument(String name, User user)

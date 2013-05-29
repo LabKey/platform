@@ -677,9 +677,9 @@ public class SpecimenUtils
     }
 
 
-    public Specimen[] getSpecimensFromRowIds(int[] requestedSampleIds)
+    public List<Specimen> getSpecimensFromRowIds(int[] requestedSampleIds)
     {
-        Specimen[] requestedSpecimens = null;
+        List<Specimen> requestedSpecimens = null;
         if (requestedSampleIds != null)
         {
             List<Specimen> specimens = new ArrayList<Specimen>();
@@ -689,36 +689,36 @@ public class SpecimenUtils
                 if (current != null)
                     specimens.add(current);
             }
-            requestedSpecimens = specimens.toArray(new Specimen[specimens.size()]);
+            requestedSpecimens = specimens;
         }
         return requestedSpecimens;
 
     }
 
-    public Specimen[] getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
+    public List<Specimen> getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
     {
-        Specimen[] requestedSpecimens = null;
+        List<Specimen> requestedSpecimens = null;
         if (globalUniqueIds != null)
         {
-            List<Specimen> specimens = new ArrayList<Specimen>();
+            List<Specimen> specimens = new ArrayList<>();
             for (String globalUniqueId : globalUniqueIds)
             {
                 Specimen match = SampleManager.getInstance().getSpecimen(getContainer(), globalUniqueId);
                 if (match != null)
                     specimens.add(match);
             }
-            requestedSpecimens = specimens.toArray(new Specimen[specimens.size()]);
+            requestedSpecimens = new ArrayList<>(specimens);
         }
         return requestedSpecimens;
 
     }
 
-    public Specimen[] getSpecimensFromRowIds(Collection<String> ids)
+    public List<Specimen> getSpecimensFromRowIds(Collection<String> ids)
     {
         return getSpecimensFromRowIds(BaseStudyController.toIntArray(ids));
     }
 
-    public Specimen[] getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
+    public List<Specimen> getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
     {
         Set<String> formValues = null;
         if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
@@ -727,15 +727,15 @@ public class SpecimenUtils
         if (formValues == null || formValues.isEmpty())
             return null;
 
-        Specimen[] selectedVials;
+        List<Specimen> selectedVials;
         if (fromGroupedView)
         {
             Map<String, List<Specimen>> keyToVialMap =
                     SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, onlyAvailable);
-            List<Specimen> vials = new ArrayList<Specimen>();
+            List<Specimen> vials = new ArrayList<>();
             for (List<Specimen> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
-            selectedVials = vials.toArray(new Specimen[vials.size()]);
+            selectedVials = new ArrayList<>(vials);
         }
         else
             selectedVials = getSpecimensFromRowIds(formValues);
@@ -776,19 +776,19 @@ public class SpecimenUtils
     public static class RequestedSpecimens
     {
         private Collection<Integer> _providingLocationIds;
-        private Specimen[] _specimens;
-        private Location[] _providingLocations;
+        private List<Specimen> _specimens;
+        private List<Location> _providingLocations;
 
-        public RequestedSpecimens(Specimen[] specimens, Collection<Integer> providingLocationIds)
+        public RequestedSpecimens(List<Specimen> specimens, Collection<Integer> providingLocationIds)
         {
             _specimens = specimens;
             _providingLocationIds = providingLocationIds;
         }
 
-        public RequestedSpecimens(Specimen[] specimens)
+        public RequestedSpecimens(List<Specimen> specimens)
         {
             _specimens = specimens;
-            _providingLocationIds = new HashSet<Integer>();
+            _providingLocationIds = new HashSet<>();
             if (specimens != null)
             {
                 for (Specimen vial : specimens)
@@ -796,26 +796,25 @@ public class SpecimenUtils
             }
         }
 
-        public Location[] getProvidingLocations()
+        public List<Location> getProvidingLocations()
         {
             if (_providingLocations == null)
             {
-                if (_specimens == null || _specimens.length == 0)
-                    _providingLocations = new Location[0];
+                if (_specimens == null || _specimens.size() == 0)
+                    _providingLocations = Collections.emptyList();
                 else
                 {
-                    Container container = _specimens[0].getContainer();
-                    _providingLocations = new Location[_providingLocationIds.size()];
-                    int siteIndex = 0;
+                    Container container = _specimens.get(0).getContainer();
+                    _providingLocations = new ArrayList<>(_providingLocationIds.size());
 
                     for (Integer locationId : _providingLocationIds)
-                        _providingLocations[siteIndex++] = StudyManager.getInstance().getLocation(container, locationId.intValue());
+                        _providingLocations.add(StudyManager.getInstance().getLocation(container, locationId.intValue()));
                 }
             }
             return _providingLocations;
         }
 
-        public Specimen[] getSpecimens()
+        public List<Specimen> getSpecimens()
         {
             return _specimens;
         }
@@ -823,13 +822,13 @@ public class SpecimenUtils
 
     public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
-        Specimen[] requestedSamples = getSpecimensFromRowIds(rowIds);
+        List<Specimen> requestedSamples = getSpecimensFromRowIds(rowIds);
         return new RequestedSpecimens(requestedSamples);
     }
 
     public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds)
     {
-        Specimen[] requestedSamples = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
+        List<Specimen> requestedSamples = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
         return new RequestedSpecimens(requestedSamples);
     }
 
@@ -838,7 +837,7 @@ public class SpecimenUtils
         Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
-            return new RequestedSpecimens(new Specimen[0]);
+            return new RequestedSpecimens(Collections.<Specimen>emptyList());
 
         if (preferredLocation == null)
         {
@@ -848,10 +847,10 @@ public class SpecimenUtils
             else if (preferredLocations.size() > 1)
                 throw new AmbiguousLocationException(getContainer(), preferredLocations);
         }
-        Specimen[] requestedSamples = new Specimen[vialsByHash.size()];
+        List<Specimen> requestedSamples = new ArrayList<>(vialsByHash.size());
 
         int i = 0;
-        Set<Integer> providingLocations = new HashSet<Integer>();
+        Set<Integer> providingLocations = new HashSet<>();
         for (List<Specimen> vials : vialsByHash.values())
         {
             Specimen selectedVial = null;
@@ -869,7 +868,7 @@ public class SpecimenUtils
             if (selectedVial == null)
                 throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
             providingLocations.add(selectedVial.getCurrentLocation());
-            requestedSamples[i++] = selectedVial;
+            requestedSamples.add(selectedVial);
         }
         return new RequestedSpecimens(requestedSamples, providingLocations);
     }

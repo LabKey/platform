@@ -22,6 +22,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.requirements.RequirementOwner;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: brittp
@@ -91,7 +92,7 @@ public class SampleRequest extends AbstractStudyCachable<SampleRequest> implemen
         _destinationSiteId = destinationSiteId;
     }
 
-    public Specimen[] getSpecimens()
+    public List<Specimen> getSpecimens()
     {
         return SampleManager.getInstance().getRequestSpecimens(this);
     }

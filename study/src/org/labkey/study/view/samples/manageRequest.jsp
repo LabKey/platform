@@ -39,12 +39,13 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies(){
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
         resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
         resources.add(ClientDependency.fromFilePath("study/StudyWizard.js"));
@@ -66,7 +67,7 @@
     SampleRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSampleRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSampleRequest().getCreatedBy());
-    LocationImpl[] locations = StudyManager.getInstance().getSites(context.getContainer());
+    List<LocationImpl> locations = StudyManager.getInstance().getSites(context.getContainer());
     boolean notYetSubmitted = false;
     if (manager.isSpecimenShoppingCartEnabled(context.getContainer()))
     {
@@ -80,7 +81,7 @@
         generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
                 "id=" + bean.getSampleRequest().getRowId()), null) : "";
 
-    Map<String, Container> folders = new HashMap<String, Container>();
+    Map<String, Container> folders = new HashMap<>();
     for (Container child : ContainerManager.getChildren(c))
         folders.put(child.getName(), child);
 
@@ -325,8 +326,8 @@
 %>
             <div style="padding-bottom: 0.5em">
 <%
-            Specimen[] specimens = bean.getSampleRequest().getSpecimens();
-            if (specimens != null && specimens.length > 0)
+            List<Specimen> specimens = bean.getSampleRequest().getSpecimens();
+            if (specimens != null && specimens.size() > 0)
             {
 %>
                 Request processing will begin after the request has been submitted.<br><br>

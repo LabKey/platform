@@ -172,8 +172,8 @@
     // get the data
 
 
-    VisitImpl[] allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
-    ArrayList<VisitImpl> visits = new ArrayList<VisitImpl>(visitSequenceMap.size());
+    List<VisitImpl> allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
+    ArrayList<VisitImpl> visits = new ArrayList<>(visitSequenceMap.size());
     for (VisitImpl visit : allVisits)
     {
         if (visitSequenceMap.containsKey(visit.getRowId()))
@@ -279,7 +279,7 @@
 
             // get the data for this dataset and group rows by SequenceNum/Key
             TableInfo table = querySchema.createDatasetTableInternal(dataset);
-            Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap();
+            Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap<>();
             FieldKey keyColumnName = null==dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
 
             if (!datasetSet.contains(datasetId))
@@ -293,9 +293,9 @@
                 double sequenceNum = dsResults.getDouble("SequenceNum");
                 Object key = null==keyColumnName ? "" : dsResults.getObject(keyColumnName);
 
-                Map keyMap = seqKeyRowMap.get(sequenceNum);
+                Map<Object, Map> keyMap = seqKeyRowMap.get(sequenceNum);
                 if (null == keyMap)
-                    seqKeyRowMap.put(sequenceNum, keyMap = new HashMap());
+                    seqKeyRowMap.put(sequenceNum, keyMap = new HashMap<>());
 
                 keyMap.put(key, dsResults.getRowMap());
             }
@@ -325,14 +325,14 @@
                 if (updateAccess)
                 {
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>">
+                <tr style="<%=text(expanded ? "" : "display:none")%>">
                     <td><a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a></td>
                 </tr>
                 <%
                 }
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString()%>"></td>
+                <tr style="<%=text(expanded ? "" : "display:none")%>">
+                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>"></td>
                 </tr>
                 <%
             }
@@ -340,7 +340,7 @@
             if (updateAccess)
             {
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>">
+                <tr style="<%=text(expanded ? "" : "display:none")%>">
                     <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row"><%=textLink("add chart",url.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%></td>
                 </tr>
                 <%
@@ -355,24 +355,24 @@
             {
                 row++;
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>"><td class="<%= className %>" align="left" nowrap>QC State</td><td class="<%= className %>">&nbsp;</td>
+                <tr style="<%=text(expanded ? "" : "display:none")%>"><td class="<%= text(className) %>" align="left" nowrap>QC State</td><td class="<%= text(className) %>">&nbsp;</td>
                 <%
                 for (VisitImpl visit : visits)
                 {
                     for (double seq : visitSequenceMap.get(visit.getRowId()))
                     {
-                        Map keyMap = seqKeyRowMap.get(seq);
+                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
                         int countTD = 0;
                         if (null != keyMap)
                         {
-                            for (Map.Entry<Object,Map> e : (Set<Map.Entry<Object,Map>>)keyMap.entrySet())
+                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
                             {
                                 Integer id = (Integer)e.getValue().get("QCState");
                                 QCState state = getQCState(study, id);
                                 boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
                                 %>
-                                    <td class="<%=className%>">
-                                        <%= state == null ? "Unspecified" : h(state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
+                                    <td class="<%=text(className)%>">
+                                        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
                                     </td>
                                 <%
                                 countTD++;
@@ -382,7 +382,7 @@
                         int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
                         if (countTD < maxTD)
                         {
-                            %><td class="<%=className%>" colspan="<%=maxTD-countTD%>">&nbsp;</td><%
+                            %><td class="<%=text(className)%>" colspan="<%=maxTD-countTD%>">&nbsp;</td><%
                         }
                     }
                 }
@@ -400,18 +400,18 @@
                 if (col == null) continue;
                 row++;
                 className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
-                String labelName = StringUtils.defaultString(col.getLabel(), col.getName());;
+                String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
                 %>
-                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><td>&nbsp;</td><%
+                <tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>"><td align="left" nowrap><%=h(labelName)%></td><td>&nbsp;</td><%
                 for (VisitImpl visit : visits)
                 {
                     for (double seq : visitSequenceMap.get(visit.getRowId()))
                     {
-                        Map keyMap = seqKeyRowMap.get(seq);
+                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
                         int countTD = 0;
                         if (null != keyMap)
                         {
-                            for (Map.Entry<Object,Map> e : (Set<Map.Entry<Object,Map>>)keyMap.entrySet())
+                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
                             {
                                 Map propMap = e.getValue();
                                 if (sourceLsidColumn.getValue(propMap) != null)
@@ -436,16 +436,16 @@
                 row++;
                 className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 %>
-                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><td>&nbsp;</td><%
+                <tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>"><td align="left" nowrap>Details</td><td>&nbsp;</td><%
                 for (VisitImpl visit : visits)
                 {
                     for (double seq : visitSequenceMap.get(visit.getRowId()))
                     {
-                        Map keyMap = seqKeyRowMap.get(seq);
+                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
                         int countTD = 0;
                         if (null != keyMap)
                         {
-                            for (Map.Entry<Object,Map> e : (Set<Map.Entry<Object,Map>>)keyMap.entrySet())
+                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
                             {
                                 String link = "&nbsp;";
                                 Map propMap = e.getValue();
@@ -457,7 +457,7 @@
                                     sourceURL.addParameter("sourceLsid", sourceLsid);
                                     link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
                                 }
-                                %><td><%= link%></td><%
+                                %><td><%= text(link)%></td><%
                                 countTD++;
                             }
                         }
@@ -483,7 +483,7 @@ QCState getQCState(Study study, Integer id)
     if (null == qcstates)
     {
         QCState[] states = StudyManager.getInstance().getQCStates(study.getContainer());
-        qcstates = new HashMap<Integer,QCState>(2*states.length);
+        qcstates = new HashMap<>(2*states.length);
         for (QCState state : states)
             qcstates.put(state.getRowId(), state);
     }
@@ -496,7 +496,7 @@ Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
     List<ColumnInfo> cols = t.getColumns();
     // Use all of the columns in the default view of the dataset, which might include columns from the assay side if
     // the data was linked
-    Set<FieldKey> keys = new java.util.LinkedHashSet<FieldKey>(t.getDefaultVisibleColumns());
+    Set<FieldKey> keys = new java.util.LinkedHashSet<>(t.getDefaultVisibleColumns());
     for (ColumnInfo c : cols)
         keys.add(c.getFieldKey());
     return QueryService.get().getColumns(t, keys);
@@ -513,7 +513,7 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
     final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
     if (sortMap != null && !sortMap.isEmpty())
     {
-        ArrayList<ColumnInfo> list = new ArrayList<ColumnInfo>(sortMap.size());
+        ArrayList<ColumnInfo> list = new ArrayList<>(sortMap.size());
         for (ColumnInfo col : cols)
         {
             if (sortMap.containsKey(col.getName()))
@@ -524,7 +524,7 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
                 list.set(index, col);
             }
         }
-        List<ColumnInfo> results = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> results = new ArrayList<>();
         for (ColumnInfo col : list)
             if (col != null)
                 results.add(col);
@@ -533,7 +533,7 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
 
     // default list
     String subjectcol = StudyService.get().getSubjectColumnName(context.getContainer());
-    List<ColumnInfo> ret = new ArrayList<ColumnInfo>(cols.size());
+    List<ColumnInfo> ret = new ArrayList<>(cols.size());
     for (ColumnInfo col : cols)
     {
         if (skipColumns.contains(col.getName()))

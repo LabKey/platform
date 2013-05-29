@@ -58,9 +58,7 @@
                 participant.getParticipantId());
         participant2Cohort.put(participant, cohort);
     }
-    CohortImpl[] cohortArray = manager.getCohorts(study.getContainer(), HttpView.currentContext().getUser());
-    List<CohortImpl> cohorts = new ArrayList<CohortImpl>();
-    cohorts.addAll(Arrays.asList(cohortArray));
+    List<CohortImpl> cohorts = new ArrayList<>(manager.getCohorts(study.getContainer(), HttpView.currentContext().getUser()));
 
     // Need a null cohort for manual removal of cohort setting
     CohortImpl nullCohort = new CohortImpl();
@@ -81,7 +79,7 @@
         {
             %>
             <b>Note:</b> All users with read access to this folder can view Cohort information.
-                If cohort blinding is required, <a href="<%= securityUrl.getLocalURIString() %>">enable dataset-level security</a>.<p>
+                If cohort blinding is required, <a href="<%= h(securityUrl.getLocalURIString()) %>">enable dataset-level security</a>.<p>
             <%
         }
     }
@@ -89,7 +87,7 @@
     {
         %>
         <b>Note:</b> All users with read access to this folder can view Cohort information.
-                If cohort blinding is required, enable automatic cohort assignment and <a href="<%= securityUrl.getLocalURIString() %>">dataset-level security</a>.<p>
+                If cohort blinding is required, enable automatic cohort assignment and <a href="<%= h(securityUrl.getLocalURIString()) %>">dataset-level security</a>.<p>
         <%
     }
     // If we're using automatic assignment, the user can't alter the specific assignments,
@@ -118,8 +116,8 @@
                 else
                 {
                     %>
-                <input type="hidden" name="participantId" value="<%=entry.getKey().getParticipantId()%>">
-                <select name="<%= CohortFilterFactory.Params.cohortId.name() %>"><%
+                <input type="hidden" name="participantId" value="<%=h(entry.getKey().getParticipantId())%>">
+                <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>"><%
                     // Need to display selection drop-down for each participant
                     CohortImpl selectedCohort = entry.getValue();
                     
@@ -131,7 +129,7 @@
                         String selected = c.getRowId() == selectedCohort.getRowId() ? "selected" : "";
                         
                     %>
-                    <option value="<%=c.getRowId()%>" <%= selected %>><%=h(c.getLabel())%></option>
+                    <option value="<%=c.getRowId()%>" <%= text(selected) %>><%=h(c.getLabel())%></option>
                     <%
 
                     }

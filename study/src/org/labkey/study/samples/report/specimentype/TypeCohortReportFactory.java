@@ -88,7 +88,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             addCohortFilter(filter, cohortFilter);
-            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+            List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
             reports.add(new TypeCohortReport(title, visits, filter, this, cohortFilter));
         }
         return reports;

@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
 <form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
     <table>
@@ -44,7 +45,7 @@
             </td>
             <td>
                 <%
-                    if (cohorts == null || cohorts.length == 0)
+                    if (cohorts == null || cohorts.size() == 0)
                     {
                 %>
                     <em>No cohorts defined</em>

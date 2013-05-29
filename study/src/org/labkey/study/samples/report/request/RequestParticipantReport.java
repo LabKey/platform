@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.sql.SQLException;
@@ -35,7 +36,7 @@ import java.sql.SQLException;
 public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.RequestSummaryByVisitType>
 {
     private boolean _completeRequestsOnly;
-    public RequestParticipantReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
+    public RequestParticipantReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _completeRequestsOnly = parameters.isCompletedRequestsOnly();

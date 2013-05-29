@@ -26,7 +26,7 @@
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
 <%
-    if (getVisits(Visit.Order.DISPLAY).length > 0)
+    if (getVisits(Visit.Order.DISPLAY).size() > 0)
     {
 %>
     <tr>
@@ -60,7 +60,7 @@
 </table>
 
 <%
-    if (getVisits(Visit.Order.DISPLAY).length > 0)
+    if (getVisits(Visit.Order.DISPLAY).size() > 0)
     {
 %>
 <p>
@@ -80,10 +80,10 @@
     %>
         <tr>
             <td><%= textLink("edit", buildURL(VisitSummaryAction.class)+ "id=" + visit.getRowId()) %></td>
-            <th align=left><%= visit.getDisplayString() %></th>
-            <td><%= visit.getSequenceNumMin() %><%= visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? "-" + visit.getSequenceNumMax() : ""%></td>
-            <td><%= visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All"%></td>
-            <td><%= visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]"%></td>
+            <th align=left><%= h(visit.getDisplayString()) %></th>
+            <td><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? "-" + visit.getSequenceNumMax() : "") %></td>
+            <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
+            <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>
             <td><%= visit.isShowByDefault()%></td>
         </tr>
     <%

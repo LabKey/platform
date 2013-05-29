@@ -95,7 +95,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    private List<Map<String, Object>> getSpecimenListResponse(Specimen[] vials) throws SQLException
+    private List<Map<String, Object>> getSpecimenListResponse(List<Specimen> vials) throws SQLException
     {
         List<Map<String, Object>> response = new ArrayList<Map<String, Object>>();
         for (Specimen vial : vials)
@@ -157,7 +157,7 @@ public class SpecimenApiController extends BaseStudyController
         SampleRequestStatus status = SampleManager.getInstance().getRequestStatus(request.getContainer(), request.getStatusId());
         if (status != null)
             map.put("status", status.getLabel());
-        Specimen[] vials = SampleManager.getInstance().getRequestSpecimens(request);
+        List<Specimen> vials = SampleManager.getInstance().getRequestSpecimens(request);
         map.put("vials", getSpecimenListResponse(vials));
         return map;
     }
@@ -234,7 +234,7 @@ public class SpecimenApiController extends BaseStudyController
                 boolean allUsers = getContainer().hasPermission(getUser(), ManageRequestsPermission.class);
                 if (requestsForm.isAllUsers() != null)
                     allUsers = requestsForm.isAllUsers().booleanValue();
-                SampleRequest[] allUserRequests = SampleManager.getInstance().getRequests(container, allUsers ? null : user);
+                List<SampleRequest> allUserRequests = SampleManager.getInstance().getRequests(container, allUsers ? null : user);
                 List<SampleRequest> nonFinalRequests = new ArrayList<SampleRequest>();
                 for (SampleRequest request : allUserRequests)
                 {
@@ -342,7 +342,7 @@ public class SpecimenApiController extends BaseStudyController
             List<Map<String, Object>> vialList;
             if (form.getRowIds() != null && form.getRowIds().length > 0)
             {
-                Specimen[] vials = SampleManager.getInstance().getSpecimens(container, form.getRowIds());
+                List<Specimen> vials = SampleManager.getInstance().getSpecimens(container, form.getRowIds());
                 vialList = getSpecimenListResponse(vials);
             }
             else
@@ -512,14 +512,14 @@ public class SpecimenApiController extends BaseStudyController
         {
             SampleRequest request = getRequest(getUser(), getContainer(), vialRequestForm.getRequestId(), true, true);
             List<Integer> rowIds = new ArrayList<Integer>();
-            Specimen[] currentSpecimens = request.getSpecimens();
+            List<Specimen> currentSpecimens = request.getSpecimens();
             for (String vialId : vialRequestForm.getVialIds())
             {
                 Specimen vial = getVial(vialId, vialRequestForm.getIdType());
                 Specimen toRemove = null;
-                for (int i = 0; i < currentSpecimens.length && toRemove == null; i++)
+                for (int i = 0; i < currentSpecimens.size() && toRemove == null; i++)
                 {
-                    Specimen possible = currentSpecimens[i];
+                    Specimen possible = currentSpecimens.get(i);
                     if (possible.getRowId() == vial.getRowId())
                         toRemove = possible;
                 }
@@ -560,13 +560,12 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(AddSampleToRequestForm addSampleToRequestForm, BindException errors) throws Exception
         {
             final SampleRequest request = getRequest(getUser(), getContainer(), addSampleToRequestForm.getRequestId(), true, true);
-            Set<String> hashes = new HashSet<String>();
+            Set<String> hashes = new HashSet<>();
             Collections.addAll(hashes, addSampleToRequestForm.getSpecimenHashes());
             SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySampleHash(hashes, addSampleToRequestForm.getPreferredLocation());
-            if (requested.getSpecimens().length > 0)
+            if (requested.getSpecimens().size() > 0)
             {
-                List<Specimen> specimens = new ArrayList<Specimen>(requested.getSpecimens().length);
-                Collections.addAll(specimens, requested.getSpecimens());
+                List<Specimen> specimens = new ArrayList<>(requested.getSpecimens());
                 try
                 {
                     SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);

@@ -27,13 +27,14 @@
 <%@ page import="org.labkey.study.model.VisitDataSetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
     StudyController.VisitSummaryBean visitBean = me.getModelBean();
     VisitImpl visit = visitBean.getVisit();
-    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 <labkey:errors/>
 <form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
@@ -62,7 +63,7 @@
             <th align="right">Cohort</th>
             <td>
                 <%
-                    if (cohorts == null || cohorts.length == 0)
+                    if (cohorts == null || cohorts.size() == 0)
                     {
                 %>
                     <em>No cohorts defined</em>
@@ -71,14 +72,14 @@
                     else
                     {
                     %>
-                    <select name="<%= CohortFilterFactory.Params.cohortId.name() %>">
+                    <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>">
                         <option value="">All</option>
                     <%
 
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
+                        <option value="<%= cohort.getRowId()%>" <%= text(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : "") %>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -93,7 +94,7 @@
         <tr>
             <th align="right">Show By Default</th>
             <td>
-                <input type="checkbox" name="showByDefault" <%= visit.isShowByDefault() ? "checked" : "" %>>
+                <input type="checkbox" name="showByDefault" <%= text(visit.isShowByDefault() ? "checked" : "") %>>
             </td>
         </tr>
         <tr>
@@ -101,7 +102,7 @@
             <td>
                 <table>
                 <%
-                    HashMap<Integer, VisitDataSetType> typeMap = new HashMap<Integer, VisitDataSetType>();
+                    HashMap<Integer, VisitDataSetType> typeMap = new HashMap<>();
                     for (VisitDataSet vds : visit.getVisitDataSets())
                         typeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 
@@ -112,16 +113,16 @@
                             type = VisitDataSetType.NOT_ASSOCIATED;
                 %>
                         <tr>
-                            <td><%= dataSet.getDisplayString() %></td>
+                            <td><%= h(dataSet.getDisplayString()) %></td>
                             <td>
                                 <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
                                 <select name="dataSetStatus">
-                                    <option value="<%= VisitDataSetType.NOT_ASSOCIATED.name() %>"
-                                        <%= type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : ""%>></option>
-                                    <option value="<%= VisitDataSetType.OPTIONAL.name() %>"
-                                        <%= type == VisitDataSetType.OPTIONAL ? "selected" : ""%>>Optional</option>
-                                    <option value="<%= VisitDataSetType.REQUIRED.name() %>"
-                                        <%= type == VisitDataSetType.REQUIRED ? "selected" : ""%>>Required</option>
+                                    <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
+                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "") %>></option>
+                                    <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
+                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "") %>>Optional</option>
+                                    <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
+                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "") %>>Required</option>
                                 </select>
                             </td>
                         </tr>

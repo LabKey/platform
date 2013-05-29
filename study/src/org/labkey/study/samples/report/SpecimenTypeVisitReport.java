@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Collection;
 import java.util.TreeMap;
@@ -36,7 +37,7 @@ import java.sql.SQLException;
  */
 public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitType>
 {
-    public SpecimenTypeVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenTypeVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
     }

@@ -69,7 +69,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();

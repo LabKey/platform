@@ -846,9 +846,9 @@ public class SpecimenImporter
 
     private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
 
-    private static Set<String> getConflictingEventColumns(SpecimenEvent[] events)
+    private static Set<String> getConflictingEventColumns(List<SpecimenEvent> events)
     {
-        if (events.length <= 1)
+        if (events.size() <= 1)
             return Collections.emptySet();
         Set<String> conflicts = new HashSet<>();
 
@@ -860,10 +860,10 @@ public class SpecimenImporter
                 {
                     // lower the case of the first character:
                     String propName = col.getDbColumnName().substring(0, 1).toLowerCase() + col.getDbColumnName().substring(1);
-                    for (int i = 0; i < events.length - 1; i++)
+                    for (int i = 0; i < events.size() - 1; i++)
                     {
-                        SpecimenEvent event = events[i];
-                        SpecimenEvent nextEvent = events[i + 1];
+                        SpecimenEvent event = events.get(i);
+                        SpecimenEvent nextEvent = events.get(i + 1);
                         Object currentValue = PropertyUtils.getProperty(event, propName);
                         Object nextValue = PropertyUtils.getProperty(nextEvent, propName);
                         if (!Objects.equals(currentValue, nextValue))
@@ -1106,7 +1106,7 @@ public class SpecimenImporter
         // clear caches before determining current sites:
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(container);
         SampleManager.getInstance().clearCaches(container);
-        Specimen[] specimens;
+        List<Specimen> specimens;
         int offset = 0;
         Map<Integer, LocationImpl> siteMap = new HashMap<>();
         String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
@@ -1123,7 +1123,7 @@ public class SpecimenImporter
             if (logger != null)
                 logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
 
-            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setMaxRows(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArray(Specimen.class);
+            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setMaxRows(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArrayList(Specimen.class);
 
             List<List<?>> vialPropertiesParams = new ArrayList<>();
             List<List<?>> commentParams = new ArrayList<>();
@@ -1208,7 +1208,7 @@ public class SpecimenImporter
                     String message = null;
                     if (comment.isQualityControlFlag() || comment.isQualityControlFlagForced())
                     {
-                        SpecimenEvent[] events = SampleManager.getInstance().getSpecimenEvents(specimen);
+                        List<SpecimenEvent> events = SampleManager.getInstance().getSpecimenEvents(specimen);
                         Set<String> conflicts = getConflictingEventColumns(events);
                         if (!conflicts.isEmpty())
                         {
@@ -1241,7 +1241,7 @@ public class SpecimenImporter
                 Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
             offset += CURRENT_SITE_UPDATE_SIZE;
         }
-        while (specimens.length > 0);
+        while (specimens.size() > 0);
 
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         updateSpecimenProcessingInfo(container, logger);

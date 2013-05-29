@@ -375,7 +375,7 @@ public abstract class VisitManager
      */
     public TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
-        VisitImpl[] visits = getStudy().getVisits(Visit.Order.DISPLAY);
+        List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<Double, VisitImpl>();
         for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(),v);

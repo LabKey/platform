@@ -19,13 +19,15 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.api.data.SimpleFilter;
 
+import java.util.List;
+
 /**
  * User: brittp
  * Created: Feb 4, 2008 3:48:04 PM
  */
 public class ParticipantSiteReport extends ParticipantVisitReport
 {
-    public ParticipantSiteReport(String title, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantSiteReport(String title, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(title, visits, filter, parameters);
     }

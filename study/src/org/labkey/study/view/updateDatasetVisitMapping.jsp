@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -41,8 +42,8 @@
     Container container = HttpView.currentContext().getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(container);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
-    Map<Integer, String> cohortMap = new HashMap<Integer, String>();
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
+    Map<Integer, String> cohortMap = new HashMap<>();
     cohortMap.put(null, "All");
 
     if (cohorts != null)
@@ -56,8 +57,8 @@
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
 %>
 
-<form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
-<%=generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId()))%>
+<form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
+<%=generateSubmitButton("Save")%>&nbsp;<%= text(this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())))%>
 <% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
         <tr>
@@ -92,9 +93,9 @@
         <%
             }
         %>
-        <tr><td class="labkey-form-label">Demographic Data</td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
+        <tr><td class="labkey-form-label">Demographic Data</td><td><%= text(dataset.isDemographicData() ? "true" : "false") %></td></tr>
         <tr>
-            <td class="labkey-form-label">Show In Overview</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td>
+            <td class="labkey-form-label">Show In Overview</td><td><%= text(dataset.isShowByDefault() ? "true" : "false") %></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description</td>
@@ -106,11 +107,11 @@
                 <%
                 if (dataset.getTypeURI() == null)
                 {
-                    %><a href="importDataType.view?<%=DataSetDefinition.DATASETKEY%>=<%= dataset.getDataSetId() %>">[Upload]</a><%
+                    %><a href="importDataType.view?<%=h(DataSetDefinition.DATASETKEY)%>=<%= dataset.getDataSetId() %>">[Upload]</a><%
                 }
                 else
                 {
-                    %><%= dataset.getTypeURI() %><%
+                    %><%= h(dataset.getTypeURI()) %><%
                 }
                 %>
             </td>
@@ -128,16 +129,16 @@
                         VisitDataSetType type = dataset.getVisitType(visit.getRowId());
                 %>
                         <tr>
-                            <td><%= visit.getDisplayString() %></td>
+                            <td><%= h(visit.getDisplayString()) %></td>
                             <td>
                                 <input type="hidden" name="visitRowIds" value="<%= visit.getRowId() %>">
                                 <select name="visitStatus">
-                                    <option value="<%= VisitDataSetType.NOT_ASSOCIATED.name() %>"
-                                        <%= type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : ""%>/>
-                                    <option value="<%= VisitDataSetType.OPTIONAL.name() %>"
-                                        <%= type == VisitDataSetType.OPTIONAL ? "selected" : ""%>>Optional</option>
-                                    <option value="<%= VisitDataSetType.REQUIRED.name() %>"
-                                        <%= type == VisitDataSetType.REQUIRED ? "selected" : ""%>>Required</option>
+                                    <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
+                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "") %>/>
+                                    <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
+                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "")%>>Optional</option>
+                                    <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
+                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "")%>>Required</option>
                                 </select>
                             </td>
                         </tr>
@@ -149,5 +150,5 @@
         </tr>
     </table>
 <% WebPartView.endTitleFrame(out); %>
-<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class), "id=" + dataset.getDataSetId())%>
+<%= this.generateSubmitButton("Save")%>&nbsp;<%= text(this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class), "id=" + dataset.getDataSetId()))%>
 </form>

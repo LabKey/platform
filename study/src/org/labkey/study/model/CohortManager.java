@@ -236,8 +236,8 @@ public class CohortManager
     {
         if (StudyManager.getInstance().showCohorts(container, user))
         {
-            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
-            return cohorts.length > 0;
+            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
+            return cohorts.size() > 0;
         }
         return false;
     }
@@ -245,8 +245,8 @@ public class CohortManager
 
     public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
     {
-        CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
-        if (cohorts.length > 0)
+        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
+        if (cohorts.size() > 0)
         {
             String caption = "Cohorts";
             Study study = StudyManager.getInstance().getStudy(container);
@@ -471,7 +471,7 @@ public class CohortManager
             Integer prevCohortId = null;
 
             Map<String, Integer> cohortNameToId = new HashMap<String, Integer>();
-            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
+            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
             for (CohortImpl cohort : cohorts)
                 cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
 
