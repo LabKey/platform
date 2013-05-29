@@ -36,6 +36,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.core.CoreController;
@@ -58,6 +59,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         super(coreSchema);
 
         setDescription("Contains one row for each workbook in this folder or project");
+        setName("Workbooks");
 
         List<FieldKey> defCols = new ArrayList<>();
         defCols.add(FieldKey.fromParts("ID"));
@@ -83,7 +85,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm)) && _userSchema.getContainer().hasPermission(user, perm);
+            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm)) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }
 
@@ -167,8 +169,24 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            // XXX: Allow updating title and description
-            throw new UnsupportedOperationException();
+            String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
+            Container workbook = null;
+            try
+            {
+                int id = Integer.parseInt(idString);
+                workbook = ContainerManager.getForRowId(id);
+            }
+            catch (NumberFormatException e) {}
+
+            if (null == workbook || !workbook.isWorkbook())
+                throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
+
+            // Only allow description and title to be updated
+            if (row.containsKey("Description"))
+                ContainerManager.updateDescription(workbook, (String)row.get("Description"), user);
+            if (row.containsKey("Title"))
+                ContainerManager.updateTitle(workbook, (String)row.get("Title"), user);
+            return row;
         }
 
         @Override
