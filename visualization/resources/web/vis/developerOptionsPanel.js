@@ -72,8 +72,8 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
                         this.codeMirror.setSize(null, size.height + 'px');
                         this.codeMirror.setValue(this.pointClickFn ? this.pointClickFn : '');
+                        LABKEY.codemirror.RegisterEditorInstance('point-click-fn-textarea', this.codeMirror);
                     }
-
                 },
                 scope: this
             }
@@ -153,7 +153,8 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     setEditorEnabled: function(editorValue) {
         this.pointClickFn = editorValue;
         this.pointClickTextAreaHtml.enable();
-        this.codeMirror.setValue(editorValue);
+        if (this.codeMirror)
+            this.codeMirror.setValue(editorValue);
         this.pointClickFnBtn.setText('Disable');
     },
 

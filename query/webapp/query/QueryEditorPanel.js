@@ -173,7 +173,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                         });
 
                         this.codeMirror.setSize(null, size.height + 'px');
-                        LABKEY.query.RegisterEditorInstance(this.editorId, this.codeMirror);
+                        LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
                     }
 
                     this.doLayout(false, true);
@@ -517,14 +517,6 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         this.queryEditorPanel.onSave(showView);
     }
 });
-
-LABKEY.query.RegisterEditorInstance = function(id, instance){
-
-    var cm = LABKEY.CodeMirror || {};
-    cm[id] = instance;
-
-    LABKEY.CodeMirror = cm;
-};
 
 LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
