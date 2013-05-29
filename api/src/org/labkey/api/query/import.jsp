@@ -32,7 +32,7 @@
 
 %>
 <% if (bean.importMessage != null) {
-        %><div><b><%=h(bean.importMessage)%></b></div><p></p><%
+        %><div><%=h(bean.importMessage)%></div><p></p><%
 
    }
 %>
@@ -55,7 +55,7 @@
 
     }
 }%>
-<div id="<%=errorDivId%>" class="labkey-error">
+<div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
 <table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
@@ -63,14 +63,14 @@
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Copy/paste text</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
 </tr>
-<tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
+<tr><td colspan=2 style="display:inline;"><div id="<%=text(copyPasteDivId)%>"></div></td></tr>
 </table>
 <br>
 <table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Upload file (.xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>
-<tr><td colspan=2><div id="<%=uploadFileDivId%>"></div></td></tr>
+<tr><td colspan=2><div id="<%=text(uploadFileDivId)%>"></div></td></tr>
 </table>
 
 <script type="text/javascript">
