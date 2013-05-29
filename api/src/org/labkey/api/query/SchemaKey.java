@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -69,6 +70,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
         return SchemaKey.fromString(FACTORY, DIVIDER, parent, str);
     }
 
+    @JsonCreator
     static public SchemaKey fromParts(List<String> parts)
     {
         return QueryKey.fromParts(FACTORY, parts);

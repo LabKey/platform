@@ -58,7 +58,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -170,7 +169,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey().toString(), dataKeys.keySet());
+            filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
             ContainerFilterable dataTable = schema.createDataTable();
@@ -185,11 +184,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-            List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> dataMaps = new ArrayList<>();
             Container sourceContainer = null;
             ResultSet rs = null;
 
-            Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<Container, Set<Integer>>();
+            Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
 
             try
             {
@@ -206,7 +205,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     TimepointType studyType = AssayPublishService.get().getTimepointType(targetStudyContainer);
 
-                    Map<String, Object> dataMap = new HashMap<String, Object>();
+                    Map<String, Object> dataMap = new HashMap<>();
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
                     String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId());
@@ -237,7 +236,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
                     if (rowIds == null)
                     {
-                        rowIds = new HashSet<Integer>();
+                        rowIds = new HashSet<>();
                         rowIdsByTargetContainer.put(targetStudyContainer, rowIds);
                     }
                     rowIds.add(publishKey.getDataId());
@@ -468,7 +467,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
         domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
-        return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user)
@@ -496,7 +495,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             studyProp.setShownInInsertView(true);
         }
 
-        return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 
     /**
@@ -504,7 +503,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
      */
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<>();
         try
         {
             ExperimentService.get().ensureTransaction();
@@ -535,7 +534,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
     {
-        List<AssayDataCollector> result = new ArrayList<AssayDataCollector>();
+        List<AssayDataCollector> result = new ArrayList<>();
         if (!PipelineDataCollector.getFileQueue(context).isEmpty())
         {
             result.add(new PipelineDataCollector());
@@ -576,7 +575,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
                     if (primaryInputData != null)
                     {
-                        Map<String, File> oldFiles = new HashMap<String, File>();
+                        Map<String, File> oldFiles = new HashMap<>();
                         oldFiles.put(AssayDataCollector.PRIMARY_FILE, primaryInputData.getFile());
                         result.add(new PreviouslyUploadedDataCollector(oldFiles));
                     }
@@ -594,7 +593,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public AssayRunCreator getRunCreator()
     {
-        return new DefaultAssayRunCreator<AbstractAssayProvider>(this);
+        return new DefaultAssayRunCreator<>(this);
     }
 
     public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
@@ -617,15 +616,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         Domain domain = getResultsDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Result, targetStudyDP);
+            return new Pair<>(ExpProtocol.AssayDomainTypes.Result, targetStudyDP);
 
         domain = getRunDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Run, targetStudyDP);
+            return new Pair<>(ExpProtocol.AssayDomainTypes.Run, targetStudyDP);
 
         domain = getBatchDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Batch, targetStudyDP);
+            return new Pair<>(ExpProtocol.AssayDomainTypes.Batch, targetStudyDP);
 
         return null;
     }
@@ -702,7 +701,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private Set<String> getPropertyDomains(ExpProtocol protocol)
     {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         for (ObjectProperty prop : protocol.getObjectProperties().values())
         {
             Lsid lsid = new Lsid(prop.getPropertyURI());
@@ -716,12 +715,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol)
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> domains = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
+        List<Pair<Domain, Map<DomainProperty, Object>>> domains = new ArrayList<>();
         for (String uri : getPropertyDomains(protocol))
         {
             Domain domain = PropertyService.get().getDomain(protocol.getContainer(), uri);
             Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
-            domains.add(new Pair<Domain, Map<DomainProperty, Object>>(domain, values));
+            domains.add(new Pair<>(domain, values));
         }
         sortDomainList(domains);
         return domains;
@@ -731,7 +730,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
         copy.setName(null);
-        return new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(copy, createDefaultDomains(targetContainer, user));
+        return new Pair<>(copy, createDefaultDomains(targetContainer, user));
     }
 
     protected void sortDomainList(List<Pair<Domain, Map<DomainProperty, Object>>> domains)
@@ -752,7 +751,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getApplicationType(), toCopy.getName());
         copy.setDescription(toCopy.getDescription());
-        Map<String, ObjectProperty> copiedProps = new HashMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> copiedProps = new HashMap<>();
         for (ObjectProperty prop : toCopy.getObjectProperties().values())
         {
             copiedProps.put(createPropertyURI(copy, prop.getName()), prop);
@@ -760,12 +759,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         copy.setObjectProperties(copiedProps);
 
         List<Pair<Domain, Map<DomainProperty, Object>>> originalDomains = getDomains(toCopy);
-        List<Pair<Domain, Map<DomainProperty, Object>>> copiedDomains = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>(originalDomains.size());
+        List<Pair<Domain, Map<DomainProperty, Object>>> copiedDomains = new ArrayList<>(originalDomains.size());
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : originalDomains)
         {
             Domain domain = domainInfo.getKey();
             Map<DomainProperty, Object> originalDefaults = domainInfo.getValue();
-            Map<DomainProperty, Object> copiedDefaults = new HashMap<DomainProperty, Object>();
+            Map<DomainProperty, Object> copiedDefaults = new HashMap<>();
 
             String uri = domain.getTypeURI();
             Lsid domainLsid = new Lsid(uri);
@@ -780,9 +779,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 copiedDefaults.put(propCopy, originalDefaults.get(propSrc));
                 propCopy.copyFrom(propSrc, targetContainer);
             }
-            copiedDomains.add(new Pair<Domain, Map<DomainProperty, Object>>(domainCopy, copiedDefaults));
+            copiedDomains.add(new Pair<>(domainCopy, copiedDefaults));
         }
-        return new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(copy, copiedDomains);
+        return new Pair<>(copy, copiedDomains);
     }
 
     public boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain)
@@ -803,11 +802,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Domain runDomain = getRunDomain(protocol);
         DomainProperty[] runColumns = runDomain.getProperties();
 
-        List<DomainProperty> pds = new ArrayList<DomainProperty>();
+        List<DomainProperty> pds = new ArrayList<>();
         pds.addAll(Arrays.asList(runColumns));
         pds.addAll(Arrays.asList(batchColumns));
 
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(run.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(run.getObjectProperties());
         ExpExperiment batch = AssayService.get().findBatch(run);
         if (batch != null)
         {
@@ -840,11 +839,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
-        Map<String, Set<String>> domainMap = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> domainMap = new HashMap<>();
         Set<String> batchProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_BATCH);
         if (batchProperties == null)
         {
-            batchProperties = new HashSet<String>();
+            batchProperties = new HashSet<>();
             domainMap.put(ExpProtocol.ASSAY_DOMAIN_BATCH, batchProperties);
         }
         batchProperties.add(PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
@@ -936,11 +935,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos =  getDomains(protocol);
-        List<Domain> domains = new ArrayList<Domain>();
+        List<Domain> domains = new ArrayList<>();
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
             domains.add(domainInfo.getKey());
 
-        Set<Container> defaultValueContainers = new HashSet<Container>();
+        Set<Container> defaultValueContainers = new HashSet<>();
         defaultValueContainers.add(protocol.getContainer());
         defaultValueContainers.addAll(protocol.getExpRunContainers());
         clearDefaultValues(defaultValueContainers, domains);
@@ -1012,7 +1011,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
             {
-                Set<ExpMaterial> newInputs = new LinkedHashSet<ExpMaterial>();
+                Set<ExpMaterial> newInputs = new LinkedHashSet<>();
                 newInputs.addAll(materialInputs);
                 newInputs.removeAll(protApp.getInputMaterials());
                 int index = 1;
@@ -1035,7 +1034,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException
     {
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
 
         StringBuilder sb = new StringBuilder();
@@ -1097,7 +1096,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
-        List<File> result = new ArrayList<File>();
+        List<File> result = new ArrayList<>();
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
             ObjectProperty transformScripts = protocol.getObjectProperties().get(ScriptType.TRANSFORM.getPropertyURI(protocol));
@@ -1128,7 +1127,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private void setBooleanProperty(ExpProtocol protocol, String propertySuffix, boolean value)
     {
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
 
         String propertyURI = createPropertyURI(protocol, propertySuffix);
         ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), propertyURI, value);
@@ -1255,7 +1254,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter)
     {
-        List<NavTree> result = new ArrayList<NavTree>();
+        List<NavTree> result = new ArrayList<>();
         result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter))));
         if (isBackgroundUpload(protocol))
         {
