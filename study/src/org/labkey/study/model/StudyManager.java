@@ -2605,117 +2605,146 @@ public class StudyManager
 
     public int setImportedAlternateParticipantIds(Study study, DataLoader dl, BatchValidationException errors) throws IOException
     {
-        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, true, true);
+        // Use first line to determine order of columns we care about
+        // The first columcn in the data must contain the ones we are seeking
+        String[][] firstline = dl.getFirstNLines(1);
+        if (null == firstline || 0 == firstline.length)
+            return 0;       // Unexpected but just in case
 
-        CaseInsensitiveHashSet usedIds = new CaseInsensitiveHashSet();
-        for (ParticipantInfo participantInfo : participantInfos.values())
+        boolean seenParticipantId = false;
+        boolean seenAlternateIdOrDateOffset = false;
+        boolean headerError = false;
+        ColumnDescriptor[] columnDescriptors = new ColumnDescriptor[3];
+        for (int i = 0; i < 3 && i < firstline[0].length; i += 1)
         {
-            String alternateId = participantInfo.getAlternateId();
-            if (alternateId != null)
+            String header = firstline[0][i];
+            switch (header)
             {
-                usedIds.add(alternateId);
+                case PTID_COLUMN_NAME:
+                    columnDescriptors[i] = new ColumnDescriptor(PTID_COLUMN_NAME, String.class);
+                    seenParticipantId = true;
+                    break;
+                case ALTERNATEID_COLUMN_NAME:
+                    columnDescriptors[i] = new ColumnDescriptor(ALTERNATEID_COLUMN_NAME, String.class);
+                    seenAlternateIdOrDateOffset = true;
+                    break;
+                case DATEOFFSET_COLUMN_NAME:
+                    columnDescriptors[i] = new ColumnDescriptor(DATEOFFSET_COLUMN_NAME, Integer.class);
+                    seenAlternateIdOrDateOffset = true;
+                    break;
+                default:
+                    if (i < 2)
+                        headerError = true;
+                    break;
             }
+            if (headerError)
+                break;
         }
 
-        dl.setHasColumnHeaders(true);
-        List<Map<String, Object>> rows = dl.load();
-
-        // Ensure that no columns other than ParticiapntId, AlternateId and DateOffset are present
-        if (!rows.isEmpty())
+        int rowCount = 0;
+        if (!seenParticipantId || !seenAlternateIdOrDateOffset || headerError)
         {
-            Set<String> keys = new HashSet<>(rows.get(0).keySet());
-            keys.remove(PTID_COLUMN_NAME);
-            keys.remove(ALTERNATEID_COLUMN_NAME);
-            keys.remove(DATEOFFSET_COLUMN_NAME);
-            if (!keys.isEmpty())
+            errors.addRowError(new ValidationException("There must be a header row, which must contain " + PTID_COLUMN_NAME + ", and may optionally contain " +
+                    ALTERNATEID_COLUMN_NAME + " and " + DATEOFFSET_COLUMN_NAME + "."));
+        }
+        else
+        {
+            assert null != columnDescriptors[0] && null != columnDescriptors[1];        // Since we've seen PTID and 1 other
+            if (null == columnDescriptors[2])
+                columnDescriptors = Arrays.copyOf(columnDescriptors, 2);    // Can't hand DataLoader a null column
+
+            // Now get loader to load all rows with correct columns and types
+            dl.setColumns(columnDescriptors);
+            dl.setHasColumnHeaders(true);
+            dl.setThrowOnErrors(true);
+            dl.setInferTypes(false);
+
+            // Note alternateIds that are already used
+            Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, true, true);
+            CaseInsensitiveHashSet usedIds = new CaseInsensitiveHashSet();
+            for (ParticipantInfo participantInfo : participantInfos.values())
             {
-                errors.addRowError(new ValidationException("There must be a header row, which must contain " + PTID_COLUMN_NAME + ", and may optionally contain " + ALTERNATEID_COLUMN_NAME + " and " + DATEOFFSET_COLUMN_NAME + "."));
+                String alternateId = participantInfo.getAlternateId();
+                if (alternateId != null)
+                {
+                    usedIds.add(alternateId);
+                }
             }
-            else
+
+            List<Map<String, Object>> rows = dl.load();
+            rowCount = rows.size();
+
+            // Remove used alternateIds for participantIds that are in the list to be changed
+            for (Map<String, Object> row : rows)
             {
-                // Remove used alternateIds for participantIds that are in the list to be changed
+                String participantId = Objects.toString(row.get(PTID_COLUMN_NAME), null);
+                String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
+                if (null != participantId && null != alternateId)
+                {
+                    ParticipantInfo participantInfo = participantInfos.get(participantId);
+                    if (null != participantInfo)
+                    {
+                        String currentAlternateId = participantInfo.getAlternateId();
+                        if (null != currentAlternateId && !alternateId.equalsIgnoreCase(currentAlternateId))
+                            usedIds.remove(currentAlternateId);     // remove as it will get replaced
+                    }
+                }
+            }
+
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
+            {
                 for (Map<String, Object> row : rows)
                 {
                     String participantId = Objects.toString(row.get(PTID_COLUMN_NAME), null);
+                    if (null == participantId)
+                    {
+                        // ParticipantId must be specified
+                        errors.addRowError(new ValidationException("A ParticipantId must be specified."));
+                        break;
+                    }
+
                     String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
-                    if (null != participantId && null != alternateId)
-                    {
-                        ParticipantInfo participantInfo = participantInfos.get(participantId);
-                        if (null != participantInfo)
-                        {
-                            String currentAlternateId = participantInfo.getAlternateId();
-                            if (null != currentAlternateId && !alternateId.equalsIgnoreCase(currentAlternateId))
-                                usedIds.remove(currentAlternateId);     // remove as it will get replaced
-                        }
-                    }
-                }
+                    Integer dateOffset = (null != row.get(DATEOFFSET_COLUMN_NAME)) ? (Integer)row.get(DATEOFFSET_COLUMN_NAME) : null;
 
-                try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
-                {
-                    for (Map<String, Object> row : rows)
+                    if (null == alternateId && null == dateOffset)
                     {
-                        String participantId = Objects.toString(row.get(PTID_COLUMN_NAME), null);
-                        if (null == participantId)
+                        errors.addRowError(new ValidationException("Either " + ALTERNATEID_COLUMN_NAME + " or " + DATEOFFSET_COLUMN_NAME + " must be specified."));
+                        break;
+                    }
+
+                    ParticipantInfo participantInfo = participantInfos.get(participantId);
+                    if (null != participantInfo)
+                    {
+                        String currentAlternateId = participantInfo.getAlternateId();
+                        if (null != alternateId && !alternateId.equalsIgnoreCase(currentAlternateId) && usedIds.contains(alternateId))
                         {
-                            // ParticipantId must be specified
-                            errors.addRowError(new ValidationException("A ParticipantId must be specified."));
+                            errors.addRowError(new ValidationException("Two participants may not share the same Alternate ID."));
                             break;
                         }
 
-                        String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
-                        Object dateOffsetObj = row.get(DATEOFFSET_COLUMN_NAME);
-
-                        if (null == alternateId && null == dateOffsetObj)
+                        if ((null != alternateId && !alternateId.equalsIgnoreCase(currentAlternateId)) ||
+                            (null != dateOffset && dateOffset != participantInfo.getDateOffset()))
                         {
-                            errors.addRowError(new ValidationException("Either " + ALTERNATEID_COLUMN_NAME + " or " + DATEOFFSET_COLUMN_NAME + " must be specified."));
-                            break;
-                        }
 
-                        Integer dateOffset = null;
-                        if (null != dateOffsetObj)
-                        {
-                            if (!(dateOffsetObj instanceof Integer))
-                            {
-                                errors.addRowError(new ValidationException(DATEOFFSET_COLUMN_NAME + " must be an integer."));
-                                break;
-                            }
-                            dateOffset = (Integer)dateOffsetObj;
-                        }
-
-                        ParticipantInfo participantInfo = participantInfos.get(participantId);
-                        if (null != participantInfo)
-                        {
-                            String currentAlternateId = participantInfo.getAlternateId();
-                            if (null != alternateId && usedIds.contains(alternateId) && !alternateId.equalsIgnoreCase(currentAlternateId) )
-                            {
-                                errors.addRowError(new ValidationException("Two participants may not share the same Alternate ID."));
-                                break;
-                            }
-
-                            if ((null != alternateId && !alternateId.equalsIgnoreCase(currentAlternateId)) ||
-                                (null != dateOffset && dateOffset != participantInfo.getDateOffset()))
-                            {
-
-                                setAlternateIdAndDateOffset(study, participantId, alternateId, dateOffset);
-                                if (null != alternateId)
-                                    usedIds.add(alternateId);                 // Add new id
-                            }
-                        }
-                        else
-                        {
-                            errors.addRowError(new ValidationException("ParticipantID " + participantId + " not found."));
+                            setAlternateIdAndDateOffset(study, participantId, alternateId, dateOffset);
+                            if (null != alternateId)
+                                usedIds.add(alternateId);                 // Add new id
                         }
                     }
-
-                    if (!errors.hasErrors())
-                        transaction.commit();
+                    else
+                    {
+                        errors.addRowError(new ValidationException("ParticipantID " + participantId + " not found."));
+                    }
                 }
+
+                if (!errors.hasErrors())
+                    transaction.commit();
             }
         }
+
         if (errors.hasErrors())
             return 0;
-
-        return rows.size();
+        return rowCount;
     }
 
     private void setAlternateId(Study study, String participantId, @Nullable String alternateId)
