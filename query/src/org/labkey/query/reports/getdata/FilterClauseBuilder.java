@@ -14,9 +14,9 @@ public class FilterClauseBuilder
     private CompareType _type;
     private Object _value;
 
-    public void setFieldKey(String[] fieldKey)
+    public void setFieldKey(FieldKey fieldKey)
     {
-        _fieldKey = FieldKey.fromParts(fieldKey);
+        _fieldKey = fieldKey;
     }
 
     public void setType(String typeName)

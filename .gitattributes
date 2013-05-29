@@ -2335,6 +2335,7 @@ query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
 query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
 query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text
 query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
+query/src/org/labkey/query/reports/getdata/AbstractBaseQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataTransform.java -text
 query/src/org/labkey/query/reports/getdata/AbstractReportDataSourceBuilder.java -text

@@ -23,25 +23,18 @@ import java.util.Map;
         @JsonSubTypes.Type(value=SchemaQueryReportDataSourceBuilder.class)})
 public abstract class AbstractReportDataSourceBuilder
 {
-    private SchemaKey _schemaName;
+    private SchemaKey _schemaKey;
     private String _containerFilterName;
     private Map<String, String> _parameters = Collections.emptyMap();
 
-    public SchemaKey getSchemaName()
+    public SchemaKey getSchemaKey()
     {
-        return _schemaName;
+        return _schemaKey;
     }
 
-    public void setSchemaName(String[] schemaName)
+    public void setSchemaName(SchemaKey schemaKey)
     {
-        if (schemaName.length == 1 && schemaName[0].contains("."))
-        {
-            _schemaName = SchemaKey.decode(schemaName[0]);
-        }
-        else
-        {
-            _schemaName = SchemaKey.fromParts(schemaName);
-        }
+        _schemaKey = schemaKey;
     }
 
     public ContainerFilter getContainerFilter(User user)

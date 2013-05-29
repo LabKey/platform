@@ -28,6 +28,6 @@ public class SchemaQueryReportDataSourceBuilder extends AbstractReportDataSource
     @Override
     public QueryReportDataSource create(User user, Container container)
     {
-        return new SchemaQueryReportDataSource(user, container, getSchemaName(), getQueryName(), getContainerFilter(user), getParameters());
+        return new SchemaQueryReportDataSource(user, container, getSchemaKey(), getQueryName(), getContainerFilter(user), getParameters());
     }
 }

@@ -68,7 +68,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         sb.append(getSource().getLabKeySQL());
         sb.append("\n) ");
         sb.append(SUBQUERY_ALIAS);
-        String where = _filters.toLabKeySQL(getSourceColumnMap());
+        String where = _filters.toLabKeySQL(getSource().getColumnMap(getRequiredInputs()));
         if (where.length() > 0)
         {
             sb.append("\nWHERE ");

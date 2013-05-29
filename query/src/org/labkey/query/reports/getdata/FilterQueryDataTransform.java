@@ -1,13 +1,10 @@
 package org.labkey.query.reports.getdata;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * User: jeckels
@@ -42,7 +39,7 @@ public class FilterQueryDataTransform extends AbstractQueryReportDataTransform
         sb.append(getSource().getLabKeySQL());
         sb.append("\n) ");
         sb.append(SUBQUERY_ALIAS);
-        String where = _filter.toLabKeySQL(getSourceColumnMap());
+        String where = _filter.toLabKeySQL(getSource().getColumnMap(getRequiredInputs()));
         if (where.length() > 0)
         {
             sb.append("\nWHERE ");

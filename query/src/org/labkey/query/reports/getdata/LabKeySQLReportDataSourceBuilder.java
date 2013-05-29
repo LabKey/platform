@@ -1,6 +1,5 @@
 package org.labkey.query.reports.getdata;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -29,6 +28,6 @@ public class LabKeySQLReportDataSourceBuilder extends AbstractReportDataSourceBu
     @Override
     public QueryReportDataSource create(User user, Container container)
     {
-        return new LabKeySQLReportDataSource(user, container, getSchemaName(), getContainerFilter(user), getParameters(), getSql());
+        return new LabKeySQLReportDataSource(user, container, getSchemaKey(), getContainerFilter(user), getParameters(), getSql());
     }
 }
