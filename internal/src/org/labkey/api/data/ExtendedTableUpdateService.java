@@ -1,6 +1,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -15,6 +16,7 @@ import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -56,9 +58,18 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        return super._update(user, c, row, oldRow, keys);
+        Map<String, Object> updatedRow = super.updateRow(user, container, row, oldRow);
+        try
+        {
+            _baseTableUpdateService.updateRows(user, container, Arrays.asList(row), Arrays.asList(oldRow), null);
+        }
+        catch (BatchValidationException e)
+        {
+            throw new QueryUpdateServiceException(e);
+        }
+        return updatedRow;
     }
 
     @Override
