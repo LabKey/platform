@@ -138,10 +138,10 @@
                 }]
             });
 
-            var displayDoneChangingMessage = function() {
+            var displayDoneChangingMessage = function(title, msg) {
                 Ext4.MessageBox.show({
-                    title: "Change All Alternate IDs",
-                    msg: "Changing Alternate IDs is complete.",
+                    title: title,
+                    msg: msg,
                     buttons: Ext4.MessageBox.OK,
                     icon: Ext4.MessageBox.INFO
                 });
@@ -162,7 +162,7 @@
                                 url : (LABKEY.ActionURL.buildURL("study", "changeAlternateIds")),
                                 method : 'POST',
                                 success: function(){
-                                    displayDoneChangingMessage();
+                                    displayDoneChangingMessage("Change All Alternate IDs", "Changing Alternate IDs is complete.");
                                 },
                                 failure: function(response, options){
                                     LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
@@ -349,7 +349,10 @@
                         method : 'POST',
 
                         success: function(details){
-                            displayDoneChangingMessage();
+                            if(dataSetId != -1)
+                                displayDoneChangingMessage("Change All Alternate IDs", "Changing Alternate IDs is complete.");
+                            else
+                                displayDoneChangingMessage("Delete Alternate ID settings", "Alternate ID settings cleared.")
                             aliasDataSetId = dataSetId;
                             if(dataSetId != -1)
                                 importButton.setDisabled(false);
