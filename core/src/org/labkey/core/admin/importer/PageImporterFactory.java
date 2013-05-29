@@ -156,11 +156,11 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         
                         if (null != webpartXml.getProperties())
                         {
-                            PagesDocument.Pages.Page.Webpart.Properties.Property[] properyXmls = webpartXml.getProperties().getPropertyArray();
-                            Map<String, String> propertyMap = new HashMap<String, String>();
-                            for (PagesDocument.Pages.Page.Webpart.Properties.Property properyXml : properyXmls)
+                            PagesDocument.Pages.Page.Webpart.Properties.Property[] propertyXmls = webpartXml.getProperties().getPropertyArray();
+                            Map<String, String> propertyMap = new HashMap<>();
+                            for (PagesDocument.Pages.Page.Webpart.Properties.Property propertyXml : propertyXmls)
                             {
-                                propertyMap.put(properyXml.getKey(), properyXml.getValue());
+                                propertyMap.put(propertyXml.getKey(), propertyXml.getValue());
                             }
 
                             WebPartFactory factory = Portal.getPortalPart(webPart.getName());

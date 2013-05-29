@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Builder to receive JSON deserialization for a data source for the GetData API and create the real data source.
  *
- * Subclasses are serialized in JSON based on the "type" propery, which chooses the appropriate subclass.
+ * Subclasses are serialized in JSON based on the "type" property, which chooses the appropriate subclass.
  * User: jeckels
  * Date: 5/20/13
  */

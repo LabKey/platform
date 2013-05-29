@@ -320,7 +320,7 @@ public class ExpGeneratorHelper
                 ExperimentServiceImpl.get().loadParameter(job.getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), "ProtocolApplicationId", app.getRowId());
             }
 
-            // If there are any propery settings, transfer them here
+            // If there are any property settings, transfer them here
             for (Map.Entry<PropertyDescriptor, Object> prop : action.getProps().entrySet())
             {
                 PropertyDescriptor pd = prop.getKey();
