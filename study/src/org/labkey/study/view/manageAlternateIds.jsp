@@ -50,19 +50,30 @@
     Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
 <div style="max-width: 1000px">
-<p>You can link <%= PageFlowUtil.filter(subjectNounPlural)%> in this folder with <%= PageFlowUtil.filter(subjectNounPlural)%> from another source.</p>
-<h2>Manage <%= PageFlowUtil.filter(subjectNounSingular)%> IDs</h2>
-<p>Alternate <%= PageFlowUtil.filter(subjectNounSingular) %> IDs allow you to publish a study with all <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> IDs
-    replaced by randomly generated alternate IDs. Alternate IDs are unique and are automatically generated for all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %>.
-    Alternate IDs will not change unless you explicitly request to change them. You may specify a prefix and the number of digits you want for the Alternate IDs.
+<h2>Alternate <%= PageFlowUtil.filter(subjectNounSingular)%> IDs</h2>
+<p>Alternate <%= PageFlowUtil.filter(subjectNounSingular) %> IDs allow you to publish and export a study with all <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> IDs
+    replaced by randomly generated alternate IDs or by IDs you specify. Alternate IDs must be unique. The Change Alternate IDs button clears all alternate IDs, whether you had specified them or not.
+    Random alternate IDs will then be generated automatically for all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> using
+    the prefix and the number of digits specified below.
+</p>
+<p>
+    Every <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> is also given a date offset that is used when you publish or export a study, if you request date shifting. Date offsets never change.
+    The Export button exports a TSV that contains the alternate ID and date offset for each <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %>.
+    The Import button imports a TSV that contains an alternate ID and/or date offset for some or all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %>.
 </p>
 </div>
 <div id="alternateIdsPanel"></div>
+
+<div style="max-width: 1000px">
 <h2><%= PageFlowUtil.filter(subjectNounSingular)%> Aliases</h2>
-<p>Each <%= PageFlowUtil.filter(subjectNounSingular)%> in the folder can have more than one alternative ID.  To set up <%= PageFlowUtil.filter(subjectNounSingular)%>
-    linking specify the dataset that contains <%= PageFlowUtil.filter(subjectNounSingular)%> aliases.</p>
-<p>Each alias may have a "source" which should be a short name for the organization that uses the ID.</p>
+<p>You may link <%= PageFlowUtil.filter(subjectNounPlural).toLowerCase()%> in this study with <%= PageFlowUtil.filter(subjectNounPlural).toLowerCase()%> from another source
+    by specifying a dataset that contains aliases for each <%= PageFlowUtil.filter(subjectNounSingular).toLowerCase()%>.
+    You must also specify which dataset columns contain the aliases and source organization names that use the aliases.
+</p>
+</div>
 <div id="datasetMappingPanel"></div>
+
+<div id="donePanel"></div>
 
 <script type="text/javascript">
 
@@ -121,12 +132,8 @@
                         handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "exportParticipantTransforms");}
                     },{
                         xtype: 'button',
-                        text: 'Import Alternate Id Mapping',
+                        text: 'Import',
                         handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "importAlternateIdMapping.view");}
-                    },{
-                        xtype: 'button',
-                        text: 'Done',
-                        handler: function() {window.location = LABKEY.ActionURL.buildURL('study', 'manageStudy.view', null, null);}
                     }]
                 }]
             });
@@ -168,6 +175,28 @@
                     }
                 });
             };
+
+            var doneForm = Ext4.create('Ext.form.FormPanel', {
+                renderTo: 'donePanel',
+                bodyPadding: 10,
+                bodyStyle: 'background: none',
+                frame: false,
+                border: false,
+                width: 600,
+                buttonAlign : 'left',
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    ui : 'footer',
+                    style : 'background: none',
+                    height : 30,
+                    items: [{
+                        xtype: 'button',
+                        text: 'Done',
+                        handler: function() {window.location = LABKEY.ActionURL.buildURL('study', 'manageStudy.view', null, null);}
+                    }]
+                }]
+            });
 
             //Alias mapping components start here
 
@@ -276,13 +305,13 @@
                         aliasCombo.fireEvent('dataloaded', aliasCombo);
                         sourceCombo.fireEvent('dataloaded', sourceCombo);
                         if(setup){
-                            if('<%=aliasColumn%>' != "")
+                            if('<%=h(aliasColumn)%>' != "")
                             {
-                                aliasCombo.select(aliasCombo.findRecord('header', '<%=aliasColumn%>'));
+                                aliasCombo.select(aliasCombo.findRecord('header', '<%=h(aliasColumn)%>'));
                             }
-                            if('<%=sourceColumn%>' != "")
+                            if('<%=h(sourceColumn)%>' != "")
                             {
-                                sourceCombo.select(sourceCombo.findRecord('header', '<%=sourceColumn%>'));
+                                sourceCombo.select(sourceCombo.findRecord('header', '<%=h(sourceColumn)%>'));
                             }
                         }
                     },

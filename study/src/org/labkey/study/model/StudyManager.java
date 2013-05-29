@@ -2460,6 +2460,7 @@ public class StudyManager
 
     private static final String ALTERNATEID_COLUMN_NAME = "AlternateId";
     private static final String DATEOFFSET_COLUMN_NAME = "DateOffset";
+    private static final String PTID_COLUMN_NAME = "ParticipantId";
     public class ParticipantInfo
     {
         private final String _alternateId;
@@ -2483,14 +2484,14 @@ public class StudyManager
     public Map<String, ParticipantInfo> getParticipantInfos(Study study, final boolean isShiftDates, final boolean isAlternateIds)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId, " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
         final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
         new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                String participantId = rs.getString("ParticipantId");
+                String participantId = rs.getString(PTID_COLUMN_NAME);
                 String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
                 int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
                 alternateIdMap.put(participantId, new ParticipantInfo(alternateId, dateOffset));
@@ -2626,75 +2627,138 @@ public class StudyManager
 
         dl.setHasColumnHeaders(true);
         List<Map<String, Object>> rows = dl.load();
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
+
+        // Ensure that no columns other than ParticiapntId, AlternateId and DateOffset are present
+        if (!rows.isEmpty())
         {
-            for (Map<String, Object> row : rows)
+            Set<String> keys = new HashSet<>(rows.get(0).keySet());
+            keys.remove(PTID_COLUMN_NAME);
+            keys.remove(ALTERNATEID_COLUMN_NAME);
+            keys.remove(DATEOFFSET_COLUMN_NAME);
+            if (!keys.isEmpty())
             {
-                String participantId = Objects.toString(row.get("ParticipantId"), null);
-                if (null == participantId)
+                errors.addRowError(new ValidationException("There must be a header row, which must contain " + PTID_COLUMN_NAME + ", and may optionally contain " + ALTERNATEID_COLUMN_NAME + " and " + DATEOFFSET_COLUMN_NAME + "."));
+            }
+            else
+            {
+                // Remove used alternateIds for participantIds that are in the list to be changed
+                for (Map<String, Object> row : rows)
                 {
-                    errors.addRowError(new ValidationException("Malformed input data."));
-                    break;
-                }
-
-                String alternateId = Objects.toString(row.get("AlternateId"), null);
-                if (null == alternateId)
-                {
-                    errors.addRowError(new ValidationException("Malformed input data."));
-                    break;
-                }
-
-                Object dateOffsetObj = row.get("DateOffset");
-                if (null == dateOffsetObj || !(dateOffsetObj instanceof Integer))
-                {
-                    errors.addRowError(new ValidationException("Malformed input data."));
-                    break;
-                }
-                Integer dateOffset = (Integer)dateOffsetObj;
-
-                ParticipantInfo participantInfo = participantInfos.get(participantId);
-                if (null != participantInfo)
-                {
-                    String currentAlternateId = participantInfo.getAlternateId();
-                    if (!alternateId.equalsIgnoreCase(currentAlternateId) || dateOffset != participantInfo.getDateOffset())
+                    String participantId = Objects.toString(row.get(PTID_COLUMN_NAME), null);
+                    String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
+                    if (null != participantId && null != alternateId)
                     {
-                        if (!alternateId.equalsIgnoreCase(currentAlternateId) && usedIds.contains(alternateId))
+                        ParticipantInfo participantInfo = participantInfos.get(participantId);
+                        if (null != participantInfo)
                         {
-                            errors.addRowError(new ValidationException("Two participants may not share the same Alternate ID."));
+                            String currentAlternateId = participantInfo.getAlternateId();
+                            if (null != currentAlternateId && !alternateId.equalsIgnoreCase(currentAlternateId))
+                                usedIds.remove(currentAlternateId);     // remove as it will get replaced
+                        }
+                    }
+                }
+
+                try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
+                {
+                    for (Map<String, Object> row : rows)
+                    {
+                        String participantId = Objects.toString(row.get(PTID_COLUMN_NAME), null);
+                        if (null == participantId)
+                        {
+                            // ParticipantId must be specified
+                            errors.addRowError(new ValidationException("A ParticipantId must be specified."));
                             break;
                         }
 
-                        setAlternateIdAndDateOffset(study, participantId, alternateId, dateOffset);
-                        if (null != currentAlternateId)
-                            usedIds.remove(currentAlternateId);       // Remove id that is no longer used
-                        usedIds.add(alternateId);                 // Add new id
+                        String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
+                        Object dateOffsetObj = row.get(DATEOFFSET_COLUMN_NAME);
+
+                        if (null == alternateId && null == dateOffsetObj)
+                        {
+                            errors.addRowError(new ValidationException("Either " + ALTERNATEID_COLUMN_NAME + " or " + DATEOFFSET_COLUMN_NAME + " must be specified."));
+                            break;
+                        }
+
+                        Integer dateOffset = null;
+                        if (null != dateOffsetObj)
+                        {
+                            if (!(dateOffsetObj instanceof Integer))
+                            {
+                                errors.addRowError(new ValidationException(DATEOFFSET_COLUMN_NAME + " must be an integer."));
+                                break;
+                            }
+                            dateOffset = (Integer)dateOffsetObj;
+                        }
+
+                        ParticipantInfo participantInfo = participantInfos.get(participantId);
+                        if (null != participantInfo)
+                        {
+                            String currentAlternateId = participantInfo.getAlternateId();
+                            if (null != alternateId && usedIds.contains(alternateId) && !alternateId.equalsIgnoreCase(currentAlternateId) )
+                            {
+                                errors.addRowError(new ValidationException("Two participants may not share the same Alternate ID."));
+                                break;
+                            }
+
+                            if ((null != alternateId && !alternateId.equalsIgnoreCase(currentAlternateId)) ||
+                                (null != dateOffset && dateOffset != participantInfo.getDateOffset()))
+                            {
+
+                                setAlternateIdAndDateOffset(study, participantId, alternateId, dateOffset);
+                                if (null != alternateId)
+                                    usedIds.add(alternateId);                 // Add new id
+                            }
+                        }
+                        else
+                        {
+                            errors.addRowError(new ValidationException("ParticipantID " + participantId + " not found."));
+                        }
                     }
+
+                    if (!errors.hasErrors())
+                        transaction.commit();
                 }
             }
-
-            transaction.commit();
         }
-
         if (errors.hasErrors())
             return 0;
 
         return rows.size();
     }
 
-    private void setAlternateId(Study study, String participantId, String alternateId)
+    private void setAlternateId(Study study, String participantId, @Nullable String alternateId)
     {
+        // Set alternateId even if null, because that's how we clear it
         SQLFragment sql = new SQLFragment(String.format(
                 "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", _tableInfoParticipant.getSelectName()),
                 alternateId, study.getContainer(), participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private void setAlternateIdAndDateOffset(Study study, String participantId, String alternateId, int dateOffset)
+    private void setAlternateIdAndDateOffset(Study study, String participantId, @Nullable String alternateId, @Nullable Integer dateOffset)
     {
-        SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId = ?, DateOffset = ? WHERE Container = ? AND ParticipantId = ?", _tableInfoParticipant.getSelectName()),
-                alternateId, dateOffset, study.getContainer(),  participantId);
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        // Only set alternateId and/or dateOffset if non-null
+        assert null != participantId;
+        if (null != alternateId || null != dateOffset)
+        {
+            SQLFragment sql = new SQLFragment("UPDATE " + _tableInfoParticipant.getSelectName() + " SET ");
+            boolean needComma = false;
+            if (null != alternateId)
+            {
+                sql.append("AlternateId = ?").add(alternateId);
+                needComma = true;
+            }
+            if (null != dateOffset)
+            {
+                if (needComma)
+                    sql.append(", ");
+                sql.append("DateOffset = ?").add(dateOffset);
+            }
+            sql.append(" WHERE Container = ? AND ParticipantId = ?");
+            sql.add(study.getContainer());
+            sql.add(participantId);
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        }
     }
 
     private int nextRandom(Random random, HashSet<Integer> usedNumbers, int firstRandom, int maxRandom)

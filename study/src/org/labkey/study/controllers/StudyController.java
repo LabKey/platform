@@ -6704,7 +6704,8 @@ public class StudyController extends BaseStudyController
             try
             {
                 _appendManageStudy(root);
-                root.addChild("Manage Alternate " + getStudy().getSubjectNounSingular() + " IDs");
+                String subjectNoun = getStudy().getSubjectNounSingular();
+                root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
             }
             catch (ServletException e)
             {
@@ -8288,9 +8289,9 @@ public class StudyController extends BaseStudyController
             {
                 _study = getStudy();
                 setImportMessage("Upload a mapping of " + _study.getSubjectNounPlural() + " to Alternate IDs and date offsets from a TXT, CSV or Excel file or paste the mapping directly into the text box below. " +
-                    "There must be three columns and a header row with headings, ParticipantId, AlternateId and DateOffset.");
+                    "There must be a header row, which must contain ParticipantId and either AlternateId, DateOffset or both. Click the button below to export the current mapping.");
             }
-            setNoTableInfo();
+            setTarget(StudySchema.getInstance().getTableInfoParticipant());
             setHideTsvCsvCombo(true);
             setSuccessMessageSuffix("uploaded");
         }

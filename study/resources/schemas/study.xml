@@ -456,6 +456,9 @@
       </ns:column>
       <ns:column columnName="LastIndexed"/>
     </ns:columns>
+    <ns:importTemplates>
+      <ns:template label="Export Participant Transforms" url="/study/exportParticipantTransforms.view"/>
+    </ns:importTemplates>
   </ns:table>
   <ns:table tableName="SampleRequestActor" tableDbType="TABLE">
     <ns:columns>

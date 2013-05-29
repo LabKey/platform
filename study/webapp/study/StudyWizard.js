@@ -1388,9 +1388,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.shiftDatesCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: 'Shift Participant Dates?',
+            fieldLabel: 'Shift ' + this.subject.nounSingular + ' Dates?',
             gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Shift Participant Dates</span></div>' +
+                    '<div class=\'g-tip-header\'><span>Shift ' + this.subject.nounSingular + ' Dates</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
                         'Selecting this option will shift selected date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days).' +
                     '</div>' +

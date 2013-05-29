@@ -221,8 +221,8 @@
     </tr>
     <tr>
         <th align="left">Alternate <%= h(subjectNounSingle) %> IDs</th>
-        <td>Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids are generated</td>
-        <td><%= textLink("Manage Alternate " + h(subjectNounSingle) + " IDs", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
+        <td>Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids and aliases are generated</td>
+        <td><%= textLink("Manage Alternate " + h(subjectNounSingle) + " IDs and Aliases", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Security</th>
