@@ -2420,7 +2420,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
             + "   // display an Ext message box with some information from the function parameters\n"
             + "   Ext4.Msg.alert('Data Point Information',\n"
-            + "       'Schema:' + measureInfo[\"schemaName\"]\n"
+            + "       'Schema: ' + measureInfo[\"schemaName\"]\n"
             + "       + '<br/> Query: <a href=\"' + queryHref + '\">' + measureInfo[\"queryName\"] + '</a>'\n"
             + "       + '<br/>' + measureInfo[\"xAxis\"] + ': ' + (data[measureInfo[\"xAxis\"]].displayValue ? data[measureInfo[\"xAxis\"]].displayValue : data[measureInfo[\"xAxis\"]].value)\n"
             + "       + '<br/>' + measureInfo[\"yAxis\"] + ': ' + (data[measureInfo[\"yAxis\"]].displayValue ? data[measureInfo[\"yAxis\"]].displayValue : data[measureInfo[\"yAxis\"]].value)\n"
