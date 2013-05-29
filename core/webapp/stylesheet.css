@@ -2322,6 +2322,21 @@ div.labkey-wiki h1
     font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
 }
 
+.labkey-wiki pre
+{
+    margin-top : 0;
+    max-width: 95%;
+    border: 1px solid #ccc;
+    white-space: pre-wrap;
+}
+
+.labkey-wiki pre code {
+    display: block; padding: 0.5em;
+}
+
+.labkey-wiki code.r, .labkey-wiki code.cpp {
+    background-color: #F8F8F8;
+}
 
 /* for wikis in custom menus */
 div.labkey-webpart-menu div.labkey-wiki p {
