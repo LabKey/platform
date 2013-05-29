@@ -5343,6 +5343,7 @@ internal/webapp/codemirror/theme/rubyblue.css -text
 internal/webapp/codemirror/theme/twilight.css -text
 internal/webapp/codemirror/theme/vibrant-ink.css -text
 internal/webapp/codemirror/theme/xq-dark.css -text
+internal/webapp/codemirror/util.js -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
 internal/webapp/dataregion/panel/Facet.js -text
