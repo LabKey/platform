@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.axis.message.addressing.EndpointReferenceType;
 import org.apache.axis.types.NonNegativeInteger;
 import org.globus.exec.client.GramJob;

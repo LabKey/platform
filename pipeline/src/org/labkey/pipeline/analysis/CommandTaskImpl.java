@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
