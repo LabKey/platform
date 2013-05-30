@@ -253,7 +253,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         String className = transformXML.getType();
         if (null == className)
         {
-            throw new  XmlException(TYPE_REQUIRED);
+            className = TransformTask.class.getName();
         }
 
         try

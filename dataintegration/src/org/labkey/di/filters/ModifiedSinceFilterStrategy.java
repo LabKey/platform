@@ -50,15 +50,18 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
     final TransformJobContext _context;
     final CopyConfig _config;
 
+    String _defaultTimestampColumnName = null;
     TableInfo _table;
     ColumnInfo _tsCol;
 
-    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta)
+
+    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta, String defaultTimestampColumnName)
     {
         if (!(stepMeta instanceof CopyConfig))
             throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
         _context = context;
         _config = (CopyConfig)stepMeta;
+        _defaultTimestampColumnName = defaultTimestampColumnName;
     }
 
 
@@ -75,7 +78,8 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         if (null == _table)
             throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
 
-        String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), "_txmodified");
+        String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), _defaultTimestampColumnName);
+        timestampColumnName = StringUtils.defaultString(timestampColumnName, "_txmodified");
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
             _tsCol = _table.getColumn("modified");
@@ -124,7 +128,10 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         Date incrementalEndDate = ((Date)maxResult.getValue());
         if (null == incrementalEndDate)
             incrementalEndDate = incrementalStartTimestamp;
-        f.addCondition(_tsCol.getFieldKey(), incrementalEndDate, CompareType.LTE);
+        if (null == incrementalEndDate)     // ERROR, no non-null values?
+            f.addCondition(new SimpleFilter.FalseClause());
+        else
+            f.addCondition(_tsCol.getFieldKey(), incrementalEndDate, CompareType.LTE);
 
         variables.put(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor(), incrementalStartTimestamp);
         variables.put(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor(), incrementalEndDate);
@@ -165,7 +172,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         @Override
         public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
         {
-            return new ModifiedSinceFilterStrategy(context, stepMeta);
+            return new ModifiedSinceFilterStrategy(context, stepMeta, null==_filterType?null:_filterType.getTimestampColumnName());
         }
 
         @Override
