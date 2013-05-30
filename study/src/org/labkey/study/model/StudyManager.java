@@ -2644,8 +2644,8 @@ public class StudyManager
         int rowCount = 0;
         if (!seenParticipantId || !seenAlternateIdOrDateOffset || headerError)
         {
-            errors.addRowError(new ValidationException("There must be a header row, which must contain " + PTID_COLUMN_NAME + ", and may optionally contain " +
-                    ALTERNATEID_COLUMN_NAME + " and " + DATEOFFSET_COLUMN_NAME + "."));
+            errors.addRowError(new ValidationException("The header row must contain " + PTID_COLUMN_NAME + " and either " +
+                    ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME + " or both."));
         }
         else
         {
