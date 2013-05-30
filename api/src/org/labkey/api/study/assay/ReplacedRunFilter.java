@@ -16,7 +16,7 @@ package org.labkey.api.study.assay;
  * limitations under the License.
  */
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jmock.Expectations;
 import org.jmock.Mockery;

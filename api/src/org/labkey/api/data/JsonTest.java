@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import com.google.gson.Gson;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

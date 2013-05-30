@@ -16,7 +16,7 @@
 
 package org.labkey.api.etl;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.CachedResultSet;

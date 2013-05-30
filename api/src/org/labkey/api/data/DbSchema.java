@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

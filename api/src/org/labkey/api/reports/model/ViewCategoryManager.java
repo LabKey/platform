@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.data.BeanObjectFactory;

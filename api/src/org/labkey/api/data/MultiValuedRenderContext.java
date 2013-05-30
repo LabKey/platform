@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.junit.Test;

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.security.Group;

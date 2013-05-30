@@ -15,7 +15,7 @@
  */
 package org.labkey.api.collections;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.PageFlowUtil;
 
