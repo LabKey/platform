@@ -2288,6 +2288,8 @@ table.labkey-manage-default-reqs
     margin-left:2px;
     margin-right:2px;
     height:100%;
+    /*Don't let the drop-down wrap to the next line by itself*/
+    white-space:nowrap;
 }
 
 .labkey-callout-tip-over {
