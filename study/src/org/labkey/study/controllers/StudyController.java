@@ -1270,6 +1270,7 @@ public class StudyController extends BaseStudyController
             study.setAllowReqLocSal(form.isAllowReqLocSal());
             study.setAllowReqLocEndpoint(form.isAllowReqLocEndpoint());
             study = StudyManager.getInstance().createStudy(user, study);
+            RequestabilityManager.getInstance().setDefaultRules(c, user);
         }
         return study;
     }

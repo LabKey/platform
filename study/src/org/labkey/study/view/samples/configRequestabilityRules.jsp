@@ -320,8 +320,8 @@
             return false;
         }
 
-        // Don't add more than 1 AdminOverride or AtRepository
-        if ((type == 'ADMIN_OVERRIDE' || type == 'AT_REPOSITORY') && ruleTypeAlreadyPresent(grid, type))
+        // Don't add more than 1 of any rules except CUSTOM QUERY
+        if (type != 'CUSTOM_QUERY' && ruleTypeAlreadyPresent(grid, type))
             return true;
 
         var ruleProperties = {
@@ -332,8 +332,8 @@
             testURL: testURL
         };
 
-        // we never insert after the last rule, which should always be the locked-in-request check:
-        var insertIndex = store.getCount() - 1;
+        // insert after current selection or last if none
+        var insertIndex = store.getCount();
         var selectionModel = grid.getSelectionModel();
         var record = selectionModel.getSelected();
         if (record)

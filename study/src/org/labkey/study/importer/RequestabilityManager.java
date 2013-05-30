@@ -697,29 +697,13 @@ public class RequestabilityManager
     public List<RequestableRule> getRules(Container container)
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
-        RuleBean[] ruleBeans;
-        try
-        {
-            ruleBeans = Table.select(ruleTableInfo, Table.ALL_COLUMNS, new SimpleFilter("Container", container.getId()),
-                    new Sort("SortOrder"), RuleBean.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        List<RequestableRule> rules = new ArrayList<RequestableRule>();
-        if (ruleBeans.length == 0)
-        {
-            // return default rule set:
-            rules.add(new RepositoryRule(container));
-            rules.add(new AdminOverrideRule(container));
-            rules.add(new LockedInRequestRule(container));
-        }
-        else
-        {
-            for (RuleBean bean : ruleBeans)
-                rules.add(bean.createRule());
-        }
+        List<RuleBean> ruleBeans = new TableSelector(ruleTableInfo, Table.ALL_COLUMNS,
+                new SimpleFilter(FieldKey.fromString("Container"), container.getId()),
+                new Sort("SortOrder")).getArrayList(RuleBean.class);
+        List<RequestableRule> rules = new ArrayList<>();
+        for (RuleBean bean : ruleBeans)
+            rules.add(bean.createRule());
+
         return rules;
     }
 
@@ -731,7 +715,7 @@ public class RequestabilityManager
         {
             scope.ensureTransaction();
 
-            Table.delete(ruleTableInfo, new SimpleFilter("Container", container.getId()));
+            Table.delete(ruleTableInfo, new SimpleFilter(FieldKey.fromString("Container"), container.getId()));
 
             int sortOrder = 0;
             for (RequestableRule rule : rules)
@@ -747,6 +731,15 @@ public class RequestabilityManager
         {
             scope.closeConnection();
         }
+    }
+
+    public void setDefaultRules(Container container, User user) throws SQLException
+    {
+        List<RequestableRule> rules = new ArrayList<>();
+        rules.add(new RepositoryRule(container));
+        rules.add(new AdminOverrideRule(container));
+        rules.add(new LockedInRequestRule(container));
+        saveRules(container, user, rules);
     }
 
     private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, List<Specimen> specimens) throws InvalidRuleException
