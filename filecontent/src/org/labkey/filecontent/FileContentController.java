@@ -562,8 +562,8 @@ public class FileContentController extends SpringActionController
                    {
                        //This relies on storing whole file in memory. Generally OK for text files like this.
                        String html = new String(formFile.getBytes(),"UTF-8");
-                       List<String> validateErrors = new ArrayList<String>();
-                       List<String> safetyWarnings = new ArrayList<String>();
+                       List<String> validateErrors = new ArrayList<>();
+                       List<String> safetyWarnings = new ArrayList<>();
                        PageFlowUtil.validateHtml(html, validateErrors, safetyWarnings);
                        if (safetyWarnings.size() > 0)
                        {
@@ -697,7 +697,7 @@ public class FileContentController extends SpringActionController
                    form.setRootPath(path);
                }
            }
-           return new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
+           return new JspView<>("/org/labkey/filecontent/view/configure.jsp", form, errors);
        }
 
 
@@ -864,7 +864,7 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
-            Set<Map<String, Object>> children = new LinkedHashSet<Map<String, Object>>();
+            Set<Map<String, Object>> children = new LinkedHashSet<>();
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
             try {
@@ -921,7 +921,7 @@ public class FileContentController extends SpringActionController
                 if (form.isExcludeWorkbooksAndTabs() && child.isWorkbookOrTab())
                     continue;
 
-                Map<String, Object> node = new HashMap<String, Object>();
+                Map<String, Object> node = new HashMap<>();
 
                 node.put("id", child.getId());
                 node.put("name", child.getName());
@@ -948,10 +948,11 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
-            Set<Map<String, Object>> children = new LinkedHashSet<Map<String, Object>>();
+            Set<Map<String, Object>> children = new LinkedHashSet<>();
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
-            try {
+            try
+            {
                 AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
                 ActionURL browse = new ActionURL(BeginAction.class, c);
 
@@ -981,7 +982,7 @@ public class FileContentController extends SpringActionController
             // include all child containers
             for (Container child : c.getChildren())
             {
-                Map<String, Object> node = new HashMap<String, Object>();
+                Map<String, Object> node = new HashMap<>();
 
                 node.put("id", child.getId());
                 node.put("name", child.getName());
@@ -997,7 +998,8 @@ public class FileContentController extends SpringActionController
             filter.addCondition("Name", FilesWebPart.PART_NAME);
             ResultSet rs = null;
 
-            try {
+            try
+            {
                 rs = Table.select(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null);
                 return rs.next();
             }
@@ -1038,7 +1040,7 @@ public class FileContentController extends SpringActionController
 
         protected Map<String, Object> createFileSetNode(String name, File dir)
         {
-            Map<String, Object> node = new HashMap<String, Object>();
+            Map<String, Object> node = new HashMap<>();
             if (dir != null)
             {
                 node.put("name", name);
@@ -1059,7 +1061,7 @@ public class FileContentController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             String uri = svc.getDomainURI(getContainer());
             OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
 
             properties.put("typeURI", uri);
             properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
@@ -1158,7 +1160,7 @@ public class FileContentController extends SpringActionController
                 if (domain != null)
                 {
                     ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
-                    List<ValidationError> validationErrors = new ArrayList<ValidationError>();
+                    List<ValidationError> validationErrors = new ArrayList<>();
                     _domainProps = domain.getProperties();
 
                     for (Map<String, Object> fileProps : _files)
@@ -1218,7 +1220,7 @@ public class FileContentController extends SpringActionController
 
         private List<Map<String, Object>> parseFromJSON(Map<String, Object> props)
         {
-            List<Map<String, Object>> files = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> files = new ArrayList<>();
 
             if (props.containsKey("files"))
             {
@@ -1229,7 +1231,7 @@ public class FileContentController extends SpringActionController
 
                     for (int i=0; i < jarray.length(); i++)
                     {
-                        Map<String, Object> fileProps = new HashMap<String, Object>();
+                        Map<String, Object> fileProps = new HashMap<>();
 
                         JSONObject jobj = jarray.getJSONObject(i);
                         if (jobj != null)
@@ -1300,7 +1302,7 @@ public class FileContentController extends SpringActionController
                     if (domain != null)
                     {
                         ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
-                        List<ValidationError> validationErrors = new ArrayList<ValidationError>();
+                        List<ValidationError> validationErrors = new ArrayList<>();
 
                         for (DomainProperty prop : domain.getProperties())
                         {

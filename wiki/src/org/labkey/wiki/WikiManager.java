@@ -35,8 +35,10 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -629,39 +631,28 @@ public class WikiManager implements WikiService
     }
 
 
-    public void indexWikiContainerSlow(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
+    public void indexWikiContainerSlow(@NotNull final SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
-        ResultSet rs = null;
-        ActionURL page = new ActionURL(WikiController.PageAction.class, null);
+        final ActionURL page = new ActionURL(WikiController.PageAction.class, null);
 
-        try
+        SimpleFilter f = new SimpleFilter();
+        f.addCondition("container", c);
+        SearchService.LastIndexedClause clause = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, null);
+        f.addCondition(clause);
+        if (null != modifiedSince)
+            f.addCondition("modified", modifiedSince, CompareType.GTE);
+
+        new TableSelector(comm.getTableInfoPages(), PageFlowUtil.set("container", "name"), f, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            SimpleFilter f = new SimpleFilter();
-            f.addCondition("container", c);
-            SearchService.LastIndexedClause clause = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, null);
-            f.addCondition(clause);
-            if (null != modifiedSince)
-                f.addCondition("modified", modifiedSince, CompareType.GTE);
-
-            rs = Table.select(comm.getTableInfoPages(), PageFlowUtil.set("container", "name"), f, null);
-
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String id = rs.getString(1);
                 String name = rs.getString(2);
                 ActionURL url = page.clone().setExtraPath(id).replaceParameter("name", name);
                 task.addResource(searchCategory, url, SearchService.PRIORITY.item);
             }
-        }
-        catch (SQLException x)
-        {
-            LOG.error(x);
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
     }
 
 
