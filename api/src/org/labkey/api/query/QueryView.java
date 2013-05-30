@@ -103,7 +103,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
 
-    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
+    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<>();
     private String _linkTarget;
 
     // Overrides for any URLs that might already be set on the TableInfo
@@ -144,7 +144,7 @@ public class QueryView extends WebPartView<Object>
     private CustomView _customView;
     private UserSchema _schema;
     private Errors _errors;
-    private List<QueryException> _parseErrors = new ArrayList<QueryException>();
+    private List<QueryException> _parseErrors = new ArrayList<>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
     private boolean _initializeButtonBar = true;
@@ -284,7 +284,7 @@ public class QueryView extends WebPartView<Object>
             out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
         out.write("</p>");
 
-        Set<String> seen = new HashSet<String>();
+        Set<String> seen = new HashSet<>();
 
         if (verboseErrors())
         {
@@ -869,14 +869,14 @@ public class QueryView extends WebPartView<Object>
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName());
         ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), urlFor(QueryAction.exportRowsXLSX), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
-        exportButton.addSubPanel("Excel", new JspView<ExcelExportOptionsBean>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
+        exportButton.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
 
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (exportAsWebPage)
         {
             tsvURL.replaceParameter("exportAsWebPage", "true");
         }
-        exportButton.addSubPanel("Text", new JspView<ActionURL>("/org/labkey/api/query/textExportOptions.jsp", tsvURL));
+        exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", tsvURL));
 
         if (_allowExportExternalQuery)
         {
@@ -889,7 +889,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (!_exportScriptFactories.isEmpty())
         {
-            Map<String, ActionURL> options = new LinkedHashMap<String, ActionURL>();
+            Map<String, ActionURL> options = new LinkedHashMap<>();
 
             for (ExportScriptFactory factory : _exportScriptFactories.values())
             {
@@ -898,7 +898,7 @@ public class QueryView extends WebPartView<Object>
                 options.put(factory.getMenuText(), url);
             }
 
-            button.addSubPanel("Script", new JspView<Map<String, ActionURL>>("/org/labkey/api/query/scriptExportOptions.jsp", options));
+            button.addSubPanel("Script", new JspView<>("/org/labkey/api/query/scriptExportOptions.jsp", options));
         }
     }
 
@@ -951,7 +951,7 @@ public class QueryView extends WebPartView<Object>
         };
 
         // insert current maxRows into sorted list of possible sizes
-        List<Integer> sizes = new LinkedList<Integer>(Arrays.asList(40, 100, 250, 1000));
+        List<Integer> sizes = new LinkedList<>(Arrays.asList(40, 100, 250, 1000));
         if (maxRows > 0)
         {
             int index = Collections.binarySearch(sizes, maxRows);
@@ -1013,7 +1013,7 @@ public class QueryView extends WebPartView<Object>
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
-            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
+            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<>();
             getSettings().setSchemaName(getSchema().getSchemaName());
 
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
@@ -1084,7 +1084,7 @@ public class QueryView extends WebPartView<Object>
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
-            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
+            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<>();
             getSettings().setSchemaName(getSchema().getSchemaName());
 
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
@@ -1135,7 +1135,7 @@ public class QueryView extends WebPartView<Object>
     private static class WrappedItemFilter implements ReportService.ItemFilter
     {
         private ReportService.ItemFilter _filter;
-        private Map<String, ViewOptions.ViewFilterItem> _filterItemMap = new HashMap<String, ViewOptions.ViewFilterItem>();
+        private Map<String, ViewOptions.ViewFilterItem> _filterItemMap = new HashMap<>();
 
 
         public WrappedItemFilter(ReportService.ItemFilter filter, QueryDefinition def)
@@ -1347,13 +1347,13 @@ public class QueryView extends WebPartView<Object>
 
     protected void addReportViews(MenuButton menu)
     {
-        List<Report> allReports = new ArrayList<Report>();
+        List<Report> allReports = new ArrayList<>();
         // Ask the schema for the report keys so that we get legacy ones for backwards compatibility too
         for (String reportKey : getSchema().getReportKeys(getSettings().getQueryName()))
         {
             allReports.addAll(ReportUtil.getReports(getContainer(), getUser(), reportKey, true));
         }
-        Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
+        Map<String, List<Report>> views = new TreeMap<>();
         ReportService.ItemFilter viewItemFilter = getItemFilter();
 
         for (Report report : allReports)
@@ -1408,13 +1408,13 @@ public class QueryView extends WebPartView<Object>
 
     protected void addChartViews(MenuButton menu)
     {
-        List<Report> reports = new ArrayList<Report>();
+        List<Report> reports = new ArrayList<>();
         // Ask the schema for the report keys so that we get legacy ones for backwards compatibility too
         for (String reportKey : getSchema().getReportKeys(getSettings().getQueryName()))
         {
             reports.addAll(ReportUtil.getReports(getContainer(), getUser(), reportKey, true));
         }
-        Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
+        Map<String, List<Report>> views = new TreeMap<>();
         ReportService.ItemFilter viewItemFilter = getItemFilter();
 
         for (Report report : reports)
@@ -1730,7 +1730,7 @@ public class QueryView extends WebPartView<Object>
                 sort = new Sort();
             }
 
-            List<Aggregate> aggregates = new LinkedList<Aggregate>();
+            List<Aggregate> aggregates = new LinkedList<>();
             if (ret.getRenderContext().getBaseAggregates() != null)
                 aggregates.addAll(ret.getRenderContext().getBaseAggregates());
 
@@ -1850,7 +1850,7 @@ public class QueryView extends WebPartView<Object>
 
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)
     {
-        List<DisplayColumn> ret = new ArrayList<DisplayColumn>(list);
+        List<DisplayColumn> ret = new ArrayList<>(list);
         for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext();)
         {
             if (it.next() instanceof DetailsColumn)
@@ -1888,7 +1888,7 @@ public class QueryView extends WebPartView<Object>
 
         //TODO: the latter might be problematic if the value of required column is set
         //in a validation script.  however, the dev could always set it to userEditable=false or nullable=true
-        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        List<FieldKey> fieldKeys = new ArrayList<>();
         TableInfo t = createTable();
 
         if (!respectView)
@@ -1904,7 +1904,7 @@ public class QueryView extends WebPartView<Object>
         else
         {
             //get list of required columns so we can verify presence
-            Set<FieldKey> requiredCols = new HashSet<FieldKey>();
+            Set<FieldKey> requiredCols = new HashSet<>();
             for (ColumnInfo c : t.getColumns())
             {
                 if(c.inferIsShownInInsertView())
@@ -2253,7 +2253,7 @@ public class QueryView extends WebPartView<Object>
 
     public List<DisplayColumn> getDisplayColumns()
     {
-        List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> ret = new ArrayList<>();
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
@@ -2511,7 +2511,7 @@ public class QueryView extends WebPartView<Object>
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.addAll(super.getClientDependencies());
 
         ButtonBarConfig cfg = _buttonBarConfig;
@@ -2520,7 +2520,7 @@ public class QueryView extends WebPartView<Object>
             TableInfo ti = _table;
             if (ti == null)
             {
-                List<QueryException> errors = new ArrayList<QueryException>();
+                List<QueryException> errors = new ArrayList<>();
                 ti = getQueryDef().getTable(errors, true);
             }
 
