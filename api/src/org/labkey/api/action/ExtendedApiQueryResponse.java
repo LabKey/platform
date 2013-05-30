@@ -51,11 +51,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         url
     }
 
-    public ExtendedApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable,
+    public ExtendedApiQueryResponse(QueryView view, boolean schemaEditable,
                                     boolean includeLookupInfo, String schemaName, String queryName,
                                     long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
-        super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
+        super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
     }
 
     public void includeStyle(boolean withStyle)

@@ -35,10 +35,10 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
 {
     private SchemaKey _schemaName = null;
 
-    public ReportingApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
+    public ReportingApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
         // Mostly piggybacking on ApiQueryResponse constructor
-        super(view, viewContext, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
+        super(view, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
         _schemaName = view.getTable().getUserSchema().getSchemaPath();
     }
 

@@ -259,7 +259,7 @@ public class ContainerDisplayColumn extends DataColumn
                 }
             };
             view.setViewContext(vc);
-            ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false, false, false);
+            ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false, false, false);
             Writer writer = new StringWriter();
             ApiResponseWriter apiWriter = new ApiJsonWriter(writer);
             resp.render(apiWriter);

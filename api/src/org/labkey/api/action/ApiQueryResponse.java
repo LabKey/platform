@@ -75,11 +75,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private boolean _includeDetailsColumn;
     private boolean _includeUpdateColumn;
 
-    public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
+    public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
                             boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
-        _viewContext = viewContext;
+        _viewContext = view.getViewContext();
         _schemaEditable = schemaEditable;
         _includeLookupInfo = includeLookupInfo;
         _schemaName = schemaName;

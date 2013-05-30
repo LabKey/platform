@@ -18,12 +18,19 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.template.ClientDependency;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -33,6 +40,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +77,49 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public void setEmpty(boolean empty)
     {
         _isEmpty = empty;
+    }
+
+    public ApiResponse renderToApiResponse() throws Exception
+    {
+        Container container = getViewContext().getContainer();
+        User user = getViewContext().getUser();
+        HttpServletRequest request = getViewContext().getRequest();
+
+        ApiResponse resp = new ApiSimpleResponse();
+        LinkedHashSet<ClientDependency> dependencies = getClientDependencies();
+        LinkedHashSet<String> includes = new LinkedHashSet<>();
+        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
+        PageFlowUtil.getJavaScriptFiles(container, user, dependencies, includes, implicitIncludes);
+
+        LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+        LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<>();
+        for (ClientDependency d : dependencies)
+        {
+            cssScripts.addAll(d.getCssPaths(container, user, AppProps.getInstance().isDevMode()));
+            implicitCssScripts.addAll(d.getCssPaths(container, user, AppProps.getInstance().isDevMode()));
+
+            implicitCssScripts.addAll(d.getCssPaths(container, user, !AppProps.getInstance().isDevMode()));
+        }
+
+        getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
+        MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
+        mr.setCharacterEncoding("UTF-8");
+        render(request, mr);
+
+        if (mr.getStatus() != HttpServletResponse.SC_OK)
+        {
+            render(request, getViewContext().getResponse());
+            return null;
+        }
+
+        resp.getProperties().put("html", mr.getContentAsString());
+        resp.getProperties().put("requiredJsScripts", includes);
+        resp.getProperties().put("implicitJsIncludes", implicitIncludes);
+        resp.getProperties().put("requiredCssScripts", cssScripts);
+        resp.getProperties().put("implicitCssIncludes", implicitCssScripts);
+        resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(container, user, dependencies));
+
+        return resp;
     }
 
     public static enum FrameType
@@ -235,8 +286,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     /** Override to declare your own NavTree menu implementation that will be used by the
      * WebPartView upon rendering your webpart. NOTE: The top level key of your tree
      * may be overridden.
-     * @return
-     * */
+     */
     public NavTree getNavMenu()
     {
         return _navMenu;
@@ -245,7 +295,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public void addCustomMenu(NavTree tree)
     {
         if (_customMenus == null)
-            _customMenus = new ArrayList<NavTree>();
+            _customMenus = new ArrayList<>();
         _customMenus.add(tree);
     }
 
