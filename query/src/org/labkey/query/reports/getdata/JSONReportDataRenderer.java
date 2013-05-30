@@ -38,65 +38,12 @@ import java.util.List;
  * Date: 5/21/13
  */
 @JsonTypeName("json")
-public class JSONReportDataRenderer implements ReportDataRenderer
+public class JSONReportDataRenderer extends AbstractQueryViewReportDataRenderer
 {
-    private int _offset;
-    private boolean _includeDetailsColumn;
-    private Integer _maxRows = null;
-    private Sort _sort = new Sort();
-
-    private void setOffset(int offset)
+    @Override
+    protected ApiResponse createApiResponse(QueryView view)
     {
-        _offset = offset;
-    }
-
-    private void setMaxRows(int maxRows)
-    {
-        _maxRows = maxRows;
-    }
-
-    private void setIncludeDetailsColumn(boolean includeDetailsColumn)
-    {
-        _includeDetailsColumn = includeDetailsColumn;
-    }
-
-    public void setSort(List<Sort.SortFieldBuilder> sorts)
-    {
-        for (Sort.SortFieldBuilder sort : sorts)
-        {
-            _sort.appendSortColumn(sort.create());
-        }
-    }
-
-    public ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors)
-    {
-        final QueryDefinition queryDefinition = QueryService.get().saveSessionQuery(context, context.getContainer(), source.getSchema().getSchemaName(), source.getLabKeySQL());
-
-        QuerySettings settings = new QuerySettings(context, "dataregion");
-        settings.setOffset(_offset);
-        settings.setBaseSort(_sort);
-
-        settings.setShowRows(ShowRows.PAGINATED);
-        if (null == _maxRows)
-        {
-            settings.setMaxRows(QueryController.DEFAULT_API_MAX_ROWS);
-        }
-        else
-        {
-            settings.setMaxRows(_maxRows.intValue());
-        }
-
-        QueryView view = new QueryView(source.getSchema(), settings, errors)
-        {
-            @Override
-            public QueryDefinition getQueryDef()
-            {
-                return queryDefinition;
-            }
-        };
-
-        return new ReportingApiQueryResponse(view, context, false, true,
-                queryDefinition.getName(), _offset, null,
-                false, _includeDetailsColumn, false);
+        return new ReportingApiQueryResponse(view, false, true, view.getQueryDef().getName(), getOffset(), null,
+                false, isIncludeDetailsColumn(), false);
     }
 }

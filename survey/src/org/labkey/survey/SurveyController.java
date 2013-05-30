@@ -808,7 +808,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                                 if (view != null)
                                 {
-                                    ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
+                                    ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, false, true,
                                             surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
                                             false, false, false);
 

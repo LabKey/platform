@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +41,7 @@ public class AggregateQueryDataTransformerBuilder
     private List<FieldKey> _groupBy = Collections.emptyList();
     private List<FilterClauseBuilder> _filters = Collections.emptyList();
     private List<Aggregate> _aggregates = Collections.emptyList();
-    private Pair<List<FieldKey>, FieldKey> _pivotBys = null;
+    private PivotBuilder _pivotBuilder = null;
 
     public void setAggregates(List<AggregateBuilder> aggregates)
     {
@@ -67,6 +66,11 @@ public class AggregateQueryDataTransformerBuilder
         _filters = filters;
     }
 
+    public void setPivot(PivotBuilder builder)
+    {
+        _pivotBuilder = builder;
+    }
+
     public AggregateQueryDataTransform create(QueryReportDataSource source)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -74,6 +78,6 @@ public class AggregateQueryDataTransformerBuilder
         {
             builder.append(filter);
         }
-        return new AggregateQueryDataTransform(source, filter, _aggregates, _groupBy, _pivotBys);
+        return new AggregateQueryDataTransform(source, filter, _aggregates, _groupBy, _pivotBuilder);
     }
 }

@@ -2338,6 +2338,7 @@ query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
 query/src/org/labkey/query/reports/getdata/AbstractBaseQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataTransform.java -text
+query/src/org/labkey/query/reports/getdata/AbstractQueryViewReportDataRenderer.java -text
 query/src/org/labkey/query/reports/getdata/AbstractReportDataSourceBuilder.java -text
 query/src/org/labkey/query/reports/getdata/AggregateBuilder.java -text
 query/src/org/labkey/query/reports/getdata/AggregateQueryDataTransform.java -text
@@ -2348,7 +2349,9 @@ query/src/org/labkey/query/reports/getdata/FilterQueryDataTransform.java -text
 query/src/org/labkey/query/reports/getdata/JSONReportDataRenderer.java -text
 query/src/org/labkey/query/reports/getdata/LabKeySQLReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/LabKeySQLReportDataSourceBuilder.java -text
+query/src/org/labkey/query/reports/getdata/PivotBuilder.java -text
 query/src/org/labkey/query/reports/getdata/QueryReportDataSource.java -text
+query/src/org/labkey/query/reports/getdata/QueryWebPartDataRenderer.java -text
 query/src/org/labkey/query/reports/getdata/ReportDataRenderer.java -text
 query/src/org/labkey/query/reports/getdata/ReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/ReportDataTransform.java -text

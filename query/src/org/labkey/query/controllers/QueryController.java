@@ -2206,7 +2206,7 @@ public class QueryController extends SpringActionController
             //if requested version is >= 9.1, use the extended api query response
             if (getRequestedApiVersion() >= 9.1)
             {
-                ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
+                ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
                 response.includeStyle(form.isIncludeStyle());
@@ -2214,7 +2214,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                return new ApiQueryResponse(view, getViewContext(), isEditable, true,
+                return new ApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
             }
@@ -2395,11 +2395,11 @@ public class QueryController extends SpringActionController
             boolean isEditable = null != t && isQueryEditable(view.getTable());
 
             if (getRequestedApiVersion() >= 9.1)
-                return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
+                return new ExtendedApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
             else
-                return new ApiQueryResponse(view, getViewContext(), isEditable,
+                return new ApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
         }

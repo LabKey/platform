@@ -1264,40 +1264,8 @@ public class ProjectController extends SpringActionController
             if (null != titleHref && titleHref.length() > 0)
                 view.setTitleHref(titleHref);
 
-            ApiResponse resp = new ApiSimpleResponse();
-            LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
-            LinkedHashSet<String> includes = new LinkedHashSet<String>();
-            LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
-            PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
 
-            LinkedHashSet<String> cssScripts = new LinkedHashSet<String>();
-            LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<String>();
-            for (ClientDependency d : dependencies)
-            {
-                cssScripts.addAll(d.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
-                implicitCssScripts.addAll(d.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
-
-                implicitCssScripts.addAll(d.getCssPaths(getContainer(), getUser(), !AppProps.getInstance().isDevMode()));
-            }
-
-            getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-            MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
-            mr.setCharacterEncoding("UTF-8");
-            view.render(request, mr);
-
-            if (mr.getStatus() != HttpServletResponse.SC_OK){
-                view.render(request, getViewContext().getResponse());
-                return null;
-            }
-
-            resp.getProperties().put("html", mr.getContentAsString());
-            resp.getProperties().put("requiredJsScripts", includes);
-            resp.getProperties().put("implicitJsIncludes", implicitIncludes);
-            resp.getProperties().put("requiredCssScripts", cssScripts);
-            resp.getProperties().put("implicitCssIncludes", implicitCssScripts);
-            resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
-
-            return resp;
+            return view.renderToApiResponse();
         }
     }
 

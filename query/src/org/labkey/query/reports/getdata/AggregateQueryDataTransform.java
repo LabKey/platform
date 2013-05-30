@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,17 +37,22 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
     private final SimpleFilter _filters;
     private final List<Aggregate> _aggregates;
     private final List<FieldKey> _groupBys;
-    private final Pair<List<FieldKey>, FieldKey> _pivotBy;
+    private final PivotBuilder _pivotBuilder;
 
     private static final String SUBQUERY_ALIAS = "A";
 
-    public AggregateQueryDataTransform(QueryReportDataSource source, SimpleFilter filters, List<Aggregate> aggregates, List<FieldKey> groupBys, Pair<List<FieldKey>, FieldKey> pivotBy)
+    public AggregateQueryDataTransform(QueryReportDataSource source, SimpleFilter filters, List<Aggregate> aggregates, List<FieldKey> groupBys, PivotBuilder pivotBuilder)
     {
         super(source);
         _filters = filters;
         _aggregates = aggregates;
         _groupBys = groupBys;
-        _pivotBy = pivotBy;
+        _pivotBuilder = pivotBuilder;
+
+        if (_pivotBuilder != null)
+        {
+            _pivotBuilder.validate();
+        }
     }
 
     @Override
@@ -79,6 +83,13 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
             sb.append(aggregate.toLabKeySQL());
         }
 
+        if (_pivotBuilder != null)
+        {
+            sb.append(separator);
+            separator = ", ";
+            sb.append(_pivotBuilder.getBy().toSQLString());
+        }
+
         sb.append(" FROM (\n");
         sb.append(getSource().getLabKeySQL());
         sb.append("\n) ");
@@ -93,15 +104,18 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append("\nGROUP BY ");
             appendFieldKeyList(sb, _groupBys, SUBQUERY_ALIAS);
+            if (_pivotBuilder != null)
+            {
+                sb.append(", ");
+                sb.append(_pivotBuilder.getBy().toSQLString());
+            }
         }
-        if (_pivotBy != null)
+        if (_pivotBuilder != null)
         {
             sb.append("\nPIVOT ");
-            appendFieldKeyList(sb, _pivotBy.getKey(), SUBQUERY_ALIAS);
+            appendFieldKeyList(sb, _pivotBuilder.getColumns(), null);
             sb.append(" BY ");
-            sb.append(SUBQUERY_ALIAS);
-            sb.append(".");
-            sb.append(_pivotBy.getValue().toSQLString());
+            sb.append(_pivotBuilder.getBy().toSQLString());
         }
 
         return sb.toString();
@@ -114,8 +128,11 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(tableAlias);
-            sb.append(".");
+            if (tableAlias != null)
+            {
+                sb.append(tableAlias);
+                sb.append(".");
+            }
             sb.append(fk.toSQLString());
         }
     }
@@ -129,10 +146,10 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
             result.add(aggregate.getFieldKey());
         }
         result.addAll(_groupBys);
-        if (_pivotBy != null)
+        if (_pivotBuilder != null)
         {
-            result.addAll(_pivotBy.getKey());
-            result.add(_pivotBy.getValue());
+            result.addAll(_pivotBuilder.getColumns());
+            result.add(_pivotBuilder.getBy());
         }
         return result;
     }
@@ -151,11 +168,14 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         @Test
         public void testPivot()
         {
+            PivotBuilder pivotBuilder = new PivotBuilder();
+            pivotBuilder.setColumns(Arrays.asList(FieldKey.fromParts("Pivot1"), FieldKey.fromParts("Pivot2")));
+            pivotBuilder.setBy(FieldKey.fromParts("Pivot3"));
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
                     new SimpleFilter(), Collections.<Aggregate>emptyList(), Collections.<FieldKey>emptyList(),
-                    new Pair<>(Arrays.asList(FieldKey.fromParts("Pivot1"), FieldKey.fromParts("Pivot2")), FieldKey.fromParts("Pivot3")));
+                    pivotBuilder);
 
-            assertEqualsIgnoreWhitespace("SELECT A.* FROM ( mySchema.myTable ) A PIVOT A.\"Pivot1\", A.\"Pivot2\" BY A.\"Pivot3\"", transform.getLabKeySQL());
+            assertEqualsIgnoreWhitespace("SELECT A.*, \"Pivot3\" FROM ( mySchema.myTable ) A PIVOT \"Pivot1\", \"Pivot2\" BY \"Pivot3\"", transform.getLabKeySQL());
         }
 
         @Test

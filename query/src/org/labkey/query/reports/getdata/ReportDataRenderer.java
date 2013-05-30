@@ -29,7 +29,8 @@ import org.springframework.validation.Errors;
  */
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, defaultImpl = JSONReportDataRenderer.class, property="type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value=JSONReportDataRenderer.class)})
+        @JsonSubTypes.Type(value=JSONReportDataRenderer.class),
+        @JsonSubTypes.Type(value=QueryWebPartDataRenderer.class)})
 public interface ReportDataRenderer
 {
     public ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors);
