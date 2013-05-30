@@ -34,7 +34,7 @@ public class CopyConfig
 
     protected SchemaKey _sourceSchema;
     protected String _sourceQuery;
-    protected String _sourceTimestampColumnName = "modified";
+    protected String _sourceTimestampColumnName = null;
     protected SourceOptions _sourceOptions = null;
 
     protected SchemaKey _targetSchema;
