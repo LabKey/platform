@@ -54,6 +54,8 @@ public abstract class ApiResponseWriter
      */
     int errorResponseStatus = HttpServletResponse.SC_BAD_REQUEST;
 
+    private boolean serializeViaJacksonAnnotations = false;
+
     protected static class StreamState
     {
         private String _name;
@@ -368,5 +370,15 @@ public abstract class ApiResponseWriter
     protected Writer getWriter()
     {
         return _writer;
+    }
+
+    public boolean isSerializeViaJacksonAnnotations()
+    {
+        return serializeViaJacksonAnnotations;
+    }
+
+    public void setSerializeViaJacksonAnnotations(boolean serializeViaJacksonAnnotations)
+    {
+        this.serializeViaJacksonAnnotations = serializeViaJacksonAnnotations;
     }
 }

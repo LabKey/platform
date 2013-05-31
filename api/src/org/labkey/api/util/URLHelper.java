@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -707,6 +708,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
+    @JsonValue
     public String toString()
     {
         return getLocalURIString(true);

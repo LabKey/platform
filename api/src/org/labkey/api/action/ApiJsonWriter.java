@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.settings.AppProps;
@@ -67,6 +68,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.useDefaultPrettyPrinter();
         }
+        jg.setCodec(new ObjectMapper());  // makes the generator annotation aware
     }
 
     @Override
@@ -160,9 +162,13 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeString(DateUtil.formatJsonDateTime((Date) value));
         }
-        else
+        else if (!isSerializeViaJacksonAnnotations())
         {
             jg.writeString(value.toString());
+        }
+        else
+        {
+            jg.writeObject(value);
         }
         if (devMode)
         {

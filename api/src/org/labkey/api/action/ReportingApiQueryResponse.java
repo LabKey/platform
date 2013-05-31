@@ -45,6 +45,8 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     @Override
     public void render(ApiResponseWriter writer) throws Exception
     {
+        writer.setSerializeViaJacksonAnnotations(true);
+
         writer.startResponse();
 
         //write the metaData section
