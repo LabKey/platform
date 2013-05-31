@@ -630,6 +630,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             logAsPreProcessingException(r, x);
             handledException[0] = x;
         }
+        catch (MinorConfigurationException e)
+        {
+            // Standard Throwable handling will wrap the exception, causing it to be sent to mothership, which we don't
+            // want. Instead, log without wrapping, so it ends up in the console.
+            ExceptionUtil.logExceptionToMothership(null, e);
+            handledException[0] = e;
+        }
         catch (Throwable e)
         {
             logAsPreProcessingException(r, e);
@@ -844,7 +851,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private void logAsPreProcessingException(WebdavResource r, Throwable e)
     {
-        //noinspection ThrowableInstanceNeverThrown
         ExceptionUtil.logExceptionToMothership(null, new PreProcessingException(getNameToLog(r), e));
     }
 
