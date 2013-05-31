@@ -224,7 +224,7 @@ public enum JdbcType
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        this.sqlType = type;
+        this.sqlType = type==Types.TINYINT ? Types.SMALLINT : type;
         this.cls = cls;
         this.xtype = xtype;
         this.json = DisplayColumn.getJsonTypeName(cls);

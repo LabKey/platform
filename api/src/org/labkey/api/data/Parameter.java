@@ -43,6 +43,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.GregorianCalendar;
@@ -291,7 +292,7 @@ public class Parameter
                 _stmt.setObject(index, value);
         else
             for (int index : _indexes)
-                _stmt.setObject(index, value, type.sqlType);
+                _stmt.setObject(index, value, type.sqlType== Types.TINYINT?Types.SMALLINT:type.sqlType);
         _isSet = true;
         _isNull = (value == null);
     }
