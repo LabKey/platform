@@ -43,6 +43,10 @@ public class LabKeySQLReportDataSourceBuilder extends AbstractReportDataSourceBu
     @Override
     public QueryReportDataSource create(User user, Container container)
     {
+        if (_sql == null)
+        {
+            throw new IllegalStateException("No SQL set");
+        }
         return new LabKeySQLReportDataSource(user, container, getSchemaKey(), getContainerFilter(user), getParameters(), getSql());
     }
 }

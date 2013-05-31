@@ -72,6 +72,7 @@ import org.labkey.query.reports.ReportsWebPartFactory;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
+import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
@@ -223,7 +224,8 @@ public class QueryModule extends DefaultModule
                 QNode.TestCase.class,
                 SimpleFilter.FilterTestCase.class,
                 TableWriter.TestCase.class,
-                AggregateQueryDataTransform.TestCase.class
+                AggregateQueryDataTransform.TestCase.class,
+                FilterClauseBuilder.TestCase.class
         ));
     }
 

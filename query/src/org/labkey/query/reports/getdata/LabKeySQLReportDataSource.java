@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class LabKeySQLReportDataSource extends AbstractQueryReportDataSource
 {
-    private final String _sql;
+    @NotNull private final String _sql;
 
     public LabKeySQLReportDataSource(@NotNull User user, @NotNull Container container, @NotNull SchemaKey schemaKey, @Nullable ContainerFilter containerFilter, @NotNull Map<String, String> parameters, @NotNull String sql)
     {

@@ -2345,7 +2345,6 @@ query/src/org/labkey/query/reports/getdata/AggregateQueryDataTransform.java -tex
 query/src/org/labkey/query/reports/getdata/AggregateQueryDataTransformerBuilder.java -text
 query/src/org/labkey/query/reports/getdata/DataRequest.java -text
 query/src/org/labkey/query/reports/getdata/FilterClauseBuilder.java -text
-query/src/org/labkey/query/reports/getdata/FilterQueryDataTransform.java -text
 query/src/org/labkey/query/reports/getdata/JSONReportDataRenderer.java -text
 query/src/org/labkey/query/reports/getdata/LabKeySQLReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/LabKeySQLReportDataSourceBuilder.java -text

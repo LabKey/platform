@@ -29,7 +29,7 @@ public class PivotBuilder
         _columns = columns;
     }
 
-    public void setBy(FieldKey by)
+    public void setBy(@NotNull FieldKey by)
     {
         _by = by;
     }

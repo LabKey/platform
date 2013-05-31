@@ -182,10 +182,16 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         public void testGroupBy()
         {
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.<Aggregate>emptyList(), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
                     null);
 
-            assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\" FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());
+            assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\", MAX(\"Agg1\") AS \"MAXAgg1\" FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());
+
+            transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX, "MyAggLabel")), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
+                    null);
+
+            assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\", MAX(\"Agg1\") AS \"MyAggLabel\" FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());
         }
 
         private void assertEqualsIgnoreWhitespace(String expected, String actual)
