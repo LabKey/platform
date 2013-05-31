@@ -256,8 +256,8 @@ public class Aggregate
         if (_distinct)
             sb.append("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
-        // TODO - handle FieldKeys that have parents
-        sb.append(") AS ").append(getAggregateName(getFieldKey().toString()));
+        String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
+        sb.append(") AS \"").append(alias.replace("\"", "\\\"")).append("\"");
         return sb.toString();
 
     }
