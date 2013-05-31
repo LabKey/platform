@@ -2573,13 +2573,17 @@ public class StudyManager
             {
                 try
                 {
-                    String alternateIdNoPrefix = alternateId.replaceFirst(prefix, "");
-                    int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
-                    usedNumbers.add(alternateIdInt);
+                    if (0 == prefix.length() || alternateId.startsWith(prefix))
+                    {
+                        String alternateIdNoPrefix = alternateId.substring(prefix.length());
+                        int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
+                        usedNumbers.add(alternateIdInt);
+                    }
                 }
                 catch (NumberFormatException x)
                 {
-                    // very much unexpected; TODO: ignore?
+                    // It's possible that the id is not an integer after stripping prefix, because it can be
+                    // set explicitly. That's fine, because it won't conflict with what we might generate
                 }
             }
         }
@@ -2587,16 +2591,15 @@ public class StudyManager
         Random random = new Random();
         int firstRandom = (int)Math.pow(10, (numDigits - 1));
         int maxRandom = (int)Math.pow(10, numDigits) - firstRandom;
-        Iterator participantMapIter = participantInfos.entrySet().iterator();
-        while (participantMapIter.hasNext())
+
+        for (Map.Entry<String, ParticipantInfo> entry : participantInfos.entrySet())
         {
-            Map.Entry pair = (Map.Entry)participantMapIter.next();
-            ParticipantInfo participantInfo = (ParticipantInfo)pair.getValue();
+            ParticipantInfo participantInfo = entry.getValue();
             String alternateId = participantInfo.getAlternateId();
 
             if (null == alternateId)
             {
-                String participantId = (String)pair.getKey();
+                String participantId = entry.getKey();
                 int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
                 setAlternateId(study, participantId, prefix + String.valueOf(newId));
             }
