@@ -31,6 +31,14 @@
     Container c = currentContext.getContainer();
     User user = currentContext.getUser();
     String contextPath = currentContext.getContextPath();
+    String time = Long.toString(System.currentTimeMillis());
+    String contentSpanName = "specimen-browse-webpart-content" + time;
+    String groupHeading1 = "groupHeading1-" + time;
+    String groupHeading2 = "groupHeading2-" + time;
+    String group1 = "group1-" + time;
+    String group2 = "group2-" + time;
+    String groupControl1 = "groupControl1-" + time;
+    String groupControl2 = "groupControl2-" + time;
 %>
 <script type="text/javascript">
     LABKEY.requiresScript("study/redesignUtils.js", true);
@@ -51,8 +59,6 @@
                 innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=h(contextPath)%>/_.gif"></td>';
 
             var nextByGroup = '';
- //           if (details.group)
- //               nextByGroup = ' [by ' + details.group.name + ']';
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
                     details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
             if (details.group)
@@ -62,54 +68,62 @@
         return innerHTML;
     }
 
-    function populateGrouping(grouping, elementId)
+    function populateGrouping(grouping, elementId, names)
     {
         var groupingName = grouping.name;
-        if (elementId == 'primaryTypes')
-            document.getElementById('groupHeading1').innerHTML = 'Vials by ' + groupingName;
+        if (elementId == names.group1)
+            document.getElementById(names.heading1).innerHTML = 'Vials by ' + groupingName;
         else
-            document.getElementById('groupHeading2').innerHTML = 'Vials by ' + groupingName;
+            document.getElementById(names.heading2).innerHTML = 'Vials by ' + groupingName;
 
         var innerHTML = populateGroupingContent(grouping, false);
         document.getElementById(elementId).innerHTML = innerHTML;
     }
 
-    function handleGroupings(resp)
+    function handleGroupings(resp, names)
     {
         if (resp.groupings.length == 0 || resp.groupings[0].values.length == 0)
         {
             var html = '<i>No specimens found.</i>';
             var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
             html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
-            document.getElementById('specimen-browse-webpart-content').innerHTML = html;
+            document.getElementById(names.content).innerHTML = html;
         }
         else if (null == resp.groupings[0].dummy || !resp.groupings[0].dummy)
         {
-            populateGrouping(resp.groupings[0], 'primaryTypes');
+            populateGrouping(resp.groupings[0], names.group1, names);
             if (resp.groupings.length > 1)
             {
-                populateGrouping(resp.groupings[1], 'derivativeTypes');
+                populateGrouping(resp.groupings[1], names.group2, names);
             }
             else
             {
-                document.getElementById('grouping2').innerHTML = '';
+                document.getElementById(names.control2).innerHTML = '';
             }
         }
         else
         {
-            document.getElementById('grouping1').innerHTML = '';
-            document.getElementById('grouping2').innerHTML = '';
+            document.getElementById(names.control1).innerHTML = '';
+            document.getElementById(names.control2).innerHTML = '';
         }
-        document.getElementById('specimen-browse-webpart-content').setAttribute('style', 'display: inline');
+        document.getElementById(names.content).setAttribute('style', 'display: inline');
     }
 
     Ext.onReady(function() {
             LABKEY.Specimen.getSpecimenWebPartGroups({
-                success: handleGroupings
+                success: function (resp) {handleGroupings(resp,
+                        {content:  '<%=text(contentSpanName)%>',
+                         heading1: '<%=text(groupHeading1)%>',
+                         heading2: '<%=text(groupHeading2)%>',
+                         group1:   '<%=text(group1)%>',
+                         group2:   '<%=text(group2)%>',
+                         control1: '<%=text(groupControl1)%>',
+                         control2: '<%=text(groupControl2)%>'
+                        })}
         });
     });
 </script>
-<span id="specimen-browse-webpart-content" style="display: none">
+<span id="<%=text(contentSpanName)%>" style="display: none">
 <table class="labkey-manage-display" style="width: 100%;">
     <tbody>
     <tr><!-- removed lines beneath headings --> <!-- using labkey nav tree markup, which probably doesn't display in wikis --> <!-- hardcoding plus minus images for looks only --> <!-- removed search links, as that's now handled by a new webpart --> <!-- left column -->
@@ -253,39 +267,39 @@
 %>
         <!-- end left column --> <!-- right column -->
         <td valign="top" width="55%">
-            <span id="grouping1">
+            <span id="<%=text(groupControl1)%>">
             <table class="labkey-nav-tree" style="width: 100%">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
                             <img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
-                            <span id="groupHeading1"></span>
+                            <span id="<%=text(groupHeading1)%>"></span>
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="primaryTypes"></span>
+                        <span id="<%=text(group1)%>"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
             </span>
-            <span id="grouping2">
+            <span id="<%=text(groupControl2)%>">
             <table class="labkey-nav-tree" style="width: 100%;;margin-top:1em">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
                             <img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
-                            <span id="groupHeading2"></span>
+                            <span id="<%=text(groupHeading2)%>"></span>
                         </a>
                     </td>
                 </tr>
                 <tr style="display:none">
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="derivativeTypes"></span>
+                        <span id="<%=text(group2)%>"></span>
                     </td>
                 </tr>
                 </tbody>
