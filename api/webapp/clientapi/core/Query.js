@@ -1280,7 +1280,75 @@ LABKEY.Query = new function()
             });
         },
 
-        URL_COLUMN_PREFIX: "_labkeyurl_"
+
+        /**
+         * Converts a javascript date into a format suitable for using in a LabKey SQL query, includes time but not milliseconds.
+         * @param {Date} javascript date
+         * @param {Boolean} withMS include milliseconds
+         * @returns {String} a date and time literal formatted to be used in a LabKey query
+         */
+        sqlDateTimeLiteral : function(date, withMS)
+        {
+            if (date === undefined || date === null || !date)
+                return "NULL";
+            if (typeof date == "string")
+            {
+                try { date = new Date(date); } catch (x) { }
+            }
+            if (typeof date == "object" && typeof date.toISOString == "function")
+            {
+                var fmt2 = function(a) {return (a>=10 ?  ""+a : "0"+a);};
+                var fmt3 = function(a) {return (a>=100 ? ""+a : "0"+fmt2(a));};
+                return "CAST('" +
+                        date.getFullYear() + "-" + fmt2(date.getMonth()+1) + "-" +fmt2(date.getDate()) + " " + fmt2(date.getHours()) + ":" + fmt2(date.getMinutes()) + ":" + fmt2(date.getSeconds()) +
+                        (withMS ? "." + fmt3(date.getMilliseconds()) : "")
+                        + "' AS TIMESTAMP)";
+            }
+            return "CAST('" + this.sqlStringLiteral(date) + "' AS TIMESTAMP)";
+        },
+
+
+        /**
+         * Converts a javascript date into a format suitable for using in a LabKey SQL query, does not include time.
+         * @param {Date} javascript date
+         * @returns {String} a date literal formatted to be used in a LabKey query
+         */
+        sqlDateLiteral : function(date)
+        {
+            if (date === undefined || date === null || !date)
+                return "NULL";
+            if (typeof date == "string")
+            {
+                try { date = new Date(date); } catch (x) { }
+            }
+            if (typeof date == "object" && typeof date.toISOString == "function")
+            {
+                var fmt2 = function(a) {return (a>=10 ? a : "0"+a);};
+                var fmt3 = function(a) {return (a>=999 ? a : "0"+fmt2(a));};
+                return "CAST('" +
+                        date.getFullYear() + "-" + fmt2(date.getMonth()+1) + "-" +fmt2(date.getDate())
+                        + "' AS DATE)";
+            }
+            return "CAST('" + this.sqlStringLiteral(date) + "' AS DATE)";
+        },
+
+
+        /**
+         * Converts a javascript string into a format suitable for using in a LabKey SQL query.
+         * @param {String} value to use in query
+         * @returns {String} value formatted for use in a LabKey query.  Will property escape single quote characters.
+         */
+        sqlStringLiteral : function(str)
+        {
+            if (str === undefined || str === null || str == '')
+                return "NULL";
+            str = str.toString();
+            return "'" + str.replace("'","''") + "'";
+        },
+
+
+
+                URL_COLUMN_PREFIX: "_labkeyurl_"
     };
 };
 
