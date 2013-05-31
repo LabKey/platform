@@ -402,6 +402,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 schema.getContainer().equals(getSchema().getContainer()) &&
                 Objects.equals(schema.getUser(), getSchema().getUser()))
             {
+                // Stash the schema because it's a match with the one we'd made for ourself
+                if (_schema == null)
+                {
+                    _schema = schema;
+                }
                 Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
                 TableInfo table = _cache.get(key);
                 if (table == null)
@@ -434,7 +439,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (errors == null)
         {
-            errors = new ArrayList<QueryException>();
+            errors = new ArrayList<>();
         }
         Query query = getQuery(schema, errors, null, includeMetadata);
         TableInfo ret = query.getTableInfo();
