@@ -688,31 +688,40 @@ public class SpecimenController extends BaseStudyController
                     new SpecimenEventBean(specimen, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
 
-            Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
-            SimpleFilter requestFilter;
-            WebPartView relevantRequests;
-            if (requestIds != null && requestIds.length > 0)
-            {
-                requestFilter = new SimpleFilter();
-                StringBuilder whereClause = new StringBuilder();
-                for (int i = 0; i < requestIds.length; i++)
-                {
-                    if (i > 0)
-                        whereClause.append(" OR ");
-                    whereClause.append("RequestId = ?");
-                }
-                requestFilter.addWhereClause(whereClause.toString(), requestIds);
-                SpecimenRequestQueryView queryView = SpecimenRequestQueryView.createView(getViewContext(), requestFilter);
-                queryView.setExtraLinks(true);
-                relevantRequests = queryView;
-            }
-            else
-                relevantRequests = new JspView("/org/labkey/study/view/samples/relevantRequests.jsp");
-            relevantRequests.setTitle("Relevant Vial Requests");
             SpecimenEventQueryView vialHistoryView = SpecimenEventQueryView.createView(getViewContext(), specimen);
             vialHistoryView.setTitle("Vial History");
 
-            return new VBox(summaryView, vialHistoryView, relevantRequests);
+            VBox vbox = null;
+            if (getStudy().getRepositorySettings().isEnableRequests())
+            {
+                Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
+                SimpleFilter requestFilter;
+                WebPartView relevantRequests;
+                if (requestIds != null && requestIds.length > 0)
+                {
+                    requestFilter = new SimpleFilter();
+                    StringBuilder whereClause = new StringBuilder();
+                    for (int i = 0; i < requestIds.length; i++)
+                    {
+                        if (i > 0)
+                            whereClause.append(" OR ");
+                        whereClause.append("RequestId = ?");
+                    }
+                    requestFilter.addWhereClause(whereClause.toString(), requestIds);
+                    SpecimenRequestQueryView queryView = SpecimenRequestQueryView.createView(getViewContext(), requestFilter);
+                    queryView.setExtraLinks(true);
+                    relevantRequests = queryView;
+                }
+                else
+                    relevantRequests = new JspView("/org/labkey/study/view/samples/relevantRequests.jsp");
+                relevantRequests.setTitle("Relevant Vial Requests");
+                vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
+            }
+            else
+            {
+                vbox = new VBox(summaryView, vialHistoryView);
+            }
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
