@@ -15,7 +15,6 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -34,6 +33,13 @@ import java.io.IOException;
 public class FolderImportContext extends AbstractFolderContext
 {
     private File _folderXml;
+
+    /** Required for xstream serialization on Java 7 */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public FolderImportContext()
+    {
+        super(null, null, null, null, null);
+    }
 
     public FolderImportContext(User user, Container c, File folderXml, LoggerGetter logger, VirtualFile root)
     {
