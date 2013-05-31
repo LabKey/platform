@@ -709,7 +709,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      */
     public boolean isVersionColumn()
     {
-        return "_ts".equals(getName()) || "Modified".equals(getName());
+        //TODO: issue 17948 hotfix until better resolution
+        return "_ts".equals(getName()) || "Modified".equals(getName()) || "_txRowVersion".equals(getName());
     }
 
 
