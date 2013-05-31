@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.UserManager;
@@ -173,48 +174,51 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         DbSchema dbschema = table.getSchema();
         try
         {
-            dbschema.getScope().ensureTransaction();
-
-            if (insert)
+            try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
             {
-                BatchValidationException batchErrors = new BatchValidationException();
-                qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
-                if (batchErrors.hasErrors())
-                    throw batchErrors;
-            }
-            else
-            {
-                Map<String, Object> oldValues = null;
-                if (form.getOldValues() instanceof Map)
+                if (insert)
                 {
-                    oldValues = (Map<String, Object>)form.getOldValues();
-                    if (!(oldValues instanceof CaseInsensitiveMapWrapper))
-                        oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
+                    BatchValidationException batchErrors = new BatchValidationException();
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                    if (batchErrors.hasErrors())
+                        throw batchErrors;
                 }
-                qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
-            }
+                else
+                {
+                    Map<String, Object> oldValues = null;
+                    if (form.getOldValues() instanceof Map)
+                    {
+                        oldValues = (Map<String, Object>)form.getOldValues();
+                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
+                            oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
+                    }
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
+                }
 
-            dbschema.getScope().commitTransaction();
-        }
-        catch (SQLException x)
-        {
-            if (!SqlDialect.isConstraintException(x))
-                throw x;
-            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
-        }
-        catch (BatchValidationException x)
-        {
-            x.addToErrors(errors);
+                transaction.commit();
+            }
+            catch (SQLException x)
+            {
+                if (!SqlDialect.isConstraintException(x))
+                    throw x;
+                errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+            }
+            catch (BatchValidationException x)
+            {
+                x.addToErrors(errors);
+            }
+            finally
+            {
+                UserManager.clearUserList(form.getUser().getUserId());
+            }
         }
         catch (Exception x)
         {
+            // Do this in a separate, outer try/catch so that we will have already committed or rolled back
+            // the transaction we started. Otherwise, our database connection is likely in a bad state and can't be
+            // reused when submitting the exception report.
             errors.reject(SpringActionController.ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-        }
-        finally
-        {
-            dbschema.getScope().closeConnection();
-            UserManager.clearUserList(form.getUser().getUserId());
         }
     }
 }

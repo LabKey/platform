@@ -877,7 +877,7 @@ abstract public class AbstractTableInfo implements TableInfo
                 }
                 else
                 {
-                    if (columnNames.contains(xmlColumn.getColumnName()))
+                    if (xmlColumn.getColumnName() != null && columnNames.contains(xmlColumn.getColumnName()))
                     {
                         ColumnInfo column = getColumn(xmlColumn.getColumnName());
 

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
