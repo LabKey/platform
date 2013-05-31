@@ -415,7 +415,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                         });
 
                         this.codeMirror.setSize(null, size.height + 'px');
-                        LABKEY.query.RegisterEditorInstance(this.editorId, this.codeMirror);
+                        LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
                     }
                 },
                 resize : function(x)
