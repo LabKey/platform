@@ -489,7 +489,7 @@ public class MothershipManager
     {
         SimpleFilter filter = new SimpleFilter("ServerInstallationId", id);
         filter.addCondition("Container", containerId);
-        return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ServerInstallation.class);
+        return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
     public List<User> getAssignedToList(Container container)
