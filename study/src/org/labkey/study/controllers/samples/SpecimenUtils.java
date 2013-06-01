@@ -18,6 +18,7 @@ package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
@@ -457,7 +458,7 @@ public class SpecimenUtils
             throw new IllegalArgumentException(type + " is not a supported export type.");
     }
 
-    public void sendNewRequestNotifications(SampleRequest request) throws Exception
+    public void sendNewRequestNotifications(SampleRequest request, BindException errors) throws Exception
     {
         RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(request.getContainer());
@@ -469,7 +470,7 @@ public class SpecimenUtils
             event.setEntityId(request.getEntityId());
             DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
                     "New Request Created", event, null, null, getViewContext());
-            sendNotification(notification, true);
+            sendNotification(notification, true, errors);
         }
     }
 
@@ -483,7 +484,7 @@ public class SpecimenUtils
         return siteActors;
     }
 
-    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers) throws Exception
+    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
     {
         RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(getContainer());
@@ -498,7 +499,7 @@ public class SpecimenUtils
         MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyToEmailAddress(getUser()), null);
         String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());
         message.setSubject(getStudy().getLabel() + ": " + subject);
-        JspView<NotificationBean> notifyView = new JspView<NotificationBean>("/org/labkey/study/view/samples/notification.jsp",
+        JspView<NotificationBean> notifyView = new JspView<>("/org/labkey/study/view/samples/notification.jsp",
                 new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel()));
         message.setTemplateContent(getViewContext().getRequest(), notifyView, "text/html");
 
@@ -517,8 +518,15 @@ public class SpecimenUtils
                 else
                     message.setRecipients(Message.RecipientType.CC, "");
 
-                message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
-                MailHelper.send(message, getUser(), getContainer());
+                try
+                {
+                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
+                    MailHelper.send(message, getUser(), getContainer());
+                }
+                catch (javax.mail.internet.AddressException | NullPointerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());      // Bad address; also InternetAddress constructor can throw null
+                }
             }
             if (notification.getRequirement() != null)
                 SampleManager.getInstance().createRequestEvent(getUser(), notification.getRequirement(),

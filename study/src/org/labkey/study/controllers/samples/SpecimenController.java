@@ -1408,20 +1408,20 @@ public class SpecimenController extends BaseStudyController
                     List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                     DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                             eventSummary, event, form.getComments(), null, getViewContext());
-                    getUtils().sendNotification(notification, form.isEmailInactiveUsers());
+                    getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
                 }
                 catch (ConfigurationException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
                 }
                 catch (IOException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
                 }
-
             }
+
+            if (errors.hasErrors())
+                return false;
             return true;
         }
 
@@ -1825,19 +1825,20 @@ public class SpecimenController extends BaseStudyController
             {
                 try
                 {
-                    getUtils().sendNewRequestNotifications(_sampleRequest);
+                    getUtils().sendNewRequestNotifications(_sampleRequest, errors);
                 }
                 catch (ConfigurationException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
                 }
                 catch (IOException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
                 }
             }
+
+            if (errors.hasErrors())
+                return false;
 
             getStudy().setLastSpecimenRequest(_sampleRequest.getRowId());
             return true;
@@ -2327,19 +2328,19 @@ public class SpecimenController extends BaseStudyController
                 List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                         eventSummary, event, form.getComment(), requirement, getViewContext());
-                getUtils().sendNotification(notification, form.isEmailInactiveUsers());
+                getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
             }
             catch (ConfigurationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                return false;
             }
             catch (IOException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                return false;
             }
 
+            if (errors.hasErrors())
+                return false;
             return true;
         }
 
@@ -2690,12 +2691,11 @@ public class SpecimenController extends BaseStudyController
                     {
                         try
                         {
-                            getUtils().sendNewRequestNotifications(request);
+                            getUtils().sendNewRequestNotifications(request, errors);
                         }
                         catch (ConfigurationException e)
                         {
                             errors.reject(ERROR_MSG, e.getMessage());
-                            return false;
                         }
                     }
                 }
@@ -2703,20 +2703,20 @@ public class SpecimenController extends BaseStudyController
                 {
                     errors.reject(ERROR_MSG, "The request could not be submitted because a requestability rule is configured incorrectly. " +
                                 "Please report this problem to an administrator.  Error details: "  + e.getMessage());
-                    return false;
                 }
                 catch (IOException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
                 }
-                return true;
             }
             else
             {
                 errors.addError(new ObjectError("Specimen Request", new String[] {"NullError"}, null, "Only requests containing specimens can be submitted."));
-                return false;
             }
+
+            if (errors.hasErrors())
+                return false;
+            return true;
         }
 
         public ActionURL getSuccessURL(IdForm idForm)
@@ -2865,21 +2865,24 @@ public class SpecimenController extends BaseStudyController
                             }
 
                         };
-                        getUtils().sendNotification(notification, form.isEmailInactiveUsers());
+                        getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
                     }
                     catch (ConfigurationException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
-                        return false;
                     }
                     catch (IOException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
-                        return false;
                     }
 
+                    if (errors.hasErrors())
+                        break;
                 }
             }
+
+            if (errors.hasErrors())
+                return false;
             return true;
         }
 
