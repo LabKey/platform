@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collections;
@@ -66,6 +67,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _label;
     }
 
+    public void setLabel(String label)
+    {
+        _label = label;
+    }
+
     public List<FormSection> getFormSections()
     {
         return Collections.unmodifiableList(_sections);
@@ -80,7 +86,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     {
         for (FormSection section : _sections)
         {
-            if (!section.hasPermission(c, u))
+            if (!section.hasPermission(c, u, UpdatePermission.class))
                 return false;
         }
 
@@ -92,6 +98,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _javascriptClass;
     }
 
+    public void setJavascriptClass(String javascriptClass)
+    {
+        _javascriptClass = javascriptClass;
+    }
+
     public boolean isAvailable(Container c, User u)
     {
         if (!c.getActiveModules().contains(_owner))
@@ -99,7 +110,7 @@ public class AbstractDataEntryForm implements DataEntryForm
 
         for (FormSection section : _sections)
         {
-            if (!section.hasPermission(c, u))
+            if (!section.hasPermission(c, u, UpdatePermission.class))
                 return false;
         }
 

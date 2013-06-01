@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -40,7 +41,7 @@ public interface FormSection
 
     abstract public String getXtype();
 
-    abstract public boolean hasPermission(Container c, User u);
+    abstract public boolean hasPermission(Container c, User u, Class<? extends Permission> perm);
 
     abstract public Set<Pair<String, String>> getTableNames();
 

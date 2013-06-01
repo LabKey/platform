@@ -97,21 +97,7 @@ abstract public class EHRService
         }
     }
 
-    public enum EHR_ACTION_TYPE
-    {
-        animalGroupDetails(),
-        cageDetails(),
-        protocolDetails(),
-        projectDetails(),
-        procedureDetails();
-
-        EHR_ACTION_TYPE()
-        {
-
-        }
-    }
-
-    abstract public void registerActionOverride(EHR_ACTION_TYPE action, Module owner, String resourcePath);
+    abstract public void registerActionOverride(String actionName, Module owner, String resourcePath);
 
     abstract public void registerHistoryDataSource(HistoryDataSource source);
 

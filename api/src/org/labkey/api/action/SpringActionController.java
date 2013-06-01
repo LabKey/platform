@@ -643,20 +643,25 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
-            HTMLFileActionDescriptor htmlDescriptor = new HTMLFileActionDescriptor(actionName, r);
+            HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(actionName, r);
             _nameToDescriptor.put(actionName, htmlDescriptor);
             registerAction(htmlDescriptor);
 
             return htmlDescriptor.createController(actionController);
         }
 
-        private class HTMLFileActionDescriptor extends BaseActionDescriptor
+        protected HTMLFileActionDescriptor createFileActionDescriptor(String actionName, Resource r)
+        {
+            return new HTMLFileActionDescriptor(actionName, r);
+        }
+
+        protected class HTMLFileActionDescriptor extends BaseActionDescriptor
         {
             private final String _primaryName;
             private final List<String> _allNames;
-            private final Resource _resource;
+            protected final Resource _resource;
 
-            private HTMLFileActionDescriptor(String primaryName, Resource resource)
+            protected HTMLFileActionDescriptor(String primaryName, Resource resource)
             {
                 _primaryName = primaryName;
                 _resource = resource;
@@ -907,7 +912,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             if(_htmlResolver == null)
             {
-                _htmlResolver = new HTMLFileActionResolver(_controllerName);
+                _htmlResolver = getHTMLFileActionResolver();
             }
 
             Controller thisActionsController = _htmlResolver.resolveActionName(actionController, actionName);
@@ -922,6 +927,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
 
             return thisActionsController;
+        }
+
+        protected HTMLFileActionResolver getHTMLFileActionResolver()
+        {
+            return new HTMLFileActionResolver(_controllerName);
         }
         
         public Collection<ActionDescriptor> getActionDescriptors()

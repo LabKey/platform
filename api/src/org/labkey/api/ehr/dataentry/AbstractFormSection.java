@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -39,15 +40,14 @@ import java.util.Set;
  * Date: 4/27/13
  * Time: 10:27 AM
  */
-public class AbstractFormSection implements FormSection
+abstract public class AbstractFormSection implements FormSection
 {
     private String _name;
     private String _label;
     private String _xtype;
-    private List<String> _metadataSources = new ArrayList<String>();
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
-    private final Logger _log = Logger.getLogger(FormSection.class);
+    protected static final Logger _log = Logger.getLogger(FormSection.class);
 
     public AbstractFormSection(String name, String label, String xtype)
     {
@@ -71,11 +71,12 @@ public class AbstractFormSection implements FormSection
         return _xtype;
     }
 
-    public boolean hasPermission(Container c, User u)
+    public boolean hasPermission(Container c, User u, Class<? extends Permission> perm)
     {
-        for (Pair<String, String> pair : getTableNames())
+        for (TableInfo ti : getTables(c, u))
         {
-
+            if (!ti.hasPermission(u, perm))
+                return false;
         }
 
         return true;
@@ -117,6 +118,21 @@ public class AbstractFormSection implements FormSection
         return tables;
     }
 
+    public List<JSONObject> getStoreConfigs(Container c, User u)
+    {
+        List<JSONObject> stores = new ArrayList<JSONObject>();
+        for (TableInfo ti : getTables(c, u))
+        {
+            JSONObject json = new JSONObject();
+            json.put("schemaName", ti.getPublicSchemaName());
+            json.put("queryName", ti.getPublicName());
+
+            stores.add(json);
+        }
+
+        return stores;
+    }
+
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject json = new JSONObject();
@@ -124,19 +140,28 @@ public class AbstractFormSection implements FormSection
         json.put("name", getName());
         json.put("label", getLabel());
         json.put("xtype", getXtype());
-        json.put("metadataSources", _metadataSources);
+        json.put("storeConfigs", getStoreConfigs(c, u));
+        json.put("fieldConfigs", getFieldConfigs(c, u));
 
         return json;
+    }
+
+    abstract protected List<FormElement> getFormElements(Container c, User u);
+
+    private List<JSONObject> getFieldConfigs(Container c, User u)
+    {
+        List<JSONObject> ret = new ArrayList<JSONObject>();
+        for (FormElement fe : getFormElements(c, u))
+        {
+            ret.add(fe.toJSON());
+        }
+
+        return ret;
     }
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         return _clientDependencies;
-    }
-
-    public void setMetadataSources(List<String> metadataSources)
-    {
-        _metadataSources = metadataSources;
     }
 
     protected void addClientDependency(ClientDependency cd)

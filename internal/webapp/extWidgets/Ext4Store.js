@@ -123,16 +123,7 @@ Ext4.define('LABKEY.ext4.Store', {
         //specify an empty fields array instead of a model.  the reader will creates a model later
         this.fields = [];
 
-        this.proxy = {
-            type: 'LabkeyProxy',
-            store: this,
-            timeout: this.timeout,
-            listeners: {
-                scope: this,
-                exception: this.onProxyException
-            },
-            extraParams: baseParams
-        };
+        this.proxy = this.getProxyConfig();
 
         //see note below
         var autoLoad = config.autoLoad;
@@ -188,7 +179,21 @@ Ext4.define('LABKEY.ext4.Store', {
          */
         this.addEvents('beforemetachange', 'exception', 'synccomplete');
     },
+
     //private
+    getProxyConfig: function(){
+        return {
+            type: 'LabkeyProxy',
+            store: this,
+            timeout: this.timeout,
+            listeners: {
+                scope: this,
+                exception: this.onProxyException
+            },
+            extraParams: this.generateBaseParams()
+        }
+    },
+
     generateBaseParams: function(config){
         if(config)
             this.initialConfig = Ext4.apply({}, config);
@@ -619,9 +624,9 @@ Ext4.define('LABKEY.ext4.Store', {
 
     validateRecords: function(errors){
         Ext4.each(errors.errors, function(error){
-            //the error object for 1 row:
+            //the error object for 1 row.  1-based row numbering
             if(Ext4.isDefined(error.rowNumber)){
-                var record = this.getAt(error.rowNumber);
+                var record = this.getAt(error.rowNumber - 1);
                 if (!record)
                     return;
 

@@ -610,25 +610,8 @@ public abstract class ContainerFilter
             {
                 if(currentContainer.getParent().hasPermission(_user, _perm))
                     result.add(currentContainer.getParent().getId());
+            }
 
-                for (Container c : currentContainer.getParent().getChildren())
-                {
-                    if(c.hasPermission(_user, _perm) && c.isWorkbook())
-                    {
-                        result.add(c.getId());  //sibling workbooks
-                    }
-                }
-            }
-            else
-            {
-                for (Container c : currentContainer.getChildren())
-                {
-                    if(c.hasPermission(_user, _perm) && c.isWorkbook())
-                    {
-                        result.add(c.getId());  //child workbooks
-                    }
-                }
-            }
             return result;
         }
 

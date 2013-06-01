@@ -191,6 +191,8 @@ LABKEY.ext.Ext4Helper = new function(){
                 width: meta.width,
                 height: meta.height,
                 msgTarget: 'qtip',
+                //NOTE: if tabIndex is set, tabbing through forms will work correctly
+                tabIndex: 1,
                 validateOnChange: true
             };
 

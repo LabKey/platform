@@ -2773,6 +2773,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return;
         }
 
+        //NOTE: _jsonType must be set prior to calling getInitialFilterType();
+        this._jsonType = (bound.displayFieldJsonType ? bound.displayFieldJsonType : bound.jsonType) || 'string'
         Ext.apply(this, {
 
             // Either invoked from GWT, which will handle the commit itself.
@@ -2781,8 +2783,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             filterType    : this.getInitialFilterType(),
             _fieldCaption : bound.caption,
-            _fieldKey     : bound.fieldKey,
-            _jsonType     : (bound.displayFieldJsonType ? bound.displayFieldJsonType : bound.jsonType) || 'string'
+            _fieldKey     : bound.fieldKey
         });
 
         if (bound.lookup && bound.displayField) {
@@ -2931,7 +2932,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             operator = 'eq';
                         else if (values.length == values.max) {
                             values.values = '';
-                            operator = 'startswith';
+                            operator = LABKEY.Filter.getDefaultFilterForType(this._jsonType).getURLSuffix();
                         }
                         else if (values.length > Math.floor(values.max/2)) {
                             filter = LABKEY.Filter.getFilterTypeForURLSuffix(operator);
@@ -3647,8 +3648,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             mode: 'local',
             clearFilterOnReset: false,
             editable: false,
-            value: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
-            originalValue: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
+            value: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this._jsonType).getURLSuffix() : '',
+            originalValue: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this._jsonType).getURLSuffix() : '',
             listeners:{
                 select : function(combo) {
                     var idx = combo.filterIndex;
