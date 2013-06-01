@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 
 import javax.script.Bindings;
@@ -47,6 +48,33 @@ public class RScriptEngine extends ExternalScriptEngine
         return new RScriptEngineFactory(_def);
     }
 
+    protected File prepareScriptFile(String script, ScriptContext context, List<String> extensions)
+    {
+        File scriptFile = null;
+        if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
+        {
+            //
+            // If we are using Knitr then we need to write a new R script that calls knitr and passes
+            // the input R script into it
+            //
+
+            // write the incoming script as the input of the preprocessor {ex: script.rhtml}
+            List<String> preprocessExtensions = Arrays.asList(new String[] {getKnitrExtension(context, extensions)});
+            scriptFile = writeScriptFile(script, context, preprocessExtensions);
+
+            // write a new script (the acutal .R script to be run) as the preprocessing script and use
+            // this as the script file we pass to the script engine
+            String preprocessScript = createKnitrScript(context, scriptFile);
+            scriptFile = writeScriptFile(preprocessScript, context, extensions);
+        }
+        else
+        {
+            scriptFile = writeScriptFile(script, context, extensions);
+        }
+
+        return scriptFile;
+    }
+
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
@@ -54,30 +82,8 @@ public class RScriptEngine extends ExternalScriptEngine
 
         if (!extensions.isEmpty())
         {
-            File scriptFile = null;
-            if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
-            {
-                //
-                // If we are using Knitr then we need to write a new R script that calls knitr and passes
-                // the input R script into it
-                //
-
-                // write the incoming script as the input of the preprocessor {ex: script.rhtml}
-                List<String> preprocessExtensions = Arrays.asList(new String[] {getKnitrExtension(context, extensions)});
-                scriptFile = writeScriptFile(script, context, preprocessExtensions);
-
-                // write a new script (the acutal .R script to be run) as the preprocessing script and use
-                // this as the script file we pass to the script engine
-                String preprocessScript = createKnitrScript(context, scriptFile);
-                scriptFile = writeScriptFile(preprocessScript, context, extensions);
-            }
-            else
-            {
-                scriptFile = writeScriptFile(script, context, extensions);
-            }
-
+            File scriptFile = prepareScriptFile(script, context, extensions);
             return eval(scriptFile, context);
-
         }
         else
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
@@ -110,10 +116,38 @@ public class RScriptEngine extends ExternalScriptEngine
         return _knitrFormat;
     }
 
+    protected String getInputFilename(File inputScript)
+    {
+        return inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+    }
+
+    protected String getOutputFilename(File inputScript)
+    {
+        String outputFilename = null;
+        // do not call getInputFilename here as we do not want to invoke
+        // any overrides.  The output file name should be the local path even
+        // in the Rserve case since this file is manipulated on the labkey
+        // server
+        String inputFilename = inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+        String ext = "html";
+
+        if (inputFilename.lastIndexOf('.') != -1)
+            outputFilename = inputFilename.substring(0, inputFilename.lastIndexOf('.') + 1) + ext;
+        else
+            outputFilename = inputFilename + "." + ext;
+
+        return outputFilename.replaceAll("\\\\", "/");
+    }
+
     protected void setKnitrOutput(ScriptContext context, String value)
     {
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put(KNITR_OUTPUT, value);
+    }
+
+    protected String getRWorkingDir(ScriptContext context)
+    {
+        return RReport.getLocalPath(getWorkingDir(context));
     }
 
     protected String createKnitrScript(ScriptContext context, File inputScript)
@@ -124,6 +158,13 @@ public class RScriptEngine extends ExternalScriptEngine
         // consider adding 'quiet mode' if we don't want knitr processing output
         // or have a knitr options argument for the R script engine definition
         StringBuilder sb = new StringBuilder();
+
+        // Set the working directory for knitr reports to be the same as
+        // where we load the input script.  Knitr will output the R results and final
+        // html to this working directory
+        sb.append("setwd(\"");
+        sb.append(getRWorkingDir(context));
+        sb.append("\")\n");
         sb.append("library(knitr)\n");
 
         //
@@ -152,25 +193,16 @@ public class RScriptEngine extends ExternalScriptEngine
             sb.append("knit(");
         }
 
-        String inputFilename = inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+        String inputFilename = getInputFilename(inputScript);
         sb.append("input=\"");
         sb.append(inputFilename);
         sb.append("\")\n");
 
         //
-        // no need to specify the output filename.  Knitr will use the input filename to derive the output
-        // filename.  Note that we always generate html
+        // No need to specify the output filename in this script.  Knitr will use the input filename to derive the output
+        // filename.  Remember the name, however, so that we can return it later after the script runs.
         //
-
-        String outputFilename = null;
-        String ext = "html";
-        if (inputFilename.lastIndexOf('.') != -1)
-            outputFilename = inputFilename.substring(0, inputFilename.lastIndexOf('.') + 1) + ext;
-        else
-            outputFilename = inputFilename + "." + ext;
-
-        outputFilename.replaceAll("\\\\", "/");
-        setKnitrOutput(context, outputFilename);
+        setKnitrOutput(context, getOutputFilename(inputScript));
 
         return sb.toString();
     }

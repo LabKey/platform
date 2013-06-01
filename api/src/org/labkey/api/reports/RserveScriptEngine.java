@@ -29,7 +29,7 @@ import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
-public class RserveScriptEngine extends ExternalScriptEngine
+public class RserveScriptEngine extends RScriptEngine
 {
     private String localHostIP = "127.0.0.1";
     private String localHostName = "localhost";
@@ -45,6 +45,20 @@ public class RserveScriptEngine extends ExternalScriptEngine
     public RserveScriptEngine(ExternalScriptEngineDefinition def)
     {
         super(def);
+    }
+
+    @Override
+    protected String getInputFilename(File inputScript)
+    {
+        String inputPath = RReport.getLocalPath(inputScript);
+        return getRemoteReportPath(inputPath);
+    }
+
+    @Override
+    protected String getRWorkingDir(ScriptContext context)
+    {
+        String workingDir = RReport.getLocalPath(getWorkingDir(context));
+        return getRemoteReportPath(workingDir);
     }
 
     public Object eval(String script, ScriptContext context) throws ScriptException
@@ -73,7 +87,7 @@ public class RserveScriptEngine extends ExternalScriptEngine
             assert (rh!=null) && (rh.isInUse());
         }
 
-        File scriptFile = writeScriptFile(script, context, extensions);
+        File scriptFile = prepareScriptFile(script, context, extensions);
 
         try
         {
@@ -86,15 +100,17 @@ public class RserveScriptEngine extends ExternalScriptEngine
             //
             boolean output = false;
             StringBuilder sb = new StringBuilder();
-            String scriptPath = RReport.getLocalPath(scriptFile);
-            scriptPath = getRemoteReportPath(scriptPath);
             //
             // wrap the command to capture the output
             //
-            sb.append("capture.output(source(\"");
-            sb.append(scriptPath);
-            sb.append("\"))");
+            sb.append("try(capture.output(source(\"");
+            sb.append(getInputFilename(scriptFile));
+            sb.append("\")), silent=TRUE)");
+
             REXP rexp = rconn.eval(sb.toString());
+            if (rexp.inherits("try-error"))
+                throw new RuntimeException(getRserveOutput(rexp));
+
             return getRserveOutput(rexp);
         }
         catch (RserveException re)
