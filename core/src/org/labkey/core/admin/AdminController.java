@@ -2845,19 +2845,7 @@ public class AdminController extends SpringActionController
             JFreeChart chart = ChartFactory.createStackedBarChart(form.getType(), null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
             response.setContentType("image/png");
 
-            // TODO: Remove try/catch once we require Java 7
-            // Ignore known Java 6 issue with sun.font.FileFontStrike.getCachedGlyphPtr(), http://bugs.sun.com/view_bug.do?bug_id=7007299
-            try
-            {
-                ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
-            }
-            catch (NullPointerException e)
-            {
-                if ("getCachedGlyphPtr".equals(e.getStackTrace()[0].getMethodName()))
-                    LOG.warn("Ignoring known synchronization issue with FileFontStrike.getCachedGlyphPtr()", e);
-                else
-                    throw e;
-            }
+            ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         }
     }
 
