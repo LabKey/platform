@@ -13,41 +13,18 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="lucene 4.1.0">
+      <library name="Lucene 4.3.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-4.1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-4.3.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-4.3.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-4.3.0.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/" />
-        </JAVADOC>
+        <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/core/src/java" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="analyzers 4.1.0">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-4.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/analysis/common/src/java" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-4.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-4.1.0-src.zip!/queryparser/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.3.0.src.zip!/core/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.3.0.src.zip!/analysis/common/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.3.0.src.zip!/analysis/common/src/tools/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.3.0.src.zip!/queryparser/src/java" />
         </SOURCES>
       </library>
     </orderEntry>

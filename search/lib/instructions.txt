@@ -4,8 +4,14 @@ download lucene-x.x.x.tgz
 - in /lucene-x.x.x/queryparser, copy lucene-queryparser-x.x.x.jar to /labkey/server/modules/search/lib
 
 download lucene-x.x.x-src.tgz
-- right click "core" directory and "Copy To..." c:\temp
 - right click "analysis" directory and "Copy To..." c:\temp
-- navigate to c:\temp, select "core" and "analysis", right click them both, "Send To..." Compressed (zipped) folder
+- right click "core" directory and "Copy To..." c:\temp
+- right click "queryparser" directory and "Copy To..." c:\temp
+- navigate to c:\temp, select "analysis", "core" and "queryparser", right click them both, "Send To..." Compressed (zipped) folder
 - rename the new zip file to lucene-x.x.x-src.zip and copy it to /labkey/server/modules/search/lib
-- open lucene-x.x.x-src.zip, switch to /core/src and delete the "test" directory (others?)
+- open lucene-x.x.x-src.zip
+  - navigate into "/analysis"
+  - delete all directories except "common"
+  - delete directory "/analysis/common/src/test"
+  - delete directory "/core/src/test"
+  - delete directory "/queryparser/src/test"

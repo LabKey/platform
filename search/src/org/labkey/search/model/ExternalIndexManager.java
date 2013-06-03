@@ -169,7 +169,7 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
     @Override
     public Set<Class<? extends Permission>> getRelevantPermissions()
     {
-        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> perms = new HashSet<>();
         perms.add(ReadPermission.class);
         return perms;
     }

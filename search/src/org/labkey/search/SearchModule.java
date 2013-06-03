@@ -69,7 +69,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     public boolean hasScripts()
@@ -135,8 +135,8 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
-            // 13.1 moved to Lucene 4.1 and updated many of the index fields, so rebuild the index. For future index rebuilds, just update the version number below.
-            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 12.32);
+            // 13.2 moved to Lucene 4.3, so rebuild the index. For future upgrades, just update the version number below.
+            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11);
 
             // don't start the crawler until all the modules are done startuping
             ContextListener.addStartupListener(new StartupListener(){
@@ -217,7 +217,7 @@ public class SearchModule extends DefaultModule
         @Override
         public List<FieldKey> getDefaultVisibleColumns()
         {
-            List<FieldKey> columns = new ArrayList<FieldKey>();
+            List<FieldKey> columns = new ArrayList<>();
             columns.add(FieldKey.fromParts("Date"));
             columns.add(FieldKey.fromParts("CreatedBy"));
             columns.add(FieldKey.fromParts("ImpersonatedBy"));
