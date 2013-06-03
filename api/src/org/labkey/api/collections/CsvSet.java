@@ -17,9 +17,9 @@ package org.labkey.api.collections;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
-public class CsvSet extends HashSet<String>
+public class CsvSet extends LinkedHashSet<String>
 {
     public CsvSet(String str)
     {
