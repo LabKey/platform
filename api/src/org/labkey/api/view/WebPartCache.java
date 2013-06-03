@@ -56,10 +56,10 @@ public class WebPartCache
     {
         Map<String, Portal.PortalPage> pages = get(c);
         if (null == pages)
-            pages = new CaseInsensitiveHashMap<Portal.PortalPage>();
+            pages = new CaseInsensitiveHashMap<>();
         if (showHidden)
             return pages;
-        CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<Portal.PortalPage>();
+        CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();
         for (Portal.PortalPage page : pages.values())
             if (!page.isHidden())
                 ret.put(page.getPageId(), page);
@@ -90,7 +90,7 @@ public class WebPartCache
         public Map<String, Portal.PortalPage> load(String containerId, Object o)
         {
             DbSchema schema = CoreSchema.getInstance().getSchema();
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>();
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
 
             SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
@@ -108,7 +108,7 @@ public class WebPartCache
             }
 
             SimpleFilter filter = new SimpleFilter("Container", containerId);
-            ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
+            ArrayList<WebPart> list = new ArrayList<>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
 
             for (WebPart wp : list)
             {

@@ -30,9 +30,9 @@ import java.sql.SQLException;
 public class ResultSetSelector extends BaseSelector
 {
     private final ResultSet _rs;
-    private CompletionAction _completionAction = CompletionAction.Close;
+    private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
 
-    protected ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
+    public ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
     {
         super(scope, conn);
         _rs = rs;

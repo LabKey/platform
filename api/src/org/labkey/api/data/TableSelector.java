@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,17 +45,25 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     private final Collection<ColumnInfo> _columns;
     private final @Nullable Filter _filter;
     private final @Nullable Sort _sort;
+    private final boolean _stableColumnOrdering;
 
     private boolean _forDisplay = false;
 
-    // Select specified columns from a table
-    public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+    // Master constructor
+    private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
     {
         super(table.getSchema().getScope());
         _table = table;
         _columns = columns;
         _filter = filter;
         _sort = sort;
+        _stableColumnOrdering = stableColumnOrdering;  // We track this to warn at method call time, e.g., if getValueMap() is called when column order is indeterminate
+    }
+
+    // Select specified columns from a table
+    public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+    {
+        this(table, columns, filter, sort, isStableOrdered(columns));
     }
 
     // Select all columns from a table, no filter or sort
@@ -66,7 +75,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // Select specified columns from a table, no filter or sort
     public TableSelector(TableInfo table, Set<String> columnNames)
     {
-        this(table, Table.columnInfosList(table, columnNames), null, null);
+        this(table, columnNames, null, null);
     }
 
     // Select all columns from a table
@@ -78,13 +87,13 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // Select specified columns from a table
     public TableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, Table.columnInfosList(table, columnNames), filter, sort);
+        this(table, Table.columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
     }
 
     // Select a single column
     public TableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(column.getParentTable(), PageFlowUtil.set(column), filter, sort);
+        this(column.getParentTable(), Collections.singleton(column), filter, sort, true);  // Single column is stable ordered
     }
 
     // Select a single column from all rows
@@ -97,6 +106,28 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     protected TableSelector getThis()
     {
         return this;
+    }
+
+    // Determine if the collection will iterate in a known order
+    private static boolean isStableOrdered(Collection<?> collection)
+    {
+        return (!(collection instanceof HashSet) || collection instanceof LinkedHashSet);
+    }
+
+    @NotNull
+    @Override
+    public <K, V> Map<K, V> getValueMap()
+    {
+        assert _stableColumnOrdering : "getValueMap() should not be called with a randomly ordered column list!";
+        return super.getValueMap();
+    }
+
+    @NotNull
+    @Override
+    public <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> fillMap)
+    {
+        assert _stableColumnOrdering : "fillValueMap() should not be called with a randomly ordered column list!";
+        return super.fillValueMap(fillMap);
     }
 
     /**

@@ -40,6 +40,8 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getArrayList(Map.class).size());
         assertEquals(count, selector.getCollection(Map.class).size());
         assertEquals(count, selector.getArray(Map.class).length);
+        assertEquals(count, selector.getMapCollection().size());
+        assertEquals(count, selector.getMapArray().length);
 
         rowCount.setValue(0);
         selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>()

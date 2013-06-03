@@ -353,7 +353,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                         Set<String> cols = new HashSet<String>();
                         cols.add(lookupTable.getTitleColumn());
                         cols.add(pks.get(0).getName());
-                        Map[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getArray(Map.class);
+                        Map<String, Object>[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getMapArray();
                         if (maps.length > 0)
                         {
                             Object title = maps[0].get(lookupTable.getTitleColumn());

@@ -279,7 +279,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     // Check to see if it already has the data rows that are being copied
                     TableInfo tableInfo = dataSet.getTableInfo(user, false);
                     Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(dataSet.getKeyPropertyName(), entry.getValue()));
-                    long existingRowCount = new TableSelector(tableInfo, Table.ALL_COLUMNS, datasetFilter, null).getRowCount();
+                    long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
                     if (existingRowCount > 0)
                     {
                         // If so, don't let the user copy them again, even if they have different participant/visit/date info

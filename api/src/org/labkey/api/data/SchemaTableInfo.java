@@ -70,7 +70,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -452,7 +451,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public List<ColumnInfo> getColumns(String... colNameArray)
     {
-        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(colNameArray.length);
+        List<ColumnInfo> ret = new ArrayList<>(colNameArray.length);
 
         for (String name : colNameArray)
         {
@@ -662,7 +661,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public Set<FieldKey> getDetailsURLKeys()
     {
-        HashSet<FieldKey> set = new HashSet<FieldKey>();
+        HashSet<FieldKey> set = new HashSet<>();
         if (null != _detailsURL)
             set.addAll(_detailsURL.getFieldKeys());
         return set;
@@ -689,7 +688,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public void setDefaultVisibleColumns(Iterable<FieldKey> keys)
     {
         checkLocked();
-        _defaultVisibleColumns = new ArrayList<FieldKey>();
+        _defaultVisibleColumns = new ArrayList<>();
         for (FieldKey key : keys)
             _defaultVisibleColumns.add(key);
     }
@@ -698,7 +697,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
     {
         List<ColumnInfo> columns = getColumns();
-        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey, ColumnInfo>(columns.size());
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>(columns.size());
         if (hidden)
         {
             for (ColumnInfo col : columns)
@@ -998,7 +997,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
-        List<Pair<String, String>> templates = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> templates = new ArrayList<>();
         //NOTE: should this create a RenderContext from viewContext instead?
         //RenderContext rc = new RenderContext(ctx);
         Map<String, Container> renderCtx = Collections.singletonMap("container", ctx.getContainer());
@@ -1034,7 +1033,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public void setImportTemplates(ImportTemplateType[] templates)
     {
         checkLocked();
-        List<Pair<String, StringExpression>> list = new ArrayList<Pair<String, StringExpression>>();
+        List<Pair<String, StringExpression>> list = new ArrayList<>();
         for (ImportTemplateType t : templates)
         {
             StringExpression url = StringExpressionFactory.createURL(t.getUrl());

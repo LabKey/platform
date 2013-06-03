@@ -72,7 +72,7 @@ public class AtomicDatabaseInteger
     // Get the current value
     public int get()
     {
-        SimpleFilter filter = (null != _container ? new SimpleFilter("Container", _container) : null);
+        SimpleFilter filter = (null != _container ? SimpleFilter.createContainerFilter(_container) : null);
         Integer currentValue = new TableSelector(_targetColumn, filter, null).getObject(_rowId, Integer.class);
 
         if (null == currentValue)
@@ -90,14 +90,14 @@ public class AtomicDatabaseInteger
         if (null != _container)
             filter.addCondition("Container", _container);
 
-        Map<String, Object> in = new HashMap<String, Object>();
+        Map<String, Object> in = new HashMap<>();
         in.put(_targetColumn.getSelectName(), update);
 
         try
         {
             // Optimistic concurrency exceptions are possible... don't log them as errors
             Map<String, Object> out = Table.update(_user, _table, in, _rowId, filter, Level.ERROR);
-            assert update == (Integer)out.get(targetColumnName);
+            assert out.get(targetColumnName).equals(update);
             return true;
         }
         catch (Table.OptimisticConflictException e)
@@ -151,7 +151,7 @@ public class AtomicDatabaseInteger
             User user = TestContext.get().getUser();
             TableInfo table = TestSchema.getInstance().getTableInfoTestTable();
 
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
             map.put("Container", c);
             map.put("IntNotNull", 0);
             map.put("DateTimeNotNull", new Date());
@@ -201,7 +201,7 @@ public class AtomicDatabaseInteger
 
             double perSecond = n / (elapsed / 1000.0);
 
-            assertTrue(perSecond > 100);   // A very low bar
+            assertTrue("Performance measured less than 100 increments per second", perSecond > 100);   // A very low bar
         }
 
         @After

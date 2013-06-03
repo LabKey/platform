@@ -27,7 +27,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
@@ -173,13 +172,13 @@ public class PropertyManager
      */
     public static Map<Container, Map<Integer, String>> getPropertyValueAndAncestors(User user, Container c, String category, String name, boolean includeNullContainers)
     {
-        Map<Container, Map<Integer, String>> map = new HashMap<Container, Map<Integer, String>>();
+        Map<Container, Map<Integer, String>> map = new HashMap<>();
         Container curContainer = c;
 
         while (curContainer != null)
         {
             String value = getProperty(user, curContainer, category, name);
-            Map<Integer, String> containerMap = new HashMap<Integer, String>();
+            Map<Integer, String> containerMap = new HashMap<>();
 
             if(value != null)
                 containerMap.put(user.getUserId(), value);
@@ -242,7 +241,7 @@ public class PropertyManager
                         prop.getSchema().getScope().commitTransaction();
                         return null;
                     }
-                    Map<String, Object> map = new HashMap<String, Object>();
+                    Map<String, Object> map = new HashMap<>();
                     map.put("UserId", user);
                     map.put("ObjectId", container);
                     map.put("Category", category);
@@ -262,7 +261,8 @@ public class PropertyManager
                 {
                     // Map-filling query needed only for existing property set
                     Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
-                    new TableSelector(prop.getTableInfoProperties(), PageFlowUtil.set("Name", "Value"), filter, null).fillValueMap(m);
+                    TableInfo tinfo = prop.getTableInfoProperties();
+                    new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null).fillValueMap(m);
                 }
 
                 prop.getSchema().getScope().commitTransaction();
@@ -456,7 +456,7 @@ public class PropertyManager
         public String remove(Object key)
         {
             if (null == removedKeys)
-                removedKeys = new HashSet<Object>();
+                removedKeys = new HashSet<>();
             if (this.containsKey(key))
             {
                 removedKeys.add(key);
@@ -489,7 +489,7 @@ public class PropertyManager
         public void clear()
         {
             if (null == removedKeys)
-                removedKeys = new HashSet<Object>();
+                removedKeys = new HashSet<>();
             removedKeys.addAll(keySet());
             _modified = true;
             super.clear();

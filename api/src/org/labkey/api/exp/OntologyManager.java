@@ -563,10 +563,10 @@ public class OntologyManager
         SimpleFilter filter = new SimpleFilter("ObjectURI", objectLSID);
         if (container != null)
         {
-            filter.addCondition("Container", container.getId());
+            filter.addCondition("Container", container);
         }
 
-        ObjectProperty[] pvals = new TableSelector(getTinfoObjectPropertiesView(), Table.ALL_COLUMNS, filter, null).getArray(ObjectProperty.class);
+        ObjectProperty[] pvals = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArray(ObjectProperty.class);
 		m = new HashMap<String, ObjectProperty>();
 		for (ObjectProperty value : pvals)
 		{
@@ -620,7 +620,7 @@ public class OntologyManager
         {
             filter.addCondition(FieldKey.fromParts("Container"), container.getId());
         }
-        return new TableSelector(getTinfoObject(), Table.ALL_COLUMNS, filter, null).getObject(OntologyObject.class);
+        return new TableSelector(getTinfoObject(), filter, null).getObject(OntologyObject.class);
 	}
 
 
@@ -3435,7 +3435,8 @@ public class OntologyManager
         String containerId;
         String newProjectId;
         // get all unique combos of Container, project
-        try {
+        try
+        {
             String sql = "SELECT Container, Project FROM " + descriptorTable + " GROUP BY Container, Project";
             rs = Table.executeQuery(getExpSchema(), sql, new Object[]{});
             while (rs.next())

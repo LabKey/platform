@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,12 +52,14 @@ public interface Selector
 
     @NotNull <E> Collection<E> getCollection(Class<E> clazz);
 
+    // Convenience method that avoids "unchecked assignment" warnings
     @NotNull Collection<Map<String, Object>> getMapCollection();
 
     @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz);
 
     <T> T getObject(Class<T> clazz);
 
+    // Convenience method that avoids "unchecked assignment" warnings
     Map<String, Object> getMap();
 
     void forEach(ForEachBlock<ResultSet> block);

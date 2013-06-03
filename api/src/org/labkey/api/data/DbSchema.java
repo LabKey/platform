@@ -471,7 +471,7 @@ public class DbSchema
 
                     TableSelector selector = new TableSelector(table);
                     selector.setMaxRows(10);
-                    selector.getCollection(Map.class);
+                    selector.getMapCollection();
                 }
             }
         }

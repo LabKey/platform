@@ -29,7 +29,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.AbstractDataIterator;
@@ -71,6 +70,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +115,7 @@ public class Table
         return offset >= 0;
     }
 
-    // ================== These methods are no longer used by core Labkey code ==================
+    // ================== These methods are no longer used by LabKey code ==================
 
     @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
@@ -154,7 +154,7 @@ public class Table
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
-        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
+        TableSelector selector = new TableSelector(table, select, filter, sort);
         selector.setForDisplay(true);
 
         return selector.getArray(clss);
@@ -260,6 +260,12 @@ public class Table
         return new LegacySqlExecutor(schema).execute(f);
     }
 
+    @Deprecated /** Use SqlSelector */
+    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
@@ -273,7 +279,7 @@ public class Table
     }
 
 
-    // 33 usages
+    // 30 usages
     @Deprecated /** Use TableSelector */
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -320,7 +326,6 @@ public class Table
         return new LegacySqlExecutor(schema).execute(sql, parameters);
     }
 
-
     // ===== SqlSelector methods below =====
 
     // 20 usages
@@ -359,13 +364,6 @@ public class Table
     public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet();
-    }
-
-    // 7 usages
-    @Deprecated /** Use SqlSelector */
-    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1103,25 +1101,30 @@ public class Table
     }
 
 
-    static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
+    // Move to TableSelector
+    static Collection<ColumnInfo> columnInfosList(TableInfo table, Collection<String> select)
     {
-        List<ColumnInfo> allColumns = table.getColumns();
-        List<ColumnInfo> selectColumns;
+        Collection<ColumnInfo> selectColumns;
 
         if (select == ALL_COLUMNS)
-            selectColumns = allColumns;
+        {
+            selectColumns = table.getColumns();
+        }
         else
         {
-            select = new CaseInsensitiveHashSet(select);
-            List<ColumnInfo> selectList = new ArrayList<>();      // TODO: Just use selectColumns
-            for (ColumnInfo column : allColumns)
+            selectColumns = new LinkedHashSet<>();
+
+            for (String name : select)
             {
-                if (select != ALL_COLUMNS && !select.contains(column.getName()) && !select.contains(column.getPropertyName()))
-                    continue;
-                selectList.add(column);
+                ColumnInfo column = table.getColumn(name);
+
+                if (null != column)
+                    selectColumns.add(column);
+                else
+                    _log.warn("Requested column does not exist in table '" + table.getSelectName() + "': " + name);
             }
-            selectColumns = selectList;
         }
+
         return selectColumns;
     }
 
@@ -1601,13 +1604,13 @@ public class Table
                         "MIN(C.Name) AS MinName\n" +
                     "FROM core.Containers C\n" +
                     "LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid\n";
-            Map expected = new SqlSelector(tinfo.getSchema(), sql).getObject(Map.class);
+            Map<String, Object> expected = new SqlSelector(tinfo.getSchema(), sql).getMap();
 
             verifyAggregates(expected, aggregateMap);
         }
 
 
-        private void verifyAggregates(Map expected, Map<String, List<Aggregate.Result>> aggregateMap)
+        private void verifyAggregates(Map<String, Object> expected, Map<String, List<Aggregate.Result>> aggregateMap)
         {
             verifyAggregate(expected.get("CountStar"), aggregateMap.get("*").get(0).getValue());
 
@@ -1918,7 +1921,7 @@ public class Table
                     testTable,
                     dic
             );
-            new Pump((DataIteratorBuilder)load, dic).run();
+            new Pump(load, dic).run();
 
             assertFalse(dic.getErrors().hasErrors());
 

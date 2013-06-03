@@ -130,7 +130,7 @@ public class DilutionManager
     private NabSpecimen getNabSpecimen(Filter filter)
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
-        List<NabSpecimen> nabSpecimens = new TableSelector(tableInfo, Table.ALL_COLUMNS, filter, null).getArrayList(NabSpecimen.class);
+        List<NabSpecimen> nabSpecimens = new TableSelector(tableInfo, filter, null).getArrayList(NabSpecimen.class);
         if (!nabSpecimens.isEmpty())
             return nabSpecimens.get(0);
         return null;
@@ -140,7 +140,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Filter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RowId"), rowIds));
-        List<NabSpecimen> nabSpecimens = new TableSelector(tableInfo, Table.ALL_COLUMNS, filter, null).getArrayList(NabSpecimen.class);
+        List<NabSpecimen> nabSpecimens = new TableSelector(tableInfo, filter, null).getArrayList(NabSpecimen.class);
         return nabSpecimens;
     }
 

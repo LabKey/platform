@@ -40,7 +40,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
     public <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
     {
-        TableSelector selector = new TableSelector(table, null, null);
+        TableSelector selector = new TableSelector(table);
 
         test(selector, clazz);
         testOffsetAndLimit(selector, clazz);

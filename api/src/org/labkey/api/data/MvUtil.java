@@ -172,7 +172,7 @@ public class MvUtil
         selectColumns.add("mvindicator");
         selectColumns.add("label");
         Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
-        Map[] selectResults = new TableSelector(mvTable, selectColumns, filter, null).getArray(Map.class);
+        Map[] selectResults = new TableSelector(mvTable, selectColumns, filter, null).getMapArray();
 
         //noinspection unchecked
         for (Map<String, String> m : selectResults)

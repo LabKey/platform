@@ -16,6 +16,8 @@
 
 package org.labkey.api.data.dialect;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.servlet.ServletException;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -32,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 */
 public class SqlDialectManager
 {
-    private static List<SqlDialectFactory> _factories = new CopyOnWriteArrayList<SqlDialectFactory>();
+    private static List<SqlDialectFactory> _factories = new CopyOnWriteArrayList<>();
 
     public static void register(SqlDialectFactory factory)
     {
@@ -43,7 +45,7 @@ public class SqlDialectManager
      * Getting the SqlDialect from the datasource properties won't return the version-specific dialect -- use
      * getFromMetaData() if possible.
      */
-    public static SqlDialect getFromDriverClassname(String dsName, String driverClassName) throws ServletException
+    public static @NotNull SqlDialect getFromDriverClassname(String dsName, String driverClassName) throws ServletException
     {
         for (SqlDialectFactory factory : _factories)
         {
@@ -57,12 +59,14 @@ public class SqlDialectManager
     }
 
 
-    public static SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
+    // Will throw if database is not supported
+    public static @NotNull SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings);
     }
 
-    public static SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    // Will throw if database is not supported
+    public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialectFactory factory : _factories)
         {
@@ -78,7 +82,7 @@ public class SqlDialectManager
 
     public static Collection<? extends Class> getAllJUnitTests()
     {
-        Set<Class> classes = new HashSet<Class>();
+        Set<Class> classes = new HashSet<>();
 
         for (SqlDialectFactory factory : _factories)
             classes.addAll(factory.getJUnitTests());
@@ -94,7 +98,7 @@ public class SqlDialectManager
     // Returns instances of all dialect implementations for testing purposes
     public static Collection<? extends SqlDialect> getAllDialectsToTest()
     {
-        Set<SqlDialect> dialects = new HashSet<SqlDialect>();
+        Set<SqlDialect> dialects = new HashSet<>();
 
         for (SqlDialectFactory factory : _factories)
         {

@@ -90,7 +90,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public ViewCategory[] getCategories(Container c, User user, SimpleFilter filter)
     {
-        try {
+        try
+        {
             filter.addCondition("Container", c);
             ViewCategory[] categories = Table.select(getTableInfoCategories(), Table.ALL_COLUMNS, filter, null, ViewCategory.class);
 

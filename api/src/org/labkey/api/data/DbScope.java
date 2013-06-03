@@ -29,7 +29,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -128,11 +127,8 @@ public class DbScope
     // because failed connections seem to get added into the pool.
     protected DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = dataSource.getConnection())
         {
-            conn = dataSource.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
             try
@@ -142,14 +138,14 @@ public class DbScope
             }
             finally
             {
-                // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis      
+                // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 _log.info("Initializing DbScope with the following configuration:" +
-                                            "\n    DataSource Name:          " + dsName +
-                                            "\n    Server URL:               " + dbmd.getURL() +
-                                            "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                                            "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
-                                            "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
-                                            "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
+                        "\n    DataSource Name:          " + dsName +
+                        "\n    Server URL:               " + dbmd.getURL() +
+                        "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
+                        "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                        "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
+                        "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
                         (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : ""));
             }
 
@@ -163,20 +159,6 @@ public class DbScope
             _driverVersion = dbmd.getDriverVersion();
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
-        }
-        finally
-        {
-            if (null != conn)
-            {
-                try
-                {
-                    conn.close();
-                }
-                catch (SQLException e)
-                {
-                    // ignore
-                }
-            }
         }
     }
 
@@ -672,32 +654,39 @@ public class DbScope
     public Collection<String> getSchemaNames() throws SQLException
     {
         Connection conn = null;
-        ResultSet rs = null;
 
         try
         {
-            SqlDialect dialect = getSqlDialect();
             conn = getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
-            if (dialect.treatCatalogsAsSchemas())
-                rs = dbmd.getCatalogs();
-            else
-                rs = dbmd.getSchemas();
+            try (ResultSet rs = getSchemaNameResultSet(dbmd))
+            {
+                final Collection<String> schemaNames = new LinkedList<>();
 
-            Collection<String> schemaNames = new LinkedList<>();
+                new ResultSetSelector(this, rs, null).forEach(new Selector.ForEachBlock<ResultSet>()
+                {
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        schemaNames.add(rs.getString(1).trim());
+                    }
+                });
 
-            while (rs.next())
-                schemaNames.add(rs.getString(1).trim());
-
-            return schemaNames;
+                return schemaNames;
+            }
         }
         finally
         {
-            ResultSetUtil.close(rs);
             if (null != conn && !isTransactionActive())
                 conn.close();
         }
+    }
+
+
+    private ResultSet getSchemaNameResultSet(DatabaseMetaData dbmd) throws SQLException
+    {
+        return getSqlDialect().treatCatalogsAsSchemas() ? dbmd.getCatalogs() : dbmd.getSchemas();
     }
 
 
@@ -1377,7 +1366,7 @@ public class DbScope
                 {
                     TableSelector selector = new TableSelector(table);
                     selector.setMaxRows(10);
-                    selector.getCollection(Map.class);
+                    selector.getMapCollection();
                 }
             }
             finally

@@ -122,7 +122,7 @@ public class SecurityManager
 {
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final List<ViewFactory> _viewFactories = new CopyOnWriteArrayList<ViewFactory>();
+    private static final List<ViewFactory> _viewFactories = new CopyOnWriteArrayList<>();
 
     static final String NULL_GROUP_ERROR_MESSAGE = "Null group not allowed";
     static final String NULL_PRINCIPAL_ERROR_MESSAGE = "Null principal not allowed";
@@ -260,7 +260,7 @@ public class SecurityManager
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<GroupListener> _listeners = new CopyOnWriteArrayList<GroupListener>();
+    private static final List<GroupListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static void addGroupListener(GroupListener listener)
     {
@@ -292,7 +292,7 @@ public class SecurityManager
 
     protected static List<Throwable> fireDeletePrincipalFromGroup(int groupId, UserPrincipal user)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
         if (user == null)
             return errors;
 
@@ -758,7 +758,7 @@ public class SecurityManager
                 Integer userId = null;
 
                 // Add row to Principals
-                Map<String, Object> fieldsIn = new HashMap<String, Object>();
+                Map<String, Object> fieldsIn = new HashMap<>();
                 fieldsIn.put("Name", email.getEmailAddress());
                 fieldsIn.put("Type", PrincipalType.USER.getTypeChar());
 
@@ -802,7 +802,7 @@ public class SecurityManager
                 //
                 try
                 {
-                    Map<String, Object> m = new HashMap<String, Object>();
+                    Map<String, Object> m = new HashMap<>();
                     m.put("UserId", userId);
                     String displayName = displayNameFromEmail(email, userId);
                     m.put("DisplayName", displayName);
@@ -934,7 +934,7 @@ public class SecurityManager
         try
         {
             String crypt = Crypt.BCrypt.digestWithPrefix(password);
-            List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
+            List<String> history = new ArrayList<>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
             // Remember only the last 10 password hashes
@@ -1248,7 +1248,7 @@ public class SecurityManager
     // Returns a list of errors
     public static List<String> addMembers(Group group, Collection<? extends UserPrincipal> principals)
     {
-        List<String> errors = new LinkedList<String>();
+        List<String> errors = new LinkedList<>();
 
         for (UserPrincipal principal : principals)
         {
@@ -1320,8 +1320,8 @@ public class SecurityManager
     // in the subgraph represented by root, just the ones that that link back to root itself.
     private static boolean hasCycle(Group root)
     {
-        HashSet<Integer> groupSet = new HashSet<Integer>();
-        LinkedList<Integer> recurse = new LinkedList<Integer>();
+        HashSet<Integer> groupSet = new HashSet<>();
+        LinkedList<Integer> recurse = new LinkedList<>();
         recurse.add(root.getUserId());
 
         while (!recurse.isEmpty())
@@ -1349,7 +1349,7 @@ public class SecurityManager
     // with a singleton.
     public static <K extends UserPrincipal> Collection<K> getValidPrincipals(Group group, Collection<K> candidates)
     {
-        Collection<K> valid = new LinkedList<K>();
+        Collection<K> valid = new LinkedList<>();
 
         // don't suggest groups that will result in errors (i.e. circular relation, already member, etc.)
         for (K candidate : candidates)
@@ -1474,7 +1474,7 @@ public class SecurityManager
         if (null == proj)
             proj = c;
         int[] groupIds = u.getGroups();
-        List<Group> groupList = new ArrayList<Group>();
+        List<Group> groupList = new ArrayList<>();
 
         for (int groupId : groupIds)
         {
@@ -1532,7 +1532,7 @@ public class SecurityManager
     // Returns the requested direct members of this group (non-recursive)
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
-        Set<P> principals = new LinkedHashSet<P>();
+        Set<P> principals = new LinkedHashSet<>();
         int[] ids = GroupMembershipCache.getGroupMembers(group);
         addMembers(principals, ids, memberType);
 
@@ -1543,9 +1543,9 @@ public class SecurityManager
     // Returns all members of this group, including those in subgroups (recursive)
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
     {
-        Set<Group> visitedGroups = new HashSet<Group>();
-        Set<P> members = new LinkedHashSet<P>();
-        LinkedList<Group> pendingGroups = new LinkedList<Group>();
+        Set<Group> visitedGroups = new HashSet<>();
+        Set<P> members = new LinkedHashSet<>();
+        LinkedList<Group> pendingGroups = new LinkedList<>();
         pendingGroups.add(group);
 
         while (!pendingGroups.isEmpty())
@@ -1582,9 +1582,9 @@ public class SecurityManager
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
     {
-        Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<UserPrincipal, List<UserPrincipal>>();
+        Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<>();
         Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.BOTH);
-        LinkedList<UserPrincipal> visited = new LinkedList<UserPrincipal>();
+        LinkedList<UserPrincipal> visited = new LinkedList<>();
         for (UserPrincipal memberGroup : getGroupMembers(group, MemberType.GROUPS))
         {
             visited.addLast(memberGroup);
@@ -1604,7 +1604,7 @@ public class SecurityManager
             if (origMembers.contains(principal))
             {
                 if (!redundantMembers.containsKey(principal))
-                    redundantMembers.put(principal, new LinkedList<UserPrincipal>(visited));
+                    redundantMembers.put(principal, new LinkedList<>(visited));
             }
             else if (principal instanceof Group)
             {
@@ -1624,10 +1624,10 @@ public class SecurityManager
      */
     public static Set<List<UserPrincipal>> getMembershipPathways(UserPrincipal principal, Group group)
     {
-        Set<List<UserPrincipal>> memberships = new HashSet<List<UserPrincipal>>();
+        Set<List<UserPrincipal>> memberships = new HashSet<>();
         if (principal.isInGroup(group.getUserId()))
         {
-            LinkedList<UserPrincipal> visited = new LinkedList<UserPrincipal>();
+            LinkedList<UserPrincipal> visited = new LinkedList<>();
             visited.add(group);
             checkForMembership(principal, group, visited, memberships);
         }
@@ -1652,7 +1652,7 @@ public class SecurityManager
             if (member.equals(principal))
             {
                 visited.addLast(member);
-                memberships.add(new LinkedList<UserPrincipal>(visited));
+                memberships.add(new LinkedList<>(visited));
                 visited.removeLast();
                 break;
             }
@@ -1714,7 +1714,7 @@ public class SecurityManager
         sql.insert(0, "SELECT DISTINCT members.UserId ");
 
         Selector selector = new SqlSelector(core.getSchema(), sql);
-        return new HashSet<Integer>(selector.getCollection(Integer.class));
+        return new HashSet<>(selector.getCollection(Integer.class));
     }
 
 
@@ -1733,10 +1733,10 @@ public class SecurityManager
             c = c.getProject();
 
         Group[] groups = getGroups(c, includeGlobal);
-        Set<String> emails = new HashSet<String>();
+        Set<String> emails = new HashSet<>();
 
        //get members for each group
-        ArrayList<User> projectUsers = new ArrayList<User>();
+        ArrayList<User> projectUsers = new ArrayList<>();
         Set<User> members;
 
         for (Group g : groups)
@@ -1823,7 +1823,7 @@ public class SecurityManager
     {
         // No cache right now, but performance seems fine.  After the user list and policy are cached, no other queries occur.
         Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<User>(allUsers.size());
+        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
@@ -1847,53 +1847,42 @@ public class SecurityManager
     // Returns both users and groups, but direct members only (not recursive)
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId, boolean includeInactive)
     {
-        ResultSet rs = null;
+        final List<Pair<Integer, String>> members = new ArrayList<>();
 
-        try
+        if (groupId != null && groupId == Group.groupUsers)
         {
-            final List<Pair<Integer, String>> members = new ArrayList<Pair<Integer, String>>();
-
-            if (groupId != null && groupId == Group.groupUsers)
+            // Special-case site users group, which isn't maintained in the database
+            for (User user : UserManager.getActiveUsers())
             {
-                // Special-case site users group, which isn't maintained in the database
-                for (User user : UserManager.getActiveUsers())
-                {
-                    members.add(new Pair<Integer, String>(user.getUserId(), user.getEmail()));
-                }
+                members.add(new Pair<>(user.getUserId(), user.getEmail()));
+            }
+        }
+        else
+        {
+            String sql = "SELECT Users.UserId, Users.Name\n" +
+                    "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
+                    "WHERE GroupId = ?";
+            SQLFragment sqlFragment;
+            if (includeInactive)
+            {
+                sql += "\nORDER BY Users.Name";
+                sqlFragment = new SQLFragment(sql, groupId);
             }
             else
             {
-                String sql = "SELECT Users.UserId, Users.Name\n" +
-                        "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
-                        "WHERE GroupId = ?";
-                SQLFragment sqlFragment = null;
-                if (includeInactive)
-                {
-                    sql += "\nORDER BY Users.Name";
-                    sqlFragment = new SQLFragment(sql, groupId);
-                }
-                else
-                {
-                    sql += "AND Active=?" + "\nORDER BY Users.Name";
-                    sqlFragment = new SQLFragment(sql, groupId, true);
-                }
-                Selector selector = new SqlSelector(core.getSchema(), sqlFragment);
-
-                selector.forEach(new Selector.ForEachBlock<ResultSet>() {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        members.add(new Pair<Integer, String>(rs.getInt(1), rs.getString(2)));
-                    }
-                });
+                sql += "AND Active=?" + "\nORDER BY Users.Name";
+                sqlFragment = new SQLFragment(sql, groupId, true);
             }
+            new SqlSelector(core.getSchema(), sqlFragment).forEach(new Selector.ForEachBlock<ResultSet>() {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    members.add(new Pair<>(rs.getInt(1), rs.getString(2)));
+                }
+            });
+        }
 
-            return members;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        return members;
     }
 
 
@@ -2083,7 +2072,7 @@ public class SecurityManager
             Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
             if (null == termsApproved)
             {
-                termsApproved = new HashSet<Project>();
+                termsApproved = new HashSet<>();
                 session.setAttribute(TERMS_APPROVED_KEY, termsApproved);
             }
             if (approved)
@@ -2192,7 +2181,7 @@ public class SecurityManager
         @Test
         public void testCircularGroupMembership() throws InvalidGroupMembershipException
         {
-            LinkedList<Group> groups = new LinkedList<Group>();
+            LinkedList<Group> groups = new LinkedList<>();
 
             try
             {
@@ -2413,7 +2402,7 @@ public class SecurityManager
         if (rawEmails == null || rawEmails.size() == 0)
             return Collections.emptyList();
 
-        List<ValidEmail> emails = new ArrayList<ValidEmail>(rawEmails.size());
+        List<ValidEmail> emails = new ArrayList<>(rawEmails.size());
 
         for (String rawEmail : rawEmails)
         {
@@ -2632,7 +2621,7 @@ public class SecurityManager
 
     public static boolean isAdminOnlyPermissions(Container c)
     {
-        Set<Role> adminRoles = new HashSet<Role>();
+        Set<Role> adminRoles = new HashSet<>();
         adminRoles.add(RoleManager.getRole(SiteAdminRole.class));
         adminRoles.add(RoleManager.getRole(ProjectAdminRole.class));
         adminRoles.add(RoleManager.getRole(FolderAdminRole.class));
@@ -2721,7 +2710,7 @@ public class SecurityManager
         private String _emailAddress = "";
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
-        protected final List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+        protected final List<ReplacementParam> _replacements = new ArrayList<>();
 
         protected SecurityEmailTemplate(String name)
         {

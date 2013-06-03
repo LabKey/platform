@@ -56,7 +56,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
         _toString = new StringBuilder(clazz.toString());
         if (container != null)
         {
-            _filter.addCondition("container", container.getId());
+            _filter.addCondition("container", container);
             addConditionToString("container", container.getId());
         }
     }

@@ -83,7 +83,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
 
         TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkNames.get(0), convertedID), null);
-        Map[] rows = selector.setForDisplay(true).getArray(Map.class);
+        Map<String, Object>[] rows = selector.setForDisplay(true).getMapArray();
 
         assert rows.length <= 1;
 

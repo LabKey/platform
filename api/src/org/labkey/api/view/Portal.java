@@ -38,7 +38,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -112,8 +111,8 @@ public class Portal
 
         try
         {
-            Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("Container", c.getId()));
-            Table.delete(getTableInfoPortalPages(), new SimpleFilter("Container", c.getId()));
+            Table.delete(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c));
+            Table.delete(getTableInfoPortalPages(), SimpleFilter.createContainerFilter(c));
         }
         catch (SQLException e)
         {
@@ -454,7 +453,7 @@ public class Portal
     // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
     public static WebPart getPart(Container c, int webPartRowId)
     {
-        return new TableSelector(getTableInfoPortalWebParts(), new SimpleFilter("Container", c), null).getObject(webPartRowId, WebPart.class);
+        return new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
     }
 
 

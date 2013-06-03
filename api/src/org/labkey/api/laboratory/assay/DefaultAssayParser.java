@@ -422,13 +422,13 @@ public class DefaultAssayParser implements AssayParser
         {
             //validate the template exists
             TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
-            TableSelector ts = new TableSelector(ti, Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);
+            TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);
             if (ts.getRowCount() == 0)
             {
                 throw new BatchValidationException(Collections.singletonList(new ValidationException("Unknown template: " + templateId)), null);
             }
 
-            Map<Object, Object> row = ts.getObject(Map.class);
+            Map<String, Object> row = ts.getMap();
             row.put("runid", runId);
             row.put("status", "Complete");
 
@@ -540,7 +540,7 @@ public class DefaultAssayParser implements AssayParser
         TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
 
         TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);
-        Map<String, Object>[] maps = ts.getArray(Map.class);
+        Map<String, Object>[] maps = ts.getMapArray();
         if (maps.length == 0)
         {
             return ret;

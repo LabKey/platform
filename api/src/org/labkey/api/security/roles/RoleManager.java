@@ -38,7 +38,7 @@ public class RoleManager
 {
     public static final Role siteAdminRole = new SiteAdminRole();
 
-    public static final Set<Class<? extends Permission>> BasicPermissions = new HashSet<Class<? extends Permission>>();
+    public static final Set<Class<? extends Permission>> BasicPermissions = new HashSet<>();
     static
     {
         BasicPermissions.add(ReadPermission.class);
@@ -48,9 +48,9 @@ public class RoleManager
     }
 
     //global map from role name to Role instance
-    private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<String,Role>();
-    private static final Map<Class<? extends Role>, Role> _classToRoleMap = new ConcurrentHashMap<Class<? extends Role>, Role>();
-    private static final List<Role> _roles = new CopyOnWriteArrayList<Role>();
+    private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<>();
+    private static final Map<Class<? extends Role>, Role> _classToRoleMap = new ConcurrentHashMap<>();
+    private static final List<Role> _roles = new CopyOnWriteArrayList<>();
 
     //register all core roles
     static
@@ -174,7 +174,7 @@ public class RoleManager
     public static Set<Class<? extends Permission>> permSet(Class<? extends Permission>... perms)
     {
         //for some reason, Collections.asSet() will not compile with these kinds of generics
-        Set<Class<? extends Permission>> set = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> set = new HashSet<>();
         set.addAll(Arrays.asList(perms));
         return set;
     }
@@ -187,7 +187,7 @@ public class RoleManager
     @NotNull
     public static Set<Role> roleSet(Class<? extends Role>... roleClasses)
     {
-        Set<Role> roles = new HashSet<Role>();
+        Set<Role> roles = new HashSet<>();
         if(null != roleClasses && roleClasses.length > 0)
         {
             for(Class<? extends Role> roleClass : roleClasses)
@@ -214,7 +214,7 @@ public class RoleManager
         if (roleFactories == null || roleFactories.length == 0)
             return contextualRoles;
 
-        Set<Role> allContextualRoles = new HashSet<Role>();
+        Set<Role> allContextualRoles = new HashSet<>();
         if (contextualRoles != null)
             allContextualRoles.addAll(contextualRoles);
         
