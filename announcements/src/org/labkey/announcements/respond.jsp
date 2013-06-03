@@ -59,7 +59,7 @@ Ext.onReady(function(){
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
-<table><%
+<div style="max-width: 1050px;"><table style="width: 100%;"><%
 
 if (settings.isTitleEditable())
 {
@@ -143,7 +143,7 @@ if (settings.hasFormatPicker())
     <tr><td colspan="3" style="padding-top: 8px;color:green;">An email notification of this post will be sent to <%=bean.emailUsers%> people.</td></tr><%
         }
     %>
-</table>
+</table></div>
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>&nbsp;<%
 if (null != bean.cancelURL)
 {

@@ -173,7 +173,7 @@ Ext.onReady(function(){messageOnResize(<%=q(tableId)%>);});
 Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
 </script>
 <!--ANNOUNCEMENTS-->
-<table style="width:100%" id="<%=tableId%>">
+<table style="table-layout: fixed; width: 100%;" id="<%=tableId%>">
     <tr>
         <td>
             <div style="text-align: left"><%
