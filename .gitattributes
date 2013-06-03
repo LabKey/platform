@@ -15,7 +15,6 @@ api/src/org/json/JSONWriter.java -text
 api/src/org/json/Test.java -text
 api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
-api/src/org/labkey/api/ProteinService.java -text
 api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
@@ -755,6 +754,8 @@ api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/file/PathMapper.java -text
 api/src/org/labkey/api/pipeline/view/SetupForm.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
+api/src/org/labkey/api/protein/ProteinService.java -text
+api/src/org/labkey/api/protein/ProteomicsModule.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataLoaderSettings.java -text
 api/src/org/labkey/api/qc/DataTransformer.java -text
@@ -1392,6 +1393,7 @@ api/src/org/labkey/api/view/PopupMenu.java -text
 api/src/org/labkey/api/view/PopupMenuView.java -text
 api/src/org/labkey/api/view/PopupUserView.java -text
 api/src/org/labkey/api/view/PopupWebpartView.java -text
+api/src/org/labkey/api/view/ProteomicsWebPartFactory.java -text
 api/src/org/labkey/api/view/ReaderView.java -text
 api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text

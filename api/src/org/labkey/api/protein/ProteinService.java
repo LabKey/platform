@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api;
+package org.labkey.api.protein;
 
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
