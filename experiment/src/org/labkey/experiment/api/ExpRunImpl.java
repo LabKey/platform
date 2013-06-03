@@ -131,7 +131,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
         }
-        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), filter, null).getArray(Data.class));
     }
 
     public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)

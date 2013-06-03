@@ -46,26 +46,26 @@ public class DemoManager
     public void deleteAllData(Container c) throws SQLException
     {
         // delete all people when the container is deleted:
-        Filter containerFilter = new SimpleFilter("Container", c.getId());
+        Filter containerFilter = SimpleFilter.createContainerFilter(c);
         Table.delete(DemoSchema.getInstance().getTableInfoPerson(), containerFilter);
     }
 
     public Person[] getPeople(Container c) throws SQLException
     {
-        Filter containerFilter = new SimpleFilter("Container", c.getId());
+        Filter containerFilter = SimpleFilter.createContainerFilter(c);
         return getPeople(containerFilter);
     }
 
     public void deletePerson(Container c, int rowId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("RowId", rowId);
         Table.delete(DemoSchema.getInstance().getTableInfoPerson(), filter);
     }
 
     public Person getPerson(Container c, int rowId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("RowId", rowId);
         Person[] people = getPeople(filter);
         if (people != null && people.length > 0)

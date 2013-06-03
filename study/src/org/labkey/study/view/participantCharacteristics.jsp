@@ -157,7 +157,7 @@
             }
 
             // Issue 13496: it is possible for older studies (<12.1) to have multiple records for a participant in a demographic dataset, so default to the first one
-            Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getArray(Map.class);
+            Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getMapArray();
             if (results.length > 1)
             {
                 ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException("Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length));

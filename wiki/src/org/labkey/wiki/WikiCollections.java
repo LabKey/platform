@@ -22,11 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.WikiTree;
 
@@ -50,11 +49,11 @@ import java.util.Set;
 public class WikiCollections
 {
     private final WikiTree _root = WikiTree.createRootWikiTree();
-    private final Map<Integer, WikiTree> _treesByRowId = new LinkedHashMap<Integer, WikiTree>();
-    private final Map<HString, WikiTree> _treesByName = new LinkedHashMap<HString, WikiTree>();
-    private final List<HString> _names = new ArrayList<HString>();
+    private final Map<Integer, WikiTree> _treesByRowId = new LinkedHashMap<>();
+    private final Map<HString, WikiTree> _treesByName = new LinkedHashMap<>();
+    private final List<HString> _names = new ArrayList<>();
     private final int _pageCount;
-    private final Map<HString, HString> _nameTitleMap = new LinkedHashMap<HString, HString>();
+    private final Map<HString, HString> _nameTitleMap = new LinkedHashMap<>();
     private final NavTree[] _navTree;
 
 
@@ -80,14 +79,12 @@ public class WikiCollections
     {
         _treesByRowId.put(_root.getRowId(), _root);
 
-        ResultSet rs = null;
-        MultiMap<Integer, Integer> childMap = new MultiHashMap<Integer, Integer>();
+        final MultiMap<Integer, Integer> childMap = new MultiHashMap<>();
 
-        try
+        new SqlSelector(CommSchema.getInstance().getSchema(), new SQLFragment(SQL, c)).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(CommSchema.getInstance().getSchema(), new SQLFragment(SQL, c));
-
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 int rowId = rs.getInt(1);
                 HString name = new HString(rs.getString(2));
@@ -102,15 +99,7 @@ public class WikiCollections
                 _treesByName.put(name, tree);
                 childMap.put(parentId, rowId);
             }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
 
         // Now that we have all the children, populate them into the WikiTree
         populateWikiTree(_root, childMap);
@@ -160,7 +149,7 @@ public class WikiCollections
 
     private NavTree[] createNavTree(Container c, WikiTree tree, String rootId)
     {
-        ArrayList<NavTree> elements = new ArrayList<NavTree>();
+        ArrayList<NavTree> elements = new ArrayList<>();
         Collection<WikiTree> children = tree.getChildren();
 
         //add all pages to the nav tree

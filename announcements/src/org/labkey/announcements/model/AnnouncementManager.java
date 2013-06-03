@@ -139,7 +139,7 @@ public class AnnouncementManager
     // Get first rowlimit threads in this container, filtered using filter
     public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
-        filter.addCondition("Container", c.getId());
+        filter.addCondition("Container", c);
         AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setMaxRows(rowLimit + 1).getArray(AnnouncementModel.class);
 
         Boolean limited = (recent.length > rowLimit);
@@ -147,7 +147,7 @@ public class AnnouncementManager
         if (limited)
             recent = ArrayUtils.subarray(recent, 0, rowLimit);
 
-        return new Pair<AnnouncementModel[], Boolean>(recent, limited);
+        return new Pair<>(recent, limited);
     }
 
     // marker for non fully loaded announcementModel
@@ -159,7 +159,7 @@ public class AnnouncementManager
     // Get all threads in this container, filtered using filter, no attachments, no responses
     public static AnnouncementModel[] getBareAnnouncements(Container c, SimpleFilter filter, Sort sort)
     {
-        filter.addCondition("Container", c.getId());
+        filter.addCondition("Container", c);
 
         return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArray(BareAnnouncementModel.class);
     }
@@ -167,7 +167,7 @@ public class AnnouncementManager
     // Return a list of announcementModels from a set of containers sorted by date created (newest first).
     public static AnnouncementModel[] getAnnouncements(Container... containers)
     {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
 
         for (Container container : containers)
             ids.add(container.getId());
@@ -183,7 +183,7 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter();
         if (c != null)
         {
-            filter.addCondition("container", c.getId());
+            filter.addCondition("container", c);
         }
 
         if (null == parent)
@@ -208,7 +208,7 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter("EntityId", entityId);
         if (c != null)
         {
-            filter.addCondition("Container", c.getId());            
+            filter.addCondition("Container", c);
         }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel[] ann = selector.getArray(AnnouncementModel.class);
@@ -261,7 +261,7 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         if (c != null)
         {
-            filter.addCondition("Container", c.getId());
+            filter.addCondition("Container", c);
         }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel ann = selector.getObject(AnnouncementModel.class);
@@ -510,7 +510,7 @@ public class AnnouncementManager
             sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = (SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?)", ann.getParent());
 
         Collection<Integer> userIds = new SqlSelector(_comm.getSchema(), sql).getCollection(Integer.class);
-        List<User> users = new ArrayList<User>(userIds.size());
+        List<User> users = new ArrayList<>(userIds.size());
 
         for (int userId : userIds)
             users.add(UserManager.getUser(userId));
@@ -743,8 +743,8 @@ public class AnnouncementManager
         }
         sql.append("\nGROUP BY a.EntityId");
 
-        final Collection<String> annIds = new HashSet<String>();
-        final Map<String, AnnouncementModel> map = new HashMap<String, AnnouncementModel>();
+        final Collection<String> annIds = new HashSet<>();
+        final Map<String, AnnouncementModel> map = new HashMap<>();
 
         new SqlSelector(_comm.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {

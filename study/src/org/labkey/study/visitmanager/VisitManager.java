@@ -32,6 +32,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -193,7 +194,7 @@ public abstract class VisitManager
 
         try
         {
-            rows = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, false, false);
+            rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false);
 
             Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<VisitMapKey, VisitStatistics>();
             VisitMapKey key = null;

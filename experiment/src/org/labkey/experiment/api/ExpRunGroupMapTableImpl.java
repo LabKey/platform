@@ -183,7 +183,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
             Pair<Integer, Integer> ids = getIds(keys);
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExperimentId"), ids.second);
             filter.addCondition(FieldKey.fromParts("ExperimentRunId"), ids.first);
-            Map<String, Object> row = new TableSelector(ExperimentServiceImpl.get().getTinfoRunList(), Table.ALL_COLUMNS, filter, null).getObject(Map.class);
+            Map<String, Object> row = new TableSelector(ExperimentServiceImpl.get().getTinfoRunList(), filter, null).getMap();
             if (row == null)
             {
                 return null;

@@ -67,8 +67,7 @@ public class MessageConfigManager
 
         try
         {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Container", c.getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             filter.addCondition("UserId", user.getUserId());
             filter.addCondition("SrcIdentifier", srcIdentifier);
 
@@ -163,9 +162,8 @@ public class MessageConfigManager
                 {
                     //if preference has been set back to default (either the default for the container, or the user's container
                     // level preference, delete user's email pref record
-                    SimpleFilter filter = new SimpleFilter();
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(c);
                     filter.addCondition("UserId", projectUser.getUserId());
-                    filter.addCondition("Container", c.getId());
                     filter.addCondition("Type", type);
                     filter.addCondition("SrcIdentifier", srcIdentifier);
                     Table.delete(_comm.getTableInfoEmailPrefs(), filter);

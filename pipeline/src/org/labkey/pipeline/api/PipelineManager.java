@@ -81,7 +81,7 @@ public class PipelineManager
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("Type", type);
 
         return CACHE.get(getCacheKey(container, type), filter);

@@ -173,7 +173,7 @@ public class StudyDesignManager
 
     public StudyDesignInfo getStudyDesign(Container c, String name) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("Label", name);
         StudyDesignInfo[] designs = Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
         return (null == designs || designs.length == 0) ? null : designs[0];
@@ -216,7 +216,7 @@ public class StudyDesignManager
 
     public StudyDesignVersion[] getStudyDesignVersions(Container c, int studyId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("studyId", studyId);
 
         return  Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, new Sort("Revision"), StudyDesignVersion.class);
@@ -224,7 +224,7 @@ public class StudyDesignManager
     
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("studyId", studyId);
         filter.addCondition("revision", versionId);
 
@@ -243,7 +243,7 @@ public class StudyDesignManager
      */
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("studyId", studyId);
         filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, FieldKey.fromParts("revision"), FieldKey.fromParts("studyid"));
 
@@ -308,7 +308,7 @@ public class StudyDesignManager
     public void deleteStudyDesigns(Container c, Set<TableInfo> deletedTables) throws SQLException
     {
         inactivateStudyDesign(c);
-        Filter filter = new SimpleFilter("Container", c.getId());
+        Filter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(getStudyVersionTable(), filter);
         deletedTables.add(getStudyVersionTable());
         Table.delete(getStudyDesignTable(), filter);
@@ -338,11 +338,11 @@ public class StudyDesignManager
 
     public void deleteStudyDesign(Container container, int studyId) throws SQLException
     {
-        SimpleFilter deleteVersionsFilter = new SimpleFilter("Container", container.getId());
+        SimpleFilter deleteVersionsFilter = SimpleFilter.createContainerFilter(container);
         deleteVersionsFilter.addCondition("studyId", studyId);
         Table.delete(getStudyVersionTable(), deleteVersionsFilter);
 
-        SimpleFilter deleteDesignInfoFilter = new SimpleFilter("Container", container.getId());
+        SimpleFilter deleteDesignInfoFilter = SimpleFilter.createContainerFilter(container);
         deleteDesignInfoFilter.addCondition("studyId", studyId);
         Table.delete(getStudyDesignTable(), deleteDesignInfoFilter);
     }
@@ -571,7 +571,7 @@ public class StudyDesignManager
 
     public StudyDesignInfo getDesignForStudy(Study study)
     {
-        SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition("Active", Boolean.TRUE);
         StudyDesignInfo info = new TableSelector(getStudyDesignTable(), filter, null).getObject(StudyDesignInfo.class);
         return info;

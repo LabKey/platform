@@ -48,7 +48,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
         if ("org.postgresql.Driver".equals(driverClassName))
-            return new PostgreSql83Dialect();
+            return new NewPostgreSql84Dialect();
         else
             return null;
     }
@@ -73,24 +73,26 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         return dialect;
     }
 
-    private SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
+    private @NotNull SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 8.3 or greater is allowed (for now)...
-        if (version >= 83)
+        // Version 8.4 or greater is allowed
+        if (version >= 84)
         {
-            if (83 == version)
-            {
-                // PostgreSQL 8.3 is deprecated; support will be removed in LabKey Server 13.2
-                if (logWarnings)
-                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new PostgreSql83Dialect();
-            }
-
+//          This approach is used when it's time to deprecate a version of PostgreSQL:
+//
+//            if (84 == version)
+//            {
+//                // PostgreSQL 8.4 is deprecated; support will be removed in LabKey Server 14.x
+//                if (logWarnings)
+//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+//
+//                return new PostgreSql84Dialect();
+//            }
+//
             if (84 == version)
-                return new PostgreSql84Dialect();
+                return new NewPostgreSql84Dialect();
 
             if (90 == version)
                 return new PostgreSql90Dialect();
@@ -122,10 +124,10 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // 8.4, 9.0, 9.1 dialects are nearly identical to 8.3
+        // 9.0 and 9.1 dialects are nearly identical to 8.4
         return PageFlowUtil.set(
-            new PostgreSql83Dialect(true),
-            new PostgreSql83Dialect(false)
+            new NewPostgreSql84Dialect(true),
+            new NewPostgreSql84Dialect(false)
         );
     }
 
@@ -134,16 +136,15 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 8.5, "");
-            badProductName("Postgres", 8.0, 8.5, "");
-            badProductName("postgresql", 8.0, 8.5, "");
+            badProductName("Gobbledygood", 8.0, 9.3, "");
+            badProductName("Postgres", 8.0, 9.3, "");
+            badProductName("postgresql", 8.0, 9.3, "");
 
-            // 8.2 or lower should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 8.2, null);
+            // 8.3 or lower should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 8.3, null);
 
-            // >= 8.3 should be good
-            good("PostgreSQL", 8.3, 8.4, "", PostgreSql83Dialect.class);
-            good("PostgreSQL", 8.4, 8.5, "", PostgreSql84Dialect.class);
+            // >= 8.4 should be good
+            good("PostgreSQL", 8.4, 8.5, "", NewPostgreSql84Dialect.class);
             good("PostgreSQL", 9.0, 9.1, "", PostgreSql90Dialect.class);
             good("PostgreSQL", 9.1, 9.2, "", PostgreSql91Dialect.class);
             good("PostgreSQL", 9.2, 11.0, "", PostgreSql92Dialect.class);
@@ -173,7 +174,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
                             "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                             "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql83Dialect();
+            SqlDialect dialect = new NewPostgreSql84Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(4, good.getCounter());
@@ -194,7 +195,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql83Dialect();
+                    return new NewPostgreSql84Dialect();
                 }
 
                 @NotNull

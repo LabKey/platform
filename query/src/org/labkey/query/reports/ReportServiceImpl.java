@@ -808,7 +808,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report[] getReports(Filter filter)
     {
-        ReportDB[] reports = new TableSelector(getTable(), Table.ALL_COLUMNS, filter, null).getArray(ReportDB.class);
+        ReportDB[] reports = new TableSelector(getTable(), filter, null).getArray(ReportDB.class);
         return _createReports(reports);
     }
 

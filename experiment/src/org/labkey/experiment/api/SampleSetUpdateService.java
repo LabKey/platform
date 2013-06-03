@@ -24,7 +24,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -174,8 +173,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         else
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 
-
-        return new TableSelector(getQueryTable(), filter, null).getObject(Map.class);
+        return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
     @Override

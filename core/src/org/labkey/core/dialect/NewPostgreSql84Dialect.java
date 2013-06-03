@@ -81,9 +81,9 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-class PostgreSql83Dialect extends SqlDialect
+class NewPostgreSql84Dialect extends SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
+    private static final Logger _log = Logger.getLogger(NewPostgreSql84Dialect.class);
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private InClauseGenerator _inClauseGenerator = null;
@@ -96,12 +96,12 @@ class PostgreSql83Dialect extends SqlDialect
     private Boolean _standardConformingStrings = null;
 
     // Standard constructor used by factory and subclasses
-    PostgreSql83Dialect()
+    NewPostgreSql84Dialect()
     {
     }
 
     // Constructor used to test standardConformingStrings setting
-    PostgreSql83Dialect(boolean standardConformingStrings)
+    NewPostgreSql84Dialect(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
@@ -109,7 +109,8 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public String getAdminWarningMessage()
     {
-        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
+        return null;
+//        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
     }
 
     @Override
@@ -466,10 +467,10 @@ class PostgreSql83Dialect extends SqlDialect
         return result;
     }
 
-    // Custom aggregate function needed for PostgreSQL 8.3 only
+    // 8.4 added a built-in array_agg() aggregate function. TODO: drop our custom aggregate function.
     protected String getArrayAggregateFunctionName()
     {
-        return "core.array_accum";
+        return "array_agg";
     }
 
     @Override

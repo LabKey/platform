@@ -57,7 +57,7 @@ public class KeywordManager
             {
                 assert type.getOrdinal() > 0;   // Ordinal 0 ==> no pick list (e.g., custom integer columns)
 
-                SimpleFilter filter = new SimpleFilter("Container", c.getId()).addCondition("Type", type.getOrdinal());
+                SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition("Type", type.getOrdinal());
                 Sort sort = new Sort("Keyword");
 
                 Selector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort);

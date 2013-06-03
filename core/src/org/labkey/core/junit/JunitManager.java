@@ -39,13 +39,13 @@ public class JunitManager
 
     static
     {
-        Set<Class> allCases = new HashSet<Class>();
+        Set<Class> allCases = new HashSet<>();
 
-        _testCases = new TreeMap<String, List<Class>>();
+        _testCases = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            List<Class> moduleClazzes = new ArrayList<Class>();
+            List<Class> moduleClazzes = new ArrayList<>();
 
             for (Class clazz : module.getIntegrationTests())
             {

@@ -156,7 +156,7 @@ public class PlateManager implements PlateService.Service
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("Container"), container);
         PlateTemplateImpl[] templates = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
-                Table.ALL_COLUMNS, filter, new Sort("Name")).getArray(PlateTemplateImpl.class);
+                filter, new Sort("Name")).getArray(PlateTemplateImpl.class);
         for (int i = 0; i < templates.length; i++)
         {
             PlateTemplateImpl template = templates[i];
@@ -338,7 +338,7 @@ public class PlateManager implements PlateService.Service
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
-        return new TableSelector(StudySchema.getInstance().getTableInfoWell(), Table.ALL_COLUMNS,
+        return new TableSelector(StudySchema.getInstance().getTableInfoWell(),
                 plateFilter, sort).getArray(plate.isTemplate() ? PositionImpl.class : WellImpl.class);
 
     }
@@ -346,7 +346,7 @@ public class PlateManager implements PlateService.Service
     private WellGroupTemplateImpl[] getWellGroups(PlateTemplateImpl plate)
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
-        return new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(), Table.ALL_COLUMNS,
+        return new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(),
                 plateFilter, null).getArray(plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class);
     }
 
@@ -508,9 +508,8 @@ public class PlateManager implements PlateService.Service
 
     public void deletePlate(Container container, int rowid) throws SQLException
     {
-        SimpleFilter plateFilter = new SimpleFilter();
+        SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
         plateFilter.addCondition("RowId", rowid);
-        plateFilter.addCondition("Container", container.getId());
         PlateTemplateImpl plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
                 plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
@@ -523,8 +522,7 @@ public class PlateManager implements PlateService.Service
         for (PositionImpl position : positions)
             lsids.add(position.getLsid());
 
-        SimpleFilter plateIdFilter = new SimpleFilter();
-        plateIdFilter.addCondition("Container", container.getId());
+        SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition("PlateId", plate.getRowId());
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -547,8 +545,7 @@ public class PlateManager implements PlateService.Service
 
     public void deleteAllPlateData(Container container) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         Table.delete(StudySchema.getInstance().getTableInfoWell(), filter);
         Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), filter);
         Table.delete(StudySchema.getInstance().getTableInfoPlate(), filter);

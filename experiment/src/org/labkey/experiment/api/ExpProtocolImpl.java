@@ -222,7 +222,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     public List<ExpExperimentImpl> getBatches()
     {
         Filter filter = new SimpleFilter("BatchProtocolId", getRowId());
-        return Arrays.asList(ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), Table.ALL_COLUMNS, filter, null).getArray(Experiment.class)));
+        return Arrays.asList(ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class)));
     }
 
     public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)

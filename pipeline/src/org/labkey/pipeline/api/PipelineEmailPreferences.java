@@ -407,7 +407,7 @@ public class PipelineEmailPreferences
                 }
 
                 if (!_c.isRoot())
-                    filter.addCondition("container", _c.getId(), CompareType.EQUAL);
+                    filter.addCondition("container", _c, CompareType.EQUAL);
                 filter.addCondition("modified", min, CompareType.GTE);
                 filter.addCondition("modified", max, CompareType.LT);
 

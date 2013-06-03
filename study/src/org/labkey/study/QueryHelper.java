@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -44,7 +43,7 @@ import java.util.Set;
 public class QueryHelper<K extends StudyCachable>
 {
     private Class<K> _objectClass;
-    private final Set<String> _cachedFilters = new HashSet<String>();
+    private final Set<String> _cachedFilters = new HashSet<>();
     private final TableInfoGetter _tableInfoGetter;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
@@ -79,13 +78,13 @@ public class QueryHelper<K extends StudyCachable>
             @Override
             public Object load(String key, Object argument)
             {
-                SimpleFilter filter = null != filterArg ? filterArg : new SimpleFilter("Container", c.getId());
+                SimpleFilter filter = null != filterArg ? filterArg : SimpleFilter.createContainerFilter(c);
                 if (!filter.hasContainerEqualClause())
-                    filter.addCondition("Container", c.getId());
+                    filter.addCondition("Container", c);
                 Sort sort = null;
                 if (sortString != null)
                     sort = new Sort(sortString);
-                List<? extends StudyCachable> objs = new TableSelector(getTableInfo(), Table.ALL_COLUMNS, filter, sort).getArrayList(_objectClass);
+                List<? extends StudyCachable> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
                 // Make both the objects and the list itself immutable so that we don't end up with a corrupted
                 // version in the cache
                 for (StudyCachable obj : objs)
@@ -123,7 +122,7 @@ public class QueryHelper<K extends StudyCachable>
             @Override
             public Object load(String key, Object argument)
             {
-                SimpleFilter filter = new SimpleFilter("Container", c.getId());
+                SimpleFilter filter = SimpleFilter.createContainerFilter(c);
                 filter.addCondition(rowIdColumnName, rowId);
                 StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
                 if (obj != null)

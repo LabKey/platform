@@ -520,7 +520,7 @@ public class ListDefinitionImpl implements ListDefinition
                 final List<String> entityIds = new ArrayList<String>();
                 final List<AttachmentParent> attachmentParents = new ArrayList<AttachmentParent>();
 
-                TableSelector ts = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null);
+                TableSelector ts = new TableSelector(getIndexTable(), lstItemFilter, null);
                 ts.setMaxRows(step);
                 ts.setOffset(offset);
 
@@ -550,7 +550,7 @@ public class ListDefinitionImpl implements ListDefinition
             }
 
             //delete all list items
-            ListItm[] itms = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null).getArray(ListItm.class);
+            ListItm[] itms = new TableSelector(getIndexTable(), lstItemFilter, null).getArray(ListItm.class);
             Table.delete(getIndexTable(), lstItemFilter);
 
             Set<String> ids = new HashSet<String>();

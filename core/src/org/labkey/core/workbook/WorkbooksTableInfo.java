@@ -140,7 +140,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
 
             try
             {
-                return new TableSelector(getQueryTable(), filter, null).getObject(Map.class);
+                return new TableSelector(getQueryTable(), filter, null).getMap();
             }
             catch (NumberFormatException e)
             {

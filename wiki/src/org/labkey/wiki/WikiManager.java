@@ -37,6 +37,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.search.SearchService;
@@ -140,7 +141,7 @@ public class WikiManager implements WikiService
 
         Wiki[] wikis = Table.select(comm.getTableInfoPages(),
                 Table.ALL_COLUMNS,
-                new SimpleFilter("Container", c.getId()).addCondition("EntityId", entityId),
+                SimpleFilter.createContainerFilter(c).addCondition("EntityId", entityId),
                 null, Wiki.class);
 
         if (0 == wikis.length)
@@ -635,8 +636,7 @@ public class WikiManager implements WikiService
     {
         final ActionURL page = new ActionURL(WikiController.PageAction.class, null);
 
-        SimpleFilter f = new SimpleFilter();
-        f.addCondition("container", c);
+        SimpleFilter f = SimpleFilter.createContainerFilter(c);
         SearchService.LastIndexedClause clause = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, null);
         f.addCondition(clause);
         if (null != modifiedSince)
@@ -681,7 +681,7 @@ public class WikiManager implements WikiService
                 f.append(" AND P.name = ?");
                 f.add(name);
             }
-            rs = Table.executeQuery(comm.getSchema(), f, false, false);
+            rs = new SqlSelector(comm.getSchema(), f).getResultSet(false, false);
 
             HashMap<String, AttachmentParent> ids = new HashMap<>();
             // AGGH wiki doesn't have a title!

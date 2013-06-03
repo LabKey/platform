@@ -338,7 +338,7 @@ public class ParticipantGroupController extends BaseStudyController
             if (form.isNew())
             {
                 // try to match a single category by label/container
-                SimpleFilter filter = new SimpleFilter("Container", getContainer());
+                SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
                 filter.addCondition("Label", form.getLabel());
 
                 ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);

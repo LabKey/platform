@@ -50,7 +50,7 @@ public class WellGroupTable extends BasePlateTable
     {
         super(schema, StudySchema.getInstance().getTableInfoWellGroup());
         FieldKey keyProp = new FieldKey(null, "Property");
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> visibleColumns = new ArrayList<>();
         addWrapColumn(_rootTable.getColumn("RowId"));
         addWrapColumn(_rootTable.getColumn("Name"));
         visibleColumns.add(FieldKey.fromParts("Name"));
@@ -81,11 +81,10 @@ public class WellGroupTable extends BasePlateTable
             //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
             ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
             String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
-            SimpleFilter filter = new SimpleFilter();
+            SimpleFilter filter = SimpleFilter.createContainerFilter(schema.getContainer());
             filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
-            filter.addCondition("Container", schema.getContainer().getId());
             PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
-            Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
+            Map<String, PropertyDescriptor> map = new TreeMap<>();
             for(PropertyDescriptor pd : pds)
             {
                 if (pd.getPropertyType() == PropertyType.DOUBLE)

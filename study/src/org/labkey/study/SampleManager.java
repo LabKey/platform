@@ -86,25 +86,25 @@ public class SampleManager implements ContainerManager.ContainerListener
     private final QueryHelper<SampleRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SampleRequestRequirement, SampleRequestActor> _requirementProvider =
             new SpecimenRequestRequirementProvider();
-    private final Map<String, Resource> _moduleExtendedSpecimenRequestViews = new ConcurrentHashMap<String, Resource>();
+    private final Map<String, Resource> _moduleExtendedSpecimenRequestViews = new ConcurrentHashMap<>();
 
     private SampleManager()
     {
-        _primaryTypeHelper = new QueryHelper<PrimaryType>(new TableInfoGetter()
+        _primaryTypeHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoPrimaryType();
             }
         }, PrimaryType.class);
-        _derivativeHelper = new QueryHelper<DerivativeType>(new TableInfoGetter()
+        _derivativeHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoDerivativeType();
             }
         }, DerivativeType.class);
-        _additiveHelper = new QueryHelper<AdditiveType>(new TableInfoGetter()
+        _additiveHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
@@ -112,35 +112,35 @@ public class SampleManager implements ContainerManager.ContainerListener
             }
         }, AdditiveType.class);
 
-        _requestEventHelper = new QueryHelper<SampleRequestEvent>(new TableInfoGetter()
+        _requestEventHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoSampleRequestEvent();
             }
         }, SampleRequestEvent.class);
-        _specimenDetailHelper = new QueryHelper<Specimen>(new TableInfoGetter()
+        _specimenDetailHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoSpecimenDetail();
             }
         }, Specimen.class);
-        _specimenEventHelper = new QueryHelper<SpecimenEvent>(new TableInfoGetter()
+        _specimenEventHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoSpecimenEvent();
             }
         }, SpecimenEvent.class);
-        _requestHelper = new QueryHelper<SampleRequest>(new TableInfoGetter()
+        _requestHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
                 return StudySchema.getInstance().getTableInfoSampleRequest();
             }
         }, SampleRequest.class);
-        _requestStatusHelper = new QueryHelper<SampleRequestStatus>(new TableInfoGetter()
+        _requestStatusHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
@@ -165,10 +165,9 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(Container container, String participantId, Double visit)
     {
-        SimpleFilter filter = new SimpleFilter();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         filter.addCondition("VisitValue", visit);
-        filter.addCondition("Container", container.getId());
         return _specimenDetailHelper.get(container, filter);
     }
 
@@ -209,9 +208,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     /** Looks for any specimens that have the given id as a globalUniqueId  */
     public Specimen getSpecimen(Container container, String globalUniqueId)
     {
-        SimpleFilter filter = new SimpleFilter();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
-        filter.addCondition("Container", container.getId());
         List<Specimen> matches = _specimenDetailHelper.get(container, filter);
         if (matches == null || matches.isEmpty())
             return null;
@@ -232,12 +230,11 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(Container container, String participantId, Date date)
     {
-        SimpleFilter filter = new SimpleFilter();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         Calendar endCal = DateUtil.newCalendar(date.getTime());
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
-        filter.addCondition("Container", container.getId());
         return _specimenDetailHelper.get(container, filter);
     }
 
@@ -251,7 +248,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         if (samples == null || samples.size() == 0)
             return Collections.emptyList();
-        Collection<Integer> vialIds = new HashSet<Integer>();
+        Collection<Integer> vialIds = new HashSet<>();
         Container container = null;
         for (Specimen sample : samples)
         {
@@ -1059,7 +1056,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 return _locationToDefaultValue;
             String defaultObjectLsid = getRequestInputDefaultObjectLsid(container);
             String setItemLsid = ensureOntologyManagerSetItem(container, defaultObjectLsid, getTitle());
-            Map<Integer, String> locationToValue = new HashMap<Integer, String>();
+            Map<Integer, String> locationToValue = new HashMap<>();
 
             Map<String, ObjectProperty> defaultValueProperties = OntologyManager.getPropertyObjects(container, setItemLsid);
             if (defaultValueProperties != null)
@@ -1264,7 +1261,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
                 for (Specimen specimen : specimens)
                 {
-                    Map<String, Object> fields = new HashMap<String, Object>();
+                    Map<String, Object> fields = new HashMap<>();
                     fields.put("Container", request.getContainer().getId());
                     fields.put("SampleRequestId", request.getRowId());
                     fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
@@ -1290,11 +1287,11 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(Container container, int[] sampleRowIds)
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
-        Set<Integer> uniqueRowIds = new HashSet<Integer>(sampleRowIds.length);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        Set<Integer> uniqueRowIds = new HashSet<>(sampleRowIds.length);
         for (int sampleRowId : sampleRowIds)
             uniqueRowIds.add(sampleRowId);
-        List<Integer> rowIds = new ArrayList<Integer>(uniqueRowIds);
+        List<Integer> rowIds = new ArrayList<>(uniqueRowIds);
         filter.addInClause("RowId", rowIds);
         List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
         if (specimens.size() != rowIds.size())
@@ -1308,11 +1305,11 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(Container container, String[] globalUniqueIds) throws SpecimenRequestException
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
-        Set<String> uniqueRowIds = new HashSet<String>(globalUniqueIds.length);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        Set<String> uniqueRowIds = new HashSet<>(globalUniqueIds.length);
         for (String globalUniqueId : globalUniqueIds)
             uniqueRowIds.add(globalUniqueId);
-        List<String> ids = new ArrayList<String>(uniqueRowIds);
+        List<String> ids = new ArrayList<>(uniqueRowIds);
         filter.addInClause("GlobalUniqueId", ids);
         List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
         if (specimens == null || specimens.size() != ids.size())
@@ -1356,7 +1353,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             return;
         List<Specimen> specimens = getSpecimens(request.getContainer(), sampleIds);
         List<String> globalUniqueIds = new ArrayList<>(specimens.size());
-        List<String> descriptions = new ArrayList<String>();
+        List<String> descriptions = new ArrayList<>();
         for (Specimen specimen : specimens)
         {
             globalUniqueIds.add(specimen.getGlobalUniqueId());
@@ -1368,8 +1365,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             scope.ensureTransaction();
 
-            SimpleFilter filter = new SimpleFilter("SampleRequestId", request.getRowId());
-            filter.addCondition("Container", request.getContainer().getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(request.getContainer());
+            filter.addCondition("SampleRequestId", request.getRowId());
             filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
             Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
             if (createEvents)
@@ -1410,7 +1407,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             sql.add(Boolean.TRUE);
         }
         Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-        List<Integer> rowIdList = new ArrayList<Integer>();
+        List<Integer> rowIdList = new ArrayList<>();
         while (rs.next())
             rowIdList.add(rs.getInt(1));
         rs.close();
@@ -1569,7 +1566,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     {
                         if (tinfo.supportsContainerFilter())
                         {
-                            Set<Container> containers = new HashSet<Container>();
+                            Set<Container> containers = new HashSet<>();
                             containers.add(container);
                             Study study = StudyManager.getInstance().getStudy(container);
                             if (study != null && study.isAncillaryStudy())
@@ -1613,7 +1610,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         List<String> missingSpecimens = getMissingSpecimens(sampleRequest);
         if (missingSpecimens.isEmpty())
             return;
-        SimpleFilter filter = new SimpleFilter("Container", sampleRequest.getContainer().getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(sampleRequest.getContainer());
         filter.addCondition("SampleRequestId", sampleRequest.getRowId());
         filter.addInClause("SpecimenGlobalUniqueId", missingSpecimens);
         Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
@@ -1632,7 +1629,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         String sql = "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen WHERE SampleRequestId = ? and Container = ? and \n" +
                 "SpecimenGlobalUniqueId NOT IN (SELECT GlobalUniqueId FROM study.Vial WHERE Container = ?);";
         ResultSet rs = null;
-        List<String> missingSpecimens = new ArrayList<String>();
+        List<String> missingSpecimens = new ArrayList<>();
         try
         {
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, new Object[] {
@@ -1649,14 +1646,14 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Map<Specimen, SpecimenComment> getSpecimensWithComments(Container container) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         SpecimenComment[] allComments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(),
                 Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
 
-        Map<Specimen, SpecimenComment> result = new HashMap<Specimen, SpecimenComment>();
+        Map<Specimen, SpecimenComment> result = new HashMap<>();
         if (allComments.length > 0)
         {
-            Map<String, SpecimenComment> globalUniqueIds = new HashMap<String, SpecimenComment>();
+            Map<String, SpecimenComment> globalUniqueIds = new HashMap<>();
             for (SpecimenComment comment : allComments)
                 globalUniqueIds.put(comment.getGlobalUniqueId(), comment);
 
@@ -1678,7 +1675,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Specimen[] getSpecimensByAvailableVialCount(Container container, int count) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("AvailableCount", count);
 
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenSummary(), filter, null).getArray(Specimen.class);
@@ -1686,14 +1683,14 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable)
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addInClause("SpecimenHash", hashes);
         if (onlyAvailable)
             filter.addCondition("Available", true);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().toString() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
-        Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
+        Map<String, List<Specimen>> map = new HashMap<>();
         Specimen[] specimens = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(Specimen.class);
 
         for (Specimen specimen : specimens)
@@ -1702,7 +1699,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             List<Specimen> keySpecimens = map.get(hash);
             if (null == keySpecimens)
             {
-                keySpecimens = new ArrayList<Specimen>();
+                keySpecimens = new ArrayList<>();
                 map.put(hash, keySpecimens);
             }
             keySpecimens.add(specimen);
@@ -1713,7 +1710,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes)
     {
-        List<Object> params = new ArrayList<Object>();
+        List<Object> params = new ArrayList<>();
         params.add(container.getId());
         StringBuilder extraClause = new StringBuilder();
 
@@ -1731,7 +1728,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             extraClause.append(")");
         }
 
-        final Map<String, Integer> map = new HashMap<String, Integer>();
+        final Map<String, Integer> map = new HashMap<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT " +
                 "SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount" +
@@ -1820,7 +1817,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void deleteAllSampleData(Container c, Set<TableInfo> set) throws SQLException
     {
         // UNDONE: use transaction?
-        SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
 
         Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSampleRequestSpecimen());
@@ -1894,19 +1891,19 @@ public class SampleManager implements ContainerManager.ContainerListener
 
             FieldKey visitKey = FieldKey.fromParts("Visit");
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
-            Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+            Collection<ColumnInfo> cols = new ArrayList<>();
             cols.add(colMap.get(visitKey));
-            Set<FieldKey> unresolvedColumns = new HashSet<FieldKey>();
+            Set<FieldKey> unresolvedColumns = new HashSet<>();
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
             if (!unresolvedColumns.isEmpty())
                 throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
             // generate our select SQL:
             SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
 
-            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
+            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit FROM (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
             visitIdSQL.addAll(specimenSql.getParamsArray());
 
-            List<Integer> visitIds = new ArrayList<Integer>();
+            List<Integer> visitIds = new ArrayList<>();
             ResultSet rs = null;
             try
             {
@@ -1919,11 +1916,11 @@ public class SampleManager implements ContainerManager.ContainerListener
                 if (rs != null) try { rs.close(); } catch (SQLException e) { /* fall through */ }
             }
 
-            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause("RowId", visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
+            return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
         }
         catch (SQLException e)
         {
@@ -2056,7 +2053,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
-                List<SpecimenTypeBeanProperty> list = new ArrayList<SpecimenTypeBeanProperty>();
+                List<SpecimenTypeBeanProperty> list = new ArrayList<>();
                 list.add(new SpecimenTypeBeanProperty(FieldKey.fromParts("PrimaryType", "Description"), "primaryType", this));
                 return list;
             }
@@ -2146,9 +2143,9 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tinfo = schema.getTable("SpecimenDetail");
-        Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<String, SpecimenTypeBeanProperty>();
+        Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<>();
 
-        Collection<FieldKey> columns = new HashSet<FieldKey>();
+        Collection<FieldKey> columns = new HashSet<>();
         if (baseView != null)
         {
             // copy our saved view filter into our SimpleFilter via an ActionURL (yuck...)
@@ -2176,9 +2173,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
 
         // turn our fieldkeys into columns:
-        Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        Collection<ColumnInfo> cols = new ArrayList<>();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
-        Set<FieldKey> unresolvedColumns = new HashSet<FieldKey>();
+        Set<FieldKey> unresolvedColumns = new HashSet<>();
         cols.addAll(colMap.values());
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
@@ -2246,7 +2243,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         try
         {
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.toString(), viewSqlHelper.getViewSql().getParamsArray());
-            ret = new ArrayList<SummaryByVisitType>();
+            ret = new ArrayList<>();
             while (rs.next())
             {
                 SummaryByVisitType summary = new SummaryByVisitType();
@@ -2351,7 +2348,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         ResultSet rs = null;
         try
         {
-            Set<LocationImpl> locations = new TreeSet<LocationImpl>(new Comparator<LocationImpl>()
+            Set<LocationImpl> locations = new TreeSet<>(new Comparator<LocationImpl>()
             {
                 public int compare(LocationImpl s1, LocationImpl s2)
                 {
@@ -2515,7 +2512,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         try
         {
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, params);
-            ret = new ArrayList<SummaryByVisitType>();
+            ret = new ArrayList<>();
             while (rs.next())
             {
                 RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
@@ -2564,11 +2561,11 @@ public class SampleManager implements ContainerManager.ContainerListener
             return Collections.emptyMap();
 
         Container container = vials.get(0).getContainer();
-        Map<Specimen, SpecimenComment> result = new HashMap<Specimen, SpecimenComment>();
+        Map<Specimen, SpecimenComment> result = new HashMap<>();
         int offset = 0;
         while (offset < vials.size())
         {
-            Map<String, Specimen> idToVial = new HashMap<String, Specimen>();
+            Map<String, Specimen> idToVial = new HashMap<>();
             for (int current = offset; current < offset + GET_COMMENT_BATCH_SIZE && current < vials.size(); current++)
             {
                 Specimen vial = vials.get(current);
@@ -2577,7 +2574,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     throw new IllegalArgumentException("All specimens must be from the same container");
             }
 
-            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause("GlobalUniqueId", idToVial.keySet());
             SpecimenComment[]  comments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
 
@@ -2593,7 +2590,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("GlobalUniqueId", globalUniqueId);
 
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
@@ -2611,7 +2608,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public SpecimenComment[] getSpecimenCommentForSpecimens(Container container, Collection<String> specimenHashes) throws SQLException
     {
-        SimpleFilter hashFilter = new SimpleFilter("Container", container.getId());
+        SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
         hashFilter.addInClause("SpecimenHash", specimenHashes);
         return Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS,
                 hashFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
@@ -2719,7 +2716,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         try
         {
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, paramArray);
-            Map<String, Set<String>> cellToPtidSet = new HashMap<String, Set<String>>();
+            Map<String, Set<String>> cellToPtidSet = new HashMap<>();
             while (rs.next())
             {
                 String ptid = rs.getString(ptidColumnName);
@@ -2747,7 +2744,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 Set<String> ptids = cellToPtidSet.get(key);
                 if (ptids == null)
                 {
-                    ptids = new TreeSet<String>();
+                    ptids = new TreeSet<>();
                     cellToPtidSet.put(key, ptids);
                 }
                 ptids.add(ptid != null ? ptid : "[unknown]");
@@ -2813,7 +2810,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     }
 
     // Map "ViewColumnName" name to object with sql column name and url filter name
-    private final Map<String, GroupedValueColumnHelper> _groupedValueAllowedColumnMap = new HashMap<String, GroupedValueColumnHelper>();
+    private final Map<String, GroupedValueColumnHelper> _groupedValueAllowedColumnMap = new HashMap<>();
 
     private void initGroupedValueAllowedColumnMap()
     {                                                                                       //    sqlColumnName    viewColumnName   urlFilterName          joinColumnName
@@ -2915,7 +2912,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         try
         {
             QueryService queryService = QueryService.get();
-            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+            List<FieldKey> fieldKeys = new ArrayList<>();
             for (String aGrouping : grouping)
             {
                 if (!StringUtils.isNotBlank(aGrouping))
@@ -2932,13 +2929,13 @@ public class SampleManager implements ContainerManager.ContainerListener
             Filter containerFilter = null;
             if (study.isAncillaryStudy())
             {
-                List<String> containerIds = new ArrayList<String>(2);
+                List<String> containerIds = new ArrayList<>(2);
                 containerIds.add(container.getId());
                 containerIds.add(study.getSourceStudy().getContainer().getId());
                 SimpleFilter.FilterClause inClause = new SimpleFilter.InClause(FieldKey.fromString("Container"), containerIds);
 
                 String[] ptids = StudyManager.getInstance().getParticipantIds(study);
-                List<String> participantIds = new ArrayList<String>(ptids.length);
+                List<String> participantIds = new ArrayList<>(ptids.length);
                 if (ptids == null || ptids.length == 0)
                     participantIds.add("NULL");
                 else
@@ -2994,7 +2991,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     // The result set is grouped by all levels together, so at the upper levels, we have to group ourselves
                     // Build a tree of GroupedResultsMaps, one level for each grouping level
                     //
-                    Map<String, GroupedResults> groupedResultsMap = new HashMap<String, GroupedResults>();
+                    Map<String, GroupedResults> groupedResultsMap = new HashMap<>();
                     while (resultSet.next())
                     {
                         Map<String, Object> rowMap = resultSet.getRowMap();
@@ -3023,7 +3020,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                                 groupedResults.viewName = grouping[i];
                                 groupedResults.urlFilterName = columnHelper.getUrlFilterName();
                                 groupedResults.labelValue = labelValue;
-                                groupedResults.childGroupedResultsMap = new HashMap<String, GroupedResults>();
+                                groupedResults.childGroupedResultsMap = new HashMap<>();
                                 currentGroupedResultsMap.put(labelValue, groupedResults);
                             }
                             groupedResults.count += count;
@@ -3037,7 +3034,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     }
                     else
                     {
-                        groupedValue = new HashMap<String, Object>(2);
+                        groupedValue = new HashMap<>(2);
                         groupedValue.put("name", grouping[0]);
                         groupedValue.put("values", new ArrayList<Map<String, Object>>());
                     }
@@ -3063,11 +3060,11 @@ public class SampleManager implements ContainerManager.ContainerListener
     private Map<String, Object> buildGroupedValue(Map<String, GroupedResults> groupedResultsMap, Container container, List<GroupedValueFilter> groupedValueFilters)
     {
         String viewName = null;
-        ArrayList<Map<String, Object>> groupedValues = new ArrayList<Map<String, Object>>();
+        ArrayList<Map<String, Object>> groupedValues = new ArrayList<>();
         for (GroupedResults groupedResults : groupedResultsMap.values())
         {
             viewName = groupedResults.viewName;             // They are all the same in this collection
-            Map<String, Object> groupedValue = new HashMap<String, Object>(5);
+            Map<String, Object> groupedValue = new HashMap<>(5);
             groupedValue.put("label", (null != groupedResults.labelValue) ? groupedResults.labelValue : "[empty]");
             groupedValue.put("count", groupedResults.count);
             groupedValue.put("url", getURL(container, groupedResults.urlFilterName, groupedValueFilters, groupedResults.labelValue));
@@ -3077,7 +3074,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 GroupedValueFilter groupedValueFilter = new GroupedValueFilter();
                 groupedValueFilter.setViewColumnName(groupedResults.viewName);
                 groupedValueFilter.setFilterValueName(null != groupedResults.labelValue ? groupedResults.labelValue.toString() : null);
-                List<GroupedValueFilter> groupedValueFiltersCopy = new ArrayList<GroupedValueFilter>(groupedValueFilters); // Need copy because can't share across members of groupedResultsMap
+                List<GroupedValueFilter> groupedValueFiltersCopy = new ArrayList<>(groupedValueFilters); // Need copy because can't share across members of groupedResultsMap
                 groupedValueFiltersCopy.add(groupedValueFilter);
                 Map<String, Object> nextLevelGroup = buildGroupedValue(childGroupResultsMap, container, groupedValueFiltersCopy);
                 groupedValue.put("group", nextLevelGroup);
@@ -3106,7 +3103,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             }
         });
 
-        Map<String, Object> groupedValue = new HashMap<String, Object>(2);
+        Map<String, Object> groupedValue = new HashMap<>(2);
         groupedValue.put("name", viewName);
         groupedValue.put("values", groupedValues);
         return groupedValue;
@@ -3138,7 +3135,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (context == null || context.getContainer() == null)
             return null;
 
-        Set<String> activeModuleNames = new HashSet<String>();
+        Set<String> activeModuleNames = new HashSet<>();
         for (Module module : context.getContainer().getActiveModules())
             activeModuleNames.add(module.getName());
         for (Map.Entry<String, Resource> entry : _moduleExtendedSpecimenRequestViews.entrySet())

@@ -187,8 +187,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Container", getContainer().getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
             filter.addCondition("CpasType", getLSID());
             Sort sort = new Sort("Name");
             return ExpMaterialImpl.fromMaterials(Table.select(ExperimentServiceImpl.get().getTinfoMaterial(), Table.ALL_COLUMNS, filter, sort, Material.class));
@@ -201,8 +200,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public ExpMaterialImpl getSample(String name)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", getContainer().getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
         filter.addCondition("CpasType", getLSID());
         filter.addCondition("Name", name);
 

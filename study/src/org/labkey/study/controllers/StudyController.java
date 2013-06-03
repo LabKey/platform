@@ -2239,7 +2239,7 @@ public class StudyController extends BaseStudyController
             dr.addDisplayColumn(dc);
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
-            SimpleFilter filter = new SimpleFilter("container", getContainer().getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
             if (form.getId() != 0)
             {
                 filter.addCondition(DataSetDefinition.DATASETKEY, form.getId());

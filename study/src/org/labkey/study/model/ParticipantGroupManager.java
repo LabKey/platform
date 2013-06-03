@@ -790,8 +790,8 @@ public class ParticipantGroupManager
 
     public ParticipantGroup getParticipantGroup(Container container, User user, int rowId)
     {
-        SimpleFilter filter = new SimpleFilter("RowId", rowId);
-        filter.addCondition("Container", container);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition("RowId", rowId);
         ResultSet rs = null;
         try
         {
@@ -828,7 +828,7 @@ public class ParticipantGroupManager
     {
         ParticipantGroup[] groups;
         ResultSet rs = null;
-        SimpleFilter filter = new SimpleFilter("Container", container);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("RowId", rowId);
         
         try

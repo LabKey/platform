@@ -511,8 +511,7 @@ public class QueryManager
 
     public void containerDeleted(Container c) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(getTableInfoQuerySnapshotDef(), filter);
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);

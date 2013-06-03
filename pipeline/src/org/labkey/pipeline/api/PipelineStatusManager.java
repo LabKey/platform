@@ -336,7 +336,7 @@ public class PipelineStatusManager
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
         if (null != container)
-            filter.addCondition("Container", container.getId(), CompareType.EQUAL);
+            filter.addCondition("Container", container, CompareType.EQUAL);
 
         try
         {
@@ -414,7 +414,7 @@ public class PipelineStatusManager
     public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c) throws SQLException
     {
         SimpleFilter filter = createQueueFilter();
-        filter.addCondition("Container", c.getId(), CompareType.EQUAL);
+        filter.addCondition("Container", c, CompareType.EQUAL);
 
         return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
@@ -423,8 +423,8 @@ public class PipelineStatusManager
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter("Status", PipelineJob.WAITING_FOR_FILES);
-            filter.addCondition("Container", c.getId(), CompareType.EQUAL);
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES);
 
             return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
         }

@@ -1545,7 +1545,7 @@ public class QueryServiceImpl extends QueryService
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
-		ResultSet rs = Table.executeQuery(table.getSchema(), sql, cache, cache);
+		ResultSet rs = new SqlSelector(table.getSchema(), sql).getResultSet(cache, cache);
         return new ResultsImpl(rs, columns);       // TODO: If ResultsImpl() throws, rs is never closed
     }
 

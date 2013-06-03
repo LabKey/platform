@@ -146,7 +146,7 @@ public class ListWriter
 
                 if (!columns.isEmpty())
                 {
-                    List<DisplayColumn> displayColumns = new LinkedList<DisplayColumn>();
+                    List<DisplayColumn> displayColumns = new LinkedList<>();
 
                     for (ColumnInfo col : columns)
                         displayColumns.add(new ListExportDataColumn(col));
@@ -179,7 +179,7 @@ public class ListWriter
     public static void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
     {
 
-        Collection<ColumnInfo> colCopy = new LinkedList<ColumnInfo>(columns);
+        Collection<ColumnInfo> colCopy = new LinkedList<>(columns);
         String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
         for (ColumnInfo column : colCopy)
         {
@@ -219,7 +219,7 @@ public class ListWriter
 
     private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir) throws SQLException, IOException
     {
-        List<ColumnInfo> attachmentColumns = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> attachmentColumns = new ArrayList<>();
 
         for (DomainProperty prop : def.getDomain().getProperties())
             if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
@@ -228,12 +228,12 @@ public class ListWriter
         if (!attachmentColumns.isEmpty())
         {
             VirtualFile listDir = listsDir.getDir(def.getName());
-            Map<String, FileNameUniquifier> uniquifiers = new HashMap<String, FileNameUniquifier>();
+            Map<String, FileNameUniquifier> uniquifiers = new HashMap<>();
 
             for (ColumnInfo attachmentColumn : attachmentColumns)
                 uniquifiers.put(attachmentColumn.getName(), new FileNameUniquifier());
 
-            List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>(attachmentColumns);
+            List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
             selectColumns.add(0, ti.getColumn("EntityId"));
 
             ResultSet rs = null; 
@@ -295,8 +295,8 @@ public class ListWriter
 
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removeProtected)
     {
-        Collection<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>();
-        Set<ColumnInfo> pks = new HashSet<ColumnInfo>(tinfo.getPkColumns());
+        Collection<ColumnInfo> columns = new LinkedHashSet<>();
+        Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
 
         assert pks.size() == 1;
 
@@ -345,7 +345,7 @@ public class ListWriter
     private static class ListTableInfoWriter extends TableInfoWriter
     {
         private final ListDefinition _def;
-        private final Map<String, DomainProperty> _properties = new HashMap<String, DomainProperty>();
+        private final Map<String, DomainProperty> _properties = new HashMap<>();
         private Domain _domain;
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)

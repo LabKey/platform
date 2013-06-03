@@ -56,7 +56,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
             MvUtil.containerDeleted(c);
 
             // Delete any rows in test.TestTable associated with this container
-            Table.delete(TestSchema.getInstance().getTableInfoTestTable(), new SimpleFilter("Container", c));
+            Table.delete(TestSchema.getInstance().getTableInfoTestTable(), SimpleFilter.createContainerFilter(c));
 
             // Let containerManager delete ACLs, we want that to happen last
 

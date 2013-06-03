@@ -90,8 +90,8 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter(getOwnerEntityIdColumnName(), ownerEntityId);
-            filter.addCondition("Container", container.getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(getOwnerEntityIdColumnName(), ownerEntityId);
             return Table.select(getRequirementTableInfo(), Table.ALL_COLUMNS, filter, getDefaultRequirementSort(), _requirementClass);
         }
         catch (SQLException e)
@@ -109,7 +109,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             return Table.select(getRequirementTableInfo(), Table.ALL_COLUMNS, filter, getDefaultRequirementSort(), _requirementClass);
         }
         catch (SQLException e)
@@ -120,8 +120,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public A[] getActors(Container c)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         try
         {
             return Table.select(getActorTableInfo(), Table.ALL_COLUMNS, filter,

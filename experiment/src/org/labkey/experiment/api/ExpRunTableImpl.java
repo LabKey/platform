@@ -824,7 +824,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (rowIdRaw != null)
             {
                 Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
-                return new TableSelector(getQueryTable(), new SimpleFilter(Column.RowId.toString(), rowId), null).getObject(Map.class);
+                return new TableSelector(getQueryTable(), new SimpleFilter(Column.RowId.toString(), rowId), null).getMap();
             }
             return null;
         }

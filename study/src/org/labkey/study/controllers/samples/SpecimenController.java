@@ -2861,7 +2861,7 @@ public class SpecimenController extends BaseStudyController
                             protected List<Specimen> getSpecimenList()
                             {
                                 SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingLocation, type);
-                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null).getArrayList(Specimen.class);
+                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(), filter, null).getArrayList(Specimen.class);
                             }
 
                         };

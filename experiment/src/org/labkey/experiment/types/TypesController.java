@@ -37,7 +37,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -74,7 +73,6 @@ import java.util.TreeMap;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: mbellew
  * Date: Nov 14, 2005
  * Time: 9:33:11 AM
@@ -148,7 +146,7 @@ public class TypesController extends SpringActionController
             StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
             if (report.getProvisionedDomains().size() == 1)
                 form.report = report.getProvisionedDomains().iterator().next();
-            return new JspView<RepairForm>(this.getClass(), "repair.jsp", form, errors);
+            return new JspView<>(this.getClass(), "repair.jsp", form, errors);
         }
 
         @Override
@@ -194,7 +192,7 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(ImportVocabularyForm form, boolean reshow, BindException errors) throws Exception
         {
-            HttpView view = new JspView<ImportVocabularyForm>("/org/labkey/experiment/types/importVocabulary.jsp",form);
+            HttpView view = new JspView<>("/org/labkey/experiment/types/importVocabulary.jsp",form);
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return view;
         }
@@ -269,7 +267,7 @@ public class TypesController extends SpringActionController
                     bean.locals.put(t.getName(), t);
             }
 
-            return new JspView<TypeBean>("/org/labkey/experiment/types/types.jsp", bean);
+            return new JspView<>("/org/labkey/experiment/types/types.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -283,8 +281,8 @@ public class TypesController extends SpringActionController
 
     public static class TypeBean
     {
-        public TreeMap<String, DomainDescriptor> locals = new TreeMap<String, DomainDescriptor>();
-        public TreeMap<String, DomainDescriptor> globals = new TreeMap<String, DomainDescriptor>();
+        public TreeMap<String, DomainDescriptor> locals = new TreeMap<>();
+        public TreeMap<String, DomainDescriptor> globals = new TreeMap<>();
     }
 
 
@@ -318,7 +316,7 @@ public class TypesController extends SpringActionController
             if (null != typeName)
                 properties = OntologyManager.getPropertiesForType(typeName, getViewContext().getContainer());
 
-            return new JspView<TypeDetailsAction>("/org/labkey/experiment/types/typeDetails.jsp", this);
+            return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -326,11 +324,6 @@ public class TypesController extends SpringActionController
             (new TypesAction(getViewContext())).appendNavTrail(root);
             root.addChild("Type -- " + StringUtils.defaultIfEmpty(typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getViewContext().getContainer()));
             return root;
-        }
-
-        public class TypeDetailsBean
-        {
-
         }
     }
 
@@ -356,7 +349,7 @@ public class TypesController extends SpringActionController
 
             //noinspection unchecked
             Map<String,Object>[] rows = new HashMap[0];
-            ArrayList<String> params = new ArrayList<String>();
+            ArrayList<String> params = new ArrayList<>();
 
             if (notEmpty(form.query) || notEmpty(form.concept) || notEmpty(form.semanticType))
             {
@@ -419,7 +412,7 @@ public class TypesController extends SpringActionController
                 System.err.println(params.toString());
             }
 
-            HashMap<String, String> parentMap = new HashMap<String, String>(rows.length * 2);
+            HashMap<String, String> parentMap = new HashMap<>(rows.length * 2);
             String pr, c1, c2, c3;
 
             for (Map<String, Object> row : rows)
@@ -461,7 +454,7 @@ public class TypesController extends SpringActionController
 
                 // PATH
                 String conceptURI = (String)row.get("PropertyURI");
-                ArrayList<String> path = new ArrayList<String>();
+                ArrayList<String> path = new ArrayList<>();
                 while (null != (conceptURI = parentMap.get(conceptURI)))
                     path.add(0, conceptURI);
                 row.put("Path", path);
@@ -479,7 +472,7 @@ public class TypesController extends SpringActionController
             }
 
             form.concepts = rows;
-            return new JspView<SearchForm>("/org/labkey/experiment/types/findConcepts.jsp", form);
+            return new JspView<>("/org/labkey/experiment/types/findConcepts.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -524,22 +517,11 @@ public class TypesController extends SpringActionController
     }
 
 
-    // this class is just so I can have a constructor
-    public static class VocabularyDescriptor extends ColumnDescriptor
-    {
-        public VocabularyDescriptor(String name)
-        {
-            this.name = name;
-            this.isProperty = true;
-        }
-    }
-
-
     public static CloseableIterator<Concept> readVocabularyTSV(String tsv)
             throws Exception
     {
         TabLoader loader = new TabLoader(tsv);
-        return new BeanIterator<Concept>(loader.iterator(), Concept.class);
+        return new BeanIterator<>(loader.iterator(), Concept.class);
     }
 
 
@@ -556,8 +538,8 @@ public class TypesController extends SpringActionController
                     "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " "
                     + expSchema.getSqlDialect().concatenate("?", "'#%'"), prefix).getValueMap();
 
-            List<PropertyDescriptor> inserts = new ArrayList<PropertyDescriptor>();
-            List<PropertyDescriptor> updates = new ArrayList<PropertyDescriptor>();
+            List<PropertyDescriptor> inserts = new ArrayList<>();
+            List<PropertyDescriptor> updates = new ArrayList<>();
             int conceptCount = 0;
 
             while (concepts.hasNext())
@@ -603,7 +585,7 @@ public class TypesController extends SpringActionController
             String[] semanticTypes = SEMANTIC_TYPES_CACHE.get("Experiment-TypesController.getSemanticTypes");
             if (semanticTypes == null)
             {
-                TreeMap<String,String> set = new TreeMap<String,String>();
+                TreeMap<String,String> set = new TreeMap<>();
                 rs = Table.executeQuery(ExperimentService.get().getSchema(), "SELECT DISTINCT SemanticType FROM exp.PropertyDescriptor" , null);
                 while (rs.next())
                 {

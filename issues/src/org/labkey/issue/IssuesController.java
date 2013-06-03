@@ -1719,14 +1719,14 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
+            DataRegion r = new DataRegion();
+            TableInfo tinfo = IssuesSchema.getInstance().getTableInfoIssues();
+            List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
+            r.addColumns(cols);
+
             ResultSet rs = null;
             try
             {
-                DataRegion r = new DataRegion();
-                TableInfo tinfo = IssuesSchema.getInstance().getTableInfoIssues();
-                List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
-                r.addColumns(cols);
-
                 rs = r.getResultSet(new RenderContext(getViewContext()));
                 ObjectFactory f = ObjectFactory.Registry.getFactory(Issue.class);
                 Issue[] issues = (Issue[]) f.handleArray(rs);
@@ -1800,7 +1800,7 @@ public class IssuesController extends SpringActionController
 
             TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
             selector.setMaxRows(limit);
-            Collection<Map> comments = selector.getCollection(Map.class);
+            Collection<Map<String, Object>> comments = selector.getMapCollection();
 
             ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
 

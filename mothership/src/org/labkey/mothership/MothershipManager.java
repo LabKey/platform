@@ -132,7 +132,7 @@ public class MothershipManager
         {
             try
             {
-                SimpleFilter filter = new SimpleFilter();
+                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                 if (svnRevision == null)
                 {
                     filter.addCondition("SVNRevision", null, CompareType.ISBLANK);
@@ -150,7 +150,6 @@ public class MothershipManager
                 {
                     filter.addCondition("SVNURL", svnURL);
                 }
-                filter.addCondition("Container", container.getId());
                 SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
                 if (result == null)
                 {
@@ -200,32 +199,32 @@ public class MothershipManager
     }
 
 
-    public ServerInstallation getServerInstallation(String serverGUID, String containerId)
+    public ServerInstallation getServerInstallation(String serverGUID, Container c)
     {
-        SimpleFilter filter = new SimpleFilter("ServerInstallationGUID", serverGUID);
-        filter.addCondition("Container", containerId);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition("ServerInstallationGUID", serverGUID);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
-    public ServerSession getServerSession(String serverSessionGUID, String containerId)
+    public ServerSession getServerSession(String serverSessionGUID, Container c)
     {
-        SimpleFilter filter = new SimpleFilter("ServerSessionGUID", serverSessionGUID);
-        filter.addCondition("Container", containerId);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition("ServerSessionGUID", serverSessionGUID);
         return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
     public ExceptionStackTrace getExceptionStackTrace(String stackTraceHash, String containerId)
             throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("StackTraceHash", stackTraceHash);
-        filter.addCondition("Container", containerId);
+        SimpleFilter filter = new SimpleFilter("Container", containerId);
+        filter.addCondition("StackTraceHash", stackTraceHash);
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
     public ExceptionStackTrace getExceptionStackTrace(int exceptionStackTraceId, Container container)
     {
-        SimpleFilter filter = new SimpleFilter("ExceptionStackTraceId", exceptionStackTraceId);
-        filter.addCondition("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition("ExceptionStackTraceId", exceptionStackTraceId);
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
@@ -245,7 +244,7 @@ public class MothershipManager
         scope.ensureTransaction();
         try
         {
-            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container.getId());
+            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container);
 
             String hostName = null;
             try
@@ -274,7 +273,7 @@ public class MothershipManager
             }
 
             Date now = new Date();
-            ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container.getId());
+            ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container);
             if (existingSession == null)
             {
                 session.setEarliestKnownTime(now);
@@ -448,7 +447,7 @@ public class MothershipManager
 
     public void deleteSoftwareRelease(Container container, int i) throws SQLException
     {
-        Filter filter = new SimpleFilter("Container", container.getId()).addCondition("ReleaseId", i);
+        Filter filter = SimpleFilter.createContainerFilter(container).addCondition("ReleaseId", i);
         Table.delete(getTableInfoSoftwareRelease(), filter);
     }
 
@@ -485,10 +484,10 @@ public class MothershipManager
         return Table.executeQuery(getSchema(), sql, ServerInstallation.class);
     }
 
-    public ServerInstallation getServerInstallation(int id, String containerId)
+    public ServerInstallation getServerInstallation(int id, Container c)
     {
-        SimpleFilter filter = new SimpleFilter("ServerInstallationId", id);
-        filter.addCondition("Container", containerId);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition("ServerInstallationId", id);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 

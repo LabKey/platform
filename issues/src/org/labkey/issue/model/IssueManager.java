@@ -17,7 +17,6 @@ package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -65,7 +64,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -144,11 +142,9 @@ public class IssueManager
     {
         SimpleFilter f = new SimpleFilter("issueId", issueId);
         if (null != c)
-            f.addCondition("container", c.getId());
+            f.addCondition("container", c);
 
-        TableSelector selector = new TableSelector(
-                _issuesSchema.getTableInfoIssues(),
-                Table.ALL_COLUMNS, f, null);
+        TableSelector selector = new TableSelector(_issuesSchema.getTableInfoIssues(), f, null);
         selector.setForDisplay(true);
         Issue issue = selector.getObject(Issue.class);
         if (issue == null)
@@ -212,7 +208,7 @@ public class IssueManager
     public static Map<ColumnType, String> getAllDefaults(Container container) throws SQLException
     {
         final Map<ColumnType, String> defaults = new HashMap<>();
-        SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition("Default", true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
         selector.forEach(new Selector.ForEachBlock<ResultSet>() {
@@ -497,7 +493,7 @@ public class IssueManager
                 "GROUP BY DisplayName",
                 c.getId());
 
-        return new SqlSelector(_issuesSchema.getSchema(), sql).getArray(Map.class);
+        return new SqlSelector(_issuesSchema.getSchema(), sql).getMapArray();
     }
 
 
@@ -860,73 +856,63 @@ public class IssueManager
     }
     
 
-    public static void indexIssues(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexIssues(final SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
-        assert null != c;
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss || null == c)
+        if (null == ss)
             return;
         
-        ResultSet rs = null;
-        try
-        {
-            SimpleFilter f = new SimpleFilter();
-            f.addCondition("container", c);
-            SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
-            if (!incremental.toSQLFragment(null,null).isEmpty())
-                f.addClause(incremental);
-            if (f.getClauses().isEmpty())
-                f = null;
+        SimpleFilter f = SimpleFilter.createContainerFilter(c);
+        SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
+        if (!incremental.toSQLFragment(null,null).isEmpty())
+            f.addClause(incremental);
+        if (f.getClauses().isEmpty())
+            f = null;
 
-            rs = Table.select(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null);
-            int[] ids = new int[100];
-            int count = 0;
-            while (rs.next())
+        final ArrayList<Integer> ids = new ArrayList<>(100);
+
+        new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 int id = rs.getInt(1);
-                ids[count++] = id;
-                if (count == ids.length)
+                ids.add(id);
+
+                if (ids.size() == 100)
                 {
-                    task.addRunnable(new IndexGroup(task, ids, count), SearchService.PRIORITY.group);
-                    count = 0;
-                    ids = new int[ids.length];
+                    task.addRunnable(new IndexGroup(task, ids), SearchService.PRIORITY.group);
+                    ids.clear();
                 }
             }
-            task.addRunnable(new IndexGroup(task, ids, count), SearchService.PRIORITY.group);
-        }
-        catch (SQLException x)
-        {
-            Logger.getLogger(IssueManager.class).error(x);
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
+
+        task.addRunnable(new IndexGroup(task, ids), SearchService.PRIORITY.group);
     }
 
     private static class IndexGroup implements Runnable
     {
-        int[] ids; int len;
-        SearchService.IndexTask _task;
+        private final List<Integer> _ids;
+        private final SearchService.IndexTask _task;
         
-        IndexGroup(SearchService.IndexTask task, int[] ids, int len)
+        IndexGroup(SearchService.IndexTask task, List<Integer> ids)
         {
-            this.ids = ids; this.len = len;
+            _ids = ids;
             _task = task;
         }
 
         public void run()
         {
-            indexIssues(_task, ids, len);
+            indexIssues(_task, _ids);
         }
     }
 
 
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(SearchService.IndexTask task, int[] ids, int count)
+    public static void indexIssues(SearchService.IndexTask task, Collection<Integer> ids)
     {
-        if (count == 0) return;
+        if (ids.isEmpty())
+            return;
 
         SQLFragment f = new SQLFragment();
         f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.searchTerms as assignedto, I.type, I.area, ")
@@ -945,9 +931,8 @@ public class IssueManager
         f.append("WHERE I.issueid IN ");
 
         String comma = "(";
-        for (int i=0 ; i<count ; i++)
+        for (Integer id : ids)
         {
-            int id = ids[i];
             f.append(comma).append(id);
             comma = ",";
         }
@@ -997,7 +982,7 @@ public class IssueManager
         // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
 
         // try requery instead
-        indexIssues(task, new int[]{issue.getIssueId()}, 1);
+        indexIssues(task, Collections.singleton(issue.getIssueId()));
     }
 
 

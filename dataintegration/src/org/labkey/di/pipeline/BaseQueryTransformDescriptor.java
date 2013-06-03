@@ -810,7 +810,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         {
             int runId = job.getTransformRunId();
             BaseQueryTransformDescriptor d = job.getTransformDescriptor();
-            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("TransformRunId"), runId), null).getObject(TransformRun.class);
+            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), runId), null).getObject(TransformRun.class);
             String status = run.getStatus();
             Integer expId = run.getExpRunId();
             Integer jobId = run.getJobId();

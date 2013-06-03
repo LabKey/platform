@@ -77,7 +77,7 @@ public class OpenSSOController extends SpringActionController
         public ModelAndView getView(ConfigProperties form, boolean reshow, BindException errors) throws Exception
         {
             form.props = OpenSSOManager.get().getSystemSettings();
-            return new JspView<ConfigProperties>("/org/labkey/authentication/opensso/view/configure.jsp", form);
+            return new JspView<>("/org/labkey/authentication/opensso/view/configure.jsp", form);
         }
 
         public boolean handlePost(ConfigProperties form, BindException errors) throws Exception
@@ -118,7 +118,7 @@ public class OpenSSOController extends SpringActionController
             form.props = OpenSSOManager.get().getSystemSettings();
             form.authLogoURL = getPickAuthLogoURL();
             form.pickRefererPrefixURL = getPickReferrerURL();
-            return new JspView<ConfigProperties>("/org/labkey/authentication/opensso/view/currentSettings.jsp", form);
+            return new JspView<>("/org/labkey/authentication/opensso/view/currentSettings.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -185,7 +185,7 @@ public class OpenSSOController extends SpringActionController
         public ModelAndView getView(PickReferrerForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setPrefix(OpenSSOManager.get().getReferrerPrefix());
-            return new JspView<PickReferrerForm>("/org/labkey/authentication/opensso/view/referrerPrefix.jsp", form);
+            return new JspView<>("/org/labkey/authentication/opensso/view/referrerPrefix.jsp", form);
         }
 
         public boolean handlePost(PickReferrerForm form, BindException errors) throws Exception

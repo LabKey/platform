@@ -827,7 +827,7 @@ public class StudyManager
 
     public void clearVisitAliases(Study study) throws SQLException
     {
-        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
 
@@ -884,7 +884,7 @@ public class StudyManager
     // maintains import order in the case where multiple names map to the same sequence number).
     public Collection<VisitAlias> getCustomVisitImportMapping(Study study)
     {
-        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
 
         return new TableSelector(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum,RowId")).getCollection(VisitAlias.class);
@@ -1163,7 +1163,7 @@ public class StudyManager
     public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId,
                                                int dataSetId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("VisitRowId", visitRowId);
         filter.addCondition("DataSetId", dataSetId);
         ResultSet rs = Table.select(_tableInfoVisitMap, Table.ALL_COLUMNS,
@@ -1194,7 +1194,7 @@ public class StudyManager
 
         if (cohort != null)
         {
-            filter = new SimpleFilter("Container", study.getContainer().getId());
+            filter = SimpleFilter.createContainerFilter(study.getContainer());
             if (showCohorts(study.getContainer(), user))
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
         }
@@ -1229,7 +1229,7 @@ public class StudyManager
 
             if (states == null)
             {
-                SimpleFilter filter = new SimpleFilter("Container", container);
+                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                 states = Table.select(StudySchema.getInstance().getTableInfoQCState(), Table.ALL_COLUMNS, filter, new Sort("Label"), QCState.class);
                 DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, CacheManager.HOUR);
             }
@@ -1614,7 +1614,7 @@ public class StudyManager
     public CohortImpl getCohortByLabel(Container container, User user, String label)
     {
         assertCohortsViewable(container, user);
-        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("Label", label);
 
         List<CohortImpl> cohorts = _cohortHelper.get(container, filter);
@@ -1696,7 +1696,7 @@ public class StudyManager
         SimpleFilter filter = null;
         if (cohort != null)
         {
-            filter = new SimpleFilter("Container", study.getContainer().getId());
+            filter = SimpleFilter.createContainerFilter(study.getContainer());
             filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
         }
 
@@ -1707,7 +1707,7 @@ public class StudyManager
             if (null != typeCol && !typeCol.isUnselectable())
             {
                 if (filter == null)
-                    filter = new SimpleFilter("Container", study.getContainer().getId());
+                    filter = SimpleFilter.createContainerFilter(study.getContainer());
                 filter.addInClause("Type", Arrays.asList(types));
             }
         }
@@ -1778,7 +1778,7 @@ public class StudyManager
             return null;
         }
         
-        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
         List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
@@ -1792,7 +1792,7 @@ public class StudyManager
     @Nullable
     public DataSetDefinition getDataSetDefinitionByEntityId(Study s, String entityId)
     {
-        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addCondition("EntityId", entityId);
 
         List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
@@ -1806,7 +1806,7 @@ public class StudyManager
     @Nullable
     public DataSetDefinition getDataSetDefinitionByName(Study s, String name)
     {
-        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
 
         List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
@@ -2174,7 +2174,7 @@ public class StudyManager
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         Set<TableInfo> deletedTables = new HashSet<>();
-        SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
 
         try
         {
@@ -3247,8 +3247,8 @@ public class StudyManager
         Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
         if (participantMap == null)
         {
-            SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
-            Participant[] participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
+            SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
+            Participant[] participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(),
                     filter, new Sort("ParticipantId")).getArray(Participant.class);
             participantMap = new LinkedHashMap<>();
             for (Participant participant : participants)
@@ -3299,7 +3299,7 @@ public class StudyManager
             }
         }
 
-        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer().getId());
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         return new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
     }
 
@@ -3426,7 +3426,7 @@ public class StudyManager
                 f.append(" WHERE container = ?");
                 f.add(c);
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
+            rs = new SqlSelector(StudySchema.getInstance().getSchema(), f).getResultSet(false, false);
 
             while (rs.next())
             {
@@ -3867,7 +3867,7 @@ public class StudyManager
                 Study study = _instance.getStudy(ContainerManager.getForId(category.getContainerId()));
                 if (study != null)
                 {
-                    SimpleFilter filter = new SimpleFilter("Container", study.getContainer().getId());
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
                     filter.addCondition("CategoryId", category.getRowId());
                     return _instance._datasetHelper.get(study.getContainer(), filter);
                 }

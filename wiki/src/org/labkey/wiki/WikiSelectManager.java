@@ -135,7 +135,7 @@ public class WikiSelectManager
 
             Wiki[] wikis = Table.select(CommSchema.getInstance().getTableInfoPages(),
                     Table.ALL_COLUMNS,
-                    new SimpleFilter("container", c.getId()).addCondition("name", name),
+                    SimpleFilter.createContainerFilter(c).addCondition("name", name),
                     null, Wiki.class);
 
             if (0 == wikis.length)
@@ -145,7 +145,7 @@ public class WikiSelectManager
                 //Bug 2225
                 wikis = Table.select(CommSchema.getInstance().getTableInfoPages(),
                         Table.ALL_COLUMNS,
-                        new SimpleFilter("container", c.getId()).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
+                        SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
                         null, Wiki.class);
 
                 if (0 == wikis.length)

@@ -38,7 +38,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -821,7 +820,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public UploadLog getUploadLog(Container c, int id)
     {
-        SimpleFilter filter = new SimpleFilter("container", c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("rowId", id);
 
         return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);

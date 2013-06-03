@@ -17,6 +17,7 @@
 package org.labkey.core.junit;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 
@@ -27,10 +28,21 @@ import org.junit.runner.Result;
 */
 public class JunitRunner
 {
+    private static final Logger LOG = Logger.getLogger(JunitRunner.class);
+
     static Result run(Class clazz)
     {
         assert !TestCase.class.isAssignableFrom(clazz);
 
-        return JUnitCore.runClasses(clazz);
+        LOG.info("Starting " + clazz.getName());
+
+        try
+        {
+            return JUnitCore.runClasses(clazz);
+        }
+        finally
+        {
+            LOG.info("Completed " + clazz.getName());
+        }
     }
 }

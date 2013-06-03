@@ -379,7 +379,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public void unregisterDirectory(Container c, String name)
     {
         FileSystemAttachmentParent parent = getRegisteredDirectory(c, name);
-        SimpleFilter filter = new SimpleFilter("Container", c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("Name", name);
         try
         {
@@ -433,7 +433,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public FileSystemAttachmentParent getRegisteredDirectory(Container c, String name)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("Name", name);
 
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
@@ -441,7 +441,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public FileSystemAttachmentParent getRegisteredDirectoryFromEntityId(Container c, String entityId)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("EntityId", entityId);
 
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
@@ -449,7 +449,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public FileSystemAttachmentParent[] getRegisteredDirectories(Container c)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         try
         {
             return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, filter, null, FileSystemAttachmentParent.class);
@@ -603,7 +603,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public AttachmentParent[] getNamedAttachmentDirectories(Container c) throws SQLException
     {
-        return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, new SimpleFilter("Container", c), null, FileSystemAttachmentParent.class);
+        return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, SimpleFilter.createContainerFilter(c), null, FileSystemAttachmentParent.class);
     }
 
     public @Nullable String getFolderName(FileContentService.ContentType type)

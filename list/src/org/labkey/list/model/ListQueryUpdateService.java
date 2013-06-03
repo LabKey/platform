@@ -89,7 +89,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             Object key = listRow.get(_list.getKeyName().toLowerCase());
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(_list.getKeyName()), key);
             TableSelector selector = new TableSelector(getQueryTable(), filter, null);
-            ret = selector.getObject(Map.class);
+            ret = selector.getMap();
         }
 
         return ret;

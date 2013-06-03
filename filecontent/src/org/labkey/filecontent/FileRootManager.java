@@ -95,7 +95,7 @@ public class FileRootManager
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", c);
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoFileRoots(), filter);
 
             CACHE.remove(getCacheKey(c));
