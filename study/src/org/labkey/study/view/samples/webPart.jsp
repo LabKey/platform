@@ -32,6 +32,8 @@
     User user = currentContext.getUser();
     String contextPath = currentContext.getContextPath();
     String time = Long.toString(System.currentTimeMillis());
+    boolean isAdmin = c.hasPermission(user, AdminPermission.class);
+
     String contentSpanName = "specimen-browse-webpart-content" + time;
     String groupHeading1 = "groupHeading1-" + time;
     String groupHeading2 = "groupHeading2-" + time;
@@ -85,8 +87,10 @@
         if (resp.groupings.length == 0 || resp.groupings[0].values.length == 0)
         {
             var html = '<i>No specimens found.</i>';
-            var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
-            html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
+            <% if (isAdmin) {%>
+                var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+                html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
+            <% } %>
             document.getElementById(names.content).innerHTML = html;
         }
         else if (null == resp.groupings[0].dummy || !resp.groupings[0].dummy)
@@ -306,7 +310,7 @@
             </table>
             </span>
 <%
-    if (c.hasPermission(user, AdminPermission.class))
+    if (isAdmin)
     {
 %>
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">

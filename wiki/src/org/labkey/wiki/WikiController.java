@@ -2259,11 +2259,13 @@ public class WikiController extends SpringActionController
             Container container = getViewContext().getContainer();
             HString name = null != form.getName() ? form.getName().trim() : null;
 
-            //must have a name
+            //must have a name, max 255 chars
             //cannot start with _ if not admin
             //if new, must be unique
             if (null == name || name.length() <= 0)
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
+            else if (name.length() > 255)
+                errors.rejectValue("name", ERROR_MSG, "Wiki names must be < 256 characters.");
             else if (name.startsWith("_") && !container.hasPermission(getUser(), AdminPermission.class))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
 

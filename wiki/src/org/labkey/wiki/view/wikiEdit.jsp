@@ -124,7 +124,7 @@
                 <tr>
                     <td class="labkey-form-label" nowrap="true">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()"/>
+                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
