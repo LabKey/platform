@@ -130,7 +130,7 @@
                 <tr>
                     <td class="labkey-form-label">Title</td>
                     <td width="99%">
-                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()" onchange="setWikiDirty()"/>
+                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()" onchange="setWikiDirty()" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>

@@ -2259,15 +2259,19 @@ public class WikiController extends SpringActionController
             Container container = getViewContext().getContainer();
             HString name = null != form.getName() ? form.getName().trim() : null;
 
-            //must have a name, max 255 chars
+            //must have a name
             //cannot start with _ if not admin
             //if new, must be unique
             if (null == name || name.length() <= 0)
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
-            else if (name.length() > 255)
-                errors.rejectValue("name", ERROR_MSG, "Wiki names must be < 256 characters.");
             else if (name.startsWith("_") && !container.hasPermission(getUser(), AdminPermission.class))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
+
+            // name and title max 255 chars
+            if (null != name && name.length() > 255)
+                errors.rejectValue("name", ERROR_MSG, "Wiki names must be < 256 characters.");
+            if(null != form.getTitle() && form.getTitle().length() > 255)
+                errors.rejectValue("title", ERROR_MSG, "Wiki titles must be < 256 characters.");
 
             //check to ensure that there is not an existing wiki with the same name
             //but different entity id (works for both insert and update case)
