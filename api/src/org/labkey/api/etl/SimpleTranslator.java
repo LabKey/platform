@@ -640,6 +640,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    public int addTimestampColumn(String name)
+    {
+        ColumnInfo col = new ColumnInfo(name, JdbcType.TIMESTAMP);
+        return addColumn(col, new TimestampColumn());
+    }
+
+
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
         SimpleTranslator t;
