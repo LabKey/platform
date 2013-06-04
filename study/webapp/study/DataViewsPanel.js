@@ -272,14 +272,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'createdBy'},
             {name : 'createdByUserId',      type : 'int'},
             {name : 'authorUserId',
-                convert : function(v, record){
+                convert : function(v, record) {
                     if (record.raw && record.raw.author)
                         return record.raw.author.userId;
                     return 0;
                 }
             },
             {name : 'authorDisplayName',
-                convert : function(v, record){
+                convert : function(v, record) {
                     if (record.raw && record.raw.author)
                         return record.raw.author.displayName;
                     return '';
@@ -419,7 +419,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             autoLoad: true,
             proxy   : this.getViewProxy(),
             listeners : {
-                beforeload : function(){
+                beforeload : function() {
                     if (this.gridPanel) {
                         if (this.catWinID) {
                             var w = Ext4.getCmp(this.catWinID);
@@ -506,7 +506,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      */
     updateConfiguration : function() {
 
-        var handler = function(json){
+        var handler = function(json) {
             this.centerPanel.getEl().unmask();
             this._height = parseInt(json.webpart.height);
             this.centerPanel.removeAll(true);
@@ -658,8 +658,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 itemclick : function(view, record, item, index, e) {
                     // TODO: Need a better way to determine the clicked item
                     var cls = e.target.className;
-                    if (cls.search(/edit-views-link/i) >= 0)
+                    if (cls.search(/edit-views-link/i) >= 0) {
                         this.onEditClick(view, record);
+                    }
                 },
                 afterlayout : function(p) {
                     /* Apply selector for tests */
@@ -743,8 +744,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden   : true
         });
 
-        if (visibleColumns['Type'] && visibleColumns['Type'].checked)
-        {
+        if (visibleColumns['Type'] && visibleColumns['Type'].checked) {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Type',
@@ -758,8 +758,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if (visibleColumns['Details'] && visibleColumns['Details'].checked)
-        {
+        if (visibleColumns['Details'] && visibleColumns['Details'].checked) {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Details',
@@ -773,7 +772,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if(visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked){
+        if(visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked) {
              _columns.push({
                  text     : 'Data Cut Date',
                  width    : 120,
@@ -785,8 +784,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
              });
         }
 
-        if (visibleColumns['Status'] && visibleColumns['Status'].checked)
-        {
+        if (visibleColumns['Status'] && visibleColumns['Status'].checked) {
             var statusTpl = '<tpl if="status == \'Draft\'">' +
                     '<img data-qtip="Draft" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_draft.png" alt="Draft">' +
                     '</tpl>' +
@@ -812,8 +810,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if (visibleColumns['Modified'] && visibleColumns['Modified'].checked)
-        {
+        if (visibleColumns['Modified'] && visibleColumns['Modified'].checked) {
             _columns.push({
                 text     : 'Modified',
                 width    : 100,
@@ -824,8 +821,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if (visibleColumns['Author'] && visibleColumns['Author'].checked)
-        {
+        if (visibleColumns['Author'] && visibleColumns['Author'].checked) {
             _columns.push({
                 text     : 'Author',
                 width    : 100,
@@ -836,8 +832,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if (visibleColumns['Access'] && visibleColumns['Access'].checked)
-        {
+        if (visibleColumns['Access'] && visibleColumns['Access'].checked) {
             _columns.push({
                 header   : 'Access',
                 width    : 100,
@@ -868,7 +863,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             width           : 400,
             border: false, frame : false,
             listeners       : {
-                change       : function(cmp, e){
+                change       : function(cmp, e) {
                     filterTask.delay(350);
                 }
             }
@@ -879,7 +874,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             boxLabelAlign   : 'before',
             border          : false, frame : false,
             listeners       : {
-                change : function(cmp, checked){
+                change : function(cmp, checked) {
                     this.searchMine = checked;
                     filterTask.delay(100);
                 },
@@ -1011,7 +1006,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
 
         this.customMode = true;
-        this.north.show(null, function(){
+        this.north.show(null, function() {
             this.north.getEl().mask('Loading Customize...');
         }, this);
         this.getConfiguration(handler, this);
@@ -1027,21 +1022,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
     },
 
-    edit : function(){
+    edit : function() {
         if(!this.isCustomizable())
             return false;
 
         this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
     },
 
-    onEnableEditMode : function(){
+    onEnableEditMode : function() {
         this.editMode = true;
         this._getEditColumn().show();
     },
 
-    onDisableEditMode : function(){
+    onDisableEditMode : function() {
         this.editMode = false;
         this._getEditColumn().hide();
+        this.hiddenFilter();
     },
 
     // private
@@ -1228,11 +1224,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var formItems = [];
 
         /* Record 'id' is required */
-        var editable = true;
-        if (record.data.id == undefined || record.data.id == "")
-        {
+        if (record.data.id == undefined || record.data.id == "") {
             console.warn('ID is required');
-            editable = false;
         }
 
         // hidden items
@@ -1261,12 +1254,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     form.submit({
                         url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
                         method : 'POST',
-                        success : function(){
+                        success : function() {
                             this.onEditSave();
                             editWindow.getEl().unmask();
                             editWindow.close();
                         },
-                        failure : function(response){
+                        failure : function(response) {
                             editWindow.getEl().unmask();
                             Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
                         },
@@ -1277,10 +1270,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope: this
         }];
 
-        if (record.data.dataType == 'reports')
-        {
+        if (record.data.dataType == 'reports') {
             var gpStore = this.gridPanel.getStore(); // Need because for some reason this.gridPanel is not in scope
-            // in the successCallback below.
+                                                     // in the successCallback below.
             buttons.push({
                 text: 'Delete Report',
                 scope: this,
@@ -1289,16 +1281,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var msg = 'Are you sure you want to delete "' + record.data.name + '"';
                     var successCallback = function (response)
                     {
-                        var jsonResp = Ext4.JSON.decode(response.responseText);
-                        console.log(jsonResp);
                         editWindow.close();
                         // Refresh the store, so deleted reports go away.
                         gpStore.load();
                     };
                     var failureCallback = function (response)
                     {
-                        var jsonResp = Ext4.JSON.decode(response.responseText);
-                        console.error(jsonResp);
                         Ext4.MessageBox.alert('Error Deleting Report', 'There was an error deleting the report "' + record.data.name + '"');
                         editWindow.close();
                     };
@@ -1310,7 +1298,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             var deleteURL = LABKEY.ActionURL.buildURL('reports', 'manageViewsDeleteReports', null, {
                                 reportId: record.data.reportId
                             });
-                            console.log(deleteURL);
                             Ext4.Ajax.request({
                                 url: deleteURL,
                                 method: 'POST',
@@ -1325,26 +1312,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            record          : record,
-            extraItems      : formItems,
-            dateFormat      : this.dateFormat,
-            visibleFields   : {
-                author  : editInfo['author'],
-                status  : editInfo['status'],
-                datacutdate : editInfo['refreshDate'],
-                category    : editInfo['category'],
-                description : editInfo['description'],
-                type        : true,
-                visible     : editInfo['visible'],
-                created     : true,
-                shared      : editInfo['shared'],
-                modified    : true,
-                customThumbnail : editInfo['customThumbnail']
-            },
-            buttons     : buttons
-        });
-
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 460,
             maxHeight : 750,
@@ -1357,7 +1324,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 border: false, frame: false
             },
             bodyPadding : 10,
-            items : viewForm,
+            items : [{
+                xtype : 'dvproperties',
+                record          : record,
+                extraItems      : formItems,
+                dateFormat      : this.dateFormat,
+                visibleFields   : {
+                    author  : editInfo['author'],
+                    status  : editInfo['status'],
+                    datacutdate : editInfo['refreshDate'],
+                    category    : editInfo['category'],
+                    description : editInfo['description'],
+                    type        : true,
+                    visible     : editInfo['visible'],
+                    created     : true,
+                    shared      : editInfo['shared'],
+                    modified    : true,
+                    customThumbnail : editInfo['customThumbnail']
+                },
+                buttons     : buttons
+            }],
             scope : this
         });
 
@@ -1372,10 +1358,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
 
-        window.on('categorychange', function(cmp){
+        window.on('categorychange', function(cmp) {
             this.gridPanel.getStore().load();
-            console.log('category changed')
         }, this);
+
         window.show();
     }
 });

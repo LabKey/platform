@@ -10,6 +10,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
     extend : 'Ext.form.Panel',
 
+    alias : 'widget.dvproperties',
+
     constructor : function(config) {
 
         Ext4.applyIf(config, {

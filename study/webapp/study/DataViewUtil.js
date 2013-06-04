@@ -153,7 +153,7 @@ Ext4.define('LABKEY.study.DataViewUtil', {
         return Ext4.create('Ext.data.Store', config);
     },
 
-    getManageCategoriesDialog : function(config) {
+    getManageCategoriesDialog : function() {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'categorycell',
