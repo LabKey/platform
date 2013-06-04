@@ -15,15 +15,19 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MVDisplayColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ReportingWriter;
+import org.labkey.api.data.UrlColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +59,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
 
         // see Ext.data.JsonReader
         writer.writeProperty("metaData", getMetaData());
-        // TODO: can use super's getMetaData(), but sort info not in mockup. Also not comment around super's getSort(); should we override?
+        // TODO: can use super's getMetaData(), but sort info not in mockup. Also note comment around super's getSort(); should we override?
 
         Map<String,String> mvInfo = getMvInfo();
 
@@ -98,7 +102,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         ArrayList<Map<String, Object>> fields = new ArrayList<>();
         for (DisplayColumn dc : displayColumns)
         {
-            if (includeColumnInResponse(dc))
+            if (dc.isQueryColumn())  // Don't put details or update columns into the field map
             {
                 Map<String,Object> fmdata = ReportingWriter.getMetaData(dc, false, includeLookupInfo, false);
                 //if the column type is file, include an extra column for the url
@@ -116,20 +120,78 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     }
 
     @Override
-    protected boolean writeRowset(ApiResponseWriter writer) throws Exception
-    {
-        return super.writeRowset(writer);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected Object getColumnValue(DisplayColumn dc)
-    {
-        return super.getColumnValue(dc);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
     {
-        super.putValue(row, dc);    //To change body of overridden methods use File | Settings | File Templates.
+        // Splitting the individual row result into two objects- "data" and "links". "links" has the detail & update links.
+
+        //column value
+        Object value = getColumnValue(dc);
+
+        if (null != value && dc instanceof UrlColumn)
+        {
+            putLinksMap(row, dc, value.toString());
+        }
+        else
+        {
+            putDataMap(row, dc, value);
+        }
     }
+
+    private void putLinksMap(Map<String, Object> row, DisplayColumn dc, String displayText)
+    {
+        if (!row.containsKey("links"))
+        {
+            row.put("links", new HashMap<>());
+        }
+        String url = dc.renderURL(getRenderContext());
+        if(null != url)
+        {
+            Map<String,Object> urlMap = new HashMap<>();
+            urlMap.put("href", url);
+            urlMap.put("title", displayText);
+            ((HashMap)row.get("links")).put(displayText, urlMap);
+        }
+    }
+
+    private void putDataMap(Map<String, Object> row, DisplayColumn dc, Object value)
+    {
+
+        String columnName = getColumnName(dc);
+        if (columnName != null)
+        {
+            if (!row.containsKey("data"))
+            {
+                row.put("data", new HashMap<>());
+            }
+
+            Map<String,Object> colMap = new HashMap<>();
+            colMap.put(ColMapEntry.value.name(), value);
+
+            //display value (if different from value)
+            Object displayValue = ensureJSONDate(dc.getDisplayValue(getRenderContext()));
+            if(null != displayValue && !displayValue.equals(value))
+                colMap.put(ColMapEntry.displayValue.name(), displayValue);
+
+            //missing values
+            if (dc instanceof MVDisplayColumn)
+            {
+                MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
+                RenderContext ctx = getRenderContext();
+                colMap.put(ColMapEntry.mvValue.name(), mvColumn.getMvIndicator(ctx));
+                colMap.put(ColMapEntry.mvRawValue.name(), mvColumn.getRawValue(ctx));
+            }
+
+            if (_doItWithStyle)
+            {
+                RenderContext ctx = getRenderContext();
+                String style = dc.getCssStyle(ctx);
+                if (!StringUtils.isEmpty(style))
+                    colMap.put("style", style);
+            }
+
+            //put the column map into the data map using the column name as the key
+            ((HashMap)row.get("data")).put(columnName, colMap);
+        }
+    }
+
 }

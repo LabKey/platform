@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -25,7 +24,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.ExtUtil;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -223,7 +221,7 @@ public class ReportingWriter
                 Map<String, Object> jsonMember = new HashMap<>();
                 jsonMember.put("value", String.valueOf(member.getValue()));
                 jsonMember.put("caption", member.getCaption());
-                jsonMember.put("dimensionFieldKey", new JSONArray(member.getDimensionFieldKey().getParts())); // TODO: possible to get rid of that usage of JSONArray?
+                jsonMember.put("dimensionFieldKey", member.getDimensionFieldKey());
                 props.put("crosstabColumnMember", jsonMember);
 
                 props.put("crosstabColumnDimension", cinfo.getCrosstabColumnDimension());
