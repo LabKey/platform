@@ -851,6 +851,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return true;
         if (c instanceof PassthroughColumn)
             return _data.isConstant(((PassthroughColumn)c).index);
+        if (c instanceof AliasColumn)
+            return isConstant(((AliasColumn)c).index);
         if (c instanceof SimpleConvertColumn)
             return _data.isConstant(((SimpleConvertColumn)c).index);
         if (c instanceof TimestampColumn)
@@ -865,8 +867,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         Callable c = _outputColumns.get(i).getValue();
         if (c instanceof ConstantColumn)
             return ((ConstantColumn)c).k;
-        if (c instanceof PassthroughColumn )
+        if (c instanceof PassthroughColumn)
             return _data.getConstantValue(((PassthroughColumn)c).index);
+        if (c instanceof AliasColumn)
+            return getConstantValue(((AliasColumn)c).index);
         if (c instanceof SimpleConvertColumn)
         {
             SimpleConvertColumn scc = (SimpleConvertColumn)c;
