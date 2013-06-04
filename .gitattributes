@@ -589,6 +589,8 @@ core/script-fragments/labkey/ActionURL.footer.js -text
 core/script-fragments/labkey/ActionURL.header.js -text
 core/script-fragments/labkey/Ajax.footer.js -text
 core/script-fragments/labkey/Ajax.header.js -text
+core/script-fragments/labkey/FieldKey.footer.js -text
+core/script-fragments/labkey/FieldKey.header.js -text
 core/script-fragments/labkey/Filter.footer.js -text
 core/script-fragments/labkey/Filter.header.js -text
 core/script-fragments/labkey/Message.footer.js -text

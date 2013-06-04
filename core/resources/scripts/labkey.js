@@ -16,6 +16,7 @@ LABKEY.Filter = require("labkey/Filter").Filter;
 LABKEY.Message = require("labkey/Message").Message;
 LABKEY.Security = require("labkey/Security").Security;
 
+LABKEY.FieldKey = require("labkey/FieldKey").FieldKey;
 LABKEY.Utils = require("labkey/Utils").Utils;
 LABKEY.Query = require("labkey/Query").Query;
 LABKEY.Report = require("labkey/Report").Report;
