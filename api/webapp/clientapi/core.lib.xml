@@ -21,6 +21,7 @@
         <script path="clientapi/core/Utils.js"/> <!-- TODO: REQUIRES FIX: Depends explicitly on Ext.get (Ext 3) -->
         <script path="clientapi/core/Visualization.js"/>
         <script path="clientapi/core/WebPart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg && Ext.get -->
+        <script path="clientapi/core/GetData.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4" />

@@ -1352,6 +1352,262 @@ LABKEY.Query = new function()
     };
 };
 
+LABKEY.Query.Filter = function (columnName, value, filterType)
+{
+    if (columnName instanceof LABKEY.FieldKey){
+        columnName = columnName.toString();
+    }
+
+    if (!filterType)
+    {
+        filterType = LABKEY.Filter.Types.EQUAL;
+    }
+
+    /**
+     * @private
+     */
+    this.columnName = columnName;
+
+    /**
+     * @private
+     */
+    this.value = value;
+
+    /**
+     * @private
+     */
+    this.filterType = filterType;
+};
+
+LABKEY.Query.Filter.prototype.getColumnName = function ()
+{
+    return this.columnName
+};
+
+LABKEY.Query.Filter.prototype.getFilterType = function ()
+{
+    return this.filterType
+};
+
+LABKEY.Query.Filter.prototype.getValue = function ()
+{
+    return this.value
+};
+
+LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
+{
+    return this.filterType.isDataValueRequired() ? this.value : ''
+};
+
+LABKEY.Query.Filter.prototype.getURLParameterName = function (dataRegionName)
+{
+    return (dataRegionName || "query") + "." + this.columnName + "~" + this.filterType.getURLSuffix();
+};
+
+LABKEY.Query.Filter.HasAnyValue = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.HAS_ANY_VALUE);
+};
+LABKEY.Query.Filter.HasAnyValue.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Equal = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUAL);
+};
+LABKEY.Query.Filter.Equal.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DateEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_EQUAL);
+};
+LABKEY.Query.Filter.DateEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DateNotEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_NOT_EQUAL);
+};
+LABKEY.Query.Filter.DateNotEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NotEqualOrNull = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NEQ_OR_NULL);
+};
+LABKEY.Query.Filter.NotEqualOrNull.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NotEqualOrMissing = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING);
+};
+LABKEY.Query.Filter.NotEqualOrMissing.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NotEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_EQUAL);
+};
+LABKEY.Query.Filter.NotEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Neq = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NEQ);
+};
+LABKEY.Query.Filter.Neq.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.IsBlank = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.ISBLANK);
+};
+LABKEY.Query.Filter.IsBlank.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Missing = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.MISSING);
+};
+LABKEY.Query.Filter.Missing.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NonBlank = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.NONBLANK);
+};
+LABKEY.Query.Filter.NonBlank.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NotMissing = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.NOT_MISSING);
+};
+LABKEY.Query.Filter.NotMissing.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Gt = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GT);
+};
+LABKEY.Query.Filter.Gt.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.GreaterThan = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GREATER_THAN);
+};
+LABKEY.Query.Filter.GreaterThan.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Lt = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LT);
+};
+LABKEY.Query.Filter.Lt.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.LessThan = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LESS_THAN);
+};
+LABKEY.Query.Filter.LessThan.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DateLessThan = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_LESS_THAN);
+};
+LABKEY.Query.Filter.DateLessThan.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Gte = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GTE);
+};
+LABKEY.Query.Filter.Gte.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.GreaterThanOrEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GREATER_THAN_OR_EQUAL);
+};
+LABKEY.Query.Filter.GreaterThanOrEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DateGreaterThanOrEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_GREATER_THAN_OR_EQUAL);
+};
+LABKEY.Query.Filter.DateGreaterThanOrEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Lte = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LTE);
+};
+LABKEY.Query.Filter.Lte.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.LessThanOrEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL);
+};
+LABKEY.Query.Filter.LessThanOrEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DateLessThanOrEqual = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_LESS_THAN_OR_EQUAL);
+};
+LABKEY.Query.Filter.DateLessThanOrEqual.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.Contains = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS);
+};
+LABKEY.Query.Filter.Contains.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DoesNotContain = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DOES_NOT_CONTAIN);
+};
+LABKEY.Query.Filter.DoesNotContain.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.StartsWith = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.STARTS_WITH);
+};
+LABKEY.Query.Filter.StartsWith.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.In = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.IN);
+};
+LABKEY.Query.Filter.In.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.EqualsOneOf = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUALS_ONE_OF);
+};
+LABKEY.Query.Filter.EqualsOneOf.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.EqualsNoneOf = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUALS_NONE_OF);
+};
+LABKEY.Query.Filter.EqualsNoneOf.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.NotIn = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_IN);
+};
+LABKEY.Query.Filter.NotIn.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.ContainsOneOf = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS_ONE_OF);
+};
+LABKEY.Query.Filter.ContainsOneOf.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.ContainsNoneOf = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS_NONE_OF);
+};
+LABKEY.Query.Filter.ContainsNoneOf.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.HasMissingValue = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.HAS_MISSING_VALUE);
+};
+LABKEY.Query.Filter.HasMissingValue.prototype = new LABKEY.Query.Filter;
+
+LABKEY.Query.Filter.DoesNotHaveMissingValue = function (columnName)
+{
+    LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.DOES_NOT_HAVE_MISSING_VALUE);
+};
+LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
+
 /**
 * @name LABKEY.Query.ModifyRowsOptions
 * @class   ModifyRowsOptions class to describe

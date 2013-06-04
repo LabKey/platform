@@ -1524,6 +1524,7 @@ api/webapp/clientapi/core/ExtAdapter.js -text
 api/webapp/clientapi/core/FieldKey.js -text
 api/webapp/clientapi/core/Filter.js -text
 api/webapp/clientapi/core/Form.js -text
+api/webapp/clientapi/core/GetData.js -text
 api/webapp/clientapi/core/Message.js -text
 api/webapp/clientapi/core/MultiRequest.js -text
 api/webapp/clientapi/core/NavTrail.js -text
