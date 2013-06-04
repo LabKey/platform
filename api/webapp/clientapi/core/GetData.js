@@ -41,7 +41,7 @@
         }
 
         if(typeof fieldKey === 'string'){
-            return [fieldKey];
+            return LABKEY.FieldKey.fromString(fieldKey).getParts();
         }
 
         return false;
@@ -178,7 +178,7 @@
     };
 
     LABKEY.Query.GetData = {
-        json: function(config){
+        RawData: function(config){
             if(!config || config === null || config === undefined){
                 throw new Error('A config object is required for GetData');
             }
