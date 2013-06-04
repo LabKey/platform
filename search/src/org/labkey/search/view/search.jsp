@@ -10,7 +10,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.                                                             :
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -75,6 +75,11 @@
 
     if (showAdvancedUI)
     { %>
+<style type="text/css">
+    .x-panel-body {
+        background-color: transparent; /* Fix 10930: Advanced search background is solid white. */
+    }
+</style>
 <form class="labkey-search-form" style="padding-bottom: 0" id="searchForm" name="search" onsubmit="resubmit(); return true;" action="<%=h(searchConfig.getPostURL(c))%>">
  <% }
     else
@@ -97,7 +102,7 @@
     {
         %>&nbsp;&nbsp;&nbsp;<%=SearchUtils.getHelpTopic().getLinkHtml("help")%><%
     }
-        
+
     if (showAdvancedUI)
     {
         %>
@@ -132,15 +137,13 @@
 %>
 <table width=100% cellpadding="0" cellspacing="0" style="padding-left: 10px;">
     <tr>
-        <td><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span></td>
+        <td>
+            <input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span>
+        </td>
     </tr>
     <tr>
-        <td><%  if (form.isShowAdvanced())
-                { %>
-            <div id="advancedPanelDiv"></div><%
-                }
-                else { %>
-            <div id='advancedPanelDiv' style='display: none;'></div><%  }  %>
+        <td>
+            <div id="advancedPanelDiv" <%= form.isShowAdvanced() ? "" : "style=\"display: none;\""%>></div>
         </td>
     </tr>
 </table>
@@ -509,65 +512,51 @@ String normalizeHref(Container c, Path contextPath, String href)
     if (showAdvancedUI)
     {
 %>
-<style type="text/css">
-    .x-panel-body {
-        background-color: transparent; /* Fix 10930: Advanced search background is solid white. */
-    }
-</style>
 <script type="text/javascript">
     var params = LABKEY.ActionURL.getParameters();
-    function establishParams()
-    {
+    var seen = false;
+    var initOpen = true;
+
+    var resubmit = function() {
         params['q'] = document.getElementById('query').value;
 
         checkOptions('adv-category', 'category');
 
-        if (!seen && document.getElementById('hidden-showAdv'))
-        {
-            document.getElementById('hidden-showAdv').disabled = "disabled";
+        var el = document.getElementById('hidden-showAdv');
+        if (!seen && el) {
+            el.disabled = "disabled";
         }
-    }
+    };
 
-    function checkOptions(el, param)
-    {
-        var cat = Ext.getCmp(el);
-        if (cat)
-        {
-            cat = cat.getValue();
-        }
-        params[param] = "";
+    var checkOptions = function(el, param) {
+
+        params[param] = ""; // reset parameter
         var catEl = document.getElementById('hidden-category');
 
-        if (cat && cat.length)
-        {
+        var cat = Ext.getCmp(el);
+        if (cat) {
+            cat = cat.getValue();
+        }
+
+        if (cat && cat.length > 0) {
             params[param] = cat[0].value;
-            for(var j = 1; j < cat.length; j++)
-            {
+            for (var j = 1; j < cat.length; j++) {
                 params[param] += " " + cat[j].value;
             }
             catEl.value = params[param];
         }
-        else
-        {
-            if (catEl)
-            {
-                catEl.disabled = "disabled";
-            }
+        else if (catEl) {
+            catEl.disabled = "disabled";
         }
-    }
+    };
 
-    var seen = false;
-    var initOpen = true;
+    var init = function() {
 
-    function init()
-    {
         var header = {
-            layout: 'form',
             html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultName()) + ".") + "</span>")%>
         };
 
         var categories = {
-            layout: 'form',
             html  : <%=PageFlowUtil.jsString("<span>Scope" + helpPopup("Scope", "Scoping allows the search to be refined to the contents of the entire site (default), contents of this project including sub-folders, or contents of just this folder.") + "</span>")%>,
             items: {
                 id        : 'adv-category',
@@ -622,7 +611,6 @@ String normalizeHref(Container c, Path contextPath, String href)
         };
 
         var scopes = {
-            layout: 'form',
             items: {
                 id        : 'adv-scope',
                 xtype     : 'radiogroup',
@@ -685,61 +673,56 @@ String normalizeHref(Container c, Path contextPath, String href)
             items: [header, categories, scopes],
             border: false,
             defaults: {
+                layout : 'form',
                 border: false,
                 style : {
                     padding : '5px'
                 }
-            },
-            listeners : {
+            }
+
+            <% if (form.isShowAdvanced()) { %>
+
+            ,listeners : {
                 beforerender : function(pnl) {
-                    <% if (form.isShowAdvanced()) {%>
-                        showPanel();
-                    <% } %>
+                    showPanel();
                 }
             }
+
+            <% } %>
         });
-    }
+    };
 
-    // This is to swap out the image on the form +/-
-    var minus_img = new Image();
-    minus_img.src = LABKEY.contextPath + "/_images/minus.gif";
-    var org_src   = LABKEY.contextPath + "/_images/plus.gif";
-    
-    function showPanel()
-    {
-        var ppanel = Ext.get('advancedPanelDiv');
-        if (!(seen) && ppanel)
-        {
-            Ext.getCmp('advanced-panel').show();
-            var adv = <%=form.isShowAdvanced()%>;
-            if (adv && initOpen)
-            {
-                initOpen = false;
+    var showPanel = function() {
+
+        var wrapEl = Ext.get('advancedPanelDiv');
+
+        if (wrapEl) {
+
+            var p = Ext.getCmp('advanced-panel');
+            var el = document.getElementById('adv-search-btn');
+
+            if (!seen) {
+                wrapEl.show();
+                p.show();
+                p.doLayout();
+
+                if (<%=form.isShowAdvanced()%> && initOpen) {
+                    initOpen = false;
+                }
+                seen = true;
+                el.src = LABKEY.contextPath + "/_images/minus.gif";
             }
-            ppanel.show();
-            seen = true;
-            document.getElementById('adv-search-btn').src = minus_img.src;
-        }
-        else if (ppanel) {
-            ppanel.hide();
-            hidehelp();
-            seen = false;
-            document.getElementById('adv-search-btn').src = org_src;
-        }
-    }
+            else {
+                wrapEl.hide();
+                p.hide();
+                wrapEl.setStyle('display', 'none');
 
-    /* Give the panel time to animate sliding away. */
-    function hidehelp()
-    {
-        Ext.getCmp('advanced-panel').hide();
-        document.getElementById('advancedPanelDiv').style.display = "none";
-    }
+                seen = false;
+                el.src = LABKEY.contextPath + "/_images/plus.gif";
+            }
+        }
+    };
 
-    function resubmit()
-    {
-        establishParams();
-    }
-    
     Ext.onReady(init);
 </script>
 <%

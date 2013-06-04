@@ -849,7 +849,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
                     makeTableIdentifier(change),
                     change.getTableName() + "_pk",
-                    pkColumn));
+                    makeLegalIdentifier(pkColumn)));
 
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
@@ -930,7 +930,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
                     makeTableIdentifier(change),
                     change.getTableName() + "_pk",
-                    pkColumn));
+                    makeLegalIdentifier(pkColumn)));
         }
 
         return statements;
