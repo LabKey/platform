@@ -26,9 +26,9 @@ import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformJobContext;
-import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.FilterType;
@@ -38,6 +38,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.di.DataIntegrationDbSchema.Columns;
 
 /**
  * Created with IntelliJ IDEA.
@@ -79,7 +81,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
             throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
 
         String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), _defaultTimestampColumnName);
-        timestampColumnName = StringUtils.defaultString(timestampColumnName, "_txmodified");
+        timestampColumnName = StringUtils.defaultString(timestampColumnName, Columns.TransformModified.getColumnName());
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
             _tsCol = _table.getColumn("modified");

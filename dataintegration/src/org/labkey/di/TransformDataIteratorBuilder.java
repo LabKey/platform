@@ -15,6 +15,7 @@
  */
 package org.labkey.di;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.etl.DataIterator;
@@ -32,14 +33,23 @@ import static org.labkey.di.DataIntegrationDbSchema.Columns.*;
  */
 public class TransformDataIteratorBuilder implements DataIteratorBuilder
 {
-    final int _txTransformRunId;
+    final int _transformRunId;
     final DataIteratorBuilder _input;
 
     public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input)
     {
-        _txTransformRunId = transformRunId;
+        _transformRunId = transformRunId;
         _input = input;
     }
+
+
+    static final CaseInsensitiveHashSet diColumns = new CaseInsensitiveHashSet();
+    static
+    {
+        for (DataIntegrationDbSchema.Columns c : DataIntegrationDbSchema.Columns.values())
+            diColumns.add(c.getColumnName());
+    }
+
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
@@ -49,11 +59,13 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);
-            if (c.getName().startsWith("_tx"))
+            if (diColumns.contains(c.getName()))
                 continue;
             out.addColumn(i);
         }
-        out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _txTransformRunId);
+        out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _transformRunId);
+        out.addTimestampColumn(TransformModified.getColumnName());
+
         return LoggingDataIterator.wrap(out);
     }
 }
