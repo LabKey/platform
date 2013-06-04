@@ -51,10 +51,11 @@
  *
  * @example &lt;script type="text/javascript"&gt;
     var _store;
-    Ext.onReady(function(){
 
-        //create a Store bound to the 'Users' list in the 'core' schema
-        _store = new LABKEY.ext4.data.Store({
+    Ext4.onReady(function(){
+
+        // create a Store bound to the 'Users' list in the 'core' schema
+        _store = Ext4.create('LABKEY.ext4.data.Store', {
             schemaName: 'core',
             queryName: 'users',
             autoLoad: true
