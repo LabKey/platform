@@ -2611,6 +2611,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
             {
                 if (uploadPanelOuter.getLayout().activeItem.getId() == this.uploadMultiPanel.getId())
                     this.onMultipleFileUpload();
+                panel.doLayout();
             }, this);
 
             layoutItems.push(this.fileUploadPanel);
