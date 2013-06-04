@@ -36,7 +36,7 @@
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }
@@ -61,7 +61,7 @@
     if (currentContext.isShowFolders())
     {
 %>
-        <li id="projectBar" class="menu-projects"> </li>
+        <li id="projectBar" class="menu-projects"></li>
 <%
     }
 
