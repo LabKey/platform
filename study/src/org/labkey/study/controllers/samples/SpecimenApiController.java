@@ -209,7 +209,7 @@ public class SpecimenApiController extends BaseStudyController
             }
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     Map<String, Object> result = new HashMap<String, Object>();
                     result.put("repositories", repositories);
@@ -250,7 +250,7 @@ public class SpecimenApiController extends BaseStudyController
 
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -269,7 +269,7 @@ public class SpecimenApiController extends BaseStudyController
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -323,7 +323,7 @@ public class SpecimenApiController extends BaseStudyController
             response.put("locations", locations);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -350,7 +350,7 @@ public class SpecimenApiController extends BaseStudyController
             response.put("vials", vialList);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -466,7 +466,7 @@ public class SpecimenApiController extends BaseStudyController
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -545,7 +545,7 @@ public class SpecimenApiController extends BaseStudyController
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -580,7 +580,7 @@ public class SpecimenApiController extends BaseStudyController
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -608,7 +608,7 @@ public class SpecimenApiController extends BaseStudyController
 
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return null;
                 }
@@ -661,7 +661,7 @@ public class SpecimenApiController extends BaseStudyController
 
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }
@@ -719,7 +719,7 @@ public class SpecimenApiController extends BaseStudyController
 
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return response;
                 }

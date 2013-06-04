@@ -242,16 +242,14 @@ public class AnalysisController extends SpringActionController
 
                 PipelineService.get().queueJob(job);
 
-                ApiSimpleResponse resp = new ApiSimpleResponse("status", "success");
-                resp.getProperties().put("jobGUID", job.getJobGUID());
+                Map<String, Object> resultProperties = new HashMap<>();
 
-                return resp;
+                resultProperties.put("status", "success");
+                resultProperties.put("jobGUID", job.getJobGUID());
+
+                return new ApiSimpleResponse(resultProperties);
             }
-            catch (IOException e)
-            {
-                throw new ApiUsageException(e);
-            }
-            catch (PipelineValidationException e)
+            catch (IOException | PipelineValidationException e)
             {
                 throw new ApiUsageException(e);
             }

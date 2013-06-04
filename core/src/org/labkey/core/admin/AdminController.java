@@ -5593,7 +5593,7 @@ public class AdminController extends SpringActionController
             return new ApiResponse()
             {
                 @Override
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return properties;
                 }

@@ -78,7 +78,6 @@ import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -903,7 +902,8 @@ public class ReportsController extends SpringActionController
             // TODO: assert?
             if (null != resultsView)
             {
-                ApiResponse resp = new ApiSimpleResponse();
+                Map<String, Object> resultProperties = new HashMap<>();
+
                 LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
                 LinkedHashSet<String> includes = new LinkedHashSet<String>();
                 LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
@@ -917,12 +917,12 @@ public class ReportsController extends SpringActionController
                     return null;
                 }
 
-                resp.getProperties().put("html", mr.getContentAsString());
-                resp.getProperties().put("requiredJsScripts", includes);
-                resp.getProperties().put("implicitJsIncludes", implicitIncludes);
-                resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
+                resultProperties.put("html", mr.getContentAsString());
+                resultProperties.put("requiredJsScripts", includes);
+                resultProperties.put("implicitJsIncludes", implicitIncludes);
+                resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
 
-                return resp;
+                return new ApiSimpleResponse(resultProperties);
             }
 
             return null;

@@ -1665,7 +1665,7 @@ public class CoreController extends SpringActionController
                 return null;
             }
 
-            List<ModuleProperty> included = new ArrayList<ModuleProperty>();
+            List<ModuleProperty> included = new ArrayList<>();
             if(form.getProperties() == null)
             {
                 included.addAll(m.getModuleProperties().values());
@@ -1688,7 +1688,7 @@ public class CoreController extends SpringActionController
                     int propUserId = propUser.getUserId();
 
                     Map<Container, Map<Integer, String>> propValues = PropertyManager.getPropertyValueAndAncestors(propUser, c, mp.getCategory(), mp.getName(), true);
-                    List<JSONObject> containers = new ArrayList<JSONObject>();
+                    List<JSONObject> containers = new ArrayList<>();
                     for (Container ct : propValues.keySet())
                     {
                         JSONObject o = new JSONObject();
@@ -1719,7 +1719,7 @@ public class CoreController extends SpringActionController
 
             if(form.isIncludePropertyDescriptors())
             {
-                Map<String, JSONObject> pds = new HashMap<String, JSONObject>();
+                Map<String, JSONObject> pds = new HashMap<>();
                 for (ModuleProperty mp : included)
                 {
                     pds.put(mp.getName(), mp.toJson());

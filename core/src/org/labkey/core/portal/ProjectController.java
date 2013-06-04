@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -38,7 +37,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -63,7 +64,6 @@ import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
@@ -74,13 +74,11 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -542,7 +540,7 @@ public class ProjectController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return root;
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm form)
@@ -733,7 +731,7 @@ public class ProjectController extends SpringActionController
     private ApiResponse getWebPartLayoutApiResponse(String pageId)
     {
         Collection<Portal.WebPart> parts = Portal.getParts(getViewContext().getContainer(), pageId);
-        final Map<String, Object> properties = new HashMap<String, Object>();
+        final Map<String, List<Map<String, Object>>> properties = new HashMap<>();
         int lastIndex = -1;
 
         for (Portal.WebPart part : parts)
@@ -747,13 +745,13 @@ public class ProjectController extends SpringActionController
             location = org.labkey.api.module.SimpleWebPartFactory.getFriendlyLocationName(location);
             if (location == null)
                 continue;
-            List<Map<String, Object>> partList = (List<Map<String, Object>>) properties.get(location);
+            List<Map<String, Object>> partList = properties.get(location);
             if (partList == null)
             {
-                partList = new ArrayList<Map<String, Object>>();
+                partList = new ArrayList<>();
                 properties.put(location, partList);
             }
-            Map<String, Object> webPartProperties = new HashMap<String, Object>();
+            Map<String, Object> webPartProperties = new HashMap<>();
             webPartProperties.put("name", part.getName());
             webPartProperties.put("index", part.getIndex());
             webPartProperties.put("webPartId", part.getRowId());
@@ -762,7 +760,7 @@ public class ProjectController extends SpringActionController
 
         return new ApiResponse()
         {
-            public Map<String, Object> getProperties()
+            public Map<String, ?> getProperties()
             {
                 return properties;
             }
@@ -776,7 +774,7 @@ public class ProjectController extends SpringActionController
         if (null == parts || parts.isEmpty())
             return true;
 
-        ArrayList<Portal.WebPart> newParts = new ArrayList<Portal.WebPart>();
+        ArrayList<Portal.WebPart> newParts = new ArrayList<>();
         for (Portal.WebPart part : parts)
             if (part.getIndex() != index)
                 newParts.add(part);
@@ -940,7 +938,6 @@ public class ProjectController extends SpringActionController
         private int index;
         private String pageId;
         private int webPartId;
-        private ViewContext _viewContext;
 
         public int getIndex()
         {
@@ -1018,7 +1015,7 @@ public class ProjectController extends SpringActionController
             if (null == _webPart)
             {
                 if (errors.hasErrors())
-                    return new JspView<Object>("/org/labkey/core/portal/customizeErrors.jsp", null, errors);
+                    return new JspView<>("/org/labkey/core/portal/customizeErrors.jsp", null, errors);
                 else
                     return HttpView.redirect(returnUrl);
             }
@@ -1187,7 +1184,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    private static CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<WebPartView.FrameType>();
+    private static CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<>();
 
     static
     {
@@ -1276,6 +1273,7 @@ public class ProjectController extends SpringActionController
         private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
         private int _depth = Integer.MAX_VALUE;
+        private String[] _moduleProperties;
 
         public Container[] getContainer()
         {
@@ -1316,6 +1314,16 @@ public class ProjectController extends SpringActionController
         {
             _depth = depth;
         }
+
+        public String[] getModuleProperties()
+        {
+            return _moduleProperties;
+        }
+
+        public void setModuleProperties(String[] moduleProperties)
+        {
+            _moduleProperties = moduleProperties;
+        }
     }
 
     /**
@@ -1332,21 +1340,50 @@ public class ProjectController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             User user = getViewContext().getUser();
 
+            // Figure out what set of module properties should be included in the reply
+            List<ModuleProperty> propertiesToSerialize = new ArrayList<>();
+            if (form.getModuleProperties() != null)
+            {
+                for (String moduleName : form.getModuleProperties())
+                {
+                    if ("*".equals(moduleName))
+                    {
+                        // Caller has requested properties from all modules, so reset any existing ones in the list
+                        // and just add them all
+                        propertiesToSerialize.clear();
+                        for (Module module : ModuleLoader.getInstance().getModules())
+                        {
+                            propertiesToSerialize.addAll(module.getModuleProperties().values());
+                        }
+                        // No need to look for any other modules by name since we just added them all
+                        break;
+                    }
+
+                    // Find the named module and add it
+                    Module module = ModuleLoader.getInstance().getModule(moduleName);
+                    if (module != null)
+                    {
+                        propertiesToSerialize.addAll(module.getModuleProperties().values());
+                    }
+
+                }
+            }
+
             Map<String, Object> resultMap;
             if (form.isMultipleContainers() || (form.getContainer() != null && form.getContainer().length > 1))
             {
-                Set<Container> containers = new LinkedHashSet<Container>();
+                Set<Container> containers = new LinkedHashSet<>();
                 if (form.getContainer() != null)
                     containers.addAll(Arrays.asList(form.getContainer()));
 
                 if (containers.isEmpty())
                     containers.add(getViewContext().getContainer());
 
-                List<Map<String, Object>> containerJSON = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> containerJSON = new ArrayList<>();
                 for (Container c : containers)
                 {
                     if (c != null)
-                        containerJSON.add(getContainerJSON(c, user));
+                        containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
                 }
                 resultMap = Collections.<String, Object>singletonMap("containers", containerJSON);
             }
@@ -1356,7 +1393,7 @@ public class ProjectController extends SpringActionController
                 if (form.getContainer() != null && form.getContainer().length > 0)
                     c = form.getContainer()[0];
                 if (null != c) // 17166
-                    resultMap = getContainerJSON(c, user);
+                    resultMap = getContainerJSON(c, user, propertiesToSerialize);
                 else
                     resultMap = Collections.emptyMap();
             }
@@ -1365,9 +1402,24 @@ public class ProjectController extends SpringActionController
             return response;
         }
 
-        Map<String, Object> getContainerJSON(Container container, User user)
+        Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
         {
             Map<String, Object> resultMap = container.toJSON(user);
+            if (!propertiesToSerialize.isEmpty())
+            {
+                List<Map<String, Object>> serializedProps = new ArrayList<>();
+                for (ModuleProperty moduleProperty : propertiesToSerialize)
+                {
+                    Map<String, Object> serializedProp = new HashMap<>();
+                    serializedProp.put("effectiveValue", moduleProperty.getEffectiveValue(container));
+                    serializedProp.put("value", moduleProperty.getValueContainerSpecific(container));
+                    serializedProp.put("name", moduleProperty.getName());
+                    serializedProp.put("module", moduleProperty.getModule().getName());
+                    serializedProps.add(serializedProp);
+                }
+                resultMap.put("moduleProperties", serializedProps);
+            }
+
             resultMap.put("children", getVisibleChildren(container, user, 0));
             return resultMap;
         }
@@ -1375,7 +1427,7 @@ public class ProjectController extends SpringActionController
         //return only those paths through the container tree leading to a container to which the user has permission
         protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, int depth)
         {
-            List<Map<String, Object>> visibleChildren = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> visibleChildren = new ArrayList<>();
             if (depth == _requestedDepth)
                 return visibleChildren;
 

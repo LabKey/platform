@@ -17,7 +17,6 @@
 package org.labkey.study.controllers.samples;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -48,7 +47,6 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipeRoot;
@@ -5261,7 +5259,7 @@ public class SpecimenController extends BaseStudyController
 
             return new ApiResponse()
             {
-                public Map<String, Object> getProperties()
+                public Map<String, ?> getProperties()
                 {
                     return Collections.<String, Object>singletonMap("savedCount", rules.size());
                 }

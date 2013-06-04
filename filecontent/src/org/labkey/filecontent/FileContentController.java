@@ -1026,7 +1026,7 @@ public class FileContentController extends SpringActionController
                 public void write(ApiResponse response) throws IOException
                 {
                     // need to write out the json in a form that the ext tree loader expects
-                    Map<String, Object> props = response.getProperties();
+                    Map<String, ?> props = response.getProperties();
                     if (props.containsKey("children"))
                     {
                         JSONArray json = new JSONArray((Collection<Object>)props.get("children"));
