@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -85,7 +86,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         User user = getViewContext().getUser();
         HttpServletRequest request = getViewContext().getRequest();
 
-        ApiResponse resp = new ApiSimpleResponse();
         LinkedHashSet<ClientDependency> dependencies = getClientDependencies();
         LinkedHashSet<String> includes = new LinkedHashSet<>();
         LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
@@ -112,14 +112,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return null;
         }
 
-        resp.getProperties().put("html", mr.getContentAsString());
-        resp.getProperties().put("requiredJsScripts", includes);
-        resp.getProperties().put("implicitJsIncludes", implicitIncludes);
-        resp.getProperties().put("requiredCssScripts", cssScripts);
-        resp.getProperties().put("implicitCssIncludes", implicitCssScripts);
-        resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(container, user, dependencies));
+        Map<String, Object> resultProperties = new HashMap<>();
+        resultProperties.put("html", mr.getContentAsString());
+        resultProperties.put("requiredJsScripts", includes);
+        resultProperties.put("implicitJsIncludes", implicitIncludes);
+        resultProperties.put("requiredCssScripts", cssScripts);
+        resultProperties.put("implicitCssIncludes", implicitCssScripts);
+        resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(container, user, dependencies));
 
-        return resp;
+        return new ApiSimpleResponse(resultProperties);
     }
 
     public static enum FrameType

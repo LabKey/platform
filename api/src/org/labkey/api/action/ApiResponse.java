@@ -26,5 +26,5 @@ import java.util.Map;
  */
 public interface ApiResponse
 {
-    public Map<String, Object> getProperties();
+    public Map<String, ?> getProperties();
 }

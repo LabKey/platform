@@ -643,6 +643,8 @@ LABKEY.Security = new function()
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
          * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
+         * @param {Array} [config.moduleProperties] The names (Strings) of modules whose Module Property values should be included for each container.
+         * Use "*" to get the value of all Module Properties for all modules.
          * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -668,6 +670,15 @@ LABKEY.Security = new function()
          *      <li>effectivePermissions: An array of effective permission unique names the group has.</li>
          *      <li>children: if the includeSubfolders parameter was true, this will contain
          *          an array of child container objects with the same shape as the parent object.</li>
+         *      <li>moduleProperties: if requested in the config object, an array of module properties for each included module:
+         *          <ul>
+         *              <li>name: the name of the Module Property.</li>
+         *              <li>moduleName: the name of the module specifying this property.</li>
+         *              <li>effectiveValue: the value of the property, including a value potentially inherited from parent containers.</li>
+         *              <li>effectiveValue: the value of the property, including a value potentially inherited from parent containers.</li>
+         *              <li>value: the value of the property as set for this specific container</li>
+         *          </ul>
+         *      </li>
          *  </ul>
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>

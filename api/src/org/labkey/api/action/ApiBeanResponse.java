@@ -36,7 +36,7 @@ public class ApiBeanResponse<BeanClass> implements ApiResponse
         _bean = bean;
     }
 
-    public Map<String, Object> getProperties()
+    public Map<String, ?> getProperties()
     {
         ObjectFactory<BeanClass> f = ObjectFactory.Registry.getFactory(_clss);
         Map<String, Object> map = new HashMap<String, Object>();

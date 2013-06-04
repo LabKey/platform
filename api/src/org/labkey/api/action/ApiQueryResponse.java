@@ -98,7 +98,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         _metaDataOnly = true;
     }
 
-    public Map<String, Object> getProperties()
+    public Map<String, ?> getProperties()
     {
         //this will stream the response instead
         return null;

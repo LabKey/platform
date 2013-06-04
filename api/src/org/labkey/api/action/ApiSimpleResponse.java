@@ -72,7 +72,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         _json.put(key, Boolean.valueOf(value));
     }
 
-    public Map<String, Object> getProperties()
+    public Map<String, ?> getProperties()
     {
         return _json;
     }
