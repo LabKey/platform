@@ -31,7 +31,7 @@ public class ExtUtil
         String x = toExtDateFormat(j);
         if (null == x)
             return null;
-        return "(Ext.util.Format.dateRenderer(" + PageFlowUtil.jsString(x) + "))";
+        return "(LABKEY.ExtAdapter.Format.dateRenderer(" + PageFlowUtil.jsString(x) + "))";
     }
 
 
@@ -158,11 +158,11 @@ public class ExtUtil
         if (isPercentage)
         {
             return "((function(){" +
-                    "var fmt = Ext.util.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "); return function(d){return fmt(d*100) + '%';};" +
+                    "var fmt = LABKEY.ExtAdapter.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "); return function(d){return fmt(d*100) + '%';};" +
                     "})())";
         }
         else
-            return "(Ext.util.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "))";
+            return "(LABKEY.ExtAdapter.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "))";
     }
 
 

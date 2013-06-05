@@ -308,6 +308,11 @@
                 field.displayField = LABKEY.FieldKey.fromParts(field.displayField);
                 field.getDisplayField = generateGetDisplayField(field.displayField, response.metaData.fields);
             }
+
+            if (field.extFormatFn) {
+                console.log(field.extFormatFn);
+                field.extFormatFn = eval(field.extFormatFn);
+            }
         }
 
         // Generate Column Model
