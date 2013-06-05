@@ -738,8 +738,7 @@ public class StudyServiceImpl implements StudyService.Service
                     AssayTableMetadata tableMetadata = provider.getTableMetadata(entry.getKey());
                     SimpleFilter filter = new SimpleFilter();
                     filter.addInClause(tableMetadata.getRunRowIdFieldKeyFromResults(), allProtocolRunIds.get(entry.getKey()));
-                    long count = new TableSelector(tableInfo, filter, null).getRowCount();
-                    if (count > 0)
+                    if (new TableSelector(tableInfo, filter, null).exists())
                     {
                         result.add(dataset);
                     }

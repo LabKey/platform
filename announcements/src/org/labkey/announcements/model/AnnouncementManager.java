@@ -595,9 +595,9 @@ public class AnnouncementManager
             return emailPref.getEmailOptionId();
     }
 
-    public static long getMessageCount(Container c) throws SQLException
+    public static long getMessageCount(Container c)
     {
-        return Table.executeSingleton(_comm.getSchema(), "SELECT COUNT(*) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
+        return new TableSelector( _comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
     public static MessageConfigService.NotificationOption[] getEmailOptions()

@@ -234,17 +234,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public Collection<String> getSummary(Container c)
     {
-        List<String> list = new ArrayList<String>(1);
-        try
-        {
-            long count = AnnouncementManager.getMessageCount(c);
-            if (count > 0)
-                list.add("" + count + " " + (count > 1 ? "Messages/Responses" : "Message"));
-        }
-        catch (SQLException x)
-        {
-            list.add(x.toString());
-        }
+        List<String> list = new ArrayList<>(1);
+        long count = AnnouncementManager.getMessageCount(c);
+
+        if (count > 0)
+            list.add("" + count + " " + (count > 1 ? "Messages/Responses" : "Message"));
+
         return list;
     }
 

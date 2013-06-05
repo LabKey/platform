@@ -152,7 +152,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -164,7 +163,6 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
@@ -173,10 +171,7 @@ public class StudyManager
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
-
-    private final TableInfo _tableInfoVisitMap;
-    private final TableInfo _tableInfoParticipant;
-    private final TableInfo _tableInfoUploadLog;
+    private static final StudySchema SCHEMA = StudySchema.getInstance();
 
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
@@ -258,24 +253,21 @@ public class StudyManager
          * however, this is the best choke point
          */
         _datasetHelper = new DatasetHelper(dataSetGetter);
-        _tableInfoVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
-        _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
-        _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
 
-    class DatasetHelper extends QueryHelper<DataSetDefinition>
+    private static class DatasetHelper extends QueryHelper<DataSetDefinition>
     {
-        DatasetHelper(TableInfoGetter tableGetter)
+        private DatasetHelper(TableInfoGetter tableGetter)
         {
             super(tableGetter, DataSetDefinition.class);
         }
 
         private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<>();
 
-        public PropertyDescriptor[] getSharedProperties(Container c)
+        private PropertyDescriptor[] getSharedProperties(Container c)
         {
             PropertyDescriptor[] pds = sharedProperties.get(c);
             if (pds == null)
@@ -311,7 +303,7 @@ public class StudyManager
             return pds;
         }
 
-        public void clearProperties(DataSetDefinition def)
+        private void clearProperties(DataSetDefinition def)
         {
             sharedProperties.remove(def.getContainer());
         }
@@ -1076,7 +1068,7 @@ public class StudyManager
     public void updateParticipant(User user, Participant participant) throws SQLException
     {
         Table.update(user,
-                _tableInfoParticipant,
+                SCHEMA.getTableInfoParticipant(),
                 participant,
                 new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
         );
@@ -1157,7 +1149,7 @@ public class StudyManager
                                           int dataSetId, boolean isRequired) throws SQLException
     {
         VisitDataSet vds = new VisitDataSet(container, dataSetId, visitId, isRequired);
-        Table.insert(user, _tableInfoVisitMap, vds);
+        Table.insert(user, SCHEMA.getTableInfoVisitMap(), vds);
     }
 
     public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId,
@@ -1166,7 +1158,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition("VisitRowId", visitRowId);
         filter.addCondition("DataSetId", dataSetId);
-        ResultSet rs = Table.select(_tableInfoVisitMap, Table.ALL_COLUMNS,
+        ResultSet rs = Table.select(SCHEMA.getTableInfoVisitMap(), Table.ALL_COLUMNS,
                 filter, null);
 
         VisitDataSet vds = null;
@@ -2011,7 +2003,7 @@ public class StudyManager
         else if (type == VisitDataSetType.NOT_ASSOCIATED)
         {
             // need to remove an existing VisitMap entry:
-            Table.delete(_tableInfoVisitMap,
+            Table.delete(SCHEMA.getTableInfoVisitMap(),
                     new Object[] { container.getId(), visitId, dataSetId});
         }
         else if ((VisitDataSetType.OPTIONAL == type && vds.isRequired()) ||
@@ -2019,7 +2011,7 @@ public class StudyManager
         {
             Map<String,Object> required = new HashMap<>(1);
             required.put("Required", VisitDataSetType.REQUIRED == type ? Boolean.TRUE : Boolean.FALSE);
-            Table.update(user, _tableInfoVisitMap, required,
+            Table.update(user, SCHEMA.getTableInfoVisitMap(), required,
                     new Object[]{container.getId(), visitId, dataSetId});
         }
     }
@@ -2076,7 +2068,7 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + _tableInfoVisitMap + "\n" +
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + SCHEMA.getTableInfoVisitMap() + "\n" +
                 "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
 
         // UNDONE: This is broken
@@ -2193,10 +2185,10 @@ public class StudyManager
             //
             // metadata
             //
-            Table.delete(_tableInfoVisitMap, containerFilter);
-            assert deletedTables.add(_tableInfoVisitMap);
-            Table.delete(_tableInfoUploadLog, containerFilter);
-            assert deletedTables.add(_tableInfoUploadLog);
+            Table.delete(SCHEMA.getTableInfoVisitMap(), containerFilter);
+            assert deletedTables.add(SCHEMA.getTableInfoVisitMap());
+            Table.delete(StudySchema.getInstance().getTableInfoUploadLog(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_datasetHelper.getTableInfo());
             Table.delete(_locationHelper.getTableInfo(), containerFilter);
@@ -2223,8 +2215,8 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantVisit());
             Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
-            Table.delete(_tableInfoParticipant, containerFilter);
-            assert deletedTables.add(_tableInfoParticipant);
+            Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
+            assert deletedTables.add(SCHEMA.getTableInfoParticipant());
             Table.delete(StudySchema.getInstance().getTableInfoCohort(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoCohort());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
@@ -2422,7 +2414,7 @@ public class StudyManager
     public long getParticipantCount(Study study)
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(ParticipantId) FROM ");
-        sql.append(_tableInfoParticipant, "p");
+        sql.append(SCHEMA.getTableInfoParticipant(), "p");
         sql.append(" WHERE Container = ?");
         sql.add(study.getContainer());
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class);
@@ -2497,7 +2489,7 @@ public class StudyManager
     {
         SQLFragment sql;
         if (participantGroupId == -1)
-            sql = new SQLFragment("SELECT " + columns + " FROM " + _tableInfoParticipant + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
+            sql = new SQLFragment("SELECT " + columns + " FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
         else
         {
             TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
@@ -2511,7 +2503,7 @@ public class StudyManager
     public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
 
         if (rowLimit > 0)
             sql = schema.getSqlDialect().limitRows(sql, rowLimit);
@@ -2519,23 +2511,22 @@ public class StudyManager
         return new SqlSelector(schema, sql).getArray(String.class);
     }
 
-    public String[] getParticipantIdsNotInCohorts(Study study, User user)
+    public String[] getParticipantIdsNotInCohorts(Study study)
     {
-        TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId IS NULL",
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? AND CurrentCohortId IS NULL",
                 study.getContainer().getId());
 
         return new SqlSelector(schema, sql).getArray(String.class);
     }
 
-    public String[] getParticipantIdsNotInGroupCategory(Study study, User user, int categoryId)
+    public String[] getParticipantIdsNotInGroupCategory(Study study, int categoryId)
     {
         TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
         TableInfo tableInfoParticipantGroup = StudySchema.getInstance().getTableInfoParticipantGroup();
 
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? " +
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? " +
                 "AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM " + groupMapTable + " WHERE Container = ? AND " +
                 "GroupId IN (SELECT RowId FROM " + tableInfoParticipantGroup + " WHERE CategoryId = ?))",
                 study.getContainer().getId(), study.getContainer().getId(), categoryId);
@@ -2754,7 +2745,7 @@ public class StudyManager
     {
         // Set alternateId even if null, because that's how we clear it
         SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", _tableInfoParticipant.getSelectName()),
+                "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", SCHEMA.getTableInfoParticipant().getSelectName()),
                 alternateId, study.getContainer(), participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
@@ -2765,7 +2756,7 @@ public class StudyManager
         assert null != participantId;
         if (null != alternateId || null != dateOffset)
         {
-            SQLFragment sql = new SQLFragment("UPDATE " + _tableInfoParticipant.getSelectName() + " SET ");
+            SQLFragment sql = new SQLFragment("UPDATE " + SCHEMA.getTableInfoParticipant().getSelectName() + " SET ");
             boolean needComma = false;
             if (null != alternateId)
             {

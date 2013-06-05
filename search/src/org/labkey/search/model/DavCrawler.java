@@ -22,12 +22,23 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.RateLimiter;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
@@ -36,8 +47,13 @@ import org.labkey.api.webdav.WebdavService;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -212,7 +228,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    LinkedList<Pair<String, Date>> _recent = new LinkedList<Pair<String, Date>>();
+    LinkedList<Pair<String, Date>> _recent = new LinkedList<>();
 
     
     class IndexDirectoryJob implements Runnable, SearchService.TaskListener
@@ -329,7 +345,7 @@ public class DavCrawler implements ShutdownListener
                             ExceptionUtil.logExceptionToMothership(null, uri);
                             continue;
                         }
-                        Map<String, Object> props = new HashMap<String, Object>();
+                        Map<String, Object> props = new HashMap<>();
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
                         props.put(SearchService.PROPERTY.title.toString(), wrap.getPath().getName());
                         props.put(SearchService.PROPERTY.keywordsMed.toString(), FileUtil.getSearchTitle(wrap.getPath().getName()));
@@ -494,7 +510,7 @@ public class DavCrawler implements ShutdownListener
     };
 
 
-    LinkedList<IndexDirectoryJob> crawlQueue = new LinkedList<IndexDirectoryJob>();
+    LinkedList<IndexDirectoryJob> crawlQueue = new LinkedList<>();
 
     IndexDirectoryJob findSomeWork()
     {
@@ -608,33 +624,25 @@ public class DavCrawler implements ShutdownListener
         boolean paused = !ss.isRunning();
         long now = System.currentTimeMillis();
 
-        Map<String, Object> m = new LinkedHashMap<String, Object>();
-        try
+        Map<String, Object> m = new LinkedHashMap<>();
+        long uniqueCollections = new TableSelector(SearchSchema.getInstance().getCrawlCollectionsTable()).getRowCount();
+        m.put("Number of unique folders/directories", uniqueCollections);
+
+        if (!paused)
         {
-            DbSchema s = ss.getSchema();
-
-            Integer uniqueCollections = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections", null, Integer.class);
-            m.put("Number of unique folders/directories", uniqueCollections);
-            
-            if (!paused)
-            {
-                Date nextHour = new Date(now + TimeUnit.SECONDS.toMillis(60*60));
-                Long countNext = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections where nextCrawl < ?", new Object[]{nextHour}, Long.class);
-                double max = (60*60) * _listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS);
-                long scheduled = Math.min(countNext.longValue(), Math.round(max));
-                m.put("Directories to scan in next 1 hr", scheduled);
-            }
-
-            m.put("Directory limiter", Math.round(_listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS)) + "/sec");
-            m.put("File I/O limiter", (_fileIORateLimiter.getTarget().getRate(TimeUnit.SECONDS)/1000000) + " MB/sec");
-
-            String activity = getActivityHtml();
-            m.put("Recent crawler activity", activity);
+            Date nextHour = new Date(now + TimeUnit.SECONDS.toMillis(60*60));
+            Filter nextFilter = new SimpleFilter("NextCrawl", nextHour);
+            long countNext = new TableSelector(SearchSchema.getInstance().getCrawlCollectionsTable(), nextFilter, null).getRowCount();
+            double max = (60*60) * _listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS);
+            long scheduled = Math.min(countNext, Math.round(max));
+            m.put("Directories to scan in next 1 hr", scheduled);
         }
-        catch (SQLException x)
-        {
-            _log.error("Unexpected error", x);
-        }
+
+        m.put("Directory limiter", Math.round(_listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS)) + "/sec");
+        m.put("File I/O limiter", (_fileIORateLimiter.getTarget().getRate(TimeUnit.SECONDS)/1000000) + " MB/sec");
+
+        String activity = getActivityHtml();
+        m.put("Recent crawler activity", activity);
         return m;
     }
 

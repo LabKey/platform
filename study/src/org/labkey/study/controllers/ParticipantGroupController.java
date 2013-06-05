@@ -27,7 +27,6 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryForm;
@@ -594,7 +593,7 @@ public class ParticipantGroupController extends BaseStudyController
 
                 if (category.getGroups().length > 0)
                 {
-                    String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), category.getRowId());
+                    String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, category.getRowId());
                     if (form.isIncludeUnassigned() && (unassigned.length > 0))
                         groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup, category).toJSON(getViewContext()));
                 }
@@ -855,7 +854,7 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     case participantGroup:
                         if (group.id == -1)
-                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), group.categoryId)));
+                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, group.categoryId)));
                         else
                         {
                             ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), group.id);
@@ -866,7 +865,7 @@ public class ParticipantGroupController extends BaseStudyController
 
                     case cohort:
                         if (group.id == -1)
-                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study, getUser())));
+                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study)));
                         else
                             participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, group.id, -1)));
                         break;

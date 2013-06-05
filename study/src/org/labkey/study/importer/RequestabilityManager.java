@@ -697,8 +697,8 @@ public class RequestabilityManager
     public List<RequestableRule> getRules(Container container)
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
-        List<RuleBean> ruleBeans = new TableSelector(ruleTableInfo, Table.ALL_COLUMNS,
-                new SimpleFilter(FieldKey.fromString("Container"), container.getId()),
+        List<RuleBean> ruleBeans = new TableSelector(ruleTableInfo,
+                SimpleFilter.createContainerFilter(container),
                 new Sort("SortOrder")).getArrayList(RuleBean.class);
         List<RequestableRule> rules = new ArrayList<>();
         for (RuleBean bean : ruleBeans)

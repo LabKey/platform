@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
@@ -81,7 +81,6 @@
             List<Container> containers = Arrays.asList(ContainerManager.getAllChildren(c));
             %>
             <tr><td>You are about to delete the following <%=h("project".equals(containerType) ? "project and its subfolders" : ("folder" + (recurse ? "s" : "")))%>:</td></tr>
-            <tr><td>&nbsp;</td></tr>
             <tr><td><ul><%
 
             for (Container container : containers)
@@ -103,15 +102,15 @@
                 </li><%
             } %>
             </ul></td></tr>
-            <tr><td><%=recurse ? "They" : "It"%> may contain objects that are not listed.</td></tr>
+            <tr><td><%=h(recurse ? "They" : "It")%> may contain objects that are not listed.</td></tr>
             <tr><td>&nbsp;</td></tr><%
         } %>
-            <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=recurse ? ", all its subfolders," : ""%> and all the objects <%=recurse ? "they contain" : "it contains"%>?</td></tr>
+            <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(recurse ? ", all its subfolders," : "")%> and all the objects <%=h(recurse ? "they contain" : "it contains")%>?</td></tr>
             <tr><td>&nbsp;</td></tr>
         </table>
 
         <table><tr>
-            <td><form action="<%=buildURL(AdminController.DeleteFolderAction.class)%><%=recurse ? "recurse=1" : ""%>" method="post">
+            <td><form action="<%=buildURL(AdminController.DeleteFolderAction.class)%><%=text(recurse ? "recurse=1" : "")%>" method="post">
                 <%=generateSubmitButton("Delete")%></form></td>
             <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
         </tr></table><%
@@ -119,7 +118,7 @@
     else
     {
         %>
-    <tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s.  If you continue you will <b>permanently delete</b> the <%=h(containerType)%>, its <%=childrenDescription%>s, and all the objects they contain.
+    <tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s.  If you continue you will <b>permanently delete</b> the <%=h(containerType)%>, its <%=h(childrenDescription)%>s, and all the objects they contain.
         The next page will summarize some of the objects in these folders and give you another chance to cancel.</td></tr>
     <tr><td>&nbsp;</td></tr>
     <tr><td>Cancel now to preserve these folders and objects.</td></tr>

@@ -736,15 +736,7 @@ public class IssueManager
 
     public static long getIssueCount(Container c)
     {
-        try
-        {
-            Long l = Table.executeSingleton(_issuesSchema.getSchema(), "SELECT COUNT(*) FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
-            return l.longValue();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(_issuesSchema.getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
     public static void uncache(@Nullable Container c)

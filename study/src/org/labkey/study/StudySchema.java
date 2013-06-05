@@ -119,7 +119,7 @@ public class StudySchema
     public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
     {
         List<DataSetDefinition> defsAll = study.getDataSets();
-        List<DataSetDefinition> defsVisible = new ArrayList<DataSetDefinition>(defsAll.size());
+        List<DataSetDefinition> defsVisible = new ArrayList<>(defsAll.size());
         for (DataSetDefinition def : defsAll)
         {
             if (!def.isShowByDefault())

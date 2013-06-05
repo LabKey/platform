@@ -23,6 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -287,17 +288,9 @@ public class SavePaths implements DavCrawler.SavePaths
 
     public Date getNextCrawl()
     {
-        try
-        {
-            SQLFragment f = new SQLFragment("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
-            f.add(System.currentTimeMillis() - 30*60000);
-            Timestamp t = Table.executeSingleton(getSearchSchema(), f.getSQL(), f.getParamsArray(), java.sql.Timestamp.class);
-            return t;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SQLFragment f = new SQLFragment("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
+        f.add(System.currentTimeMillis() - 30*60000);
+        return new SqlSelector(getSearchSchema(), f).getObject(Timestamp.class);
     }
 
 

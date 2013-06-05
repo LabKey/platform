@@ -26,7 +26,7 @@ import java.util.Set;
 * Date: May 22, 2011
 * Time: 9:28:29 PM
 */
-public class PostgreSql90Dialect extends NewPostgreSql84Dialect
+public class PostgreSql90Dialect extends PostgreSql84Dialect
 {
     @NotNull
     @Override

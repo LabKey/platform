@@ -81,9 +81,9 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-class NewPostgreSql84Dialect extends SqlDialect
+class PostgreSql84Dialect extends SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(NewPostgreSql84Dialect.class);
+    private static final Logger _log = Logger.getLogger(PostgreSql84Dialect.class);
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private InClauseGenerator _inClauseGenerator = null;
@@ -96,12 +96,12 @@ class NewPostgreSql84Dialect extends SqlDialect
     private Boolean _standardConformingStrings = null;
 
     // Standard constructor used by factory and subclasses
-    NewPostgreSql84Dialect()
+    PostgreSql84Dialect()
     {
     }
 
     // Constructor used to test standardConformingStrings setting
-    NewPostgreSql84Dialect(boolean standardConformingStrings)
+    PostgreSql84Dialect(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
