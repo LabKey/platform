@@ -344,7 +344,7 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
-    // 72 usages
+    // 66 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
