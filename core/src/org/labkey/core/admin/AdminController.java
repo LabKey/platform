@@ -1808,6 +1808,8 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            // Log to labkey.log as well as showing through the browser
+            BreakpointThread.requestThreadDumpsToLogFile();
             return new JspView<ThreadsBean>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
         }
 
