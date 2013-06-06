@@ -16,14 +16,22 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 /**
@@ -57,6 +65,34 @@ public class KnitrOutput extends HtmlOutput
     public HttpView render(ViewContext context)
     {
         return new KnitrOutputView(this, getLabel());
+    }
+
+    @Override
+    public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
+    {
+        KnitrOutputView view = new KnitrOutputView(this, getLabel());
+        String html = null;
+        URI baseURI = null;
+
+        try
+        {
+            html = view.renderInternalAsString();
+            try
+            {
+                baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
+            }
+            catch(URISyntaxException e)
+            {
+            }
+        }
+        catch(Exception e)
+        {
+        }
+
+        if (html == null || baseURI == null)
+            return null;
+
+        return ImageUtil.webThumbnail(context, html, baseURI);
     }
 
     public static class KnitrOutputView extends HtmlOutputView

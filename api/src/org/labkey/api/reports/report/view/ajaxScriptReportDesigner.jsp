@@ -61,6 +61,8 @@
     String scriptId = "script" + uid;
     String viewDivId = "viewDiv" + uid;
 
+    String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
+
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
@@ -634,11 +636,11 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Knitr Options</th></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(bean.getKnitrFormat().equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(knitrFormat.equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 None<%=helpPopup("No preprocessing", "The source is run without going through knitr.")%></td></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(bean.getKnitrFormat().equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(knitrFormat.equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Html<%=helpPopup("Html", "Use knitr to process html source")%></td></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(bean.getKnitrFormat().equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(knitrFormat.equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Markdown<%=helpPopup("Markdown", "Use knitr to process markdown source")%></td></tr>
             <tr><td>&nbsp;</td></tr>
             <%

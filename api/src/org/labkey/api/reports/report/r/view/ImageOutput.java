@@ -163,7 +163,7 @@ public class ImageOutput extends AbstractParamReplacement
     }
 
     @Override
-    public Thumbnail renderThumbnail() throws IOException
+    public Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
         return ImageUtil.renderThumbnail(ImageIO.read(getFile()));
     }

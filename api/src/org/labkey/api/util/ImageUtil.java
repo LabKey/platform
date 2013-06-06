@@ -15,12 +15,15 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.view.ViewContext;
 import org.w3c.dom.Document;
+import org.xhtmlrenderer.resource.ImageResource;
 import org.xhtmlrenderer.resource.XMLResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
 import org.xhtmlrenderer.swing.NaiveUserAgent;
@@ -162,6 +165,15 @@ public class ImageUtil
         return renderThumbnail(webImage(url));
     }
 
+    public static Thumbnail webThumbnail(ViewContext context, String html, URI baseURI) throws IOException
+    {
+        List<String> errors = new ArrayList<String>();
+        Document document = TidyUtil.convertHtmlToDocument(html, true, errors);
+        if (!errors.isEmpty())
+            throw new RuntimeException(errors.get(0));
+        return renderThumbnail(webImage(context, document, baseURI, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT));
+    }
+
     // Default size for generating the web image.
     private static final int WEB_IMAGE_WIDTH = 1024;
     private static final int WEB_IMAGE_HEIGHT = 768;
@@ -259,13 +271,23 @@ public class ImageUtil
         return null;
     }
 
-    private static BufferedImage webImage(Document document, URI baseURI, int width, int height)
+    private static BufferedImage webImage(ViewContext context, Document document, URI baseURI, int width, int height)
     {
         String uri = baseURI.toString();
         Java2DRenderer renderer = new Java2DRenderer(document, width, height);
-        renderer.getSharedContext().setUserAgentCallback(new DumbUserAgent(uri));
+
+        if (null == context)
+            renderer.getSharedContext().setUserAgentCallback(new DumbUserAgent(uri));
+        else
+            renderer.getSharedContext().setUserAgentCallback(new LabKeyUserAgent(context, uri));
+
         renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
         return renderer.getImage();
+    }
+
+    private static BufferedImage webImage(Document document, URI baseURI, int width, int height)
+    {
+        return webImage(null, document, baseURI, width, height);
     }
 
     // DumbUserAgent is intended to be used by a Java2DRenderer that has been constructed with a Document.
@@ -273,7 +295,7 @@ public class ImageUtil
     // No tidying of HTML content is needed.
     private static class DumbUserAgent extends NaiveUserAgent
     {
-        private DumbUserAgent(String baseURL)
+        protected DumbUserAgent(String baseURL)
         {
             super.setBaseURL(baseURL);
         }
@@ -282,6 +304,65 @@ public class ImageUtil
         public void setBaseURL(String url)
         {
             // no-op.  Java2DRenderer.getImage() tries to set the baseURL to null when using the overloaded Java2DRenderer(Document, ...) constructor.
+        }
+    }
+
+    // LabKey user agent is used to resolve image resources (or others if required in the future) using the
+    // same session as the incoming request.  Right now this occurs when we are generating a thumbnail for a Knitr
+    // R report
+    private static class LabKeyUserAgent extends DumbUserAgent
+    {
+        private final ViewContext _context;
+
+        private LabKeyUserAgent(ViewContext context, String baseURL)
+        {
+            super(baseURL);
+            _context = context;
+        }
+
+        @Override
+        public org.xhtmlrenderer.resource.ImageResource getImageResource(java.lang.String uri)
+        {
+            ImageResource ir = null;
+            String uriResolved = resolveURI(uri);
+            ir = (ImageResource) _imageCache.get(uriResolved);
+
+            if (ir == null &&
+                _context != null &&
+                _context.getRequest() != null &&
+                _context.getRequest().getSession() != null)
+            {
+                try
+                {
+                    URLHelper helper = new URLHelper(uriResolved);
+                    String sessionKey = helper.getParameter("sessionKey");
+                    String deleteFile = helper.getParameter("deleteFile");
+                    File file = (File) _context.getRequest().getSession().getAttribute(sessionKey);
+                    if (file != null && file.exists())
+                    {
+                        try
+                        {
+                            BufferedImage img = ImageIO.read(file);
+                            ir = createImageResource(uri, img);
+                            _imageCache.put(uri, ir);
+
+                            if (BooleanUtils.toBoolean(deleteFile))
+                                file.delete();
+                        }
+                        catch(IOException e)
+                        {
+                        }
+                    }
+                }
+                catch(URISyntaxException e)
+                {
+                }
+            }
+
+            if (ir != null)
+                return ir;
+
+            return super.getImageResource(uri);
         }
     }
 

@@ -64,6 +64,6 @@ public interface ParamReplacement
     public boolean getHeaderVisible();
 
     public HttpView render(ViewContext context);
-    public @Nullable Thumbnail renderThumbnail() throws IOException;
+    public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException;
     public ScriptOutput renderAsScriptOutput() throws Exception;
 }

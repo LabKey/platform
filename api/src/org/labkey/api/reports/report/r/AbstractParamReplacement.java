@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,7 +106,7 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     }
 
     @Override
-    public @Nullable Thumbnail renderThumbnail() throws IOException
+    public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
         return null; // Subclasses that can should implement this
     }

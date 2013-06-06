@@ -23,6 +23,7 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 
@@ -47,7 +48,7 @@ public class SvgOutput extends HtmlOutput
     }
 
     @Override
-    public Thumbnail renderThumbnail() throws IOException
+    public Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
         DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
 

@@ -143,7 +143,8 @@ public class ScriptReportBean extends ReportDesignBean
 
             descriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
 
-            descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
+            if (getKnitrFormat() != null)
+                descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
 
             assert descriptor instanceof ScriptReportDescriptor;
 
@@ -296,8 +297,6 @@ public class ScriptReportBean extends ReportDesignBean
 
     public String getKnitrFormat()
     {
-        if (_knitrFormat == null)
-            _knitrFormat = RReportDescriptor.KnitrFormat.None.name();
         return _knitrFormat;
     }
 

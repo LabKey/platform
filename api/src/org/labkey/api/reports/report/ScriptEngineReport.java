@@ -568,7 +568,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             @Override
             public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
             {
-                _thumbnail = param.renderThumbnail();
+                _thumbnail = param.renderThumbnail(context);
 
                 // Return true (keep iterating) if we can't render this output as a thumbnail
                 return null == _thumbnail;
