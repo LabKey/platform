@@ -403,7 +403,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 for (Object o1 : ((JSONArray)o).toArray())
                     values.add(_c.convert(o1));
             }
-            else
+            else if (o != null)
             {
                 values.add(_c.convert(o));
             }

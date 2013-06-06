@@ -15,11 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,14 +51,46 @@ public class MultiValuedForeignKey implements ForeignKey
         return _junctionLookup;
     }
 
+    /**
+     * Get the junction join column as a LookupColumn with FieldKey relative to parent.
+     */
+    public ColumnInfo createJunctionLookupColumn(@NotNull ColumnInfo parent)
+    {
+        TableInfo junction = _fk.getLookupTableInfo();
+        if (junction == null)
+            return null;
+
+        ColumnInfo junctionKey = _fk.createLookupColumn(parent, _junctionLookup);
+
+        if (junctionKey == null)
+            throw new IllegalStateException("Could not find column '" + _junctionLookup + "' on table " + junction);
+
+        return junctionKey;
+    }
+
+    /**
+     * Get the junction join column as a regular ColumnInfo with FieldKey relative to lookup table.
+     */
+    private ColumnInfo getJunctionColumn()
+    {
+        TableInfo junction = _fk.getLookupTableInfo();
+        if (junction == null)
+            return null;
+
+        ColumnInfo junctionKey = junction.getColumn(_junctionLookup);
+
+        if (junctionKey == null)
+            throw new IllegalStateException("Could not find column '" + _junctionLookup + "' on table " + junction);
+
+        return junctionKey;
+    }
+
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo junction = _fk.getLookupTableInfo();
         if (junction == null)
-        {
             return null;
-        }
 
         ColumnInfo junctionKey = junction.getColumn(_junctionLookup);       // Junction join to value table
         ColumnInfo childKey = junction.getColumn(getLookupColumnName());    // Junction join to primary table
@@ -97,7 +131,7 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public TableInfo getLookupTableInfo()
     {
-        ColumnInfo junctionColumn = _fk.getLookupTableInfo().getColumn(_junctionLookup);
+        ColumnInfo junctionColumn = getJunctionColumn();
         if (junctionColumn != null)
         {
             ForeignKey junctionFK = junctionColumn.getFk();
@@ -118,12 +152,16 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
-        NamedObjectList ret = new NamedObjectList();
-        TableInfo lookupTable = getLookupTableInfo();
-        if (lookupTable == null)
-            return ret;
-
-        return lookupTable.getSelectList(getLookupColumnName());
+        ColumnInfo junctionColumn = getJunctionColumn();
+        if (junctionColumn != null)
+        {
+            ForeignKey junctionFK = junctionColumn.getFk();
+            if (junctionFK != null)
+            {
+                return junctionFK.getSelectList(ctx);
+            }
+        }
+        return null;
     }
 
     @Override

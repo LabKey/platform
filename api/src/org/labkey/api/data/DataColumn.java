@@ -37,6 +37,7 @@ import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 
@@ -480,11 +481,20 @@ public class DataColumn extends DisplayColumn
                 _boundColumn.isReadOnly() || !_boundColumn.isUserEditable();
     }
 
+    protected boolean isSelectInputSelected(String entryName, Object value, String valueStr)
+    {
+        if (value instanceof Collection)
+        {
+            // CONSIDER: stringify values in collection?
+            return ((Collection)value).contains(entryName);
+        }
+        return null != valueStr && entryName.equals(valueStr);
+    }
+
     protected String getSelectInputDisplayValue(NamedObject entry)
     {
         return entry.getObject().toString();
     }
-
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
@@ -543,7 +553,7 @@ public class DataColumn extends DisplayColumn
                 out.write("  <option value=\"");
                 out.write(entryName);
                 out.write("\"");
-                if (null != valueStr && entryName.equals(valueStr))
+                if (isSelectInputSelected(entryName, value, valueStr))
                     out.write(" selected ");
                 out.write(" >");
                 if (null != entry.getObject())
@@ -709,7 +719,7 @@ public class DataColumn extends DisplayColumn
             if (_boundColumn != null)
             {
                 StringBuilder sb = new StringBuilder();
-                if (_boundColumn.getFriendlyTypeName() != null && !_inputType.equalsIgnoreCase("select"))
+                if (_boundColumn.getFriendlyTypeName() != null && !_inputType.toLowerCase().startsWith("select"))
                 {
                     sb.append("Type: ").append(_boundColumn.getFriendlyTypeName()).append("\n");
                 }

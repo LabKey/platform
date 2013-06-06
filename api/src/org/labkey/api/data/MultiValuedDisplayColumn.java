@@ -35,6 +35,9 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 {
     private final Set<FieldKey> _fieldKeys = new HashSet<FieldKey>();
 
+//    private ColumnInfo _junctionCol;
+//    private DisplayColumn _junctionDisplayCol;
+
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
         this(dc, false);
@@ -44,6 +47,11 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     public MultiValuedDisplayColumn(DisplayColumn dc, boolean boundColumnIsNotMultiValued)
     {
         super(dc);
+
+//        _junctionCol = getJunctionColumn(dc);
+//        if (_junctionCol != null)
+//            _junctionDisplayCol = new DataColumn(_junctionCol);
+
         addQueryFieldKeys(_fieldKeys);
         assert _fieldKeys.contains(getColumnInfo().getFieldKey());
         if (boundColumnIsNotMultiValued)
@@ -52,6 +60,26 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
             // and iterate through individual values
             _fieldKeys.remove(getColumnInfo().getFieldKey());
         }
+    }
+
+    private static ColumnInfo getJunctionColumn(DisplayColumn dc)
+    {
+        ColumnInfo colInfo = dc.getColumnInfo();
+        if (colInfo.getFk() instanceof MultiValuedForeignKey)
+        {
+            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)colInfo.getFk();
+            ColumnInfo junctionCol = mvfk.createJunctionLookupColumn(colInfo);
+            return junctionCol;
+        }
+        return null;
+    }
+
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+//        if (_junctionDisplayCol != null)
+//            _junctionDisplayCol.addQueryFieldKeys(_fieldKeys);
     }
 
     @Override
@@ -121,9 +149,45 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         while (mvCtx.next())
         {
             Object v = super.getJsonValue(mvCtx);
-            values.add(v);            
+            values.add(v);
         }
 
         return values;
     }
+
+    @Override
+    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    {
+        out.write("<td colspan=" + span + ">");
+        renderInputHtml(ctx, out, getInputValue(ctx));
+        out.write("</td>");
+    }
+
+    @Override
+    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    {
+        super.renderInputHtml(ctx, out, value);
+    }
+
+    @Override
+    public Object getInputValue(RenderContext ctx)
+    {
+        List<Object> values = new LinkedList<Object>();
+
+//        // UNDONE: Use junction column as input value instead of wrapped column
+//        DisplayColumn d = _column;
+//        if (_junctionDisplayCol != null)
+//            d = _junctionDisplayCol;
+
+        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+        while (mvCtx.next())
+        {
+            Object v = super.getInputValue(mvCtx);
+            //Object v = d.getInputValue(mvCtx);
+            values.add(v);
+        }
+
+        return values;
+    }
+
 }
