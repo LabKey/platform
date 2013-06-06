@@ -717,6 +717,8 @@ LABKEY.Security = new function()
                 params.includeSubfolders = config.includeSubfolders;
             if(undefined != config.depth)
                 params.depth = config.depth;
+            if(undefined != config.moduleProperties)
+                params.moduleProperties = config.moduleProperties;
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
