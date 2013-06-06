@@ -863,7 +863,7 @@ public class CoreController extends SpringActionController
                 byte[] buf = new byte[4096];
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
 
-                WebdavResource file = staticFiles.lookup(new Path(path.split("/")));
+                WebdavResource file = staticFiles.lookup(Path.parse(path));
                 if (file != null)
                 {
                     InputStream is = file.getInputStream();
