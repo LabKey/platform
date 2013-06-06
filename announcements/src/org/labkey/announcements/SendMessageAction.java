@@ -20,6 +20,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -224,8 +225,15 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     {
         for (int i=0; i < contents.length(); i++)
         {
-            JSONObject part = contents.getJSONObject(i);
-            msg.setBodyContent(part.getString(MsgContent.content.name()), part.getString(MsgContent.type.name()));
+            try
+            {
+                JSONObject part = contents.getJSONObject(i);
+                msg.setBodyContent(part.getString(MsgContent.content.name()), part.getString(MsgContent.type.name()));
+            }
+            catch (JSONException je)
+            {
+                throw new IllegalArgumentException("Unable to add the specified message contents. Please use LABKEY.Message.createMsgContent for each msgContent array element.", je);
+            }
         }
     }
 

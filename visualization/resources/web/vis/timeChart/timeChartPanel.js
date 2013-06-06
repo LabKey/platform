@@ -448,7 +448,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         }, scope: this});
 
         // if edit mode, then add the editor panel buttons and save buttons
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.editModeURL != null;
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,

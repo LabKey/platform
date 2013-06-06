@@ -94,7 +94,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.editModeURL != null;
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
 
         this.items = [];
 

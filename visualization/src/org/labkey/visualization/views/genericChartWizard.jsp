@@ -101,7 +101,8 @@
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            editModeURL: <%=q((!ctx.getUser().isGuest() && form.allowToggleMode()) && editUrl != null ? editUrl.toString() : null) %>,
+            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
             firstLoad: true
         });
 

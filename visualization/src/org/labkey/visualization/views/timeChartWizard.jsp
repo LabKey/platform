@@ -171,7 +171,8 @@
                     canShare: <%=canShare%>,
                     isDeveloper: <%=isDeveloper%>,
                     defaultNumberFormat: eval("<%=numberFormatFn%>"),
-                    editModeURL: <%=q((!ctx.getUser().isGuest() && form.allowToggleMode()) && editUrl != null ? editUrl.toString() : null) %>
+                    allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+                    editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
                 })
             ]
         });

@@ -164,10 +164,13 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                             }
 
                             WebPartFactory factory = Portal.getPortalPart(webPart.getName());
-                            Map<String, String> newPropertyMap = factory.deserializePropertyMap(ctx, propertyMap);
-                            for (Map.Entry<String, String> newProperty : newPropertyMap.entrySet())
+                            if (null != factory)
                             {
-                                webPart.setProperty(newProperty.getKey(), newProperty.getValue());
+                                Map<String, String> newPropertyMap = factory.deserializePropertyMap(ctx, propertyMap);
+                                for (Map.Entry<String, String> newProperty : newPropertyMap.entrySet())
+                                {
+                                    webPart.setProperty(newProperty.getKey(), newProperty.getValue());
+                                }
                             }
                         }
                         webparts.add(webPart);
