@@ -384,16 +384,27 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
         if(hoverText){
             box.attr('title', hoverText.value(group, stats));
         }
+
+        // Construct the box.
         boxSet.push(
-                // Construct the box.
                 box,
-                paper.path(LABKEY.vis.makeLine(x, middleY, x+width, middleY)),
-                // Construct the Whiskers.
-                paper.path(LABKEY.vis.makeLine(middleX, bottom, middleX, bottomWhisker)),
-                paper.path(LABKEY.vis.makeLine(whiskerLeft, bottomWhisker, whiskerRight, bottomWhisker)),
-                paper.path(LABKEY.vis.makeLine(middleX, top, middleX, topWhisker)),
-                paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
+                paper.path(LABKEY.vis.makeLine(x, middleY, x+width, middleY))
         );
+        // Construct the Whiskers.
+        if(bottomWhisker != null){
+            boxSet.push(
+                    paper.path(LABKEY.vis.makeLine(middleX, bottom, middleX, bottomWhisker)),
+                    paper.path(LABKEY.vis.makeLine(whiskerLeft, bottomWhisker, whiskerRight, bottomWhisker))
+            );
+        }
+
+        if(topWhisker != null){
+            boxSet.push(
+                    paper.path(LABKEY.vis.makeLine(middleX, top, middleX, topWhisker)),
+                    paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
+            );
+        }
+
         boxSet.attr('stroke', this.color).attr('stroke-width', this.lineWidth);
     };
 
@@ -414,6 +425,13 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
     for(var group in groupedData){
         // Create a box.
         var stats = LABKEY.vis.Stat.summary(groupedData[group], this.yMap.getValue);
+
+        if(stats.sortedValues.length == 0){
+            // Issue 17651: Batik exception creating thumbnail from box plot
+            // If all values are null or undefined the sortedValues array will have no items.
+            continue;
+        }
+
         var width = binWidth / 2;
         var middleX = Math.floor(scales.x.scale(group)) + .5;
         var x = scales.x.scale(group) - width/2;
@@ -423,17 +441,25 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
         var smallestNotOutlier = stats.Q1 - (1.5 * stats.IQR);
         var biggestNotOutlier = stats.Q3 + (1.5 * stats.IQR);
         var i = 0;
-        
+        var topWhisker = null;
+        var bottomWhisker = null;
+
         while(stats.sortedValues[i] < smallestNotOutlier){
             i++;
         }
-        var bottomWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
+
+        if(stats.sortedValues[i] < stats.Q1){
+            bottomWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
+        }
 
         i = stats.sortedValues.length - 1;
         while(stats.sortedValues[i] > biggestNotOutlier){
             i--;
         }
-        var topWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
+
+        if(stats.sortedValues[i] > stats.Q3){
+            topWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
+        }
 
         plotBox.call(this, x, width, top, bottom, middleY, topWhisker, bottomWhisker, hoverText);
 
