@@ -138,7 +138,7 @@
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
-                                if(issue.getResolution().equals("Duplicate"))
+                                if("Duplicate".equals(issue.getResolution()))
                                 {
                                     //Enabled duplicate field.
                         %>
@@ -153,7 +153,6 @@
                         <%
                                 }
                         %>
-                            <%--<%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\"" + issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>--%>
                             <script type="text/javascript">
                                 var duplicateInput = document.getElementsByName('duplicate')[0];
                                 var duplicateOrig = duplicateInput.value;

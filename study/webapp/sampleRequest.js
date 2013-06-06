@@ -203,11 +203,11 @@ function requestSelected(requestRecord)
 
     var vialStore = new LABKEY.ext.Store({
         schemaName: 'study',
-        queryName: 'SpecimenDetail'
+        queryName: 'SpecimenDetail',
+        filterArray : [
+            LABKEY.Filter.create('RowId', requestData.vialRowIds, LABKEY.Filter.Types.IN)
+        ]
     });
-    
-    var filter = LABKEY.Filter.create("RowId", requestData.vialRowIds, LABKEY.Filter.Types.IN);
-    vialStore.baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
 
     if (!_vialGrid)
     {
@@ -255,8 +255,16 @@ function requestSelected(requestRecord)
 function removeSelectedVialSuccessful(updatedRequest)
 {
     var vialRowIds = getVialRowIds(updatedRequest.vials);
-    var filter = LABKEY.Filter.create("RowId", vialRowIds, LABKEY.Filter.Types.IN);
-    _vialGrid.getStore().baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
+    var filter;
+    if (vialRowIds && vialRowIds.length > 0)
+    {
+        filter = LABKEY.Filter.create("RowId", vialRowIds, LABKEY.Filter.Types.IN);
+    }
+    else
+    {
+        filter = LABKEY.Filter.create("RowId", null, LABKEY.Filter.Types.ISBLANK);
+    }
+    _vialGrid.getStore().filterArray = [filter];
     _vialGrid.getStore().reload();
     Ext.Msg.hide();
 }
