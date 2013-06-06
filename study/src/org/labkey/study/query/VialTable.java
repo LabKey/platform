@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
@@ -45,8 +46,8 @@ public class VialTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                SimpleSpecimenTable tableInfo = schema.createSimpleSpecimenTable();
-                tableInfo.setContainerFilter(ContainerFilter.EVERYTHING);
+                TableInfo tableInfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+                ((ContainerFilterable)tableInfo).setContainerFilter(ContainerFilter.EVERYTHING);
                 return tableInfo;
             }
         });
