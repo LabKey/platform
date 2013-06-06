@@ -36,6 +36,8 @@ import java.lang.reflect.Method;
 public class BreakpointThread extends Thread implements ShutdownListener
 {
     private boolean _shutdown = false;
+    /** Number of thread dumps that have been requested but not yet fulfilled */
+    private static volatile int _remainingRequestedThreadDumps = 0;
 
     private static final Logger _log = Logger.getLogger(BreakpointThread.class);
     private final File _modulesDir;
@@ -54,10 +56,8 @@ public class BreakpointThread extends Thread implements ShutdownListener
         File threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
         if (!threadDumpFile.exists())
         {
-            FileOutputStream fOut = null;
-            try
+            try (FileOutputStream fOut = new FileOutputStream(threadDumpFile))
             {
-                fOut = new FileOutputStream(threadDumpFile);
                 PrintWriter writer = new PrintWriter(fOut);
                 writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
                 writer.println("dump all of its threads to its standard log file, including database connection SPIDs");
@@ -67,19 +67,13 @@ public class BreakpointThread extends Thread implements ShutdownListener
             {
                 _log.error("Failed to create file " + threadDumpFile.getAbsolutePath(), e);
             }
-            finally
-            {
-                if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-            }
         }
 
         File heapDumpFile = new File(labkeyRoot, "heapDumpRequest");
         if (!heapDumpFile.exists())
         {
-            FileOutputStream fOut = null;
-            try
+            try (FileOutputStream fOut = new FileOutputStream(heapDumpFile))
             {
-                fOut = new FileOutputStream(heapDumpFile);
                 PrintWriter writer = new PrintWriter(fOut);
                 writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
                 writer.println("dump its heap to disk. The log file will contain information on where the dump was written,");
@@ -89,10 +83,6 @@ public class BreakpointThread extends Thread implements ShutdownListener
             catch (IOException e)
             {
                 _log.error("Failed to create file " + heapDumpFile.getAbsolutePath(), e);
-            }
-            finally
-            {
-                if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
             }
         }
 
@@ -107,6 +97,13 @@ public class BreakpointThread extends Thread implements ShutdownListener
                 boolean threadDumpRequested = threadDumpModified != threadDumpLastModified;
                 if (threadDumpRequested)
                 {
+                    // Don't do a single dump because it's hard to tell what's actually causing the problem
+                    // and what just happened to be running at the same time
+                    _remainingRequestedThreadDumps = 3;
+                }
+                if (_remainingRequestedThreadDumps > 0)
+                {
+                    _remainingRequestedThreadDumps--;
                     dumpThreads();
                 }
                 threadDumpLastModified = threadDumpModified;
@@ -127,7 +124,7 @@ public class BreakpointThread extends Thread implements ShutdownListener
                 }
                 heapDumpLastModified = heapDumpModified;
             }
-            catch (InterruptedException e) {}
+            catch (InterruptedException ignored) {}
         }
     }
 
@@ -140,6 +137,9 @@ public class BreakpointThread extends Thread implements ShutdownListener
 
     public static void dumpThreads(Logger log)
     {
+        log.debug("*********************************************");
+        log.debug("Starting thread dump");
+        log.debug("*********************************************");
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
         {
@@ -162,8 +162,17 @@ public class BreakpointThread extends Thread implements ShutdownListener
                 log.debug("\t" + stackTraceElement.toString());
             }
         }
+
+        log.debug("*********************************************");
+        log.debug("Completed thread dump");
+        log.debug("*********************************************");
     }
 
+    /** Request that we log three thread dumps to the primary log file (labkey.log) */
+    public static void requestThreadDumpsToLogFile()
+    {
+        _remainingRequestedThreadDumps = 3;
+    }
 
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {

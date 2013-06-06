@@ -99,7 +99,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         int exitCode = runProcess(context, pb, output);
         if (exitCode != 0)
         {
-            throw new ScriptException("An error occurred when running the script (exit code: " + exitCode + ").\n" + output.toString());
+            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName () + "', exit code: " + exitCode + ").\n" + output.toString());
         }
         else
             return output.toString();
