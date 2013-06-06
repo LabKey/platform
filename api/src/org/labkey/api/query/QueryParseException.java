@@ -85,7 +85,7 @@ public class QueryParseException extends QueryException
         error.put("col", getColumn());
         error.put("type", "sql");
 
-        if (lines != null && getLine() <= lines.length && getLine() >= 1)
+        if (lines != null && getLine() <= lines.length && getLine() >= 1 && getColumn() >= 0)
         {
             String errorStr = lines[getLine() - 1];
             error.put("errorStr", errorStr.substring(getColumn()));
