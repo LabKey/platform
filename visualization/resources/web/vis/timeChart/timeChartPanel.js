@@ -324,10 +324,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     else
                         this.setOptionsForGroupLayout(groupLayoutSelected);
                 },
-                'numChartsSelectionChanged': function(multipleCharts) {
-                    this.editorYAxisLeftPanel.setRangeAutomaticOptions(multipleCharts);
-                    this.editorYAxisRightPanel.setRangeAutomaticOptions(multipleCharts);
-                    this.editorXAxisPanel.setRangeAutomaticOptions(multipleCharts);
+                'numChartsSelectionChanged': function(chartLayout) {
+                    this.editorYAxisLeftPanel.setRangeAutomaticOptions(chartLayout, true);
+                    this.editorYAxisRightPanel.setRangeAutomaticOptions(chartLayout, true);
+                    this.editorXAxisPanel.setRangeAutomaticOptions(chartLayout, false);
                 }
             }
         });
@@ -448,7 +448,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         }, scope: this});
 
         // if edit mode, then add the editor panel buttons and save buttons
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.editModeURL != null;
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
@@ -465,17 +465,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             toolbarButtons.push(this.saveButton);
             toolbarButtons.push(this.saveAsButton);
         }
-        else if (this.allowEditMode)
+        else if (this.editModeURL != null)
         {
             // add an "edit" button if the user is allowed to toggle to edit mode for this report
             toolbarButtons.push('->');
             toolbarButtons.push({
                 xtype: 'button',
                 text: 'Edit',
+                scope: this,
                 handler: function() {
-                    var params = LABKEY.ActionURL.getParameters();
-                    Ext4.apply(params, {edit: "true"});
-                    window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
+                    window.location = this.editModeURL;
                 }
             });
         }

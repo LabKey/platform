@@ -43,7 +43,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         );
         this.sideBarTemplate.compile();
-        console.log(this.allowRefresh);
 
     },
 
@@ -880,9 +879,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             selModel: selectionModel,
             columns: [
                 selectionModel,
-                {header: 'Name', width: 270, sortable: true, dataIndex: 'name'},
-                {header: 'Category', width: 120, sortable: true, dataIndex:'category'},
-                {header: 'Description', width: 215, sortable: true, dataIndex: 'description'}
+                {header: 'Name', width: 270, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode},
+                {header: 'Category', width: 120, sortable: true, dataIndex:'category', renderer: Ext.util.Format.htmlEncode},
+                {header: 'Description', width: 215, sortable: true, dataIndex: 'description', renderer: Ext.util.Format.htmlEncode}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1064,15 +1063,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             selModel: selectionModel,
             columns: [
                 selectionModel,
-                {header: 'Name', width: 200, sortable: true, dataIndex: 'name'},
-                {header: 'Category', width: 120, sortable: true, dataIndex:'category'},
+                {header: 'Name', width: 200, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode},
+                {header: 'Category', width: 120, sortable: true, dataIndex:'category', renderer: Ext.util.Format.htmlEncode},
                 {header: 'Type', width: 60, sortable: true, dataIndex: 'type', renderer : function(v, meta, rec) {
                     return '<div style="margin-left: auto; margin-right: auto; width: 30px; vertical-align: middle;">' +
                                 '<img title="' + rec.data.type + '" src="' + rec.data.icon + '" alt="' + rec.data.type +'" height="16px" width="16px">' +
                            '</div>';
                 }
                 },
-                {header: 'Description', sortable: true, dataIndex: 'description'}
+                {header: 'Description', sortable: true, dataIndex: 'description', renderer: Ext.util.Format.htmlEncode}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1273,7 +1272,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             selModel: selectionModel,
             columns: [
                 selectionModel,
-                {header: 'Name', width: 300, sortable: true, dataIndex: 'name'}
+                {header: 'Name', width: 300, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1490,6 +1489,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     customizeColumnModel : function(colModel, index, c){
+        index.Name.renderer = Ext.util.Format.htmlEncode;
+        index.Label.renderer = Ext.util.Format.htmlEncode;
+        index.description.renderer = Ext.util.Format.htmlEncode;
+
         index.Label.header = 'Dataset';
         index.Label.width = 250;
         index.DataSetId.hidden = true;
@@ -1500,6 +1503,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         index.RowId.hidden = true;
         index.Folder.hidden = true;
         index.DisplayOrder.hidden = true;
+
+        index.Label.renderer = Ext.util.Format.htmlEncode;
 
         index.SequenceNumMin.header = 'Sequence Min';
         index.SequenceNumMin.align = 'left';

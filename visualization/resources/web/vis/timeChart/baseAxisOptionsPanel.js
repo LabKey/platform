@@ -75,24 +75,24 @@ Ext4.define('LABKEY.vis.BaseAxisOptionsPanel', {
         }
     },
 
-    setRangeAutomaticOptions: function(multipleCharts){
+    setRangeAutomaticOptions: function(chartLayout, isYaxis){
         if (this.rangeAutomaticPerChartRadio)
         {
             // hide/show the automatic per chart radio option
-            this.rangeAutomaticPerChartRadio.setVisible(multipleCharts);
+            this.rangeAutomaticPerChartRadio.setVisible(chartLayout != "single");
 
-            // if the automatic per chart option was set, change it to the automatic across charts option
-            if (this.rangeAutomaticPerChartRadio.checked && !multipleCharts)
+            // change y-axis default to 'automatic within chart' for per measure/dimension chart layout
+            if (this.rangeAutomaticRadio.checked || this.rangeAutomaticPerChartRadio.checked)
             {
-                this.rangeAutomaticRadio.setValue(true);
-                this.rangeAutomaticPerChartRadio.setValue(false);
+                this.rangeAutomaticPerChartRadio.setValue(isYaxis && chartLayout == "per_dimension");
+                this.rangeAutomaticRadio.setValue(!isYaxis || chartLayout != "per_dimension");
             }
         }
 
         if (this.rangeAutomaticRadio)
         {
             // update the automatic (across chart) radio option box label
-            this.rangeAutomaticRadio.boxLabel = multipleCharts ? 'Automatic across charts' : 'Automatic';
+            this.rangeAutomaticRadio.boxLabel = chartLayout != "single" ? 'Automatic across charts' : 'Automatic';
             if (this.rangeAutomaticRadio.rendered)
             {
                 this.rangeAutomaticRadio.boxLabelEl.update(this.rangeAutomaticRadio.boxLabel);

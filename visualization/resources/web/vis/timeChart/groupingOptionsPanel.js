@@ -389,7 +389,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             if (this.subjectSelectionChange)
                 this.fireEvent('groupLayoutSelectionChanged', this.getChartSubjectSelection() == "groups");
             if (this.numChartSelectionChange)
-                this.fireEvent('numChartsSelectionChanged', this.chartLayout != "single");
+                this.fireEvent('numChartsSelectionChanged', this.chartLayout);
             this.fireEvent('chartDefinitionChanged', this.requireDataRefresh);
         }
 

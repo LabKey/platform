@@ -94,7 +94,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.editModeURL != null;
 
         this.items = [];
 
@@ -246,17 +246,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             
             tbarItems.push(this.saveAsBtn);
         }
-        else if (this.allowEditMode)
+        else if (this.editModeURL != null)
         {
             // add an "edit" button if the user is allowed to toggle to edit mode for this report
             tbarItems.push('->');
             tbarItems.push({
                 xtype: 'button',
                 text: 'Edit',
+                scope: this,
                 handler: function() {
-                    var params = LABKEY.ActionURL.getParameters();
-                    Ext4.apply(params, {edit: "true"});
-                    window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
+                    window.location = this.editModeURL;
                 }
             });
         }

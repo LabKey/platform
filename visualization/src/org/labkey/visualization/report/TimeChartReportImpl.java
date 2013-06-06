@@ -47,7 +47,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         VisualizationController.GetVisualizationForm form = new VisualizationController.GetVisualizationForm();
 
         form.setReportId(getReportId());
-        form.setAllowToggleMode(false);
+        form.setAllowToggleMode(true);
 
         Report report = form.getReportId().getReport(context);
 

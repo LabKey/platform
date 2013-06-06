@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -49,6 +50,7 @@
     String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
     String numberFormatFn;
     boolean canEdit = false;
+    ActionURL editUrl = null;
 
     if(numberFormat == null)
     {
@@ -61,7 +63,10 @@
 
         Report report = form.getReportId().getReport(ctx);
         if(report != null)
+        {
             canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+            editUrl = report.getEditReportURL(ctx);
+        }
     }
     else
     {
@@ -96,7 +101,7 @@
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+            editModeURL: <%=q((!ctx.getUser().isGuest() && form.allowToggleMode()) && editUrl != null ? editUrl.toString() : null) %>,
             firstLoad: true
         });
 

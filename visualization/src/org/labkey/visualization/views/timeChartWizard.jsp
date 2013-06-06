@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -56,12 +57,16 @@
 
     ReportIdentifier id = form.getReportId();
     Report report = null;
+    ActionURL editUrl = null;
 
     if (id != null)
     {
         report = id.getReport(ctx);
         if (report != null)
+        {
             canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+            editUrl = report.getEditReportURL(ctx);
+        }
     }
     else
     {
@@ -166,7 +171,7 @@
                     canShare: <%=canShare%>,
                     isDeveloper: <%=isDeveloper%>,
                     defaultNumberFormat: eval("<%=numberFormatFn%>"),
-                    allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>
+                    editModeURL: <%=q((!ctx.getUser().isGuest() && form.allowToggleMode()) && editUrl != null ? editUrl.toString() : null) %>
                 })
             ]
         });
