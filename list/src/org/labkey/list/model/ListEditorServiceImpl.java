@@ -16,6 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.axis.utils.StringUtils;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -40,8 +41,10 @@ import org.labkey.list.client.ListEditorService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -267,6 +270,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             {
                 return errors;
             }
+            else
+            {
+                // Check for legalName problems -- GWT designer does not catch them (and doesn't have support on the client to easily check)
+                errors = checkLegalNameConflicts(dd);
+                if (errors != null && !errors.isEmpty())
+                    return errors;
+            }
 
             boolean changedName = !def.getName().equals(list.getName());
             update(def, list);
@@ -292,6 +302,21 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         return new ArrayList<String>(); // GWT error Collections.emptyList();
     }
 
+    private List<String> checkLegalNameConflicts(GWTDomain dd)
+    {
+        List<String> errors = new ArrayList<>();
+        Set<String> names = new HashSet<>();
+        for (Object obj : dd.getFields())
+        {
+            GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)obj;
+            String legalName = ColumnInfo.legalNameFromName(descriptor.getName());
+            if (names.contains(legalName))
+                errors.add("Field name's legal name is not unique: " + descriptor.getName());
+            else
+                names.add(legalName);
+        }
+        return errors;
+    }
 
     public GWTDomain getDomainDescriptor(GWTList list) throws SQLException
     {
