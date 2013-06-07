@@ -242,7 +242,13 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getGuidType()
     {
-        return "VARCHAR";
+        return "VARCHAR(36)";
+    }
+
+    @Override
+    public String getLsidType()
+    {
+        return "VARCHAR(300)";
     }
 
     @Override

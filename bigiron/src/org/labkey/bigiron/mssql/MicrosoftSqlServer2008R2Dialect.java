@@ -201,6 +201,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
+    public String getLsidType()
+    {
+        return "NVARCHAR(300)";
+    }
+
+    @Override
     public void appendStatement(Appendable sql, String statement)
     {
         try
