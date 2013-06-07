@@ -925,6 +925,11 @@ public class ReportsController extends SpringActionController
                 return new ApiSimpleResponse(resultProperties);
             }
 
+/*
+            if (null != resultsView)
+                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+*/
+
             return null;
         }
     }
@@ -1480,7 +1485,7 @@ public class ReportsController extends SpringActionController
             form.setShared(null == report.getDescriptor().getOwner());
 
             if (null != report.getDescriptor().getCategory())
-                form.setCategory(report.getDescriptor().getCategory().getLabel());
+                form.setViewCategory(report.getDescriptor().getCategory());
 
             Integer authorId = report.getDescriptor().getAuthor();
             if (null != authorId)
@@ -1542,8 +1547,7 @@ public class ReportsController extends SpringActionController
                 ViewCategory category = null;
 
                 // save the category information then the report
-                if (form.getCategory() != null)
-                    category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
+                category = form.getViewCategory();
 
                 R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
