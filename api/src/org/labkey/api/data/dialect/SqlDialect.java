@@ -498,6 +498,8 @@ public abstract class SqlDialect
 
     public abstract String getGuidType();
 
+    public abstract String getLsidType();
+
     public abstract String getTempTableKeyword();
 
     public abstract String getTempTablePrefix();

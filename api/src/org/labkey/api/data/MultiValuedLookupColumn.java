@@ -116,7 +116,15 @@ public class MultiValuedLookupColumn extends LookupColumn
             valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
             {
-                String sqlType = "userid".equalsIgnoreCase(lc.getSqlTypeName()) ? "INTEGER" : "VARCHAR";
+                String sqlType;
+                if ("userid".equalsIgnoreCase(lc.getSqlTypeName()))
+                    sqlType = "INTEGER";
+                else if ("entityid".equalsIgnoreCase(lc.getSqlTypeName()))
+                    sqlType = dialect.getGuidType();
+                else if ("lsidtype".equalsIgnoreCase(lc.getSqlTypeName()))
+                    sqlType = dialect.getLsidType();
+                else
+                    throw new IllegalStateException("Unexpected sql type '" + lc.getSqlTypeName() + "' for column '" + lc.getName() + "'");
                 valueSql.append(") AS " + sqlType + ")");
             }
 
