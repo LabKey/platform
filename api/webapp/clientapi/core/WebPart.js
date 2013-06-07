@@ -295,5 +295,5 @@ LABKEY.WebPart.createReportWebpart = function(config){
     }, this);
 
     return new LABKEY.WebPart(wpConfig);
-}
+};
 
