@@ -96,6 +96,8 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
 
     public double getPercent(WellGroup group, WellData data) throws DilutionCurve.FitFailedException
     {
+        if (null == group)
+            throw new DilutionCurve.FitFailedException("Invalid well group.");
         Plate plate = group.getPlate();
         WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
         if (cellControl == null)
