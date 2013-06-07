@@ -1405,6 +1405,14 @@ public class ProjectController extends SpringActionController
         Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
         {
             Map<String, Object> resultMap = container.toJSON(user);
+            addModuleProperties(container, propertiesToSerialize, resultMap);
+
+            resultMap.put("children", getVisibleChildren(container, user, propertiesToSerialize, 0));
+            return resultMap;
+        }
+
+        private void addModuleProperties(Container container, List<ModuleProperty> propertiesToSerialize, Map<String, Object> resultMap)
+        {
             if (!propertiesToSerialize.isEmpty())
             {
                 List<Map<String, Object>> serializedProps = new ArrayList<>();
@@ -1419,13 +1427,10 @@ public class ProjectController extends SpringActionController
                 }
                 resultMap.put("moduleProperties", serializedProps);
             }
-
-            resultMap.put("children", getVisibleChildren(container, user, 0));
-            return resultMap;
         }
 
         //return only those paths through the container tree leading to a container to which the user has permission
-        protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, int depth)
+        protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, List<ModuleProperty> propertiesToSerialize, int depth)
         {
             List<Map<String, Object>> visibleChildren = new ArrayList<>();
             if (depth == _requestedDepth)
@@ -1433,10 +1438,11 @@ public class ProjectController extends SpringActionController
 
             for (Container child : parent.getChildren())
             {
-                List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, depth + 1);
+                List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
                 if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
                 {
                     Map<String, Object> visibleChild = child.toJSON(user);
+                    addModuleProperties(child, propertiesToSerialize, visibleChild);
                     visibleChild.put("children", theseChildren);
                     visibleChildren.add(visibleChild);
                 }
