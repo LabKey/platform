@@ -26,6 +26,8 @@ tokens
 	IN_LIST;
 	IS_NOT;
 	METHOD_CALL;
+	DATE_LITERAL;
+	TIMESTAMP_LITERAL;
 	NOT_BETWEEN;
 	NOT_IN;
 	NOT_LIKE;
@@ -282,7 +284,7 @@ union
 
 unionTerm
   : select
-  | OPEN! union CLOSE!
+  | OPEN! selectStatement CLOSE!
   ;
 
 
@@ -624,7 +626,10 @@ dottedIdentifier
 
 escapeFn
     : '{fn'! identifier op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! '}'!
+    | '{d ' QUOTED_STRING '}' -> ^(DATE_LITERAL QUOTED_STRING)
+    | '{ts ' QUOTED_STRING '}' -> ^(TIMESTAMP_LITERAL QUOTED_STRING)
     ;
+
 
 aggregate
     @after {$aggregate.tree.getToken().setType(AGGREGATE);}
@@ -647,7 +652,7 @@ compoundExpr
 
 
 subQuery
-	: union
+	: selectStatement
 	;
 
 exprList

@@ -2389,6 +2389,7 @@ query/src/org/labkey/query/sql/QAggregate.java -text
 query/src/org/labkey/query/sql/QAs.java -text
 query/src/org/labkey/query/sql/QBoolean.java -text
 query/src/org/labkey/query/sql/QCase.java -text
+query/src/org/labkey/query/sql/QDate.java -text
 query/src/org/labkey/query/sql/QDistinct.java -text
 query/src/org/labkey/query/sql/QDot.java -text
 query/src/org/labkey/query/sql/QElse.java -text
@@ -2418,6 +2419,7 @@ query/src/org/labkey/query/sql/QSelect.java -text
 query/src/org/labkey/query/sql/QSelectFrom.java -text
 query/src/org/labkey/query/sql/QString.java -text
 query/src/org/labkey/query/sql/QTable.java -text
+query/src/org/labkey/query/sql/QTimestamp.java -text
 query/src/org/labkey/query/sql/QUnion.java -text
 query/src/org/labkey/query/sql/QUnknownNode.java -text
 query/src/org/labkey/query/sql/QUnsafeExpr.java -text

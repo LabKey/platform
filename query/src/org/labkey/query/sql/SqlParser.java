@@ -27,6 +27,7 @@ import org.antlr.runtime.Token;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -42,6 +44,7 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -753,6 +756,23 @@ public class SqlParser
                     return result;
                 }
                 break;
+            }
+            case TIMESTAMP_LITERAL:
+            case DATE_LITERAL:
+            {
+                String s = QString.unquote(first(children).getTokenText());
+                try
+                {
+                    if (node.getType() == TIMESTAMP_LITERAL)
+                        return new QTimestamp(node,new Timestamp(DateUtil.parseDateTime(s)));
+                    else
+                        return new QDate(node,new java.sql.Date(DateUtil.parseDate(s)));
+                }
+                catch (ConversionException x)
+                {
+                    _parseErrors.add(new QueryParseException("Can't convert date literal: " + s, null, node.getLine(), node.getCharPositionInLine()));
+                    return null;
+                }
             }
 			default:
 				break;
