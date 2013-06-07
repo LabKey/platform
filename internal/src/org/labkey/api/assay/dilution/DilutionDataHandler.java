@@ -222,6 +222,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
     }
 
+    public static class MissingMaterialException extends ExperimentException
+    {
+        public MissingMaterialException(String message)
+        {
+            super(message);
+        }
+    }
+
     public DilutionAssayRun getAssayResults(ExpRun run, User user) throws ExperimentException
     {
         return getAssayResults(run, user, null);
@@ -374,7 +382,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         {
             ExpMaterial material = nameToMaterial.get(wellgroup.getName());
             if (material == null)
-                throw new IllegalStateException("Each wellgroup should have a matching input material.");
+                throw new MissingMaterialException("Wellgroup " + wellgroup.getName() + " does not have a matching input material. Was plate template edited?");
             mapping.put(material, Collections.singletonList(wellgroup));
         }
         return mapping;
