@@ -70,8 +70,8 @@ function removeAnnouncementAttachment(eid, name, xid)
         Ext.Msg.show({
             title : 'Remove Attachment',
             msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
-            buttons: LABKEY.ExtAdapter.Msg.OKCANCEL,
-            icon: LABKEY.ExtAdapter.Msg.QUESTION,
+            buttons: Ext.Msg.OKCANCEL,
+            icon: Ext.Msg.QUESTION,
             fn  : function(b) {
                 if (b == 'ok') {
                     remove();
