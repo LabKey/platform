@@ -1299,12 +1299,12 @@ LABKEY.Query = new function()
             {
                 var fmt2 = function(a) {return (a>=10 ?  ""+a : "0"+a);};
                 var fmt3 = function(a) {return (a>=100 ? ""+a : "0"+fmt2(a));};
-                return "CAST('" +
+                return "{ts '" +
                         date.getFullYear() + "-" + fmt2(date.getMonth()+1) + "-" +fmt2(date.getDate()) + " " + fmt2(date.getHours()) + ":" + fmt2(date.getMinutes()) + ":" + fmt2(date.getSeconds()) +
                         (withMS ? "." + fmt3(date.getMilliseconds()) : "")
-                        + "' AS TIMESTAMP)";
+                        + "'}";
             }
-            return "CAST('" + this.sqlStringLiteral(date) + "' AS TIMESTAMP)";
+            return "{ts '" + this.sqlStringLiteral(date) + "'}";
         },
 
 
@@ -1325,11 +1325,11 @@ LABKEY.Query = new function()
             {
                 var fmt2 = function(a) {return (a>=10 ? a : "0"+a);};
                 var fmt3 = function(a) {return (a>=999 ? a : "0"+fmt2(a));};
-                return "CAST('" +
+                return "{d '" +
                         date.getFullYear() + "-" + fmt2(date.getMonth()+1) + "-" +fmt2(date.getDate())
-                        + "' AS DATE)";
+                        + "'}";
             }
-            return "CAST('" + this.sqlStringLiteral(date) + "' AS DATE)";
+            return "{d '" + this.sqlStringLiteral(date) + "'}";
         },
 
 
