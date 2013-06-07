@@ -15,6 +15,8 @@
  */
 package org.labkey.api.reports.model;
 
+import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.reports.report.ReportIdentifier;
 
@@ -30,6 +32,7 @@ public class DataViewEditForm extends ReturnUrlForm
     String _viewName;
     String _entityId;
     String _category;
+    ViewCategory _viewCategory;
     String _description;
     boolean _hidden;
     ViewInfo.DataType _dataType;
@@ -88,6 +91,22 @@ public class DataViewEditForm extends ReturnUrlForm
     public void setCategory(String category)
     {
         _category = category;
+    }
+
+    @Nullable
+    public ViewCategory getViewCategory()
+    {
+        if (_viewCategory == null && _category != null)
+        {
+            int categoryId = NumberUtils.toInt(_category);
+            _viewCategory = ViewCategoryManager.getInstance().getCategory(categoryId);
+        }
+        return _viewCategory;
+    }
+
+    public void setViewCategory(ViewCategory viewCategory)
+    {
+        _viewCategory = viewCategory;
     }
 
     public String getDescription()
