@@ -310,7 +310,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 continue;
 
             // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
-            if (col.isReadOnly() || col instanceof ExprColumn)
+            if (col.isReadOnly() || col.isCalculated())
                 continue;
 
             //when updating a row, we should strip the following fields, as they are
