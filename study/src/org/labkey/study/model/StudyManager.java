@@ -30,6 +30,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -178,6 +179,7 @@ public class StudyManager
     private final QueryHelper<LocationImpl> _locationHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
+    private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
     private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<>();
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
@@ -254,58 +256,50 @@ public class StudyManager
          */
         _datasetHelper = new DatasetHelper(dataSetGetter);
 
+        // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
+        // The shared properties chace will be cleared when the _datasetHelper cache is cleared.
+        _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "StudySharedProperties",
+                new CacheLoader<Container, Set<PropertyDescriptor>>()
+                {
+                    @Override
+                    public Set<PropertyDescriptor> load(Container key, @Nullable Object argument)
+                    {
+                        Container sharedContainer = ContainerManager.getSharedContainer();
+                        assert key != sharedContainer;
+
+                        List<DataSetDefinition> defs = _datasetHelper.get(key);
+                        if (defs == null)
+                            return Collections.emptySet();
+
+                        Set<PropertyDescriptor> set = new LinkedHashSet<>();
+                        for (DataSetDefinition def : defs)
+                        {
+                            Domain domain = def.getDomain();
+                            if (domain == null)
+                                continue;
+
+                            for (DomainProperty dp : domain.getProperties())
+                                if (dp.getContainer().equals(sharedContainer))
+                                    set.add(dp.getPropertyDescriptor());
+                        }
+                        return Collections.unmodifiableSet(set);
+                    }
+                });
+
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
 
-    private static class DatasetHelper extends QueryHelper<DataSetDefinition>
+    private class DatasetHelper extends QueryHelper<DataSetDefinition>
     {
         private DatasetHelper(TableInfoGetter tableGetter)
         {
             super(tableGetter, DataSetDefinition.class);
         }
 
-        private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<>();
-
-        private PropertyDescriptor[] getSharedProperties(Container c)
-        {
-            PropertyDescriptor[] pds = sharedProperties.get(c);
-            if (pds == null)
-            {
-                Container sharedContainer = ContainerManager.getSharedContainer();
-                assert c != sharedContainer;
-
-                Set<PropertyDescriptor> set = new LinkedHashSet<>();
-                List<DataSetDefinition> defs = get(c);
-                if (defs == null)
-                {
-                    pds = new PropertyDescriptor[0];
-                }
-                else
-                {
-                    for (DataSetDefinition def : defs)
-                    {
-                        Domain domain = def.getDomain();
-                        if (domain == null)
-                            continue;
-
-                        for (DomainProperty dp : domain.getProperties())
-                            if (dp.getContainer().equals(sharedContainer))
-                                set.add(dp.getPropertyDescriptor());
-                    }
-
-                    pds = set.toArray(new PropertyDescriptor[set.size()]);
-                }
-
-                sharedProperties.put(c, pds);
-            }
-
-            return pds;
-        }
-
         private void clearProperties(DataSetDefinition def)
         {
-            sharedProperties.remove(def.getContainer());
+            StudyManager.this._sharedProperties.remove(def.getContainer());
         }
 
         @Override
@@ -1733,9 +1727,9 @@ public class StudyManager
     }
 
 
-    public PropertyDescriptor[] getSharedProperties(Study study)
+    public Set<PropertyDescriptor> getSharedProperties(Study study)
     {
-        return _datasetHelper.getSharedProperties(study.getContainer());
+        return _sharedProperties.get(study.getContainer());
     }
 
     @Nullable

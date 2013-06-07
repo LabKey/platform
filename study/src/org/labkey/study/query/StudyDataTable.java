@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -109,8 +110,7 @@ public class StudyDataTable extends FilteredTable<StudyQuerySchema>
         StudyImpl study = _userSchema.getStudy();
         if (study != null)
         {
-            PropertyDescriptor[] pds = study.getSharedProperties();
-
+            Set<PropertyDescriptor> pds = study.getSharedProperties();
             for (PropertyDescriptor pd : pds)
             {
                 addWrapColumn(_rootTable.getColumn(pd.getName()));

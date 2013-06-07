@@ -240,7 +240,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this, null, types));
     }
 
-    public PropertyDescriptor[] getSharedProperties()
+    public Set<PropertyDescriptor> getSharedProperties()
     {
         return StudyManager.getInstance().getSharedProperties(this);
     }

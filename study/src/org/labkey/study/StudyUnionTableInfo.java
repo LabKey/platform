@@ -78,7 +78,7 @@ public class StudyUnionTableInfo extends VirtualTable
         int count = 0;
         String unionAll = "";
 
-        PropertyDescriptor[] sharedProperties = _study.getSharedProperties();
+        Set<PropertyDescriptor> sharedProperties = _study.getSharedProperties();
 
         for (DataSetDefinition def : defs)
         {
@@ -192,7 +192,7 @@ public class StudyUnionTableInfo extends VirtualTable
         return unionSql;
     }
 
-    private void makeColumnInfos(PropertyDescriptor[] sharedProperties)
+    private void makeColumnInfos(Set<PropertyDescriptor> sharedProperties)
     {
         TableInfo template = DataSetDefinition.getTemplateTableInfo();
 
