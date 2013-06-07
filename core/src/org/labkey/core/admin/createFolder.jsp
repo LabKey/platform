@@ -291,6 +291,7 @@
                         },{
                             xtype: 'checkboxgroup',
                             columns: 3,
+                            vertical: true,
                             autoHeight: true,
                             name: 'activeModules',
                             listeners: {
