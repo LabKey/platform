@@ -289,7 +289,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
         Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
         // First prune out any domains of the same type that aren't in the new set
-        for (String uri : new HashSet<String>(props.keySet()))
+        for (String uri : new HashSet<>(props.keySet()))
         {
             Lsid lsid = new Lsid(uri);
             if (lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX) && !uris.contains(uri))
@@ -330,7 +330,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                         XarContext context = new XarContext("Domains", getContainer(), getUser());
                         context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
-                        Set<String> domainURIs = new HashSet<String>();
+                        Set<String> domainURIs = new HashSet<>();
                         for (GWTDomain domain : assay.getDomains())
                         {
                             domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
@@ -362,7 +362,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         protocol.setProtocolDescription(assay.getDescription());
                     }
 
-                    Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
+                    Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());
                     for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
                     {
                         ProtocolParameter param = new ProtocolParameter();

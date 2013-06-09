@@ -939,7 +939,11 @@ public class AssayController extends SpringActionController
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
-
+            // It's possible that the assay provider is no longer installed
+            if (provider == null)
+            {
+                return null;
+            }
             AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
             String resultsTableName = AssayProtocolSchema.DATA_TABLE_NAME;
 
