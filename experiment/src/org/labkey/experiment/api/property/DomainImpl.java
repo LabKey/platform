@@ -251,8 +251,8 @@ public class DomainImpl implements Domain
             boolean propChanged = false;
             int sortOrder = 0;
 
-            List<DomainProperty> propsDropped = new ArrayList<DomainProperty>();
-            List<DomainProperty> propsAdded = new ArrayList<DomainProperty>();
+            List<DomainProperty> propsDropped = new ArrayList<>();
+            List<DomainProperty> propsAdded = new ArrayList<>();
 
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
@@ -417,7 +417,7 @@ public class DomainImpl implements Domain
 
     public List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
     {
-        List<ColumnInfo> result = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> result = new ArrayList<>();
         for (DomainProperty property : getProperties())
         {
             ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, container, user, false);
