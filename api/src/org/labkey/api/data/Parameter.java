@@ -453,9 +453,9 @@ public class Parameter
             else
                 stmt= conn.prepareStatement(_sqlf.getSQL());
 
-            IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
+            IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<>();
             List<Object> paramList = _sqlf.getParams();
-            List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
+            List<Parameter> parameters = new ArrayList<>(paramList.size());
 
             for (int i = 0; i < paramList.size(); i++)
             {

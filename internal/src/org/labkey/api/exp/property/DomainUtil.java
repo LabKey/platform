@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
@@ -260,7 +262,7 @@ public class DomainUtil
     public static List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
         if (null == d)
@@ -279,7 +281,7 @@ public class DomainUtil
         // look for swapped names
 
         // first delete properties
-        Set<Integer> s = new HashSet<Integer>();
+        Set<Integer> s = new HashSet<>();
         for (GWTPropertyDescriptor pd : orig.getFields())
             s.add(pd.getPropertyId());
         for (GWTPropertyDescriptor pd : update.getFields())
@@ -387,7 +389,7 @@ public class DomainUtil
         }
 
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
-        Set<String> propertyUrisInUse = new HashSet<String>(update.getFields().size());
+        Set<String> propertyUrisInUse = new CaseInsensitiveHashSet();
 
         for (GWTPropertyDescriptor pd : update.getFields())
             if (!StringUtils.isEmpty(pd.getPropertyURI()))

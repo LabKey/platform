@@ -120,7 +120,7 @@ public class StatementUtils
     boolean useVariables = false;
     final SqlDialect dialect;
     final Map<String,Object> constants = new CaseInsensitiveHashMap<>();
-    final Map<String,ParameterHolder> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<String,ParameterHolder>());
+    final Map<String,ParameterHolder> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<>());
 
 
     private static class ParameterHolder
@@ -645,7 +645,6 @@ public class StatementUtils
             if (null != skip)
                 done.addAll(skip);
 
-            String stmtSep = "";
             for (DomainProperty dp : properties)
             {
                 // ignore property that 'wraps' a hard column
@@ -791,7 +790,6 @@ public class StatementUtils
 
             fn.append(sqlfDeclare);
 
-            String semi = "";
             fn.append("BEGIN\n");
             for (SQLFragment f : Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty))
             {
@@ -877,7 +875,7 @@ public class StatementUtils
         }
         else if (value instanceof java.util.Date)
         {
-            f.append("{ts '").append(DateUtil.formatDate((java.sql.Date)value)).append("'}");
+            f.append("{ts '").append(DateUtil.formatDate((java.util.Date)value)).append("'}");
             return;
         }
         assert value instanceof String;

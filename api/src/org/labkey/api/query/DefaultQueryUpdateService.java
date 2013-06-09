@@ -269,8 +269,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (objectUriCol != null && domain != null && domain.getProperties().length > 0)
         {
             // convert "Property name"->value map into PropertyURI->value map
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-            Map<String, Object> values = new HashMap<String, Object>();
+            List<PropertyDescriptor> pds = new ArrayList<>();
+            Map<String, Object> values = new HashMap<>();
             for (PropertyColumn pc : getPropertyColumns())
             {
                 PropertyDescriptor pd = pc.getPropertyDescriptor();
@@ -294,10 +294,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Map<String,Object> rowStripped = new CaseInsensitiveHashMap<Object>(row.size());
+        Map<String,Object> rowStripped = new CaseInsensitiveHashMap<>(row.size());
 
         // Flip the key/value pairs around for easy lookup
-        Map<String, String> queryToDb = new CaseInsensitiveHashMap<String>();
+        Map<String, String> queryToDb = new CaseInsensitiveHashMap<>();
         for (Map.Entry<String, String> entry : _columnMapping.entrySet())
         {
             queryToDb.put(entry.getValue(), entry.getKey());
@@ -363,8 +363,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             String lsid = (String)oldRow.get(objectUriCol.getName());
 
             // convert "Property name"->value map into PropertyURI->value map
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-            Map<String, Object> newValues = new HashMap<String, Object>();
+            List<PropertyDescriptor> pds = new ArrayList<>();
+            Map<String, Object> newValues = new HashMap<>();
             for (PropertyColumn pc : getPropertyColumns())
             {
                 PropertyDescriptor pd = pc.getPropertyDescriptor();
@@ -522,11 +522,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 // improve handling of conversion errors
                 try
                 {
-                    switch (col.getSqlTypeInt())
+                    switch (col.getJdbcType())
                     {
-                        case java.sql.Types.DATE:
-                        case java.sql.Types.TIME:
-                        case java.sql.Types.TIMESTAMP:
+                        case DATE:
+                        case TIME:
+                        case TIMESTAMP:
                             row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                             break;
                         default:
