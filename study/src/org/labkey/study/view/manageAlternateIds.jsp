@@ -352,7 +352,7 @@
                             if(dataSetId != -1)
                                 displayDoneChangingMessage("Change All Alternate IDs", "Changing Alternate IDs is complete.");
                             else
-                                displayDoneChangingMessage("Delete Alternate ID settings", "Alternate ID settings cleared.")
+                                displayDoneChangingMessage("Clear Alias Settings", "Participant alias settings cleared.")
                             aliasDataSetId = dataSetId;
                             if(dataSetId != -1)
                                 importButton.setDisabled(false);
