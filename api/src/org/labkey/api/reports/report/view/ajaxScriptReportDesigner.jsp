@@ -37,8 +37,20 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.reports.report.RReportDescriptor" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<%!
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("codemirror"));
+      return resources;
+  }
+%>
+
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
     ViewContext ctx = getViewContext();
@@ -88,9 +100,7 @@
     initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 %>
-<script type="text/javascript">
-    LABKEY.requiresScript('/editarea/edit_area_full.js');
-</script>
+<labkey:scriptDependency/>
 <script type="text/javascript">
     if (<%=!readOnly%>)
     {
@@ -149,7 +159,7 @@ var f_scope<%=text(uid)%> = new (function() {
 
         if (sourceAndHelp)
         {
-            items.push({title: 'Source', contentEl: <%=q("scriptDiv"+uid)%>, listeners: {render: activateSourceTab}});
+            items.push({title: 'Source', contentEl: <%=q("scriptDiv"+uid)%>, listeners: {afterrender: activateSourceTab}});
 
             if (preferSourceTab)
                 activeTab = 2;
@@ -167,7 +177,6 @@ var f_scope<%=text(uid)%> = new (function() {
             plain: true,
             defaults: {autoScroll: true, autoHeight: true},
             listeners: {
-                beforetabchange: beforeTabChange,
                 tabchange : function(cmp, tab) {
                     // display a warning message if the report is inherited (and cannot be edited)
                     if (tab.title == 'Source' && inheritedWarningMsg) {
@@ -190,26 +199,31 @@ var f_scope<%=text(uid)%> = new (function() {
         Ext.EventManager.fireWindowResize();
     });
 
-    function beforeTabChange()
-    {
-        if (editAreaLoader) editAreaLoader.execCommand(<%=q(scriptId)%>, 'focus');
-    }
-
     function activateSourceTab(tab)
     {
         if (!readOnly)
         {
-            Ext.EventManager.on(<%=q(scriptId)%>, 'keydown', handleTabsInTextArea);
-            editAreaLoader.init({
-                id: <%=q(scriptId)%>,
-                toolbar: "search, go_to_line, |, undo, redo, |, select_font,|, change_smooth_selection, highlight, reset_highlight, word_wrap, |, help",<%
-            if (null != report.getEditAreaSyntax())
-            { %>
-                syntax: <%=q(report.getEditAreaSyntax())%>,<%
-            } %>
-                start_highlight: true,
-                change_callback: "LABKEY.setDirty(true);"  // JavaScript string to eval, NOT a function
-            });
+            var code = Ext.get(<%=q(scriptId)%>);
+            var cmp = Ext.get('tabsDiv' + '<%=text(uid)%>');
+
+            var size = tab.getSize();
+
+            if (code) {
+
+                var me = this;
+                this.codeMirror = CodeMirror.fromTextArea(code.dom, {
+                    mode            : <%=q((report.getEditAreaSyntax() != null) ? report.getEditAreaSyntax() : "text/plain")%>,
+                    lineNumbers     : true,
+                    lineWrapping    : true,
+                    indentUnit      : 3,
+                    onChange : function(cmp){
+                        LABKEY.setDirty(true);
+                    }
+                });
+
+                //this.codeMirror.setValue(<%=q(StringUtils.trimToEmpty(bean.getScript()))%>);
+                LABKEY.codemirror.RegisterEditorInstance('script-report-editor', this.codeMirror);
+            }
         }
     }
 
@@ -443,10 +457,18 @@ var f_scope<%=text(uid)%> = new (function() {
 
     function updateScript()
     {
-        if (scriptText && editAreaLoader && document.getElementById("edit_area_toggle_checkbox_<%=text(scriptId)%>") && document.getElementById("edit_area_toggle_checkbox_<%=text(scriptId)%>").checked)
+        var editor = getEditorInstance();
+        if (scriptText && editor)
         {
-            scriptText.value = editAreaLoader.getValue(<%=q(scriptId)%>);
+            scriptText.value = editor.getValue();
         }
+    }
+
+    function getEditorInstance()
+    {
+        if (LABKEY.CodeMirror)
+            return LABKEY.CodeMirror['script-report-editor'];
+        return null;
     }
 
     function saveAs(btn, name)
@@ -585,7 +607,7 @@ function setDisabled(checkbox, label, disabled)
     <div id="scriptDiv<%=text(uid)%>" class="x-hide-display">
         <form id="renderReport" method="post">
         <table width="100%">
-            <tr><td width="100%">
+            <tr><td style="padding: 10px 0 10px 0" width="100%">
                 <textarea id="<%=text(scriptId)%>" onchange="LABKEY.setDirty(true);return true;"
                     name="<%=text(scriptId)%>"<%
                     if (readOnly)

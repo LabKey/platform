@@ -53,7 +53,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public String getEditAreaSyntax()
     {
-        return "js";
+        return "text/javascript";
     }
 
     @Override

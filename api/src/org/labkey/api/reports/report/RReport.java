@@ -548,5 +548,12 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         
         return super.canEdit(user, container, errors);    //To change body of overridden methods use File | Settings | File Templates.
     }
+
+    @Nullable
+    @Override
+    public String getEditAreaSyntax()
+    {
+        return "text/x-rsrc";
+    }
 }
 
