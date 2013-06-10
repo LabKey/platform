@@ -24,6 +24,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
@@ -134,7 +135,14 @@ public class ListImporter
 
             if (null != def)
             {
-                def.delete(user);
+                try
+                {
+                    def.delete(user);
+                }
+                catch (Table.OptimisticConflictException e)
+                {
+                    throw new ImportException("Error deleting list \"" + name + "\": " + e.getMessage());
+                }
                 preferredListIds.add(def.getListId());
             }
 
