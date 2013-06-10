@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -81,10 +82,11 @@ public abstract class BaseStudyController extends SpringActionController
         return page;
     }
 
-    public static StudyImpl getStudy(boolean allowNullStudy, Container c) throws ServletException
+    @NotNull
+    public static StudyImpl getStudyRedirectIfNull(Container c) throws ServletException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(c);
-        if (!allowNullStudy && study == null)
+        if (null == study)
         {
             // redirect to the study home page, where admins will see a 'create study' button,
             // and non-admins will simply see a message that no study exists.
@@ -93,14 +95,40 @@ public abstract class BaseStudyController extends SpringActionController
         return study;
     }
 
-    public StudyImpl getStudy() throws ServletException
+    @NotNull
+    public StudyImpl getStudyRedirectIfNull() throws ServletException
     {
-        return getStudy(false, getContainer());
+        return getStudyRedirectIfNull(getContainer());
     }
 
-    public StudyImpl getStudy(boolean allowNullStudy) throws ServletException
+    @NotNull
+    public static StudyImpl getStudyThrowIfNull(Container c) throws IllegalStateException
     {
-        return getStudy(allowNullStudy, getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
+        if (null == study)
+        {
+            // We expected to find a study
+            throw new IllegalStateException("No study found.");
+        }
+        return study;
+    }
+
+    @NotNull
+    public StudyImpl getStudyThrowIfNull() throws IllegalStateException
+    {
+        return getStudyThrowIfNull(getContainer());
+    }
+
+    @Nullable
+    public static StudyImpl getStudy(Container container)
+    {
+        return StudyManager.getInstance().getStudy(container);
+    }
+
+    @Nullable
+    public StudyImpl getStudy()
+    {
+        return getStudy(getContainer());
     }
 
     protected BaseViewAction initAction(BaseViewAction parent, BaseViewAction action)
@@ -129,14 +157,16 @@ public abstract class BaseStudyController extends SpringActionController
         return root;
     }
 
+    @NotNull
     protected Study appendRootNavTrail(NavTree root) throws ServletException
     {
         return appendRootNavTrail(root, getContainer(), getUser());
     }
 
+    @NotNull
     public static Study appendRootNavTrail(NavTree root, Container container, User user) throws ServletException
     {
-        Study study = getStudy(false, container);
+        Study study = getStudyRedirectIfNull(container);
         ActionURL rootURL;
         FolderType folderType = container.getFolderType();
         // AssayFolderType is defined in the study module, but it's not really a folder of type study

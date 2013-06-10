@@ -102,17 +102,17 @@ public class CohortController extends BaseStudyController
             StudyManager.getInstance().assertCohortsViewable(getContainer(), HttpView.currentContext().getUser());
 
             VBox vbox = new VBox();
-
-            StudyJspView<Object> top = new StudyJspView<Object>(getStudy(), "manageCohortsTop.jsp", null, errors);
+            StudyImpl study = getStudyRedirectIfNull();
+            StudyJspView<Object> top = new StudyJspView<>(study, "manageCohortsTop.jsp", null, errors);
             top.setTitle("Cohort Assignment");
             vbox.addView(top);
 
-            CohortQueryView queryView = new CohortQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
+            CohortQueryView queryView = new CohortQueryView(getUser(), study, HttpView.currentContext(), true);
             queryView.setTitle("Defined Cohorts");
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             vbox.addView(queryView);
             
-            StudyJspView<Object> bottom = new StudyJspView<Object>(getStudy(), "manageCohortsBottom.jsp", null, errors);
+            StudyJspView<Object> bottom = new StudyJspView<>(study, "manageCohortsBottom.jsp", null, errors);
             bottom.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + "-Cohort Assignments");
             vbox.addView(bottom);
 
@@ -130,7 +130,7 @@ public class CohortController extends BaseStudyController
 
         public boolean handlePost(ManageCohortsForm form, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyThrowIfNull();
 
             if (form.isClearParticipants())
             {
@@ -264,15 +264,9 @@ public class CohortController extends BaseStudyController
 
         protected CohortTable getTableInfo()
         {
-            try
-            {
-                StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getUser(), true);
-                return new CohortTable(schema);
-            }
-            catch (ServletException se)
-            {
-                throw UnexpectedException.wrap(se);
-            }
+            StudyImpl study = getStudyThrowIfNull();
+            StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
+            return new CohortTable(schema);
         }
 
         public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors) throws Exception
@@ -285,7 +279,7 @@ public class CohortController extends BaseStudyController
                 if (cohort == null)
                     throw new NotFoundException("Could not find cohort for rowId: " + form.getRowId());
                 cohortLabel = cohort.getLabel();
-                if (!getStudy().isManualCohortAssignment())
+                if (!getStudyRedirectIfNull().isManualCohortAssignment())
                 {
                     // Can't edit the label if the cohorts are automatically generated
                     ColumnInfo labelColumn = table.getColumn("Label");
@@ -363,7 +357,8 @@ public class CohortController extends BaseStudyController
             {
                 if (isInsert())
                 {
-                    cohort = CohortManager.getInstance().createCohort(getStudy(), getUser(), newLabel, newEnrolled);
+                    Study study = getStudyThrowIfNull();
+                    cohort = CohortManager.getInstance().createCohort(study, getUser(), newLabel, newEnrolled);
                 }
                 else
                 {
@@ -418,7 +413,7 @@ public class CohortController extends BaseStudyController
                     errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
                 return false;
             }
-            catch (ServletException e)
+            catch (ServletException | IllegalStateException e)
             {
                 errors.reject("insertCohort", e.getMessage());
                 return false;

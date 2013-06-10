@@ -106,7 +106,7 @@ public class StudyDefinitionController extends BaseStudyController
 
         protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
-            return new ExtensibleObjectQueryView(getUser(), getStudy(), getDomainInfo(), HttpView.currentContext(), false);
+            return new ExtensibleObjectQueryView(getUser(), getStudyRedirectIfNull(), getDomainInfo(), HttpView.currentContext(), false);
         }
     }
 

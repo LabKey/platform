@@ -69,6 +69,7 @@ import org.labkey.study.designer.StudyDesignVersion;
 import org.labkey.study.designer.XMLSerializer;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.VaccineStudyWebPart;
 import org.springframework.validation.BindException;
@@ -272,8 +273,7 @@ public class DesignerController extends SpringActionController
             {
 
                 VaccineStudyWebPart.Model model = new VaccineStudyWebPart.Model();
-                Study study = BaseStudyController.getStudy(false, getContainer());
-                assert null != study;
+                Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
                 StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(getUser(), study, getContainer().hasPermission(getUser(), AdminPermission.class));
                 if (null == info)
                     return new HtmlView("Study design information not available for this study.  Contact an administrator to configure the study design.");
@@ -517,7 +517,7 @@ public class DesignerController extends SpringActionController
             return;
         }
         Container studyFolder = ContainerManager.getForId(form.getParentFolderId()).getChild(form.getFolderName());
-        if (null != studyFolder && null != BaseStudyController.getStudy(false, studyFolder))
+        if (null != studyFolder && null != BaseStudyController.getStudy(studyFolder))
         {
             form.setMessage("Folder already exists");
             form.setWizardStep(WizardStep.PICK_FOLDER);
@@ -545,7 +545,7 @@ public class DesignerController extends SpringActionController
             form.setMessage("Please enter a date in the format yyyy-MM-dd.");
             form.setBeginDate(new Date());
         }
-        else if (container.hasChild(folderName) && null != BaseStudyController.getStudy(false, container.getChild(folderName)))
+        else if (container.hasChild(folderName) && null != BaseStudyController.getStudy(container.getChild(folderName)))
             form.setMessage(container.getName() + " already has a child named " + folderName + " containing a study.");
         else if (!StudyService.get().isValidSubjectColumnName(getContainer(), form.getSubjectColumnName()))
             form.setMessage("\"" + form.getSubjectColumnName() + "\" is not a valid subject column name.");

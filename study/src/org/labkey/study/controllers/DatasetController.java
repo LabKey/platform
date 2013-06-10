@@ -21,7 +21,6 @@ import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -29,14 +28,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.view.StudyGWTView;
@@ -110,7 +108,7 @@ public class DatasetController extends BaseStudyController
 
         public ModelAndView getView(EditDatasetRowForm form, boolean reshow, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
             if (null == ds)
             {
@@ -223,7 +221,7 @@ public class DatasetController extends BaseStudyController
         {
             try
             {
-                Study study = getStudy();
+                Study study = getStudyRedirectIfNull();
                 root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
                 root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
                 appendExtraNavTrail(root);
@@ -237,7 +235,7 @@ public class DatasetController extends BaseStudyController
         public boolean handlePost(EditDatasetRowForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
             if (null == ds)
             {
                 redirectTypeNotFound(form.getDatasetId());
@@ -308,12 +306,12 @@ public class DatasetController extends BaseStudyController
             // we need to recompute the participant-visit map
             if (isInsert() || !newLsid.equals(form.getLsid()))
             {
-                StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
-                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser());
+                StudyManager.getInstance().recomputeStudyDataVisitDate(getStudyRedirectIfNull());
+                StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser());
             }
 
-            if (safeEquals(form.getDatasetId(), getStudy().getParticipantCohortDataSetId()))
-                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
+            if (safeEquals(form.getDatasetId(), getStudyRedirectIfNull().getParticipantCohortDataSetId()))
+                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudyRedirectIfNull());
 
             return true;
         }
@@ -366,7 +364,7 @@ public class DatasetController extends BaseStudyController
                 {
                     // If we have a current record, display it
                     int datasetId = null==event.getIntKey1() ? -1 : event.getIntKey1().intValue();
-                    DataSet ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                    DataSet ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
                     if (null != ds)
                     {
                         TableInfo datasetTable = ds.getTableInfo(getUser());
@@ -428,15 +426,11 @@ public class DatasetController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                Study study = getStudy();
-                root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Audit Log", new ActionURL("audit","begin", getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM,1));
-                root.addChild("Dataset Entry Detail");
-                return root;
-            }
-            catch (ServletException se) {throw UnexpectedException.wrap(se);}
+            Study study = getStudyThrowIfNull();
+            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+            root.addChild("Audit Log", new ActionURL("audit","begin", getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM,1));
+            root.addChild("Dataset Entry Detail");
+            return root;
         }
     }
 
@@ -445,7 +439,7 @@ public class DatasetController extends BaseStudyController
     {
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<DatasetDeleteForm>(getStudy(), "bulkDatasetDelete.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -463,11 +457,13 @@ public class DatasetController extends BaseStudyController
 
             if (datasetIds == null)
                 return false;
-            
+
+            StudyImpl study = getStudyThrowIfNull();
+
             // Loop over each dataset, transacting per dataset to keep from locking out other users
             for (int datasetId : datasetIds)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
                 if (def == null)
                     continue; // It's already been deleted; ignore it. User likely double-clicked.
 
@@ -475,7 +471,7 @@ public class DatasetController extends BaseStudyController
                 try
                 {
                     scope.ensureTransaction();
-                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def, false);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), def, false);
                     scope.commitTransaction();
                     countDeleted++;
                 }
@@ -486,7 +482,7 @@ public class DatasetController extends BaseStudyController
             }
 
             if (countDeleted > 0)
-                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser(), Collections.<DataSetDefinition>emptySet());
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.<DataSetDefinition>emptySet());
 
             return true;
         }
@@ -505,16 +501,16 @@ public class DatasetController extends BaseStudyController
         {
             Map<String,String> props = new HashMap<String,String>();
 
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             DataSet def = study.getDataSet(form.getDatasetId());
             if (null == def)
                 throw new NotFoundException("Invalid dataset id");
 
             props.put("typeURI", def.getTypeURI());
 
-            props.put("timepointType", getStudy().getTimepointType().toString());
+            props.put("timepointType", study.getTimepointType().toString());
 
-            props.put("subjectColumnName", getStudy().getSubjectColumnName());
+            props.put("subjectColumnName", study.getSubjectColumnName());
 
             // Cancel should delete the dataset
             String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
@@ -545,15 +541,10 @@ public class DatasetController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                Study study = getStudy();
-                _appendManageStudy(root);
-                root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
-                root.addChild("Define Dataset from File");
-                return root;
-            }
-            catch (ServletException se) {throw UnexpectedException.wrap(se);}
+            _appendManageStudy(root);
+            root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
+            root.addChild("Define Dataset from File");
+            return root;
         }
     }
 

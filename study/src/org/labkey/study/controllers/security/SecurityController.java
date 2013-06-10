@@ -32,7 +32,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -66,7 +65,7 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("studySecurity"));
-            StudyImpl study = BaseStudyController.getStudy(false, getContainer());
+            StudyImpl study = BaseStudyController.getStudyRedirectIfNull(getContainer());
             return new Overview(study);
         }
 
@@ -85,7 +84,7 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Study study = BaseStudyController.getStudy(false, getContainer());
+            Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             HttpServletRequest request = getViewContext().getRequest();
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
             HashSet<Integer> set = new HashSet<Integer>(groups.length*2);
@@ -161,7 +160,7 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Study study = BaseStudyController.getStudy(false, getContainer());
+            Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
             HashSet<Integer> groupsInProject = new HashSet<Integer>(groups.length*2);
             for (Group g : groups)
@@ -277,7 +276,7 @@ public class SecurityController extends SpringActionController
         {
             if (TAB_STUDY.equals(tabId))
             {
-                StudyImpl study = BaseStudyController.getStudy(false, getViewContext().getContainer());
+                StudyImpl study = BaseStudyController.getStudyRedirectIfNull(getViewContext().getContainer());
                 return new Overview(study, getViewContext().getActionURL());
             }
             else
@@ -375,7 +374,7 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                Study study = BaseStudyController.getStudy(false, getContainer());
+                Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
                 root.addChild(study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
 
                 if (getUser().isAdministrator())
@@ -416,21 +415,14 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(StudySecurityForm form, BindException errors) throws Exception
         {
-            try
+            StudyImpl study = BaseStudyController.getStudy(getContainer());
+            if (study != null && form.getSecurityType() != study.getSecurityType())
             {
-                StudyImpl study = BaseStudyController.getStudy(false, getContainer());
-                if (study != null && form.getSecurityType() != study.getSecurityType())
-                {
-                    StudyImpl updated = study.createMutable();
-                    updated.setSecurityType(form.getSecurityType());
-                    StudyManager.getInstance().updateStudy(getUser(), updated);
-                }
-                return true;
+                StudyImpl updated = study.createMutable();
+                updated.setSecurityType(form.getSecurityType());
+                StudyManager.getInstance().updateStudy(getUser(), updated);
             }
-            catch (RedirectException re)
-            {
-                return true;
-            }
+            return true;
         }
 
         public ActionURL getSuccessURL(StudySecurityForm studySecurityForm)
@@ -565,15 +557,10 @@ public class SecurityController extends SpringActionController
 
     public static class StudySecurityViewFactory implements SecurityManager.ViewFactory
     {
-        public HttpView createView(ViewContext context) throws ServletException
+        public HttpView createView(ViewContext context)
         {
-            try{
-                if (BaseStudyController.getStudy(false, context.getContainer()) != null)
-                    return new StudySecurityPermissionsView();
-            }
-            catch (RedirectException re){
-                return null;
-            }
+            if (null != BaseStudyController.getStudy(context.getContainer()))
+                return new StudySecurityPermissionsView();
             return null;
         }
     }

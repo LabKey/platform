@@ -378,7 +378,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     protected StudyImpl getStudy() throws ServletException
     {
         if (null == _study)
-            _study = BaseStudyController.getStudy(false, getViewContext().getContainer());
+            _study = BaseStudyController.getStudyRedirectIfNull(getViewContext().getContainer());
         return _study;
     }
 

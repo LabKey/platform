@@ -27,7 +27,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
@@ -109,7 +108,7 @@ public class StudyPropertiesController extends BaseStudyController
 
             Map<String, Object> dataMap = updateForm.getTypedColumns();
 
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyThrowIfNull();
 
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
@@ -148,15 +147,9 @@ public class StudyPropertiesController extends BaseStudyController
 
         protected StudyPropertiesTable getTableInfo()
         {
-            try
-            {
-                StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getUser(), true);
-                return new StudyPropertiesTable(schema);
-            }
-            catch (ServletException se)
-            {
-                throw UnexpectedException.wrap(se);
-            }
+            StudyImpl study = getStudyThrowIfNull();
+            StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
+            return new StudyPropertiesTable(schema);
         }
     }
 }

@@ -139,9 +139,9 @@ public class SpecimenUtils
         return _controller.getViewContext().getUser();
     }
 
-    private Study getStudy() throws ServletException
+    private Study getStudy() throws IllegalStateException
     {
-        return _controller.getStudy();
+        return _controller.getStudyThrowIfNull();
     }
 
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException, SQLException

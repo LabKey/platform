@@ -503,13 +503,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public void validateForm(BrowseGroupsForm browseGroupsForm, Errors errors)
         {
-            try{
-                _study = BaseStudyController.getStudy(false, getContainer());
-             }
-            catch(ServletException e){
-                    errors.reject(ERROR_MSG, "Cannot be accessed from a non-study");
-             }
-
+            _study = getStudy(getContainer());
             if (_study == null)
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");
         }
@@ -822,13 +816,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public void validateForm(GroupsForm groupsForm, Errors errors)
         {
-            try{
-                _study = BaseStudyController.getStudy(false, getContainer());
-            }
-            catch(ServletException e){
-                errors.reject(ERROR_MSG, "Cannot be accessed from a non-study");
-            }
-
+            _study = getStudy(getContainer());
             if (_study == null)
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");
         }

@@ -37,7 +37,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
@@ -150,7 +149,7 @@ public class ReportsController extends BaseStudyController
         private Study _study;
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            _study = getStudy(true);
+            _study = getStudy();
             return StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null);
         }
 
@@ -206,7 +205,7 @@ public class ReportsController extends BaseStudyController
             {
                 final ViewContext context = getViewContext();
                 final UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-                final Study study = BaseStudyController.getStudy(false, context.getContainer());
+                final Study study = getStudyRedirectIfNull(context.getContainer());
                 QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), study.getContainer(), "study", defName);
                 if (qd == null)
                     qd = schema.getQueryDefForTable(defName);
@@ -233,7 +232,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(StudyManageReportsBean form, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("manageReportsAndViews"));
-            StudyJspView<StudyManageReportsBean> view = new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", form, errors);
+            StudyJspView<StudyManageReportsBean> view = new StudyJspView<>(getStudyRedirectIfNull(), "manageViews.jsp", form, errors);
 
             view.setTitle("Manage Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
@@ -434,7 +433,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
+            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudyRedirectIfNull(), true);
 
             if (report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY) == null)
             {
@@ -458,8 +457,9 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
         {
+            StudyImpl study = getStudyRedirectIfNull();
             setHelpTopic(new HelpTopic("enrollmentView"));
-            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
+            Report report = EnrollmentReport.getEnrollmentReport(getUser(), study, true);
             final ReportDescriptor descriptor = report.getDescriptor();
 
             if (form.getDatasetId() != null)
@@ -480,11 +480,11 @@ public class ReportsController extends BaseStudyController
             form.setSequenceNum(sequenceNum);
 
             DataPickerBean bean = new DataPickerBean(
-                    getStudy(), form,
+                    study, form,
                     "Choose the form and column to use for the enrollment view.",
                     PropertyType.DATE_TIME);
             bean.pickColumn = false;
-            return new JspView<DataPickerBean>("/org/labkey/study/view/columnPicker.jsp", bean);
+            return new JspView<>("/org/labkey/study/view/columnPicker.jsp", bean);
         }
 
         public void validateCommand(ColumnPickerForm target, Errors errors)
@@ -609,7 +609,8 @@ public class ReportsController extends BaseStudyController
                 if (report instanceof StudyQueryReport)
                 {
                     // add the dataset id
-                    DataSet def = StudyManager.getInstance().getDatasetDefinitionByQueryName(getStudy(), form.getQueryName());
+                    Study study = getStudyThrowIfNull();
+                    DataSet def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, form.getQueryName());
                     if (def != null)
                     {
                         report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDataSetId()));
@@ -966,7 +967,7 @@ public class ReportsController extends BaseStudyController
         {
             setHelpTopic(new HelpTopic("exportExcel"));
 
-            return new JspView<StudyImpl>("/org/labkey/study/reports/configureExportExcel.jsp", getStudy());
+            return new JspView<>("/org/labkey/study/reports/configureExportExcel.jsp", getStudyRedirectIfNull());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -997,7 +998,7 @@ public class ReportsController extends BaseStudyController
             }
 
             User user = getUser();
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
 
             report.runExportToExcel(getViewContext(), study, user, errors);
             return null;
@@ -1062,9 +1063,9 @@ public class ReportsController extends BaseStudyController
         private DataSetDefinition[] _datasets;
         private List<VisitImpl> _visits;
 
-        public CreateCrosstabBean(ViewContext context) throws ServletException
+        public CreateCrosstabBean(ViewContext context) throws IllegalStateException
         {
-            Study study = BaseStudyController.getStudy(false, context.getContainer());
+            Study study = getStudyThrowIfNull(context.getContainer());
             _datasets = StudyManager.getInstance().getDataSetDefinitions(study);
             _visits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
         }
@@ -1089,7 +1090,7 @@ public class ReportsController extends BaseStudyController
         private ActionURL _srcURL;
         private Map<String, DataSetDefinition> _datasetMap;
 
-        public CreateQueryReportBean(ViewContext context, String queryName) throws ServletException
+        public CreateQueryReportBean(ViewContext context, String queryName) throws IllegalStateException
         {
             _tableAndQueryNames = getTableAndQueryNames(context);
             _container = context.getContainer();
@@ -1098,9 +1099,9 @@ public class ReportsController extends BaseStudyController
             _srcURL = context.getActionURL();
         }
 
-        private List<String> getTableAndQueryNames(ViewContext context) throws ServletException
+        private List<String> getTableAndQueryNames(ViewContext context) throws IllegalStateException
         {
-            StudyImpl study = BaseStudyController.getStudy(false, context.getContainer());
+            StudyImpl study = getStudyThrowIfNull(context.getContainer());
             StudyQuerySchema studySchema = new StudyQuerySchema(study, context.getUser(), true);
             return studySchema.getTableAndQueryNames(true);
         }
@@ -1110,12 +1111,12 @@ public class ReportsController extends BaseStudyController
             return _tableAndQueryNames;
         }
 
-        public Map<String, DataSetDefinition> getDatasetDefinitions() throws ServletException
+        public Map<String, DataSetDefinition> getDatasetDefinitions() throws IllegalStateException
         {
             if (_datasetMap == null)
             {
-                _datasetMap = new HashMap<String, DataSetDefinition>();
-                final Study study = BaseStudyController.getStudy(false, _container);
+                _datasetMap = new HashMap<>();
+                final Study study = getStudyThrowIfNull(_container);
 
                 for (DataSetDefinition def : StudyManager.getInstance().getDataSetDefinitions(study))
                 {
@@ -1285,7 +1286,7 @@ public class ReportsController extends BaseStudyController
             out.write("'></td>");
 
             Container c = getViewContext().getContainer();
-            Study study = BaseStudyController.getStudy(false, c);
+            Study study = getStudyThrowIfNull(c);
             DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
             out.write("<td>Add as Custom View For: ");
             out.write("<select name=\"showWithDataset\">");
@@ -1660,7 +1661,7 @@ public class ReportsController extends BaseStudyController
             props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
             _datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(BaseStudyController.getStudy(false, getContainer()), _datasetId);
+            DataSet def = StudyManager.getInstance().getDataSetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
             if (def != null)
                 props.put("datasetId", String.valueOf(_datasetId));
 
@@ -1791,21 +1792,14 @@ public class ReportsController extends BaseStudyController
 
         protected DataSet getDataSetDefinition()
         {
-            try
+            if (_def == null && _report != null)
             {
-                if (_def == null && _report != null)
+                final Study study = getStudy(getContainer());
+                if (study != null)
                 {
-                    final Study study = BaseStudyController.getStudy(false, getContainer());
-                    if (study != null)
-                    {
-                        _def = StudyManager.getInstance().
-                                getDatasetDefinitionByQueryName(study, _report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
-                    }
+                    _def = StudyManager.getInstance().
+                            getDatasetDefinitionByQueryName(study, _report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
                 }
-            }
-            catch(ServletException e)
-            {
-
             }
             return _def;
         }
@@ -1901,11 +1895,11 @@ public class ReportsController extends BaseStudyController
             VisitImpl visit = null;
 
             if (visitRowId > 0)
-                visit = StudyManager.getInstance().getVisitForRowId(getStudy(), visitRowId);
+                visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
 
             if (datasetId > 0)
             {
-                DataSet dataSet = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                DataSet dataSet = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
                 if (dataSet != null)
                 {
@@ -1969,14 +1963,9 @@ public class ReportsController extends BaseStudyController
                 throw new RuntimeException(e);
             }
 
-            try{
-                if (BaseStudyController.getStudy(false, ctx.getContainer()) == null || !RReport.class.isAssignableFrom(report.getClass()))
-                    return null;
-            }
-            catch (RedirectException re)
-            {
+            if (null == getStudy(ctx.getContainer()) || !RReport.class.isAssignableFrom(report.getClass()))
                 return null;
-            }
+
             boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
 
             StringBuilder html = new StringBuilder();

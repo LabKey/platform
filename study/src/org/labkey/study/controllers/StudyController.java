@@ -62,7 +62,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
@@ -229,7 +228,7 @@ public class StudyController extends BaseStudyController
         private Study _study;
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            _study = getStudy(true);
+            _study = getStudy();
 
             WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), null);
             WebPartView right = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null);
@@ -269,7 +268,7 @@ public class StudyController extends BaseStudyController
         private DataSet _def;
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<ImportTypeForm>(getStudy(false), "importDataType.jsp", form, errors);
+            return new StudyJspView<ImportTypeForm>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
         }
 
         public void validateCommand(ImportTypeForm form, Errors errors)
@@ -303,9 +302,9 @@ public class StudyController extends BaseStudyController
             Integer datasetId = form.getDataSetId();
 
             if (form.autoDatasetId)
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, null, false, null);
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, null, false, null);
             else
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, false, null);
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, datasetId, false, null);
 
 
             if (_def != null)
@@ -365,7 +364,7 @@ public class StudyController extends BaseStudyController
         private DataSet _def;
         public ModelAndView getView(DatasetForm form, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             DataSetDefinition def = study.getDataSet(form.getDatasetId());
             _def = def;
             if (null == def)
@@ -414,7 +413,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
+            _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
             if (_def == null)
             {
                 throw new NotFoundException("Invalid Dataset ID");
@@ -493,7 +492,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(OverviewForm form, BindException errors) throws Exception
         {
-            _study = getStudy();
+            _study = getStudyRedirectIfNull();
             OverviewBean bean = new OverviewBean();
             bean.study = _study;
             bean.showAll = "1".equals(getViewContext().get("showAll"));
@@ -512,7 +511,7 @@ public class StudyController extends BaseStudyController
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
             bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
 
-            return new StudyJspView<OverviewBean>(getStudy(), "overview.jsp", bean, errors);
+            return new StudyJspView<>(_study, "overview.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -621,7 +620,7 @@ public class StudyController extends BaseStudyController
             }
 
             int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
 
             if (def != null)
             {
@@ -706,7 +705,7 @@ public class StudyController extends BaseStudyController
                     try
                     {
                         int id = NumberUtils.toInt(String.valueOf(datasetKeyObject), 0);
-                        _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), id);
+                        _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), id);
                     }
                     catch (ConversionException x)
                     {
@@ -717,7 +716,7 @@ public class StudyController extends BaseStudyController
                 {
                     String entityId = (String)getViewContext().get("entityId");
                     if (null != entityId)
-                        _def = StudyManager.getInstance().getDataSetDefinitionByEntityId(getStudy(), entityId);
+                        _def = StudyManager.getInstance().getDataSetDefinitionByEntityId(getStudyRedirectIfNull(), entityId);
                 }
             }
             if (null == _def)
@@ -758,7 +757,7 @@ public class StudyController extends BaseStudyController
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
 
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(getContainer()))
@@ -780,7 +779,7 @@ public class StudyController extends BaseStudyController
             if (_visitId != 0)
             {
                 assert study.getTimepointType() != TimepointType.CONTINUOUS;
-                visit = StudyManager.getInstance().getVisitForRowId(getStudy(), _visitId);
+                visit = StudyManager.getInstance().getVisitForRowId(study, _visitId);
                 if (null == visit)
                     throw new NotFoundException();
             }
@@ -993,8 +992,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
         {
             _form = form;
-            _study = getStudy();
-            if (null == _form.getParticipantId() || null == _study)
+            _study = getStudyRedirectIfNull();
+            if (null == _form.getParticipantId())
                 throw new NotFoundException();
             getPageConfig().setTemplate(PageConfig.Template.Print);
             getPageConfig().setNoIndex();
@@ -1021,7 +1020,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             _bean = form;
             ActionURL previousParticipantURL = null;
             ActionURL nextParticipantURL = null;
@@ -1118,7 +1117,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "uploadVisitMap.jsp", null, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "uploadVisitMap.jsp", null, errors);
         }
 
         public void validateCommand(TSVForm target, Errors errors)
@@ -1129,7 +1128,7 @@ public class StudyController extends BaseStudyController
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
-            if (!importer.process(getUser(), getStudy(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg, _log))
+            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -1155,7 +1154,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (null != getStudy(true))
+            if (null != getStudy())
             {
                 BeginAction action = (BeginAction)initAction(this, new BeginAction());
                 return action.getView(form, errors);
@@ -1198,7 +1197,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            createStudy(getStudy(true), getContainer(), getUser(), form);
+            createStudy(getStudy(), getContainer(), getUser(), form);
             updateRepositorySettings(getContainer(), form.isSimpleRepository());
             return true;
         }
@@ -1235,7 +1234,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            createStudy(getStudy(true), getContainer(), getUser(), form);
+            createStudy(getStudy(), getContainer(), getUser(), form);
             updateRepositorySettings(getContainer(), form.isSimpleRepository());
             return true;
         }
@@ -1288,9 +1287,9 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StudyPropertiesQueryView propView = new StudyPropertiesQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
+            StudyPropertiesQueryView propView = new StudyPropertiesQueryView(getUser(), getStudyRedirectIfNull(), HttpView.currentContext(), true);
 
-            return new StudyJspView<StudyPropertiesQueryView>(getStudy(true), "manageStudy.jsp", propView, errors);
+            return new StudyJspView<>(getStudy(), "manageStudy.jsp", propView, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1310,7 +1309,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(DeleteStudyForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "confirmDeleteStudy.jsp", null, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "confirmDeleteStudy.jsp", null, errors);
         }
 
         public boolean handlePost(DeleteStudyForm form, BindException errors) throws Exception
@@ -1371,7 +1370,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(RemoveProtocolDocumentForm removeProtocolDocumentForm, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyThrowIfNull();
             study.removeProtocolDocument(removeProtocolDocumentForm.getName(), getUser());
             return true;
         }
@@ -1399,7 +1398,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(TableViewForm form, BindException errors) throws Exception
         {
-            Study study = getStudy(true);
+            Study study = getStudy();
             if (null == study)
                 throw new RedirectException(new ActionURL(CreateStudyAction.class, getContainer()));
             return new StudyJspView<Study>(getStudy(), "manageStudyPropertiesExt.jsp", study, null);
@@ -1429,7 +1428,7 @@ public class StudyController extends BaseStudyController
             {
                 qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null);
                 List<AttachmentFile> files = getAttachmentFileList();
-                getStudy(true).attachProtocolDocument(files, getUser());
+                getStudyThrowIfNull().attachProtocolDocument(files, getUser());
             }
             catch (BatchValidationException x)
             {
@@ -1464,7 +1463,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
-            Study study = getStudy(true);
+            StudyImpl study = getStudy();
             if (null == study)
             {
                 CreateStudyAction action = (CreateStudyAction)initAction(this, new CreateStudyAction());
@@ -1473,12 +1472,12 @@ public class StudyController extends BaseStudyController
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
 
-            return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
+            return new StudyJspView<>(study, _jspName(study), form, errors);
         }
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy().createMutable();
+            StudyImpl study = getStudyThrowIfNull().createMutable();
             study.setStartDate(form.getStartDate());
             study.setDefaultTimepointDuration(form.getDefaultTimepointDuration());
             StudyManager.getInstance().updateStudy(getUser(), study);
@@ -1497,10 +1496,10 @@ public class StudyController extends BaseStudyController
             return root;
         }
 
-        private String _jspName() throws ServletException
+        private String _jspName(Study study) throws ServletException
         {
-            assert getStudy().getTimepointType() != TimepointType.CONTINUOUS;
-            return getStudy().getTimepointType() == TimepointType.DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
+            assert study.getTimepointType() != TimepointType.CONTINUOUS;
+            return study.getTimepointType() == TimepointType.DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
         }
     }
 
@@ -1513,7 +1512,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ManageTypesForm manageTypesForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<ManageTypesAction>(getStudy(), "manageTypes.jsp", this, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageTypes.jsp", this, errors);
         }
 
         public boolean handlePost(ManageTypesForm form, BindException errors) throws Exception
@@ -1595,7 +1594,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<StudyImpl>(getStudy(), "manageLocations.jsp", getStudy(), errors);
+            ModelAndView view = new StudyJspView<>(getStudyRedirectIfNull(), "manageLocations.jsp", getStudyRedirectIfNull(), errors);
             return view;
         }
 
@@ -1610,7 +1609,7 @@ public class StudyController extends BaseStudyController
                     labelLookup.put(ids[i], labels[i]);
 
                 boolean emptyLabel = false;
-                for (LocationImpl location : getStudy().getLocations())
+                for (LocationImpl location : getStudyThrowIfNull().getLocations())
                 {
                     String label = labelLookup.get(location.getRowId());
                     if (label == null)
@@ -1675,7 +1674,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                StudyImpl study = getStudy();
+                StudyImpl study = getStudyRedirectIfNull();
                 if (study.getTimepointType() == TimepointType.CONTINUOUS)
                     errors.reject(null, "Unsupported operation for continuous date study");
 
@@ -1704,7 +1703,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
 
@@ -1717,7 +1716,7 @@ public class StudyController extends BaseStudyController
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
 
-            return new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit"), visitSummary, errors);
+            return new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit", study), visitSummary, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -1730,7 +1729,7 @@ public class StudyController extends BaseStudyController
             postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
-            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(getStudy()).getVisitSequenceMap();
+            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(getStudyThrowIfNull()).getVisitSequenceMap();
             boolean validRange = true;
             // make sure there is no overlapping visit
             for (VisitImpl v : visits.values())
@@ -1829,14 +1828,14 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
-            Study study = getStudy();
+            StudyImpl study = getStudyThrowIfNull();
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
             VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
             {
-                StudyManager.getInstance().deleteVisit(getStudy(), visit, getUser());
+                StudyManager.getInstance().deleteVisit(study, visit, getUser());
                 return true;
             }
             throw new NotFoundException();
@@ -1855,7 +1854,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
@@ -1881,7 +1880,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                StudyImpl study = getStudy();
+                StudyImpl study = getStudyRedirectIfNull();
                 if (study.getTimepointType() == TimepointType.CONTINUOUS)
                     errors.reject(null, "Unsupported operation for continuous date study");
 
@@ -1909,19 +1908,19 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
 
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
-            return new StudyJspView<VisitForm>(study, getVisitJsp("create"), form, errors);
+            return new StudyJspView<VisitForm>(study, getVisitJsp("create", study), form, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
         {
             VisitImpl visit = form.getBean();
             if (visit != null)
-                StudyManager.getInstance().createVisit(getStudy(), getUser(), visit);
+                StudyManager.getInstance().createVisit(getStudyThrowIfNull(), getUser(), visit);
             return true;
         }
 
@@ -1950,7 +1949,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
 
             if (_def == null)
             {
@@ -1963,7 +1962,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DatasetForm form, BindException errors) throws Exception
         {
-            DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), form.getDatasetId());
             DataSetDefinition modified = original.createMutable();
             if (null != form.getVisitRowIds())
             {
@@ -1991,15 +1990,8 @@ public class StudyController extends BaseStudyController
             _appendNavTrailDatasetAdmin(root);
             if (_def != null)
             {
-                try
-                {
-                    VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
-                    return root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
-                }
-                catch (ServletException se)
-                {
-                    throw new UnexpectedException(se);
-                }
+                VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudyThrowIfNull());
+                return root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
             }
             return root;
         }
@@ -2010,7 +2002,7 @@ public class StudyController extends BaseStudyController
     public class ImportAction extends AbstractQueryImportAction<ImportDataSetForm>
     {
         ImportDataSetForm _form = null;
-        Study _study = null;
+        StudyImpl _study = null;
         DataSetDefinition _def = null;
         boolean isAliasImport = false;
 
@@ -2023,13 +2015,11 @@ public class StudyController extends BaseStudyController
         protected void initRequest(ImportDataSetForm form) throws ServletException
         {
             _form = form;
-            _study = getStudy();
+            _study = getStudyRedirectIfNull();
 
-            if((getStudy().getParticipantAliasDatasetId() != null) && (getStudy().getParticipantAliasDatasetId() == form.getDatasetId())){
+            if((_study.getParticipantAliasDatasetId() != null) && (_study.getParticipantAliasDatasetId() == form.getDatasetId())){
                 super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
             }
-            if (null == _study)
-                throw new NotFoundException("Container does not contain a study.");
 
             _def = StudyManager.getInstance().getDataSetDefinition(_study, form.getDatasetId());
             if (null == _def)
@@ -2135,7 +2125,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkImportTypesForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<BulkImportTypesForm>(getStudy(), "bulkImportDataTypes.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkImportDataTypes.jsp", form, errors);
         }
 
         @SuppressWarnings("unchecked")
@@ -2153,8 +2143,8 @@ public class StudyController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            SchemaReader reader = new SchemaTsvReader(getStudy(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
-            return StudyManager.getInstance().importDatasetSchemas(getStudy(), getUser(), reader, errors);
+            SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
+            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)
@@ -2243,7 +2233,7 @@ public class StudyController extends BaseStudyController
             if (form.getId() != 0)
             {
                 filter.addCondition(DataSetDefinition.DATASETKEY, form.getId());
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
+                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
                 if (dsd != null)
                     _datasetLabel = dsd.getLabel();
             }
@@ -2299,7 +2289,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            final StudyImpl study = getStudy();
+            final StudyImpl study = getStudyRedirectIfNull();
             final ViewContext context = getViewContext();
 
             VBox view = new VBox();
@@ -2365,7 +2355,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
-            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), form.getDatasetId());
             if (def == null)
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
 
@@ -2480,7 +2470,7 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyThrowIfNull();
             DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
             if (null == dataset)
                 throw new NotFoundException();
@@ -2615,7 +2605,7 @@ public class StudyController extends BaseStudyController
             }
         }
         if (queryView instanceof StudyQueryView && null != ((StudyQueryView)queryView).getCohortFilter())
-            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(getStudy(), base, null);
+            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(getStudyThrowIfNull(), base, null);
 
         for (DisplayColumn col : columns)
         {
@@ -2648,7 +2638,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             AttachmentService.get().download(getViewContext().getResponse(), study.getProtocolDocumentAttachmentParent(), form.getName());
             return null;
         }
@@ -3284,7 +3274,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(getStudy(), manageQCStatesForm.getReturnUrl()), errors);
+                    new ManageQCStatesBean(getStudyRedirectIfNull(), manageQCStatesForm.getReturnUrl()), errors);
         }
 
         public void validateCommand(ManageQCStatesForm form, Errors errors)
@@ -3345,7 +3335,7 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            updateQcState(getStudy(), getUser(), form);
+            updateQcState(getStudyThrowIfNull(), getUser(), form);
 
             return true;
         }
@@ -3539,7 +3529,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             _datasetId = updateQCForm.getDatasetId();
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             if (def == null)
@@ -3631,16 +3621,9 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
     {
-        protected BaseRemoteService createService()
+        protected BaseRemoteService createService() throws IllegalStateException
         {
-            try
-            {
-                return new DatasetServiceImpl(getViewContext(), getStudy(), StudyManager.getInstance());
-            }
-            catch (ServletException se)
-            {
-                throw new UnexpectedException(se);
-            }
+            return new DatasetServiceImpl(getViewContext(), getStudyThrowIfNull(), StudyManager.getInstance());
         }
     }
 
@@ -3712,12 +3695,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(AdminPermission.class)
     public class ManageUndefinedTypesAction extends SimpleViewAction
     {
-        Study study;
+        StudyImpl study;
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            study = getStudy();
-            return new StudyJspView<Object>(getStudy(), "manageUndefinedTypes.jsp", o, errors);
+            study = getStudyRedirectIfNull();
+            return new StudyJspView<>(study, "manageUndefinedTypes.jsp", o, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3732,7 +3715,7 @@ public class StudyController extends BaseStudyController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyThrowIfNull();
             ViewContext context = getViewContext();
 
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
@@ -3815,7 +3798,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            study = getStudy();
+            study = getStudyRedirectIfNull();
 
 
             String id = getViewContext().getRequest().getParameter(DataSetDefinition.DATASETKEY);
@@ -3897,7 +3880,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException();
             }
 
-            File lockFile = StudyPipeline.lockForDataset(getStudy(), definitionFile);
+            File lockFile = StudyPipeline.lockForDataset(getStudyRedirectIfNull(), definitionFile);
 
             if (!definitionFile.canRead())
                 errors.reject("importStudyBatch", "Can't read dataset file: " + path);
@@ -3905,7 +3888,7 @@ public class StudyController extends BaseStudyController
                 errors.reject("importStudyBatch", "Lock file exists.  Delete file before running import. " + lockFile.getName());
 
             VirtualFile datasetsDir = new FileSystemFile(definitionFile.getParentFile());
-            DatasetFileReader reader = new DatasetFileReader(datasetsDir, definitionFile.getName(), getStudy());
+            DatasetFileReader reader = new DatasetFileReader(datasetsDir, definitionFile.getName(), getStudyRedirectIfNull());
 
             if (!errors.hasErrors())
             {
@@ -3916,14 +3899,14 @@ public class StudyController extends BaseStudyController
             }
 
             return new StudyJspView<ImportStudyBatchBean>(
-                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
+                    getStudyRedirectIfNull(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             try
             {
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+                root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
                 root.addChild("Import Study Batch - " + path);
                 return root;
             }
@@ -3939,7 +3922,7 @@ public class StudyController extends BaseStudyController
     {
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             Container c = getContainer();
             String path = form.getPath();
             File f = null;
@@ -4105,7 +4088,7 @@ public class StudyController extends BaseStudyController
 
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
             {
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
                 if (null == dataset)
                 {
                     throw new NotFoundException();
@@ -4145,7 +4128,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new StudyJspView<StudyImpl>(getStudy(), "typeNotFound.jsp", null, errors);
+            return new StudyJspView<StudyImpl>(getStudyRedirectIfNull(), "typeNotFound.jsp", null, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4159,7 +4142,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser(), getStudy().getDataSets());
+            StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDataSets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
@@ -4186,7 +4169,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(VisitReorderForm reorderForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "visitOrder.jsp", reorderForm, errors);
+            return new StudyJspView<Object>(getStudyRedirectIfNull(), "visitOrder.jsp", reorderForm, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4227,7 +4210,7 @@ public class StudyController extends BaseStudyController
         {
             Map<Integer, Integer> displayOrder = null;
             Map<Integer, Integer> chronologicalOrder = null;
-            List<VisitImpl> visits = StudyManager.getInstance().getVisits(getStudy(), Visit.Order.SEQUENCE_NUM);
+            List<VisitImpl> visits = StudyManager.getInstance().getVisits(getStudyThrowIfNull(), Visit.Order.SEQUENCE_NUM);
 
             if (form.isExplicitDisplayOrder())
                 displayOrder = getVisitIdToOrderIndex(form.getDisplayOrder());
@@ -4260,8 +4243,8 @@ public class StudyController extends BaseStudyController
             }
 
             // Changing visit order can cause cohort assignments to change when advanced cohort tracking is enabled:
-            if (getStudy().isAdvancedCohorts())
-                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
+            if (getStudyThrowIfNull().isAdvancedCohorts())
+                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudyThrowIfNull());
             return true;
         }
 
@@ -4276,7 +4259,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "visitVisibility.jsp", visitPropertyForm, errors);
+            return new StudyJspView<Object>(getStudyRedirectIfNull(), "visitVisibility.jsp", visitPropertyForm, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4301,7 +4284,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("Arrays must be the same length.");
             for (int i = 0; i < allIds.length; i++)
             {
-                VisitImpl def = StudyManager.getInstance().getVisitForRowId(getStudy(), allIds[i]);
+                VisitImpl def = StudyManager.getInstance().getVisitForRowId(getStudyThrowIfNull(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String label = (i < labels.length) ? labels[i] : null;
                 String typeStr = (i < typeStrs.length) ? typeStrs[i] : null;
@@ -4335,7 +4318,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
             Map<Integer, DatasetVisibilityData> bean = new HashMap<Integer,DatasetVisibilityData>();
-            for (DataSet def : getStudy().getDataSets())
+            for (DataSet def : getStudyRedirectIfNull().getDataSets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4381,7 +4364,7 @@ public class StudyController extends BaseStudyController
                 }
             }
             return new StudyJspView<Map<Integer,StudyController.DatasetVisibilityData>>(
-                    getStudy(), "dataSetVisibility.jsp", bean, errors);
+                    getStudyRedirectIfNull(), "dataSetVisibility.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4431,7 +4414,7 @@ public class StudyController extends BaseStudyController
             String[] statuses = form.getStatuses();
             for (int i = 0; i < allIds.length; i++)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), allIds[i]);
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String[] extraData = form.getExtraData();
                 String category = extraData == null ? null : extraData[i];
@@ -4481,7 +4464,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "dataSetDisplayOrder.jsp", form, errors);
+            return new StudyJspView<Object>(getStudyRedirectIfNull(), "dataSetDisplayOrder.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4506,12 +4489,12 @@ public class StudyController extends BaseStudyController
                 for (String id : ids)
                     orderedIds.add(Integer.parseInt(id));
 
-                DatasetReorderer reorderer = new DatasetReorderer(getStudy(), getUser());
+                DatasetReorderer reorderer = new DatasetReorderer(getStudyThrowIfNull(), getUser());
                 reorderer.reorderDatasets(orderedIds);
             }
             else if (form.isResetOrder())
             {
-                DatasetReorderer reorderer = new DatasetReorderer(getStudy(), getUser());
+                DatasetReorderer reorderer = new DatasetReorderer(getStudyThrowIfNull(), getUser());
                 reorderer.resetOrder();
             }
 
@@ -4529,7 +4512,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
+            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
             if (null == ds)
                 redirectTypeNotFound(form.getId());
 
@@ -4537,7 +4520,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 scope.ensureTransaction();
-                StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds, true);
+                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, true);
                 scope.commitTransaction();
                 throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
             }
@@ -4679,7 +4662,7 @@ public class StudyController extends BaseStudyController
             // We know that the user is at least a folder admin - they must also be either a developer
             if (!(getUser().isDeveloper()))
                 throw new UnauthorizedException();
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
             {
@@ -4693,7 +4676,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(CustomizeParticipantViewForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyThrowIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view == null)
                 view = new CustomParticipantView();
@@ -4963,7 +4946,7 @@ public class StudyController extends BaseStudyController
             }
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
-                StudyImpl study = getStudy();
+                StudyImpl study = getStudyRedirectIfNull();
                 DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
 
                 ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
@@ -5156,7 +5139,7 @@ public class StudyController extends BaseStudyController
                 if (showDataset)
                 {
                     // create the GWT dataset designer
-                    StudyImpl study = getStudy();
+                    StudyImpl study = getStudyRedirectIfNull();
                     DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
 
                     if (dsDef == null)
@@ -5474,7 +5457,7 @@ public class StudyController extends BaseStudyController
     {
         try
         {
-            return StudyManager.getInstance().getVisitManager(getStudy()).getLabel();
+            return StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).getLabel();
         }
         catch (ServletException e)
         {
@@ -5487,7 +5470,7 @@ public class StudyController extends BaseStudyController
     {
         try
         {
-            return StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
+            return StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).getPluralLabel();
         }
         catch (ServletException e)
         {
@@ -5495,10 +5478,10 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private String getVisitJsp(String prefix) throws ServletException
+    private String getVisitJsp(String prefix, StudyImpl study) throws ServletException
     {
-        assert getStudy().getTimepointType() != TimepointType.CONTINUOUS;
-        return prefix + (getStudy().getTimepointType() == TimepointType.DATE ? "Timepoint" : "Visit") + ".jsp";
+        assert study.getTimepointType() != TimepointType.CONTINUOUS;
+        return prefix + (study.getTimepointType() == TimepointType.DATE ? "Timepoint" : "Visit") + ".jsp";
     }
 
     public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
@@ -6196,15 +6179,9 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                Study study = getStudy();
-                if (study != null)
-                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            }
-            catch (ServletException e)
-            {
-            }
+            Study study = getStudy();
+            if (study != null)
+                root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Samples");
             return root;
         }
@@ -6236,12 +6213,12 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<ReloadForm>(getStudy(), "manageReload.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageReload.jsp", form, errors);
         }
 
         public boolean handlePost(ReloadForm form, final BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyThrowIfNull();
 
             // If the "allow reload" state or the interval changes then update the study and initialize the timer
             if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()))
@@ -6515,7 +6492,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<ImportMappingBean>("/org/labkey/study/view/visitImportMapping.jsp", new ImportMappingBean(getStudy()));
+            return new JspView<>("/org/labkey/study/view/visitImportMapping.jsp", new ImportMappingBean(getStudyRedirectIfNull()));
         }
 
         @Override
@@ -6574,7 +6551,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(VisitAliasesForm form, BindException errors) throws Exception
         {
-            boolean hadCustomMapping = !StudyManager.getInstance().getCustomVisitImportMapping(getStudy()).isEmpty();
+            boolean hadCustomMapping = !StudyManager.getInstance().getCustomVisitImportMapping(getStudyThrowIfNull()).isEmpty();
 
             try
             {
@@ -6586,7 +6563,7 @@ public class StudyController extends BaseStudyController
                     return false;
                 }
 
-                StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv(), true));
+                StudyManager.getInstance().importVisitAliases(getStudyThrowIfNull(), getUser(), new TabLoader(form.getTsv(), true));
             }
             catch (SQLException e)
             {
@@ -6650,7 +6627,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().clearVisitAliases(getStudy());
+            StudyManager.getInstance().clearVisitAliases(getStudyThrowIfNull());
             // TODO: Change to audit log
             _log.info("The visit import custom mapping was cleared");
 
@@ -6682,7 +6659,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 _appendManageStudy(root);
-                root.addChild("Manage " + getStudy().getSubjectNounSingular() + " Groups");
+                root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
             }
             catch (ServletException e)
             {
@@ -6696,7 +6673,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
-            ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudy());
+            ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudyRedirectIfNull());
             return new JspView<ChangeAlternateIdsForm>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
         }
 
@@ -6705,7 +6682,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 _appendManageStudy(root);
-                String subjectNoun = getStudy().getSubjectNounSingular();
+                String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
                 root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
             }
             catch (ServletException e)
@@ -7862,7 +7839,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             // switch the dataset back to a placeholder type
-            Study study = getStudy(false, getContainer());
+            Study study = getStudy(getContainer());
             if (study != null)
             {
                 String expectationDataset = getViewContext().getActionURL().getParameter("expectationDataset");
@@ -8015,10 +7992,10 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(ChangeAlternateIdsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
             {
-                setAlternateIdProperties(getStudy(), form.getPrefix(), form.getNumDigits());
+                setAlternateIdProperties(study, form.getPrefix(), form.getNumDigits());
                 StudyManager.getInstance().clearAlternateParticipantIds(study);
                 response.put("success", true);
                 return response;
@@ -8072,10 +8049,10 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(MapAliasIdsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
             {
-                setAliasMappingProperties(getStudy(), form.getDataSetId(), form.getAliasColumn(), form.getSourceColumn());
+                setAliasMappingProperties(study, form.getDataSetId(), form.getAliasColumn(), form.getSourceColumn());
                 StudyManager.getInstance().clearAlternateParticipantIds(study);
                 response.put("success", true);
                 return response;
@@ -8175,7 +8152,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(ManageLocationTypesForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             form.setRepository(study.isAllowReqLocRepository());
             form.setClinic(study.isAllowReqLocClinic());
             form.setSal(study.isAllowReqLocSal());
@@ -8299,10 +8276,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            _study = getStudy();
-            if (_study == null)
-                throw new NotFoundException("No study exists in this folder.");
-
+            _study = getStudyThrowIfNull();
             initRequest(form);
             return getDefaultImportView(form, errors);
         }

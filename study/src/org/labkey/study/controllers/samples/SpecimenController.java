@@ -349,7 +349,7 @@ public class SpecimenController extends BaseStudyController
 
         protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            Study study = getStudyRedirectIfNull();
             Set<Pair<String, String>> ptidVisits = new HashSet<Pair<String, String>>();
             if (getFilterPds() != null)
             {
@@ -445,14 +445,13 @@ public class SpecimenController extends BaseStudyController
 
         protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
         {
-            if (getStudy() == null)
-                throw new NotFoundException("No study exists in this folder.");
+            StudyImpl study = getStudyRedirectIfNull();
 
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
             SpecimenHeaderBean bean = new SpecimenHeaderBean(getViewContext(), view);
             // Get last selected request
-            if (null != getStudy().getLastSpecimenRequest())
-                bean.setSelectedRequest(getStudy().getLastSpecimenRequest());
+            if (null != study.getLastSpecimenRequest())
+                bean.setSelectedRequest(study.getLastSpecimenRequest());
             JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
             return new VBox(header, view);
         }
@@ -478,7 +477,7 @@ public class SpecimenController extends BaseStudyController
             this(context, view, Collections.<Pair<String, String>>emptySet());
         }
 
-        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits) throws ServletException
+        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits) throws RuntimeException
         {
             Map<String, String[]> params = context.getRequest().getParameterMap();
 
@@ -487,7 +486,9 @@ public class SpecimenController extends BaseStudyController
             ActionURL otherView = context.cloneActionURL();
             otherView.deleteParameters();
 
-            StudyImpl study = BaseStudyController.getStudy(false, context.getContainer());
+            StudyImpl study = getStudy(context.getContainer());
+            if (null == study)
+                throw new NotFoundException("No study exists in this folder.");
             StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
 
             TableInfo otherTableInfo = schema.getTable(otherTable);
@@ -690,7 +691,7 @@ public class SpecimenController extends BaseStudyController
             vialHistoryView.setTitle("Vial History");
 
             VBox vbox = null;
-            if (getStudy().getRepositorySettings().isEnableRequests())
+            if (getStudyRedirectIfNull().getRepositorySettings().isEnableRequests())
             {
                 Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
                 SimpleFilter requestFilter;
@@ -1838,7 +1839,10 @@ public class SpecimenController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            getStudy().setLastSpecimenRequest(_sampleRequest.getRowId());
+            StudyImpl study = getStudy();
+            if (null == study)
+                throw new NotFoundException("No study exists in this folder.");
+            study.setLastSpecimenRequest(_sampleRequest.getRowId());
             return true;
         }
 
@@ -3336,7 +3340,7 @@ public class SpecimenController extends BaseStudyController
 
         public ReportConfigurationBean(ViewContext viewContext) throws ServletException
         {
-            Study study = BaseStudyController.getStudy(false, viewContext.getContainer());
+            Study study = getStudy(viewContext.getContainer());
             _viewContext = viewContext;
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
@@ -3365,7 +3369,7 @@ public class SpecimenController extends BaseStudyController
             _viewContext = singleFactory.getViewContext();
             assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
-            _hasReports = BaseStudyController.getStudy(false, _viewContext.getContainer()) != null && singleFactory.getReports().size() > 0;
+            _hasReports = getStudy(_viewContext.getContainer()) != null && singleFactory.getReports().size() > 0;
         }
 
         private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
@@ -3584,7 +3588,7 @@ public class SpecimenController extends BaseStudyController
             try
             {
                 Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
-                _participantVisitMap = generateParticipantVisitMap(samples, BaseStudyController.getStudy(false, context.getContainer()));
+                _participantVisitMap = generateParticipantVisitMap(samples, BaseStudyController.getStudyRedirectIfNull(context.getContainer()));
                 _mixedComments = false;
                 _mixedFlagState = false;
                 SpecimenComment prevComment = currentComments.get(samples.get(0));
@@ -4149,7 +4153,7 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<StudyImpl>("/org/labkey/study/view/samples/" + _jsp + ".jsp", getStudy());
+            return new JspView<>("/org/labkey/study/view/samples/" + _jsp + ".jsp", getStudyRedirectIfNull());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4820,8 +4824,8 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
+            List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudyRedirectIfNull().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
@@ -4933,7 +4937,7 @@ public class SpecimenController extends BaseStudyController
             String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
             try
             {
-                final Study study = BaseStudyController.getStudy(false, getContainer());
+                final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
                 if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
                 {
                     DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
@@ -4970,7 +4974,7 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             SecurityType securityType = study.getSecurityType();
 
             if (securityType == SecurityType.ADVANCED_READ || securityType == SecurityType.BASIC_READ)
@@ -4995,6 +4999,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(ManageCommentsForm form, BindException errors) throws Exception
         {
+            if (null == getStudy())
+                throw new IllegalStateException("No study found.");
             StudyImpl study = getStudy().createMutable();
 
             // participant comment dataset
@@ -5099,7 +5105,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
         {
-            StudyImpl study = getStudy();
+            StudyImpl study = getStudyRedirectIfNull();
             DataSetDefinition def;
 
             if (form.getVisitId() != 0)
@@ -5347,10 +5353,7 @@ public class SpecimenController extends BaseStudyController
                 return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
             }
 
-            _study = getStudy();
-            if (_study == null)
-                throw new NotFoundException("No study exists in this folder.");
-
+            _study = getStudyRedirectIfNull();
             return getDefaultImportView(form, errors);
         }
 
@@ -5581,7 +5584,7 @@ public class SpecimenController extends BaseStudyController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Container container = getContainer();
-            StudyImpl study = BaseStudyController.getStudy(false, container);
+            StudyImpl study = getStudy(container);
             if (study != null)
             {
                 RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
