@@ -94,6 +94,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         sqlTypeNameMap.put("BINARY", Types.BINARY);
         sqlTypeNameMap.put("FLOAT", Types.DOUBLE);
         sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
+        sqlTypeNameMap.put("BIGINT IDENTITY", Types.BIGINT);
         sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
         sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);

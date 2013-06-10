@@ -169,6 +169,7 @@ class PostgreSql84Dialect extends SqlDialect
         //Added for PostgreSQL, which returns type names like "userid," not underlying type name
         sqlTypeNameMap.put("USERID", Types.INTEGER);
         sqlTypeNameMap.put("SERIAL", Types.INTEGER);
+        sqlTypeNameMap.put("BIGSERIAL", Types.BIGINT);
         sqlTypeNameMap.put("BYTEA", Types.BINARY);
         sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
         sqlTypeNameMap.put("INT2", Types.INTEGER);
