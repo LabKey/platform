@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
@@ -50,12 +51,19 @@ public class SchemaQueryReportDataSource extends AbstractQueryReportDataSource
     @Override
     protected QueryDefinition createBaseQueryDef()
     {
-        QueryDefinition result = getSchema().getQueryDefForTable(_queryName);
-        if (result == null)
+        if (getSchema().getTable(_queryName) != null) // query exists
+        {
+            QueryDefinition result = getSchema().getQueryDefForTable(_queryName);
+            if (result == null) // This is likely a redundant check, as TableQueryDefinition.getQueryDef() doesn't ever return null
+            {
+                throw new NotFoundException("No such query '" + _queryName + "' in schema '" + getSchema().getName());
+            }
+            return result;
+        }
+        else
         {
             throw new NotFoundException("No such query '" + _queryName + "' in schema '" + getSchema().getName());
         }
-        return result;
     }
 
     @Override
