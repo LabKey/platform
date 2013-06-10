@@ -720,8 +720,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             height : 180,
             cls: 'studyWizardDatasetList',
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         var hiddenGrid = new LABKEY.ext.EditorGridPanel({
@@ -752,8 +752,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             height : 180,
             cls: 'studyWizardHiddenDatasetList',
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         items.push(grid);
@@ -773,21 +773,39 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
         hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
 
-        var syncTip = '' +
-            '<div>' +
-                '<div class=\'g-tip-header\'>' +
-                    '<span>Data Refresh</span>' +
-                '</div>' +
-                '<div class=\'g-tip-subheader\'>' +
-                    '<span>Automatic:</span>' +
-                    ' When data refreshes or changes in the source study, the data will ' +
-                    'automatically refresh in the ancillary study as well.' +
-                '</div>' +
-                '<div class=\'g-tip-subheader\'>' +
-                    '<span>Manual:</span> When data refreshes or changes in the source study, ' +
-                    'the ancillary data will <b>not</b> refresh until you specifically choose to refresh.' +
-                '</div>' +
-            '</div>';
+        if(this.mode != 'publish'){
+          var syncTip = '' +
+                '<div>' +
+                    '<div class=\'g-tip-header\'>' +
+                        '<span>Data Refresh</span>' +
+                    '</div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                     '<span>Automatic:</span>' +
+                        ' When data refreshes or changes in the source study, the data will ' +
+                        'automatically refresh in the ancillary study as well.' +
+                    '</div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                        '<span>Manual:</span> When data refreshes or changes in the source study, ' +
+                        'the ancillary data will <b>not</b> refresh until you specifically choose to refresh.' +
+                    '</div>' +
+                '</div>';
+        }
+        else {
+            var syncTip = '' +
+                    '<div>' +
+                        '<div class=\'g-tip-header\'>' +
+                            '<span>Data Refresh</span>' +
+                         '</div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                     '<span>None:</span>' +
+                         ' The data in this published study will not refresh.' +
+                    '</div>' +
+                     '<div class=\'g-tip-subheader\'>' +
+                         '<span>Manual:</span> When data refreshes or changes in the source study, ' +
+                         'the published study data will <b>not</b> refresh until you specifically choose to refresh.' +
+                     '</div>' +
+                    '</div>';
+        }
 
         if(this.allowRefresh)
         {
