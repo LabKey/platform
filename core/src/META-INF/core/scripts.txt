@@ -2,7 +2,6 @@
 Library|Version|Source|License|LabKey Dev|Purpose
 CodeMirror|2.36|{link:codemirror.net|http://www.codemirror.net}|{link:MIT|http://www.codemirror.net/LICENSE}|klum|browser based code editor
 Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|{link:LGPL|http://www.everaldo.com/crystal/?action=license}|matthewb|document, action, and other icons
-EditArea|0.8.2|{link:EditArea|http://www.cdolivet.com/index.php?page=editArea}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Enhanced HTML editor for SQL, XML, etc
 Ext JS|3.4|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
 Ext JS|4.1.0|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
 js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}|jeckels|Color picker for web themes
