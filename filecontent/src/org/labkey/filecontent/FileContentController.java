@@ -44,6 +44,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
@@ -70,6 +71,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -994,23 +996,11 @@ public class FileContentController extends SpringActionController
 
         private boolean containsFileWebPart(Container c)
         {
-            SimpleFilter filter = new SimpleFilter("PageId", c.getId());
-            filter.addCondition("Name", FilesWebPart.PART_NAME);
-            ResultSet rs = null;
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
+            filter.addCondition(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME);
 
-            try
-            {
-                rs = Table.select(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null);
-                return rs.next();
-            }
-            catch(SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
+            TableSelector selector = new TableSelector(Portal.getTableInfoPortalWebParts(), filter, null);
+            return selector.getRowCount() > 0;
         }
     }
 
