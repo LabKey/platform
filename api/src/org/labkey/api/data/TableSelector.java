@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
@@ -267,15 +268,20 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
                 // query wasn't executed. Just return an empty map in this case.
                 if (null != rs)
                 {
+                    // Issue 17536: Issue a warning instead of blowing up if there is no result row containing the aggregate values.
                     if (!rs.next())
-                        throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
-
-                    for (Aggregate agg : aggregates)
                     {
-                        if (!results.containsKey(agg.getColumnName()))
-                            results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
+                        Logger.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
+                    }
+                    else
+                    {
+                        for (Aggregate agg : aggregates)
+                        {
+                            if (!results.containsKey(agg.getColumnName()))
+                                results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
 
-                        results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
+                            results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
+                        }
                     }
                 }
 
