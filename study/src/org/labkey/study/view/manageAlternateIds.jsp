@@ -150,7 +150,7 @@
             var changeAlternateIds = function(prefixField, digitsField) {
                 Ext4.MessageBox.show({
                     title: "Change All Alternate IDs",
-                    msg: "This action will change the Alternate IDs for all participants in this study. The Alternate IDs in future published studies will not match the Alternate IDs in previously published studies. Are you sure you want to change all Alternate IDs?",
+                    msg: "This action will change the Alternate IDs for all " + <%=q(subjectNounPlural)%> + " in this study. The Alternate IDs in future published studies will not match the Alternate IDs in previously published studies. Are you sure you want to change all Alternate IDs?",
                     buttons: Ext4.MessageBox.OKCANCEL,
                     icon: Ext4.MessageBox.WARNING,
                     fn : function(buttonID) {
@@ -350,9 +350,9 @@
 
                         success: function(details){
                             if(dataSetId != -1)
-                                displayDoneChangingMessage("Change All Alternate IDs", "Changing Alternate IDs is complete.");
+                                displayDoneChangingMessage("Save Alias Settings", <%=q(subjectNounSingular)%> + " alias settings saved successfully.");
                             else
-                                displayDoneChangingMessage("Clear Alias Settings", "Participant alias settings cleared.")
+                                displayDoneChangingMessage("Clear Alias Settings", <%=q(subjectNounSingular)%> + " alias settings cleared.")
                             aliasDataSetId = dataSetId;
                             if(dataSetId != -1)
                                 importButton.setDisabled(false);
