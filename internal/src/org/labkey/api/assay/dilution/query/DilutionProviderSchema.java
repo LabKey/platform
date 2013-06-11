@@ -50,6 +50,8 @@ public class DilutionProviderSchema extends AssayProviderSchema
 {
     public static final String SAMPLE_PREPARATION_METHOD_TABLE_NAME = "SamplePreparationMethod";
     public static final String CURVE_FIT_METHOD_TABLE_NAME = "CurveFitMethod";
+    public static final String RUN_ID_COLUMN_NAME = "RunId";
+
     private String _schemaName;
 
     public DilutionProviderSchema(User user, Container container, AssayProvider provider, String schemaName, @Nullable Container targetStudy, boolean hidden)

@@ -4957,6 +4957,7 @@ internal/src/org/labkey/api/assay/dilution/SafeTextConverter.java -text
 internal/src/org/labkey/api/assay/dilution/SampleInfo.java -text
 internal/src/org/labkey/api/assay/dilution/SampleProperty.java -text
 internal/src/org/labkey/api/assay/dilution/query/DilutionProviderSchema.java -text
+internal/src/org/labkey/api/assay/dilution/query/DilutionResultsQueryView.java -text
 internal/src/org/labkey/api/assay/nab/GraphForm.java -text
 internal/src/org/labkey/api/assay/nab/Luc5Assay.java -text
 internal/src/org/labkey/api/assay/nab/NabGraph.java -text
@@ -4967,10 +4968,15 @@ internal/src/org/labkey/api/assay/nab/query/CutoffValueTable.java -text
 internal/src/org/labkey/api/assay/nab/query/NAbSpecimenTable.java -text
 internal/src/org/labkey/api/assay/nab/view/DilutionGraphAction.java -text
 internal/src/org/labkey/api/assay/nab/view/DuplicateDataFileRunView.java -text
+internal/src/org/labkey/api/assay/nab/view/GraphSelectedAction.java -text
+internal/src/org/labkey/api/assay/nab/view/GraphSelectedBean.java -text
+internal/src/org/labkey/api/assay/nab/view/GraphSelectedForm.java -text
+internal/src/org/labkey/api/assay/nab/view/MultiGraphAction.java -text
 internal/src/org/labkey/api/assay/nab/view/RunDetailsAction.java -text
 internal/src/org/labkey/api/assay/nab/view/RunDetailsHeaderView.java -text
 internal/src/org/labkey/api/assay/nab/view/controlSummary.jsp -text
 internal/src/org/labkey/api/assay/nab/view/cutoffDilutions.jsp -text
+internal/src/org/labkey/api/assay/nab/view/multiRunGraph.jsp -text
 internal/src/org/labkey/api/assay/nab/view/plateData.jsp -text
 internal/src/org/labkey/api/assay/nab/view/runDetails.jsp -text
 internal/src/org/labkey/api/assay/nab/view/runGraph.jsp -text
