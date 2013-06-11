@@ -17,6 +17,8 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
@@ -144,36 +146,81 @@ public interface CustomViewInfo
         }
     }
 
-    String getName();
-    User getOwner();
+    /** Get the name of the custom view or null if this is the default view. */
+    @Nullable String getName();
+
+    /**
+     * Get the alternate label of the default custom view.
+     * Issue 17710. Support an alterante label on the default custom view.
+     * The default custom view returns "default" or a customized label set in a file-based module.
+     * All other implementations should simply return name for now.
+     */
+    @NotNull String getLabel();
+
+    /** Get the owner of the custom view or null if this is a shared view. */
+    @Nullable User getOwner();
+
     /** Convenience for <code>getOwner() == null</code> */
     boolean isShared();
-    User getCreatedBy();
-    Date getCreated();
-    User getModifiedBy();
-    Date getModified();
 
-    String getSchemaName();
-    SchemaKey getSchemaPath();
-    String getQueryName();
-    
-    Container getContainer();
-    String getEntityId();
+    /** Get the user that created the custom view or null if this is an auto-generated view (insert, update) or a file-based custom view. */
+    @Nullable User getCreatedBy();
 
+    /** Get the date that the custom view was created or the last modified date for file-based custom views. */
+    @NotNull Date getCreated();
+
+    /** Get the user that last modified the custom view  or null if this is an auto-generated view (insert, update) or a file-based custom view. */
+    @Nullable User getModifiedBy();
+
+    /** Get the date that the custom view was last modified or the last modified date for file-based custom views. */
+    @NotNull Date getModified();
+
+    /** Get the SchemaKey encoded schema name this custom view is bound to. Use {#getSchemaPath} in favor of this method. */
+    @NotNull String getSchemaName();
+
+    /** Get the SchemaKey this custom view is bound to. */
+    @NotNull SchemaKey getSchemaPath();
+
+    /** Get the query name this custom view is bound to. */
+    @NotNull String getQueryName();
+
+    /** Get the container the custom view is defined in or null for file-based custom views. */
+    @Nullable Container getContainer();
+
+    /** Get the entityid of this custom view or null if this is an auto-generated view (insert, update) or a file-based custom view. */
+    @Nullable String getEntityId();
+
+    /** Returns true if this custom view is inheritable (available in sub-containers). */
     boolean canInherit();
+
+    /** Returns true if this custom view is hidden. */
     boolean isHidden();
+
+    /** Returns true if this custom view is editable. */
     boolean isEditable();
-    /** @returns true if the custom view is in session state. */
+
+    /** Returns true if the custom view is in session state. */
     boolean isSession();
-    String getCustomIconUrl();
 
-    List<FieldKey> getColumns();
-    List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties();
+    /** Get the webapp relative image URL. */
+    @Nullable String getCustomIconUrl();
 
-    String getFilterAndSort();
+    /** Get the list of columns in the custom view. */
+    @NotNull List<FieldKey> getColumns();
 
-    String getContainerFilterName();
-    
+    /** Get the list of {@link ColumnProperty} properties. */
+    @NotNull List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties();
+
+    /**
+     * Get the URL encoded filter, sort, and aggregates or null.
+     * @see CustomViewInfo.FilterAndSort#fromString(String)
+     */
+    @Nullable String getFilterAndSort();
+
+    /** Get the ContainerFilter name or null. */
+    @Nullable String getContainerFilterName();
+
+    /** Returns true if the custom view has filters, sorts, or aggregates. */
     boolean hasFilterOrSort();
 
 }

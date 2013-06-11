@@ -421,10 +421,16 @@ abstract public class UserSchema extends AbstractSchema
 
     public final QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)
     {
-        String dataRegionName = webPart.getPropertyMap().get("dataRegionName");
+        String dataRegionName = webPart.getPropertyMap().get(QueryParam.dataRegionName.name());
 
         if (null == dataRegionName)
             dataRegionName = "qwp" + webPart.getIndex();
+
+        // Issue 17768: Default view not applied when viewing dataset from the 'Query' webpart
+        // The Selector.js was initializing the view name of a portal QueryWebPart to "[default view]" rather than null and may be saved in the database.
+        String viewName = webPart.getPropertyMap().get(QueryParam.viewName.name());
+        if ("[default view]".equals(viewName))
+            webPart.getPropertyMap().put(QueryParam.viewName.name(), null);
 
         QuerySettings settings = createQuerySettings(dataRegionName, null, null);
         (new BoundMap(settings)).putAll(webPart.getPropertyMap());

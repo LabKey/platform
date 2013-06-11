@@ -54,10 +54,4 @@ public interface CustomView extends CustomViewInfo
 
     Collection<String> getDependents(User user);
 
-    /**
-     *  17710. To support an alterante label on the default custom view. By way of ModuleCustomViewDef,
-     * ModuleCustomView returns label != null ? label : name. All other implementations
-     * should simply return name for now.
-    **/
-    String getLabel();
 }

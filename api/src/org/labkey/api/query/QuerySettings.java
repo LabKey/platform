@@ -70,6 +70,7 @@ public class QuerySettings
     private SimpleFilter _baseFilter;
     private Sort _baseSort;
     private QueryDefinition _queryDef;
+    private TableInfo _table;
 
     protected QuerySettings(String dataRegionName)
     {
@@ -447,6 +448,26 @@ public class QuerySettings
         return getDataRegionName() + "." + param;
     }
 
+    public final TableInfo getTable(UserSchema schema)
+    {
+        if (_table == null)
+        {
+            _table = createTable(schema);
+        }
+        return _table;
+    }
+
+    protected TableInfo createTable(UserSchema schema)
+    {
+        String queryName = getQueryName();
+        if (queryName == null)
+            return null;
+        TableInfo table = schema.getTable(queryName);
+        if (table instanceof ContainerFilterable && getContainerFilterName() != null)
+            ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
+        return table;
+    }
+
     public final QueryDefinition getQueryDef(UserSchema schema)
     {
         if (_queryDef == null)
@@ -580,7 +601,13 @@ public class QuerySettings
 
     public ActionURL getSortFilterURL()
     {
-        ActionURL url = HttpView.getRootContext().cloneActionURL();
+        // Root context isn't available in background jobs
+        ActionURL url;
+        ViewContext context = HttpView.getRootContext();
+        if (context != null)
+            url = context.cloneActionURL();
+        else
+            url = new ActionURL();
         url.deleteParameters();
         url.setPropertyValues(_filterSort);
         return url;

@@ -1036,7 +1036,9 @@ LABKEY.Query = new function()
          *      <li><b>queryName:</b> the name of the requested query</li>
          *      <li><b>views:</b> an array of objects, each of which has the following properties
          *          <ul>
-         *              <li><b>name:</b> the name of the view</li>
+         *              <li><b>name:</b> the name of the view (default view's name is empty string)</li>
+         *              <li><b>label:</b> the label of the view</li>
+         *              <li><b>default:</b> true if this is the default view info</li>
          *              <li><b>viewDataUrl:</b> the server-relative URL where this view's data can be viewed.
          *                  Available in LabKey Server version 10.2 and later.</li>
          *              <li><b>columns:</b> this will contain an array of objects with the following properties

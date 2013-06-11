@@ -57,6 +57,8 @@ Ext4.define('LABKEY.sqv.Model', {
             fields : [
                 {name : 'default',      type : 'boolean'},
                 {name : 'name',         type : 'string', sortType: 'asUCString'},
+                // displayName is a client-side calculated column created in changeViewStore()
+                {name : 'displayName',  type : 'string'},
                 {name : 'viewDataUrl',  type : 'string'}
             ],
             idProperty: 'name'
@@ -213,7 +215,7 @@ Ext4.define('LABKEY.sqv.Model', {
             fn : function (cb) {
                 if (!cb.initiallyLoaded) {
                     cb.initiallyLoaded = true;
-                    if (cb.initialValue) {
+                    if (cb.initialValue !== undefined) {
                         this.setComboValues(cb, cb.initialValue);
                     }
                     cb.addCls('schema-loaded-marker');
@@ -280,7 +282,7 @@ Ext4.define('LABKEY.sqv.Model', {
             fn : function (cb) {
                 if (!cb.initiallyLoaded) {
                     cb.initiallyLoaded = true;
-                    if (cb.initialValue) {
+                    if (cb.initialValue !== undefined) {
                         this.setComboValues(cb, cb.initialValue);
                     }
                 }
@@ -298,8 +300,8 @@ Ext4.define('LABKEY.sqv.Model', {
             queryMode : 'local',
             fieldLabel : 'View',
             valueField : 'name',
-            displayField : 'name',
-            initialValue : '[default view]',
+            displayField : 'displayName',
+            initialValue : '',
             disabled : true,
             editable : false,
             store : this.viewStore,
@@ -310,6 +312,8 @@ Ext4.define('LABKEY.sqv.Model', {
             },
             scope : this
         });
+        if (config.initialValue == '[default view]')
+            config.initialValue = '';
 
         config.listeners = {
             afterrender : function(cb) {
@@ -321,13 +325,10 @@ Ext4.define('LABKEY.sqv.Model', {
                     this.onViewChange(newValue, oldValue);
                 }
             },
-            select : function(cb) {
-                cb.setValue(cb.getRawValue());
-            },
             dataloaded : function(cb) {
                 if (!cb.initiallyLoaded) {
                     cb.initiallyLoaded = true;
-                    if (cb.initialValue) {
+                    if (cb.initialValue !== undefined) {
                         this.setComboValues(cb, cb.initialValue);
                     }
                     cb.addCls('view-loaded-marker');
@@ -476,14 +477,18 @@ Ext4.define('LABKEY.sqv.Model', {
                     this.viewCombo.setLoading(false);
                     var filteredViews = [];
                     for (var i = 0; i < details.views.length; i++) {
-                        if (!details.views[i].hidden) {
-                            if (details.views[i].name == "") {
-                                details.views[i].name = "[default view]";
+                        var view = details.views[i];
+                        if (!view.hidden) {
+                            // CONSIDER: just use view.label instead of creating a calculated display value
+                            var viewDisplayName = view.label;
+                            if (view.name == "" && viewDisplayName == "default") {
+                                viewDisplayName = "[default view]";
                             }
-                            if (details.views[i]["default"] && details.views[i].name != "[default view]") {
-                                details.views[i].name += " [default]";
+                            if (view["default"] && viewDisplayName != "[default view]") {
+                                viewDisplayName += " [default]";
                             }
-                            filteredViews.push(details.views[i]);
+                            view.displayName = viewDisplayName;
+                            filteredViews.push(view);
                         }
                     }
                     this.viewStore.loadData(filteredViews);
@@ -498,7 +503,7 @@ Ext4.define('LABKEY.sqv.Model', {
 
     // Sets the values on a combobox if a corresponding record is found in the store.
     setComboValues : function (combo, values) {
-        if (values) {
+        if (values !== undefined) {
             if (combo.multiSelect) {
                 if (Ext4.isString(values))
                     values = values.split(",");
