@@ -49,14 +49,8 @@
                 transforms: []
             };
 
-            if (viewName != null) {
-                //TODO: Issue 18000
-                //getDataConfig.source.viewName = viewName;
-            }
-
             if (columnArray != null && columnArray.length > 0) {
-                // TODO: Issue 18007
-                //getDataConfig.source.columns = columnArray;
+                getDataConfig.columns = columnArray;
             }
 
             if (filterArray != null && filterArray.length > 0) {

@@ -73,20 +73,6 @@
             if (!source.queryName || source.queryName == null) {
                 throw new Error('A queryName is required for getData requests with type = "query"');
             }
-
-            if (source.columns) {
-                if (!source.columns instanceof Array) {
-                    throw new Error('columns must be an array of FieldKeys.');
-                }
-
-                for (var i = 0; i < source.columns.length; i++) {
-                    source.columns[i] = validateFieldKey(source.columns[i]);
-
-                    if (!source.columns[i]) {
-                        throw new Error('columns must be an array of FieldKeys.');
-                    }
-                }
-            }
         } else if (source.type === 'sql') {
             if (!source.sql) {
                 throw new Error('sql is required if source.type = "sql"');
@@ -194,7 +180,20 @@
             };
 
             validateSource(config.source);
-            jsonData.source = config.source;
+
+            // Shallow copy source so if the user adds unexpected properties to source the server doesn't throw errors.
+            jsonData.source = {
+                type: config.source.type,
+                schemaName: config.source.schemaName
+            };
+
+            if (config.source.type === 'query') {
+                jsonData.source.queryName = config.source.queryName;
+            }
+
+            if (config.source.type === 'sql') {
+                jsonData.source.sql = config.source.sql;
+            }
 
             if (config.transforms) {
                 if (!(config.transforms instanceof Array)) {
@@ -209,6 +208,22 @@
 
             if (config.pivot) {
                 validatePivot(config.pivot);
+            }
+
+            if (config.columns) {
+                if (!config.columns instanceof Array) {
+                    throw new Error('columns must be an array of FieldKeys.');
+                }
+
+                for (var i = 0; i < config.columns.length; i++) {
+                    config.columns[i] = validateFieldKey(config.columns[i]);
+
+                    if (!config.columns[i]) {
+                        throw new Error('columns must be an array of FieldKeys.');
+                    }
+                }
+
+                jsonData.renderer.columns = config.columns;
             }
 
             if (!config.failure) {
