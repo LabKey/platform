@@ -996,11 +996,10 @@ public class FileContentController extends SpringActionController
 
         private boolean containsFileWebPart(Container c)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
-            filter.addCondition(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME);
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("name"), FilesWebPart.PART_NAME);
 
             TableSelector selector = new TableSelector(Portal.getTableInfoPortalWebParts(), filter, null);
-            return selector.getRowCount() > 0;
+            return selector.exists();
         }
     }
 
