@@ -329,9 +329,7 @@ public class ParticipantGroupManager
     {
         StringBuilder script = new StringBuilder();
         script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilter(")
-              .append("LABKEY.Filter.create('")
-              .append(filterColValue.first).append("', '").append(filterColValue.second)
-              .append("', LABKEY.Filter.Types.EQUAL)")
+              .append(getFilterScript(filterColValue))
               .append(");");
         return script.toString();
     }
@@ -340,12 +338,18 @@ public class ParticipantGroupManager
     {
         StringBuilder script = new StringBuilder();
         script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilterMatch(")
-              .append("LABKEY.Filter.create('")
-              .append(filterColValue.first).append("', '").append(filterColValue.second)
-              .append("', LABKEY.Filter.Types.EQUAL), ")
-              .append("'").append(match).append("/'")
-              .append(");");
+              .append(getFilterScript(filterColValue))
+              .append(", ").append(PageFlowUtil.jsString(match + "/")).append(");");
         return script.toString();
+    }
+
+    private StringBuilder getFilterScript(Pair<FieldKey, String> filterColValue)
+    {
+        StringBuilder script = new StringBuilder();
+        script.append("LABKEY.Filter.create(")
+              .append(PageFlowUtil.jsString(filterColValue.first.toString())).append(", ").append(PageFlowUtil.jsString(filterColValue.second))
+              .append(", LABKEY.Filter.Types.EQUAL)");
+        return script;
     }
 
     private String createNewParticipantGroupScript(ViewContext context, String dataRegionName, boolean fromSelection)
