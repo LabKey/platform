@@ -3,6 +3,7 @@ package org.labkey.query.reports.getdata;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -24,6 +25,7 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
     private boolean _includeDetailsColumn;
     private Integer _maxRows = null;
     private Sort _sort = new Sort();
+    private List<FieldKey> _columns;
 
     private void setOffset(int offset)
     {
@@ -48,6 +50,11 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
         }
     }
 
+    public void setColumns(List<FieldKey> columns)
+    {
+        _columns = columns;
+    }
+
     @Override
     public ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors)
     {
@@ -56,6 +63,10 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
         QuerySettings settings = new QuerySettings(context, "dataregion");
         settings.setOffset(_offset);
         settings.setBaseSort(_sort);
+        if (_columns != null)
+        {
+            settings.setFieldKeys(_columns);
+        }
     
         settings.setShowRows(ShowRows.PAGINATED);
         if (null == _maxRows)
