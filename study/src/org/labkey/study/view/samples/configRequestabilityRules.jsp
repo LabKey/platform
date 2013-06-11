@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.study.importer.RequestabilityManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    // TODO: This should use viewPicker.js
+    // TODO: This should use Selector.js
     ViewContext context = HttpView.currentContext();
 %>
 <script type="text/javascript">

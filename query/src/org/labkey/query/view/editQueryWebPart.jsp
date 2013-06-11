@@ -84,7 +84,7 @@
             typeAhead : true,
             typeAheadDelay : 250,
             forceSelection : true,
-            initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '[default view]',
+            initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '',
             name : 'viewName',
             labelWidth : 200,
             width : 500

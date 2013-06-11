@@ -54,6 +54,14 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return null == _cstmView ? null : _cstmView.getName();
     }
 
+    @Override
+    public String getLabel()
+    {
+        if (getName() == null)
+            return "default";
+        return getName();
+    }
+
     public User getOwner()
     {
         Integer userId = _cstmView.getCustomViewOwner();

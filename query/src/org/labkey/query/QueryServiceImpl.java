@@ -620,6 +620,7 @@ public class QueryServiceImpl extends QueryService
 
         Map<String, Object> ret = new LinkedHashMap<String, Object>();
         ret.put("name", view.getName() == null ? "" : view.getName());
+        ret.put("label", view.getLabel());
         ret.put("default", view.getName() == null);
         if (null != view.getOwner())
             ret.put("owner", view.getOwner().getDisplayName(currentUser));

@@ -640,9 +640,4 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
     }
 
-    @Override
-    public String getLabel()
-    {
-        return getName();
-    }
 }

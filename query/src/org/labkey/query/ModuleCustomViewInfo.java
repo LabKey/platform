@@ -50,6 +50,12 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
+    public String getLabel()
+    {
+        return _customViewDef.getLabel();
+    }
+
+    @Override
     public User getOwner()
     {
         //module-based reports have no owner

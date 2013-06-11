@@ -345,7 +345,7 @@ public class CohortManager
 
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
-                if (null != cohortLabelCol)
+                if (null != cohortLabelCol && cohortLabelCol.getJdbcType().isText())
                 {
                     clearParticipantCohorts(study);
 
