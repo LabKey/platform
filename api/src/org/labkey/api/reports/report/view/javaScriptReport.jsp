@@ -30,12 +30,54 @@
         // ========== Begin report writer's script ==========
         <%=text(bean.script)%>
         // ========== End report writer's script ==========
-
         if (render && (typeof render === 'function'))
         {
+            <%
+                if (bean.useGetDataApi)
+                {
+            %>
+            var filterArray = <%=bean.model.getJSONFilters()%>;
+            var columnArray = <%=bean.model.getJSONColumns()%>;
+            var viewName = <%=bean.model.getViewName() != null ? q(bean.model.getViewName()) : null%>;
+
+            var getDataConfig = {
+                source: {
+                    containerFilter: <%=bean.model.getContainerFilter()%>,
+                    schemaName: new LABKEY.FieldKey.fromString('<%=bean.model.getSchemaName()%>'),
+                    queryName: '<%=bean.model.getQueryName()%>'
+                },
+                transforms: []
+            };
+
+            if (viewName != null) {
+                //TODO: Issue 18000
+                //getDataConfig.source.viewName = viewName;
+            }
+
+            if (columnArray != null && columnArray.length > 0) {
+                // TODO: Issue 18007
+                //getDataConfig.source.columns = columnArray;
+            }
+
+            if (filterArray != null && filterArray.length > 0) {
+                getDataConfig.transforms.push({
+                    type: 'aggregate',
+                    filters: filterArray
+                });
+            }
+            render(getDataConfig, document.getElementById("<%=text(uniqueDivName)%>"));
+            <%
+                }
+                else
+                {
+            %>
             render({
-               <%=text(bean.model.getStandardJavaScriptParameters(16, false))%>
+                <%=text(bean.model.getStandardJavaScriptParameters(16, false))%>
             }, document.getElementById("<%=text(uniqueDivName)%>"));
+            <%
+                }
+            %>
+
         }
         else
         {

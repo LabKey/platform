@@ -310,7 +310,6 @@
             }
 
             if (field.extFormatFn) {
-                console.log(field.extFormatFn);
                 field.extFormatFn = eval(field.extFormatFn);
             }
         }

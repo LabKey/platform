@@ -25,14 +25,24 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td>
         Your code must define a render() function.  When a user views the report, LabKey calls this render() function,
-        passing a query config and a div element.  You can pass the query config directly to LABKEY.Query.selectRows() to
+        passing a query config and a div element. Render your view's HTML to the div passed into the render() function.
+    </td></tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr><td>
+        "Use Get Data API" is selected by default, if you choose to use this setting you can pass the query config directly
+        to LABKEY.Query.GetData.RawData to retrieve the data, or you can modify the query config (add/removing transforms,
+        etc) before passing it to RawData().
+    </td></tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr><td>
+        If "Use GetData API" is not selected you can pass the query config directly to LABKEY.Query.selectRows() to
         retrieve the data, or you can modify the query config (adding/removing filters, adding columns, etc.) before
-        passing it to selectRows().  Render your view's HTML to the div passed into the render() function. 
+        passing it to selectRows().
     </td></tr>
     <tr><td>&nbsp;</td></tr>
     <tr><td>
         Your JavaScript code is wrapped in an anonymous function, which provides unique scoping for the functions and
         variables you define; these identifiers will not conflict with identifiers in other JavaScript views rendered
-        on the same page. 
+        on the same page.
     </td></tr>
 </table>

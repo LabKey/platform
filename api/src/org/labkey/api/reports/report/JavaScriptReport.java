@@ -116,6 +116,7 @@ public class JavaScriptReport extends ScriptReport
     {
         public final CreateJavaScriptModel model;
         public final String script;
+        public final boolean useGetDataApi;
         private LinkedHashSet<ClientDependency> _dependencies;
 
         private JavaScriptReportBean(ViewContext context) throws Exception
@@ -123,6 +124,14 @@ public class JavaScriptReport extends ScriptReport
             QueryView qv = createQueryView(context, getDescriptor());
             model = new CreateJavaScriptModel(qv);
             script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
+            if (getDescriptor().getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null)
+            {
+                useGetDataApi = getDescriptor().getProperty(ScriptReportDescriptor.Prop.useGetDataApi).equals("true");
+            }
+            else
+            {
+                useGetDataApi = false;
+            }
         }
 
         public void setClientDependencies(LinkedHashSet<ClientDependency> dependencies)

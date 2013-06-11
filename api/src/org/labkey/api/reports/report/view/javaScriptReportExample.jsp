@@ -25,7 +25,10 @@ function render(queryConfig, div)
     jsDiv = div;
     queryConfig.success = onSuccess;
     queryConfig.error = onError;
-    LABKEY.Query.selectRows(queryConfig);
+    LABKEY.Query.GetData.RawData(queryConfig);
+
+    // If not using the GetData API you can use SelectRows instead:
+    // LABKEY.Query.selectRows(queryConfig);
 }
 
 function onSuccess(results)

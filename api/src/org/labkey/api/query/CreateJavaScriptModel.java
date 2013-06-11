@@ -16,9 +16,12 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
@@ -51,6 +54,56 @@ public class CreateJavaScriptModel extends ExportScriptModel
         }
         ret.append("]");
         return ret.toString();
+    }
+
+    public String getJSONFilters()
+    {
+        // Returns filters in a JSON format for use with the GetData API.
+        // Most of this code was taken from ExportScriptModel.getFilterExpressions()
+        JSONArray filters = new JSONArray();
+        QueryView view = getQueryView();
+        SimpleFilter filter = new SimpleFilter(view.getSettings().getSortFilterURL(), view.getDataRegionName());
+
+        for (SimpleFilter.FilterClause clause : filter.getClauses())
+        {
+            JSONObject filterObj = new JSONObject();
+            List<String> fieldKey = clause.getFieldKeys().get(0).getParts();
+            String value = getFilterValue(clause, clause.getParamVals());
+            CompareType operator;
+
+            //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
+            if (clause instanceof CompareType.CompareClause)
+                operator = ((CompareType.CompareClause)clause).getComparison();
+            else if (clause instanceof SimpleFilter.ContainsOneOfClause)
+                operator = clause.isNegated() ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
+            else if (clause instanceof SimpleFilter.InClause)
+                operator = clause.isNegated() ? CompareType.NOT_IN : CompareType.IN;
+            else
+                operator = CompareType.EQUAL;
+
+            filterObj.put("value", value);
+            filterObj.put("type", operator.getScriptName());
+            filterObj.put("fieldKey", fieldKey);
+            filters.put(filterObj);
+        }
+
+        return filters.toString();
+    }
+
+    public String getJSONColumns()
+    {
+        // Returns columns in a JSON format for use with the GetData API.
+        JSONArray jsonCols = new JSONArray();
+
+        for (DisplayColumn dc : getQueryView().getDisplayColumns())
+        {
+            if (dc.isQueryColumn())
+            {
+                jsonCols.put(dc.getDisplayColumnInfo().getFieldKey().getParts());
+            }
+        }
+
+        return jsonCols.toString();
     }
 
     protected String makeFilterExpression(String name, CompareType operator, String value)

@@ -39,6 +39,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.reports.report.JavaScriptReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -74,6 +75,7 @@
     String viewDivId = "viewDiv" + uid;
 
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
+    boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
 
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
@@ -270,6 +272,7 @@ var f_scope<%=text(uid)%> = new (function() {
         url = addIncludeScripts(url);
         url = addRunInBackground(url);
         url = addKnitrFormat(url);
+        url = addGetDataApiOptions(url);
 
         return url;
     }
@@ -318,6 +321,17 @@ var f_scope<%=text(uid)%> = new (function() {
             url = url + '&<%=ScriptReportDescriptor.Prop.knitrFormat%>=' + v;
         }
 
+        return url;
+    }
+
+    // add get data api options if present
+    function addGetDataApiOptions(url)
+    {
+        var getDataApi = document.getElementById("<%=ScriptReportDescriptor.Prop.useGetDataApi%>");
+        if (getDataApi && getDataApi.checked)
+        {
+            url = url + '&<%=ScriptReportDescriptor.Prop.useGetDataApi%>=true';
+        }
         return url;
     }
 
@@ -664,6 +678,23 @@ function setDisabled(checkbox, label, disabled)
                 Html<%=helpPopup("Html", "Use knitr to process html source")%></td></tr>
             <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(knitrFormat.equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Markdown<%=helpPopup("Markdown", "Use knitr to process markdown source")%></td></tr>
+            <tr><td>&nbsp;</td></tr>
+            <%
+               }
+
+               if(report instanceof JavaScriptReport)
+               {
+            %>
+            <tr class="labkey-wp-header"><th align="left" colspan="2">JavaScript Options</th></tr>
+            <tr><td>
+                <input type="checkbox" id="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" name="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" value="true" <%=text(useGetDataApi ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+                Use GetData API?
+                <%=helpPopup(
+                        "Use GetData API",
+                        "Uses the GetData API to retrieve data. Allows you to pass the data through one or more transforms before retrieving it. " +
+                                "See the documentation <a href=\"https://www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html\">here</a>.",
+                        true)
+                %>
             <tr><td>&nbsp;</td></tr>
             <%
                }
