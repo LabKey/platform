@@ -879,6 +879,9 @@ public class ReportsController extends SpringActionController
             errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
 
             HttpView resultsView = null;
+
+            bean.init(getViewContext(), Mode.view); // Needed to init values such as useGetDataApi
+
             Report report = bean.getReport(getViewContext());
 
             // for now, limit pipeline view to saved R reports
