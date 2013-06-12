@@ -56,7 +56,7 @@ public class DataRegionSelection
                 Set<String> result = (Set<String>)session.getAttribute(key);
                 if (result == null && create)
                 {
-                    result = new LinkedHashSet<String>();
+                    result = new LinkedHashSet<>();
                     session.setAttribute(key, result);
                 }
                 return result;
@@ -126,7 +126,7 @@ public class DataRegionSelection
      */
     public static Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
     {
-        Set<String> result = new LinkedHashSet<String>();
+        Set<String> result = new LinkedHashSet<>();
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         List<String> parameterSelected = values == null ? new ArrayList<String>() : Arrays.asList(values);
         result.addAll(parameterSelected);
@@ -247,7 +247,7 @@ public class DataRegionSelection
     private static List<String> createSelectionList(ResultSet rs, TableInfo table)
             throws SQLException
     {
-        List<String> selected = new LinkedList<String>();
+        List<String> selected = new LinkedList<>();
         List<ColumnInfo> pkColumns = table.getPkColumns();
         while (rs.next())
         {

@@ -103,7 +103,7 @@ public class DefaultFolderType implements FolderType
                 }
 
                 @Override
-                public List<Portal.WebPart> createWebParts() { return new ArrayList<WebPart>(); }
+                public List<Portal.WebPart> createWebParts() { return new ArrayList<>(); }
             };
             tab.setIsDefaultTab(true);
             _folderTabs = Collections.singletonList(tab);
@@ -128,7 +128,7 @@ public class DefaultFolderType implements FolderType
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
 
-        ArrayList<Portal.WebPart> all = new ArrayList<Portal.WebPart>();
+        ArrayList<Portal.WebPart> all = new ArrayList<>();
         List<Portal.WebPart> existingParts = Portal.getParts(c);
 
         if (null == existingParts || existingParts.isEmpty())
@@ -179,9 +179,9 @@ public class DefaultFolderType implements FolderType
         Set<Module> requiredActive = c.getRequiredModules();
 
         if (null == active)
-            active = new HashSet<Module>();
+            active = new HashSet<>();
         else
-            active = new HashSet<Module>(active); //Need to copy since returned set is unmodifiable.
+            active = new HashSet<>(active); //Need to copy since returned set is unmodifiable.
 
         active.addAll(requiredActive);
         c.setActiveModules(active);
@@ -215,7 +215,7 @@ public class DefaultFolderType implements FolderType
     {
         List<WebPart> parts = Portal.getParts(c);
         List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
-        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(c, true));
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(c, true));
 
         if (null != parts)
         {
@@ -364,7 +364,7 @@ public class DefaultFolderType implements FolderType
         //NOT thread safe, but worst thing that will happen is that it is set to the same thing twice
         if (null == s_defaultModules)
         {
-            Set<Module> defaultModules = new HashSet<Module>();
+            Set<Module> defaultModules = new HashSet<>();
             defaultModules.add(getModule("Announcements"));
             defaultModules.add(getModule("FileContent"));
             defaultModules.add(getModule("Wiki"));
@@ -373,7 +373,7 @@ public class DefaultFolderType implements FolderType
             s_defaultModules = Collections.unmodifiableSet(defaultModules);
         }
 
-        Set<Module> modules = new HashSet<Module>(s_defaultModules);
+        Set<Module> modules = new HashSet<>(s_defaultModules);
         modules.addAll(Arrays.asList(additionalModules));
 
         return modules;
@@ -413,7 +413,8 @@ public class DefaultFolderType implements FolderType
         addStandardManageLinks(adminNavTree, container);
     }
 
-    public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
+    @Override
+    public @NotNull AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
         ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
         NavTree startPage = new NavTree(getStartPageLabel(context), startURL);

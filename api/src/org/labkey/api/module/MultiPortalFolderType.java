@@ -70,17 +70,17 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private ArrayList<Portal.PortalPage> getSortedPortalPages(Container container)
     {
 
-        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(container, false));
 
         // Build up a list of all the currently defined tab names
-        Set<String> currentTabNames = new HashSet<String>();
+        Set<String> currentTabNames = new HashSet<>();
         for (FolderTab folderTab : getDefaultTabs())
         {
             currentTabNames.add(folderTab.getName());
         }
 
         // Filter out ones that we've saved that are no longer part of the folder type
-        ArrayList<Portal.PortalPage> filtered = new ArrayList<Portal.PortalPage>(portalPages.size());
+        ArrayList<Portal.PortalPage> filtered = new ArrayList<>(portalPages.size());
         for (Portal.PortalPage tab : portalPages.values())
         {
             if (currentTabNames.contains(tab.getPageId()))
@@ -113,8 +113,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private static List<FolderTab> getFolderTabs(Container container, FolderType folderType)
     {
-        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
-        List<FolderTab> folderTabs = new ArrayList<FolderTab>();
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(container, false));
+        List<FolderTab> folderTabs = new ArrayList<>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
         {
             if (portalPages.containsKey(folderTab.getName()))
@@ -153,7 +153,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         Container container = ctx.getContainer();
 
         // Get folder tabs first because it will bring back a portal page if ALL have been hidden
-        CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
+        CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
         for (FolderTab folderTab : getFolderTabs(container, this))
         {
             folderTabMap.put(folderTab.getName(), folderTab);
@@ -161,7 +161,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         // Now get portal pages that are not hidden
         Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
-        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<Portal.PortalPage>(portalPages.values());
+        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<>(portalPages.values());
         Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
         {
             @Override
@@ -175,9 +175,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         assert !(sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0);
 
         _activePortalPage = null;
-        Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
-        List<NavTree> buttons = new ArrayList<NavTree>();
-        List<NavTree> subContainerTabs = new ArrayList<NavTree>();
+        Map<String, NavTree> navMap = new LinkedHashMap<>();
+        List<NavTree> buttons = new ArrayList<>();
+        List<NavTree> subContainerTabs = new ArrayList<>();
 
         for (int i = 0; i < sortedPages.size(); i++)
         {
@@ -287,7 +287,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private void migrateLegacyPortalPage(Container container)
     {
-        List<Portal.WebPart> legacyPortalParts = new ArrayList<Portal.WebPart>(Portal.getParts(container));
+        List<Portal.WebPart> legacyPortalParts = new ArrayList<>(Portal.getParts(container));
         if (!legacyPortalParts.isEmpty())
         {
             FolderType folderType = container.getFolderType();
@@ -305,7 +305,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
 
             String defaultTabName = folderType.getDefaultTab().getName();
-            List<Portal.WebPart> mergedParts = new ArrayList<Portal.WebPart>(Portal.getParts(container, defaultTabName));
+            List<Portal.WebPart> mergedParts = new ArrayList<>(Portal.getParts(container, defaultTabName));
             Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
             boolean changed = false;
             while (i.hasNext())

@@ -58,7 +58,7 @@ public class UserManager
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed.  It's a trivial amount of data, though.
-    private static final Map<Integer, Long> RECENT_USERS = new HashMap<Integer, Long>(100);
+    private static final Map<Integer, Long> RECENT_USERS = new HashMap<>(100);
 
     private static final String USER_PREF_MAP = "UserPreferencesMap";
 
@@ -82,7 +82,7 @@ public class UserManager
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<UserListener> _listeners = new CopyOnWriteArrayList<UserListener>();
+    private static final List<UserListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static void addUserListener(UserListener listener)
     {
@@ -113,7 +113,7 @@ public class UserManager
     protected static List<Throwable> fireDeleteUser(User user)
     {
         List<UserListener> list = getListeners();
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (UserListener userListener : list)
         {
@@ -133,7 +133,7 @@ public class UserManager
     protected static List<Throwable> fireUserDisabled(User user)
     {
         List<UserListener> list = getListeners();
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (UserListener userListener : list)
         {
@@ -153,7 +153,7 @@ public class UserManager
     protected static List<Throwable> fireUserEnabled(User user)
     {
         List<UserListener> list = getListeners();
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (UserListener userListener : list)
         {
@@ -224,7 +224,7 @@ public class UserManager
         synchronized(RECENT_USERS)
         {
             long now = System.currentTimeMillis();
-            List<Pair<String, Long>> recentUsers = new ArrayList<Pair<String, Long>>(RECENT_USERS.size());
+            List<Pair<String, Long>> recentUsers = new ArrayList<>(RECENT_USERS.size());
 
             for (int id : RECENT_USERS.keySet())
             {
@@ -234,7 +234,7 @@ public class UserManager
                 {
                     User user = getUser(id);
                     String display = user != null ? user.getEmail() : "" + id;
-                    recentUsers.add(new Pair<String, Long>(display, (now - lastActivity)/60000));
+                    recentUsers.add(new Pair<>(display, (now - lastActivity)/60000));
                 }
             }
 
@@ -554,7 +554,7 @@ public class UserManager
                     Collections.singletonMap("Active", active), userId);
 
             // update the modified bit on the users table
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
             map.put("Modified", new Timestamp(System.currentTimeMillis()));
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
@@ -600,7 +600,7 @@ public class UserManager
     public static List<AjaxCompletion> getAjaxCompletions(Collection<Group> groups, Collection<User> users, User currentUser,
                                                           boolean showEmailAddresses, boolean useDisplayNames)
     {
-        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+        List<AjaxCompletion> completions = new ArrayList<>();
 
         for (Group group : groups)
         {
@@ -625,7 +625,7 @@ public class UserManager
     public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser,
                                                           boolean showEmailAddresses, boolean useDisplayNames)
     {
-        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+        List<AjaxCompletion> completions = new ArrayList<>();
 
         for (User user : users)
         {
