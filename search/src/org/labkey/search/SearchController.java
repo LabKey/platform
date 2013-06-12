@@ -273,23 +273,23 @@ public class SearchController extends SpringActionController
             }
 
             // Spring errors get displayed in the "Primary Index Configuration" pane
-            WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
+            WebPartView indexerView = new JspView<>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
             indexerView.setTitle("Primary Index Configuration");
             vbox.addView(indexerView);
 
-            WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props);
+            WebPartView externalIndexView = new JspView<>(SearchController.class, "view/externalIndex.jsp", props);
             externalIndexView.setTitle("External Index Configuration");
             vbox.addView(externalIndexView);
 
             // Won't be able to gather statistics if the search index is misconfigured
             if (null == t)
             {
-                WebPartView indexerStatsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form);
+                WebPartView indexerStatsView = new JspView<>(SearchController.class, "view/indexerStats.jsp", form);
                 indexerStatsView.setTitle("Primary Index Statistics");
                 vbox.addView(indexerStatsView);
             }
 
-            WebPartView searchStatsView = new JspView<AdminForm>(SearchController.class, "view/searchStats.jsp", form);
+            WebPartView searchStatsView = new JspView<>(SearchController.class, "view/searchStats.jsp", form);
             searchStatsView.setTitle("Search Statistics");
             vbox.addView(searchStatsView);
 
@@ -522,7 +522,7 @@ public class SearchController extends SpringActionController
                     }
                     else
                     {
-                        return new JspView<SecurableResource>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
+                        return new JspView<>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
                     }
                 }
                 else
@@ -755,7 +755,7 @@ public class SearchController extends SpringActionController
             getPageConfig().setNoIndex();
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
-            return new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
+            return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
     }
 

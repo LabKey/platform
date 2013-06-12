@@ -15,14 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
-<%@ page import="org.labkey.announcements.config.AnnouncementEmailConfig" %>
-<%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm bean = ((JspView<org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm>)HttpView.currentView()).getModelBean();

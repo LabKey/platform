@@ -357,7 +357,7 @@ public class CohortManager
                             "  (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
-                    Set<String> newCohortLabels = new HashSet<String>();
+                    Set<String> newCohortLabels = new HashSet<>();
                     Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sqlFragment);
                     try
                     {
@@ -458,10 +458,10 @@ public class CohortManager
         else
             cohortSql = getContinuousStudyCohortSql(user, study, dsd, cohortLabelCol);
 
-        Map<String, Integer> initialCohortAssignments = new HashMap<String, Integer>();
-        Map<String, Integer> currentCohortAssignments = new HashMap<String, Integer>();
+        Map<String, Integer> initialCohortAssignments = new HashMap<>();
+        Map<String, Integer> currentCohortAssignments = new HashMap<>();
 
-        Set<List<Object>> participantVisitParams = new HashSet<List<Object>>();
+        Set<List<Object>> participantVisitParams = new HashSet<>();
 
         ResultSet rs = null;
         try
@@ -470,7 +470,7 @@ public class CohortManager
             String prevParticipantId = null;
             Integer prevCohortId = null;
 
-            Map<String, Integer> cohortNameToId = new HashMap<String, Integer>();
+            Map<String, Integer> cohortNameToId = new HashMap<>();
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
             for (CohortImpl cohort : cohorts)
                 cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
@@ -512,7 +512,7 @@ public class CohortManager
                     // if this ptid/visit isn't already assigned to this cohort visit, we need to make the assignment now:
                     if (!Objects.equals(newCohortId, assignedCohortId))
                     {
-                        List<Object> params = new ArrayList<Object>();
+                        List<Object> params = new ArrayList<>();
                         addCohortIdParameter(params, newCohortId);
                         params.add(participantId);
                         params.add(visitRowId);
@@ -532,10 +532,10 @@ public class CohortManager
                 try { rs.close(); } catch (SQLException e) { /* fall through */ }
         }
 
-        Set<List<Object>> participantParams = new HashSet<List<Object>>();
+        Set<List<Object>> participantParams = new HashSet<>();
         for (Map.Entry<String, Integer> cohortAssignment : currentCohortAssignments.entrySet())
         {
-            List<Object> participantRow = new ArrayList<Object>();
+            List<Object> participantRow = new ArrayList<>();
             String participantId = cohortAssignment.getKey();
             Integer currentCohortId = cohortAssignment.getValue();
 
@@ -553,7 +553,7 @@ public class CohortManager
 
             if (!study.isAdvancedCohorts() && study.getTimepointType() != TimepointType.CONTINUOUS)
             {
-                List<Object> participantVisitRow = new ArrayList<Object>();
+                List<Object> participantVisitRow = new ArrayList<>();
                 addCohortIdParameter(participantVisitRow, currentCohortId);
                 participantVisitRow.add(participantId);
                 participantVisitRow.add(study.getContainer().getId());

@@ -48,7 +48,7 @@
 
     BindException errors = bean.getErrors();
     ActionURL completionUrl = new ActionURL(IssuesController.CompleteUserAction.class, c);
-    ActionURL cancelURL = null;
+    ActionURL cancelURL;
 
     if (issue.getIssueId() > 0)
     {

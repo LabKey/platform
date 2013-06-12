@@ -257,7 +257,7 @@ public class StudyManager
         _datasetHelper = new DatasetHelper(dataSetGetter);
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
-        // The shared properties chace will be cleared when the _datasetHelper cache is cleared.
+        // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
         _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "StudySharedProperties",
                 new CacheLoader<Container, Set<PropertyDescriptor>>()
                 {
