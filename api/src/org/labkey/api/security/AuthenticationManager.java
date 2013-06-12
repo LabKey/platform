@@ -41,6 +41,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
@@ -493,7 +494,7 @@ public class AuthenticationManager
             @Override
             public RateLimiter load(Integer key, @Nullable Object request)
             {
-                return new RateLimiter("Addr limiter: " + String.valueOf(key), new RateLimiter.Rate(60,TimeUnit.MINUTES));
+                return new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
             }
         };
     static final CacheLoader<Integer,RateLimiter> pwdLoader = new CacheLoader<Integer,RateLimiter>()
@@ -501,7 +502,7 @@ public class AuthenticationManager
             @Override
             public RateLimiter load(Integer key, @Nullable Object request)
             {
-                return new RateLimiter("Pwd limiter: " + String.valueOf(key), new RateLimiter.Rate(20,TimeUnit.MINUTES));
+                return new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
             }
         };
     static final CacheLoader<Integer,RateLimiter> userLoader = new CacheLoader<Integer,RateLimiter>()
@@ -509,7 +510,7 @@ public class AuthenticationManager
             @Override
             public RateLimiter load(Integer key, @Nullable Object request)
             {
-                return new RateLimiter("User limiter: " + String.valueOf(key), new RateLimiter.Rate(20,TimeUnit.MINUTES));
+                return new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
             }
         };
 

@@ -1326,6 +1326,7 @@ api/src/org/labkey/api/util/MinorConfigurationException.java -text
 api/src/org/labkey/api/util/MockServletResponse.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/MultiPhaseCPUTimer.java -text
+api/src/org/labkey/api/util/MultisetRateAccumulator.java -text
 api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/Pair.java -text
 api/src/org/labkey/api/util/Path.java -text
@@ -1333,6 +1334,8 @@ api/src/org/labkey/api/util/PepXMLFileType.java -text
 api/src/org/labkey/api/util/PollingUtil.java -text
 api/src/org/labkey/api/util/PossiblyGZIPpedFileInputStreamFactory.java -text
 api/src/org/labkey/api/util/ProtXMLFileType.java -text
+api/src/org/labkey/api/util/Rate.java -text
+api/src/org/labkey/api/util/RateAccumulator.java -text
 api/src/org/labkey/api/util/RateLimiter.java -text
 api/src/org/labkey/api/util/ReturnURLString.java -text
 api/src/org/labkey/api/util/SafeFileAppender.java -text
@@ -1340,6 +1343,7 @@ api/src/org/labkey/api/util/ScalabilityProblem.java -text
 api/src/org/labkey/api/util/SessionAppender.java -text
 api/src/org/labkey/api/util/SessionHelper.java -text
 api/src/org/labkey/api/util/ShutdownListener.java -text
+api/src/org/labkey/api/util/SimpleRateAccumulator.java -text
 api/src/org/labkey/api/util/SkipMothershipLogging.java -text
 api/src/org/labkey/api/util/StartupListener.java -text
 api/src/org/labkey/api/util/StringExpression.java -text

@@ -15,14 +15,13 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
 import static java.lang.Math.min;
-import static java.lang.Math.max;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,14 +42,14 @@ public class RateLimiter
 
     // the interval over which history is gathered, and rate is enforced
     final long historyInterval;
-    RateAccumulator _long;
+    SimpleRateAccumulator _long;
 
     // size of sub-windows within the history interval
     final long accumulateInterval;
-    RateAccumulator _short;
+    SimpleRateAccumulator _short;
 
     // collection of 'short' intervals
-    ArrayList<RateAccumulator> _history = new ArrayList<RateAccumulator>(4);
+    ArrayList<RateAccumulator> _history = new ArrayList<>(4);
 
     public RateLimiter(String name, Rate rate)
     {
@@ -65,13 +64,13 @@ public class RateLimiter
     // set accum small to avoid jumpiness (testing)
     public RateLimiter(String name, Rate rate, long history, long accum)
     {
-        this._name = name;
-        this._target = rate;
+        _name = name;
+        _target = rate;
         if (history < TimeUnit.SECONDS.toMillis(20))
             useSystem = true;
         long now = currentTimeMillis();
-        _short = new RateAccumulator(now);
-        _long = new RateAccumulator(now);
+        _short = new SimpleRateAccumulator(now);
+        _long = new SimpleRateAccumulator(now);
         historyInterval = history;
         accumulateInterval = 0==accum ? history/3 : accum;
         minPause = 200;
@@ -91,18 +90,18 @@ public class RateLimiter
     }
     
 
-    private RateAccumulator aggregateRate(long now)
+    private SimpleRateAccumulator aggregateRate(long now)
     {
         long start = now;
         long count = 0;
         for (RateAccumulator a : _history)
         {
-            if (a._start + historyInterval < now)
+            if (a.getStart() + historyInterval < now)
                 continue;
-            start = min(start,a._start);
-            count += a._count;
+            start = min(start, a.getStart());
+            count += a.getCount();
         }
-        return new RateAccumulator(start,count);
+        return new SimpleRateAccumulator(start, count);
     }
 
 
@@ -150,104 +149,22 @@ public class RateLimiter
     private synchronized long _updateCounts(long count)
     {
         long now = currentTimeMillis();
-        if (_short._start + accumulateInterval < now)
+        if (_short.getStart() + accumulateInterval < now)
         {
             while (!_history.isEmpty())
             {
                 RateAccumulator last = _history.get(_history.size()-1);
-                if (last._start+accumulateInterval > now-historyInterval)
+                if (last.getStart() + accumulateInterval > now - historyInterval)
                     break;
                 _history.remove(_history.size()-1);
             }
             _history.add(0, _short);
-            _short = new RateAccumulator(now);
+            _short = new SimpleRateAccumulator(now);
             _long = aggregateRate(now); // consider: reuse RateAccumulator instead of new
         }
         _short.accumulate(count);
         _long.accumulate(count);
         return _long.getDelay(now, _target);
-    }
-
-
-    public static class Rate
-    {
-        final double _rate;
-        final String _toString;        
-
-        public Rate(long count, TimeUnit unit)
-        {
-            this(count, 1, unit);
-        }
-
-        public Rate(long count, long duration, TimeUnit unit)
-        {
-            if (unit == TimeUnit.MILLISECONDS && 0 == (duration%1000))
-            {
-                duration /= 1000;
-                unit = TimeUnit.SECONDS;
-            }
-            
-            _rate = (double)count / (double)unit.toMillis(duration);
-
-            if (duration == 1)
-                _toString = "" + count + "/" + StringUtils.stripEnd(unit.toString(),"S");
-            else
-                _toString = "" + count + "/(" + duration + " "  + unit.toString()+ ")";
-        }
-
-
-        public double getRate(TimeUnit unit)
-        {
-            return _rate * unit.toMillis(1);    
-        }
-
-
-        @Override
-        public String toString()
-        {
-            return _toString;
-        }
-    }
-
-
-    /** Not thread safe */
-    public static class RateAccumulator
-    {
-        private final long _start;
-        private long _count = 0;
-
-        public RateAccumulator(long now)
-        {
-            _start = now;
-        }
-        public RateAccumulator(long start, long count)
-        {
-            _start = start;
-            _count = count;
-        }
-        public void accumulate(long add)
-        {
-            _count += add;
-        }
-        double getRate(long now)
-        {
-            return (double)_count / max(1000, now-_start);
-        }
-        long getDelay(long now, Rate target)
-        {
-            if (getRate(now) <= target._rate)
-                return 0;
-            double remainder = ((double)_count/target._rate) - (now - _start);
-            return (long)max(0,remainder);
-        }
-        public long getStart()
-        {
-            return _start;
-        }
-        public long getCount()
-        {
-            return _count;
-        }
     }
 
 
@@ -260,7 +177,7 @@ public class RateLimiter
         @org.junit.Test
         public void test()
         {
-            final RateLimiter l = new RateLimiter("test",new Rate(1,TimeUnit.MILLISECONDS),10000,500);
+            final RateLimiter l = new RateLimiter("test", new Rate(1, TimeUnit.MILLISECONDS), 10000, 500);
             l.minPause = 1;
             assertEquals("RateLimiter:test 1/MILLISECOND", l.toString());
             assertEquals(1000.0, l.getTarget().getRate(TimeUnit.SECONDS), DELTA);
