@@ -962,7 +962,7 @@ public class FileContentController extends SpringActionController
                     if (containsFileWebPart(c))
                     {
                         ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
-                        config.addParameter("tabId", "messages");
+                        config.addParameter("tabId", "files");
 
                         node.put("configureURL", config.getEncodedLocalURIString());
                         node.put("browseURL", browse.getEncodedLocalURIString());

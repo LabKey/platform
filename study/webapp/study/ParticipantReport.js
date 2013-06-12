@@ -206,10 +206,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.initialRender = true;
         this.items = [];
         this.pendingRequests = 0;
+        this.maxRowCount = 10000;
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
             bodyStyle : 'padding: 0 20px;',
             autoScroll  : !this.printMode,
+            height : 400,
             region : 'center',
             border : false, frame : false,
             html   : '<span style="width: 400px; display: block; margin-left: auto; margin-right: auto">' +
@@ -374,7 +376,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var sorts = this.getSorts();
 
             if (measures.length > 0) {
-                var limit = 10000;
+                var limit = this.maxRowCount;
                 if (this._inCustomMode()) {
                     limit = 50;
                     this.queryLimited = true;
@@ -394,7 +396,23 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     },
                     success : function(response){
                         this.response = Ext4.decode(response.responseText);
-                        onLoad.call(this);
+
+                        if (this.response.rowCount == this.maxRowCount) {
+
+                            var el = this.previewEl || this.previewPanel.getEl().id + '-body';
+                            Ext4.get(el).update('<span class="labkey-error" style="width: 600px; height: 400px; display: block; margin-left: 250px;"><i>' +
+                                    'The number of results returned has exceeded an internal limit. Please select fewer measures and/or select fewer participants ' +
+                                    'to reduce the number of rows returned.' +
+                                    '</i></span>');
+                            if (!this._inCustomMode())
+                                this.lengthReportField.setValue('');
+
+                            this.unmask();
+                            this.pendingRequests--;
+                            this.showFilter(this.filterSet ? this.filterSet : []);
+                        }
+                        else
+                            onLoad.call(this);
                     },
                     failure : this.onFailure,
                     scope   : this

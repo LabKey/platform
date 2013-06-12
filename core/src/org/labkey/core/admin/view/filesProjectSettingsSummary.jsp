@@ -81,7 +81,7 @@
                 {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
                 {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
                 {text:'Configure Selected', id:idConfigBtn, tooltip: {text:'Configure settings for the selected web part', title:'Configure Selected'}, disabled: true, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-                {text:'Browse Selected', id:idBrowseBtn, tooltip: {text:'Browse files from the selected web part', title:'Browse Selected'}, disabled: true, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
+                {text:'Browse Selected', id:idBrowseBtn, tooltip: {text:'Browse files from the selected web part', title:'Browse Selected'}, disabled: true, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}}
             ],
             dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container, {node: LABKEY.container.id}),
             listeners: {dblclick: function(node){browseSelected(node);}}
