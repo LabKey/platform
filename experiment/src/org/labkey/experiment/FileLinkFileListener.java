@@ -126,10 +126,10 @@ public class FileLinkFileListener implements FileListener
     {
         hardTableFileLinkColumns(new ForEachFileLinkColumn() {
             @Override
-            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo pathColumn, String containerId)
             {
                 // Migrate any paths that match this file move
-                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath);
                 updater.fileMoved(srcFile, destFile, user, container);
             }
         });
@@ -137,13 +137,13 @@ public class FileLinkFileListener implements FileListener
 
     private interface ForEachFileLinkColumn
     {
-        public void exec(DbSchema schema, TableInfo table, ColumnInfo column);
+        public void exec(DbSchema schema, TableInfo table, ColumnInfo pathColumn, String containerId);
     }
 
     private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
-        SQLFragment sql = new SQLFragment("SELECT dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
+        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         sql.append(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
@@ -164,10 +164,11 @@ public class FileLinkFileListener implements FileListener
                     TableInfo tableInfo = schema.getTable(row.get("StorageTableName").toString());
                     if (tableInfo != null)
                     {
-                        ColumnInfo column = tableInfo.getColumn(row.get("Name").toString());
-                        if (column != null)
+                        String containerId = row.get("Container").toString();
+                        ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
+                        if (pathCol != null && containerId != null)
                         {
-                            block.exec(schema, tableInfo, column);
+                            block.exec(schema, tableInfo, pathCol, containerId);
                         }
                     }
                 }
@@ -216,9 +217,9 @@ public class FileLinkFileListener implements FileListener
         hardTableFileLinkColumns(new ForEachFileLinkColumn()
         {
             @Override
-            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo pathColumn, String containerId)
             {
-                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath);
                 files.addAll(updater.listFiles(container));
             }
         });
@@ -255,10 +256,10 @@ public class FileLinkFileListener implements FileListener
         hardTableFileLinkColumns(new ForEachFileLinkColumn()
         {
             @Override
-            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo pathColumn, String containerId)
             {
-                // UNDONE: Add a constant container column
-                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                SQLFragment containerFrag = new SQLFragment("'").append(containerId).append("'");
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
                 frag.append("UNION\n");
                 frag.append(updater.listFilesQuery());
             }
