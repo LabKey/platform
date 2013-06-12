@@ -860,6 +860,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 },
                 failure : function(info, response, options) {
                     this.clearChartPanel("Error: " + info.exception);
+                    this.disableNonMeasureOptionButtons();
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
@@ -931,6 +932,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 },
                 failure : function(info, response, options) {
                     this.clearChartPanel("Error: " + info.exception);
+                    this.disableNonMeasureOptionButtons();
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
@@ -1188,7 +1190,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             var xName, xFunc;
             var min, max, tempMin, tempMax, errorBarType;
             var leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor;
-            var columnAliases = this.individualData ? this.individualData.columnAliases : this.aggregateData.columnAliases;
+            var columnAliases = this.individualData ? this.individualData.columnAliases : (this.aggregateData ? this.aggregateData.columnAliases : null);
 
             for(var i = 0; i < seriesList.length; i++){
                 var columnName = this.getColumnAlias(columnAliases, seriesList[i].aliasLookupInfo);
@@ -1212,13 +1214,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 };
             }
 
+            var rows = this.individualData ? this.individualData.rows : (this.aggregateData ? this.aggregateData.rows : []);
             if (!this.chartInfo.axis[xAxisIndex].range.min && this.chartInfo.axis[xAxisIndex].range.type != 'automatic_per_chart')
             {
-                this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
+                this.chartInfo.axis[xAxisIndex].range.min = d3.min(rows, xFunc);
             }
             if (!this.chartInfo.axis[xAxisIndex].range.max && this.chartInfo.axis[xAxisIndex].range.type != 'automatic_per_chart')
             {
-                this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
+                this.chartInfo.axis[xAxisIndex].range.max = d3.max(rows, xFunc);
             }
 
             if(this.chartInfo.errorBars !== 'None'){
@@ -1255,8 +1258,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 if(!this.chartInfo.axis[leftAxisIndex].range.min && this.chartInfo.axis[leftAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
-                                leftAccessorMin ? leftAccessorMin : leftAccessor);
+                        tempMin = d3.min(rows, leftAccessorMin ? leftAccessorMin : leftAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.min = min;
@@ -1264,8 +1266,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 if(!this.chartInfo.axis[leftAxisIndex].range.max && this.chartInfo.axis[leftAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
-                                leftAccessorMax ? leftAccessorMax : leftAccessor);
+                        tempMax = d3.max(rows, leftAccessorMax ? leftAccessorMax : leftAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.max = max;
@@ -1293,16 +1294,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 if(!this.chartInfo.axis[rightAxisIndex].range.min && this.chartInfo.axis[rightAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
-                                rightAccessorMin ? rightAccessorMin : rightAccessor);
+                        tempMin = d3.min(rows, rightAccessorMin ? rightAccessorMin : rightAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.min = min;
                 }
                 if(!this.chartInfo.axis[rightAxisIndex].range.max && this.chartInfo.axis[rightAxisIndex].range.type != 'automatic_per_chart'){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
-                                rightAccessorMax ? rightAccessorMax : rightAccessor);
+                        tempMax = d3.max(rows, rightAccessorMax ? rightAccessorMax : rightAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.max = max;
@@ -1974,6 +1973,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
      *             3. an object with both measureName AND pivotValue
      */
     getColumnAlias: function(aliasArray, measureInfo) {
+        if (!aliasArray)
+            aliasArray = [];
+
         if (typeof measureInfo != "object")
             measureInfo = {measureName: measureInfo};
         for (var i = 0; i < aliasArray.length; i++)

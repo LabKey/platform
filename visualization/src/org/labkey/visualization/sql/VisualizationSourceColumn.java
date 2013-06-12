@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
 import java.util.*;
@@ -186,8 +187,8 @@ public class VisualizationSourceColumn
             }
             else
             {
-                // The column can't be found, but try to select it anyway to give a reasonable error to the user
-                parts = Arrays.asList(_name.split("[\\./]"));
+                throw new NotFoundException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
+                        ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
             }
 
             StringBuilder selectName = new StringBuilder();
@@ -239,7 +240,7 @@ public class VisualizationSourceColumn
                 if (column == null)
                 {
                     throw new VisualizationSQLGenerator.GenerationException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
-                            ".  The field may not exist, or you may not have permissions to read the data.");
+                            ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
                 }
 
                 _type = column.getJdbcType();
@@ -263,7 +264,7 @@ public class VisualizationSourceColumn
             if (tinfo == null)
             {
                 throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
-                        ".  The table may not exist, or you may not have permissions to read the data.");
+                        ".  The table may have been deleted, or you may not have permissions to read the data.");
             }
 
             FieldKey fieldKey = FieldKey.fromString(_name);

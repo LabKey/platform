@@ -795,7 +795,7 @@ public class VisualizationController extends SpringActionController
             catch (VisualizationSQLGenerator.GenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                _log.warn("Unable to generate visualization SQL.", e);
+                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
                 return null;
             }
 
