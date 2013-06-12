@@ -293,7 +293,20 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                 scope.getSqlDialect().configureToDisableJdbcCaching(conn);
             }
 
-            ResultSet rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+            boolean inTransaction = getScope().isTransactionActive();
+            ResultSet rs;
+
+            try
+            {
+                rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+            }
+            catch (SQLException x)
+            {
+                if (inTransaction || !SqlDialect.isTransactionException(x))
+                    throw x;
+                // retry if simple transaction exception
+                rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+            }
 
             // Just to be safe: if processResultSet() throws SQLException then caller will close the result set; if it
             // throws anything else, we will lose the result set, so we need to close it here.
