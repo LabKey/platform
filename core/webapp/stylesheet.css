@@ -40,7 +40,7 @@ body, div, td, th, table, img, form
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
-    font-size: 60px;
+    font-size: 13px;
 }
 
 img
@@ -1648,56 +1648,43 @@ td.labkey-proj
     text-decoration: none;
 }
 
-.labkey-search-filter A:hover
+.labkey-search-filter a:hover
 {
     text-decoration: underline;
 }
+
 .labkey-search-navresults
 {
     padding-left:8px;
     border-left:1px solid #89A1B4;
 }
-.labkey-search-navresults H3
+
+.labkey-search-navresults h3
 {
-    color: #676767; margin-top:0;
+    color: #676767;
+    margin-top:0;
 }
-.labkey-search-results TD
+
+.labkey-search-results td
 {
-    color: #676767; margin-top:0;
+    color: #676767;
+    margin-top:0;
 }
+
 form.labkey-search-form
 {
     padding:0;
 }
+
 .labkey-search-title
 {
     font-size:110%;
-}
-
-
-
-/* The  td that holds the side panel with the navigation and admin expandable menus */
-/* there's lots of levels of divs and tables under this, including menu-wrapper, labkey-expandable-nav-panel, labkey-expandable-nav, and labkey-nav-tree */
-td.labkey-site-nav-panel {
-    background-color: #f8f8f8;
-    padding-top: 10px;
-    padding-left: 5px;
-    border-top: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-right: 1px solid #e0e6ea;
-    border-collapse: separate;
-	border-spacing: 2px;
-    vertical-align: top;
-    width: 120px;
-	overflow: auto;
 }
 
 div.menu-wrapper {
     width: 175px;
     overflow: auto;
 }
-
 
 /* The strip at the top of the left side panel that is used to set its minimum width */
 .labkey-site-nav-expander
@@ -2721,44 +2708,44 @@ div.single-upload-panel input.x-form-field
 }
 
 .x-menu {
-    padding:0;
+    padding: 0;
     background: #FFFFFF none;
     border-color: #b4b4b4;
 }
 .x-menu-sep {margin:1px 1px 0 1px;}
 
 li.x-menu-item-active {
-	background:#e5e5e5 none repeat scroll 0 0;
+	background: #e5e5e5 none repeat scroll 0 0;
 	border: none;
 }
 
 li.x-menu-list-item, li.x-menu-item-active { padding:0; }
 
 li.x-menu-item-active a.x-menu-item {
-	color:#000000;
+	color: #000000;
 }
 
 .extContainer .x-menu-item-active {
-    background:#EAEAEA repeat-x left bottom;
-    border:1px solid #b4b4b4;
-    padding:0;
+    background: #EAEAEA repeat-x left bottom;
+    border: 1px solid #b4b4b4;
+    padding: 0;
 }
 
 /* Tools */
 .x-tool {
-    background-image:url(./gtheme/img/icons7.png);
+    background-image: url(./gtheme/img/icons7.png);
 }
 
 .x-tool-close {			background-position: -40px -80px; }
-.x-tool-close-over {		background-position: -40px -100px; }
-.x-tool-maximize {		background-position:-120px -80px; }
-.x-tool-maximize-over {	background-position:-120px -100px; }
-.x-tool-minimize {		background-position:-20px -80px; }
-.x-tool-minimize-over {	background-position:-20px -100px; }
-.x-tool-restore {		background-position:0px -80px; }
-.x-tool-restore-over {	background-position:0px -100px; }
-.x-tool-toggle {			background-position:-70px -30px; height:10px; margin-top:1px; width:10px; }
-.x-tool-toggle-over {	background-position:-70px -30px; }
+.x-tool-close-over {	background-position: -40px -100px; }
+.x-tool-maximize {		background-position: -120px -80px; }
+.x-tool-maximize-over {	background-position: -120px -100px; }
+.x-tool-minimize {		background-position: -20px -80px; }
+.x-tool-minimize-over {	background-position: -20px -100px; }
+.x-tool-restore {		background-position: 0px -80px; }
+.x-tool-restore-over {	background-position: 0px -100px; }
+.x-tool-toggle {		background-position: -70px -30px; height:10px; margin-top:1px; width:10px; }
+.x-tool-toggle-over {	background-position: -70px -30px; }
 .x-panel-collapsed .x-tool-toggle {	background-position:-60px -20px; }
 .x-panel-collapsed .x-tool-toggle-over {	background-position:-60px -20px; }
 
@@ -2829,23 +2816,22 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-layout-collapsed{
-    background-color:#eeeeee;
-    border-color:#e0e0e0;
+    background-color: #eeeeee;
+    border-color: #e0e0e0;
 }
 .x-layout-collapsed-over{
-	 background-color:#fbfbfb;
+	 background-color: #fbfbfb;
 }
 
 
 /* Toolbars */
 
-.x-toolbar{
-	border-color:#d0d0d0;
+.x-toolbar {
     background: #F4F4F4;
-    border-width: 0;
+    border: #d0d0d0 solid 0;
 }
 .x-toolbar .x-btn {
-	margin-right:2px;
+	margin-right: 2px;
 }
 
 .x-toolbar .x-btn-over button {
@@ -2853,18 +2839,18 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
-	background-image:url(./gtheme/img/lkbtn.gif);
+	background-image: url(./gtheme/img/lkbtn.gif);
 }
 
 /* Window */
 
 .x-window-proxy {
-    background:#e0e0e0;
-    border-color:#b0b0b0;
+    background: #e0e0e0;
+    border-color: #b0b0b0;
 }
 
 body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text {
-    color:#FFFFFF;
+    color: #FFFFFF;
     font-weight: normal;
     font-size: 13px;
 }
@@ -3316,7 +3302,7 @@ li.labkey-tab-inactive a
   padding: 4px 7px;
   margin-right: 6px;
   cursor: default;
-  background-color: transparent;
+  background: transparent;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected div {
@@ -3525,7 +3511,7 @@ div.note {
 	text-transform: uppercase;
 	text-decoration: none;
 	font-family: Verdana, Arial, Helvetica, sans serif;
-	color: #999;
+	color: #126495;
 	font-size: 10px;
 	font-weight: bold;
 }
@@ -3535,14 +3521,23 @@ div.note {
     color: #000000;
 }
 
-/* save for when we look at project webpart updates
+.tool-icon img {
+    border: none;
+    width: 64px;
+    height: 64px;
+    background: rgb(18, 100, 149); /* no RGBa */
+    background: rgba(18, 100, 149, 0.7); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2126495, endColorstr=#b2126495); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2126495, endColorstr=#b2126495)"; /* IE 8 */
+}
 
-.tool-icon.thumb-wrap.thumb-wrap-bottom a,
-.tool-icon.thumb-wrap.thumb-wrap-bottom a:visited {
-	text-transform: none;
-	font-size: 12px;
-	font-weight: normal;
-} */
+.tool-icon:hover img {
+    cursor: pointer;
+    background: rgba(18, 100, 149, 1.0); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff126495, endColorstr=#ff126495); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff126495, endColorstr=#ff126495)"; /* IE 8 */
+}
+
 
 .study-schedule-container .x4-reset .x4-grid-header-ct {
     background-image: none;
@@ -3671,16 +3666,9 @@ input[type="checkbox"], input[type="radio"] {
 
 /* Used for the "App Bar" containing the main title and the application button bar */
 
-.labkey-app-bar { /* THIS IS A NEW COLOR */
-    /*
-        TODO: this will be overridden by the themeStylesheet.  We need to add another background color to the theme.
-        This is included for now to allow the other changes to be added.
-    */
+.labkey-app-bar {
     padding: 10px 20px 0 20px;
-	background: #8abede;
-	/*box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);*/
-	/*-moz-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);*/
-	/*-webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);*/
+    background-color: #e0e6ea;
 }
 
 .labkey-app-bar div.labkey-folder-title { /* this should map to the link and top border color in theme */
@@ -3762,6 +3750,7 @@ input[type="checkbox"], input[type="radio"] {
 
 li.labkey-app-bar-tab-active {
     border:  1px solid transparent;
+    background-color: #f8f8f8;
 }
 
 li.labkey-app-bar-tab-inactive {
@@ -3769,11 +3758,11 @@ li.labkey-app-bar-tab-inactive {
 }
 
 li.labkey-app-bar-tab-inactive:hover a {
-    color: #000;
+    color: #000000;
 }
 
 li.labkey-app-bar-tab-active a {
-    color: #000;
+    color: #000000;
 }
 
 li.labkey-app-bar-tab-inactive a {
@@ -3883,7 +3872,7 @@ a.labkey-main-menu-link:visited
 
 .labkey-main-menu li.selected
 {
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     color: #000;
 }
 
@@ -3891,6 +3880,12 @@ a.labkey-main-menu-link:visited
 {
     background: url(./_images/icon_menu_projects_over.png) top center no-repeat;
     border-left: 1px solid transparent;
+}
+
+.labkey-main-menu-item:hover,
+.labkey-main-menu-item.selected
+{
+    background-color: #ffffff;
 }
 
 .labkey-main-menu-item:hover a,
@@ -3939,7 +3934,6 @@ span.button-icon {
     min-width: 280px;
     max-width: 800px;
     white-space: nowrap;
-    display: inline-block;
     overflow-y: auto;
     overflow-x: hidden;
     -ms-overflow-y: auto;
@@ -3948,31 +3942,29 @@ span.button-icon {
 
 .project-nav ul {
     list-style: none;
-    padding: 10px;
+    padding: 5px 10px 10px 10px;
 }
 
 .project-nav ul li {
     list-style: none;
     float: left;
     width: 11em;
-    height: 25px;
+    height: 15px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin-left: 5px;
     margin-right: 30px;
-    display: inline;
+    padding: 5px;
+    display: inline-block;
 }
 
 .project-nav ul li a {
-    display: block;
-    width: 100%;
-    height: 20px;
-    padding: 5px 5px 0 5px;
+    padding: 5px 20px 5px 5px;
 }
 
 .project-nav ul li a:hover {
-   background-color: #E0E6EA;
+    background-color: #E0E6EA;
 }
 
 .project-menu-buttons {

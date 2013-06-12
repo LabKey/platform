@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
@@ -24,17 +23,14 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 
-/* NOTE - The ONLY styles that should be set in this file are ones pulled from the look and feel settings.
+/*
+   NOTE - The ONLY styles that should be set in this file are ones pulled from the look and feel settings.
    That means colors and font sizes only. All other properties should be set in stylesheet.css. This file represents
-   the minimal set of overrides to respect the user's look and feel settings. */
-
-
+   the minimal set of overrides to respect the user's look and feel settings.
+*/
     Container c = getViewContext().getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
-
-    ThemeFont themeFont = ThemeFont.getThemeFont(c);
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
     String link        = theme.getLinkColor();
     String text        = theme.getTextColor();
@@ -43,34 +39,12 @@
     String second      = theme.getSecondaryBackgroundColor();
     String borderTitle = theme.getBorderTitleColor();
     String webpart     = theme.getWebPartColor();
+    String fontSize    = ThemeFont.getThemeFont(c).getNormalSize();
 
-    String toolIconBackgroundHex = link;
-    Color toolIconBackgroundColor = WebTheme.parseColor(toolIconBackgroundHex);
-    /*
-
-    index:
-
-    defaults
-    general
-        -various
-        -data region
-    home template
-        -main
-            -header-panel
-                -main-title
-            -site-nav-panel
-                -expandable-nav
-                -nav-tree
-            -proj
-                -proj-nav-panel
-                -body-panel
-                -side-panel
-    module specific (alphabetical)
-    GWT
-    Ext
-
-    */
-
+    Color toolIconBackgroundColor = WebTheme.parseColor(link);
+    int r = toolIconBackgroundColor.getRed();
+    int g = toolIconBackgroundColor.getGreen();
+    int b = toolIconBackgroundColor.getBlue();
 %>
 
 /* defaults, general attributes */
@@ -82,7 +56,7 @@ body, div, td, th, table, img, form
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
-    font-size: <%=themeFont.getNormalSize()%>;
+    font-size: <%= fontSize %>;
 }
 
 a, a:visited, .labkey-link, .labkey-link:visited
@@ -248,22 +222,11 @@ span.labkey-button:active
     border-bottom: 1px solid #<%= primary %>;
 }
 
-.labkey-tab-active
-{
-    <%--background-color: #<%= grid %>;--%>
-}
-
-td.labkey-app-button-bar-button a
-{
-//    color:#<%= link %>;
-}
-
 .labkey-completion-highlight
 {
     background-color: #<%= grid %>;
 }
 
-/* Used for full screen pages such as for login or upgrade */
 .labkey-full-screen-background
 {
     background-color: #<%= primary %>;
@@ -282,14 +245,11 @@ table.labkey-customize-view .labkey-tab a:hover
     background: #<%= second %>;
 }
 
-/* There are some odd styles that are used so that the data
-regions look the same in IE, Safari, and Firefox */
 table.labkey-data-region
 {
     background-color: #<%= second %>;
 }
 
-/* Used for the unbordered empty or title cells sometimes put on tables */
 .labkey-data-region .labkey-data-region-title
 {
     background-color: #<%= second %>;
@@ -308,8 +268,6 @@ table.labkey-data-region
     color: #<%= link %>;
 }
 
-/* This is used for the headers on data regions that highlight on mouseover and give a drop down
-of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
 {
     color: #<%= link %>;
@@ -320,7 +278,6 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     background-color: #<%= grid %>;
 }
 
-/* Used for blank cells in the data region such as when the main row headers have sub row headers */
 td.labkey-blank-cell, th.labkey-blank-cell
 {
     background: #<%= second %>;
@@ -332,29 +289,19 @@ td.labkey-blank-cell, th.labkey-blank-cell
     border-bottom: 1px solid #<%= link %>;
 }
 
-/* Help pop ups */
 #helpDiv
 {
     background-color:#<%= second %>;
 }
 
-/* The table that is the entire page */
 table.labkey-main
 {
     background-color: #<%= primary %>;
 }
 
-/* The top panel with the title and logo */
 #headerpanel
 {
     background-color: #<%= second %>;
-}
-
-/* The side panel with the navigation and admin expandable menus */
-td.labkey-site-nav-panel
-{
-    background-color: #<%= primary %>;
-    border-right: 1px solid #<%= webpart %>;
 }
 
 .labkey-webpart-menu
@@ -367,23 +314,21 @@ td.labkey-site-nav-panel
     color: #<%= borderTitle %>;
 }
 
-.labkey-search-navresults H3
+.labkey-search-navresults h3
 {
     color: #<%= borderTitle %>;
 }
 
-.labkey-search-results TD
+.labkey-search-results td
 {
     color: #<%= borderTitle %>;
 }
 
-/* The table that contains the expandable nav panels */
 table.labkey-expandable-nav
 {
     background-color: #<%= primary %>;
 }
 
-/* Each line of the expandable nav menus */
 tr.labkey-nav-tree-row
 {
     color: #<%= link %>;
@@ -399,24 +344,16 @@ table#navBar
     background-color:#<%= primary %>;
 }
 
-/* This is the table that contains each web part in the portal view */
 table.labkey-wp
 {
-    width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
     border: 5px solid #<%= webpart %>;
 }
 
-/* This is the body of the web part */
 td.labkey-wp-body
 {
-    width: 100%;
-    padding: 10px;
     background: #<%= second %>;
 }
 
-/* This is used for the top strip on web parts, but is also used for headers elsewhere such as the
-help pop up */
 tr.labkey-wp-header
 {
     background-color: #<%= webpart %>;
@@ -491,11 +428,6 @@ td.labkey-ms1-filter
 .gwt-TabBar .gwt-TabBarItem
 {
     background-color: #<%= grid %>;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected
-{
-    background: transparent;
 }
 
 /* ExtJS */
@@ -594,7 +526,6 @@ body .x-grid3 .x-grid3-row-selected
     background-color: #<%= webpart %>;
 }
 
-/* This tab has a bottom border so it looks like it is back */
 td.labkey-tab, .labkey-tab
 {
     background-color: #<%= grid %>;
@@ -657,26 +588,20 @@ li.labkey-tab-inactive a
     color : #<%= link %>
 }
 
-.tool-icon:hover img {
-	cursor: pointer;
-    background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
-    background: rgba(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>, 1.0); /* FF, Safari, Chrome, IE9 */
-    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff<%= toolIconBackgroundHex %>, endColorstr=#ff<%= toolIconBackgroundHex %>); /* IE 5.5 - 7 */
-    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff<%= toolIconBackgroundHex %>, endColorstr=#ff<%= toolIconBackgroundHex %>)"; /* IE 8 */
+.tool-icon img {
+    background: rgba(<%= r %>, <%= g %>, <%= b %>, 0.7); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= link %>, endColorstr=#b2<%= link %>); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= link %>, endColorstr=#b2<%= link %>)"; /* IE 8 */
 }
 
-.tool-icon img {
-	border: none;
-	width: 64px;
-	height: 64px;
-    background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
-    background: rgba(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>, 0.7); /* FF, Safari, Chrome, IE9 */
-    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>); /* IE 5.5 - 7 */
-    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>)"; /* IE 8 */
+.tool-icon:hover img {
+    background: rgba(<%= r %>, <%= g %>, <%= b %>, 1.0); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= link %>, endColorstr=#b2<%= link %>); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= link %>, endColorstr=#b2<%= link %>)"; /* IE 8 */
 }
 
 .study-schedule-container .x4-reset .x4-grid-header-ct {
-    background-color: #<%=grid%>;
+    background-color: #<%= grid %>;
 }
 
 .themed-panel div.x4-panel-header {
@@ -716,7 +641,6 @@ li.labkey-app-bar-tab-inactive:hover {
 {
     background-color: #<%= link %>;
 }
-
 
 .labkey-main-menu-item:hover,
 .labkey-main-menu-item.selected

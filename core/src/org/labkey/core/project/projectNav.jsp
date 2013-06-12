@@ -87,7 +87,7 @@
     {
 %>
 <div class="project-nav">
-    <ul style="width: <%=(11.333*cols)+(cols*2.188)+1%>em;">
+    <ul style="width: <%=(11.333*cols)+(cols*2.188)+3.8%>em;">
 <%
         int idx, last = rowsPerCol-1;
         for (r=0; r < rowsPerCol; r++)
