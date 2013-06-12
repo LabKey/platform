@@ -18,16 +18,12 @@ package org.labkey.demo.view;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.demo.DemoController;
 import org.labkey.demo.model.DemoManager;
 import org.labkey.demo.model.Person;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,16 +41,7 @@ public class DemoWebPart extends JspView<List<Person>>
         super("/org/labkey/demo/view/demoWebPart.jsp", null);
 
         Container c = getViewContext().getContainer();
-
-        try
-        {
-            setModelBean(Arrays.asList(DemoManager.getInstance().getPeople(c)));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        setModelBean(Arrays.asList(DemoManager.getInstance().getPeople(c)));
         setTitle("Demo Summary");
         setTitleHref(new ActionURL(DemoController.BeginAction.class, c));
     }

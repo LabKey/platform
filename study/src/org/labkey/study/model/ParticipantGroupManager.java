@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
@@ -44,7 +45,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -76,7 +76,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
-    private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<ParticipantCategoryListener>();
+    private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
 
     private ParticipantGroupManager(){}
 
@@ -139,7 +139,7 @@ public class ParticipantGroupManager
         try {
             filter.addCondition(FieldKey.fromString("Container"), c);
             ParticipantCategoryImpl[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategoryImpl.class);
-            List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
+            List<ParticipantCategoryImpl> filtered = new ArrayList<>();
 
             for (ParticipantCategoryImpl pc : categories)
             {
@@ -162,8 +162,8 @@ public class ParticipantGroupManager
     {
         Container container = context.getContainer();
         String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
-        Map<String, String> colFilters = new HashMap<String, String>();
-        Set<ParticipantGroup> selected = new HashSet<ParticipantGroup>();
+        Map<String, String> colFilters = new HashMap<>();
+        Set<ParticipantGroup> selected = new HashSet<>();
         // Build up a case-insensititive set of all columns that are being filtered.
         // We'll use this to identify any existing participant list filters.
         for (String colFilterParamName : colFilterParamNames)
@@ -898,7 +898,7 @@ public class ParticipantGroupManager
             {
                 throw new RuntimeSQLException(e);
             }
-            Map<Integer, ParticipantGroup> groupMap = new HashMap<Integer, ParticipantGroup>();
+            Map<Integer, ParticipantGroup> groupMap = new HashMap<>();
 
             for (ParticipantGroupMap pg : maps)
             {
@@ -1098,42 +1098,39 @@ public class ParticipantGroupManager
 
     public List<String> getParticipantsFromSelection(Container container, QueryView view, Collection<String> lsids) throws SQLException
     {
-        List<String> ptids = new ArrayList<String>();
+        List<String> ptids = new ArrayList<>();
         TableInfo table = view.getTable();
 
         if (table != null)
         {
-            ResultSet rs = null;
+            StringBuilder whereClause = new StringBuilder();
+            whereClause.append("lsid IN (");
+            Object[] params = new Object[lsids.size()];
+            String comma = "";
+            int i = 0;
 
-            try
+            for (String lsid : lsids)
             {
-                StringBuilder whereClause = new StringBuilder();
-                whereClause.append("lsid IN (");
-                Object[] params = new Object[lsids.size()];
-                String comma = "";
-                int i = 0;
+                whereClause.append(comma);
+                whereClause.append("?");
+                params[i++] = lsid;
+                comma = ",";
+            }
 
-                for (String lsid : lsids)
-                {
-                    whereClause.append(comma);
-                    whereClause.append("?");
-                    params[i++] = lsid;
-                    comma = ",";
-                }
+            whereClause.append(")");
+            SimpleFilter filter = new SimpleFilter();
+            filter.addWhereClause(whereClause.toString(), params);
+            FieldKey ptidKey = new FieldKey(null, StudyService.get().getSubjectColumnName(container));
 
-                whereClause.append(")");
-                SimpleFilter filter = new SimpleFilter();
-                filter.addWhereClause(whereClause.toString(), params);
-
-                FieldKey ptidKey = new FieldKey(null, StudyService.get().getSubjectColumnName(container));
-                Results r = Table.select(table, table.getColumns(ptidKey.toString(), "lsid"), filter, null);
-                rs = r.getResultSet();
+            try (Results r = new TableSelector(table, table.getColumns(ptidKey.toString(), "lsid"), filter, null).getResults())
+            {
+                ResultSet rs = r.getResultSet();
 
                 if (rs != null)
                 {
                     ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
-
                     int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+
                     while (rs.next() && ptidIndex > 0)
                     {
                         String ptid = rs.getString(ptidIndex);
@@ -1141,11 +1138,8 @@ public class ParticipantGroupManager
                     }
                 }
             }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
         }
+
         return ptids;
     }
 
@@ -1171,7 +1165,7 @@ public class ParticipantGroupManager
 
     private static List<Throwable> fireDeleteCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ParticipantCategoryListener l : _listeners)
         {
@@ -1188,7 +1182,7 @@ public class ParticipantGroupManager
 
     private static List<Throwable> fireUpdateCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ParticipantCategoryListener l : _listeners)
         {
@@ -1205,7 +1199,7 @@ public class ParticipantGroupManager
 
     private static List<Throwable> fireCreatedCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ParticipantCategoryListener l : _listeners)
         {

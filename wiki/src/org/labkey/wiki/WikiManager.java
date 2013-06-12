@@ -37,6 +37,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
@@ -995,18 +996,20 @@ public class WikiManager implements WikiService
 
         private void purgePages(Container c, boolean verifyEmpty) throws SQLException
         {
+            SqlExecutor executor = new SqlExecutor(_m.comm.getSchema());
+
             // TODO this belongs in attachment service!
             String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int docs = Table.execute(_m.comm.getSchema(), deleteDocuments, c.getId(), c.getId());
+            int docs = executor.execute(deleteDocuments, c, c);
 
             String updatePages = "UPDATE " + _m.comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";
-            Table.execute(_m.comm.getSchema(), updatePages, c.getId());
+            executor.execute(updatePages, c);
 
             String deletePageVersions = "DELETE FROM " + _m.comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int pageVersions = Table.execute(_m.comm.getSchema(), deletePageVersions, c.getId());
+            int pageVersions = executor.execute(deletePageVersions, c);
 
             String deletePages = "DELETE FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?";
-            int pages = Table.execute(_m.comm.getSchema(), deletePages, c.getId());
+            int pages = executor.execute(deletePages, c);
 
             if (verifyEmpty)
             {

@@ -15,6 +15,8 @@
  */
 package org.labkey.study.controllers.assay.actions;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -25,9 +27,15 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -36,16 +44,13 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.data.Table;
-import org.json.JSONObject;
-import org.json.JSONArray;
 import org.springframework.validation.BindException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -134,13 +139,11 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         {
             filter.addClause(new SimpleFilter.InClause(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, Arrays.asList(objectIds)));
         }
-        Results results = null;
 
-        try
+        try (Results results = new TableSelector(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)).getResults())
         {
-            results = Table.select(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
-
             JSONArray dataRows = new JSONArray();
+
             while (results.next())
             {
                 JSONObject dataRow = new JSONObject();
@@ -151,13 +154,9 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
                 }
                 dataRows.put(dataRow);
             }
+
             return dataRows;
         }
-        finally
-        {
-            if (results != null) { try { results.close(); } catch (SQLException e) {} }
-        }
-
     }
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException

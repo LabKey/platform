@@ -53,7 +53,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
     {
         if (null == _successorRunIdList)
             throw new IllegalStateException("successorRunIdList not populated");
-        List<ExpRun> result = new ArrayList<ExpRun>();
+        List<ExpRun> result = new ArrayList<>();
         for (Integer integer : _successorRunIdList)
         {
             result.add(ExperimentService.get().getExpRun(integer.intValue()));
@@ -65,7 +65,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
     {
         if (_successorRunIdList == null)
         {
-            _successorRunIdList = new ArrayList<Integer>();
+            _successorRunIdList = new ArrayList<>();
         }
         _successorRunIdList.add(runId);
     }
@@ -81,7 +81,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         _sourceApp = sourceApp;
         if (_successorAppList == null)
         {
-            _successorRunIdList = new ArrayList<Integer>();
+            _successorRunIdList = new ArrayList<>();
         }
         markSuccessorAppsAsPopulated();
     }
@@ -90,7 +90,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
     {
         if (_successorAppList == null)
         {
-            _successorAppList = new ArrayList<ExpProtocolApplication>();
+            _successorAppList = new ArrayList<>();
         }
     }
 
@@ -202,11 +202,9 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     protected ExpProtocolApplication[] getTargetApplications(SimpleFilter filter, TableInfo inputTable)
     {
-        ResultSet rs = null;
-        try
+        try (ResultSet rs = Table.select(inputTable, new CsvSet("TargetApplicationId,DataId"), filter, null))
         {
-            rs = Table.select(inputTable, new CsvSet("TargetApplicationId,DataId"), filter, null);
-            List<ExpProtocolApplication> ret = new ArrayList<ExpProtocolApplication>();
+            List<ExpProtocolApplication> ret = new ArrayList<>();
 			int targetCol = rs.findColumn("TargetApplicationId");
             while (rs.next())
             {
@@ -217,10 +215,6 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
         }
     }
 

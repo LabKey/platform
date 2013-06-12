@@ -16,28 +16,32 @@
 
 package org.labkey.demo;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.demo.model.DemoManager;
 import org.labkey.demo.model.Person;
 import org.labkey.demo.view.DemoWebPart;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Set;
 
 
 public class DemoModule extends DefaultModule
 {
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
-
     public String getName()
     {
         return "Demo";
@@ -80,19 +84,12 @@ public class DemoModule extends DefaultModule
 
     public Collection<String> getSummary(Container c)
     {
-        try
+        Person[] people = DemoManager.getInstance().getPeople(c);
+        if (people != null && people.length > 0)
         {
-            Person[] people = DemoManager.getInstance().getPeople(c);
-            if (people != null && people.length > 0)
-            {
-                Collection<String> list = new LinkedList<String>();
-                list.add("Demo Module: " + people.length + " person records.");
-                return list;
-            }
-        }
-        catch (SQLException e)
-        {
-            _log.error("Failure checking for demo data in container " + c.getPath(), e);
+            Collection<String> list = new LinkedList<>();
+            list.add("Demo Module: " + people.length + " person records.");
+            return list;
         }
         return Collections.emptyList();
     }

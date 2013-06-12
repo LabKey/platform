@@ -23,8 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
@@ -196,7 +196,7 @@ public class ExternalReport extends AbstractReport
                 TableInfo mainTable = schema.getTable(getQueryName());
                 if (mainTable == null)
                     return new HtmlView("Unable to get TableInfo for query: " + getQueryName());
-                rs = Table.select(mainTable, mainTable.getColumns(), null, null);
+                rs = new TableSelector(mainTable).getResults();
             }
 
             TSVGridWriter tsv = new TSVGridWriter(rs);

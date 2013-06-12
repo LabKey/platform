@@ -22,6 +22,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.User;
 import org.labkey.demo.DemoSchema;
 import org.springframework.validation.Errors;
@@ -50,7 +51,7 @@ public class DemoManager
         Table.delete(DemoSchema.getInstance().getTableInfoPerson(), containerFilter);
     }
 
-    public Person[] getPeople(Container c) throws SQLException
+    public Person[] getPeople(Container c)
     {
         Filter containerFilter = SimpleFilter.createContainerFilter(c);
         return getPeople(containerFilter);
@@ -63,7 +64,7 @@ public class DemoManager
         Table.delete(DemoSchema.getInstance().getTableInfoPerson(), filter);
     }
 
-    public Person getPerson(Container c, int rowId) throws SQLException
+    public Person getPerson(Container c, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("RowId", rowId);
@@ -74,10 +75,9 @@ public class DemoManager
             return null;
     }
 
-    private Person[] getPeople(Filter filter) throws SQLException
+    private Person[] getPeople(Filter filter)
     {
-        return Table.select(DemoSchema.getInstance().getTableInfoPerson(),
-                Table.ALL_COLUMNS, filter, new Sort("RowId"), Person.class);
+        return new TableSelector(DemoSchema.getInstance().getTableInfoPerson(), filter, new Sort("RowId")).getArray(Person.class);
     }
 
     public Person insertPerson(Container c, User user, Person person) throws SQLException

@@ -1577,8 +1577,8 @@ public class SampleManager implements ContainerManager.ContainerListener
                             }
                             ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
                         }
-                        rs = Table.select(tinfo, Arrays.asList(tinfo.getColumn(tinfo.getTitleColumn())), null,
-                                new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn()));
+                        rs = new TableSelector(tinfo.getColumn(tinfo.getTitleColumn()), null,
+                                new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn())).getResultSet();
                     }
                     else
                     {

@@ -69,6 +69,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -286,7 +287,7 @@
                 continue;
             Map<FieldKey,ColumnInfo> allColumns = getQueryColumns(table);
             ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
-            Results dsResults = Table.select(table, allColumns.values(), filter, sort);
+            Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults();
             int rowCount = dsResults.getSize();
             while (dsResults.next())
             {

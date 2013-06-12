@@ -234,7 +234,7 @@ public class DemoController extends SpringActionController
         public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
             List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getViewContext().getContainer()));
-            return new JspView<List<Person>>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
+            return new JspView<>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
         }
 
         public boolean handlePost(BulkUpdateForm form, BindException errors) throws Exception
@@ -506,9 +506,9 @@ public class DemoController extends SpringActionController
         private String s;
         private Date d;
         private SubBean sub;
-        private ArrayList<String> indexString = new ArrayList<String>();
-        private ArrayList<String> listString = new ArrayList<String>();
-        private ArrayList<SubBean> listBean = new FormArrayList<SubBean>(SubBean.class);
+        private ArrayList<String> indexString = new ArrayList<>();
+        private ArrayList<String> listString = new ArrayList<>();
+        private ArrayList<SubBean> listBean = new FormArrayList<>(SubBean.class);
 
         public int getI()
         {
@@ -677,7 +677,7 @@ public class DemoController extends SpringActionController
 
         public ModelAndView getView(BindActionBean form, BindException errors) throws Exception
         {
-            return new JspView<BindActionBean>("/org/labkey/demo/view/bindTest.jsp", form, errors);
+            return new JspView<>("/org/labkey/demo/view/bindTest.jsp", form, errors);
         }
 
 

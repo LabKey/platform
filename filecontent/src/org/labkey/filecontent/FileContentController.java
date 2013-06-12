@@ -42,7 +42,6 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
@@ -90,7 +89,6 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -124,8 +122,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -998,8 +994,7 @@ public class FileContentController extends SpringActionController
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("name"), FilesWebPart.PART_NAME);
 
-            TableSelector selector = new TableSelector(Portal.getTableInfoPortalWebParts(), filter, null);
-            return selector.exists();
+            return new TableSelector(Portal.getTableInfoPortalWebParts(), filter, null).exists();
         }
     }
 
