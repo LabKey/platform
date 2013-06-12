@@ -47,7 +47,10 @@ public class TableUpdaterFileListener implements FileListener
 {
     private static final Logger LOG = Logger.getLogger(TableUpdaterFileListener.class);
 
+    public static final String TABLE_ALIAS = "x";
+
     private final TableInfo _table;
+    private final SQLFragment _containerFrag;
     private final String _pathColumn;
     private final PathGetter _pathGetter;
     private final String _keyColumn;
@@ -113,15 +116,21 @@ public class TableUpdaterFileListener implements FileListener
 
     public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter)
     {
-        this(table, pathColumn, pathGetter, null);
+        this(table, pathColumn, pathGetter, null, null);
     }
 
     public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter, @Nullable String keyColumn)
+    {
+        this(table, pathColumn, pathGetter, keyColumn, null);
+    }
+
+    public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter, @Nullable String keyColumn, @Nullable SQLFragment containerFrag)
     {
         _table = table;
         _pathColumn = pathColumn;
         _pathGetter = pathGetter;
         _keyColumn = keyColumn;
+        _containerFrag = containerFrag;
     }
 
     @Override
@@ -233,11 +242,12 @@ public class TableUpdaterFileListener implements FileListener
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
 
-        // TODO: Add container expression for tables without container column (provisioned tables, genotyping.analyses uses container in genotyping.runs table)
-        if (_table.getColumn("Container") != null)
+        if (_containerFrag != null)
+            selectFrag.append("(").append(_containerFrag).append(") AS Container,\n");
+        else if (_table.getColumn("Container") != null)
             selectFrag.append("  Container,\n");
         else if (_table.getColumn("Folder") != null)
-            selectFrag.append("  Folder AS Container\n");
+            selectFrag.append("  Folder AS Container,\n");
         else
             selectFrag.append("  NULL AS Container,\n");
 
@@ -271,7 +281,7 @@ public class TableUpdaterFileListener implements FileListener
         //selectFrag.append("  ? AS SourceName\n").add(getName());
         selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
 
-        selectFrag.append("FROM ").append(_table).append("\n");
+        selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
         selectFrag.append("WHERE ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
 
         return selectFrag;
