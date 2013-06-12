@@ -181,7 +181,7 @@ public abstract class DisplayColumn extends RenderColumn
     public String getName()
     {
         if (null != getColumnInfo())
-            return getColumnInfo().getPropertyName();
+            return getColumnInfo().getName();
         else
             return super.getName();
     }
