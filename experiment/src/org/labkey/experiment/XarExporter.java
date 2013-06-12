@@ -64,15 +64,15 @@ public class XarExporter
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
      */
-    private Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<String, Set<String>>();
-    private Set<String> _experimentRunLSIDs = new HashSet<String>();
-    private Set<String> _protocolLSIDs = new HashSet<String>();
-    private Set<String> _inputDataLSIDs = new HashSet<String>();
-    private Set<String> _inputMaterialLSIDs = new HashSet<String>();
+    private Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<>();
+    private Set<String> _experimentRunLSIDs = new HashSet<>();
+    private Set<String> _protocolLSIDs = new HashSet<>();
+    private Set<String> _inputDataLSIDs = new HashSet<>();
+    private Set<String> _inputMaterialLSIDs = new HashSet<>();
 
-    private Set<String> _sampleSetLSIDs = new HashSet<String>();
-    private Set<String> _domainLSIDs = new HashSet<String>();
-    private Set<Integer> _expDataIDs = new HashSet<Integer>();
+    private Set<String> _sampleSetLSIDs = new HashSet<>();
+    private Set<String> _domainLSIDs = new HashSet<>();
+    private Set<Integer> _expDataIDs = new HashSet<>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
@@ -391,7 +391,7 @@ public class XarExporter
         logProgress("Adding material " + material.getLSID());
         addSampleSet(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
-        xMaterial.setCpasType(material.getCpasType() == null ? "Material" : _relativizedLSIDs.relativize(material.getCpasType()));
+        xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
         PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
         if (materialProperties != null)
@@ -629,7 +629,7 @@ public class XarExporter
     {
         logProgress("Adding data " + data.getLSID());
         xData.setAbout(_relativizedLSIDs.relativize(data));
-        xData.setCpasType(data.getCpasType() == null ? "Data" : _relativizedLSIDs.relativize(data.getCpasType()));
+        xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
         File f = data.getFile();
         String url = null;
@@ -783,7 +783,7 @@ public class XarExporter
             return;
         }
         logProgress("Adding experiment " + experiment.getLSID());
-        Set<String> runLsids = new HashSet<String>();
+        Set<String> runLsids = new HashSet<>();
         for (ExpRun expRun : exp.getRuns())
         {
             runLsids.add(expRun.getLSID());
@@ -822,7 +822,7 @@ public class XarExporter
     {
         Map<String, ObjectProperty> properties = getObjectProperties(parentContainer, lsid);
 
-        Set<String> ignoreSet = new HashSet<String>();
+        Set<String> ignoreSet = new HashSet<>();
         ignoreSet.addAll(Arrays.asList(ignoreProperties));
 
         PropertyCollectionType result = PropertyCollectionType.Factory.newInstance();
@@ -896,7 +896,7 @@ public class XarExporter
                                     }
                                 }
                             }
-                            catch (URISyntaxException e) {}
+                            catch (URISyntaxException ignored) {}
                             simpleValue.setStringValue(link);
                         }
                         else
@@ -930,7 +930,7 @@ public class XarExporter
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
     {
         XmlOptions validateOptions = new XmlOptions();
-        ArrayList<XmlError> errorList = new ArrayList<XmlError>();
+        ArrayList<XmlError> errorList = new ArrayList<>();
         validateOptions.setErrorListener(errorList);
         if (!_document.validate(validateOptions))
         {

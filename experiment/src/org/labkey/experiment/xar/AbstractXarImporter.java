@@ -23,6 +23,9 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
@@ -60,7 +63,7 @@ public abstract class AbstractXarImporter
 
     protected void checkMaterialCpasType(String declaredType) throws SQLException, XarFormatException
     {
-        if (declaredType != null && !"Material".equals(declaredType))
+        if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
             if (ExperimentService.get().getSampleSet(declaredType) != null)
             {
@@ -73,7 +76,10 @@ public abstract class AbstractXarImporter
 
     protected void checkProtocolApplicationCpasType(String cpasType, Logger logger)
     {
-        if (cpasType != null && !"ProtocolApplication".equals(cpasType) && !"ExperimentRun".equals(cpasType) && !"ExperimentRunOutput".equals(cpasType))
+        if (cpasType != null &&
+                !ExpProtocol.ApplicationType.ProtocolApplication.toString().equals(cpasType) &&
+                !ExpProtocol.ApplicationType.ExperimentRun.toString().equals(cpasType) &&
+                !ExpProtocol.ApplicationType.ExperimentRunOutput.toString().equals(cpasType))
         {
             logger.warn("Unrecognized CpasType '" + cpasType + "' loaded for ProtocolApplication object.");
         }
