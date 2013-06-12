@@ -484,10 +484,14 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         if (protocol != null)
         {
             // First, see the if the assay table can resolve the column
-            result = getAssayResultTable().getColumn(name);
-            if (result != null)
+            TableInfo assayTable = getAssayResultTable();
+            if (null != assayTable)
             {
-                return wrapAssayColumn(result);
+                result = getAssayResultTable().getColumn(name);
+                if (result != null)
+                {
+                    return wrapAssayColumn(result);
+                }
             }
 
             AssayProvider provider = AssayService.get().getProvider(protocol);

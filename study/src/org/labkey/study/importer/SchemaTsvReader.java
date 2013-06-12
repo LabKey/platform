@@ -15,6 +15,8 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.reader.TabLoader;
@@ -25,7 +27,6 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
 import org.springframework.validation.BindException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
@@ -88,8 +89,10 @@ public class SchemaTsvReader implements SchemaReader
                 }
                 else
                 {
-                    Boolean hidden = (Boolean) props.get("hidden");
-                    isHidden = (null != hidden && hidden.booleanValue());
+                    Object hidden = props.get("hidden");
+                    if (null != hidden && !(hidden instanceof Boolean))
+                        try {hidden = ConvertUtils.convert(hidden.toString(), Boolean.class);} catch (ConversionException x) {}
+                    isHidden = (hidden instanceof Boolean && ((Boolean)hidden).booleanValue());
                 }
 
                 DatasetImportInfo info = _datasetInfoMap.get(typeId);
