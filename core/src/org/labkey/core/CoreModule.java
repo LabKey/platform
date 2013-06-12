@@ -20,6 +20,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.attachments.AttachmentService;
@@ -738,7 +739,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SubfolderWriter.TestCase.class,
                 Aggregate.TestCase.class,
                 CaseInsensitiveHashSet.TestCase.class,
-                SwapQueue.TestCase.class
+                SwapQueue.TestCase.class,
+                ApiXmlWriter.TestCase.class
         ));
     }
 
