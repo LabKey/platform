@@ -18,6 +18,8 @@ package org.labkey.api.action;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONString;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.DateUtil;
 
 import javax.servlet.http.HttpServletResponse;
@@ -60,7 +62,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void writeObject(Object value) throws XMLStreamException, IOException
     {
-        if (value == null || value.equals(null))
+        if (value == null)
         {
             return;
         }
@@ -69,12 +71,9 @@ public class ApiXmlWriter extends ApiResponseWriter
         {
             if (value instanceof JSONString)
             {
-                Object o = ((JSONString) value).toJSONString();
-                if (o instanceof String)
-                {
-                    _xmlWriter.writeCharacters(o.toString());
-                    return;
-                }
+                String s = ((JSONString) value).toJSONString();
+                _xmlWriter.writeCharacters(filter(s));
+                return;
             }
         }
         catch (Exception e)
@@ -83,11 +82,11 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
         if (value instanceof Number)
         {
-            _xmlWriter.writeCharacters(JSONObject.numberToString((Number) value));
+            _xmlWriter.writeCharacters(filter(JSONObject.numberToString((Number) value)));
         }
         else if (value instanceof Boolean)
         {
-            _xmlWriter.writeCharacters(value.toString());
+            _xmlWriter.writeCharacters(filter(value.toString()));
         }
         else if (value instanceof JSONObject)
         {
@@ -111,12 +110,21 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
         else if (value instanceof Date)
         {
-            _xmlWriter.writeCharacters(DateUtil.formatJsonDateTime((Date) value));
+            _xmlWriter.writeCharacters(filter(DateUtil.formatJsonDateTime((Date) value)));
         }
         else
         {
-            _xmlWriter.writeCharacters(value.toString());
+            _xmlWriter.writeCharacters(filter(value.toString()));
         }
+    }
+
+    private static String filter(String s)
+    {
+        if (s == null)
+        {
+            return s;
+        }
+        return s.replaceAll("[\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u000B\u000C\u000E\u000F\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001A\u001B\u001C\u001D\u001E\u001F\uFFFE\uFFFF]", "");
     }
 
     private void writeJsonArray(JSONArray jsonArray) throws XMLStreamException, IOException
@@ -211,7 +219,6 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void writeProperty(String name, Object value) throws IOException
     {
-        StreamState state = _streamStack.peek();
         try
         {
             _xmlWriter.writeStartElement(escapeElementName(name));
@@ -260,7 +267,6 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void writeListEntry(Object entry) throws IOException
     {
-        StreamState state = _streamStack.peek();
         try
         {
             _xmlWriter.writeStartElement(ARRAY_ELEMENT_NAME);
@@ -270,6 +276,22 @@ public class ApiXmlWriter extends ApiResponseWriter
         catch (XMLStreamException e)
         {
             throw new IOException(e);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testFilter()
+        {
+            assertEquals("test", filter("test"));
+            assertEquals("test", filter("test\u0015"));
+            assertEquals("test", filter("\u0015test"));
+            assertEquals("testtest", filter("test\u0015test"));
+            assertEquals("testtest", filter("test\u0015\u0015test"));
+            assertEquals("testtest", filter("\u0000test\u0015\u0015test\u0000"));
+            assertEquals("", filter("\u0000"));
+            assertEquals("\n\r", filter("\u0000\n\r"));
         }
     }
 }

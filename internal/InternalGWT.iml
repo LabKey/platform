@@ -43,10 +43,12 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/gwt-dnd-3.1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/gwt-dnd-3.2.0.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/gwt-dnd-3.2.0.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>
