@@ -57,7 +57,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 18, 2009
  * Time: 11:09:03 AM

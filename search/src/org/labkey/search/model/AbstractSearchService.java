@@ -15,6 +15,8 @@
  */
 package org.labkey.search.model;
 
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -39,8 +41,9 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
+import org.labkey.api.util.MultisetRateAccumulator;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
@@ -84,15 +87,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected static final long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
-    final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);
 
     // Resources go here for preprocessing (this can be multi-threaded)
-    final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<>(1000, itemCompare);
 
     // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
     BlockingQueue<Item> _indexQueue = null;
 
-    private final List<IndexTask> _tasks = new CopyOnWriteArrayList<IndexTask>();
+    private final List<IndexTask> _tasks = new CopyOnWriteArrayList<>();
 
     final _IndexTask _defaultTask = new _IndexTask("default");
 
@@ -118,7 +121,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addSearchCategory(navigationCategory);
 
         // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in Java 7 u11 (or perhaps it's u12)
+        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in Java 7 u40
         if (SystemUtils.IS_JAVA_1_7)
         {
             MemTracker.register(new MemTrackerListener()
@@ -520,7 +523,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public List<IndexTask> getTasks()
     {
-        return new LinkedList<IndexTask>(_tasks);
+        return new LinkedList<>(_tasks);
     }
 
 
@@ -625,7 +628,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<String, ResourceResolver>();
+    Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
@@ -648,7 +651,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    private final List<SearchResultTemplate> _templates = new CopyOnWriteArrayList<SearchResultTemplate>();
+    private final List<SearchResultTemplate> _templates = new CopyOnWriteArrayList<>();
     private final SearchResultTemplate _defaultTemplate = new DefaultSearchResultTemplate();
 
     @Override
@@ -675,7 +678,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     boolean _threadsInitialized = false;
     volatile boolean _shuttingDown = false;
     boolean _crawlerPaused = true;
-    ArrayList<Thread> _threads = new ArrayList<Thread>(10);
+    ArrayList<Thread> _threads = new ArrayList<>(10);
 
     
     public void start()
@@ -830,7 +833,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
         if (0 < countPreprocessingThreads)
-            _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,10*countIndexingThreads));
+            _indexQueue = new ArrayBlockingQueue<>(Math.min(100,10*countIndexingThreads));
 
         _threadsInitialized = true;
 
@@ -1150,7 +1153,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         success = true;
                         synchronized (_commitLock)
                         {
-                            incrementIndexStat(ms);
+                            String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
+                            incrementIndexStat(ms, category);
                             _countIndexedSinceCommit++;
                             _lastIndexedTime = ms;
                             if (_countIndexedSinceCommit > 10000)
@@ -1183,9 +1187,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
-    final Object _categoriesLock = new Object();
-    List<SearchCategory> _readonlyCategories = Collections.emptyList();
-    ArrayList<SearchCategory> _searchCategories = new ArrayList<SearchCategory>();
+    private final ArrayList<SearchCategory> _searchCategories = new ArrayList<>();
+    private final Object _categoriesLock = new Object();
+
+    private List<SearchCategory> _readonlyCategories = Collections.emptyList();
 
 
     public DbSchema getSchema()
@@ -1219,7 +1224,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return null;
         
         List<SearchCategory> cats = _readonlyCategories;
-        List<SearchCategory> usedCats = new ArrayList<SearchCategory>();
+        List<SearchCategory> usedCats = new ArrayList<>();
         List<String> requestedCats = Arrays.asList(categories.split(" "));
         for (SearchCategory cat : cats)
         {
@@ -1256,7 +1261,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected final List<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<DocumentProvider>();
+    protected final List<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<>();
     
     public void addDocumentProvider(DocumentProvider provider)
     {
@@ -1264,7 +1269,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected final List<DocumentParser> _documentParsers = new CopyOnWriteArrayList<DocumentParser>();
+    protected final List<DocumentParser> _documentParsers = new CopyOnWriteArrayList<>();
     
     public void addDocumentParser(DocumentParser parser)
     {
@@ -1302,7 +1307,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             public void run()
             {
                 MultiMap<Container,Container> mmap = ContainerManager.getContainerTree(c);
-                Set<Container> set = new HashSet<Container>();
+                Set<Container> set = new HashSet<>();
                 for (Container key : mmap.keySet())
                 {
                     set.add(key);
@@ -1363,49 +1368,69 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    LinkedList<RateLimiter.RateAccumulator> _history = new LinkedList<RateLimiter.RateAccumulator>();
-    RateLimiter.RateAccumulator _current = new RateLimiter.RateAccumulator(System.currentTimeMillis());
-    long _currentHour = _current.getStart() / (60*60*1000L);
+    private final LinkedList<IndexerRateAccumulator> _history = new LinkedList<>();
 
+    private IndexerRateAccumulator _current = new IndexerRateAccumulator(System.currentTimeMillis());
+    private long _currentHour = _current.getStart() / (60*60*1000L);
 
     // call when holding _commitLock
-    private void incrementIndexStat(long now)
+    private void incrementIndexStat(long now, String type)
     {
         assert Thread.holdsLock(_commitLock);
         long hour = now / (60*60*1000L);
         if (hour > _currentHour)
         {
             _history.addFirst(_current);
-            _current = new RateLimiter.RateAccumulator(now);
+            _current = new IndexerRateAccumulator(now);
             _currentHour = hour;
             while (_history.size() > 24)
                 _history.removeLast();
         }
-        _current.accumulate(1);
+        _current.accumulate(type);
     }
 
     
+    private static class IndexerRateAccumulator extends MultisetRateAccumulator<String>
+    {
+        public IndexerRateAccumulator(long start)
+        {
+            super(start);
+        }
+
+        public IndexerRateAccumulator(long start, Multiset<String> multiset)
+        {
+            super(start, multiset);
+        }
+    }
+
+
     public Map<String, Object> getIndexerStats()
     {
-        HashMap<String, Object> map = new HashMap<String,Object>();
+        HashMap<String, Object> map = new HashMap<>();
 
-        ArrayList<RateLimiter.RateAccumulator> history;
+        ArrayList<IndexerRateAccumulator> history;
+
         synchronized (_commitLock)
         {
-            history = new ArrayList<RateLimiter.RateAccumulator>(_history.size()+1);
-            history.add(new RateLimiter.RateAccumulator(_current.getStart(),_current.getCount()));
+            history = new ArrayList<>(_history.size() + 1);
+            history.add(new IndexerRateAccumulator(_current.getStart(), _current.getCounter()));
             history.addAll(_history);
         }
+
         SimpleDateFormat f = new SimpleDateFormat("h:mm a");
         StringBuilder sb = new StringBuilder();
         sb.append("<table>");
-        for (RateLimiter.RateAccumulator r : history)
+
+        for (IndexerRateAccumulator r : history)
         {
             long start = r.getStart();
             start -= start % (60*60*1000);
-            sb.append("<tr><td align=right>").append(f.format(start)).append("&nbsp;</td>");
-            sb.append("<td align=right>").append(Formats.commaf0.format(r.getCount())).append("</td></tr>");
+            String fStart = f.format(start);
+            String fCount = Formats.commaf0.format(r.getCount());
+            sb.append("<tr><td align=right>").append(fStart).append("&nbsp;</td>");
+            sb.append("<td align=right>").append(fCount).append(getPopup(fStart + " " + fCount + " documents", r)).append("</td></tr>");
         }
+
         sb.append("</table>");
         map.put("Indexing history added/updated", sb.toString());
         map.put("Maximum allowed document size", FILE_SIZE_LIMIT);
@@ -1413,6 +1438,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return map;
     }
     
+
+    private String getPopup(String title, IndexerRateAccumulator r)
+    {
+        if (r.getCounter().isEmpty())
+            return "";
+
+        StringBuilder html = new StringBuilder();
+        html.append("<table>\n");
+
+        for (Entry<String> entry : r.getSortedEntries())
+            html.append("<tr><td>").append(PageFlowUtil.filter(entry.getElement())).append("</td><td align=right>").append(Formats.commaf0.format(entry.getCount())).append("</td></tr>\n");
+
+        html.append("</table>\n");
+
+        return PageFlowUtil.helpPopup(title, html.toString(), true);
+    }
+
 
     public abstract Map<String, Double> getSearchStats();
 
