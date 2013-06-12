@@ -15,12 +15,14 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExtUtil;
 
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import java.util.Map;
  */
 public class ReportingWriter
 {
+    private static final Logger LOG = Logger.getLogger(ReportingWriter.class);
 
     public static Map<String, Object> getMetaData(DisplayColumn dc, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {
@@ -282,7 +285,16 @@ public class ReportingWriter
             else
             {
                 queryName = lookupTable.getName();
-                schemaName = lookupTable.getUserSchema().getSchemaPath();
+                UserSchema userSchema = lookupTable.getUserSchema();
+                if (userSchema != null)
+                {
+                    schemaName = userSchema.getSchemaPath();
+                }
+                else
+                {
+                    schemaName = SchemaKey.decode(lookupTable.getSchema().getName());
+                    LOG.warn("userSchema for non-public lookup table " + queryName + " was null. Using " + lookupTable.getSchema().getName());
+                }
             }
             lookupInfo.put("queryName", queryName);
             lookupInfo.put("schemaName", schemaName);

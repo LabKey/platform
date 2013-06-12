@@ -122,6 +122,13 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         else if (value instanceof Map) // This also covers the JSONObject case as that subclasses HashMap. TODO: replace the creation of JSONObjects with Jackson methods
         {
+            boolean badContext = jg.getOutputContext().getCurrentName() == null && jg.getOutputContext().inObject();
+            if (badContext)
+            {   // Exceptions get serialized out into the response. However, in some parts of the processing we're in the wrong output context
+                // and this would create invalid JSON. Detect and prevent this to still create valid JSON, and hopefully something downstream will handle
+                // the error gracefully.
+                jg.writeFieldName("unhandledException");
+            }
             jg.writeStartObject();
             for (Object o : ((Map) value).keySet())
             {
@@ -130,6 +137,10 @@ public class ApiJsonWriter extends ApiResponseWriter
                 writeValue(((Map) value).get(key));
             }
             jg.writeEndObject();
+            if (badContext)
+            {
+                jg.writeEndObject();
+            }
         }
         else if (value instanceof Collection<?>)
         {
