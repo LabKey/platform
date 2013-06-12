@@ -260,39 +260,37 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public NamedObjectList getSelectList(ColumnInfo firstColumn)
     {
-        NamedObjectList ret = new NamedObjectList();
+        final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
             return ret;
         ColumnInfo titleColumn = getColumn(getTitleColumn());
         if (titleColumn == null)
             return ret;
-        try
-        {
-            List<ColumnInfo> cols;
-            int titleIndex;
-            if (firstColumn == titleColumn)
-            {
-                cols = Arrays.asList(firstColumn);
-                titleIndex = 1;
-            }
-            else
-            {
-                cols = Arrays.asList(firstColumn, titleColumn);
-                titleIndex = 2;
-            }
 
-            String sortStr = (titleColumn.getSortDirection() != null ? titleColumn.getSortDirection().getDir() : "") + titleColumn.getName();
-            ResultSet rs = Table.select(this, cols, null, new Sort(sortStr));
-            while (rs.next())
+        List<ColumnInfo> cols;
+        final int titleIndex;
+        if (firstColumn == titleColumn)
+        {
+            cols = Arrays.asList(firstColumn);
+            titleIndex = 1;
+        }
+        else
+        {
+            cols = Arrays.asList(firstColumn, titleColumn);
+            titleIndex = 2;
+        }
+
+        String sortStr = (titleColumn.getSortDirection() != null ? titleColumn.getSortDirection().getDir() : "") + titleColumn.getName();
+
+        new TableSelector(this, cols, null, new Sort(sortStr)).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));
             }
-            rs.close();
-        }
-        catch (SQLException e)
-        {
-            
-        }
+        });
+
         return ret;
     }
 

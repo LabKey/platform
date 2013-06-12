@@ -32,8 +32,7 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -107,11 +106,11 @@ public class ModuleLoader implements Filter
 {
     private static final double EARLIEST_UPGRADE_VERSION = 11.1;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
-    private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
-    private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
-    private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
-    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<String, Collection<ResourceFinder>>();
-    private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
+    private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
+    private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
+    private static final Map<String, Module> _schemaNameToModule = new HashMap<>();
+    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
+    private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
@@ -126,7 +125,7 @@ public class ModuleLoader implements Filter
     private User upgradeUser = null;
     private boolean _startupComplete = false;
 
-    private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<ModuleResourceLoader>();
+    private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<>();
 
     private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
 
@@ -168,12 +167,12 @@ public class ModuleLoader implements Filter
     }
 
 
-    private Map<String, ModuleContext> contextMap = new HashMap<String, ModuleContext>();
-    private Map<String, Module> moduleMap = new CaseInsensitiveHashMap<Module>();
-    private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<Class<? extends Module>, Module>();
+    private Map<String, ModuleContext> contextMap = new HashMap<>();
+    private Map<String, Module> moduleMap = new CaseInsensitiveHashMap<>();
+    private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<>();
 
     private List<Module> _modules;
-    private final SortedMap<String, FolderType> _folderTypes = new TreeMap<String, FolderType>(new FolderTypeComparator());
+    private final SortedMap<String, FolderType> _folderTypes = new TreeMap<>(new FolderTypeComparator());
     private static class FolderTypeComparator implements Comparator<String>
     {
         //Sort NONE to the bottom and Collaboration to the top
@@ -341,7 +340,7 @@ public class ModuleLoader implements Filter
         ModuleContext coreCtx = contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
 
-        List<String> modulesRequiringUpgrade = new LinkedList<String>();
+        List<String> modulesRequiringUpgrade = new LinkedList<>();
 
         for (Module m : _modules)
         {
@@ -368,7 +367,7 @@ public class ModuleLoader implements Filter
     // Set the project source root based upon the core module's source path or the project.root system property.
     private void setProjectRoot(Module core)
     {
-        List<String> possibleRoots = new ArrayList<String>();
+        List<String> possibleRoots = new ArrayList<>();
         if (null != core.getSourcePath())
             possibleRoots.add(core.getSourcePath() + "/../../..");
         if (null != System.getProperty("project.root"))
@@ -424,7 +423,7 @@ public class ModuleLoader implements Filter
             {
                 if (moduleXml.exists())
                 {
-                    ApplicationContext applicationContext = null;
+                    ApplicationContext applicationContext;
                     if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
                     {
                         XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
@@ -567,7 +566,7 @@ public class ModuleLoader implements Filter
 
     private Set<File> listCurrentFiles(File file) throws IOException
     {
-        Set<File> result = new HashSet<File>();
+        Set<File> result = new HashSet<>();
         result.add(file);
         if (file.isDirectory())
         {
@@ -586,7 +585,7 @@ public class ModuleLoader implements Filter
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
-        Map<String, DataSource> dataSources = new TreeMap<String, DataSource>(new Comparator<String>() {
+        Map<String, DataSource> dataSources = new TreeMap<>(new Comparator<String>() {
             public int compare(String name1, String name2)
             {
                 return name1.compareTo(name2);
@@ -953,7 +952,7 @@ public class ModuleLoader implements Filter
         {
             if (_upgradeState == UpgradeState.UpgradeRequired)
             {
-                List<Module> modules = new ArrayList<Module>(getModules());
+                List<Module> modules = new ArrayList<>(getModules());
                 modules.remove(ModuleLoader.getInstance().getCoreModule());
                 setUpgradeState(UpgradeState.UpgradeInProgress);
                 setUpgradeUser(user);
@@ -999,7 +998,7 @@ public class ModuleLoader implements Filter
         {
             try
             {
-                Map<String, Object> map = new HashMap<String, Object>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("AutoUninstall", module.isAutoUninstall());
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
                 Table.update(getUpgradeUser(), getTableInfoModules(), map, module.getName());
@@ -1112,7 +1111,7 @@ public class ModuleLoader implements Filter
     // CONSIDER: ModuleUtil.java
     public Collection<String> getModuleSummaries(Container c)
     {
-        LinkedList<String> list = new LinkedList<String>();
+        LinkedList<String> list = new LinkedList<>();
         for (Module m : _modules)
         {
             Collection<String> messages = m.getSummary(c);
@@ -1241,7 +1240,7 @@ public class ModuleLoader implements Filter
 
             if (null == col)
             {
-                col = new ArrayList<ResourceFinder>();
+                col = new ArrayList<>();
                 _resourceFinders.put(prefix, col);
             }
 
@@ -1254,7 +1253,7 @@ public class ModuleLoader implements Filter
         //NOTE: jasper encodes underscores in JSPs, so decode this here
         path = path.replaceAll("_005f", "_");
 
-        Collection<ResourceFinder> finders = new LinkedList<ResourceFinder>();
+        Collection<ResourceFinder> finders = new LinkedList<>();
 
         synchronized (_resourceFinders)
         {
@@ -1341,7 +1340,7 @@ public class ModuleLoader implements Filter
     {
         synchronized (_folderTypes)
         {
-            return Collections.unmodifiableCollection(new ArrayList<FolderType>(_folderTypes.values()));
+            return Collections.unmodifiableCollection(new ArrayList<>(_folderTypes.values()));
         }
     }
 
@@ -1361,17 +1360,8 @@ public class ModuleLoader implements Filter
 
     public ModuleContext getModuleContext(String name)
     {
-        try
-        {
-            TableInfo modules = getTableInfoModules();
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getSelectName() + " WHERE Name=?", name);
-            ModuleContext[] contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
-            return contexts == null || contexts.length == 0 ? null : contexts[0];
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SimpleFilter filter = new SimpleFilter("Name", name);
+        return new TableSelector(getTableInfoModules(), filter, null).getObject(ModuleContext.class);
     }
 
 
@@ -1383,7 +1373,7 @@ public class ModuleLoader implements Filter
 
     public Map<String, ModuleContext> getUnknownModuleContexts()
     {
-        Map<String, ModuleContext> unknownContexts = new HashMap<String, ModuleContext>();
+        Map<String, ModuleContext> unknownContexts = new HashMap<>();
 
         for (ModuleContext moduleContext : getAllModuleContexts())
         {

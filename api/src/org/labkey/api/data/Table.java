@@ -206,6 +206,12 @@ public class Table
         return selector.getMapArray();
     }
 
+    @Deprecated /** Use TableSelector */
+    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        return new LegacyTableSelector(table, columns, filter, sort).getResults();
+    }
+
     /**
      * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
@@ -270,7 +276,7 @@ public class Table
 
     // ===== TableSelector methods below =====
 
-    // 78 usages
+    // 72 usages
     @NotNull
     @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
@@ -286,13 +292,6 @@ public class Table
         return new LegacyTableSelector(table, select, filter, sort).getResultSet();
     }
 
-
-    // 14 usages
-    @Deprecated /** Use TableSelector */
-    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return new LegacyTableSelector(table, columns, filter, sort).getResults();
-    }
 
     // 6 usages
     @Deprecated /** Use TableSelector */
@@ -319,7 +318,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 189 usages
+    // 185 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -328,7 +327,7 @@ public class Table
 
     // ===== SqlSelector methods below =====
 
-    // 20 usages
+    // 19 usages
     @NotNull
     @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
