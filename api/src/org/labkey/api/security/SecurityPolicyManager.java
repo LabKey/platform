@@ -267,7 +267,7 @@ public class SecurityPolicyManager
 
 
     // Remove all assignments and policies on the Containers childre
-    public static void removeAllChildren(Container c) throws SQLException
+    public static void removeAllChildren(Container c)
     {
         Container[] subtrees = ContainerManager.getAllChildren(c);
         StringBuilder sb = new StringBuilder();

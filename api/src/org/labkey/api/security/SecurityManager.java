@@ -2678,7 +2678,6 @@ public class SecurityManager
 
 
     public static void changeProject(Container c, Container oldProject, Container newProject)
-            throws SQLException
     {
         assert core.getSchema().getScope().isTransactionActive();
 

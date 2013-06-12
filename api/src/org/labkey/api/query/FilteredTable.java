@@ -38,7 +38,6 @@ import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 {
     final private SimpleFilter _filter;
     private String _innerAlias = null;
-    protected TableInfo _rootTable;
+    @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
     protected String _publicSchemaName = null;
 
@@ -64,7 +63,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
     /** CAREFUL: This constructor does not take a schema... call one of the other constructors to filter based on container */
     // TODO: Should be protected?
-    public FilteredTable(TableInfo table)
+    public FilteredTable(@NotNull TableInfo table)
     {
         super(table.getSchema());
         _filter = new SimpleFilter();
@@ -83,12 +82,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         // to _rootTable lazily, allowing overrides.
     }
 
-    public FilteredTable(TableInfo table, SchemaType userSchema)
+    public FilteredTable(@NotNull TableInfo table, SchemaType userSchema)
     {
         this(table, userSchema, null);
     }
 
-    public FilteredTable(TableInfo table, SchemaType userSchema, @Nullable ContainerFilter containerFilter)
+    public FilteredTable(@NotNull TableInfo table, SchemaType userSchema, @Nullable ContainerFilter containerFilter)
     {
         this(table);
         _userSchema = userSchema;
