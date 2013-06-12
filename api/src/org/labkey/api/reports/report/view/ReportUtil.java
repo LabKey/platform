@@ -55,6 +55,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
@@ -380,7 +381,13 @@ public class ReportUtil
     {
         public boolean accept(Report report, Container c, User user)
         {
-            return report.canEdit(user, c);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor(), false);
+            if (policy.isEmpty())
+            {
+                return c.hasPermission(user, ReadPermission.class);
+            }
+            else
+                return policy.hasPermission(user, ReadPermission.class);
         }
 
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)

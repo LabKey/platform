@@ -38,7 +38,6 @@
             %>
             var filterArray = <%=bean.model.getJSONFilters()%>;
             var columnArray = <%=bean.model.getJSONColumns()%>;
-            var viewName = <%=bean.model.getViewName() != null ? q(bean.model.getViewName()) : null%>;
 
             var getDataConfig = {
                 source: {
