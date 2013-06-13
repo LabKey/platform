@@ -546,13 +546,13 @@ public class PipelineServiceImpl extends PipelineService
         }
     }
 
-    public int getJobId(User u, Container c, String jobGUID)
+    public Integer getJobId(User u, Container c, String jobGUID)
     {
         try
         {
             SimpleFilter filter = new SimpleFilter("job", jobGUID);
             Map[] selectResults = Table.select(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null, Map.class);
-            int rowId = 0;
+            Integer rowId = null;
             for (Map<String, Integer> m : selectResults)
             {
                 rowId = m.get("RowId");

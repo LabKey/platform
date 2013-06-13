@@ -848,7 +848,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             //
             // verify run standard properties
             //
-            assert expRun.getJobId() == transformRun.getJobId();
+            assert expRun.getJobId().intValue() == transformRun.getJobId().intValue();
             assert expRun.getName().equalsIgnoreCase(TransformJob.ETL_PREFIX + d.getDescription());
 
             //

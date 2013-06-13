@@ -39,7 +39,7 @@ public class TransformRun
     private Date _modified;
     private User _modifiedBy;
     private Container _container;
-    private int _jobId;
+    private Integer _jobId;
     private Integer _expRunId = null;
 
     public int getTransformRunId()
@@ -162,12 +162,12 @@ public class TransformRun
         _container = container;
     }
 
-    public void setJobId(int jobId)
+    public void setJobId(Integer jobId)
     {
         _jobId = jobId;
     }
 
-    public int getJobId()
+    public Integer getJobId()
     {
         return _jobId;
     }
