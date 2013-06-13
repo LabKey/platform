@@ -267,9 +267,7 @@ public abstract class ExtendedTable<SchemaType extends UserSchema> extends Simpl
         if (getRealTable() instanceof UpdateableTableInfo && getBaseTable() instanceof UpdateableTableInfo)
         {
             DataIteratorBuilder builder = ((UpdateableTableInfo)getBaseTable()).persistRows(data, context);
-            //DataIteratorBuilder builder = new MergedTableDataIteratorBuilder(data, context);
             return ((UpdateableTableInfo)getRealTable()).persistRows(builder, context);
-            //return TableInsertDataIterator.create(data, this, null, context);
         }
         return null;
     }
@@ -292,31 +290,4 @@ public abstract class ExtendedTable<SchemaType extends UserSchema> extends Simpl
         throw new UnsupportedOperationException();
     }
 
-    /*
-    private class MergedTableDataIteratorBuilder implements DataIteratorBuilder
-    {
-        DataIteratorContext _context;
-        final DataIteratorBuilder _in;
-
-        MergedTableDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
-        {
-            _context = context;
-            _in = in;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;
-
-            //TableInfo tableInfo = ExtendedTable.this.getBaseTable();
-            final SimpleTranslator it = new SimpleTranslator(input, context);
-
-            return LoggingDataIterator.wrap(it);
-        }
-    }
-    */
 }
