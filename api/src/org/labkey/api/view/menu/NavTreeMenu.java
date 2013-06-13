@@ -45,7 +45,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     private String _collapseId;
     protected boolean _highlightSelection = true;
 
-    public NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, NavTree... elements)
+    public NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, boolean applyCollapseState, NavTree... elements)
     {
         super(title);
         setFrame(FrameType.LEFT_NAVIGATION);
@@ -53,19 +53,22 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         if (titleHref != null)
             setTitleHref(titleHref);
         _elements = elements;
-        // assume we're collapsed:
-        setCollapsed(collapseByDefault);
-        NavTreeManager.applyExpandState(this, context);
+        if (applyCollapseState)
+        {
+            // assume we're collapsed
+            setCollapsed(collapseByDefault);
+            NavTreeManager.applyExpandState(this, context);
+        }
     }
 
     public NavTreeMenu(ViewContext context,String rootId, String title, boolean collapseByDefault, NavTree... elements)
     {
-        this(context, rootId, title, null, collapseByDefault, elements);
+        this(context, rootId, title, null, collapseByDefault, true, elements);
     }
 
     public NavTreeMenu(ViewContext context, String rootId, NavTree... elements)
     {
-        this(context, rootId, null, null, false, elements);
+        this(context, rootId, null, null, false, true, elements);
     }
 
     public boolean isCollapsed()

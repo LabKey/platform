@@ -53,6 +53,14 @@
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null && currentContext.isShowFolders();
     Container p = c.getProject();
+    String projectName = null;
+    if (null != p)
+    {
+        projectName = p.getName();
+        if (null != projectName && projectName.equalsIgnoreCase("home"))
+            projectName = "Home";
+    }
+
     folderMode.isShowInMenu();
 %>
 <div id="menubar" class="labkey-main-menu">
@@ -68,7 +76,7 @@
     if (showFolderNavigation)
     {
 %>
-        <li id="folderBar" class="menu-folders"><%=p.getName()%></li>
+        <li id="folderBar" class="menu-folders"><%=projectName%></li>
 <%
     }
 %>
