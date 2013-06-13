@@ -16,22 +16,18 @@
  */
 %>
 <%@ page import="org.json.JSONArray"%>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.admin.FolderWriter" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.admin.FolderWriter" %>
+<%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
-<%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
-<%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
-    final ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
 
     String name = form.getName();
     String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration

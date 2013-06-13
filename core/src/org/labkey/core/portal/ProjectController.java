@@ -1272,6 +1272,7 @@ public class ProjectController extends SpringActionController
         private Container[] _container;
         private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
+        private boolean _includeEffectivePermissions = true;
         private int _depth = Integer.MAX_VALUE;
         private String[] _moduleProperties;
 
@@ -1324,6 +1325,16 @@ public class ProjectController extends SpringActionController
         {
             _moduleProperties = moduleProperties;
         }
+
+        public boolean isIncludeEffectivePermissions()
+        {
+            return _includeEffectivePermissions;
+        }
+
+        public void setIncludeEffectivePermissions(boolean includeEffectivePermissions)
+        {
+            _includeEffectivePermissions = includeEffectivePermissions;
+        }
     }
 
     /**
@@ -1333,10 +1344,12 @@ public class ProjectController extends SpringActionController
     public class GetContainersAction extends ApiAction<GetContainersForm>
     {
         int _requestedDepth;
+        boolean _includeEffectivePermissions = true;
 
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
         {
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
+            _includeEffectivePermissions = form.isIncludeEffectivePermissions();
             ApiSimpleResponse response = new ApiSimpleResponse();
             User user = getViewContext().getUser();
 
@@ -1441,7 +1454,7 @@ public class ProjectController extends SpringActionController
                 List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
                 if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
                 {
-                    Map<String, Object> visibleChild = child.toJSON(user);
+                    Map<String, Object> visibleChild = child.toJSON(user, _includeEffectivePermissions);
                     addModuleProperties(child, propertiesToSerialize, visibleChild);
                     visibleChild.put("children", theseChildren);
                     visibleChildren.add(visibleChild);
