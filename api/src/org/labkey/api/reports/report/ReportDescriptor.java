@@ -29,7 +29,6 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -42,7 +41,12 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.VirtualFile;
@@ -54,7 +58,16 @@ import org.labkey.query.xml.ReportPropertyList;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Karl Lum
@@ -72,13 +85,13 @@ public class ReportDescriptor extends Entity implements SecurableResource
     private ViewCategory _category;
     private int _displayOrder;
 
-    protected Map<String, Object> _props = new LinkedHashMap<String, Object>();
+    protected Map<String, Object> _props = new LinkedHashMap<>();
 
     // For clients of the descriptor and reports,
     // hide the fact that refreshDate, status, and author are stored via the
     // report property manager.  Do not include as _props above or you'll
     // serialize these twice
-    protected Map<String, Object> _mapReportProps = new HashMap<String, Object>();
+    protected Map<String, Object> _mapReportProps = new HashMap<>();
 
 public enum Prop implements ReportProperty
     {
@@ -396,7 +409,7 @@ public enum Prop implements ReportProperty
 
     private Map<String, Object> mapFromQueryString(List<Pair<String, String>> pairs)
     {
-        Map<String, Object> m = new LinkedHashMap<String, Object>();
+        Map<String, Object> m = new LinkedHashMap<>();
         for (Pair<String, String> p : pairs)
         {
             if (isArrayType(p.getKey()))
@@ -410,7 +423,7 @@ public enum Prop implements ReportProperty
                 }
                 else
                 {
-                    final List<String> list = new ArrayList<String>();
+                    final List<String> list = new ArrayList<>();
                     list.add(p.getValue());
                     m.put(p.getKey(), list);
                 }
@@ -593,11 +606,11 @@ public enum Prop implements ReportProperty
             descriptor.setReportName(d.getReportName());
             descriptor.setReportKey(d.getReportKey());
             descriptor.setHidden(d.getHidden());
-            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+            List<Pair<String, String>> props = new ArrayList<>();
 
             for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
             {
-                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+                props.add(new Pair<>(prop.getName(), prop.getStringValue()));
             }
 
             descriptor.init(props);
@@ -633,11 +646,11 @@ public enum Prop implements ReportProperty
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
         d = doc.getReportDescriptor();
 
-        List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> props = new ArrayList<>();
         if (d.getProperties() != null)
         {
             for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+                props.add(new Pair<>(prop.getName(), prop.getStringValue()));
         }
 
         setProperties(props);
@@ -670,11 +683,11 @@ public enum Prop implements ReportProperty
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
             ReportDescriptorType d = doc.getReportDescriptor();
 
-            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+            List<Pair<String, String>> props = new ArrayList<>();
             if (d.getProperties() != null)
             {
                 for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+                    props.add(new Pair<>(prop.getName(), prop.getStringValue()));
             }
 
             return props;
@@ -824,7 +837,7 @@ public enum Prop implements ReportProperty
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        return new LinkedHashSet<ClientDependency>();
+        return new LinkedHashSet<>();
     }
 
     public String getViewClass()

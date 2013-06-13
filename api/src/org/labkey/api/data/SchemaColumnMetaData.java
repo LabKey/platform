@@ -49,10 +49,10 @@ public class SchemaColumnMetaData
     private static final Logger LOG = Logger.getLogger(SchemaColumnMetaData.class);
 
     private final SchemaTableInfo _tinfo;
-    private final List<ColumnInfo> _columns = new ArrayList<ColumnInfo>();
+    private final List<ColumnInfo> _columns = new ArrayList<>();
 
     private Map<String, ColumnInfo> _colMap = null;
-    private @NotNull List<String> _pkColumnNames = new ArrayList<String>();
+    private @NotNull List<String> _pkColumnNames = new ArrayList<>();
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
@@ -110,7 +110,7 @@ public class SchemaColumnMetaData
         }
 
         ColumnType[] xmlColumnArray = columns.getColumnArray();
-        List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
+        List<ColumnType> wrappedColumns = new ArrayList<>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
         {
@@ -188,7 +188,7 @@ public class SchemaColumnMetaData
             rs = dbmd.getPrimaryKeys(catalogName, schemaName, ti.getMetaDataName());
 
         // Use TreeMap to order columns by keySeq
-        Map<Integer, String> pkMap = new TreeMap<Integer, String>();
+        Map<Integer, String> pkMap = new TreeMap<>();
         int columnCount = 0;
         PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
 
@@ -216,7 +216,7 @@ public class SchemaColumnMetaData
             ResultSetUtil.close(rs);
         }
 
-        setPkColumnNames(new ArrayList<String>(pkMap.values()));
+        setPkColumnNames(new ArrayList<>(pkMap.values()));
     }
 
     private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException
@@ -251,7 +251,7 @@ public class SchemaColumnMetaData
 
         if (null == _colMap)
         {
-            Map<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
+            Map<String, ColumnInfo> m = new CaseInsensitiveHashMap<>();
             for (ColumnInfo colInfo : _columns)
             {
                 m.put(colInfo.getName(), colInfo);
@@ -284,7 +284,7 @@ public class SchemaColumnMetaData
 
     public List<ColumnInfo> getUserEditableColumns()
     {
-        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(_columns.size());
+        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<>(_columns.size());
 
         for (ColumnInfo col : _columns)
             if (col.isUserEditable())
@@ -296,7 +296,7 @@ public class SchemaColumnMetaData
 
     public Set<String> getColumnNameSet()
     {
-        Set<String> nameSet = new HashSet<String>();
+        Set<String> nameSet = new HashSet<>();
 
         for (ColumnInfo aColumnList : _columns)
         {
@@ -348,7 +348,7 @@ public class SchemaColumnMetaData
     {
         if (null == _pkColumns)
         {
-            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.size());
+            List<ColumnInfo> cols = new ArrayList<>(_pkColumnNames.size());
 
             for (String name : _pkColumnNames)
             {

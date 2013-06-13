@@ -43,6 +43,8 @@ import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -51,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +112,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
 
     private static final Logger _log = Logger.getLogger(ColumnInfo.class);
-    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private static final Set<String> nonEditableColNames = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey fieldKey;
@@ -134,7 +136,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String propertyURI = null;
     private String conceptURI = null;
     private FieldKey sortFieldKey = null;
-    private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
+    private List<ConditionalFormat> conditionalFormats = new ArrayList<>();
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
@@ -974,6 +976,51 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         if (xmlCol.isSetFacetingBehavior())
             facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
+        if (xmlCol.isSetDisplayColumnFactory())
+        {
+            org.labkey.data.xml.ColumnType.DisplayColumnFactory xmlFactory = xmlCol.getDisplayColumnFactory();
+            String displayColumnClassName = xmlFactory.getClassName();
+
+            Map<String, String> props = null;
+
+            if (xmlFactory.isSetProperties())
+            {
+                props = new HashMap<>();
+
+                for (ColumnType.DisplayColumnFactory.Properties.Property prop : xmlFactory.getProperties().getPropertyArray())
+                    props.put(prop.getName(), prop.getStringValue());
+            }
+
+            try
+            {
+                Class clazz = Class.forName(displayColumnClassName);
+
+                if (DisplayColumnFactory.class.isAssignableFrom(clazz))
+                {
+                    //noinspection unchecked
+                    Class<DisplayColumnFactory> factoryClass = (Class<DisplayColumnFactory>)clazz;
+
+                    if (null == props)
+                    {
+                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor();
+                        _displayColumnFactory = ctor.newInstance();
+                    }
+                    else
+                    {
+                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(Map.class);
+                        _displayColumnFactory = ctor.newInstance(props);
+                    }
+                }
+                else
+                {
+                    _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                }
+            }
+            catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
+            {
+                _log.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
+            }
+        }
     }
 
     public static String labelFromName(String name)
@@ -1306,7 +1353,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             throws SQLException
     {
          //Use linked hash map to preserve ordering...
-        LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<String, ColumnInfo>();
+        LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();
         SqlDialect dialect = parentTable.getSqlDialect();
         ResultSet rsCols;
 
@@ -1387,7 +1434,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
         int iFkName = findColumn(rsKeys, "FK_NAME");
         
-        List<ImportedKey> importedKeys = new ArrayList<ImportedKey>();
+        List<ImportedKey> importedKeys = new ArrayList<>();
 
         while (rsKeys.next())
         {
@@ -1532,8 +1579,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         String fkName;
         String pkOwnerName;
         String pkTableName;
-        ArrayList<String> pkColumnNames = new ArrayList<String>(2);
-        ArrayList<String> fkColumnNames = new ArrayList<String>(2);
+        ArrayList<String> pkColumnNames = new ArrayList<>(2);
+        ArrayList<String> fkColumnNames = new ArrayList<>(2);
     }
 
 
