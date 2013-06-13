@@ -53,8 +53,8 @@ import java.util.Set;
  */
 public class NabGraph
 {
-    private static final int DEFAULT_WIDTH = 425;
-    private static final int DEFAULT_HEIGHT = 300;
+    public static final int DEFAULT_WIDTH = 425;
+    public static final int DEFAULT_HEIGHT = 300;
 
     private static final Color[] GRAPH_COLORS = {
             ChartColor.BLUE,

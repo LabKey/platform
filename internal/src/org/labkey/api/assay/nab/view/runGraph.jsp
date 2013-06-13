@@ -19,15 +19,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.nab.NabUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
-    ViewContext context = me.getViewContext();
 %>
+
+<table><tr>
 <%
     ActionURL graphAction = bean.getGraphURL();
     graphAction.addParameter("rowId", bean.getRunId());
@@ -35,11 +33,9 @@
         graphAction.addParameter("fitType", bean.getFitType());
     int maxSamplesPerGraph = bean.getMaxSamplesPerGraph();
     int sampleCount = bean.getSampleResults().size();
-    if (sampleCount > maxSamplesPerGraph)
-    {
-        graphAction.addParameter("width", bean.getGraphWidth());
-        graphAction.addParameter("height", bean.getGraphHeight());
-    }
+    graphAction.addParameter("width", bean.getGraphWidth());
+    graphAction.addParameter("height", bean.getGraphHeight());
+
     int graphCount = 0;
     for (int firstSample = 0; firstSample < sampleCount; firstSample += maxSamplesPerGraph)
     {
@@ -49,11 +45,12 @@
         zoomGraphURL.replaceParameter("width", "" + 800);
         zoomGraphURL.replaceParameter("height", "" + 600);
 %>
-<a href="<%= zoomGraphURL.getLocalURIString() %>">
-    <img src="<%= graphAction.getLocalURIString() %>" alt="Neutralization Graph">
-</a>
+        <td><a href="<%= text(zoomGraphURL.getLocalURIString())%>" target="_blank">
+            <img src="<%= text(graphAction.getLocalURIString()) %>" alt="Neutralization Graph">
+        </a></td>
 <%
         if (++graphCount % bean.getGraphsPerRow() == 0)
-            out.write("<br>");
+            out.write("</tr><tr>");
     }
 %>
+</tr></table>

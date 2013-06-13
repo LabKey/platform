@@ -76,8 +76,8 @@ public class RenderAssayBean extends RenderAssayForm
     private Set<String> _hiddenRunColumns;
     private Map<String, Object> _displayProperties;
     private Boolean _dupFile = null;
-    private int _graphHeight = 300;
-    private int _graphWidth = 275;
+    private int _graphHeight = NabGraph.DEFAULT_HEIGHT;
+    private int _graphWidth = NabGraph.DEFAULT_WIDTH;
     private int _maxSamplesPerGraph = 8;
     private int _graphsPerRow = 2;
     private String _sampleNoun = "Sample";

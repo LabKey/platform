@@ -15,7 +15,9 @@
  */
 package org.labkey.api.assay.nab.view;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.nab.NabUrls;
@@ -41,12 +43,14 @@ public class RunDetailsHeaderView extends AssayHeaderView
 {
     private int _runId;
     private Container _container;
+    private boolean _showGraphLayoutOptions;
 
-    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId)
+    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, boolean showLayoutOptions)
     {
         super(protocol, provider, true, true, null);
         _container = container;
         _runId = runId;
+        _showGraphLayoutOptions = showLayoutOptions;
     }
 
     @Override
@@ -72,18 +76,131 @@ public class RunDetailsHeaderView extends AssayHeaderView
             }
         }
 
-        NavTree changeCurveMenu = new NavTree("Change Curve Type");
-        for (DilutionCurve.FitType type : DilutionCurve.FitType.values())
+        NavTree graphOptionsMenu = new NavTree("Change Graph Options");
+        graphOptionsMenu.addChild(getCurveFitMenu());
+        graphOptionsMenu.addChild(getGraphSizeMenu());
+
+        if (_showGraphLayoutOptions)
         {
-            ActionURL changeCurveURL = getViewContext().cloneActionURL();
-            changeCurveURL.replaceParameter("fitType", type.name());
-            changeCurveMenu.addChild(type.getLabel(), changeCurveURL);
+            graphOptionsMenu.addChild(getSamplesPerGraphMenu());
+            graphOptionsMenu.addChild(getGraphLayoutMenu());
         }
-        links.add(changeCurveMenu);
+        links.add(graphOptionsMenu);
 
         ActionURL downloadURL = PageFlowUtil.urlProvider(NabUrls.class).urlDownloadDatafile(_container).addParameter("rowId", _runId);
         links.add(new NavTree("Download Datafile", downloadURL));
         links.add(new NavTree("Print", getViewContext().cloneActionURL().addParameter("_print", "true")));
         return links;
+    }
+
+    private NavTree getCurveFitMenu()
+    {
+        String currentFit = getViewContext().getActionURL().getParameter("fitType");
+        NavTree menu = new NavTree("Curve Type");
+        for (DilutionCurve.FitType type : DilutionCurve.FitType.values())
+        {
+            ActionURL changeCurveURL = getViewContext().cloneActionURL();
+            changeCurveURL.replaceParameter("fitType", type.name());
+
+            NavTree item = new NavTree(type.getLabel(), changeCurveURL);
+            item.setSelected(type.name().equals(currentFit));
+
+            menu.addChild(item);
+        }
+
+        return menu;
+    }
+
+    private NavTree getGraphSizeMenu()
+    {
+        int currentWidth = NumberUtils.toInt(getViewContext().getActionURL().getParameter("graphWidth"), NabGraph.DEFAULT_WIDTH);
+        NavTree menu = new NavTree("Graph Size");
+
+        ActionURL url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphWidth", String.valueOf(NabGraph.DEFAULT_WIDTH));
+        url.replaceParameter("graphHeight", String.valueOf(NabGraph.DEFAULT_HEIGHT));
+        NavTree item = new NavTree("Small", url);
+        item.setSelected(currentWidth == NabGraph.DEFAULT_WIDTH);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphWidth", "600");
+        url.replaceParameter("graphHeight", "550");
+        item = new NavTree("Medium", url);
+        item.setSelected(currentWidth == 600);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphWidth", "800");
+        url.replaceParameter("graphHeight", "600");
+        item = new NavTree("Large", url);
+        item.setSelected(currentWidth == 800);
+        menu.addChild(item);
+
+        return menu;
+    }
+
+    private NavTree getGraphLayoutMenu()
+    {
+        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("graphsPerRow"), 1);
+        NavTree menu = new NavTree("Graphs per Row");
+
+        ActionURL url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphsPerRow", "1");
+        NavTree item = new NavTree("One", url);
+        item.setSelected(currentLayout == 1);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphsPerRow", "2");
+        item = new NavTree("Two", url);
+        item.setSelected(currentLayout == 2);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphsPerRow", "3");
+        item = new NavTree("Three", url);
+        item.setSelected(currentLayout == 3);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("graphsPerRow", "4");
+        item = new NavTree("Four", url);
+        item.setSelected(currentLayout == 4);
+        menu.addChild(item);
+
+        return menu;
+    }
+
+    private NavTree getSamplesPerGraphMenu()
+    {
+        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("maxSamplesPerGraph"), 5);
+        NavTree menu = new NavTree("Samples per Graph");
+
+        ActionURL url = getViewContext().cloneActionURL();
+        url.replaceParameter("maxSamplesPerGraph", "5");
+        NavTree item = new NavTree("5", url);
+        item.setSelected(currentLayout == 5);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("maxSamplesPerGraph", "10");
+        item = new NavTree("10", url);
+        item.setSelected(currentLayout == 10);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("maxSamplesPerGraph", "15");
+        item = new NavTree("15", url);
+        item.setSelected(currentLayout == 15);
+        menu.addChild(item);
+
+        url = getViewContext().cloneActionURL();
+        url.replaceParameter("maxSamplesPerGraph", "20");
+        item = new NavTree("20", url);
+        item.setSelected(currentLayout == 20);
+        menu.addChild(item);
+
+        return menu;
     }
 }
