@@ -17,16 +17,24 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.AbstractTaskFactorySettings;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /*
 * User: adam
@@ -55,7 +63,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         try
         {
             // TODO: Pull these from the study serialization registry?
-            Collection<InternalStudyImporter> internalImporters = new LinkedList<InternalStudyImporter>();
+            Collection<InternalStudyImporter> internalImporters = new LinkedList<>();
 
             // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
             // cohorts until the end of upload.
@@ -94,7 +102,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                     // Retrieve userid for queries being validated through the pipeline (study import).
                     QueryService.get().setEnvironment(QueryService.Environment.USERID, null==job.getUser() ? User.guest.getUserId() : job.getUser().getUserId());
 
-                    List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
+                    List<PipelineJobWarning> warnings = new ArrayList<>();
                     for (FolderImporter importer : externalStudyImporters)
                     {
                         job.setStatus("POST-PROCESS " + importer.getDescription()); 
