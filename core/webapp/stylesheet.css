@@ -3978,7 +3978,7 @@ span.button-icon {
 }
 
 .folder-nav {
-    max-height: 350px;
+    max-height: 400px;
     min-height: 75px;
     min-width: 280px;
     max-width: 800px;
@@ -4034,16 +4034,20 @@ span.button-icon {
     white-space: nowrap;
 }
 
-.collapse-folder {
+.expand-folder span.marked {
+    background: url(./_images/expand-collapse.gif) no-repeat 0 -132px;
+    padding: 0;
+    margin: 0
+}
+
+.collapse-folder span.marked {
     background: url(./_images/expand-collapse.gif) no-repeat 0 0;
     padding: 0;
     margin: 0;
 }
 
-.expand-folder {
-    background: url(./_images/expand-collapse.gif) no-repeat 0 -132px;
-    padding: 0;
-    margin: 0
+.collapse-folder ul {
+    display: none;
 }
 
 .folder-menu-buttons {

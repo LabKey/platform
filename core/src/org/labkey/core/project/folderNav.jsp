@@ -32,7 +32,7 @@
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }
@@ -101,37 +101,68 @@
 <script type="text/javascript">
     Ext4.onReady(function() {
 
-        var toggle = function(node) {
-            var p = node.parent();
-            var el = p.child('ul');
-            el.setVisibilityMode(Ext4.Element.DISPLAY);
+        var toggle = function(selector) {
+            var p = selector.parent();
 
-            if (node.hasCls('expand-folder')) {
-                node.replaceCls('expand-folder', 'collapse-folder');
-                el.hide();
-            }
-            else {
-                node.replaceCls('collapse-folder', 'expand-folder');
-                el.show();
+            if (p) {
+                var collapse = true;
+                if (p.hasCls('expand-folder')) {
+                    // collapse the tree
+                    p.replaceCls('expand-folder', 'collapse-folder');
+                }
+                else {
+                    // expand the tree
+                    p.replaceCls('collapse-folder', 'expand-folder');
+                    collapse = false;
+                }
+
+                var a = p.child('a');
+                if (a) {
+                    var url = a.getAttribute('expandurl');
+                    if (url) {
+                        url += (collapse ? '&collapse=true' : '');
+                        Ext4.Ajax.request({ url : url });
+                    }
+                }
             }
         };
 
-        var applyCollapse = function(nodes) {
-            for (var n=0; n < nodes.length; n++) {
-                Ext4.get(nodes[n]).on('click', function(x,node,z) {
-                    toggle(Ext4.get(node));
-                });
-            }
-        };
+        // nodes - the set of +/- icons
+        var nodes = Ext4.DomQuery.select('.folder-nav .clbl span.marked');
+        for (var n=0; n < nodes.length; n++) {
+            Ext4.get(nodes[n]).on('click', function(x,node) { toggle(Ext4.get(node)); });
+        }
 
-        var selNodes = Ext4.DomQuery.select('.folder-nav .clbl span.marked');
-        applyCollapse(selNodes);
+        // scrollIntoView
+        var siv = function(t, ct) {
+            ct = Ext.getDom(ct) || Ext.getBody().dom;
+            var el = t.dom,
+                    offsets = t.getOffsetsTo(ct),
+                    // el's box
+                    top = offsets[1] + ct.scrollTop,
+                    bottom = top + el.offsetHeight,
+                    // ct's box
+                    ctClientHeight = ct.clientHeight,
+                    ctScrollTop = parseInt(ct.scrollTop, 10),
+                    ctBottom = ctScrollTop + ctClientHeight,
+                    ctHalf = (ctBottom / 2);
+
+            if (bottom > ctBottom) { // outside the visible area
+                ct.scrollTop = bottom - (ctClientHeight / 2);
+            }
+            else if (bottom > ctHalf) { // centering
+                ct.scrollTop = bottom - ctHalf;
+            }
+
+            // corrects IE, other browsers will ignore
+            ct.scrollTop = ct.scrollTop;
+
+            return this;
+        };
 
         // Folder Scrolling
-        var target = Ext4.get('folder-target');
-        if (target) {
-            target.scrollIntoView(Ext4.get('folder-tree-wrap'));
-        }
+        var t = Ext4.get('folder-target');
+        if (t) { siv(t, Ext4.get('folder-tree-wrap')); }
     });
 </script>
 <div class="folder-menu-buttons">

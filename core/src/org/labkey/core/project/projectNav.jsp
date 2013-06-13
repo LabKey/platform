@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
@@ -37,6 +38,10 @@
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
     NavTree projects = ContainerManager.getProjectList(ctx);
+    Container currentProject = ctx.getContainer().getProject();
+    String projectName = null;
+    if (null != currentProject)
+        projectName = currentProject.getName();
 
     // Based on the number of projects calculate a rectangle with a column number of MAX_COLS
     int MAX_COLS = 4;
@@ -122,19 +127,21 @@
                 {
                     duplicates.add(Integer.valueOf(idx));
                     NavTree p = children.get(idx);
+                    String text = p.getText();
+                    String highlight = (text.equalsIgnoreCase(projectName) ? "style=\"font-weight: bold;\"" : "");
 
                     %><li>
                         <%
                             if (null != p.getHref())
                             {
                         %>
-                        <a title="<%=h(p.getText())%>" href="<%=PageFlowUtil.filter(p.getHref())%>"><%=h(p.getText())%></a>
+                        <a title="<%=h(text)%>" href="<%=PageFlowUtil.filter(p.getHref())%>" <%=highlight%>><%=h(text)%></a>
                         <%
                             }
                             else
                             {
                         %>
-                        <span><%=h(p.getText())%></span>
+                        <span><%=h(text)%></span>
                         <%
                             }
                         %>
