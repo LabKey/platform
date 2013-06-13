@@ -206,6 +206,7 @@ public class DavController extends SpringActionController
 
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
+        response.setCharacterEncoding("UTF-8");
         _webdavresponse = new WebdavResponse(response);
 
         String contentType = request.getContentType();
@@ -1698,7 +1699,7 @@ public class DavController extends SpringActionController
                                 xml.writeElement(null, "action", XMLWriter.OPENING);
                                 if (action.getText() != null)
                                 {
-                                    xml.writeProperty(null, "message", action.getText());
+                                    xml.writeProperty(null, "message", PageFlowUtil.filter(action.getText()));
                                 }
                                 if (action.getHref() != null)
                                 {
@@ -3533,8 +3534,8 @@ public class DavController extends SpringActionController
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
             {
-                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-                if (null != filename)
+            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+            if (null != filename)
                 {
                     if (!p.isDirectory())
                     {
@@ -3694,7 +3695,7 @@ public class DavController extends SpringActionController
     
     // per request cache
     Map<Path, WebdavResource> resourceCache = new HashMap<Path, WebdavResource>();
-    WebdavResource nullDavFileInfo = (WebdavResource)Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{WebdavResource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
+    WebdavResource nullDavFileInfo = (WebdavResource)Proxy.newProxyInstance(DavController.class.getClassLoader(), new Class[]{WebdavResource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
 
     @Nullable WebdavResource resolvePath(String path) throws DavException
     {
