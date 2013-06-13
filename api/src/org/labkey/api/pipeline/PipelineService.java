@@ -122,5 +122,5 @@ abstract public class PipelineService
 
     abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot);
 
-    abstract public int getJobId(User u, Container c, String jobGUID);
+    abstract public Integer getJobId(User u, Container c, String jobGUID);
 }
