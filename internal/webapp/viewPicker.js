@@ -11,9 +11,8 @@
     Originally developed by britt.  Generalized into a reusable widget by adam.
 */
 var dataFieldName = 'name';
-var dataUrlFieldName = 'viewDataUrl';
-                                    // schema, query, view, column, folder, rootFolder, folderTypes
-var initialValues = new Array();        // TODO: Select these values in combos
+                               // schema, query, view, column, folder, rootFolder, folderTypes
+var initialValues = [];        // TODO: Select these values in combos
 
 function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo, customizePanel)
 {
@@ -21,7 +20,7 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
 
     if (includeSchema)
     {
-        schemas = new Array();
+        schemas = [];
         var len = schemasInfo.schemas.length;
 
         for (var i = 0; i < len; i++)
@@ -46,13 +45,13 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
             containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
-            successCallback: function(details)
+            success: function(details)
             {
                 if (customizePanel)
                     customizePanel.getEl().unmask();
                 populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo, customizePanel);
             },
-            failureCallback: function()
+            failure: function()
             {
                 if (customizePanel)
                     customizePanel.getEl().unmask();
@@ -116,8 +115,7 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
             containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
             schemaName: schemaName,
             queryName: queryName,
-            successCallback: function(details)
-            {
+            success: function(details) {
                 if (customizePanel)
                     customizePanel.getEl().unmask();
                 populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo, customizePanel);
@@ -130,13 +128,13 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
                         schemaName: schemaName,
                         queryName: queryName,
                         initializeMissingView: true,
-                        successCallback: function(details)
+                        success: function(details)
                         {
                             if (customizePanel)
                                 customizePanel.getEl().unmask();
                             populateColumns(columnCombo, details);
                         },
-                        failureCallback: function ()
+                        failure: function ()
                         {
                             if (customizePanel)
                                 customizePanel.getEl().unmask();
@@ -145,8 +143,7 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
                     });
                 }
             },
-            failureCallback: function ()
-            {
+            failure: function() {
                 if (customizePanel)
                     customizePanel.getEl().unmask();
                 viewCombo.clearValue();
@@ -203,8 +200,7 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
 
     if (columnCombo)
     {
-        viewCombo.on("select", function(combo, record, index)
-        {
+        viewCombo.on("select", function() {
             if (customizePanel)
                 customizePanel.getEl().mask('Loading Columns...', 'loading-indicator indicator-helper');
 
@@ -213,13 +209,13 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
                 schemaName: schemaCombo.getValue(),
                 queryName: queryCombo.getValue(),
                 initializeMissingView: true,
-                successCallback: function(details)
+                success: function(details)
                 {
                     if (customizePanel)
                         customizePanel.getEl().unmask();
                     populateColumns(columnCombo, details);
                 },
-                failureCallback: function ()
+                failure: function ()
                 {
                     if (customizePanel)
                         customizePanel.getEl().unmask();
@@ -399,17 +395,16 @@ function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaC
     if (customizePanel)
         customizePanel.getEl().mask('Loading Folders...', 'loading-indicator indicator-helper');
     LABKEY.Security.getContainers({
-        container:["/"],
-        includeSubfolders:true,
-        successCallback:function (details)
-        {
+        container: ["/"],
+        includeSubfolders: true,
+        includeEffectivePermissions : false,
+        success: function(details) {
             if (customizePanel)
                 customizePanel.getEl().unmask();
             populateRootFolder(rootFolderCombo, details);
             populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema, customizePanel);
         },
-        failureCallback:function ()
-        {
+        failure: function() {
             if (customizePanel)
                 customizePanel.getEl().unmask();
         }

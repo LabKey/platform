@@ -642,6 +642,8 @@ LABKEY.Security = new function()
          * @param {Mixed} [config.container] A container id or full-path String or an Array of container id/full-path Strings.  If not present, the current container is used.
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
+         * @param {boolean} [config.includeEffectivePermissions] If set to false, the effective permissions for this container resource
+         * will not be included. (defaults to true)
          * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
          * @param {Array} [config.moduleProperties] The names (Strings) of modules whose Module Property values should be included for each container.
          * Use "*" to get the value of all Module Properties for all modules.
@@ -713,12 +715,14 @@ LABKEY.Security = new function()
                 }
                 params.container = config.container;
             }
-            if(undefined != config.includeSubfolders)
+            if (undefined != config.includeSubfolders)
                 params.includeSubfolders = config.includeSubfolders;
-            if(undefined != config.depth)
+            if (undefined != config.depth)
                 params.depth = config.depth;
-            if(undefined != config.moduleProperties)
+            if (undefined != config.moduleProperties)
                 params.moduleProperties = config.moduleProperties;
+            if (undefined != config.includeEffectivePermissions)
+                params.includeEffectivePermissions = config.includeEffectivePermissions;
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),

@@ -126,6 +126,7 @@
             },
 
             statics : {
+                Parts : {},
                 visiblePopup : false,
                 clickClose : false,
                 _click : function(e) {
@@ -172,6 +173,9 @@
                 this.hoverEl.hover(this.onTargetOver, this.delayCheck, this);
                 this.popup.hover(this.cancelHide, this.delayCheck, this);
 
+                // Configure click element list
+                this.hoverEl.on('click', this.onTargetOver, this);
+
                 // Initialize global click
                 if (!HoverNavigation.clickClose) {
                     HoverNavigation.clickClose = true;
@@ -199,16 +203,16 @@
 
                 // show immediately if we already have a menu up
                 // Otherwise, make sure that someone hovers for a while
-                HoverNavigation.visiblePopup ? this.show() : this.delayShow();
+                (e && e.type == 'click' ? this.show() : (HoverNavigation.visiblePopup ? this.show() : this.delayShow()));
             },
 
-            notFocused : function(e) {
-                return !this.hoverEl.getRegion().contains(e.getPoint()) || !this.popup.getRegion().contains(e.getPoint());
-            },
+            notFocused : function(e) { return !this.hRegion(e) || !this.pRegion(e); },
 
-            focused : function(e) {
-                return this.hoverEl.getRegion().contains(e.getPoint()) || this.popup.getRegion().contains(e.getPoint());
-            },
+            focused : function(e) { return this.hRegion(e) || this.pRegion(e); },
+
+            hRegion : function(e) { return this.hoverEl.getRegion().contains(e.getPoint()); },
+
+            pRegion : function(e) { return this.popup.getRegion().contains(e.getPoint()); },
 
             delayCheck : function(e) {
                 if (this.notFocused(e)) {
@@ -270,7 +274,6 @@
             }
         });
 
-        HoverNavigation.Parts = {};
         HoverNavigation._project = new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
 <%
     if (showFolderNavigation)

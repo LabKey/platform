@@ -125,7 +125,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
-        _parent = new WeakReference<Container>(dirParent);
+        _parent = new WeakReference<>(dirParent);
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
@@ -171,7 +171,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null == parent && _path.size() > 0)
         {
             parent = ContainerManager.getForPath(_path.getParent());
-            _parent = new WeakReference<Container>(parent);
+            _parent = new WeakReference<>(parent);
         }
         return parent;
     }
@@ -332,7 +332,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @Deprecated
     private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
     {
-        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> perms = new HashSet<>();
         if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
             perms.add(ReadPermission.class);
         if ((perm & ACL.PERM_INSERT) > 0)
@@ -464,7 +464,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        List<SecurableResource> ret = new ArrayList<SecurableResource>();
+        List<SecurableResource> ret = new ArrayList<>();
 
         //add all sub-containers the user is allowed to read
         ret.addAll(ContainerManager.getChildren(this, user, ReadPermission.class));
@@ -699,7 +699,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //should be there already if it's not portal, but if it is core, we have to add it for upgrade
             if (defaultModuleName.compareToIgnoreCase("Core") == 0)
             {
-                Set<Module> modules = new HashSet<Module>(getActiveModules());
+                Set<Module> modules = new HashSet<>(getActiveModules());
                 if (!modules.contains(defaultModule))
                 {
                     modules.add(defaultModule);
@@ -723,7 +723,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), errors);
         if (!errors.hasErrors())
         {
-            Set<Module> modules = new HashSet<Module>(folderType.getActiveModules());
+            Set<Module> modules = new HashSet<>(folderType.getActiveModules());
             modules.addAll(ensureModules);
             setActiveModules(modules);
         }
@@ -748,7 +748,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        Set<Module> requiredModules = new HashSet<Module>();
+        Set<Module> requiredModules = new HashSet<>();
         requiredModules.addAll(getFolderType().getActiveModules());
 
         for(Container child: getChildren())
@@ -822,7 +822,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return;
 
         boolean isChanged = false;
-        Set<Module> existingModules = new HashSet<Module>();
+        Set<Module> existingModules = new HashSet<>();
         existingModules.addAll(getParent().getActiveModules(false, false));
 
         newModules.addAll(getFolderType().getActiveModules());
@@ -869,7 +869,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (isRoot())
         {
             //get active modules from database
-            Set<Module> modules = new HashSet<Module>();
+            Set<Module> modules = new HashSet<>();
             return Collections.unmodifiableSet(modules);
         }
 
@@ -891,7 +891,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (isProject())
             {
                 // first time in this project: initialize active modules now, based on the active webparts
-                Map<String, Module> mapWebPartModule = new HashMap<String, Module>();
+                Map<String, Module> mapWebPartModule = new HashMap<>();
                 //get set of all web parts for all modules
                 for (Module module : allModules)
                 {
@@ -940,7 +940,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             PropertyManager.saveProperties(propsWritable);
         }
 
-        Set<Module> modules = new HashSet<Module>();
+        Set<Module> modules = new HashSet<>();
         // add all modules found in user preferences:
         if (null != props)
         {
@@ -982,7 +982,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         Set<Module> activeModules;
         if(includeDepencendies)
         {
-            Set<Module> withDependencies = new HashSet<Module>();
+            Set<Module> withDependencies = new HashSet<>();
             for (Module m : modules)
             {
                 withDependencies.add(m);
@@ -1016,7 +1016,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Map<String, Set<String>> getModuleDependencyMap()
     {
-        Map<String, Set<String>> dependencies = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> dependencies = new HashMap<>();
 
         for (Module m : ModuleLoader.getInstance().getModules())
         {
@@ -1072,7 +1072,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Map<String, Object> toJSON(User user, boolean includePermissions)
     {
-        Map<String, Object> containerProps = new HashMap<String,Object>();
+        Map<String, Object> containerProps = new HashMap<>();
         containerProps.put("name", getName());
         containerProps.put("id", getId());
         containerProps.put("path", getPath());
@@ -1150,7 +1150,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // returns in order from the root (e.g. /project/folder/)
     private List<Container> getPathAsList()
     {
-        List<Container> containerList = new ArrayList<Container>();
+        List<Container> containerList = new ArrayList<>();
         Container current = this;
         while (!current.isRoot())
         {
