@@ -47,7 +47,7 @@ public class VisualizationSourceColumn
     private String _otherAlias;
     protected String _label;
     private JdbcType _type = null;
-    private Set<Object> _values = new LinkedHashSet<Object>();
+    private Set<Object> _values = new LinkedHashSet<>();
 
     public Map<String, String> toJSON(String measureName)
     {
@@ -63,11 +63,13 @@ public class VisualizationSourceColumn
 
     public static class Factory
     {
-        private Map<Path, VisualizationSourceColumn> _currentCols = new HashMap<Path, VisualizationSourceColumn>();
-        private Map<String,VisualizationSourceColumn> _aliasMap = new CaseInsensitiveHashMap<VisualizationSourceColumn>();
+        private Map<Path, VisualizationSourceColumn> _currentCols = new HashMap<>();
+        private Map<String,VisualizationSourceColumn> _aliasMap = new CaseInsensitiveHashMap<>();
 
         private VisualizationSourceColumn findOrAdd(VisualizationSourceColumn col)
         {
+            col.ensureColumn();
+
             Path key = new Path(col.getSchemaName(), col.getQueryName(), col.getOriginalName());
             VisualizationSourceColumn current = _currentCols.get(key);
             if (current != null)
@@ -172,6 +174,28 @@ public class VisualizationSourceColumn
     public void setAllowNullResults(boolean allowNullResults)
     {
         _allowNullResults = allowNullResults;
+    }
+
+    public void ensureColumn() throws IllegalArgumentException
+    {
+        if (getSchemaName() == null || getQueryName() == null || getOriginalName() == null)
+        {
+            throw new IllegalArgumentException("SchemaName, queryName, and name are all required for each measure, dimension, or sort.");
+        }
+
+        try
+        {
+            ColumnInfo columnInfo = findColumnInfo();
+            if (columnInfo == null)
+            {
+                throw new NotFoundException("Unable to find field " + getOriginalName() + " in " + getSchemaName() + "." + getQueryName() +
+                        ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
+            }
+        }
+        catch (VisualizationSQLGenerator.GenerationException e)
+        {
+            throw new NotFoundException(e.getMessage(), e);
+        }
     }
 
     public String getSelectName()

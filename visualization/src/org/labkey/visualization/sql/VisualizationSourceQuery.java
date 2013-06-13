@@ -134,6 +134,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     public void addAggregate(VisualizationAggregateColumn aggregate)
     {
         ensureSameQuery(aggregate);
+        aggregate.ensureColumn();
         _aggregates.add(aggregate);
     }
 

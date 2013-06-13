@@ -55,9 +55,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
     }
 
-    private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
-    private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<String, VisualizationIntervalColumn>();
-    private List<VisualizationSourceColumn> _groupBys = new ArrayList<VisualizationSourceColumn>();
+    private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
+    private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
+    private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
@@ -83,7 +83,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     }
 
 
-    private Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<VisualizationProvider>();
+    private Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<>();
 
     public VisualizationProvider ensureVisualizationProvider(String schema, ChartType type)
     {
@@ -133,6 +133,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             for (Map<String, Object> measureInfo : ((JSONArray) measuresProp).toJSONObjectArray())
             {
                 Map<String, Object> measureProperties = (Map<String, Object>) measureInfo.get("measure");
+                if (null == measureProperties || measureProperties.isEmpty())
+                {
+                    throw new IllegalArgumentException("The 'measure' property is required for each of the elements in the measures array.");
+                }
+
                 Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
 
                 VisualizationSourceQuery query;
@@ -173,7 +178,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
                         Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
                         Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
-                        if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
+                        if (dateProperties != null && !dateProperties.isEmpty() && zeroDateProperties != null && !zeroDateProperties.isEmpty())
                         {
                             VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
                             dateCol.setAllowNullResults(measureCol.isAllowNullResults());
@@ -205,6 +210,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                                     _intervals.put(newInterval.getFullAlias(), newInterval);
                                 }
                             }
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("The 'dateCol' and 'zeroDateCol' properties are requried for each measure.");
                         }
                         break;
                     case TIME_VISITBASED:
@@ -260,6 +269,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             if (NumberUtils.isDigits(limit.toString()))
                 _limit = Integer.parseInt(limit.toString());
         }
+
+        if (_sourceQueries.isEmpty())
+        {
+            throw new IllegalArgumentException("No source queries requested with the specified measures array.");
+        }
     }
 
     private void ensureJoinColumns()
@@ -278,7 +292,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             query.getDisplayName() + " to " + joinTarget.getDisplayName());
                 }
                 VisualizationProvider provider = getVisualizationProvider(query.getSchemaName());
-                List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
+                List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<>();
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget, false))
                 {
                     // Make sure we're selecting all the columns we need to join on:
@@ -289,7 +303,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     // We need to filter both left and right queries by the same values (for the same columns), since we
                     // may be doing an outer join.
                     left.syncValues(right);
-                    joinConditions.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(left, right));
+                    joinConditions.add(new Pair<>(left, right));
                 }
                 query.setJoinConditions(joinConditions);
             }
@@ -320,8 +334,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public String getSQL() throws VisualizationSQLGenerator.GenerationException
     {
-        Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<IVisualizationSourceQuery>();
-        Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<VisualizationSourceQuery>();
+        Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<>();
+        Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<>();
         for (VisualizationSourceQuery query : _sourceQueries.values())
         {
             if (query.requireInnerJoin())
@@ -331,7 +345,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
 
         // Create a single, nested outer join query to gather up all the outer-join results
-        List<IVisualizationSourceQuery> queries = new ArrayList<IVisualizationSourceQuery>();
+        List<IVisualizationSourceQuery> queries = new ArrayList<>();
         IVisualizationSourceQuery nestedOuterJoinQuery = null;
         if (outerJoinQueries.size() > 1)
         {
@@ -354,7 +368,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
 
         if (!_groupBys.isEmpty())
         {
@@ -379,7 +393,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
         String separator = "";
-        Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<VisualizationSourceQuery>();
+        Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<>();
         StringBuilder groupByAndSelectSQL = new StringBuilder();
 
         for (VisualizationSourceColumn groupByColumn : _groupBys)
@@ -557,7 +571,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize)).append(" @preservetitle");
         }
 
-        Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, IVisualizationSourceQuery>();
+        Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<>();
         StringBuilder sql = new StringBuilder();
         for (IVisualizationSourceQuery query : queries)
         {
@@ -635,7 +649,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         Sort sort = new Sort();
 
-        Map<String, VisualizationSourceColumn> sorts = new LinkedHashMap<String, VisualizationSourceColumn>();
+        Map<String, VisualizationSourceColumn> sorts = new LinkedHashMap<>();
         for (IVisualizationSourceQuery query : _sourceQueries.values())
         {
             for (VisualizationSourceColumn orderBy : query.getSorts())
@@ -666,7 +680,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
         Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
-        Set<Map<String, String>> result = new LinkedHashSet<Map<String, String>>();
+        Set<Map<String, String>> result = new LinkedHashSet<>();
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
@@ -683,7 +697,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        return new ArrayList<Map<String, String>>(result);
+        return new ArrayList<>(result);
     }
 
     @Deprecated
@@ -695,7 +709,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
         Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
-        Map<String, String> colMap = new LinkedHashMap<String, String>();
+        Map<String, String> colMap = new LinkedHashMap<>();
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
@@ -744,7 +758,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         Set<VisualizationSourceColumn> aliases = colMap.get(name);
         if (aliases == null)
         {
-            aliases = new LinkedHashSet<VisualizationSourceColumn>();
+            aliases = new LinkedHashSet<>();
             colMap.put(name, aliases);
         }
         aliases.addAll(newAliases);
@@ -775,7 +789,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         if (_sourceQueries.isEmpty())
         {
-            throw new NotFoundException();
+            throw new NotFoundException("No primary schema found.");
         }
         VisualizationSourceQuery firstQuery = _sourceQueries.values().iterator().next();
         return firstQuery.getSchema();
