@@ -660,7 +660,6 @@ groupByLoop:
                 _log.debug(">>" + debugMsg);
             }
 
-
             if (!methodName)
             {
                 RelationColumn column = _declaredFields.get(key);
@@ -672,10 +671,10 @@ groupByLoop:
                         debugMsg += "\n        resolvedTo: " + column.getDebugString();
                     return new QField(column, expr);
                 }
+                if (isDebugEnabled)
+                    debugMsg += "\n        resolvedTo: /NOT FOUND/";
             }
 
-            if (isDebugEnabled)
-                debugMsg += "\n        resolvedTo: /NOT FOUND/";
             if (key.getTable() == null)
             {
                 return new QField(null, key.getName(), expr);
@@ -687,8 +686,12 @@ groupByLoop:
                 {
                     return new QField(table, key.getName(), expr);
                 }
+                // TODO make table method work on outer tables
+                if (methodName)
+                {
+                    parseError("Method not found: " + key.toString(), expr);
+                }
                 return super.getField(key, expr, referant);
-
             }
         }
         finally
@@ -1054,6 +1057,8 @@ groupByLoop:
         Set<RelationColumn> set = new HashSet<RelationColumn>(_columns.values());
 
         getSuggestedColumns(set);
+        if (!getParseErrors().isEmpty())
+            return null;
 
         // mark all top level columns selected, since we want to generate column info for all columns
         markAllSelected(_query);
