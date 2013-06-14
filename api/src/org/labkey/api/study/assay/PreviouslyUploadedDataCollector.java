@@ -17,9 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -63,7 +61,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(PageFlowUtil.encode(entry.getValue().getName()));
+            sb.append(PageFlowUtil.filter(entry.getValue().getName()));
             sb.append("<input name=\"");
             sb.append(PATH_FORM_ELEMENT_NAME);
             sb.append("\" type=\"hidden\" value=\"");
@@ -71,7 +69,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
             sb.append("\"/><input type=\"hidden\" name=\"");
             sb.append(NAME_FORM_ELEMENT_NAME);
             sb.append("\" value=\"");
-            sb.append(PageFlowUtil.encode(entry.getKey()));
+            sb.append(PageFlowUtil.filter(entry.getKey()));
             sb.append("\"/>");
         }
         return new HtmlView(sb.toString());
@@ -107,7 +105,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         {
             throw new IOException("The number of paths did not match the number of names");
         }
-        Map<String, File> result = new HashMap<String, File>();
+        Map<String, File> result = new HashMap<>();
 
         PipeRoot pipelineRoot = getPipelineRoot(context.getContainer());
 
