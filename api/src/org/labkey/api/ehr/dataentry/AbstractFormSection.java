@@ -45,6 +45,9 @@ abstract public class AbstractFormSection implements FormSection
     private String _name;
     private String _label;
     private String _xtype;
+    private String _clientModelClass = "EHR.model.DefaultClientModel";
+    private List<String> _configSources = new ArrayList<String>();
+
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
     protected static final Logger _log = Logger.getLogger(FormSection.class);
@@ -69,6 +72,26 @@ abstract public class AbstractFormSection implements FormSection
     public String getXtype()
     {
         return _xtype;
+    }
+
+    public String getClientModelClass()
+    {
+        return _clientModelClass;
+    }
+
+    public List<String> getConfigSources()
+    {
+        return _configSources;
+    }
+
+    public void setConfigSources(List<String> configSources)
+    {
+        _configSources = new ArrayList<String>(configSources);
+    }
+
+    public void addConfigSource(String source)
+    {
+        _configSources.add(source);
     }
 
     public boolean hasPermission(Container c, User u, Class<? extends Permission> perm)
@@ -140,8 +163,10 @@ abstract public class AbstractFormSection implements FormSection
         json.put("name", getName());
         json.put("label", getLabel());
         json.put("xtype", getXtype());
+        json.put("clientModelClass", getClientModelClass());
         json.put("storeConfigs", getStoreConfigs(c, u));
         json.put("fieldConfigs", getFieldConfigs(c, u));
+        json.put("configSources", getConfigSources());
 
         return json;
     }
@@ -153,7 +178,7 @@ abstract public class AbstractFormSection implements FormSection
         List<JSONObject> ret = new ArrayList<JSONObject>();
         for (FormElement fe : getFormElements(c, u))
         {
-            ret.add(fe.toJSON());
+            ret.add(fe.toJSON(c, u));
         }
 
         return ret;

@@ -17,8 +17,10 @@ package org.labkey.api.ehr.dataentry;
 
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.security.User;
 
 /**
  * User: bimber
@@ -43,7 +45,7 @@ public class FormElement
         return fd;
     }
 
-    public JSONObject toJSON()
+    public JSONObject toJSON(Container c, User u)
     {
         JSONObject json = new JSONObject();
 

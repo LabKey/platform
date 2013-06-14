@@ -84,7 +84,7 @@ public class AbstractDataEntryForm implements DataEntryForm
 
     public boolean hasPermission(Container c, User u)
     {
-        for (FormSection section : _sections)
+        for (FormSection section : getFormSections())
         {
             if (!section.hasPermission(c, u, UpdatePermission.class))
                 return false;
@@ -108,7 +108,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         if (!c.getActiveModules().contains(_owner))
             return false;
 
-        for (FormSection section : _sections)
+        for (FormSection section : getFormSections())
         {
             if (!section.hasPermission(c, u, UpdatePermission.class))
                 return false;
@@ -128,7 +128,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("isAvailable", isAvailable(c, u));
 
         JSONArray sections = new JSONArray();
-        for (FormSection section : _sections)
+        for (FormSection section : getFormSections())
         {
             sections.put(section.toJSON(c, u));
         }
@@ -169,7 +169,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     public Set<TableInfo> getTables(Container c, User u)
     {
         Set<TableInfo> tables = new HashSet<TableInfo>();
-        for (FormSection section : _sections)
+        for (FormSection section : getFormSections())
         {
             tables.addAll(section.getTables(c, u));
         }
@@ -179,7 +179,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<ClientDependency>();
-        for (FormSection section : _sections)
+        for (FormSection section : getFormSections())
         {
             cds.addAll(section.getClientDependencies());
         }

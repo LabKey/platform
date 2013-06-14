@@ -41,6 +41,8 @@ public interface FormSection
 
     abstract public String getXtype();
 
+    abstract public String getClientModelClass();
+
     abstract public boolean hasPermission(Container c, User u, Class<? extends Permission> perm);
 
     abstract public Set<Pair<String, String>> getTableNames();
@@ -50,4 +52,8 @@ public interface FormSection
     abstract public JSONObject toJSON(Container c, User u);
 
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
+
+    abstract public void setConfigSources(List<String> configSources);
+
+    abstract public void addConfigSource(String source);
 }

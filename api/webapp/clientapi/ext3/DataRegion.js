@@ -2756,7 +2756,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     MAX_FILTER_CHOICES : 250, // 15565, Switch faceted limit to 250
-    MAX_DISPLAY_CHOICES : 100,
+    MAX_DISPLAY_CHOICES : 250,  //see issues 16944 and
 
     savedSearchString : null,
 
