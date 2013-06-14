@@ -119,20 +119,17 @@ public class TransformManager implements DataIntegrationService
 
     private BaseQueryTransformDescriptor parseETL(Resource resource, String moduleName)
     {
-        if (resource != null && resource.isFile())
+        try
         {
-            try
-            {
-                return new BaseQueryTransformDescriptor(resource, moduleName);
-            }
-            catch (IOException e)
-            {
-                LOG.warn("Unable to parse " + resource, e);
-            }
-            catch (XmlException e)
-            {
-                LOG.warn("Unable to parse " + resource, e);
-            }
+            return new BaseQueryTransformDescriptor(resource, moduleName);
+        }
+        catch (IOException e)
+        {
+            LOG.warn("Unable to parse " + resource, e);
+        }
+        catch (XmlException e)
+        {
+            LOG.warn("Unable to parse " + resource, e);
         }
         return null;
     }
@@ -500,14 +497,22 @@ public class TransformManager implements DataIntegrationService
 
         if (etlsDir != null && etlsDir.isCollection())
         {
-            for (Resource etlDir : etlsDir.list())
+            for (Resource r : etlsDir.list())
             {
-                BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
-                if (descriptor != null)
+                Resource configXml = null;
+                if (r.isCollection())
+                    configXml = r.find("config.xml");
+                else if (r.isFile() && r.getName().toLowerCase().endsWith(".xml"))
+                    configXml = r;
+                if (null != configXml && configXml.isFile())
                 {
-                    l.add(descriptor);
-                    if (autoRegister)
-                        _etls.put(descriptor.getId(), new Pair<Module,ScheduledPipelineJobDescriptor>(module,descriptor));
+                    BaseQueryTransformDescriptor descriptor = parseETL(configXml, module.getName());
+                    if (descriptor != null)
+                    {
+                        l.add(descriptor);
+                        if (autoRegister)
+                            _etls.put(descriptor.getId(), new Pair<Module,ScheduledPipelineJobDescriptor>(module,descriptor));
+                    }
                 }
             }
         }

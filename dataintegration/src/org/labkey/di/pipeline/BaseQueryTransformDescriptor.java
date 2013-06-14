@@ -15,14 +15,11 @@
  */
 package org.labkey.di.pipeline;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.jetbrains.annotations.Nullable;
-import org.jfree.data.DataUtilities;
-import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
@@ -59,6 +56,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -80,9 +78,9 @@ import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
+import org.quartz.Job;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
-import org.quartz.core.QuartzScheduler;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -97,7 +95,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: jeckels
@@ -143,7 +140,12 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         _resource = resource;
         _resourcePath = resource.getPath();
         _moduleName = moduleName;
-        _id = "{" + moduleName + "}/" + _resourcePath.toString();
+        String name;
+        if ("config.xml".equals(_resourcePath.getName().toLowerCase()))
+            name = _resourcePath.getParent().getName();
+        else
+            name = FileUtil.getBaseName(_resourcePath.getName());
+        _id = "{" + moduleName + "}/" + name;
         parse();
     }
 
@@ -363,10 +365,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     }
 
 
-    public void setDefaultFilterFactory(FilterStrategy.Factory defaultFactory)
-    {
-        _defaultFactory = defaultFactory;
-    }
+//    public void setDefaultFilterFactory(FilterStrategy.Factory defaultFactory)
+//    {
+//        _defaultFactory = defaultFactory;
+//    }
 
 
     private void checkForUpdates()
@@ -436,7 +438,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
 
     @Override
-    public Class getJobClass()
+    public Class<? extends Job> getJobClass()
     {
         return TransformJobRunner.class;
     }
@@ -518,6 +520,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     }
 
 
+/*
     public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
     {
         if (null == map)
@@ -530,15 +533,15 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         map.put("version", getVersion());
         return map;
     }
+*/
+
 
     private SimpleQueryTransformStepMeta getTransformStepMetaFromTaskId(TaskId tid)
     {
-        SimpleQueryTransformStepMeta meta = null;
-
         // step ids are guaranteed to be unique
         for (int i = 0; i < _stepMetaDatas.size(); i++)
         {
-            meta = _stepMetaDatas.get(i);
+            SimpleQueryTransformStepMeta meta = _stepMetaDatas.get(i);
             if (StringUtils.equals(meta.getId(), tid.getName()))
                 return meta;
         }
@@ -567,7 +570,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     private void registerTaskPipeline(TaskId pipelineId) throws CloneNotSupportedException
     {
-        ArrayList<Object> progressionSpec = new ArrayList<Object>();
+        ArrayList<Object> progressionSpec = new ArrayList<>();
         TaskPipelineSettings settings = new TaskPipelineSettings(pipelineId);
 
         // Register all the tasks that are associated with this transform and
@@ -1034,7 +1037,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             EtlResource etl = new EtlResource(file);
             try
             {
-                BaseQueryTransformDescriptor d = new BaseQueryTransformDescriptor(etl, "junit");
+                new BaseQueryTransformDescriptor(etl, "junit");
             }
             catch (XmlException x)
             {
