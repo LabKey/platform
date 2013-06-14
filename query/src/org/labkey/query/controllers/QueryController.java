@@ -2218,7 +2218,12 @@ public class QueryController extends SpringActionController
         {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-            DataRequest builder = mapper.readValue(form.getJsonObject().toString(), DataRequest.class);
+            JSONObject object = form.getJsonObject();
+            if (object == null)
+            {
+                object = new JSONObject();
+            }
+            DataRequest builder = mapper.readValue(object.toString(), DataRequest.class);
 
             return builder.render(getViewContext(), errors);
         }

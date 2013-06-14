@@ -61,7 +61,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");
         String separator = "";
-        if (_groupBys.isEmpty())
+        if (_groupBys.isEmpty() && _aggregates.isEmpty())
         {
             sb.append(SUBQUERY_ALIAS);
             sb.append(".*");
@@ -176,6 +176,16 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
                     pivotBuilder);
 
             assertEqualsIgnoreWhitespace("SELECT A.*, \"Pivot3\" FROM ( mySchema.myTable ) A PIVOT \"Pivot1\", \"Pivot2\" BY \"Pivot3\"", transform.getLabKeySQL());
+        }
+
+        @Test
+        public void testAggregatesWithNoGroupBy()
+        {
+            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Collections.<FieldKey>emptyList(),
+                    null);
+
+            assertEqualsIgnoreWhitespace("SELECT MAX(\"Agg1\") AS \"MAXAgg1\" FROM ( mySchema.myTable ) A", transform.getLabKeySQL());
         }
 
         @Test

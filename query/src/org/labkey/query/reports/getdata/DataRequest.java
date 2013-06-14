@@ -51,6 +51,10 @@ public class DataRequest
 
     public ApiResponse render(ViewContext context, BindException errors)
     {
+        if (_source == null)
+        {
+            throw new IllegalStateException("No source object was included in the request");
+        }
         QueryReportDataSource source = _source.create(context.getUser(), context.getContainer());
         for (AggregateQueryDataTransformerBuilder transform : _transforms)
         {
