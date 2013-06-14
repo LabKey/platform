@@ -117,6 +117,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
+import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -262,6 +263,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
+        AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
+                "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
     }
 
     @Override
@@ -405,6 +408,35 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         view.setTitle(form.getTitle());
                         view.setFrame(WebPartView.FrameType.PORTAL);
                         return view;
+                    }
+                },
+                new BaseWebPartFactory("BetaNav")
+                {
+                    @Override
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        FolderNavigationForm form = getForm(portalCtx);
+
+                        final FolderMenu folders = new FolderMenu(portalCtx);
+                        form.setFolderMenu(folders);
+
+                        JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
+                        view.setTitle("Beta Navigation");
+                        view.setFrame(WebPartView.FrameType.NONE);
+                        return view;
+                    }
+
+                    @Override
+                    public boolean isAvailable(Container c, String location)
+                    {
+                        return false;
+                    }
+
+                    private FolderNavigationForm getForm(ViewContext context)
+                    {
+                        FolderNavigationForm form = new FolderNavigationForm();
+                        form.setPortalContext(context);
+                        return form;
                     }
                 }
         ));

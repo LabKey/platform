@@ -719,6 +719,7 @@ core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text
 core/src/org/labkey/core/portal/testsvg.jsp -text
 core/src/org/labkey/core/project/FolderNavigationForm.java -text
+core/src/org/labkey/core/project/betaNav.jsp -text
 core/src/org/labkey/core/project/folderNav.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projectNav.jsp -text
