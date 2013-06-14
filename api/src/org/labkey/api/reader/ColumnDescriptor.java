@@ -34,6 +34,12 @@ public class ColumnDescriptor
     {
     }
 
+    public ColumnDescriptor(String name)
+    {
+        this.name = name;
+        this.clazz = String.class;
+    }
+
     public ColumnDescriptor(String name, Class type)
     {
         this.name = name;

@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringBufferInputStream;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +112,34 @@ public class TabLoader extends DataLoader
         public FileType getFileType() { return CSV_FILE_TYPE; }
     }
 
+    public static class MysqlFactory extends AbstractDataLoaderFactory
+    {
+        String fieldTerminator="~@~";
+        String lineTerminator="~@@~";
+
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            loader.setDelimiters(fieldTerminator, lineTerminator);
+            loader.setParseQuotes(false);
+            return loader;
+        }
+
+        @NotNull @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            TabLoader loader = new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+            loader.setDelimiters(fieldTerminator,lineTerminator);
+            loader.setParseQuotes(false);
+            return loader;
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return CSV_FILE_TYPE; }
+    }
+
+
     protected static char COMMENT_CHAR = '#';
 
     // source data
@@ -121,6 +150,8 @@ public class TabLoader extends DataLoader
     private Map<String, String> _comments = new HashMap<>();
     private char _chDelimiter = '\t';
     private String _strDelimiter = new String(new char[]{_chDelimiter});
+    private String _lineDelimiter = null;
+
     private String _strQuote = null;
     private String _strQuoteQuote = null;
     private boolean _parseQuotes = true;
@@ -276,7 +307,30 @@ public class TabLoader extends DataLoader
     private ArrayList<String> listParse = new ArrayList<>(30);
 
 
-    private String readLine(BufferedReader r, boolean skipComments)
+
+    private CharSequence readLine(BufferedReader r, boolean skipComments)
+    {
+        String line = readOneTextLine(r,skipComments);
+        if (null == line || null == _lineDelimiter)
+            return line;
+        if (line.endsWith(_lineDelimiter))
+            return line.substring(0,line.length()-_lineDelimiter.length());
+        StringBuilder sb = new StringBuilder(line);
+        while (null != (line = readOneTextLine(r,false)))
+        {
+            sb.append("\n");
+            if (line.endsWith(_lineDelimiter))
+            {
+                sb.append(line.substring(0,line.length()-_lineDelimiter.length()));
+                return sb;
+            }
+            sb.append(line);
+        }
+        return sb;
+    }
+
+
+    private String readOneTextLine(BufferedReader r, boolean skipComments)
     {
         try
         {
@@ -303,20 +357,19 @@ public class TabLoader extends DataLoader
     {
         if (!_parseQuotes)
         {
-            String line = readLine(r, true);
+            CharSequence line = readLine(r, true);
             if (line == null)
                 return null;
-            String[] fields = line.split(_strDelimiter);
+            String[] fields = StringUtils.splitByWholeSeparator(line.toString(), _strDelimiter);
             for (int i = 0; i < fields.length; i++)
                 fields[i] = parseValue(fields[i]);
             return fields;
         }
 
-        String line = readLine(r, true);
+        CharSequence line = readLine(r, true);
         if (line == null)
             return null;
-        StringBuilder buf = new StringBuilder(line.length());
-        buf.append(line);
+        StringBuilder buf = line instanceof StringBuilder ? (StringBuilder)line : new StringBuilder(line);
 
         String field = null;
         int start = 0;
@@ -354,7 +407,7 @@ public class TabLoader extends DataLoader
                     if (end == -1)
                     {
                         // XXX: limit number of lines we read
-                        String nextLine = readLine(r, false);
+                        CharSequence nextLine = readLine(r, false);
                         end = buf.length();
                         if (nextLine == null)
                         {
@@ -416,7 +469,7 @@ public class TabLoader extends DataLoader
             if (end < buf.length() && buf.charAt(end) != _chDelimiter)
                 throw new IllegalArgumentException("Can't parse line: " + buf);
 
-            end++;
+            end += _strDelimiter.length();
 
             while (end < buf.length() && buf.charAt(end) != _chDelimiter && Character.isWhitespace(buf.charAt(end)))
                 end++;
@@ -463,6 +516,15 @@ public class TabLoader extends DataLoader
     {
         _chDelimiter = delimiter;
         _strDelimiter = new String(new char[]{_chDelimiter});
+    }
+
+    public void setDelimiters(@NotNull String field, @Nullable String line)
+    {
+        if (StringUtils.isEmpty(field))
+            throw new IllegalArgumentException();
+        _chDelimiter = field.charAt(0);
+        _strDelimiter = field;
+        _lineDelimiter = StringUtils.isEmpty(line) ? null : line;
     }
 
     public void setParseQuotes(boolean parseQuotes)
@@ -884,6 +946,46 @@ public class TabLoader extends DataLoader
             assertEquals("Fred", row.get("Name"));
             assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
             assertEquals(1, row.get("Age"));
+        }
+
+
+        @Test
+        public void testMySql() throws IOException
+        {
+            String mysqlData =
+                    "3072~@~\\N~@~biotinylated antihuIgG antibody~@~ESR8865~@~2149~@@~\n" +
+                    "3073~@~Multiline\n" +
+                            "description~@~anti-huIgM antibody~@~ESR8866~@~2149~@@~\n" +
+                    "3074~@~short~description~@~anti-huIgA antibody~@~ESR8867~@~2149~@@~\n" +
+                    "3075~@~description with\n" +
+                            "\n" +
+                            "\n" +
+                            "\n" +
+                            "blank lines\n" +
+                            "\n~@~avidin-D-HRP conjugate~@~ESR8868~@~2149~@@~\n";
+            TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new StringBufferInputStream(mysqlData), false, null);
+            loader.setColumns(new ColumnDescriptor[] {new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"),new ColumnDescriptor("reagent_ascession"),new ColumnDescriptor("workspace_id")});
+            loader.setDelimiters("~@~","~@@~");
+            List<Map<String, Object>> rows = loader.load();
+            loader.close();
+
+            assertEquals(4, rows.size());
+
+            Map<String, Object> row = rows.get(0);
+            assertEquals("biotinylated antihuIgG antibody", row.get("name"));
+            assertNull(row.get("description"));
+
+            row = rows.get(1);
+            assertEquals("anti-huIgM antibody", row.get("name"));
+            assertEquals("Multiline\ndescription",row.get("description"));
+
+            row = rows.get(2);
+            assertEquals("anti-huIgA antibody", row.get("name"));
+            assertEquals("short~description",row.get("description"));
+
+            row = rows.get(3);
+            assertEquals("avidin-D-HRP conjugate", row.get("name"));
+            assertEquals("description with\n\n\n\nblank lines",row.get("description"));
         }
 
         @Test
