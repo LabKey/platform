@@ -55,6 +55,7 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
+import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -69,6 +70,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -197,6 +199,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (plateTemplate != null)
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
+
+            SampleMetadataInputFormat[] formats = ((PlateBasedAssayProvider) provider).getSupportedMetadataInputFormats();
+            if (formats.length > 1)
+            {
+                Map<String, String> metadataFormats = new LinkedHashMap<>();
+
+                for (SampleMetadataInputFormat format : formats)
+                {
+                    metadataFormats.put(format.name(), format.getLabel());
+                }
+                result.setAvailableMetadataInputFormats(metadataFormats);
+            }
+            result.setSelectedMetadataInputFormat(((PlateBasedAssayProvider)provider).getMetadataInputFormat(protocol).name());
         }
 
         List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
@@ -383,6 +398,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             plateProvider.setPlateTemplate(getContainer(), protocol, template);
                         else
                             throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
+
+                        String selectedFormat = assay.getSelectedMetadataInputFormat();
+                        SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
+                        if (inputFormat != null)
+                            ((PlateBasedAssayProvider)provider).setMetadataInputFormat(protocol, inputFormat);
                     }
 
                     // data transform scripts
