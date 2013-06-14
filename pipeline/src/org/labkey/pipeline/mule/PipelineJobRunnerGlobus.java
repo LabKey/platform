@@ -15,43 +15,66 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.globus.axis.util.Util;
 import org.globus.exec.client.GramJob;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.GlobusKeyPair;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.DateUtil;
-import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.mule.impl.RequestContext;
+import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.UMOException;
-import org.mule.umo.UMODescriptor;
 import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.umo.lifecycle.Callable;
-import org.mule.impl.RequestContext;
 
-import javax.naming.*;
-import java.io.*;
-import java.security.Security;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateNotYetValidException;
+import java.security.Security;
 import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
+    private static final String TRIMMED_MESSAGE_PREFIX = "******* TRIMMED ";
+    private static final String TRIMMED_MESSAGE_SUFFIX = " FROM GLOBUS LOG FILE *******";
+    private static final int GLOBUS_LOG_LINE_LIMIT = 1000;
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
 
     private static final String GLOBUS_LOCATION = "GLOBUS_LOCATION";
@@ -59,7 +82,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
     static
     {
         Util.registerTransport();
-        if (System.getProperty(GLOBUS_LOCATION) == null)
+        if (System.getProperty(GLOBUS_LOCATION) == null && ModuleLoader.getServletContext() != null)
         {
             File webappDir = new File(ModuleLoader.getServletContext().getRealPath("/"));
             File webinfDir = new File(webappDir, "WEB-INF"); 
@@ -408,40 +431,46 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (f.length() > 0)
             {
                 job.getLogger().debug("Reading log file " + f + ", which is now of size " + f.length());
-                FileInputStream fIn = null;
-                try
+                try (FileInputStream fIn = new FileInputStream(f))
                 {
-                    fIn = new FileInputStream(f);
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
-                    String line;
-                    StringBuilder sb = new StringBuilder();
-                    while ((line = reader.readLine()) != null)
-                    {
-                        sb.append(line);
-                        sb.append("\n");
-                    }
+                    String logMessage = getLogMessage(new InputStreamReader(fIn), outputType);
                     if (outputType == GlobusJobWrapper.OutputType.out)
                     {
-                        job.getLogger().debug("Content of std" + outputType + ":\n" + sb.toString());
+                        job.getLogger().debug(logMessage);
                     }
                     else
                     {
-                        job.getLogger().warn("Content of std" + outputType + ":\n" + sb.toString());
+                        job.getLogger().warn(logMessage);
                     }
                 }
                 catch (IOException e)
                 {
                     job.getLogger().warn("Failed to append contents from log file " + f, e);
                 }
-                finally
-                {
-                    if (fIn != null) { try { fIn.close(); } catch (IOException ignored) {} }
-                }
             }
 
             job.getLogger().debug("Deleting log file " + f + ", which is now of size " + f.length());
             f.delete();
         }
+    }
+
+    private static String getLogMessage(Reader reader, GlobusJobWrapper.OutputType outputType) throws IOException
+    {
+        String line;
+        List<String> lines = new LinkedList<>();
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        int trimmedLinesCount = 0;
+        while ((line = bufferedReader.readLine()) != null)
+        {
+            if (lines.size() >= GLOBUS_LOG_LINE_LIMIT)
+            {
+                trimmedLinesCount++;
+                lines.set(800, TRIMMED_MESSAGE_PREFIX + trimmedLinesCount + TRIMMED_MESSAGE_SUFFIX);
+                lines.remove(801);
+            }
+            lines.add(line);
+        }
+        return "Content of std" + outputType + ":\n" + StringUtils.join(lines, "\n");
     }
 
     public static File getOutputFile(File statusFile, GlobusJobWrapper.OutputType outputType)
@@ -458,5 +487,56 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             name = name.substring(0, index);
         }
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Reader generateReader(int lineCount)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                sb.append("Line ").append(i).append("\n");
+            }
+            return new StringReader(sb.toString());
+        }
+
+        @Test
+        public void testNoLogTrimming() throws IOException
+        {
+            String message = getLogMessage(generateReader(10), GlobusJobWrapper.OutputType.out);
+            assertFalse(message.contains(TRIMMED_MESSAGE_PREFIX));
+            assertEquals(11, new StringTokenizer(message, "\n").countTokens());
+        }
+
+        @Test
+        public void testNoTrimmingAtLimit() throws IOException
+        {
+            String message = getLogMessage(generateReader(GLOBUS_LOG_LINE_LIMIT), GlobusJobWrapper.OutputType.out);
+            assertFalse(message.contains(TRIMMED_MESSAGE_PREFIX));
+            assertEquals(GLOBUS_LOG_LINE_LIMIT + 1, new StringTokenizer(message, "\n").countTokens());
+        }
+
+        @Test
+        public void testTrimmingJustPastLimit() throws IOException
+        {
+            String message = getLogMessage(generateReader(GLOBUS_LOG_LINE_LIMIT + 1), GlobusJobWrapper.OutputType.out);
+            assertTrue(message.contains(TRIMMED_MESSAGE_PREFIX));
+            assertEquals(GLOBUS_LOG_LINE_LIMIT + 1, new StringTokenizer(message, "\n").countTokens());
+        }
+
+        @Test
+        public void testTrimming() throws IOException
+        {
+            String message = getLogMessage(generateReader(GLOBUS_LOG_LINE_LIMIT * 2), GlobusJobWrapper.OutputType.out);
+            assertTrue(message.contains(TRIMMED_MESSAGE_PREFIX));
+            assertTrue(message.contains("Line 799"));
+            assertTrue(message.contains("Line 800"));
+            assertFalse(message.contains("Line 801"));
+            assertFalse(message.contains("Line 802"));
+            assertTrue(message.contains("Line 1802"));
+            assertTrue(message.contains("Line 2000"));
+            assertEquals(GLOBUS_LOG_LINE_LIMIT + 1, new StringTokenizer(message, "\n").countTokens());
+        }
     }
 }
