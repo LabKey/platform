@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.PlateTemplate;
@@ -33,6 +34,9 @@ public interface PlateBasedAssayProvider extends AssayProvider
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
     public File getSampleMetadataFile(Container container, int runId);
     public String getPlateReaderListName();
+    public SampleMetadataInputFormat[] getSupportedMetadataInputFormats();
+    public SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol);
+    public void setMetadataInputFormat(ExpProtocol protocol, SampleMetadataInputFormat format) throws ExperimentException;
 
     public Domain getSampleWellGroupDomain(ExpProtocol protocol);
     public PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType);

@@ -32,7 +32,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.actions.PlateUploadForm;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -159,7 +158,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
         try
         {
             ExpData sampleMetadataFile = null;
-            if (getProvider().isSampleMetadataFileBased())
+            if (getProvider().getMetadataInputFormat(context.getProtocol()) == SampleMetadataInputFormat.FILE_BASED)
             {
                 PlateSampleFilePropertyHelper helper = (PlateSampleFilePropertyHelper) getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);
                 File metadataFile = helper.getMetadataFile();

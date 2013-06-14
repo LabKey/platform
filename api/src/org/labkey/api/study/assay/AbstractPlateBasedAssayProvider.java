@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -52,6 +53,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
+    public static final String METADATA_INPUT_FORMAT_SUFFIX = "#SampleMetadataInputFormat";
 
     public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
@@ -103,10 +105,10 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
     public File getSampleMetadataFile(Container container, int runId)
     {
-        if (!isSampleMetadataFileBased())
-            return null;
         ExpRun run = ExperimentService.get().getExpRun(runId);
         if (!run.getContainer().equals(container))
+            return null;
+        if (getMetadataInputFormat(run.getProtocol()) == SampleMetadataInputFormat.MANUAL)
             return null;
         AssayProvider provider = AssayService.get().getProvider(run.getProtocol());
         if (!(provider instanceof AbstractPlateBasedAssayProvider))
@@ -135,9 +137,48 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
     }
 
-    protected boolean isSampleMetadataFileBased()
+    @Override
+    public SampleMetadataInputFormat[] getSupportedMetadataInputFormats()
     {
-        return false;
+        return new SampleMetadataInputFormat[]{SampleMetadataInputFormat.MANUAL};
+    }
+
+    protected SampleMetadataInputFormat getDefaultMetadataInputFormat()
+    {
+        return SampleMetadataInputFormat.MANUAL;
+    }
+
+    @Override
+    public SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol)
+    {
+        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + METADATA_INPUT_FORMAT_SUFFIX);
+        if (prop != null)
+        {
+            SampleMetadataInputFormat format = SampleMetadataInputFormat.valueOf(prop.getStringValue());
+
+            if (format != null)
+                return format;
+        }
+        return getDefaultMetadataInputFormat();
+    }
+
+    @Override
+    public void setMetadataInputFormat(ExpProtocol protocol, SampleMetadataInputFormat format) throws ExperimentException
+    {
+        for (SampleMetadataInputFormat inputFormat : getSupportedMetadataInputFormats())
+        {
+            if (format == inputFormat)
+            {
+                Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
+                String propertyURI = protocol.getLSID() + METADATA_INPUT_FORMAT_SUFFIX;
+                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), propertyURI, format.name());
+                props.put(propertyURI, prop);
+
+                protocol.setObjectProperties(props);
+                return;
+            }
+        }
+        throw new ExperimentException("This assay protocol does not support the specified metadata input format : " + format.name());
     }
 
     public PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType)
@@ -161,10 +202,10 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         // If we don't have a sample helper yet, create it here:
         if (helper == null)
         {
-            if (isSampleMetadataFileBased())
-                helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template);
-            else
+            if (getMetadataInputFormat(context.getProtocol()) == SampleMetadataInputFormat.MANUAL)
                 helper = new PlateSamplePropertyHelper(selectedSampleProperties, template);
+            else
+                helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template);
             context.setSamplePropertyHelper(helper);
         }
         else

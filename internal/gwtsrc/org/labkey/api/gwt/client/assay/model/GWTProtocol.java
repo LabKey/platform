@@ -18,6 +18,7 @@ package org.labkey.api.gwt.client.assay.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -43,8 +44,11 @@ public class GWTProtocol implements IsSerializable
     private List<GWTDomain<GWTPropertyDescriptor>> _domains;
 
     private List<String> _availablePlateTemplates;
+    private Map<String, String> _availableMetadataInputFormats = new HashMap<String, String>();
 
     private String _selectedPlateTemplate;
+    private String _selectedMetadataInputFormat;
+
     /** Scripts defined in the module itself, associated with the assay provider */
     private List<String> _moduleTransformScripts = new ArrayList<String>();
     /** Scripts defined in the assay definition */
@@ -223,5 +227,25 @@ public class GWTProtocol implements IsSerializable
     public void setBackgroundUpload(boolean backgroundUpload)
     {
         _backgroundUpload = backgroundUpload;
+    }
+
+    public Map<String, String> getAvailableMetadataInputFormats()
+    {
+        return _availableMetadataInputFormats;
+    }
+
+    public void setAvailableMetadataInputFormats(Map<String, String> availableMetadataInputFormats)
+    {
+        _availableMetadataInputFormats = availableMetadataInputFormats;
+    }
+
+    public String getSelectedMetadataInputFormat()
+    {
+        return _selectedMetadataInputFormat;
+    }
+
+    public void setSelectedMetadataInputFormat(String selectedMetadataInputFormat)
+    {
+        _selectedMetadataInputFormat = selectedMetadataInputFormat;
     }
 }

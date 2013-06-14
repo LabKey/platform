@@ -1228,6 +1228,7 @@ api/src/org/labkey/api/study/assay/RunDataSetContextualRoles.java -text
 api/src/org/labkey/api/study/assay/RunDataTable.java -text
 api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
+api/src/org/labkey/api/study/assay/SampleMetadataInputFormat.java -text
 api/src/org/labkey/api/study/assay/SimpleAssayDataImportHelper.java -text
 api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
 api/src/org/labkey/api/study/assay/SpecimenPropertyColumnDecorator.java -text

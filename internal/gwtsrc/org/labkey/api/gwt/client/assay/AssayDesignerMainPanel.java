@@ -71,6 +71,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -479,9 +480,50 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             DOM.setElementAttribute(templateList.getElement(), "id", "plateTemplate");
             HorizontalPanel picker = new HorizontalPanel();
             picker.add(templateList);
-            picker.add(new HTML("&nbsp;[<a href=\"" + PropertyUtil.getRelativeURL("plateTemplateList", "Plate") + "\">configure templates</a>]"));
+            picker.add(new LinkButton("configure templates", PropertyUtil.getRelativeURL("plateTemplateList", "Plate")));
+
             picker.setVerticalAlignment(ALIGN_BOTTOM);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row++, 1, picker);
+        }
+
+        if (!assay.getAvailableMetadataInputFormats().isEmpty())
+        {
+            // file based metadata
+            FlowPanel metadataInputPanel = new FlowPanel();
+            metadataInputPanel.add(new InlineHTML("Metadata Input Format"));
+            metadataInputPanel.add(new HelpPopup("Metadata Input Format", "Assays that support more than one method of adding " +
+                    "sample metadata during the data import process can be configured by selecting one of the values " +
+                    "from the dropdown selection list."));
+
+            table.setWidget(row, 0, metadataInputPanel);
+            final ListBox metadataSelection = new ListBox();
+            String selectedFormat = assay.getSelectedMetadataInputFormat();
+            int selectedIndex = -1;
+            int i=0;
+            for (Map.Entry<String, String> entry : assay.getAvailableMetadataInputFormats().entrySet())
+            {
+                metadataSelection.addItem(entry.getValue(), entry.getKey());
+                if (entry.getKey().equals(selectedFormat))
+                    selectedIndex = i;
+
+                i++;
+            }
+            metadataSelection.setSelectedIndex(selectedIndex);
+            metadataSelection.addChangeHandler(new ChangeHandler()
+            {
+                public void onChange(ChangeEvent event)
+                {
+                    assay.setSelectedMetadataInputFormat(metadataSelection.getValue(metadataSelection.getSelectedIndex()));
+                    setDirty(true);
+                }
+            });
+
+            HorizontalPanel metadata = new HorizontalPanel();
+            metadata.add(metadataSelection);
+            metadata.setVerticalAlignment(ALIGN_BOTTOM);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+            table.setWidget(row++, 1, metadata);
         }
 
         if (assay.isAllowTransformationScript())
