@@ -89,7 +89,7 @@ public class StudyCache
     {
         if (!ENABLE_CACHING)
             return loader.load(getCacheName(c, cacheKey), null);
-        BlockingCache<String, Object> cache = new BlockingCache<String, Object>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
+        BlockingCache<String, Object> cache = new BlockingCache<>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
         return cache.get(getCacheName(c, cacheKey), null);
     }
 
