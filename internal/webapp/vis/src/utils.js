@@ -84,7 +84,7 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     return groupedData;
 };
 
-LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList){
+LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList, columnAliases){
     /*
         Groups data by the groupAccessor passed in. Also, checks for the existance of any series data for that groupAccessor.
         Returns an object where each attribute will be a groupAccessor with an array of data rows and a boolean for hasSeriesData
@@ -101,7 +101,7 @@ LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList){
 
         for (var j = 0; j < seriesList.length; j++)
         {
-            var seriesAlias = seriesList[j].aliasLookupInfo.alias;
+            var seriesAlias = LABKEY.vis.getColumnAlias(columnAliases, seriesList[j].aliasLookupInfo);
             if (seriesAlias && data[i][seriesAlias] && data[i][seriesAlias].value)
             {
                 groupedData[value].hasSeriesData = true;
@@ -110,7 +110,40 @@ LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList){
         }
     }
     return groupedData;
-}
+};
+
+LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
+    /*
+     Lookup the column alias (from the getData response) by the specified measure information
+     aliasArray: columnAlias array from the getData API response
+     measureInfo: 1. a string with the name of the column to lookup
+                  2. an object with a measure alias OR measureName
+                 3. an object with both measureName AND pivotValue
+    */
+    if (!aliasArray)
+        aliasArray = [];
+
+    if (typeof measureInfo != "object")
+        measureInfo = {measureName: measureInfo};
+    for (var i = 0; i < aliasArray.length; i++)
+    {
+        var arrVal = aliasArray[i];
+
+        if (measureInfo.measureName && measureInfo.pivotValue)
+        {
+            if (arrVal.measureName == measureInfo.measureName && arrVal.pivotValue == measureInfo.pivotValue)
+                return arrVal.columnName;
+        }
+        else if (measureInfo.alias)
+        {
+            if (arrVal.alias == measureInfo.alias)
+                return arrVal.columnName;
+        }
+        else if (measureInfo.measureName && arrVal.measureName == measureInfo.measureName)
+            return arrVal.columnName;
+    }
+    return null;
+};
 
 LABKEY.vis.isValid = function(value){
     return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
