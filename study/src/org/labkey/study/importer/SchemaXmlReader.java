@@ -31,7 +31,7 @@ import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
+import org.labkey.study.importer.DatasetDefinitionImporter.DatasetImportProperties;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 

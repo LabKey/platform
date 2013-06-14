@@ -19,7 +19,7 @@ package org.labkey.study.pipeline;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.importer.DatasetImporter;
+import org.labkey.study.importer.DatasetDefinitionImporter;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyImpl;
@@ -70,7 +70,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
 
     public static VirtualFile getDatasetsDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
-        return DatasetImporter.getDatasetDirectory(ctx, root);
+        return DatasetDefinitionImporter.getDatasetDirectory(ctx, root);
     }
 
     public StudyImpl getStudy()

@@ -31,7 +31,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.writer.AbstractContext;
-import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -148,51 +147,12 @@ public class StudyImportContext extends AbstractContext
     {
         StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
 
-        if (null != specimens)
+        if (null != specimens && null != specimens.getDir())
         {
-            Container c = getContainer();
-            RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+            VirtualFile specimenDir = root.getDir(specimens.getDir());
 
-            StudyDocument.Study.Specimens.SpecimenWebPartGroupings specimenWebPartGroupings = specimens.getSpecimenWebPartGroupings();
-            if (null != specimenWebPartGroupings)
-            {
-                StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping[] groupingArray = specimenWebPartGroupings.getGroupingArray();
-                if (null != groupingArray)
-                {
-                    ArrayList<String[]> groupings = new ArrayList<String[]>(2);
-                    for (int i = 0; i < groupingArray.length; i += 1)
-                    {
-                        String[] groupBys = groupingArray[i].getGroupByArray();
-                        groupings.add(groupBys);
-                    }
-                    reposSettings.setSpecimenWebPartGroupings(groupings);
-                }
-            }
-
-            RepositoryType.Enum repositoryType = specimens.getRepositoryType();
-            boolean simple = (RepositoryType.STANDARD == repositoryType);
-            reposSettings.setSimple(simple);
-            reposSettings.setEnableRequests(!simple);
-            SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
-
-            StudyImpl study = StudyManager.getInstance().getStudy(c).createMutable();
-            if (specimens.isSetAllowReqLocRepository())
-                study.setAllowReqLocRepository(specimens.getAllowReqLocRepository());
-            if (specimens.isSetAllowReqLocClinic())
-                study.setAllowReqLocClinic(specimens.getAllowReqLocClinic());
-            if (specimens.isSetAllowReqLocSal())
-                study.setAllowReqLocSal(specimens.getAllowReqLocSal());
-            if (specimens.isSetAllowReqLocEndpoint())
-                study.setAllowReqLocEndpoint(specimens.getAllowReqLocEndpoint());
-            StudyManager.getInstance().updateStudy(getUser(), study);
-
-            if (null != specimens.getDir())
-            {
-                VirtualFile specimenDir = root.getDir(specimens.getDir());
-
-                if (null != specimenDir && null != specimens.getFile())
-                    return getStudyFile(root, specimenDir, specimens.getFile());
-            }
+            if (null != specimenDir && null != specimens.getFile())
+                return getStudyFile(root, specimenDir, specimens.getFile());
         }
 
         return null;

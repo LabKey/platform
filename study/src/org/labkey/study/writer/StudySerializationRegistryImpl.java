@@ -91,6 +91,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
             new QcStateWriter(),
+            new SpecimenSettingsWriter(),
             new SpecimenArchiveWriter(),
             new VisitMapWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)

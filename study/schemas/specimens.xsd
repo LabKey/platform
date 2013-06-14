@@ -1,0 +1,24 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/study/xml"
+           targetNamespace="http://labkey.org/study/xml"
+           attributeFormDefault="unqualified"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://labkey.org/study/xml" schemaLocation="../../../../schemas/study.xsd"/>
+
+    <xs:element name="specimens" type="specimenSettingsType">
+        <xs:annotation>
+            <xs:documentation>
+                Provides information on the files that describe the specimens in the study.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="specimenSettingsType">
+        <xs:complexContent>
+            <xs:extension base="specimenSettingsBaseType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>

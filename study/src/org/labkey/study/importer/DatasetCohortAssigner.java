@@ -50,7 +50,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
-        DatasetsDocument.Datasets datasets = DatasetImporter.getDatasetsManifest(ctx, root, false);
+        DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
         if (null != datasets)
         {
@@ -58,11 +58,11 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             User user = ctx.getUser();
 
             StudyManager studyManager = StudyManager.getInstance();
-            Map<String, DatasetImporter.DatasetImportProperties> datasetProps = DatasetImporter.getDatasetImportProperties(datasets);
+            Map<String, DatasetDefinitionImporter.DatasetImportProperties> datasetProps = DatasetDefinitionImporter.getDatasetImportProperties(datasets);
 
             for (DataSetDefinition def : study.getDataSets())
             {
-                DatasetImporter.DatasetImportProperties props = datasetProps.get(def.getName());
+                DatasetDefinitionImporter.DatasetImportProperties props = datasetProps.get(def.getName());
 
                 // Props will be null if a dataset is referenced in the visit map but not in the datasets_manifest
                 if (null == props)

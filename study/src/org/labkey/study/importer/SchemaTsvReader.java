@@ -43,7 +43,7 @@ public class SchemaTsvReader implements SchemaReader
     private final String _typeNameColumn;
 
 
-    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
@@ -79,7 +79,7 @@ public class SchemaTsvReader implements SchemaReader
                 }
 
                 Integer typeId = (Integer) typeIdObj;
-                DatasetImporter.DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeName) : null;
+                DatasetDefinitionImporter.DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeName) : null;
 
                 boolean isHidden;
 
@@ -236,7 +236,7 @@ public class SchemaTsvReader implements SchemaReader
         this(study, new TabLoader(tsv, true), labelColumn, typeNameColumn, typeIdColumn, null, errors);
     }
 
-    public SchemaTsvReader(Study study, VirtualFile root, String tsvFileName, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+    public SchemaTsvReader(Study study, VirtualFile root, String tsvFileName, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
         this(study, new TabLoader(new InputStreamReader(root.getInputStream(tsvFileName)), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }

@@ -27,17 +27,14 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
-import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -101,7 +98,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
                 StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getLoggerGetter(), studyDir);
 
-                // the initial study import task handles things like base study properties, MVIs, qcStates, visits, datasets
+                // the initial study import task handles things like base study properties, MVIs, qcStates, visits, specimen settings, datasets definitions.
                 StudyImportInitialTask.doImport(job, studyImportContext, errors, studyFileName);
 
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables

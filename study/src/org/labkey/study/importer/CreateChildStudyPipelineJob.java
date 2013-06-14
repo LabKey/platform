@@ -373,10 +373,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             // missing values and qc states
             new MissingValueImporterFactory().create().process(null, importContext, studyDir);
             new QcStatesImporter().process(importContext, studyDir, errors);
+            new SpecimenSettingsImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
-            DatasetImporter datasetImporter = new DatasetImporter();
-            datasetImporter.process(importContext, studyDir, errors);
+            DatasetDefinitionImporter datasetDefinitionImporter = new DatasetDefinitionImporter();
+            datasetDefinitionImporter.process(importContext, studyDir, errors);
 
             // import visits
             VisitImporter visitImporter = new VisitImporter();

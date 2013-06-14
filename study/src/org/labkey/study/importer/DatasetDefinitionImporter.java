@@ -47,7 +47,7 @@ import java.util.Objects;
  * Date: May 16, 2009
  * Time: 9:42:02 PM
  */
-public class DatasetImporter implements InternalStudyImporter
+public class DatasetDefinitionImporter implements InternalStudyImporter
 {
     @Override
     public String getDescription()

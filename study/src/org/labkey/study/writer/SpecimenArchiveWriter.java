@@ -19,21 +19,16 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
-import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
-
-import java.util.ArrayList;
 
 /**
  * User: adam
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-class SpecimenArchiveWriter implements InternalStudyWriter
+class SpecimenArchiveWriter extends AbstractSpecimenWriter
 {
-    private static final String DEFAULT_DIRECTORY = "specimens";
     public static final String SELECTION_TEXT = "Specimens";
 
     public String getSelectionText()
@@ -43,31 +38,14 @@ class SpecimenArchiveWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
-        VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
+        StudyDocument.Study.Specimens specimensXml = ensureSpecimensElement(ctx);
 
-        StudyDocument.Study studyXml = ctx.getXml();
-        StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
-        RepositorySettings repositorySettings = study.getRepositorySettings();
-        specimens.setRepositoryType(repositorySettings.isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
-        specimens.setDir(DEFAULT_DIRECTORY);
-        specimens.setAllowReqLocRepository(study.isAllowReqLocRepository());
-        specimens.setAllowReqLocClinic(study.isAllowReqLocClinic());
-        specimens.setAllowReqLocSal(study.isAllowReqLocSal());
-        specimens.setAllowReqLocEndpoint(study.isAllowReqLocEndpoint());
-        ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
-        if (groupings.size() > 0)
-        {
-            StudyDocument.Study.Specimens.SpecimenWebPartGroupings specimenWebPartGroupings = specimens.addNewSpecimenWebPartGroupings();
-            for (String[] grouping : groupings)
-            {
-                StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping specimenWebPartGrouping = specimenWebPartGroupings.addNewGrouping();
-                specimenWebPartGrouping.setGroupByArray(grouping);
-            }
-        }
-        String archiveName = vf.makeLegalName(study.getShortName() + ".specimens");
-        VirtualFile zip = vf.createZipArchive(archiveName);
-        if (!zip.equals(vf)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
-            specimens.setFile(archiveName);
+        VirtualFile specimensDir = root.getDir(DEFAULT_DIRECTORY);
+
+        String archiveName = specimensDir.makeLegalName(study.getShortName() + ".specimens");
+        VirtualFile zip = specimensDir.createZipArchive(archiveName);
+        if (!zip.equals(specimensDir)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
+            specimensXml.setFile(archiveName);
 
         StudySchema schema = StudySchema.getInstance();
 
@@ -80,4 +58,5 @@ class SpecimenArchiveWriter implements InternalStudyWriter
 
         zip.close();
     }
+
 }
