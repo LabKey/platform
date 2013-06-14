@@ -128,7 +128,7 @@
                     duplicates.add(Integer.valueOf(idx));
                     NavTree p = children.get(idx);
                     String text = p.getText();
-                    String highlight = (text.equalsIgnoreCase(projectName) ? "style=\"font-weight: bold;\"" : "");
+                    String highlight = (text.equalsIgnoreCase(projectName) ? "style=\"font-weight: bold; font-style: italic;\"" : "");
 
                     %><li>
                         <%

@@ -657,3 +657,12 @@ li.labkey-app-bar-tab-inactive:hover {
 div.headermenu {
     background-color: #<%= link %>;
 }
+
+.project-nav ul li a:hover {
+    background-color: #<%= webpart %>
+}
+
+.folder-nav ul li a:hover {
+    white-space: nowrap;
+    background-color: #<%= webpart %>;
+}

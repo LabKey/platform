@@ -3926,6 +3926,7 @@ span.button-icon {
 
 #projectBar_menu {
     padding: 0;
+    left: 19px !important;
 }
 
 .project-nav {
@@ -3960,7 +3961,7 @@ span.button-icon {
 }
 
 .project-nav ul li a {
-    padding: 5px 20px 5px 5px;
+    padding: 4px;
 }
 
 .project-nav ul li a:hover {
@@ -3970,11 +3971,13 @@ span.button-icon {
 .project-menu-buttons {
     border-top: 1px solid #d5d5d5;
     padding: 5px 0 0 5px;
+    margin-top: 10px;
 }
 
 #folderBar_menu {
     padding-right: 0px;
     padding-left: 0px;
+    left: 59px !important;
 }
 
 .folder-nav {
@@ -4017,21 +4020,28 @@ span.button-icon {
 }
 
 .folder-nav ul li {
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 .folder-nav ul li span {
     padding-left: 14px;
-    margin-right: 6px;
+    margin-right: 2px;
 }
 
 .folder-nav .clbl span.marked {
     padding: 0 0 0 10px;
-    margin: 0 6px 0 0;
+    margin: 0 3px;
 }
 
 .folder-nav ul li a {
     white-space: nowrap;
+    display: inline-block;
+    padding: 4px;
+}
+
+.folder-nav ul li a:hover {
+    white-space: nowrap;
+    background-color: #E0E6EA;
 }
 
 .expand-folder span.marked {
