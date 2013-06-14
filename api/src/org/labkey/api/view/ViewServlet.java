@@ -79,7 +79,7 @@ public class ViewServlet extends HttpServlet
     private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
-    private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<>();
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
     private static volatile boolean _shuttingDown = false;
@@ -264,7 +264,7 @@ public class ViewServlet extends HttpServlet
 
     private static void initializeControllerMaps()
     {
-        _controllerClassToName = new HashMap<Class<? extends Controller>, String>();
+        _controllerClassToName = new HashMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
             _controllerClassToName.putAll(module.getControllerClassToName());

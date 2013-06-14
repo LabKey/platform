@@ -66,11 +66,11 @@ import java.util.zip.DataFormatException;
 public class QueryProfiler
 {
     private static final Logger LOG = Logger.getLogger(QueryProfiler.class);
-    private static final BlockingQueue<Query> QUEUE = new LinkedBlockingQueue<Query>(1000);
+    private static final BlockingQueue<Query> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final QueryProfilerThread THREAD = new QueryProfilerThread();
-    private static final Map<String, QueryTracker> QUERIES = new ReferenceMap<String, QueryTracker>(ReferenceMap.HARD, ReferenceMap.WEAK);
+    private static final Map<String, QueryTracker> QUERIES = new ReferenceMap<>(ReferenceMap.HARD, ReferenceMap.WEAK);
     private static final Object LOCK = new Object();
-    private static final Collection<QueryTrackerSet> TRACKER_SETS = new ArrayList<QueryTrackerSet>();
+    private static final Collection<QueryTrackerSet> TRACKER_SETS = new ArrayList<>();
 
     // All access to these guarded by LOCK
     private static long _requestQueryCount;
@@ -434,7 +434,7 @@ public class QueryProfiler
         {
             _scope = scope;
             _sql = sql;
-            _parameters = null != parameters ? new ArrayList<Object>(parameters) : null;    // Make a copy... callers might modify the collection
+            _parameters = null != parameters ? new ArrayList<>(parameters) : null;    // Make a copy... callers might modify the collection
             _elapsed = elapsed;
             _stackTrace = stackTrace;
             _isRequestThread = isRequestThread;
@@ -540,7 +540,7 @@ public class QueryProfiler
         private final String _sql;
         private final boolean _validSql;
         private final long _firstInvocation;
-        private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<ByteArrayHashKey, AtomicInteger>();
+        private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<>();
 
         private @Nullable List<Object> _parameters = null;  // Keep parameters from the longest running query
 
@@ -652,7 +652,7 @@ public class QueryProfiler
         public void appendStackTraces(StringBuilder sb)
         {
             // Descending order by occurrences (the value)
-            Set<Pair<String, AtomicInteger>> set = new TreeSet<Pair<String, AtomicInteger>>(new Comparator<Pair<String, AtomicInteger>>() {
+            Set<Pair<String, AtomicInteger>> set = new TreeSet<>(new Comparator<Pair<String, AtomicInteger>>() {
                 public int compare(Pair<String, AtomicInteger> e1, Pair<String, AtomicInteger> e2)
                 {
                     int compare = e2.getValue().intValue() - e1.getValue().intValue();
@@ -665,14 +665,14 @@ public class QueryProfiler
             });
 
             // Save the stacktraces separately to find common prefix
-            List<String> stackTraces = new LinkedList<String>();
+            List<String> stackTraces = new LinkedList<>();
 
             for (Map.Entry<ByteArrayHashKey, AtomicInteger> entry : _stackTraces.entrySet())
             {
                 try
                 {
                     String decompressed = Compress.inflate(entry.getKey().getBytes());
-                    set.add(new Pair<String, AtomicInteger>(decompressed, entry.getValue()));
+                    set.add(new Pair<>(decompressed, entry.getValue()));
                     stackTraces.add(decompressed);
                 }
                 catch (DataFormatException e)

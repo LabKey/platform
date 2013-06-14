@@ -32,20 +32,20 @@ public enum ExceptionFramework
     Spring
         {
             @Override
-            DataAccessException translate(DbScope scope, String message, @Nullable String sql, SQLException e)
+            DataAccessException translate(DbScope scope, String task, @Nullable String sql, SQLException e)
             {
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
-                return translator.translate(message, sql, e);
+                return translator.translate(task, sql, e);
             }
         },
     JDBC
         {
             @Override
-            RuntimeSQLException translate(DbScope scope, String message, @Nullable String SQL, SQLException e)
+            RuntimeSQLException translate(DbScope scope, String task, @Nullable String SQL, SQLException e)
             {
                 return new RuntimeSQLException(e);
             }
         };
 
-    abstract RuntimeException translate(DbScope scope, String message, @Nullable String SQL, SQLException e);
+    abstract RuntimeException translate(DbScope scope, String task, @Nullable String SQL, SQLException e);
 }

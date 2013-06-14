@@ -91,7 +91,7 @@ public class SqlExecutor extends JdbcCommand
         catch(SQLException e)
         {
             Table.logException(sql, conn, e, getLogLevel());
-            throw getExceptionFramework().translate(getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
+            throw getExceptionFramework().translate(getScope(), "SqlExecutor.execute()", sql.getSQL(), e);
         }
         finally
         {

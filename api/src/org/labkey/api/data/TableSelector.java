@@ -308,7 +308,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         }
         catch (SQLException e)
         {
-            throw getExceptionFramework().translate(getScope(), "Message", null, e);
+            throw getExceptionFramework().translate(getScope(), "TableSelector.getAggregatesAsync()", null, e);
         }
     }
 
