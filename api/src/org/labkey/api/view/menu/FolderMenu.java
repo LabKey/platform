@@ -124,7 +124,7 @@ public class FolderMenu extends NavTreeMenu
             out.print("<span");
             if (hasChildren)
                 out.print(" class=\"marked\"");
-            out.print("> </span>");
+            out.print(">&nbsp;</span>"); // Safari
 
             if (null != link)
             {

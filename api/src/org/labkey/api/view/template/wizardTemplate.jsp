@@ -61,7 +61,7 @@
                     <td class="labkey-fullscreen-wizard-background">
                         <ol class="labkey-fullscreen-wizard-steps">
                             <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                                <li <%= navTree.getText().equals(pageConfig.getTitle()) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getText() %></li>
+                                <li <%= navTree.getText().equals(pageConfig.getTitle()) || (navTree.getText().equals("Create Folder") && pageConfig.getTitle().startsWith("Create Folder")) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getText() %></li>
                             <% } %>
                         </ol>
                     </td>
