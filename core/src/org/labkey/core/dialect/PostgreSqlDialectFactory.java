@@ -108,7 +108,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
                 if (logWarnings)
                     _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-                return new PostgreSql92Dialect();
+                return new PostgreSql93Dialect();
             }
         }
 
@@ -147,7 +147,8 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             good("PostgreSQL", 8.4, 8.5, "", PostgreSql84Dialect.class);
             good("PostgreSQL", 9.0, 9.1, "", PostgreSql90Dialect.class);
             good("PostgreSQL", 9.1, 9.2, "", PostgreSql91Dialect.class);
-            good("PostgreSQL", 9.2, 11.0, "", PostgreSql92Dialect.class);
+            good("PostgreSQL", 9.2, 9.3, "", PostgreSql92Dialect.class);
+            good("PostgreSQL", 9.3, 11.0, "", PostgreSql93Dialect.class);
         }
     }
 
