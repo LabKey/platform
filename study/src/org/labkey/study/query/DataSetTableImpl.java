@@ -333,6 +333,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
         autoJoinColumn.setUserEditable(false);
+        autoJoinColumn.setCalculated(true);
         autoJoinColumn.setLabel("DataSets");
         final FieldKey sequenceNumFieldKey = new FieldKey(null, "SequenceNum");
         final FieldKey keyFieldKey = new FieldKey(null, "_Key");
