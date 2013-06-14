@@ -19,12 +19,23 @@
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("createFolder.css"));
+        return resources;
+    }
+%>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
@@ -51,10 +62,6 @@
 
 %>
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss('createFolder.css');
-</script>
-<script type="text/javascript">
     Ext4.QuickTips.init();
 
     Ext4.onReady(function(){
@@ -62,7 +69,7 @@
         var request = new LABKEY.MultiRequest();
         var folderTypes;
         var moduleTypes;
-        var moduleTypesMap = {};;
+        var moduleTypesMap = {};
         var templateFolders = [];
         <%="var selectedModules = " + modulesOut + ";"%>
         <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
@@ -105,9 +112,7 @@
             }
         });
 
-        request.send(onSuccess);
-
-        function onSuccess(){
+        var onSuccess = function() {
 
             var panel = Ext4.create('Ext.form.Panel', {
                 border: false,
@@ -434,19 +439,17 @@
                     }
                 }
             });
-        }
+        };
 
-        function initTemplateFolders(combo)
-        {
+        var initTemplateFolders = function(combo) {
             return function(data)
             {
                 getTemplateFolders(data);
                 combo.setLoading(false);
             }
-        }
+        };
 
-        function getTemplateFolders(data)
-        {
+        var getTemplateFolders = function(data) {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
             // and if it is not a workbook or container tab folder
             if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin)
@@ -461,7 +464,9 @@
                 for (var i = 0; i < data.children.length; i++)
                     getTemplateFolders(data.children[i]);
             }
-        }
+        };
+
+        request.send(onSuccess);
 
         var folderTemplateWriters = [];
         <%

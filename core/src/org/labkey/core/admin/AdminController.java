@@ -4104,7 +4104,7 @@ public class AdminController extends SpringActionController
         {
             VBox vbox = new VBox();
 
-            JspView statusView = new JspView<ManageFoldersForm>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            JspView statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getViewContext().getContainer();
@@ -4115,7 +4115,20 @@ public class AdminController extends SpringActionController
             if (c.isRoot())
                 getPageConfig().setTitle("Create Project");
             else
-                getPageConfig().setTitle("Create Folder");
+            {
+                String title = "Create Folder";
+
+                if (null != c)
+                {
+                    title += " in /";
+                    if (c == ContainerManager.getHomeContainer())
+                        title += "Home";
+                    else
+                        title += c.getName();
+                }
+
+                getPageConfig().setTitle(title);
+            }
 
             return vbox;
         }
