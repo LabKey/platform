@@ -16,10 +16,12 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ReportingWriter;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -57,6 +59,38 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         writer.writeProperty("schemaName", _schemaName);
         writer.writeProperty("queryName", _queryName);
 
+        if (_metaDataOnly)
+        {
+            writeMetaData(writer);
+        }
+        else
+        {
+            // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
+            try (Results results = getResults())
+            {
+                writeMetaData(writer);
+
+                boolean complete = writeRowset(writer, results);
+
+                // Figure out if we need to make a separate request to get the total row count (via the aggregates)
+                if (!complete && _rowCount == 0)
+                {
+                    // Load the aggregates
+                    _dataRegion.getAggregateResults(_ctx);
+                    if (_dataRegion.getTotalRows() != null)
+                    {
+                        _rowCount = _dataRegion.getTotalRows();
+                        _rowCount = _dataRegion.getTotalRows();
+                    }
+                }
+                writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+            }
+        }
+        writer.endResponse();
+    }
+
+    private void writeMetaData(ApiResponseWriter writer) throws Exception
+    {
         // see Ext.data.JsonReader
         writer.writeProperty("metaData", getMetaData());
         // TODO: can use super's getMetaData(), but sort info not in mockup. Also note comment around super's getSort(); should we override?
@@ -75,25 +109,11 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
             for (Map.Entry<String, Object> entry : _extraReturnProperties.entrySet())
                 writer.writeProperty(entry.getKey(), entry.getValue());
         }
+    }
 
-        boolean complete = writeRowset(writer);
-
-        if (!_metaDataOnly)
-        {
-            // Figure out if we need to make a separate request to get the total row count (via the aggregates)
-            if (!complete && _rowCount == 0)
-            {
-                // Load the aggregates
-                _dataRegion.getAggregateResults(_ctx);
-                if (_dataRegion.getTotalRows() != null)
-                {
-                    _rowCount = _dataRegion.getTotalRows();
-                }
-            }
-            writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
-        }
-
-        writer.endResponse();
+    private Results getResults() throws Exception
+    {
+        return _dataRegion.getResultSet(_ctx);
     }
 
     @Override
@@ -194,4 +214,26 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         }
     }
 
+    private boolean writeRowset(ApiResponseWriter writer, Results results) throws Exception
+    {
+        boolean complete = true;
+        writer.startList("rows");
+        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
+        // can monitor if the client has stopped listening
+        _dataRegion.setAllowAsync(true);
+
+        _ctx.setResults(results);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+        factory.setConvertBigDecimalToDouble(false);
+
+        while(results.next())
+        {
+            _ctx.setRow(factory.getRowMap(results));
+            writer.writeListEntry(getRow());
+            ++_numRespRows;
+        }
+        complete = results.isComplete();
+        writer.endList();
+        return complete;
+    }
 }
