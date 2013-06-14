@@ -31,6 +31,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -51,7 +52,8 @@
     Container c = currentContext.getContainer();
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null && currentContext.isShowFolders();
+    boolean isShowExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);
+    boolean showFolderNavigation = !isShowExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && currentContext.isShowFolders();
     Container p = c.getProject();
     String projectName = null;
     if (null != p)
@@ -66,10 +68,10 @@
 <div id="menubar" class="labkey-main-menu">
     <ul>
 <%
-    if (currentContext.isShowFolders())
+    if (isShowExperimentalNavigation || currentContext.isShowFolders())
     {
 %>
-        <li id="projectBar" class="menu-projects"></li>
+        <li id="<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>" class="menu-projects"></li>
 <%
     }
 
@@ -274,7 +276,7 @@
             }
         });
 
-        HoverNavigation._project = new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
+        HoverNavigation._project = new HoverNavigation({hoverElem : '<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>', webPartName : '<%=isShowExperimentalNavigation ? "betanav" : "projectnav"%>' });
 <%
     if (showFolderNavigation)
     {

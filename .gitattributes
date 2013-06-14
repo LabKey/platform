@@ -5749,6 +5749,7 @@ internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
 internal/webapp/mothership.js -text
+internal/webapp/nav/betanav.css -text
 internal/webapp/query/column.gif -text
 internal/webapp/query/expressionColumn.gif -text
 internal/webapp/slider/css/boxsizing.htc -text
