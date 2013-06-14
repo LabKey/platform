@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import com.sun.istack.internal.NotNull;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -53,7 +55,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -981,11 +982,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             org.labkey.data.xml.ColumnType.DisplayColumnFactory xmlFactory = xmlCol.getDisplayColumnFactory();
             String displayColumnClassName = xmlFactory.getClassName();
 
-            Map<String, String> props = null;
+            // MultiMap is a little harder for the factories to work with, but it allows the same property
+            // multiple times (e.g., multiple "dependency" properties on JavaScriptDisplayColumnFactory)
+            MultiMap<String, String> props = null;
 
             if (xmlFactory.isSetProperties())
             {
-                props = new HashMap<>();
+                props = new MultiHashMap<>();
 
                 for (ColumnType.DisplayColumnFactory.Properties.Property prop : xmlFactory.getProperties().getPropertyArray())
                     props.put(prop.getName(), prop.getStringValue());
@@ -1007,7 +1010,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     }
                     else
                     {
-                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(Map.class);
+                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
                         _displayColumnFactory = ctor.newInstance(props);
                     }
                 }

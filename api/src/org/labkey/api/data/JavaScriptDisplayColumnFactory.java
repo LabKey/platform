@@ -1,8 +1,10 @@
 package org.labkey.api.data;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -11,18 +13,18 @@ import java.util.Map;
  */
 public class JavaScriptDisplayColumnFactory implements DisplayColumnFactory
 {
-    private final @Nullable String _javaScriptFile;
+    private final @Nullable Collection<String> _dependencies;
     private final @Nullable String _javaScriptEvents;
 
-    public JavaScriptDisplayColumnFactory(Map<String, String> properties)
+    public JavaScriptDisplayColumnFactory(MultiMap<String, String> properties)
     {
-        _javaScriptFile = properties.get("javaScriptFile");
-        _javaScriptEvents = properties.get("javaScriptEvents");
+        _dependencies = properties.get("dependency");
+        _javaScriptEvents = StringUtils.join(properties.get("javaScriptEvents"), " ");
     }
 
     @Override
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
-        return new JavaScriptDisplayColumn(colInfo, _javaScriptFile, _javaScriptEvents);
+        return new JavaScriptDisplayColumn(colInfo, _dependencies, _javaScriptEvents);
     }
 }

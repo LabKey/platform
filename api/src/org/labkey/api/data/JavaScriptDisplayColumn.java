@@ -2,6 +2,7 @@ package org.labkey.api.data;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -10,13 +11,13 @@ import java.io.Writer;
  */
 public class JavaScriptDisplayColumn extends DataColumn
 {
-    private final String _javaScriptFile;  // TODO: DisplayColumn implements getClientDependencies()?
+    private final Collection<String> _dependencies;  // TODO: DisplayColumn implements getClientDependencies()?
     private final String _javaScriptEvents;
 
-    public JavaScriptDisplayColumn(ColumnInfo col, String javaScriptFile, String javaScriptEvents)
+    public JavaScriptDisplayColumn(ColumnInfo col, Collection<String> dependencies, String javaScriptEvents)
     {
         super(col);
-        _javaScriptFile = javaScriptFile;
+        _dependencies = dependencies;
         _javaScriptEvents = javaScriptEvents;
     }
 
