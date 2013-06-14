@@ -465,7 +465,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             toolbarButtons.push(this.saveButton);
             toolbarButtons.push(this.saveAsButton);
         }
-        else if (this.editModeURL != null)
+        else if (this.allowEditMode && this.editModeURL != null)
         {
             // add an "edit" button if the user is allowed to toggle to edit mode for this report
             toolbarButtons.push('->');
@@ -806,7 +806,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             LABKEY.Query.Visualization.getData({
                 success: function(data){
                     // set the dirty state for non-saved time chart once data is requested
-                    if (!this.editorSavePanel.isSavedReport())
+                    if (this.canEdit && !this.editorSavePanel.isSavedReport())
                         this.markDirty(true);
 
                     // store the data in an object by subject for use later when it comes time to render the line chart
@@ -822,11 +822,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         for (var i = 0; i < this.individualData.rows.length; i++)
                         {
                             var row = this.individualData.rows[i];
-                            var alias = this.getColumnAlias(this.individualData.columnAliases, s.aliasLookupInfo);
+                            var alias = LABKEY.vis.getColumnAlias(this.individualData.columnAliases, s.aliasLookupInfo);
                             if (row[alias] && row[alias].value != null)
                                 this.individualHasData[s.name] = true;
 
-                            var visitMappedName = this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
+                            var visitMappedName = LABKEY.vis.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
                             if (this.editorXAxisPanel.getTime() == "visit" && row[visitMappedName])
                             {
                                 var visitVal = row[visitMappedName].value;
@@ -845,8 +845,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                     // store the temp schema name, query name, etc. for the data grid
                     this.tempGridInfo = {schema: this.individualData.schemaName, query: data.queryName,
-                        subjectCol: this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn),
-                        sortCols: this.editorXAxisPanel.getTime() == "date" ? gridSortCols : [this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder")]
+                        subjectCol: LABKEY.vis.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn),
+                        sortCols: this.editorXAxisPanel.getTime() == "date" ? gridSortCols : [LABKEY.vis.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder")]
                     };
 
                     // now that we have the temp grid info, enable the View Data button
@@ -897,11 +897,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         for (var i = 0; i < this.aggregateData.rows.length; i++)
                         {
                             var row = this.aggregateData.rows[i];
-                            var alias = this.getColumnAlias(this.aggregateData.columnAliases, s.aliasLookupInfo);
+                            var alias = LABKEY.vis.getColumnAlias(this.aggregateData.columnAliases, s.aliasLookupInfo);
                             if (row[alias] && row[alias].value != null)
                                 this.aggregateHasData[s.name] = true;
 
-                            var visitMappedName = this.getColumnAlias(this.aggregateData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
+                            var visitMappedName = LABKEY.vis.getColumnAlias(this.aggregateData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
                             if (this.editorXAxisPanel.getTime() == "visit" && row[visitMappedName])
                             {
                                 var visitVal = row[visitMappedName].value;
@@ -1107,6 +1107,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 //Don't mark dirty if the user can't edit the report or if this is the view mode, that's just mean.
                 if (this.canEdit && this.editMode)
                 {
+                    console.log("marking dirty in renderLineChart");
                     this.markDirty(true);
                 }
             }
@@ -1182,6 +1183,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         );
 
         // Use the same max/min for every chart if displaying more than one chart.
+        var columnAliases = this.individualData ? this.individualData.columnAliases : (this.aggregateData ? this.aggregateData.columnAliases : null);
         if (this.chartInfo.chartLayout != "single")
         {
             //ISSUE In multi-chart case, we need to precompute the default axis ranges so that all charts share them.
@@ -1190,10 +1192,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             var xName, xFunc;
             var min, max, tempMin, tempMax, errorBarType;
             var leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor;
-            var columnAliases = this.individualData ? this.individualData.columnAliases : (this.aggregateData ? this.aggregateData.columnAliases : null);
 
             for(var i = 0; i < seriesList.length; i++){
-                var columnName = this.getColumnAlias(columnAliases, seriesList[i].aliasLookupInfo);
+                var columnName = LABKEY.vis.getColumnAlias(columnAliases, seriesList[i].aliasLookupInfo);
                 if(seriesList[i].yAxisSide == "left"){
                     leftMeasures.push(columnName);
                 } else if(seriesList[i].yAxisSide == "right"){
@@ -1208,7 +1209,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 };
             } else {
                 var visitMap = this.individualData ? this.individualData.visitMap : this.aggregateData.visitMap;
-                xName = this.getColumnAlias(columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
+                xName = LABKEY.vis.getColumnAlias(columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
                 xFunc = function(row){
                     return visitMap[row[xName].value].displayOrder;
                 };
@@ -1353,8 +1354,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
 
-                var accessor = this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn);
-                var dataPerParticipant = LABKEY.vis.groupDataWithSeriesCheck(this.individualData.rows, function(row){return row[accessor].value}, seriesList);
+                var accessor = LABKEY.vis.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn);
+                var dataPerParticipant = LABKEY.vis.groupDataWithSeriesCheck(this.individualData.rows, function(row){return row[accessor].value}, seriesList, this.individualData.columnAliases);
                 for (var participant in dataPerParticipant)
                 {
                     // skip the group if there is no data for it
@@ -1385,12 +1386,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 //Display individual lines
                 var groupedIndividualData = null;
                 if (this.individualData)
-                    groupedIndividualData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn));
+                    groupedIndividualData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, LABKEY.vis.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn));
 
                 // Display aggregate lines
                 var groupedAggregateData = null;
                 if (this.aggregateData)
-                    groupedAggregateData = LABKEY.vis.groupDataWithSeriesCheck(this.aggregateData.rows, function(row){return row.UniqueId.displayValue}, seriesList);
+                    groupedAggregateData = LABKEY.vis.groupDataWithSeriesCheck(this.aggregateData.rows, function(row){return row.UniqueId.displayValue}, seriesList, this.aggregateData.columnAliases);
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
@@ -1423,6 +1424,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
                 for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
                 {
+                    // skip the measure/dimension if there is no data for it
+                    if ((this.aggregateHasData && !this.aggregateHasData[seriesList[i].name]) || (this.individualHasData && !this.individualHasData[seriesList[i].name]))
+                    {
+                        continue;
+                    }
+
                     this.plotConfigInfoArr.push({
                         title: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
                         series: [seriesList[i]],
@@ -1616,7 +1623,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
         var xMin = null, xMax = null, xTrans = null;
         var intervalKey = null;
-        var individualSubjectColumn = individualColumnAliases ? this.getColumnAlias(individualColumnAliases, viewInfo.subjectColumn) : null;
+        var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, viewInfo.subjectColumn) : null;
         var aggregateSubjectColumn = "UniqueId";
         var xAes, xTickFormat, tickMap = {};
         var visitMap = individualVisitMap ? individualVisitMap : aggregateVisitMap;
@@ -1630,8 +1637,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             xAes = function(row){return (row[intervalKey] ? row[intervalKey].value : null)}
         } else {
             intervalKey = individualColumnAliases ?
-                    this.getColumnAlias(individualColumnAliases, viewInfo.subjectNounSingular + "Visit/Visit") :
-                    this.getColumnAlias(aggregateColumnAliases, viewInfo.subjectNounSingular + "Visit/Visit");
+                    LABKEY.vis.getColumnAlias(individualColumnAliases, viewInfo.subjectNounSingular + "Visit/Visit") :
+                    LABKEY.vis.getColumnAlias(aggregateColumnAliases, viewInfo.subjectNounSingular + "Visit/Visit");
             xAes = function(row){
                 return visitMap[row[intervalKey].value].displayOrder;
             };
@@ -1698,7 +1705,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     chartSeriesName = chartSeries.aliasLookupInfo.alias;
             }
 
-            var columnName = individualColumnAliases ? this.getColumnAlias(individualColumnAliases, chartSeries.aliasLookupInfo) : this.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo);
+            var columnName = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, chartSeries.aliasLookupInfo) : LABKEY.vis.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo);
             if(individualData && individualColumnAliases){
                 var pathLayerConfig = {
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
@@ -1746,7 +1753,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 } else if(chartInfo.errorBars == 'SEM'){
                     errorBarType = '_STDERR';
                 }
-                var errorColumnName = errorBarType ? this.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo) + errorBarType : null;
+                var errorColumnName = errorBarType ? LABKEY.vis.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo) + errorBarType : null;
 
                 var aggregatePathLayerConfig = {
                     data: aggregateData,
@@ -1965,39 +1972,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         return arr;
     },
 
-    /*
-    * Lookup the column alias (from the getData response) by the specified measure information
-    * aliasArray: columnAlias array from the getData API response
-    * measureInfo: 1. a string with the name of the column to lookup
-    *              2. an object with a measure alias OR measureName
-     *             3. an object with both measureName AND pivotValue
-     */
-    getColumnAlias: function(aliasArray, measureInfo) {
-        if (!aliasArray)
-            aliasArray = [];
-
-        if (typeof measureInfo != "object")
-            measureInfo = {measureName: measureInfo};
-        for (var i = 0; i < aliasArray.length; i++)
-        {
-            var arrVal = aliasArray[i];
-
-            if (measureInfo.measureName && measureInfo.pivotValue)
-            {
-                if (arrVal.measureName == measureInfo.measureName && arrVal.pivotValue == measureInfo.pivotValue)
-                    return arrVal.columnName;
-            }
-            else if (measureInfo.alias)
-            {
-                if (arrVal.alias == measureInfo.alias)
-                    return arrVal.columnName;
-            }
-            else if (measureInfo.measureName && arrVal.measureName == measureInfo.measureName)
-                return arrVal.columnName;
-        }
-        return null;
-    },
-
     toggleExportPdfBtns: function(showSingle) {
         if(showSingle){
             this.exportPdfSingleBtn.show();
@@ -2022,8 +1996,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
             // add a panel to put the queryWebpart in
             var qwpPanelDiv = Ext4.create('Ext.container.Container', {
-                autoHeight: true,
-                anchor: '100%',
                 autoEl: {tag: 'div'}
             });
             var dataGridPanel = Ext4.create('Ext.panel.Panel', {
