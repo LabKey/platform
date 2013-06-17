@@ -246,7 +246,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             
             tbarItems.push(this.saveAsBtn);
         }
-        else if (this.editModeURL != null)
+        else if (this.allowEditMode && this.editModeURL != null)
         {
             // add an "edit" button if the user is allowed to toggle to edit mode for this report
             tbarItems.push('->');
