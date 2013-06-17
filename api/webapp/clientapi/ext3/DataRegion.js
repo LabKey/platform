@@ -4133,9 +4133,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     // TODO: Migrate to use LABKEY.Query.selectDistinctRows
     getLookupValueSql: function(dataRegion, column)
     {
+        var fieldKey;
+        if (column.displayField) {
+            fieldKey = LABKEY.FieldKey.fromString(column.displayField);
+        }
+        else {
+            fieldKey = LABKEY.FieldKey.fromParts(column.fieldKeyArray);
+        }
+
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
-        var sql = '';
+        var sql = '-- Selecting DISTINCT value for faceted filtering on ' + dataRegion.schemaName + '.' + dataRegion.queryName + '.' + fieldKey.toSQLString() + '\n';
         if (this._jsonType == 'boolean') {
             var _case = 'CASE WHEN value IS NULL then \'\' WHEN value = \'true\' then \'true\' ELSE \'false\' END';
             sql += 'SELECT ' + _case + ' as value, ' + _case + ' as strValue'; // 16724
@@ -4144,14 +4152,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             sql += 'SELECT value AS value, CAST(value AS VARCHAR(1000)) AS strValue';
         }
         sql += ' FROM (SELECT DISTINCT t.';
-
-        var fieldKey;
-        if (column.displayField) {
-            fieldKey = LABKEY.FieldKey.fromString(column.displayField);
-        }
-        else {
-            fieldKey = LABKEY.FieldKey.fromParts(column.fieldKeyArray);
-        }
 
         sql += fieldKey.toSQLString() + ' AS value FROM "' + dataRegion.queryName.replace("\"", "\"\"") + '" t) s';
 
