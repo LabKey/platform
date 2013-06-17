@@ -54,6 +54,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -532,6 +533,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             if (_reRun == null)
             {
                 throw new NotFoundException("Existing run " + _reRunId + " could not be found.");
+            }
+            if (!_reRun.getContainer().hasPermission(getUser(), ReadPermission.class))
+            {
+                throw new UnauthorizedException("You do not have read access for run id " + _reRunId);
             }
         }
         return _reRun;
