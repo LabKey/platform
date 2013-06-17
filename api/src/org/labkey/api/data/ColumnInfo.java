@@ -712,8 +712,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      */
     public boolean isVersionColumn()
     {
-        //TODO: issue 17948 hotfix until better resolution
-        return "_ts".equalsIgnoreCase(getName()) || "Modified".equalsIgnoreCase(getName()) || "_txRowVersion".equalsIgnoreCase(getName());
+        if ("_ts".equalsIgnoreCase(getName()) || "Modified".equalsIgnoreCase(getName()))
+            return true;
+        if (JdbcType.BINARY == getJdbcType() && 8 == getScale() && "timestamp".equals(getSqlTypeName()))
+            return true;
+        return false;
     }
 
 
