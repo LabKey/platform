@@ -408,9 +408,13 @@ public class SampleMindedTransformTask
             visit = visit.substring("visit".length()).trim();
         }
         // UNDONE: This should not be here this is what SequenceNumImportHelper and the visit import maps is for
-        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
+        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit))
         {
             visit = "999";
+        }
+        else if ("PT1".equalsIgnoreCase(visit))
+        {
+            visit = "-1";
         }
         outputRow.put("visit_value", visit);
 
