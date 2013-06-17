@@ -149,6 +149,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             maxWidth: defaultWidth,
             valueField : 'RowId',
             displayField : 'Label',
+            listConfig: { itemTpl: "{Label:htmlEncode}" },
             triggerAction : 'all',
             listeners : {
                 scope:this,

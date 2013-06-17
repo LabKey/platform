@@ -227,7 +227,8 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 {
                     var row = groups[i];
                     var key = row.type;
-                    var categoryName =  row.category ? row.category.label : 'Cohorts';
+                    // i.e. categoryName will be either "cohort" or "participantGroup123"
+                    var categoryName =  row.type + (row.category ? row.category.rowId : '');
 
                     var groupList = categories[key] || [];
 

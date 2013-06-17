@@ -53,7 +53,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
             var renderTip = function(tip) {
                 if (_activeLabel) {
-                    tip.update('<b>' + Ext4.util.Format.htmlEncode(_activeLabel) + '</b><br>Click the label to ' +
+                    tip.update('<b>' + Ext4.htmlEncode(_activeLabel) + '</b><br>Click the label to ' +
                             'select only this item. Click the checkbox to toggle this item and preserve other selections.');
                 }
             };
@@ -171,9 +171,16 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
                         var classNames = me.allowAll ? "category-label-padding category-label" : "category-label";
 
+                        var displayName = value;
+                        var record = me.store.findRecord('categoryName', value);
+                        if (record)
+                        {
+                            displayName = record.get("category") ? record.get("category").label : 'Cohorts';
+                        }
+
                         return headerHtml
-                            + "<td><div class='" + classNames + " lk-filter-panel-label" + (me.normalWrap ? " normalwrap-gridcell" : "") + "'>" + value + "</div></td>"
-                            + "</tr></table>";
+                            + "<td><div class='" + classNames + " lk-filter-panel-label" + (me.normalWrap ? " normalwrap-gridcell" : "") + "'>"
+                            + Ext4.htmlEncode(displayName) + "</div></td></tr></table>";
                     }
                 }
             ]

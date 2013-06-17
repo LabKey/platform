@@ -193,7 +193,7 @@
         var categoryRenderer = function(value){
             if (value.type == "list")
                 return '';
-            return value.label;
+            return Ext4.htmlEncode(value.label);
         };
 
         var grid = Ext4.create('Ext.grid.Panel', {
@@ -202,7 +202,7 @@
             cls: 'participantCategoriesGrid',
             width : 855,
             columns: [
-                {header:'Label',       dataIndex:'label',    width: 275},
+                {header:'Label',       dataIndex:'label',    width: 275, renderer: Ext4.htmlEncode},
                 {header:'Category',    dataIndex:'category', width: 275, renderer: categoryRenderer},
                 {header:'Shared',      dataIndex:'shared'},
                 {header:'Created By',  dataIndex:'createdBy'},
