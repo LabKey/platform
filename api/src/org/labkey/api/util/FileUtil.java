@@ -245,7 +245,7 @@ public class FileUtil
      */
     private static List<String> getPathList(File file) throws IOException
     {
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         while (file != null)
         {
             parts.add(file.getName());
@@ -441,7 +441,7 @@ quickScan:
     public static ArrayList<String> normalizeSplit(String str)
     {
         int len = str.length();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         int start = 0;
         for (int i=0 ; i<=len ; i++)
         {
