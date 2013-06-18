@@ -5339,6 +5339,7 @@ public class AdminController extends SpringActionController
     protected static final String CUSTOMMENU_FOLDERTYPES = "customMenuFolderTypes";
     protected static final String CUSTOMMENU_CHOICELISTQUERY = "customMenuChoiceListQuery";
     protected static final String CUSTOMMENU_INCLUDEALLDESCENDANTS = "customIncludeAllDescendants";
+    protected static final String CUSTOMMENU_CURRENTPROJECTONLY = "customCurrentProjectOnly";
 
     public static CustomizeMenuForm getCustomizeMenuForm(Portal.WebPart webPart)
     {
@@ -5358,6 +5359,8 @@ public class AdminController extends SpringActionController
         boolean choiceListQuery = null == choiceListQueryString || choiceListQueryString.equalsIgnoreCase("true");
         String includeAllDescendantsString = menuProps.get(CUSTOMMENU_INCLUDEALLDESCENDANTS);
         boolean includeAllDescendants = null == includeAllDescendantsString || includeAllDescendantsString.equalsIgnoreCase("true");
+        String currentProjectOnlyString = menuProps.get(CUSTOMMENU_CURRENTPROJECTONLY);
+        boolean currentProjectOnly = null != currentProjectOnlyString && currentProjectOnlyString.equalsIgnoreCase("true");
 
         form.setSchemaName(schemaName);
         form.setQueryName(queryName);
@@ -5370,6 +5373,7 @@ public class AdminController extends SpringActionController
         form.setFolderTypes(folderTypes);
         form.setChoiceListQuery(choiceListQuery);
         form.setIncludeAllDescendants(includeAllDescendants);
+        form.setCurrentProjectOnly(currentProjectOnly);
 
         form.setWebPartIndex(webPart.getIndex());
         form.setPageId(webPart.getPageId());
@@ -5394,6 +5398,7 @@ public class AdminController extends SpringActionController
         menuProps.put(CUSTOMMENU_FOLDERTYPES, form.getFolderTypes());
         menuProps.put(CUSTOMMENU_CHOICELISTQUERY, form.isChoiceListQuery() ? "true" : "false");
         menuProps.put(CUSTOMMENU_INCLUDEALLDESCENDANTS, form.isIncludeAllDescendants() ? "true" : "false");
+        menuProps.put(CUSTOMMENU_CURRENTPROJECTONLY, form.isCurrentProjectOnly() ? "true" : "false");
 
         try
         {

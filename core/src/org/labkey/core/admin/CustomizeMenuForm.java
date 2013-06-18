@@ -36,6 +36,7 @@ public class CustomizeMenuForm
     private String _rootFolder;
     private String _folderTypes;
     private boolean _includeAllDescendants;
+    private boolean _currentProjectOnly;
     private int _webPartIndex;
     private String _pageId;
 
@@ -168,5 +169,15 @@ public class CustomizeMenuForm
     public void setPageId(String pageId)
     {
         _pageId = pageId;
+    }
+
+    public boolean isCurrentProjectOnly()
+    {
+        return _currentProjectOnly;
+    }
+
+    public void setCurrentProjectOnly(boolean currentProjectOnly)
+    {
+        _currentProjectOnly = currentProjectOnly;
     }
 }
