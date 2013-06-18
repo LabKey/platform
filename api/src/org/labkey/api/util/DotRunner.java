@@ -40,7 +40,7 @@ public class DotRunner
 
     private final String _dotInput;
     private final File _directory;
-    private final List<String> _parameters = new LinkedList<String>();
+    private final List<String> _parameters = new LinkedList<>();
 
     public DotRunner(File directory, String dotInput)
     {
@@ -162,33 +162,20 @@ public class DotRunner
         StringBuilder sb = new StringBuilder();
         pb.redirectErrorStream(true);
         Process p = pb.start();
-        PrintWriter writer = null;
-        BufferedReader procReader = null;
 
-        try
+        try (PrintWriter writer = new PrintWriter(p.getOutputStream()))
         {
-            writer = new PrintWriter(p.getOutputStream());
             writer.write(stdIn);
-            writer.close();
-            writer = null;
-            procReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        }
+
+        try (BufferedReader procReader = new BufferedReader(new InputStreamReader(p.getInputStream())))
+        {
             String line;
 
             while ((line = procReader.readLine()) != null)
             {
                 sb.append(line);
                 sb.append("\n");
-            }
-        }
-        finally
-        {
-            if (procReader != null)
-            {
-                try { procReader.close(); } catch (IOException ignored) {}
-            }
-            if (writer != null)
-            {
-                writer.close();
             }
         }
 
