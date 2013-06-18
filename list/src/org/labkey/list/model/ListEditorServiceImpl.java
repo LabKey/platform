@@ -313,7 +313,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         for (Object obj : dd.getFields())
         {
             GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)obj;
-            String legalName = ColumnInfo.legalNameFromName(descriptor.getName());
+            String legalName = ColumnInfo.legalNameFromName(descriptor.getName()).toLowerCase();
             if (names.contains(legalName))
                 errors.add("Field name's legal name is not unique: " + descriptor.getName());
             else
