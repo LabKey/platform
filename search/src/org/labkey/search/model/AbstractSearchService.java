@@ -96,8 +96,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     BlockingQueue<Item> _indexQueue = null;
 
     private final List<IndexTask> _tasks = new CopyOnWriteArrayList<>();
-
-    final _IndexTask _defaultTask = new _IndexTask("default");
+    private final _IndexTask _defaultTask = new _IndexTask("default");
 
     private Throwable _configurationError = null;
 
@@ -121,7 +120,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addSearchCategory(navigationCategory);
 
         // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in Java 7 u40
+        // TODO: Remove this once Oracle fixes it; they claim it will be fixed in Java 7u40
         if (SystemUtils.IS_JAVA_1_7)
         {
             MemTracker.register(new MemTrackerListener()
