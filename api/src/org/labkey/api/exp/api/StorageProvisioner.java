@@ -51,6 +51,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -603,10 +604,23 @@ public class StorageProvisioner
 
     private static void execute(DbScope scope, Connection conn, TableChange change) throws SQLException
     {
-        for (String sql : scope.getSqlDialect().getChangeStatements(change))
+        try
         {
-            log.debug("Will issue: " + sql);
-            conn.prepareStatement(sql).execute();
+            for (String sql : scope.getSqlDialect().getChangeStatements(change))
+            {
+                log.debug("Will issue: " + sql);
+                conn.prepareStatement(sql).execute();
+            }
+        }
+        catch (SQLException e)
+        {
+            // We're calling Statement.execute() directly, so we need to log the SQL if an exception occurs
+            String sql = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
+
+            if (null != sql)
+                log.error(sql);
+
+            throw e;
         }
     }
 
