@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -528,7 +527,7 @@ public class QueryProfiler
                 out = SPECIMEN_TEMP_TABLE_PATTERN.matcher(out).replaceAll("$1");
             }
 
-            _validSql = out.equals(in);   // We changed the SQL, which means it's no longer valid
+            _validSql = out.equals(in);   // If we changed the SQL then it's no longer valid
 
             return out;
         }
@@ -540,7 +539,7 @@ public class QueryProfiler
         private final String _sql;
         private final boolean _validSql;
         private final long _firstInvocation;
-        private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<>();
+        private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceMap.SOFT, ReferenceMap.HARD, true); // Not sure about purgeValues
 
         private @Nullable List<Object> _parameters = null;  // Keep parameters from the longest running query
 
