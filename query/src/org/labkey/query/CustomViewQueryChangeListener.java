@@ -34,10 +34,13 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * QueryChangeListener for custom views.
@@ -47,6 +50,9 @@ import java.util.Map;
  */
 public class CustomViewQueryChangeListener implements QueryChangeListener
 {
+    // issue 17760 - looking for expected fieldKey parents in the rename case, todo: where to put this list to keep it updated
+    private static final List<String> EXPECTED_PARENT_FKS = Arrays.asList("DataSets", "DataSet", "ParticipantVisit");
+
     @Override
     public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
@@ -272,20 +278,21 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         keyParts.add(col.getName());
 
         // we don't have to worry about field keys without parents (i.e. column/field names without lookup)
-        FieldKey parent = col.getParent();
-        while (parent != null)
+        FieldKey currentParent = col.getParent();
+        while (currentParent != null)
         {
             // look through the parts of the field key in search of something that matches a query name change
-            // TODO: issue 17760 - unexpected "fixup" of column names that happen to match a renamed query
-            if (queryNameChangeMap.containsKey(parent.getName()))
+            // and has an expected parent (i.e. Datasets, ParticipantVisit, etc.)
+            FieldKey nextParent = currentParent.getParent();
+            if (null != nextParent && EXPECTED_PARENT_FKS.contains(nextParent.getName()) && queryNameChangeMap.containsKey(currentParent.getName()))
             {
-                return FieldKey.fromParts(new FieldKey(parent.getParent(), queryNameChangeMap.get(parent.getName())), FieldKey.fromParts(keyParts));
+                return FieldKey.fromParts(new FieldKey(nextParent, queryNameChangeMap.get(currentParent.getName())), FieldKey.fromParts(keyParts));
             }
             else
             {
-                keyParts.add(0, parent.getName());
+                keyParts.add(0, currentParent.getName());
             }
-            parent = parent.getParent();
+            currentParent = nextParent;
         }
         return null;
     }

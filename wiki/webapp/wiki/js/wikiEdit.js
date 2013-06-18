@@ -74,7 +74,6 @@ tinyMCE.init({
 Ext.onReady(function(){
     updateControls(_wikiProps);
     updateExistingAttachments(_attachments);
-    addNewAttachmentInput();
     enableDeleteButton(null != _wikiProps.entityId);
 
     //if the format is HTML
@@ -727,11 +726,9 @@ function clearNewAttachments()
     var table = getNewAttachmentsTable();
     while(table.hasChildNodes())
         table.removeChild(table.childNodes[0]);
-
-    addNewAttachmentInput();
 }
 
-function addNewAttachmentInput()
+function addNewAttachmentInput(linkId)
 {
     var table = getNewAttachmentsTable();
     var row = table.insertRow(-1);
@@ -745,6 +742,8 @@ function addNewAttachmentInput()
     cell.innerHTML = "&nbsp;";
 
     ++_newAttachmentIndex;
+
+    updateInstructions(document.getElementById(linkId), _newAttachmentIndex);
 }
 
 function onAddAttachment(fileInput, index)
@@ -760,9 +759,6 @@ function onAddAttachment(fileInput, index)
 
     //mark the attachments as dirty
     _attachments.isDirty = true;
-
-    //add another new attachment input
-    addNewAttachmentInput();
 }
 
 function getFileName(pathname)

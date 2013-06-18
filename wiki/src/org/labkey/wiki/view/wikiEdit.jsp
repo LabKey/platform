@@ -200,6 +200,7 @@
                             </table>
                             <table id="wiki-new-attachments">
                             </table>
+                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=h(me.getViewContext().getContextPath())%>/_images/paperclip.gif">Attach a file</a>
                         </form>
                     </td>
                 </tr>
