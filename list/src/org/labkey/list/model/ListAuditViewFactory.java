@@ -156,7 +156,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         filter.addClause(or);
 
         // try to filter on just list domains
-        filter.addCondition(FieldKey.fromParts("Key1"), ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
+//        filter.addCondition(FieldKey.fromParts("Key1"), ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
 
         table.addCondition(filter);
 

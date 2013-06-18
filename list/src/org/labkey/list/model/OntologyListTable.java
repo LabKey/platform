@@ -16,30 +16,29 @@
 
 package org.labkey.list.model;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PkFilter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.etl.TableInsertDataIterator;
-import org.labkey.api.etl.ValidatorIterator;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -54,16 +53,17 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.controllers.ListController;
+import org.labkey.list.view.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 @Deprecated
 /* package */ class OntologyListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
@@ -91,7 +91,7 @@ import java.util.concurrent.Callable;
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        addCondition(getRealTable().getColumn("ListId"), listDef.getRowId());
+        addCondition(getRealTable().getColumn("ListId"), (Integer) getRowId(_list));
         List<ColumnInfo> defaultColumnsCandidates = new LinkedList<>();
 
         // All columns visible by default, except for auto-increment integer
@@ -164,13 +164,6 @@ import java.util.concurrent.Callable;
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
-
-        DetailsURL insertURL = new DetailsURL(_list.urlFor(ListController.InsertAction.class), Collections.<String, String>emptyMap());
-        setInsertURL(insertURL);
-
-        DetailsURL updateURL = new DetailsURL(_list.urlUpdate(null, null), Collections.singletonMap("pk", _list.getKeyName()));
-        setUpdateURL(updateURL);
-
         DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
 
@@ -189,6 +182,9 @@ import java.util.concurrent.Callable;
 
     private ColumnInfo addColumn(String name, boolean hidden)
     {
+        // might be unsafe but fine for migraiton purposes to avoid duplicate columns
+        if (_columnMap.containsKey(name))
+            return _columnMap.get(name);
         ColumnInfo column = wrapColumn(getRealTable().getColumn(name));
         column.setHidden(hidden);
         return addColumn(column);
@@ -258,7 +254,7 @@ import java.util.concurrent.Callable;
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new OntologyListQueryUpdateService(this, getList());
+        throw new UnsupportedOperationException("OntologyListTable no longer provides an UpdateService.");
     }
 
     // UpdateableTableInfo
@@ -328,91 +324,8 @@ import java.util.concurrent.Callable;
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
-        data = new _DataIteratorBuilder(data, context);
-        DataIteratorBuilder ins;
-        ins = TableInsertDataIterator.create(data, this, _list.getContainer(), context);
-        return ins;
+        throw new UnsupportedOperationException("persistRows is no longer supported on OntologyListTables");
     }
-
-
-    public class _DataIteratorBuilder implements DataIteratorBuilder
-    {
-        DataIteratorContext _context;
-        final DataIteratorBuilder _in;
-        final ListItemImpl.KeyIncrementer _keyIncrementer = ListItemImpl._keyIncrementer;
-
-        _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
-        {
-            _context = context;
-            _in = in;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
-
-            final SimpleTranslator it = new SimpleTranslator(input, context);
-
-            int keyColumnInput = 0;
-            int keyColumnOutput = 0;
-            for (int c=1 ; c<=input.getColumnCount() ; c++)
-            {
-                ColumnInfo col = input.getColumnInfo(c);
-                if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
-                {
-                    keyColumnInput = c;
-                    if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
-                        continue;
-                }
-// TODO lists allow a column called "container"! need to start disallowing this!
-//                if (StringUtils.equalsIgnoreCase("container", col.getName()))
-//                    continue;
-                if (StringUtils.equalsIgnoreCase("listid", col.getName()))
-                    continue;
-                int out = it.addColumn(c);
-                if (keyColumnInput==c)
-                    keyColumnOutput = out;
-            }
-
-            if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
-            {
-                ColumnInfo keyCol = new ColumnInfo(_list.getKeyName(), JdbcType.INTEGER);
-                final int inputKeyColumn = keyColumnInput;
-                keyColumnOutput = it.addColumn(keyCol, new Callable()
-                {
-                    @Override
-                    public Object call() throws Exception
-                    {
-                        Object keyValue = (_context.getInsertOption().batch && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
-                        return null != keyValue ? keyValue : _keyIncrementer.getNextKey((ListDefinitionImpl)_list);
-                    }
-                });
-            }
-
-// handled as constant in StatementUtils.createStatement()
-//            ColumnInfo containerCol = new ColumnInfo("container", JdbcType.GUID);
-//            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
-
-            ColumnInfo listIdCol = new ColumnInfo("listid", JdbcType.INTEGER);
-            it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getRowId()));
-
-            DataIterator ret = LoggingDataIterator.wrap(it);
-
-            if (0 != keyColumnOutput && (context.getInsertOption().batch || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
-            {
-                ValidatorIterator vi = new ValidatorIterator(ret, context, _list.getContainer(), null);
-                vi.addUniqueValidator(keyColumnOutput, DbSchema.get("exp").getSqlDialect().isCaseSensitive());
-                ret = vi;
-            }
-            return ret;
-        }
-    }
-
 
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
@@ -438,5 +351,67 @@ import java.util.concurrent.Callable;
     public boolean supportsContainerFilter()
     {
         return false;
+    }
+
+    /**
+     * NOTE: This function is only to be used during the migration of lists to hard tables. DO NOT use this prior to
+     * or after the migration occurs due to dependencies being bridged.
+     */
+    @Deprecated
+    public static void deleteOntologyList(final ListDefinition list, User user) throws SQLException, DomainNotFoundException
+    {
+        // could ensure old list by validating against domain type being ListDomainType
+        if (!list.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
+            return;
+
+        try
+        {
+            ExperimentService.get().ensureTransaction();
+
+            SimpleFilter listItemFilter = new SimpleFilter(FieldKey.fromParts("ListId"), getRowId(list));
+
+            // SKIP DOING ANYTHING WITH ANNOUNCEMENTS AND DISCUSSIONS AS THEY SHOULD ALREADY BE MIGRATED
+
+            //delete all list items
+            ListItm[] itms = new TableSelector(getIndexTable(list.getKeyType()), Table.ALL_COLUMNS, listItemFilter, null).getArray(ListItm.class);
+            Table.delete(getIndexTable(list.getKeyType()), listItemFilter);
+
+            Set<String> ids = new HashSet<>();
+
+            for (ListItm itm : itms)
+            {
+                if (itm.getObjectId() != null)
+                {
+                    OntologyObject object = OntologyManager.getOntologyObject(itm.getObjectId());
+                    if (object != null)
+                    {
+                        ids.add(object.getObjectURI());
+                    }
+                }
+            }
+            OntologyManager.deleteOntologyObjects(list.getContainer(), ids.toArray(new String[ids.size()]));
+
+            // Unindex all item docs and the entire list doc
+//            ListManager.get().deleteIndexedList(list);
+
+            //then delete the list itself
+//            Table.delete(ListManager.get().getListMetadataTable(), new Object[] {list.getContainer(), list.getListId()});
+//            list.getDomain().delete(user);
+
+            ExperimentService.get().commitTransaction();
+        }
+        finally
+        {
+            ExperimentService.get().closeTransaction();
+        }
+    }
+
+    private static Object getRowId(ListDefinition list)
+    {
+        int listId = list.getListId();
+        Container c = list.getContainer();
+        SimpleFilter filter = new PkFilter(ListManager.get().getListMetadataTable(), new Object[]{c, listId});
+        Map<String, Object> results = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(Map.class);
+        return results.get("rowid");
     }
 }

@@ -1497,10 +1497,11 @@ list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
 list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text
 list/resources/schemas/dbscripts/postgresql/list-13.10-13.11.sql -text
+list/resources/schemas/dbscripts/postgresql/list-13.11-13.12.sql -text
 list/resources/schemas/dbscripts/sqlserver/list-13.10-13.11.sql -text
+list/resources/schemas/dbscripts/sqlserver/list-13.11-13.12.sql -text
 list/schemas/lists.xsd -text
 list/src/org/labkey/list/ListModule.java -text
-list/src/org/labkey/list/controllers/InsertUpdateAction.java -text
 list/src/org/labkey/list/controllers/ListController.java -text
 list/src/org/labkey/list/model/FileNameUniquifier.java -text
 list/src/org/labkey/list/model/FolderListImporter.java -text
@@ -1522,12 +1523,10 @@ list/src/org/labkey/list/model/ListSchema.java -text
 list/src/org/labkey/list/model/ListServiceImpl.java -text
 list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
-list/src/org/labkey/list/model/OntologyListQueryUpdateService.java -text
 list/src/org/labkey/list/model/OntologyListTable.java -text
 list/src/org/labkey/list/model/VarcharListDomainKind.java -text
 list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text
-list/src/org/labkey/list/view/ListImportHelper.java -text
 list/src/org/labkey/list/view/ListImportServiceImpl.java -text
 list/src/org/labkey/list/view/ListItemAttachmentParent.java -text
 list/src/org/labkey/list/view/ListQueryForm.java -text
@@ -1539,7 +1538,6 @@ list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
-list/src/org/labkey/list/view/migrate.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-10.20.sql -text

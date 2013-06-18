@@ -15,33 +15,51 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.Pump;
+import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListImportProgress;
+import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.view.ListItemAttachmentParent;
 
-import java.io.IOException;
+import java.io.File;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,9 +67,9 @@ import java.util.List;
 import java.util.Map;
 
 /*
-* User: Dave
-* Date: Jun 12, 2008
-* Time: 1:51:50 PM
+* User: Nick Arnold
+* Date: June 5, 2012
+* Time: 10:27:30 AM
 */
 
 /**
@@ -60,6 +78,8 @@ import java.util.Map;
 public class ListQueryUpdateService extends DefaultQueryUpdateService
 {
     ListDefinitionImpl _list = null;
+    private static String ID = "entityId";
+    private VirtualFile _att = null;
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, ListDefinition list)
     {
@@ -79,6 +99,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return context;
     }
 
+
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
@@ -95,85 +116,175 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return ret;
     }
 
+
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("Update Service Not Complete");
+        throw new IllegalStateException("Method not used by ListQueryUpdateService");
     }
+
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT), extraScriptContext);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT);
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
 
         if (null != result)
         {
-            int idx = 0; // index used to compare result and rows
+            ListManager mgr = ListManager.get();
+
             for (Map row : result)
             {
-                if (null != row.get("entityId"))
+                if (null != row.get(ID))
                 {
                     // Audit each row
-                    String entityId = (String) row.get("entityId");
-                    addAuditEvent(user, "A new list record was inserted", entityId, null, null);
+                    String entityId = (String) row.get(ID);
+                    String newRecord = mgr.formatAuditItem(_list, user, row);
 
-                    // Add attachments
-                    AttachmentParent parent = new ListItemAttachmentParent(entityId, _list.getContainer());
-                    List<AttachmentFile> newAttachments = new ArrayList<>();
-
-                    for (DomainProperty property : _list.getDomain().getProperties())
-                    {
-                        if (null != row.get(property.getName()))
-                        {
-                            Object value = rows.get(idx).get(property.getName());
-                            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-                            {
-                                newAttachments.add((AttachmentFile) value);
-                            }
-                        }
-                    }
-
-                    if (newAttachments.size() > 0)
-                    {
-                        try
-                        {
-                            AttachmentService.get().addAttachments(parent, newAttachments, user);
-                        }
-                        catch (IOException e)
-                        {
-//                                    throw new ValidationException(e.getMessage());
-                        }
-                    }
+                    mgr.addAuditEvent(_list, user, "A new list record was inserted", entityId, null, newRecord);
                 }
-                idx++;
             }
 
             if (result.size() > 0 && !errors.hasErrors())
-                ListManager.get().indexList(_list);
+                mgr.indexList(_list);
         }
 
         return result;
     }
+
+    @Override
+    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+    {
+        DataIteratorBuilder dib = super.createImportETL(user, container, data, context);
+        return getAttachmentDataIteratorBuilder(dib, user, context.getInsertOption() == InsertOption.IMPORT ? getAttachmentDirectory(): null);
+    }
+
+    /**
+     * TODO: Make attachmentDirs work for other QueryUpdateServices. This is private to list for now.
+     */
+    public int insertETL(DataLoader loader, User user, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress)
+    {
+        // TODO: Figure out what to do with 'progress'
+
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setFailFast(false);
+        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
+        setAttachmentDirectory(attachmentDir);
+
+        DataIteratorBuilder dib = createImportETL(user, _list.getContainer(), loader, context);
+
+        if (context.getErrors().hasErrors())
+            return 0;                           // if there are errors dib may be returned as null (bug #17286)
+
+        TableInfo ti = _list.getTable(user);
+
+        try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
+        {
+            Pump p = new Pump(dib, context);
+            p.run();
+            int inserted = p.getRowCount();
+
+            if (!errors.hasErrors())
+            {
+                if (inserted > 0)
+                    ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
+                transaction.commit();
+                ListManager.get().indexList(_list);
+                return inserted;
+            }
+
+            return 0;
+        }
+    }
+
+
+    @Override
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
+        int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        if (count > 0 && !errors.hasErrors())
+            ListManager.get().indexList(_list);
+        return count;
+    }
+
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         // TODO: Check for equivalency so that attachments can be deleted etc.
 
+        Map<String, DomainProperty> dps = new HashMap<>();
+        for (DomainProperty dp : _list.getDomain().getProperties())
+        {
+            dps.put(dp.getPropertyURI(), dp);
+        }
+
+        ValidatorContext validatorCache = new ValidatorContext(_list.getContainer(), user);
+        ListItem item = new ListItemImpl(_list);
+
+        if (item.getProperties() != null)
+        {
+            List<ValidationError> errors = new ArrayList<>();
+            for (Map.Entry<String, DomainProperty> entry : dps.entrySet())
+            {
+                Object value = row.get(entry.getValue().getName());
+                validateProperty(entry.getValue(), value, errors, validatorCache);
+            }
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+        }
+
         Map<String, Object> result = super.updateRow(user, container, row, oldRow);
 
         if (null != result)
         {
-            if (null != result.get("entityId"))
+            result = getRow(user, container, result);
+
+            if (null != result.get(ID))
             {
-                String entityId = (String) result.get("entityId");
+                ListManager mgr = ListManager.get();
+                String entityId = (String) result.get(ID);
+                String oldRecord = mgr.formatAuditItem(_list, user, oldRow);
+                String newRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
-                addAuditEvent(user, "An existing list record was modified", entityId, null, null);
+                mgr.addAuditEvent(_list, user, "An existing list record was modified", entityId, oldRecord, newRecord);
             }
         }
 
         return result;
+    }
+
+    private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+    {
+        //check for isRequired
+        if (prop.isRequired())
+        {
+            // for mv indicator columns either an indicator or a field value is sufficient
+            boolean hasMvIndicator = prop.isMvEnabled() && (value instanceof ObjectProperty && ((ObjectProperty)value).getMvIndicator() != null);
+            if (!hasMvIndicator && (null == value || (value instanceof ObjectProperty && ((ObjectProperty)value).value() == null)))
+            {
+                errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
+                return false;
+            }
+        }
+
+//        if (value instanceof ObjectProperty)
+//            value = ((ObjectProperty)value).value();
+
+        if (null != value)
+        {
+            for (IPropertyValidator validator : prop.getValidators())
+            {
+                if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache))
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -183,12 +294,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != result)
         {
-            if (null != result.get("entityId"))
+            if (null != result.get(ID))
             {
-                String entityId = (String) result.get("entityId");
+                ListManager mgr = ListManager.get();
+                String entityId = (String) result.get(ID);
+                String deletedRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
-                addAuditEvent(user, "An existing list record was deleted", entityId, null, null);
+                mgr.addAuditEvent(_list, user, "An existing list record was deleted", entityId, deletedRecord, null);
 
                 // Remove discussions
                 DiscussionService.get().deleteDiscussions(container, user, entityId);
@@ -198,7 +311,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                 // Clean up Search indexer
                 if (result.size() > 0)
-                    ListManager.get().deleteItemIndex(_list, entityId);
+                    mgr.deleteItemIndex(_list, entityId);
             }
         }
 
@@ -206,40 +319,160 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
 
-    /**
-     * Modeled after ListItemImpl.addAuditEvent
-     * @param user
-     * @param comment
-     * @param entityId
-     * @param oldRecord
-     * @param newRecord
-     */
-    private void addAuditEvent(User user, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    private static class _AttachmentUploadHelper
     {
-        AuditLogEvent event = new AuditLogEvent();
+        _AttachmentUploadHelper(int i, DomainProperty dp)
+        {
+            index=i;
+            domainProperty = dp;
+        }
+        final int index;
+        final DomainProperty domainProperty;
+        final FileNameUniquifier uniquifier = new FileNameUniquifier();
+    }
 
-        event.setCreatedBy(user);
-        event.setComment(comment);
 
-        Container c = _list.getContainer();
-        event.setContainerId(c.getId());
-        Container project = c.getProject();
-        if (null != project)
-            event.setProjectId(project.getId());
+    private DataIteratorBuilder getAttachmentDataIteratorBuilder(final DataIteratorBuilder builder, final User user, @Nullable final VirtualFile attachmentDir)
+    {
+        return new DataIteratorBuilder()
+        {
+            @Override
+            public DataIterator getDataIterator(DataIteratorContext context)
+            {
+                DataIterator it = builder.getDataIterator(context);
 
-        event.setKey1(_list.getDomain().getTypeURI());
-        event.setEventType(ListManager.LIST_AUDIT_EVENT);
-        event.setIntKey1(_list.getListId());
-        event.setKey2(_list.getName());
-        event.setKey3(entityId);
+                // find attachment columns
+                int entityIdIndex = 0;
+                final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
 
-        final Map<String, Object> dataMap = new HashMap<String, Object>();
-        if (oldRecord != null) dataMap.put(ListAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
-        if (newRecord != null) dataMap.put(ListAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
+                for (int c = 1; c <= it.getColumnCount(); c++)
+                {
+                    ColumnInfo col = it.getColumnInfo(c);
+                    if (StringUtils.equalsIgnoreCase(ID, col.getName()))
+                        entityIdIndex = c;
 
-        if (!dataMap.isEmpty())
-            AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ListManager.LIST_AUDIT_EVENT));
-        else
-            AuditLogService.get().addEvent(event);
+                    // Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
+                    // UNDONE: PropertyURI is not propagated, need to use name
+                    DomainProperty domainProperty = _list.getDomain().getPropertyByName(col.getName());
+                    if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
+                        continue;
+
+                    attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+                }
+
+                if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
+                    return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, context.getInsertOption());
+
+                return it;
+            }
+        };
+    }
+
+
+    class AttachmentDataIterator extends WrapperDataIterator
+    {
+        final VirtualFile attachmentDir;
+        final BatchValidationException errors;
+        final int entityIdIndex;
+        final ArrayList<_AttachmentUploadHelper> attachmentColumns;
+        final InsertOption insertOption;
+        final User user;
+
+        AttachmentDataIterator(DataIterator insertIt, BatchValidationException errors,
+                               User user,
+                               VirtualFile attachmentDir,
+                               int entityIdIndex,
+                               ArrayList<_AttachmentUploadHelper> attachmentColumns,
+                               InsertOption insertOption)
+        {
+            super(insertIt);
+            this.attachmentDir = attachmentDir;
+            this.errors = errors;
+            this.entityIdIndex = entityIdIndex;
+            this.attachmentColumns = attachmentColumns;
+            this.insertOption = insertOption;
+            this.user = user;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            try
+            {
+                boolean ret = super.next();
+                if (!ret)
+                    return false;
+                ArrayList<AttachmentFile> attachmentFiles = null;
+                for (_AttachmentUploadHelper p : attachmentColumns)
+                {
+                    Object attachmentValue = get(p.index);
+                    String filename = null;
+                    AttachmentFile attachmentFile;
+
+                    if (null == attachmentValue)
+                        continue;
+                    else if (attachmentValue instanceof String)
+                    {
+                        if (null == attachmentDir)
+                        {
+                            errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
+                            return false;
+                        }
+                        filename = (String) attachmentValue;
+                        InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
+                        attachmentFile = new InputStreamAttachmentFile(aIS, filename);
+                        attachmentFile.setFilename(filename);
+                    }
+                    else if (attachmentValue instanceof AttachmentFile)
+                    {
+                        attachmentFile = (AttachmentFile) attachmentValue;
+                        filename = attachmentFile.getFilename();
+                    }
+                    else if (attachmentValue instanceof File)
+                    {
+                        attachmentFile = new FileAttachmentFile((File) attachmentValue);
+                        filename = attachmentFile.getFilename();
+                    }
+                    else
+                    {
+                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachament file."));
+                        return false;
+                    }
+
+                    if (null == filename)
+                        continue;
+
+                    if (null == attachmentFiles)
+                        attachmentFiles = new ArrayList<>();
+                    attachmentFiles.add(attachmentFile);
+                }
+
+                if (null != attachmentFiles && !attachmentFiles.isEmpty())
+                {
+                    String entityId = String.valueOf(get(entityIdIndex));
+                    AttachmentService.get().addAttachments(new ListItemAttachmentParent(entityId, _list.getContainer()), attachmentFiles, user);
+                }
+                return ret;
+            }
+            catch (AttachmentService.DuplicateFilenameException e)
+            {
+                errors.addRowError(new ValidationException(e.getMessage()));
+                return false;
+            }
+            catch (Exception x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+    }
+
+    private void setAttachmentDirectory(VirtualFile att)
+    {
+        _att = att;
+    }
+
+    private VirtualFile getAttachmentDirectory()
+    {
+        return _att;
     }
 }

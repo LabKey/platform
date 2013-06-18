@@ -41,7 +41,6 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
@@ -50,7 +49,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.defaults.SetDefaultValuesListAction;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
@@ -77,16 +75,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -95,7 +90,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditViewFactory;
-import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
@@ -198,41 +192,6 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class MigrateAction extends FormViewAction
-    {
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/list/view/migrate.jsp", null, errors);
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            ListManager.get().upgradeListDefinitions(getUser(), 13.11);
-            return false;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return null;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -270,7 +229,7 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
 
             URLHelper returnURL = form.getReturnURLHelper();
 
@@ -361,74 +320,6 @@ public class ListController extends SpringActionController
     }
 
 
-    @Deprecated
-    @RequiresPermissionClass(InsertPermission.class)
-    public class InsertAction extends InsertUpdateAction
-    {
-        @Override
-        protected DataView getDataView(ListQueryUpdateForm tableForm, URLHelper returnURL, BindException errors)
-        {
-            InsertView view = new InsertView(tableForm, errors);
-            if (errors.getErrorCount() == 0)
-            {
-                Map<String, Object> defaults = new HashMap<String, Object>();
-                Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(getContainer(), tableForm.getDomain(), getUser());
-                for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
-                {
-                    ColumnInfo tempCol = new ColumnInfo(entry.getKey().getName());
-                    String formFieldName = tableForm.getFormFieldName(tempCol);
-                    defaults.put(formFieldName, entry.getValue());
-                }
-                view.setInitialValues(defaults);
-            }
-            view.setFocusId("firstInputField");
-            getPageConfig().setFocusId(view.getFocusId());
-            view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(InsertAction.class).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString()), returnURL));
-
-            return view;
-        }
-
-        protected boolean isInsert()
-        {
-            return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, "Add New List Item");
-        }
-    }
-
-
-    @Deprecated
-    @RequiresPermissionClass(UpdatePermission.class)
-    public class UpdateAction extends InsertUpdateAction
-    {
-        @Override
-        protected DataView getDataView(ListQueryUpdateForm tableForm, URLHelper returnURL, BindException errors)
-        {
-            DataView view = new UpdateView(tableForm, errors);
-            view.getDataRegion().setButtonBar(getButtonBar(_list.urlUpdate(tableForm.getPkVal(), returnURL), returnURL));
-            return view;
-        }
-
-        protected boolean isInsert()
-        {
-            return false;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, "Edit List Item");
-        }
-
-        public void setList(ListDefinition list)
-        {
-            _list = list;
-        }
-    }
-
-
     // Unfortunate query hackery that orders details columns based on default view
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn)
@@ -484,9 +375,9 @@ public class ListController extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            if (getViewContext().hasPermission(UpdatePermission.class))
+            if (table.hasPermission(getUser(), UpdatePermission.class))
             {
-                ActionURL updateUrl = _list.urlUpdate(tableForm.getPkVal(), getViewContext().getActionURL());
+                ActionURL updateUrl = _list.urlUpdate(getUser(), tableForm.getPkVal(), getViewContext().getActionURL());
                 ActionButton editButton = new ActionButton("Edit", updateUrl);
                 bb.add(editButton);
             }
@@ -511,10 +402,7 @@ public class ListController extends SpringActionController
 
             VBox view = new VBox();
             ListItem item;
-            if (ListDefinitionImpl.ontologyBased())
-                item = _list.getListItem(tableForm.getPkVal());
-            else
-                item = _list.getListItem(tableForm.getPkVal(), getUser());
+            item = _list.getListItem(tableForm.getPkVal(), getUser());
 
             if (null == item)
                 throw new NotFoundException("List item '" + tableForm.getPkVal() + "' does not exist");
@@ -599,7 +487,7 @@ public class ListController extends SpringActionController
         public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
         {
             ListDefinition list = form.getList();
-            ListItem item = list.getListItemForEntityId(getViewContext().getActionURL().getParameter("entityId")); // TODO: Use proper form, validate
+            ListItem item = list.getListItemForEntityId(getViewContext().getActionURL().getParameter("entityId"), getUser()); // TODO: Use proper form, validate
             ActionURL url = getViewContext().cloneActionURL().setAction(DetailsAction.class);   // Clone to preserve discussion params
             url.deleteParameter("entityId");
             url.addParameter("pk", item.getKey().toString());

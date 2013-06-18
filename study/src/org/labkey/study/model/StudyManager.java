@@ -1889,6 +1889,9 @@ public class StudyManager
 
     public void uncache(DataSetDefinition def)
     {
+        if (null == def)
+            return;
+
         _datasetHelper.clearCache(def);
         String uri = def.getTypeURI();
         if (null != uri)

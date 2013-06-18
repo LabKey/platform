@@ -19,7 +19,6 @@ package org.labkey.list.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.DefaultSchema;
@@ -41,47 +40,29 @@ import java.util.Set;
 
 public class ListQuerySchema extends UserSchema
 {
-    static public final String NAME = "lists";
+    public static final String NAME = "lists";
     public static final String DESCR = "Contains a data table for each defined list";
 
-    public static final String HDNAME = "lists_hard";
-    public static final String HDDESCR = "Temporary schema containing a data table for each hard-table backed list";
-
-    static public void register()
+    public static void register()
     {
-        DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider() {
+        DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider()
+        {
             public QuerySchema getSchema(DefaultSchema schema)
             {
                 return new ListQuerySchema(schema.getUser(), schema.getContainer());
             }
         });
-//        DefaultSchema.registerProvider(HDNAME, new DefaultSchema.SchemaProvider() {
-//            public QuerySchema getSchema(DefaultSchema schema)
-//            {
-//                return new ListQuerySchema(HDNAME, HDDESCR, schema.getUser(), schema.getContainer(), ListSchema.getInstance().getSchema());
-//            }
-//        });
     }
-
-//    @Override
-//    public DbSchema getDbSchema()
-//    {
-//        return ListSchema.getInstance().getSchema();
-//    }
 
     public ListQuerySchema(User user, Container container)
     {
-        this(NAME, DESCR, user, container);
+        super(NAME, DESCR, user, container, ListSchema.getInstance().getSchema());
     }
 
-    public ListQuerySchema(String name, String description, User user, Container container)
+    @Override
+    public DbSchema getDbSchema()
     {
-        this(name, description, user, container, ExperimentService.get().getSchema());
-    }
-
-    public ListQuerySchema(String name, String description, User user, Container container, DbSchema schema)
-    {
-        super(name, description, user, container, schema);
+        return ListSchema.getInstance().getSchema();
     }
 
     public Set<String> getTableNames()
@@ -94,16 +75,12 @@ public class ListQuerySchema extends UserSchema
         ListDefinition def = ListService.get().getLists(getContainer()).get(name);
         if (def != null)
         {
-            if (ListDefinitionImpl.ontologyBased())
+            // Only for supporting migration. These should not be handed out after migration to hard tables.
+            if (def.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
             {
-                // don't call def.getTable(),
-                // UserSchema will call afterConstruct()
                 return new OntologyListTable(this, def);
             }
-            else
-            {
-                return new ListTable(this, def);
-            }
+            return new ListTable(this, def);
         }
         return null;
     }

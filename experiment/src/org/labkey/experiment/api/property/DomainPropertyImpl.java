@@ -823,7 +823,6 @@ public class DomainPropertyImpl implements DomainProperty
         private PropertyDescriptor getPropertyDescriptor(Container c, String domainURI)
         {
             PropertyDescriptor pd = new PropertyDescriptor();
-            pd = new PropertyDescriptor();
             pd.setPropertyURI(domainURI + ":column");
             pd.setName("column");
             pd.setLabel("label");

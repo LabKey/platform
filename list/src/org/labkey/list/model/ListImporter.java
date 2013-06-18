@@ -229,16 +229,15 @@ public class ListImporter
         }
 
         list.setPreferredListIds(preferredListIds);
-        list.save(user);
 
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate
 
         // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-        RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
+        RowMapFactory<Object> mapFactory = new RowMapFactory<>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
                 "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected", "ExcludeFromShifting");
-        List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
+        List<Map<String, Object>> importMaps = new LinkedList<>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
         {
@@ -282,7 +281,7 @@ public class ListImporter
             boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
             boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
 
-            Set<String> importAliases = new LinkedHashSet<String>();
+            Set<String> importAliases = new LinkedHashSet<>();
             if (columnXml.isSetImportAliases())
             {
                 importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
@@ -322,16 +321,7 @@ public class ListImporter
             importMaps.add(map);
         }
 
-        final String typeURI = list.getDomain().getTypeURI();
-
-        DomainURIFactory factory = new DomainURIFactory() {
-            public String getDomainURI(String name)
-            {
-                return typeURI;
-            }
-        };
-
-        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, errors, c, true, user);
+        ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importMaps, user, errors);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException

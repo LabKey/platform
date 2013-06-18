@@ -46,7 +46,8 @@ import org.labkey.list.view.ListItemAttachmentParent;
 import java.sql.SQLException;
 import java.util.Set;
 
-public class ListDomainType extends AbstractDomainKind
+@Deprecated
+/* package */ public class ListDomainType extends AbstractDomainKind
 {
     public String getTypeLabel(Domain domain)
     {
@@ -80,13 +81,7 @@ public class ListDomainType extends AbstractDomainKind
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        ListDefinitionImpl listDef = (ListDefinitionImpl) ListService.get().getList(domain);
-        if (listDef == null)
-            return new SQLFragment("NULL");
-        SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM ");
-        ret.append(listDef.getIndexTable().getFromSQL("IndexTable"));
-        ret.append("\nWHERE IndexTable.listId = ").append(String.valueOf(listDef.getRowId()));
-        return ret;
+        return new SQLFragment("NULL");
     }
 
     public static Lsid generateDomainURI(String name, Container c, String entityId)
@@ -129,7 +124,7 @@ public class ListDomainType extends AbstractDomainKind
     }
 
     @Override
-    public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
+    public void deletePropertyDescriptor(Domain domain, final User user, PropertyDescriptor pd)
     {
         if (pd.getPropertyType() != PropertyType.ATTACHMENT)
             return;
@@ -143,7 +138,7 @@ public class ListDomainType extends AbstractDomainKind
             @Override
             public void exec(Object key) throws SQLException
             {
-                ListItem item = list.getListItem(key);
+                ListItem item = list.getListItem(key, user);
                 Object file = item.getProperty(prop);
 
                 if (null != file)

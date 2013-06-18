@@ -1269,18 +1269,25 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         @Override
         protected void onFinish()
         {
-            // Need to escapeURIComponent each part of the container path
-            StringBuilder loc = new StringBuilder(PropertyUtil.getContextPath());
-            loc.append("/list");
-            for (String part : PropertyUtil.getContainerPath().split("/"))
+            getService().getDomainDescriptor(_list, new ErrorDialogAsyncCallback<GWTDomain>()
             {
-                if(!"".equals(part))
+                @Override
+                public void onSuccess(GWTDomain result)
                 {
-                    loc.append("/").append(URL.encodePathSegment(part));
+                    // Need to escapeURIComponent each part of the container path
+                    StringBuilder loc = new StringBuilder(PropertyUtil.getContextPath());
+                    loc.append("/list");
+                    for (String part : PropertyUtil.getContainerPath().split("/"))
+                    {
+                        if(!"".equals(part))
+                        {
+                            loc.append("/").append(URL.encodePathSegment(part));
+                        }
+                    }
+                    loc.append("/grid.view?listId=").append(_list.getListId());
+                    WindowUtil.setLocation(loc.toString());
                 }
-            }
-            loc.append("/grid.view?listId=").append(_list.getListId());
-            WindowUtil.setLocation(loc.toString());
+            });
         }
 
         @Override

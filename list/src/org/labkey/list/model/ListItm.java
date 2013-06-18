@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.UnexpectedException;
 
 public class ListItm implements Cloneable
@@ -45,11 +46,14 @@ public class ListItm implements Cloneable
         this.listId = listId;
     }
 
+    @Nullable
+    @Deprecated
     public Integer getObjectId()
     {
         return objectId;
     }
 
+    @Deprecated
     public void setObjectId(Integer objectId)
     {
         this.objectId = objectId;

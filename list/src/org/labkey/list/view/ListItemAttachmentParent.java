@@ -37,11 +37,6 @@ public class ListItemAttachmentParent implements AttachmentParent
         this(item.getEntityId(), c);
     }
 
-    public ListItemAttachmentParent(ListItm itm, Container c)
-    {
-        this(itm.getEntityId(), c);
-    }
-
     public ListItemAttachmentParent(String entityId, Container c)
     {
         _entityId = entityId;

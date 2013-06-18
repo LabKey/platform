@@ -91,12 +91,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         if (list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
             throw new ListImportException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
 
+        ListDefinition definition;
+
         try
         {
-            ListDefinition definition = ListService.get().createList(getContainer(), list.getName(), KeyType.valueOf(list.getKeyPropertyType()));
+            definition = ListService.get().createList(getContainer(), list.getName(), KeyType.valueOf(list.getKeyPropertyType()));
             update(definition, list);
-            definition.save(getUser());
-            return getList(definition.getListId());
+            definition.save(getUser(), false);
         }
         //NOTE: handling of constraint exceptions / duplicate names should be handled in ListDefinitionImpl, which will throw a ListImportException instead of SQLException
         //issue 12162
@@ -117,6 +118,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             throw new RuntimeException(x);
         }
+
+        int listId = definition.getListId();
+        return getList(listId);
     }
 
 
@@ -135,7 +139,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         if (listId == 0)
             return null;
 
-        ListDefinition def =  ListService.get().getList(getContainer(), listId); //ListManager.get().getList(getContainer(), id);
+        ListDefinition def =  ListService.get().getList(getContainer(), listId);
         if (def == null)
             return null;
 
@@ -242,7 +246,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
             throw new UnauthorizedException();
 
-        DbScope scope = ListManager.get().getSchema().getScope();
+        DbScope scope = ListManager.get().getListMetadataSchema().getScope();
 
         ListDef def = ListManager.get().getList(getContainer(), list.getListId());
         if (def.getDomainId() != orig.getDomainId() || def.getDomainId() != dd.getDomainId() || !orig.getDomainURI().equals(dd.getDomainURI()))
@@ -298,8 +302,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
 
         // schedules a scan (doesn't touch db)
-        ListManager.get().indexList(def);
-        return new ArrayList<String>(); // GWT error Collections.emptyList();
+//        ListManager.get().indexList(def);
+        return new ArrayList<>(); // GWT error Collections.emptyList();
     }
 
     private List<String> checkLegalNameConflicts(GWTDomain dd)

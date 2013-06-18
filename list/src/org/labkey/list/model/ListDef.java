@@ -16,8 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.labkey.api.data.CacheKey;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
@@ -29,23 +27,6 @@ import java.util.Date;
 
 public class ListDef extends Entity implements Cloneable
 {
-    public enum Column
-    {
-        rowId,
-        name,
-        domainId,
-    }
-
-    static public class Key extends CacheKey<ListDef, Column>
-    {
-        public Key(Container container)
-        {
-            super(ListManager.get().getTinfoList(), ListDef.class, container);
-        }
-    }
-
-    @Deprecated
-    private int _rowId;  // Unique within the server... will be removed after hard table conversion
     private int _listId; // Unique within this container
     private String _name;
     private int _domainId;
@@ -72,18 +53,6 @@ public class ListDef extends Entity implements Cloneable
     private String _eachItemTitleTemplate = null;
     private BodySetting _eachItemBodySetting = BodySetting.TextOnly;
     private String _eachItemBodyTemplate = null;
-
-    @Deprecated
-    public int getRowId()
-    {
-        return _rowId;
-    }
-
-    @Deprecated
-    public void setRowId(int rowId)
-    {
-        _rowId = rowId;
-    }
 
     public int getListId()
     {

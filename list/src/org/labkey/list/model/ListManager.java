@@ -16,11 +16,16 @@
 
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -37,6 +42,12 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.DomainURIFactory;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
@@ -44,6 +55,8 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -68,6 +81,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ListManager implements SearchService.DocumentProvider
 {
@@ -82,125 +96,117 @@ public class ListManager implements SearchService.DocumentProvider
         return INSTANCE;
     }
 
-    public DbSchema getSchema()
+    public DbSchema getListMetadataSchema()
     {
         return ExperimentService.get().getSchema();
     }
 
-    public TableInfo getTinfoList()
+    public TableInfo getListMetadataTable()
     {
-        return getSchema().getTable("list");
+        return getListMetadataSchema().getTable("list");
     }
 
     public ListDef[] getLists(Container container)
     {
-        ListDef.Key key = new ListDef.Key(container);
-        return key.select();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container.getEntityId());
+        return new TableSelector(getListMetadataTable(), filter, null).getArray(ListDef.class);
     }
 
 
     public ListDef getList(Container container, int listId)
     {
-        SimpleFilter filter = new PkFilter(getTinfoList(), new Object[]{container, listId});
+        SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
 
-        return new TableSelector(getTinfoList(), filter, null).getObject(ListDef.class);
+        return new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
     }
 
 
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
-    public ListDef insert(User user, ListDef def, Collection<Integer> preferredListIds) throws SQLException
+    public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds) throws SQLException
     {
         Container c = def.lookupContainer();
         if (null == c)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
-        TableInfo tinfo = getTinfoList();
+        TableInfo tinfo = getListMetadataTable();
         DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
+        ListDef ret = def.clone();
 
         for (Integer preferredListId : preferredListIds)
         {
             SimpleFilter filter = new SimpleFilter(tinfo.getColumn("Container").getFieldKey(), c).addCondition(tinfo.getColumn("ListId"), preferredListId);
 
             // Need to check proactively... unfortunately, calling insert and handling the constraint violation will cancel the current transaction
-            if (!new TableSelector(getTinfoList().getColumn("ListId"), filter, null).exists())
+            if (!new TableSelector(getListMetadataTable().getColumn("ListId"), filter, null).exists())
             {
                 def.setListId(preferredListId);
-                def = Table.insert(user, tinfo, def);
+                ret = Table.insert(user, tinfo, def);
                 sequence.ensureMinimum(preferredListId);  // Ensure sequence is at or above the preferred ID we just used
                 return def;
             }
         }
 
         // If none of the preferred IDs is available then use the next sequence value
-        def.setListId(sequence.next());
+        ret.setListId(sequence.next());
 
-        return Table.insert(user, tinfo, def);
+        return Table.insert(user, tinfo, ret);
     }
 
 
     // Note: callers must invoke indexer (can't invoke here since we may already be in a transaction)
-    ListDef update(User user, ListDef def) throws SQLException
+    ListDef update(User user, final ListDef def) throws SQLException
     {
         Container c = def.lookupContainer();
         if (null == c)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
-        DbScope scope = getSchema().getScope();
+        DbScope scope = getListMetadataSchema().getScope();
         ListDef ret;
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             ListDef old = getList(c, def.getListId());
-            ret = Table.update(user, getTinfoList(), def, new Object[]{c, def.getListId()});
+            ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
             if (!old.getName().equals(ret.getName()))
             {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<String>(
-                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(ret.getName()),
-                    QueryChangeListener.QueryProperty.Name,
-                    old.getName(),
-                    ret.getName()
+                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                        QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(ret.getName()),
+                        QueryChangeListener.QueryProperty.Name,
+                        old.getName(),
+                        ret.getName()
                 );
 
                 QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
 
         return ret;
     }
-
 
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     // Index all lists in this container
     public void enumerateDocuments(@Nullable SearchService.IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        if (ListDefinitionImpl.ontologyBased())
+        final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+
+        Runnable r = new Runnable()
         {
-            final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
-
-            Runnable r = new Runnable()
+            public void run()
             {
-                public void run()
+                Map<String, ListDefinition> lists = ListService.get().getLists(c);
+
+                for (ListDefinition list : lists.values())
                 {
-                    Map<String, ListDefinition> lists = ListService.get().getLists(c);
-
-                    for (ListDefinition list : lists.values())
-                    {
-                        indexList(task, list);
-                    }
+                    indexList(task, list);
                 }
-            };
+            }
+        };
 
-            task.addRunnable(r, SearchService.PRIORITY.group);
-        }
+        task.addRunnable(r, SearchService.PRIORITY.group);
     }
 
     public void indexList(final ListDefinition def)
@@ -275,9 +281,9 @@ public class ListManager implements SearchService.DocumentProvider
     {
         final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
 
-        if (getSchema().getScope().isTransactionActive())
+        if (getListMetadataSchema().getScope().isTransactionActive())
         {
-            getSchema().getScope().addCommitTask(new Runnable(){
+            getListMetadataSchema().getScope().addCommitTask(new Runnable(){
                 @Override
                 public void run()
                 {
@@ -428,7 +434,7 @@ public class ListManager implements SearchService.DocumentProvider
                     String entityId = (String)map.get(entityIdKey);
 
                     String documentId = getDocumentId(list, entityId);
-                    Map<String, Object> props = new HashMap<String, Object>();
+                    Map<String, Object> props = new HashMap<>();
                     props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
                     props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
 
@@ -448,7 +454,7 @@ public class ListManager implements SearchService.DocumentProvider
                         @Override
                         public void setLastIndexed(long ms, long modified)
                         {
-                            ListManager.get().setLastIndexed(list, pk, ms);
+                            ListManager.get().setItemLastIndexed(list, pk, ms);
                         }
                     };
 
@@ -480,112 +486,109 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list)
     {
-        if (ListDefinitionImpl.ontologyBased())
+        if (!list.getEntireListIndex())
         {
-            if (!list.getEntireListIndex())
+            // TODO: Shouldn't be necessary
+            deleteIndexedEntireListDoc(list);
+            return;
+        }
+
+        ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
+        String documentId = getDocumentId(list);
+
+        // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
+        boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
+
+        // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
+        if (!needToIndex && setting.indexItemData())
+            needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
+
+        if (!needToIndex)
+            return;
+
+        StringBuilder body = new StringBuilder();
+        Map<String, Object> props = new HashMap<>();
+
+        // Use standard title if that setting is chosen or template is null/whitespace
+        String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
+
+        props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+        props.put(SearchService.PROPERTY.title.toString(), title);
+
+        if (!StringUtils.isEmpty(list.getDescription()))
+            body.append(list.getDescription()).append("\n");
+
+        String sep = "";
+
+        if (setting.indexMetaData())
+        {
+            String comma = "";
+            for (DomainProperty property : list.getDomain().getProperties())
             {
-                // TODO: Shouldn't be necessary
-                deleteIndexedEntireListDoc(list);
-                return;
+                String n = StringUtils.trimToEmpty(property.getName());
+                String l = StringUtils.trimToEmpty(property.getLabel());
+                if (n.equals(l))
+                    l = "";
+                body.append(comma).append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+                comma = ",";
+                sep = "\n";
             }
+        }
 
-            ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
-            String documentId = getDocumentId(list);
+        if (setting.indexItemData())
+        {
+            TableInfo ti = list.getTable(User.getSearchUser());
+            FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+            StringBuilder data = new StringBuilder();
 
-            // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
-            boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
-
-            // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
-            if (!needToIndex && setting.indexItemData())
-                needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
-
-            if (!needToIndex)
-                return;
-
-            StringBuilder body = new StringBuilder();
-            Map<String, Object> props = new HashMap<String, Object>();
-
-            // Use standard title if that setting is chosen or template is null/whitespace
-            String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
-
-            props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-            props.put(SearchService.PROPERTY.title.toString(), title);
-
-            if (!StringUtils.isEmpty(list.getDescription()))
-                body.append(list.getDescription()).append("\n");
-
-            String sep = "";
-
-            if (setting.indexMetaData())
+            try
             {
-                String comma = "";
-                for (DomainProperty property : list.getDomain().getProperties())
-                {
-                    String n = StringUtils.trimToEmpty(property.getName());
-                    String l = StringUtils.trimToEmpty(property.getLabel());
-                    if (n.equals(l))
-                        l = "";
-                    body.append(comma).append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
-                    comma = ",";
-                    sep = "\n";
-                }
-            }
-
-            if (setting.indexItemData())
-            {
-                TableInfo ti = list.getTable(User.getSearchUser());
-                FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
-                StringBuilder data = new StringBuilder();
+                Results results = null;
 
                 try
                 {
-                    Results results = null;
+                    results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
 
-                    try
+                    while (results.next())
                     {
-                        results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
-
-                        while (results.next())
-                        {
-                            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                            data.append(template.eval(map)).append("\n");
-                        }
-                    }
-                    finally
-                    {
-                        if (null != results)
-                            results.close();
+                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                        data.append(template.eval(map)).append("\n");
                     }
                 }
-                catch (SQLException e)
+                finally
                 {
-                    throw new RuntimeSQLException(e);
+                    if (null != results)
+                        results.close();
                 }
-
-                body.append(sep);
-                body.append(data);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
             }
 
-            ActionURL url = list.urlShowData();
-            url.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-
-            SimpleDocumentResource r = new SimpleDocumentResource(
-                    new Path(documentId),
-                    documentId,
-                    list.getContainer().getId(),
-                    "text/plain",
-                    body.toString().getBytes(),
-                    url,
-                    props) {
-                @Override
-                public void setLastIndexed(long ms, long modified)
-                {
-                    ListManager.get().setLastIndexed(list, ms);
-                }
-            };
-
-            task.addResource(r, SearchService.PRIORITY.item);
+            body.append(sep);
+            body.append(data);
         }
+
+        ActionURL url = list.urlShowData();
+        url.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+
+        SimpleDocumentResource r = new SimpleDocumentResource(
+                new Path(documentId),
+                documentId,
+                list.getContainer().getId(),
+                "text/plain",
+                body.toString().getBytes(),
+                url,
+                props) {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ListManager.get().setLastIndexed(list, ms);
+            }
+        };
+
+        task.addResource(r, SearchService.PRIORITY.item);
     }
 
 
@@ -667,45 +670,173 @@ public class ListManager implements SearchService.DocumentProvider
     private boolean hasModifiedItems(ListDefinition list)
     {
         // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
-        SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM " +
-                ((ListDefinitionImpl) list).getIndexTable().getSelectName() +
-                " WHERE ListId = ? AND Modified > ?) THEN 1 ELSE 0 END", list.getRowId(), list.getLastIndexed());
+        SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM ");
+        sql.append(list.getTable(User.getSearchUser()).getSelectName());
+        sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
+        sql.append(" WHERE ListId = ? AND Container = ?");
+        sql.add(list.getListId());
+        sql.add(list.getContainer().getEntityId());
+        sql.append(")) THEN 1 ELSE 0 END");
 
-        return new SqlSelector(getSchema(), sql).getObject(Boolean.class);
+        return new SqlSelector(getListMetadataSchema(), sql).getObject(Boolean.class);
     }
-
 
     public void setLastIndexed(ListDefinition list, long ms)
     {
-        new SqlExecutor(getSchema()).execute("UPDATE " + getTinfoList().getSelectName() +
+        new SqlExecutor(getListMetadataSchema()).execute("UPDATE " + getListMetadataTable().getSelectName() +
                 " SET LastIndexed = ? WHERE ListId = ?", new Timestamp(ms), list.getListId());
     }
 
 
-    public void setLastIndexed(ListDefinition list, Object pk, long ms)
+    public void setItemLastIndexed(ListDefinition list, Object pk, long ms)
     {
-        TableInfo ti = ((ListDefinitionImpl) list).getIndexTable();
-        String keySelectName = ti.getColumn("Key").getSelectName();   // Reserved word on sql server
-        new SqlExecutor(getSchema()).execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE ListId = ? AND " +
-                keySelectName + " = ?", new Timestamp(ms), list.getRowId(), pk);
+        // TODO: Ensure the Search user is correct to use
+        TableInfo ti = list.getTable(User.getSearchUser());
+
+        // The "search user" might not have access
+        if (null != ti)
+        {
+            ColumnInfo keyColumn = ti.getColumn(list.getKeyName());
+            if (null != keyColumn)
+            {
+                String keySelectName = keyColumn.getSelectName();
+                new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE " +
+                        keySelectName + " = ?", new Timestamp(ms), pk);
+            }
+        }
     }
 
 
     public void indexDeleted() throws SQLException
     {
-        if (ListDefinitionImpl.ontologyBased())
-        {
-            SqlExecutor executor = new SqlExecutor(getSchema());
+        SqlExecutor executor = new SqlExecutor(getListMetadataSchema());
 
-            for (TableInfo ti : new TableInfo[]{
-                    getTinfoList(),
-                    OntologyListTable.getIndexTable(ListDefinition.KeyType.Integer),
-                    OntologyListTable.getIndexTable(ListDefinition.KeyType.Varchar)
-            })
-            {
-                executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
-            }
+        for (TableInfo ti : new TableInfo[]{
+                getListMetadataTable()
+        })
+        {
+            executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
         }
+    }
+
+    public void addAuditEvent(ListDefinitionImpl list, User user, String comment)
+    {
+        if (null != user)
+        {
+            AuditLogEvent event = new AuditLogEvent();
+
+            event.setCreatedBy(user);
+            event.setComment(comment);
+
+            Container c = list.getContainer();
+            event.setContainerId(c.getId());
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setKey1(list.getDomain().getTypeURI());
+
+            event.setEventType(LIST_AUDIT_EVENT);
+            event.setIntKey1(list.getListId());
+            event.setKey3(list.getName());
+
+            AuditLogService.get().addEvent(event);
+        }
+    }
+
+    /**
+     * Modeled after ListItemImpl.addAuditEvent
+     */
+    public void addAuditEvent(ListDefinitionImpl list, User user, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(user);
+        event.setComment(comment);
+
+        Container c = list.getContainer();
+        event.setContainerId(c.getId());
+        Container project = c.getProject();
+        if (null != project)
+            event.setProjectId(project.getId());
+
+        event.setKey1(list.getDomain().getTypeURI());
+        event.setEventType(ListManager.LIST_AUDIT_EVENT);
+        event.setIntKey1(list.getListId());
+        event.setKey2(entityId);
+        event.setKey3(list.getName());
+
+        final Map<String, Object> dataMap = new HashMap<>();
+        if (oldRecord != null) dataMap.put(ListAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+        if (newRecord != null) dataMap.put(ListAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
+
+        if (!dataMap.isEmpty())
+            AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(LIST_AUDIT_EVENT));
+        else
+            AuditLogService.get().addEvent(event);
+    }
+
+    public String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
+    {
+        String itemRecord = "";
+        TableInfo ti = list.getTable(user);
+
+        if (null != ti)
+        {
+            Map<String, String> recordChangedMap = new CaseInsensitiveHashMap<>();
+            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain());
+
+            // Match props to columns
+            for (Map.Entry<String, Object> entry : props.entrySet())
+            {
+                String baseKey = entry.getKey();
+
+                boolean isReserved = false;
+                for (String res : reserved)
+                {
+                    if (res.equalsIgnoreCase(baseKey))
+                    {
+                        isReserved = true;
+                        break;
+                    }
+                }
+
+                if (isReserved)
+                    continue;
+
+                ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
+                String value = ObjectUtils.toString(entry.getValue());
+                String key = null;
+
+                if (null != col)
+                {
+                    // Found the column
+                    key = col.getName(); // best good
+                }
+                else
+                {
+                    // See if there is a match in the domain properties
+                    for (DomainProperty dp : list.getDomain().getProperties())
+                    {
+                        if (dp.getName().equalsIgnoreCase(baseKey))
+                        {
+                            key = dp.getName(); // middle good
+                        }
+                    }
+
+                    // Try by name
+                    DomainProperty dp = list.getDomain().getPropertyByName(baseKey);
+                    if (null != dp)
+                        key = dp.getName();
+                }
+
+                if (null != key && null != value)
+                    recordChangedMap.put(key, value);
+            }
+
+            if (!recordChangedMap.isEmpty())
+                itemRecord = ListAuditViewFactory.encodeForDataMap(recordChangedMap, true);
+        }
+
+        return itemRecord;
     }
 
     public void upgradeListDefinitions(User user, double targetVersion)
@@ -719,36 +850,272 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
+    public boolean importListSchema(ListDefinition unsavedList, String typeColumn, List<Map<String, Object>> importMaps, User user, List<String> errors) throws Exception
+    {
+        if (!errors.isEmpty())
+            return false;
+
+        if (importMaps.isEmpty())
+            return true;
+
+        final Container container = unsavedList.getContainer();
+        final String typeURI = unsavedList.getDomain().getTypeURI();
+
+        DomainURIFactory factory = new DomainURIFactory() {
+            public String getDomainURI(String name)
+            {
+                return typeURI;
+            }
+        };
+
+        OntologyManager.ListImportPropertyDescriptors pds = OntologyManager.createPropertyDescriptors(factory, typeColumn, importMaps, errors, container, true);
+
+        if (!errors.isEmpty())
+            return false;
+
+        for (OntologyManager.ImportPropertyDescriptor ipd : pds.properties)
+        {
+            if (null == ipd.domainName || null == ipd.domainURI)
+                errors.add("List not specified for property: " + ipd.pd.getName());
+        }
+
+        if (!errors.isEmpty())
+            return false;
+
+        for (OntologyManager.ImportPropertyDescriptor ipd : pds.properties)
+        {
+            unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
+        }
+
+        for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
+        {
+            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), container), entry.getValue());
+        }
+
+        unsavedList.save(user);
+
+        return true;
+    }
+
     private void migrateToHardTable(User user, Container container)
     {
         Map<String, ListDefinition> definitionMap = ListService.get().getLists(container);
-        ListQuerySchema schema = new ListQuerySchema(ListQuerySchema.HDNAME, ListQuerySchema.HDDESCR, user, container, ListSchema.getInstance().getSchema());
+        ListQuerySchema schema = new ListQuerySchema(user, container);
+        boolean isAutoIncrement;
+
+        if (definitionMap.size() > 0)
+            ModuleUpgrader.getLogger().info("Migrating list data for [" + container.getPath() + "]");
 
         for (ListDefinition listDef : definitionMap.values())
         {
-            // First wrap the list definition to ensure the correct domain kind
-            ListDefinitionImpl hardListDef = new ListDefinitionImpl(container, listDef.getName(), listDef.getKeyType());
+            isAutoIncrement = listDef.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger;
 
-            TableInfo toTable = StorageProvisioner.createTableInfo(hardListDef.getDomain(), schema.getDbSchema());
-
+            // Get the source table info -- original Ontology based list
             @SuppressWarnings({"deprecation"})
             OntologyListTable fromTable = new OntologyListTable(schema, listDef);
 
-            // Build up a list of all the columns we need from the source table
-            List<FieldKey> selectFKs = new ArrayList<>();
-            for (ColumnInfo col : fromTable.getColumns())
-            {
-                // Include all the base columns
-                selectFKs.add(col.getFieldKey());
-            }
-            int x = 1;
-        }
-//        ListDef[] definitions = ListManager.get().getTinfoList();
+            // Wrap the list definition to ensure the correct domain kind
+            ListDefinitionImpl hardListDef = new ListDefinitionImpl(container, listDef.getName(), listDef.getKeyType());
 
-//        for (ListDef listDef : definitions)
-//        {
-//            // Create the hard table
-//            TableInfo toTable = StorageProvisioner.createTableInfo(listDef.getDom)
-//        }
+            Domain d = migrateDomainURI(listDef, hardListDef);
+
+            // Using the newly created domain get a fresh instance of the domain which will contain the migrated properties
+            Domain newDomain = PropertyService.get().getDomain(d.getTypeId());
+
+            DomainProperty PKProp = newDomain.getPropertyByName(listDef.getKeyName());
+
+            // add the PK if it does not already exist
+            if (null == PKProp)
+            {
+                DomainProperty p = newDomain.addProperty();
+
+                p.setName(listDef.getKeyName());
+                p.setType(PropertyService.get().getType(d.getContainer(), listDef.getKeyType() == ListDefinition.KeyType.Varchar ? PropertyType.STRING.getXmlName() : PropertyType.INTEGER.getXmlName()));
+                p.setPropertyURI(fromTable.getColumn(listDef.getKeyName()).getPropertyURI());
+                p.setRequired(true);
+            }
+
+            // create the hard table
+            TableInfo toTable = StorageProvisioner.createTableInfo(newDomain, schema.getDbSchema());
+
+            // Smoke test row count
+            long fromRowCount = new TableSelector(fromTable, Table.ALL_COLUMNS, null, null).getRowCount();
+
+            if (isAutoIncrement)
+                migrateBeginAutoIncrement(toTable, toTable.getSqlDialect());
+
+            migrateRows(fromTable, toTable, hardListDef, container);
+
+            if (isAutoIncrement)
+                migrateEndAutoIncrement(toTable, toTable.getSqlDialect(), listDef);
+
+            // Smoke test row count
+            assert fromRowCount == new TableSelector(toTable, Table.ALL_COLUMNS, null, null).getRowCount();
+
+            // Update Audit Records for the given list
+            migrateListAuditRecords(listDef, hardListDef, toTable.getSchema()); // Only needed for scope -- need true TableInfo
+
+            try
+            {
+                // Delete the list
+                OntologyListTable.deleteOntologyList(listDef, user);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+            catch (DomainNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private Domain migrateDomainURI(ListDefinition fromListDef, ListDefinitionImpl toListDef)
+    {
+        // Add a domain property for the key column as it was wrapped before
+        Domain d = fromListDef.getDomain();
+
+        // Update the Domain URI
+        TableInfo ddTable = OntologyManager.getTinfoDomainDescriptor();
+        ColumnInfo idCol = ddTable.getColumn(FieldKey.fromParts("domainid"));
+        ColumnInfo uriCol = ddTable.getColumn(FieldKey.fromParts("domainuri"));
+
+        SQLFragment update = new SQLFragment("UPDATE ").append(ddTable.getSelectName());
+        update.append(" SET ").append(uriCol.getSelectName()).append(" = ?");
+        update.add(toListDef.getDomain().getTypeURI());
+        update.append(" WHERE ").append(idCol.getSelectName()).append(" = ?");
+        update.add(d.getTypeId());
+
+        new SqlExecutor(ddTable.getSchema()).execute(update);
+
+        return d;
+    }
+
+    private void migrateBeginAutoIncrement(TableInfo table, SqlDialect dialect)
+    {
+        if (dialect.isSqlServer())
+        {
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(table.getSelectName()).append(" ON\n");
+            ModuleUpgrader.getLogger().info(check.toString());
+            new SqlExecutor(table.getSchema()).execute(check);
+        }
+    }
+
+    private void migrateEndAutoIncrement(TableInfo table, SqlDialect dialect, ListDefinition listDef)
+    {
+        // If auto-increment based need to reset the sequence counter on the DB
+        if (dialect.isPostgreSQL())
+        {
+            String src = table.getColumn(listDef.getKeyName()).getJdbcDefaultValue();
+            if (null != src)
+            {
+                String sequence = "";
+
+                int start = src.indexOf('\'');
+                int end = src.lastIndexOf('\'');
+
+                if (end > start)
+                {
+                    sequence = src.substring(start + 1, end);
+                    if (!sequence.toLowerCase().startsWith("list."))
+                        sequence = "list." + sequence;
+                }
+
+                SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                keyupdate.append(", coalesce((SELECT MAX(").append(listDef.getKeyName().toLowerCase()).append(")+1 FROM ").append(table.getSelectName());
+                keyupdate.append("), 1), false);");
+                ModuleUpgrader.getLogger().info("Post Key Update");
+                ModuleUpgrader.getLogger().info(keyupdate.toString());
+                new SqlExecutor(table.getSchema()).execute(keyupdate);
+            }
+            else
+            {
+                ModuleUpgrader.getLogger().error("List Column " + listDef.getName() + "." + listDef.getKeyName() + " does not have a correlated sequence.");
+            }
+        }
+        else if (dialect.isSqlServer())
+        {
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(table.getSelectName()).append(" OFF");
+            ModuleUpgrader.getLogger().info(check.toString());
+            new SqlExecutor(table.getSchema()).execute(check);
+        }
+    }
+
+    private void migrateRows(TableInfo fromTable, TableInfo toTable, ListDefinitionImpl toListDef, Container container)
+    {
+        // Build up a list of all the columns we need from the source table
+        List<FieldKey> selectFKs = new ArrayList<>();
+
+        for (ColumnInfo col : fromTable.getColumns())
+        {
+            // Include all the base columns
+            selectFKs.add(col.getFieldKey());
+        }
+        for (DomainProperty property : fromTable.getDomain().getProperties())
+        {
+            // Plus the custom properties
+            selectFKs.add(FieldKey.fromParts("Properties", property.getName()));
+        }
+
+        Map<FieldKey, ColumnInfo> fromColumns = QueryService.get().getColumns(fromTable, selectFKs);
+
+        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
+        for (ColumnInfo c : fromColumns.values())
+        {
+            if (null != c.getPropertyURI())
+                colMap.put(c.getPropertyURI(), c);
+            colMap.put(c.getName(), c);
+        }
+
+        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+
+        SQLFragment insertInto = new SQLFragment("INSERT INTO ").append(toTable.getSelectName());
+        insertInto.append(" (");
+        SQLFragment insertSelect = new SQLFragment("SELECT ");
+        String sep = "";
+
+        for (ColumnInfo to : toTable.getColumns())
+        {
+            ColumnInfo from = colMap.get(to.getPropertyURI());
+            if (null == from)
+                from = colMap.get(to.getName());
+            if (null == from)
+            {
+                String name = to.getName().toLowerCase();
+                if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                {
+                    from = colMap.get(name.substring(0,name.length()-(MvColumn.MV_INDICATOR_SUFFIX.length()+1)) + MvColumn.MV_INDICATOR_SUFFIX);
+                    if (null == from)
+                        continue;
+                }
+                else
+                {
+                    ModuleUpgrader.getLogger().error("Could not copy column: " + container.getId() + "-" + container.getPath() + " List: " + toListDef.getName() + to.getName());
+                    continue;
+                }
+            }
+
+            String legalName = to.getSelectName(); //schema.getDbSchema().getSqlDialect().makeLegalIdentifier(to.getSelectName());
+            insertInto.append(sep).append(legalName);
+            insertSelect.append(sep).append(from.getAlias());
+            sep = ", ";
+        }
+        insertInto.append(")\n");
+        insertInto.append(insertSelect);
+        insertInto.append("\n FROM (").append(fromSQL).append(") x");
+
+        ModuleUpgrader.getLogger().info(insertInto.toString());
+        new SqlExecutor(toTable.getSchema()).execute(insertInto);
+    }
+
+    private void migrateListAuditRecords(ListDefinition listDef, ListDefinitionImpl hardListDef, DbSchema schema)
+    {
+        SQLFragment audit = new SQLFragment("UPDATE ").append("audit.AuditLog");
+        audit.append(" SET ").append("Key1").append(" = ?");
+        audit.add(hardListDef.getDomain().getTypeURI());
+        audit.append(" WHERE ").append("Key1").append(" = ?");
+        audit.add(listDef.getDomain().getTypeURI());
+        new SqlExecutor(schema).execute(audit);
     }
 }

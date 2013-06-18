@@ -16,37 +16,21 @@
 
 package org.labkey.list.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.InputStreamAttachmentFile;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.Pump;
-import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -56,42 +40,35 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.controllers.ListController;
-import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import static org.labkey.api.util.GUID.makeGUID;
 
 public class ListDefinitionImpl implements ListDefinition
 {
     protected static final String NAMESPACE_PREFIX = "List";
-
-    public static boolean ontologyBased()
-    {
-        return true;
-    }
 
     static public ListDefinitionImpl of(ListDef def)
     {
@@ -129,12 +106,6 @@ public class ListDefinitionImpl implements ListDefinition
     public void setPreferredListIds(Collection<Integer> preferredListIds)
     {
         _preferredListIds = preferredListIds;
-    }
-
-    @Deprecated // Global auto-increment that's not long for this world... needed for item index tables
-    public int getRowId()
-    {
-        return _def.getRowId();
     }
 
     @Override
@@ -370,13 +341,31 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void save(User user) throws Exception
     {
+        save(user, true);
+    }
+
+    public void save(User user, boolean ensureKey) throws Exception
+    {
+        if (ensureKey)
+        {
+            assert getKeyName() != null : "Key not provided for List: " + getName();
+            assert getKeyType() != null : "Invalid Key Type for List: " + getName();
+        }
+
         try
         {
             ExperimentService.get().ensureTransaction();
 
+            if (ensureKey)
+                ensureKey();
+
             if (_new)
             {
+                // The domain kind cannot lookup the list definition if the domain has not been saved
+                ((ListDomainKind) _domain.getDomainKind()).setListDefinition(this);
+
                 _domain.save(user);
+
                 _def.setDomainId(_domain.getTypeId());
                 _def = ListManager.get().insert(user, _def, _preferredListIds);
                 _new = false;
@@ -385,7 +374,7 @@ public class ListDefinitionImpl implements ListDefinition
             {
                 _def = ListManager.get().update(user, _def);
                 _defOld = null;
-                addAuditEvent(user, String.format("The definition of the list %s was modified", _def.getName()));
+                ListManager.get().addAuditEvent(this, user, String.format("The definition of the list %s was modified", _def.getName()));
             }
 
             ExperimentService.get().commitTransaction();
@@ -405,6 +394,20 @@ public class ListDefinitionImpl implements ListDefinition
             ExperimentService.get().closeTransaction();
         }
         ListManager.get().indexList(_def);
+    }
+
+    private void ensureKey()
+    {
+        for (DomainProperty dp : _domain.getProperties())
+        {
+            if (dp.getName().equalsIgnoreCase(getKeyName()))
+                return;
+        }
+
+        DomainProperty prop = _domain.addProperty();
+        prop.setPropertyURI(_domain.getTypeURI() + "#" + getKeyName());
+        prop.setName(getKeyName());
+        prop.setType(PropertyService.get().getType(_domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
     }
 
     private void processSqlException(SQLException e) throws Exception
@@ -434,339 +437,121 @@ public class ListDefinitionImpl implements ListDefinition
         // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
         Object typedKey = getKeyType().convertKey(key);
 
-        ListItm itm = new TableSelector(getTable(user), new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), null).getObject(ListItm.class);
+        return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), user);
+    }
 
-        if (itm == null)
+    public ListItem getListItemForEntityId(String entityId, User user)
+    {
+        return getListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user);
+    }
+
+    private ListItem getListItem(SimpleFilter filter, User user)
+    {
+        TableInfo tbl = getTable(user);
+
+        if (null == tbl)
             return null;
 
-        return new ListItemImpl(this, itm);
-    }
+        Map<String, Object> row = null;
 
-    public ListItem getListItem(Object key)
-    {
-        // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
-        Object typedKey = getKeyType().convertKey(key);
-
-        if (ListDefinitionImpl.ontologyBased())
-        {
-            return getListItem(new SimpleFilter("Key", typedKey));
-        }
-        else
-        {
-            return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey));
-        }
-    }
-
-    public ListItem getListItemForEntityId(String entityId)
-    {
-        return getListItem(new SimpleFilter("EntityId", entityId));
-    }
-
-    private ListItem getListItem(SimpleFilter filter)
-    {
-        if (ListDefinitionImpl.ontologyBased())
-        {
-            filter.addCondition("ListId", getRowId());
-            ListItm itm = new TableSelector(getIndexTable(), filter, null).getObject(ListItm.class);
-
-            if (itm == null)
-            {
-                return null;
-            }
-
-            return new ListItemImpl(this, itm);
-        }
-
-        return null;
-    }
-
-    public void deleteListItems(User user, Collection keys) throws SQLException
-    {
         try
         {
-            ExperimentService.get().ensureTransaction();
-            for (Object key : keys)
-            {
-                ListItem item = getListItem(key);
-                if (item != null)
-                {
-                    item.delete(user, getContainer());
-                }
-            }
-            ExperimentService.get().commitTransaction();
+            row = new TableSelector(tbl, filter, null).getObject(Map.class);
         }
-        finally
+        catch (IllegalStateException e)
         {
-            ExperimentService.get().closeTransaction();
+            /* more than one row matches */
         }
+
+        if (row == null)
+            return null;
+
+        ListItm itm = new ListItm();
+
+        itm.setListId(getListId());
+        itm.setEntityId(row.get("EntityId").toString());
+        itm.setKey(row.get(getKeyName()));
+
+        ListItemImpl impl = new ListItemImpl(this, itm);
+        for (DomainProperty prop : getDomain().getProperties())
+        {
+            impl.setProperty(prop, row.get(prop.getName()));
+        }
+
+        return impl;
     }
 
     public void delete(User user) throws SQLException, DomainNotFoundException
     {
-        try
+        TableInfo table = getTable(user);
+        QueryUpdateService qus = table.getUpdateService();
+
+        if (null != qus)
         {
-            ExperimentService.get().ensureTransaction();
-
-            //new approach
-            SimpleFilter lstItemFilter = new SimpleFilter("ListId", getRowId());
-
-            //we make the assumption that big lists will have relatively few discussions and attachments
-            //we find and delete these in batches of 1000, then delete the rows below
-            int offset = 0;
-            int step = 1000;
-
-            while(1==1)
+            try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
             {
-                final List<String> entityIds = new ArrayList<String>();
-                final List<AttachmentParent> attachmentParents = new ArrayList<AttachmentParent>();
+                // Delete all the rows
+                Map<String, Object>[] rows = new TableSelector(table, Table.ALL_COLUMNS, null, null).getMapArray();
+                qus.deleteRows(user, getContainer(), Arrays.asList(rows), null);
 
-                TableSelector ts = new TableSelector(getIndexTable(), lstItemFilter, null);
-                ts.setMaxRows(step);
-                ts.setOffset(offset);
+                // Unindex all item docs and the entire list doc
+                ListManager.get().deleteIndexedList(this);
 
-                ts.forEach(new Selector.ForEachBlock<ResultSet>() {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        entityIds.add(rs.getString("EntityId"));
-                        attachmentParents.add(new ListItemAttachmentParent(rs.getString("EntityId"), getContainer()));
-                    }
-                });
+                //then delete the list itself
+                Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
+                Domain domain = getDomain();
+                domain.delete(user);
 
-                String[] distinctIDs = entityIds.toArray(new String[entityIds.size()]);
-                if (distinctIDs.length > 0)
-                    DiscussionService.get().deleteDiscussions(getContainer(), user, distinctIDs);
-
-                AttachmentParent[] distinctAttachments = attachmentParents.toArray(new AttachmentParent[attachmentParents.size()]);
-                if (distinctAttachments.length > 0)
-                    AttachmentService.get().deleteAttachments(distinctAttachments);
-
-                if (entityIds.size() < step)
-                {
-                    break;
-                }
-
-                offset += step;
+                transaction.commit();
             }
-
-            //delete all list items
-            ListItm[] itms = new TableSelector(getIndexTable(), lstItemFilter, null).getArray(ListItm.class);
-            Table.delete(getIndexTable(), lstItemFilter);
-
-            Set<String> ids = new HashSet<String>();
-
-            for (ListItm itm : itms)
+            catch (Exception e)
             {
-                if (itm.getObjectId() != null)
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+    @Override
+    public int insertListItems(User user, List<ListItem> listItems) throws IOException
+    {
+        BatchValidationException ve = new BatchValidationException();
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        for (ListItem item : listItems)
+        {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            Map<String, ObjectProperty> propertyMap = item.getProperties();
+
+            if (null != propertyMap)
+            {
+                for (String key : propertyMap.keySet())
                 {
-                    OntologyObject object = OntologyManager.getOntologyObject(itm.getObjectId());
-                    if (object != null)
+                    ObjectProperty prop = propertyMap.get(key);
+                    if (null != prop)
                     {
-                        ids.add(object.getObjectURI());
+                        row.put(prop.getName(), prop.getObjectValue());
                     }
                 }
+                rows.add(row);
             }
-            OntologyManager.deleteOntologyObjects(getContainer(), ids.toArray(new String[ids.size()]));
-
-            // Unindex all item docs and the entire list doc
-            ListManager.get().deleteIndexedList(this);
-
-            //then delete the list itself
-            Table.delete(ListManager.get().getTinfoList(), new Object[] {getContainer(), getListId()});
-            Domain domain = getDomain();
-            domain.delete(user);
-
-            ExperimentService.get().commitTransaction();
         }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
-        }
+
+        MapLoader loader = new MapLoader(rows);
+
+        // TODO: Find out the attachment directory?
+        return insertListItems(user, loader, ve, null, null);
     }
 
 
     @Override
     public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
-        return insertListItemsETL(user, loader, errors, attachmentDir, progress);
+        ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
+        return lqus.insertETL(loader, user, errors, attachmentDir, progress);
     }
 
-
-    public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
-    {
-        OntologyListQueryUpdateService lqus = (OntologyListQueryUpdateService)getTable(user).getUpdateService();
-
-        DataIteratorContext context = new DataIteratorContext(errors);
-        context.setFailFast(false);
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
-        DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, context);
-        DataIterator insertIt = null;
-        DataIterator attach = null;
-
-        if (context.getErrors().hasErrors())
-            return 0;                           // if there are errors dib may be returned as null (bug #17286)
-
-        try
-        {
-            ExperimentService.get().ensureTransaction();
-
-            insertIt = dib.getDataIterator(context);
-            attach = _AttachmentImportDataIterator_wrap(insertIt, errors, user, attachmentDir);
-            Pump p = new Pump(attach, context);
-            p.run();
-            int inserted = p.getRowCount();
-
-            if (!errors.hasErrors())
-            {
-                if (inserted > 0)
-                    addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
-                ExperimentService.get().commitTransaction();
-                ListManager.get().indexList(_def);
-                return inserted;
-            }
-            return 0;
-        }
-        finally
-        {
-            DataIteratorUtil.closeQuietly(attach);
-            DataIteratorUtil.closeQuietly(insertIt);
-            ExperimentService.get().closeTransaction();
-        }
-    }
-
-
-    private static class _AttachmentUploadHelper
-    {
-        _AttachmentUploadHelper(int i, DomainProperty dp)
-        {
-            index=i;
-            domainProperty = dp;
-        }
-        final int index;
-        final DomainProperty domainProperty;
-        final FileNameUniquifier uniquifier = new FileNameUniquifier();
-    }
-
-
-    private DataIterator _AttachmentImportDataIterator_wrap(DataIterator it, BatchValidationException errors, User user, VirtualFile attachmentDir)
-    {
-        // find attachment columns
-        int entityIdIndex = 0;
-        final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
-        for (int c=1 ; c<=it.getColumnCount() ; c++)
-        {
-            ColumnInfo col = it.getColumnInfo(c);
-            if (StringUtils.equalsIgnoreCase("entityid",col.getName()))
-                entityIdIndex = c;
-            // Don't seem to have attachment information in the ColumnInfo 8(, so we need to lookup the DomainProperty
-            // UNDONE: PropertyURI is not propagated, need to use name
-            DomainProperty domainProperty = getDomain().getPropertyByName(col.getName());
-            if (null==domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
-                continue;
-            attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
-        }
-        if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
-            return new _AttachmentImportDataIterator(it, errors, user, attachmentDir, entityIdIndex, attachmentColumns);
-        else
-            return it;
-    }
-
-
-    class _AttachmentImportDataIterator extends WrapperDataIterator
-    {
-        final VirtualFile attachmentDir;
-        final BatchValidationException errors;
-        final int entityIdIndex;
-        final ArrayList<_AttachmentUploadHelper> attachmentColumns;
-        final User user;
-
-        _AttachmentImportDataIterator(DataIterator insertIt, BatchValidationException errors,
-                User user,
-                VirtualFile attachmentDir,
-                int entityIdIndex,
-                ArrayList<_AttachmentUploadHelper> attachmentColumns)
-        {
-            super(insertIt);
-            this.attachmentDir = attachmentDir;
-            this.errors = errors;
-            this.entityIdIndex = entityIdIndex;
-            this.attachmentColumns = attachmentColumns;
-            this.user = user;
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            try
-            {
-                boolean ret = super.next();
-                if (!ret)
-                    return false;
-                ArrayList<AttachmentFile> attachmentFiles = null;
-                for (_AttachmentUploadHelper p : attachmentColumns)
-                {
-                    Object attachmentValue = get(p.index);
-                    String filename = null;
-                    if (attachmentValue instanceof String)
-                        filename = (String)attachmentValue;
-                    else if (attachmentValue instanceof File)
-                        filename = ((File)attachmentValue).getName();
-                    if (null == filename)
-                        continue;
-                    if (null == attachmentDir)
-                    {
-                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
-                        return false;
-                    }
-                    InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
-                    AttachmentFile attachmentFile = new InputStreamAttachmentFile(aIS, filename);
-                    attachmentFile.setFilename(filename);
-                    if (null == attachmentFiles)
-                        attachmentFiles = new ArrayList<>();
-                    attachmentFiles.add(attachmentFile);
-                }
-                if (null != attachmentFiles && !attachmentFiles.isEmpty())
-                {
-                    String entityId = String.valueOf(get(entityIdIndex));
-                    AttachmentService.get().addAttachments(new ListItemAttachmentParent(entityId, getContainer()), attachmentFiles, user);
-                }
-                return ret;
-            }
-            catch (AttachmentService.DuplicateFilenameException e)
-            {
-                errors.addRowError(new ValidationException(e.getMessage()));
-                return false;
-            }
-            catch (Exception x)
-            {
-                throw UnexpectedException.wrap(x);
-            }
-        }
-    }
-
-
-    private void addAuditEvent(User user, String comment)
-    {
-        if (user != null)
-        {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setComment(comment);
-
-            Container c = getContainer();
-            event.setContainerId(c.getId());
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setKey1(getDomain().getTypeURI());
-
-            event.setEventType(ListManager.LIST_AUDIT_EVENT);
-            event.setIntKey1(getListId());
-            event.setKey3(getName());
-
-            AuditLogService.get().addEvent(event);
-        }
-    }
 
     public String getDescription()
     {
@@ -810,18 +595,9 @@ public class ListDefinitionImpl implements ListDefinition
     /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
-        if (ontologyBased())
-        {
-            OntologyListTable ret = new OntologyListTable(new ListQuerySchema(user, getContainer()), this);
-            ret.afterConstruct();
-            return ret;
-        }
-        else
-        {
-            ListTable ret = new ListTable(new ListQuerySchema(ListQuerySchema.HDNAME, ListQuerySchema.HDDESCR, user, getContainer(), ListSchema.getInstance().getSchema()), this);
-            ret.afterConstruct();
-            return ret;
-        }
+        ListTable ret = new ListTable(new ListQuerySchema(user, getContainer()), this);
+        ret.afterConstruct();
+        return ret;
     }
 
     public ActionURL urlShowDefinition()
@@ -834,16 +610,16 @@ public class ListDefinitionImpl implements ListDefinition
         return urlFor(ListController.GridAction.class);
     }
 
-    public ActionURL urlUpdate(@Nullable Object pk, @Nullable URLHelper returnUrl)
+    public ActionURL urlUpdate(User user, @Nullable Object pk, @Nullable URLHelper cancelUrl)
     {
-        ActionURL url = urlFor(ListController.UpdateAction.class);
+        ActionURL url = QueryService.get().urlFor(user, getContainer(), QueryAction.updateQueryRow, ListQuerySchema.NAME, getName());
 
         // Can be null if caller will be filling in pk (e.g., grid edit column)
         if (null != pk)
             url.addParameter("pk", pk.toString());
 
-        if (returnUrl != null)
-            url.addParameter(ActionURL.Param.returnUrl, returnUrl.getLocalURIString());
+        if (cancelUrl != null)
+            url.addParameter(QueryParam.srcURL, cancelUrl.getLocalURIString());
 
         return url;
     }
@@ -884,20 +660,6 @@ public class ListDefinitionImpl implements ListDefinition
         }
         return _def;
 
-    }
-
-    public TableInfo getIndexTable()
-    {
-        switch (getKeyType())
-        {
-            case Integer:
-            case AutoIncrementInteger:
-                return OntologyManager.getTinfoIndexInteger();
-            case Varchar:
-                return OntologyManager.getTinfoIndexVarchar();
-            default:
-                throw new IllegalStateException();
-        }
     }
 
     @Override

@@ -45,12 +45,11 @@ import java.util.Set;
  */
 public abstract class ListDomainKind extends AbstractDomainKind
 {
-    public static String KEY_FIELD = "Key";
-
     /*
      * the columns common to all lists
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+    private ListDefinitionImpl _list;
 
     static
     {
@@ -71,10 +70,15 @@ public abstract class ListDomainKind extends AbstractDomainKind
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
     }
 
+    public void setListDefinition(ListDefinitionImpl list)
+    {
+        _list = list;
+    }
+
     @Override
     public String getTypeLabel(Domain domain)
     {
-        return "HD List '" + domain.getName() + "'";
+        return "List '" + domain.getName() + "'";
     }
 
     @Override
@@ -122,17 +126,20 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
     {
         ListDefinition list = ListService.get().getList(domain);
+        if (null == list)
+            list = _list;
+
         if (null != list)
         {
             if (pd.getName().equalsIgnoreCase(list.getKeyName()))
             {
                 PropertyStorageSpec key = this.getKeyProperty(list);
                 assert key.isPrimaryKey();
+                _list = null;
                 return key;
             }
-            return new PropertyStorageSpec(pd);
         }
-        return null;
+        return super.getPropertySpec(pd, domain);
     }
 
     abstract PropertyStorageSpec getKeyProperty(ListDefinition list);
@@ -140,7 +147,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed"); // ObjectId?
+        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed");
     }
 
     @Override
@@ -165,33 +172,31 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)
     {
         String type;
-        if (ListDefinitionImpl.ontologyBased())
+        switch (keyType)
         {
-            type = ListDefinitionImpl.NAMESPACE_PREFIX;
-        }
-        else
-        {
-            switch (keyType)
-            {
-                case Integer:
-                case AutoIncrementInteger:
-                    type = IntegerListDomainKind.NAMESPACE_PREFIX;
-                    break;
-                case Varchar:
-                    type = VarcharListDomainKind.NAMESPACE_PREFIX;
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
+            case Integer:
+            case AutoIncrementInteger:
+                type = IntegerListDomainKind.NAMESPACE_PREFIX;
+                break;
+            case Varchar:
+                type = VarcharListDomainKind.NAMESPACE_PREFIX;
+                break;
+            default:
+                throw new IllegalStateException();
         }
 
-        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + type + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
-        //bug 13131.  uniqueify the lsid for situations where a preexisting list was renamed
+        StringBuilder typeURI = new StringBuilder("urn:lsid:")
+               .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
+               .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
+               .append(PageFlowUtil.encode(name));
+
+        // 13131: uniqueify the lsid for situations where a preexisting list was renamed
         int i = 1;
-        String uniqueURI = typeURI;
+        String sTypeURI = typeURI.toString();
+        String uniqueURI = sTypeURI;
         while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
         {
-            uniqueURI = typeURI + '-' + (i++);
+            uniqueURI = sTypeURI + '-' + (i++);
         }
         return new Lsid(uniqueURI);
     }

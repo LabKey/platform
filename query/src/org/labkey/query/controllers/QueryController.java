@@ -1869,7 +1869,7 @@ public class QueryController extends SpringActionController
                 else
                     stringValues = new String[]{id};
 
-                Map<String, Object> rowKeyValues = new HashMap<>();
+                Map<String, Object> rowKeyValues = new CaseInsensitiveHashMap<>();
                 for (int idx = 0; idx < numPks; ++idx)
                 {
                     ColumnInfo keyColumn = pks.get(idx);

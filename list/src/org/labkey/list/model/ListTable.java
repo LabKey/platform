@@ -21,10 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -32,18 +32,20 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -65,86 +67,117 @@ import java.util.Set;
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     private final ListDefinition _list;
-    private final List<FieldKey> _defaultVisibleColumns;
 
     public ListTable(ListQuerySchema schema, ListDefinition listDef)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()));
+        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()), schema);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
         List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
+
+        assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
+
+        ColumnInfo colKey = null;
 
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
             String name = baseColumn.getName();
             if (listDef.getKeyName().equalsIgnoreCase(name))
             {
-                ColumnInfo column = wrapColumn(baseColumn);
-                column.setKeyField(true);
-                column.setInputType("text");
-                column.setInputLength(-1);
-                column.setWidth("180");
+                colKey = wrapColumn(baseColumn);
+                colKey.setName(_list.getKeyName());
+                colKey.setKeyField(true);
+                colKey.setNullable(false); // Must assure this as it can be set incorrectly via StorageProvisioner
+                colKey.setInputType("text");
+                colKey.setInputLength(-1);
+                colKey.setWidth("180");
 
                 // TODO : Can this somehow be asked of the Domain/Kind?
                 if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
                 {
-                    column.setAutoIncrement(true);
-                    column.setUserEditable(false);
-                    column.setHidden(true);
+                    colKey.setAutoIncrement(true);
+                    colKey.setUserEditable(false);
+                    colKey.setHidden(true);
                 }
 
                 // TODO: column.setFK()?
 
-                addColumn(column);
-                defaultColumnsCandidates.add(column);
-
-                boolean auto = (null == listDef.getTitleColumn());
-                setTitleColumn(findTitleColumn(listDef, column), auto);
+                addColumn(colKey);
+                defaultColumnsCandidates.add(colKey);
             }
             else if (name.equalsIgnoreCase("EntityId"))
             {
-                ColumnInfo column = wrapColumn(baseColumn);
-                column.setHidden(true);
-                addColumn(column);
+                continue; // processed at the end
             }
             else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
                     name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
                     )
             {
-                ColumnInfo c = wrapColumn(baseColumn);
+                ColumnInfo c = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
                 c.setUserEditable(false);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
-                addColumn(c);
             }
             else if (name.equalsIgnoreCase("LastIndexed"))
             {
-                ColumnInfo column = wrapColumn(baseColumn);
+                ColumnInfo column = addWrapColumn(baseColumn);
                 column.setHidden(true);
                 column.setUserEditable(false);
-                addColumn(column);
             }
             else
             {
-                ColumnInfo column = wrapColumn(baseColumn);
-                safeAddColumn(column);
-                defaultColumnsCandidates.add(column);
+                assert baseColumn.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
 
-                for (DomainProperty property : listDef.getDomain().getProperties())
+                ColumnInfo col = wrapColumn(baseColumn);
+
+                ColumnInfo ret = new AliasedColumn(this, col.getName(), col);
+                // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
+                // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
+                if (col.isKeyField() && getColumnNameSet().contains(col.getName()))
                 {
-                    if (property.getName().equalsIgnoreCase(column.getName()))
+                    ret.setKeyField(false);
+                }
+
+                col = ret;
+
+                // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                if (baseColumn.isHidden())
+                    col.setHidden(true);
+
+                String propertyURI = col.getPropertyURI();
+                if (null != propertyURI)
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
+                    if (null != pd)
                     {
-//                        if (property.isMvEnabled())
+                        col.setName(pd.getName());
+                        col.setLabel(pd.getLabel());
+
+                        if (null != pd.getLookupQuery())
+                            col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+
+//                        if (pd.isMvEnabled() && null != entityId)
 //                        {
-//                            MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
+//                            MVDisplayColumnFactory.addMvColumns(this, col, getDomain().getPropertyByURI(propertyURI), entityId, _list.getContainer(), _userSchema.getUser());
 //                        }
 
-                        if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+                        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
-                            column.setDisplayColumnFactory(new DisplayColumnFactory()
+                            col.setDisplayColumnFactory(new DisplayColumnFactory() {
+                                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                                {
+                                    DataColumn dc = new DataColumn(colInfo);
+                                    dc.setPreserveNewlines(true);
+                                    return dc;
+                                }
+                            });
+                        }
+                        else if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                        {
+                            col.setDisplayColumnFactory(new DisplayColumnFactory()
                             {
                                 @Override
                                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -152,44 +185,31 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                                     return new AttachmentDisplayColumn(colInfo);
                                 }
                             });
-                            column.setInputType("file");
+                            col.setInputType("file");
                         }
                     }
                 }
+
+                addColumn(col);
+                defaultColumnsCandidates.add(col);
             }
         }
 
-        // TODO: Possibly iterate over using getRealTable().getColumns()
-//        for (DomainProperty property : listDef.getDomain().getProperties())
-//        {
-//            if (property.getName().equalsIgnoreCase(colKey.getName()))
-//            {
-//                colKey.setExtraAttributesFrom(column);
-//                continue;
-//            }
-//
-//            column.setParentIsObjectId(true);
-//            column.setReadOnly(false);
-//            column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
-//            safeAddColumn(column);
-//            defaultColumnsCandidates.add(column);
-//
-//            if (property.isMvEnabled())
-//            {
-//                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
-//            }
-//
-//            // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
-//            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-//            {
-//                column.setDisplayColumnFactory(new DisplayColumnFactory() {
-//                    public DisplayColumn createRenderer(final ColumnInfo colInfo)
-//                    {
-//                        return new AttachmentDisplayColumn(colInfo);
-//                    }
-//                });
-//            }
-//        }
+//        assert null != colKey : "The Primary Key for List: " + _list.getName() + " was not set correctly.";
+
+        if (null != colKey)
+        {
+            boolean auto = (null == listDef.getTitleColumn());
+            setTitleColumn(findTitleColumn(listDef, colKey), auto);
+        }
+
+        // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
+        // Do this late so the column doesn't get selected as title column, etc.
+        ColumnInfo entityId = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("EntityId")));
+        entityId.setHidden(true);
+        entityId.setUserEditable(false);
+        entityId.setShownInInsertView(false);
+        entityId.setShownInUpdateView(false);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -208,13 +228,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
     }
-
-    @Override
-    public List<FieldKey> getDefaultVisibleColumns()
-    {
-        return _defaultVisibleColumns;
-    }
-
 
     @Override
     public Domain getDomain()
@@ -272,7 +285,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new ListQueryUpdateService(this, this.getRealTable(), getList());
+        return new ListQueryUpdateService(this, this.getRealTable(), _list);
     }
 
     @Override
@@ -319,12 +332,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
-        if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase(ListDomainKind.KEY_FIELD))
-        {
-            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
-            m.put(ListDomainKind.KEY_FIELD, _list.getKeyName());
-            return m;
-        }
         return null;
     }
 
@@ -342,9 +349,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
         data = new _DataIteratorBuilder(data, context);
-        DataIteratorBuilder ins;
-        ins = TableInsertDataIterator.create(data, this, _list.getContainer(), context);
-        return ins;
+        return TableInsertDataIterator.create(data, this, _list.getContainer(), context);
     }
 
 
@@ -371,7 +376,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
             int keyColumnInput = 0;
             int keyColumnOutput = 0;
-            for (int c=1 ; c<=input.getColumnCount() ; c++)
+
+            for (int c = 1; c <= input.getColumnCount(); c++)
             {
                 ColumnInfo col = input.getColumnInfo(c);
                 if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
@@ -380,31 +386,22 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
                         continue;
                 }
-// TODO lists allow a column called "container"! need to start disallowing this!
-//                if (StringUtils.equalsIgnoreCase("container", col.getName()))
-//                    continue;
-                if (StringUtils.equalsIgnoreCase("listid", col.getName()))
-                    continue;
+
                 int out = it.addColumn(c);
-                if (keyColumnInput==c)
+                if (keyColumnInput == c)
                     keyColumnOutput = out;
             }
 
-// handled as constant in StatementUtils.createStatement()
-//            ColumnInfo containerCol = new ColumnInfo("container", JdbcType.GUID);
-//            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
+            DataIterator ret = it;
 
-            ColumnInfo listIdCol = new ColumnInfo("listid", JdbcType.INTEGER);
-            it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getRowId()));
-
-            DataIterator ret = LoggingDataIterator.wrap(it);
-
+            // Checking within this batch we're not getting duplicates
             if (0 != keyColumnOutput && (context.getInsertOption().batch || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
             {
-                ValidatorIterator vi = new ValidatorIterator(ret, context, _list.getContainer(), null);
+                ValidatorIterator vi = new ValidatorIterator(input, context, _list.getContainer(), null);
                 vi.addUniqueValidator(keyColumnOutput, DbSchema.get("exp").getSqlDialect().isCaseSensitive());
                 ret = vi;
             }
+
             return ret;
         }
     }

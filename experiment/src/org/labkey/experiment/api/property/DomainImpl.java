@@ -71,11 +71,11 @@ public class DomainImpl implements Domain
     {
         _dd = dd;
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
-        _properties = new ArrayList<DomainPropertyImpl>(pds.length);
+        _properties = new ArrayList<>(pds.length);
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
         for (PropertyDescriptor pd : pds)
         {
-            List<ConditionalFormat> formats = new ArrayList<ConditionalFormat>();
+            List<ConditionalFormat> formats = new ArrayList<>();
             for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
             {
                 if (format.getPropertyId() == pd.getPropertyId())
@@ -95,7 +95,7 @@ public class DomainImpl implements Domain
         _dd.setProject(container.getProject());
         _dd.setDomainURI(uri);
         _dd.setName(name);
-        _properties = new ArrayList<DomainPropertyImpl>();
+        _properties = new ArrayList<>();
     }
 
     public Container getContainer()
@@ -166,7 +166,7 @@ public class DomainImpl implements Domain
     public Container[] getInstanceContainers(User user, Class<? extends Permission> perm)
     {
         Container[] all = getInstanceContainers();
-        List<Container> ret = new ArrayList<Container>();
+        List<Container> ret = new ArrayList<>();
         for (Container c : all)
         {
             if (c.hasPermission(user, perm))
@@ -235,7 +235,7 @@ public class DomainImpl implements Domain
         {
             ExperimentService.get().ensureTransaction();
 
-            List<DomainProperty> newlyRequiredProps = new ArrayList<DomainProperty>();
+            List<DomainProperty> newlyRequiredProps = new ArrayList<>();
             if (isNew())
             {
                 _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
@@ -366,6 +366,17 @@ public class DomainImpl implements Domain
     {
         List<DomainProperty> properties = new ArrayList<DomainProperty>(_properties);
         return ImportAliasable.Helper.createImportMap(properties, includeMVIndicators);
+    }
+
+    public DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd)
+    {
+        assert pd.getPropertyId() == 0;
+        assert pd.getContainer().equals(getContainer());
+
+        // Warning: Shallow copy
+        DomainPropertyImpl ret = new DomainPropertyImpl(this, pd.clone());
+        _properties.add(ret);
+        return ret;
     }
 
     public DomainProperty addProperty()

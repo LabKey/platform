@@ -53,7 +53,7 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
-        QuerySettings settings = getSettings();
+        getSettings();
         disableContainerFilterSelection();
     }
 

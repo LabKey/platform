@@ -16,6 +16,7 @@
 
 package org.labkey.list;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -29,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.list.controllers.ListController;
@@ -40,6 +42,7 @@ import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListQuerySchema;
+import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.VarcharListDomainKind;
 import org.labkey.list.view.ListWebPart;
@@ -48,6 +51,7 @@ import org.labkey.list.view.SingleListWebPartFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public class ListModule extends DefaultModule
 {
@@ -59,7 +63,7 @@ public class ListModule extends DefaultModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 13.11;
+        return 13.12;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -81,7 +85,10 @@ public class ListModule extends DefaultModule
         addController("list", ListController.class);
         ListService.setInstance(new ListServiceImpl());
         ListQuerySchema.register();
+
+        // NOTE: This domain kind is only maintained for purposes of migrating lists to hard tables.
         PropertyService.get().registerDomainKind(new ListDomainType());
+
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
     }
@@ -133,20 +140,29 @@ public class ListModule extends DefaultModule
         }
         return null;
     }
-//
-//    @NotNull
-//    @Override
-//    public Set<String> getSchemaNames()
-//    {
-//        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
-//    }
+
+    @NotNull
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new ListUpgradeCode();
+    }
 
     public static class ListUpgradeCode implements UpgradeCode
     {
         /** called at 13.11->13.12 */
         public void upgradeListDomains(final ModuleContext moduleContext)
         {
-            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser(), 13.11);
+            if (moduleContext.isNewInstall())
+                return;
+
+            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser(), 13.12);
         }
     }
 }

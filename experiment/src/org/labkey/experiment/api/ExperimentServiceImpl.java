@@ -1736,7 +1736,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             for (ListDefinition list : ListService.get().getLists(c).values())
             {
-                list.delete(null);
+                list.delete(user);
             }
 
             OntologyManager.deleteAllObjects(c, user);

@@ -19,9 +19,12 @@ package org.labkey.list.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
 
@@ -65,9 +68,9 @@ public class ListServiceImpl implements ListService.Interface
 
     public ListDefinition getList(Domain domain)
     {
-        ListDef.Key key = new ListDef.Key(domain.getContainer());
-        key.addCondition(ListDef.Column.domainId, domain.getTypeId());
-        return ListDefinitionImpl.of(key.selectObject());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("domainid"), domain.getTypeId());
+        ListDef def = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDef.class);
+        return ListDefinitionImpl.of(def);
     }
 
     public ActionURL getManageListsURL(Container container)

@@ -62,6 +62,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return new DomainImpl(dd);
     }
 
+    @Nullable
     public Domain getDomain(int domainId)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId);
