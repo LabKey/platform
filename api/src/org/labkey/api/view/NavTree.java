@@ -427,16 +427,6 @@ public class NavTree implements Collapsible
         _disabled = disabled;
     }
 
-    public String getDisplay()
-    {
-        return _display;
-    }
-
-    public void setDisplay(String display)
-    {
-        _display = display;
-    }
-
     /** Get the description text for this item.  Menu items will render this as a tooltip. */
     public String getDescription()
     {
@@ -506,8 +496,6 @@ public class NavTree implements Collapsible
             o.put("hrefTarget", getTarget());
         if (null != getScript())
             o.put("handler", "function(){" + getScript() + "}");
-        if (null != getDisplay())
-            o.put("display", getDisplay());
         if (recursive && hasChildren())
         {
             JSONArray a = new JSONArray();

@@ -707,18 +707,27 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 {
                                     String linkHref = current.getHref();
                                     String linkText = current.getText();
+                                    String script = current.getScript();
 
-                                    if (null != linkHref && 0 < linkHref.length())
+                                    if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
+                                    {
+                                        out.print("<span class=\"labkey-wp-icon-button-inactive\">");
+                                    }
+                                    else
                                     {
                                         out.print("<span class=\"labkey-wp-icon-button-active\">");
+
+                                        if (StringUtils.isEmpty(linkHref))
+                                            linkHref = "javascript:void(0);";
+
                                         out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
                                         if (current.isNoFollow())
                                             out.print(" rel=\"nofollow\"");
+                                        if (StringUtils.isNotEmpty(script))
+                                            out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
                                         out.print(">");
                                     }
-                                    else
-                                        out.print("<span class=\"labkey-wp-icon-button-inactive\">");
-                                    
+
                                     if (null != current.getImageSrc())
                                     {
                                         if (current.getImageWidth() != null && current.getImageHeight() != null)
@@ -727,8 +736,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                             out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
                                     }
                                     else
+                                    {
                                         out.print(PageFlowUtil.filter(linkText));
-                                    if (null != linkHref && 0 < linkHref.length())
+                                    }
+
+                                    if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
                                         out.print("</a>");
                                     out.print("</span>");
                                 }
