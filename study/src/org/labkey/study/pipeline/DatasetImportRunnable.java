@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -35,6 +36,7 @@ import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -149,67 +151,76 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
-                loader = DataLoaderService.get().createLoader(_tsvName, null, _root.getInputStream(_tsvName), true, _job.getContainer(), TabLoader.TSV_FILE_TYPE);
-                if (useCutoff && loader instanceof TabLoader)
+                InputStream is = _root.getInputStream(_tsvName);
+
+                try
                 {
-                    // UNDONE: shouldn't be tied to TabLoader
-                    ((TabLoader)loader).setMapFilter(new Filter<Map<String, Object>>()
+                    loader = DataLoaderService.get().createLoader(_tsvName, null, is, true, _job.getContainer(), TabLoader.TSV_FILE_TYPE);
+                    if (useCutoff && loader instanceof TabLoader)
                     {
-                        public boolean accept(Map<String, Object> row)
+                        // UNDONE: shouldn't be tied to TabLoader
+                        ((TabLoader)loader).setMapFilter(new Filter<Map<String, Object>>()
                         {
-                            Object o = row.get(visitDatePropertyURI);
+                            public boolean accept(Map<String, Object> row)
+                            {
+                                Object o = row.get(visitDatePropertyURI);
 
-                            // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
-                            if (!(o instanceof Date))
-                                return true;
+                                // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
+                                if (!(o instanceof Date))
+                                    return true;
 
-                            // Allow rows after the cutoff date.
-                            if (((Date)o).compareTo(_replaceCutoff) > 0)
-                                return true;
+                                // Allow rows after the cutoff date.
+                                if (((Date)o).compareTo(_replaceCutoff) > 0)
+                                    return true;
 
-                            skippedRowCount[0]++;
-                            return false;
-                        }
-                    });
+                                skippedRowCount[0]++;
+                                return false;
+                            }
+                        });
+                    }
+
+                    assert cpuImport.start();
+                    _job.info(_datasetDefinition.getLabel() + ": Starting import");
+                    List<String> imported = StudyManager.getInstance().importDatasetData(
+                            _study,
+                            _job.getUser(),
+                            _datasetDefinition,
+                            loader,
+                            _columnMap,
+                            errors,
+                            false, //Set to TRUE if/when MERGE is implemented
+                            //Set to TRUE if MERGEing
+                            defaultQCState,
+                            _job.getLogger()
+                    );
+                    if (errors.size() == 0)
+                    {
+                        assert cpuCommit.start();
+                        scope.commitTransaction();
+                        String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
+                        if (useCutoff && skippedRowCount[0] > 0)
+                            msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                        _job.info(msg);
+                        assert cpuCommit.stop();
+                    }
+
+                    for (String err : errors)
+                        _job.error(_tsvName + " -- " + err);
+
+                    if (_deleteAfterImport)
+                    {
+                        boolean success = _root.delete(_tsvName);
+                        if (success)
+                            _job.info("Deleted file " + _tsvName);
+                        else
+                            _job.error("Could not delete file " + _tsvName);
+                    }
+                    assert cpuImport.stop();
                 }
-
-                assert cpuImport.start();
-                _job.info(_datasetDefinition.getLabel() + ": Starting import");
-                List<String> imported = StudyManager.getInstance().importDatasetData(
-                        _study,
-                        _job.getUser(),
-                        _datasetDefinition,
-                        loader,
-                        _columnMap,
-                        errors,
-                        false, //Set to TRUE if/when MERGE is implemented
-                        //Set to TRUE if MERGEing
-                        defaultQCState,
-                        _job.getLogger()
-                );
-                if (errors.size() == 0)
+                finally
                 {
-                    assert cpuCommit.start();
-                    scope.commitTransaction();
-                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
-                    if (useCutoff && skippedRowCount[0] > 0)
-                        msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                    _job.info(msg);
-                    assert cpuCommit.stop();
+                    IOUtils.closeQuietly(is);
                 }
-
-                for (String err : errors)
-                    _job.error(_tsvName + " -- " + err);
-
-                if (_deleteAfterImport)
-                {
-                    boolean success = _root.delete(_tsvName);
-                    if (success)
-                        _job.info("Deleted file " + _tsvName);
-                    else
-                        _job.error("Could not delete file " + _tsvName);
-                }
-                assert cpuImport.stop();
             }
         }
         catch (Exception x)
