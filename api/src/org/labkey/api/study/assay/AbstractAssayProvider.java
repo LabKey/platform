@@ -26,6 +26,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
@@ -504,19 +506,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<>();
-        try
-        {
-            ExperimentService.get().ensureTransaction();
 
-            result.add(createBatchDomain(c, user));
-            result.add(createRunDomain(c, user));
-
-            ExperimentService.get().commitTransaction();
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
-        }
+        result.add(createBatchDomain(c, user));
+        result.add(createRunDomain(c, user));
 
         return result;
     }

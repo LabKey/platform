@@ -292,8 +292,6 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
-    @Deprecated  // Old, crufty global rowId... only used for item index tables. Remove completely on hard table conversion.
-    int getRowId();
     int getListId();
     void setPreferredListIds(Collection<Integer> preferredListIds); // Attempts to use this list IDs when inserting
     Container getContainer();
@@ -314,20 +312,20 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void deleteListItems(User user, Collection keys) throws SQLException;
+    void save(User user, boolean ensureKey) throws Exception;
     void delete(User user) throws SQLException, DomainNotFoundException;
 
     ListItem createListItem();
-    ListItem getListItem(Object key);
     ListItem getListItem(Object key, User user);
-    ListItem getListItemForEntityId(String entityId);
+    ListItem getListItemForEntityId(String entityId, User user);
 
+    int insertListItems(User user, List<ListItem> listItems) throws IOException;
     int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException;
 
     TableInfo getTable(User user);
 
     ActionURL urlShowDefinition();
-    ActionURL urlUpdate(@Nullable Object pk, @Nullable URLHelper returnUrl);
+    ActionURL urlUpdate(User user, @Nullable Object pk, @Nullable URLHelper returnUrl);
     ActionURL urlDetails(@Nullable Object pk);
     ActionURL urlShowData();
     ActionURL urlShowHistory();

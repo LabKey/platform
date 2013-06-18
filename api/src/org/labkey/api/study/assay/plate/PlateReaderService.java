@@ -19,6 +19,7 @@ package org.labkey.api.study.assay.plate;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -78,35 +79,44 @@ public class PlateReaderService
         ListDefinition readerList = getPlateReaderList(provider, c);
         if (readerList == null)
         {
-            Container lookupContainer = c.getProject();
-            readerList = ListService.get().createList(lookupContainer, provider.getPlateReaderListName(), ListDefinition.KeyType.Varchar);
+            try
+            {
+                ExperimentService.get().ensureTransaction();
 
-            DomainProperty nameProperty = addProperty(readerList.getDomain(), PLATE_READER_PROPERTY, PropertyType.STRING, null);
-            nameProperty.setPropertyURI(readerList.getDomain().getTypeURI() + "#" + PLATE_READER_PROPERTY);
-            DomainProperty typeProperty = addProperty(readerList.getDomain(), READER_TYPE_PROPERTY, PropertyType.STRING, null);
-            typeProperty.setPropertyURI(readerList.getDomain().getTypeURI() + "#" + READER_TYPE_PROPERTY);
+                Container lookupContainer = c.getProject();
+                readerList = ListService.get().createList(lookupContainer, provider.getPlateReaderListName(), ListDefinition.KeyType.Varchar);
 
-            try {
+                DomainProperty nameProperty = addProperty(readerList.getDomain(), PLATE_READER_PROPERTY, PropertyType.STRING, null);
+                nameProperty.setPropertyURI(readerList.getDomain().getTypeURI() + "#" + PLATE_READER_PROPERTY);
+                DomainProperty typeProperty = addProperty(readerList.getDomain(), READER_TYPE_PROPERTY, PropertyType.STRING, null);
+                typeProperty.setPropertyURI(readerList.getDomain().getTypeURI() + "#" + READER_TYPE_PROPERTY);
+
                 readerList.setKeyName(nameProperty.getName());
                 readerList.setTitleColumn(PLATE_READER_PROPERTY);
 
                 readerList.save(user);
+
+                ExperimentService.get().commitTransaction();
             }
             catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
+            finally
+            {
+                ExperimentService.get().closeTransaction();
+            }
         }
         return readerList;
     }
 
-    public static PlateReader getPlateReaderFromName(String readerName, Container c, PlateBasedAssayProvider provider)
+    public static PlateReader getPlateReaderFromName(String readerName, User u, Container c, PlateBasedAssayProvider provider)
     {
         ListDefinition list = PlateReaderService.getPlateReaderList(provider, c);
         if (list != null)
         {
             DomainProperty prop = list.getDomain().getPropertyByName(PlateReaderService.READER_TYPE_PROPERTY);
-            ListItem item = list.getListItem(readerName);
+            ListItem item = list.getListItem(readerName, u);
             if (item != null && prop != null)
             {
                 Object value = item.getProperty(prop);

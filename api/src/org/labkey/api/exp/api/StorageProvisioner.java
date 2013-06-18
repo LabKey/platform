@@ -61,7 +61,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -87,12 +86,9 @@ public class StorageProvisioner
     private static String _create(DbScope scope, DomainKind kind, Domain domain) throws SQLException
     {
         assert create.start();
-        Connection conn;
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId(), true);
             if (null == dd)
@@ -139,27 +135,20 @@ public class StorageProvisioner
 
             change.setIndexedColumns(kind.getPropertyIndices());
 
-            conn = scope.getConnection();
-
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                conn.prepareStatement(sql).execute();
-            }
+            execute(scope, scope.getConnection(), change);
 
             dd.setStorageTableName(tableName);
             dd.setStorageSchemaName(kind.getStorageSchemaName());
             OntologyManager.updateDomainDescriptor(dd);
 
-            scope.releaseConnection(conn);
-            conn = null;
+            kind.invalidate(domain);
 
-            scope.commitTransaction();
+            transaction.commit();
+
             return tableName;
         }
         finally
         {
-            scope.closeConnection();
             assert create.stop();
         }
     }
@@ -198,11 +187,8 @@ public class StorageProvisioner
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             Connection con = transaction.getConnection();
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
+            execute(scope, con, change);
+            kind.invalidate(domain);
             transaction.commit();
         }
         catch (SQLException e)
@@ -262,11 +248,8 @@ public class StorageProvisioner
         try
         {
             con = scope.getConnection();
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
+            execute(scope, con, change);
+            kind.invalidate(domain);
         }
         finally
         {
@@ -297,11 +280,8 @@ public class StorageProvisioner
         try
         {
             con = scope.getConnection();
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
+            execute(scope, con, change);
+            kind.invalidate(domain);
         }
         finally
         {
@@ -334,11 +314,8 @@ public class StorageProvisioner
         try
         {
             con = scope.getConnection();
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
+            execute(scope, con, change);
+            kind.invalidate(domain);
         }
         finally
         {
@@ -378,11 +355,8 @@ public class StorageProvisioner
         try
         {
             con = scope.getConnection();
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
+            execute(scope, con, change);
+            kind.invalidate(domain);
         }
         finally
         {
@@ -434,12 +408,8 @@ public class StorageProvisioner
 
             }
 
-            for (String sql : scope.getSqlDialect().getChangeStatements(renamePropChange))
-            {
-                log.debug("Will issue: " + sql);
-                con.prepareStatement(sql).execute();
-            }
-
+            execute(scope, con, renamePropChange);
+            kind.invalidate(domain);
         }
         finally
         {
@@ -477,7 +447,6 @@ public class StorageProvisioner
         if (null == scope || null == schemaName)
             throw new IllegalArgumentException();
 
-        Connection conn = null;
         try
         {
             String tableName = domain.getStorageTableName();
@@ -485,46 +454,9 @@ public class StorageProvisioner
             if (null == tableName)
                 tableName = _create(scope, kind, domain);
 
-            SchemaTableInfo ti = new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
+            SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
             ti.setMetaDataSchemaName(schemaName);
-
-            conn = scope.getConnection();
-//            ti.loadFromMetaData(conn.getMetaData(), scope.getDatabaseName(), schemaName);
-
-            int index = 0;
-
-            for (DomainProperty p : domain.getProperties())
-            {
-                ColumnInfo c = ti.getColumn(p.getName());
-
-                if (null == c)
-                {
-                    Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + p.getName());
-                    continue;
-                }
-
-                // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
-                // wants them based on its current property order
-                ti.setColumnIndex(c, index++);
-                PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor(), p.getContainer(), null);
-
-                if (p.isMvEnabled())
-                {
-                    c.setDisplayColumnFactory(new MVDisplayColumnFactory());
-
-                    ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorColumnName(p.getName()));
-                    assert mvColumn != null : "No MV column found for " + p.getName();
-                    if (mvColumn != null)
-                    {
-                        c.setMvColumnName(mvColumn.getFieldKey());
-                        mvColumn.setMvIndicatorColumn(true);
-                        // The UI for the main column will include MV input as well, so no need for another column in insert/update views
-                        mvColumn.setShownInUpdateView(false);
-                        mvColumn.setShownInInsertView(false);
-                    }
-                }
-                c.setScale(p.getScale());
-            }
+            fixupProvisionedDomain(ti, domain, tableName);
 
             return ti;
         }
@@ -532,16 +464,51 @@ public class StorageProvisioner
         {
             throw new RuntimeSQLException(x);
         }
-        finally
+    }
+
+    public static void fixupProvisionedDomain(SchemaTableInfo ti, Domain domain, String tableName)
+    {
+        assert !ti.isLocked();
+
+        int index = 0;
+
+        for (DomainProperty p : domain.getProperties())
         {
-            if (null != conn)
-                scope.releaseConnection(conn);
+            ColumnInfo c = ti.getColumn(p.getName());
+
+            if (null == c)
+            {
+                Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + p.getName());
+                continue;
+            }
+
+            // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
+            // wants them based on its current property order
+            ti.setColumnIndex(c, index++);
+            PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor(), p.getContainer(), null);
+
+            if (p.isMvEnabled())
+            {
+                c.setDisplayColumnFactory(new MVDisplayColumnFactory());
+
+                ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorColumnName(p.getName()));
+                assert mvColumn != null : "No MV column found for " + p.getName();
+                if (mvColumn != null)
+                {
+                    c.setMvColumnName(mvColumn.getFieldKey());
+                    mvColumn.setMvIndicatorColumn(true);
+                    // The UI for the main column will include MV input as well, so no need for another column in insert/update views
+                    mvColumn.setShownInUpdateView(false);
+                    mvColumn.setShownInInsertView(false);
+                }
+            }
+            c.setScale(p.getScale());
         }
     }
 
 
     /**
-     * We are mostly makeing the storage table match the existing property descriptors, because that is easiest.
+     * We are mostly making the storage table match the existing property descriptors, because that is easiest.
      * Sometimes it would be better or more conservative to update the property descriptors instead
      */
 
@@ -616,17 +583,9 @@ public class StorageProvisioner
             }
 
             if (hasDrops)
-                for (String sql : scope.getSqlDialect().getChangeStatements(drops))
-                {
-                    log.debug("Will issue: " + sql);
-                    conn.prepareStatement(sql).execute();
-                }
+                execute(scope, conn, drops);
             if (hasAdds)
-                for (String sql : scope.getSqlDialect().getChangeStatements(adds))
-                {
-                    log.debug("Will issue: " + sql);
-                    conn.prepareStatement(sql).execute();
-                }
+                execute(scope, conn, adds);
             kind.invalidate(domain);
             scope.commitTransaction();
             return !errors.hasErrors();
@@ -642,6 +601,14 @@ public class StorageProvisioner
         }
     }
 
+    private static void execute(DbScope scope, Connection conn, TableChange change) throws SQLException
+    {
+        for (String sql : scope.getSqlDialect().getChangeStatements(change))
+        {
+            log.debug("Will issue: " + sql);
+            conn.prepareStatement(sql).execute();
+        }
+    }
 
     public static ProvisioningReport getProvisioningReport() throws SQLException
     {
@@ -660,9 +627,9 @@ public class StorageProvisioner
         }
         ResultSet rs = null;
 
-        TreeSet<Path> schemaNames = new TreeSet<Path>();;
-        Map<Path, Set<String>> nonProvisionedTableMap = new TreeMap<Path, Set<String>>();
-        TreeSet<Path> provisionedTables = new TreeSet<Path>();
+        TreeSet<Path> schemaNames = new TreeSet<>();
+        Map<Path, Set<String>> nonProvisionedTableMap = new TreeMap<>();
+        TreeSet<Path> provisionedTables = new TreeSet<>();
         if (null == domainuri)
         {
             for (DomainKind dk : PropertyService.get().getDomainKinds())

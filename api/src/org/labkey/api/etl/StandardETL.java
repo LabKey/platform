@@ -23,6 +23,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
@@ -220,10 +221,11 @@ public class StandardETL implements DataIteratorBuilder
 
         for (TranslateHelper pair : targetCols)
         {
+            boolean isAttachment = (null != pair.dp && pair.dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT);
             boolean supportsMV = (null != pair.target && null != pair.target.getMvColumnName()) || (null != pair.dp && pair.dp.isMvEnabled());
             int indexConvert;
 
-            if (null == pair.target)
+            if (null == pair.target || isAttachment)
                 indexConvert = convert.addColumn(input.getColumnInfo(pair.indexFrom).getName(), pair.indexFrom);
             else if (null == pair.dp)
                 indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);

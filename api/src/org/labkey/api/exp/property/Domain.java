@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -51,6 +52,7 @@ public interface Domain extends IPropertyType
     DomainProperty getPropertyByName(String name);
     ActionURL urlShowData(ContainerUser context);
 
+    DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd);
     DomainProperty addProperty();
 
     List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);

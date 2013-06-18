@@ -977,10 +977,16 @@ public class OntologyManager
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
 			Table.execute(getExpSchema(), deleteObjPropSql, containerid);
-			String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-			Table.execute(getExpSchema(), deleteIndexIntegerSql, containerid);
-			String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-			Table.execute(getExpSchema(), deleteIndexVarcharSql, containerid);
+            if (null != getTinfoIndexInteger())
+            {
+                String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
+                Table.execute(getExpSchema(), deleteIndexIntegerSql, containerid);
+            }
+            if (null != getTinfoIndexVarchar())
+            {
+                String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
+                Table.execute(getExpSchema(), deleteIndexVarcharSql, containerid);
+            }
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
 			Table.execute(getExpSchema(), deleteObjSql, containerid);
 
@@ -2230,30 +2236,30 @@ public class OntologyManager
                 {
                     return domainURI;
                 }
-            }, null, maps, errors, container, false, user);
+            }, null, maps, errors, container, false, user, null);
     }
 
 
     /**
      * @return whether the import was successful or not. Check the errors collection for details
-     * @deprecated  use PropertyService
+     * @deprecated Use Domain.importTypes
      * TODO rewrite to use createPropertyDescriptors()
      */
     @Deprecated
-    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user)
+    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user, @Nullable Domain domain)
             throws SQLException, ChangePropertyDescriptorException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
-        LinkedHashMap<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<String, PropertyDescriptor>();
-        LinkedHashMap<String, PropertyDescriptor> allProps = new LinkedHashMap<String, PropertyDescriptor>();
-        Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new  TreeMap<String, Map<String, PropertyDescriptor>>();
+        LinkedHashMap<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<>();
+        LinkedHashMap<String, PropertyDescriptor> allProps = new LinkedHashMap<>();
+        Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new  TreeMap<>();
         // Case insensitive set since we don't want property names that differ only by case
-        Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<>();
         Map<String, PropertyDescriptor> pdNewMap;
         // propertyURI -> ConditionalFormats
-        Map<String, List<ConditionalFormat>> allConditionalFormats = new HashMap<String, List<ConditionalFormat>>();
+        Map<String, List<ConditionalFormat>> allConditionalFormats = new HashMap<>();
 
-        Map<String, DomainDescriptor> domainMap = new HashMap<String, DomainDescriptor>();
+        Map<String, DomainDescriptor> domainMap = new HashMap<>();
 
         for (Map<String, Object> m : maps)
         {
@@ -2307,7 +2313,7 @@ public class OntologyManager
                     pdNewMap = newPropsByDomain.get(dd.getDomainURI());
                     if (null == pdNewMap)
                     {
-                        pdNewMap = new LinkedHashMap<String, PropertyDescriptor>();
+                        pdNewMap = new LinkedHashMap<>();
                         newPropsByDomain.put(dd.getDomainURI(), pdNewMap);
                     }
                     pdNewMap.put(pd.getPropertyURI(), pd);
@@ -2335,11 +2341,6 @@ public class OntologyManager
         if (!errors.isEmpty())
             return false;
 
-        //
-        //  Find any PropertyDescriptors that exist already
-        //
-        ArrayList<PropertyDescriptor> list = new ArrayList<PropertyDescriptor>(allProps.size());
-
         for (String dURI : newPropsByDomain.keySet())
         {
             pdNewMap = newPropsByDomain.get(dURI);
@@ -2351,32 +2352,36 @@ public class OntologyManager
                 DomainDescriptor dd = domainMap.get(dURI);
                 assert (null!= dd);
                 PropertyDescriptor pdInserted = null;
-                if (domainProps.length == 0)
+                if (null != domain)
                 {
-                    try
-                    {
-                        // this is much faster than insertOrUpdatePropertyDescriptor()
-                        if (pdToInsert.getPropertyId() == 0)
-                            insertPropertyDescriptor(pdToInsert);
-                        pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
-                    }
-                    catch (SQLException x)
-                    {
-                        // it is possible that the property descriptor exists without being part of the domain
-                        // fall through
-                    }
+                    domain.addPropertyOfPropertyDescriptor(pdToInsert);
                 }
-                if (null == pdInserted)
-                    pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, dd, sortOrder++);
-
-                list.add(pdInserted);
+                else
+                {
+                    if (domainProps.length == 0)
+                    {
+                        try
+                        {
+                            // this is much faster than insertOrUpdatePropertyDescriptor()
+                            if (pdToInsert.getPropertyId() == 0)
+                                insertPropertyDescriptor(pdToInsert);
+                            pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
+                        }
+                        catch (SQLException x)
+                        {
+                            // it is possible that the property descriptor exists without being part of the domain
+                            // fall through
+                        }
+                    }
+                    if (null == pdInserted)
+                        OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, dd, sortOrder++);
+                }
             }
         }
 
         for (PropertyDescriptor pdToInsert : propsWithoutDomains.values())
         {
-            PropertyDescriptor pdInserted = OntologyManager.ensurePropertyDescriptor(pdToInsert);
-            list.add(pdInserted);
+            OntologyManager.ensurePropertyDescriptor(pdToInsert);
         }
 
         for (Map.Entry<String, List<ConditionalFormat>> entry : allConditionalFormats.entrySet())
@@ -3387,11 +3392,19 @@ public class OntologyManager
         return getExpSchema().getTable("ObjectProperty");
     }
 
+    /**
+     * Since migrating Lists to Hard Tables this table no longer exists.
+     */
+    @Deprecated
     public static TableInfo getTinfoIndexInteger()
     {
         return getExpSchema().getTable("IndexInteger");
     }
 
+    /**
+     * Since migrating Lists to Hard Tables this table no longer exists.
+     */
+    @Deprecated
     public static TableInfo getTinfoIndexVarchar()
     {
         return getExpSchema().getTable("IndexVarchar");

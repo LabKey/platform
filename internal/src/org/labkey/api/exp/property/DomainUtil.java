@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008-2013 LabKey Corporation
  *
@@ -152,7 +151,7 @@ public class DomainUtil
     {
         GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
 
-        ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
+        ArrayList<GWTPropertyDescriptor> list = new ArrayList<>();
 
         DomainProperty[] properties = domain.getProperties();
         Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
@@ -176,15 +175,15 @@ public class DomainUtil
             throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
         }
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
-        d.setReservedFieldNames(new HashSet<String>(reservedProperties));
-        d.setMandatoryFieldNames(new HashSet<String>(domainKind.getMandatoryPropertyNames(domain)));
+        d.setReservedFieldNames(new HashSet<>(reservedProperties));
+        d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
 
         return d;
     }
 
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
-        GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
+        GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
 
         gwtDomain.setDomainId(dd.getTypeId());
         gwtDomain.setDomainURI(dd.getTypeURI());
@@ -224,7 +223,7 @@ public class DomainUtil
         StringExpression url = prop.getPropertyDescriptor().getURL();
         gwtProp.setURL(url == null ? null : url.toString());
 
-        List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
+        List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())
         {
             GWTPropertyValidator gpv = new GWTPropertyValidator();
@@ -242,7 +241,7 @@ public class DomainUtil
         }
         gwtProp.setPropertyValidators(validators);
 
-        List<GWTConditionalFormat> formats = new ArrayList<GWTConditionalFormat>();
+        List<GWTConditionalFormat> formats = new ArrayList<>();
         for (ConditionalFormat format : prop.getConditionalFormats())
         {
             formats.add(new GWTConditionalFormat(format));
@@ -354,7 +353,7 @@ public class DomainUtil
             p.delete();
         }
 
-        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
 
         // and now update properties
         for (GWTPropertyDescriptor pd : update.getFields())
@@ -406,7 +405,7 @@ public class DomainUtil
             if (errors.size() == 0)
             {
                 // Reorder the properties based on what we got from GWT
-                Map<String, DomainProperty> dps = new HashMap<String, DomainProperty>();
+                Map<String, DomainProperty> dps = new HashMap<>();
                 for (DomainProperty dp : d.getProperties())
                 {
                     dps.put(dp.getPropertyURI(), dp);
@@ -420,7 +419,7 @@ public class DomainUtil
 
                 d.save(user);
                 // Rebucket the hash map with the real property ids
-                defaultValues = new HashMap<DomainProperty, Object>(defaultValues);
+                defaultValues = new HashMap<>(defaultValues);
                 try
                 {
                     DefaultValueService.get().setDefaultValues(d.getContainer(), defaultValues);

@@ -54,7 +54,6 @@ public interface UpdateableTableInfo
 
     /*
      * all updatable tables have a 'root' SchemaTableInfo
-     * For list it might be exp.IndexInteger or exp.IndexVarchar
      *
      * may not be null if any of insert/update/delete are supported
      */

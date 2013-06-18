@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -108,6 +109,7 @@ public class Parameter
     private String _name;
     private @Nullable String _uri = null;       // for migration of ontology based code
     private final @Nullable JdbcType _type;
+    private boolean setFileAsName = false;
 
     // only allow setting once, do not clear
     private boolean _constant = false;
@@ -179,6 +181,7 @@ public class Parameter
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
         _indexes = indexes;
+        setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
     }
 
 
@@ -246,23 +249,28 @@ public class Parameter
                 if (_indexes.length > 1)
                     throw new IllegalArgumentException("AttachmentFile can only be bound to a single parameter");
 
-                try
+                if (setFileAsName)
+                    _stmt.setString(_indexes[0], ((AttachmentFile) value).getFilename());
+                else
                 {
-                    InputStream is = ((AttachmentFile) value).openInputStream();
-                    long len = ((AttachmentFile) value).getSize();
+                    try
+                    {
+                        InputStream is = ((AttachmentFile) value).openInputStream();
+                        long len = ((AttachmentFile) value).getSize();
 
-                    if (len > Integer.MAX_VALUE)
-                        throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
-                    _stmt.setBinaryStream(_indexes[0], is, (int)len);
-                    _isSet = true;
-                    _isNull = false;
-                    return;
-                }
-                catch (Exception x)
-                {
-                    SQLException sqlx = new SQLException();
-                    sqlx.initCause(x);
-                    throw sqlx;
+                        if (len > Integer.MAX_VALUE)
+                            throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
+                        _stmt.setBinaryStream(_indexes[0], is, (int)len);
+                        _isSet = true;
+                        _isNull = false;
+                        return;
+                    }
+                    catch (Exception x)
+                    {
+                        SQLException sqlx = new SQLException();
+                        sqlx.initCause(x);
+                        throw sqlx;
+                    }
                 }
             }
 

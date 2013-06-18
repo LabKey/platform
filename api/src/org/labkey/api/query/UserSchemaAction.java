@@ -167,6 +167,8 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             }
         }
 
+        values = form.getTypedColumns();
+
         QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
             throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");

@@ -1690,7 +1690,7 @@ public class Table
     {
         int bad = 0;
 
-        Map<FieldKey, ColumnInfo> mapFK = new HashMap<>(columns.size()*2);
+//        Map<FieldKey, ColumnInfo> mapFK = new HashMap<>(columns.size()*2);
         Map<String, ColumnInfo> mapAlias = new HashMap<>(columns.size()*2);
         ColumnInfo prev;
 

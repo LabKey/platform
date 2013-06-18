@@ -216,7 +216,7 @@ class StatementDataIterator extends AbstractDataIterator
             assert _elapsed.start();
         }
 
-        boolean hasNextRow;
+        boolean hasNextRow = false;
 
         try
         {
@@ -286,7 +286,7 @@ class StatementDataIterator extends AbstractDataIterator
             {
                 getRowError().addGlobalError(x);
                 _context.checkShouldCancel();
-                return true;
+                return hasNextRow;
             }
             throw new RuntimeSQLException(x);
         }

@@ -48,7 +48,7 @@ public class PropertyService
     {
         IPropertyType getType(Container container, String domainURI);
         Domain getDomain(Container container, String domainURI);
-        Domain getDomain(int domainId);
+        @Nullable Domain getDomain(int domainId);
         List<DomainKind> getDomainKinds();
         Domain[] getDomains(Container container);
         Domain createDomain(Container container, String typeURI, String name);

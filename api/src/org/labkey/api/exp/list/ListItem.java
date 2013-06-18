@@ -16,13 +16,10 @@
 
 package org.labkey.api.exp.list;
 
-import org.labkey.api.data.Container;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
 
-import java.io.IOException;
-import java.sql.SQLException;
+import java.util.Map;
 
 public interface ListItem
 {
@@ -35,8 +32,5 @@ public interface ListItem
     public Object getProperty(DomainProperty property);
     public void setProperty(DomainProperty property, Object value);
 
-    public void save(User user) throws SQLException, IOException, ValidationException;
-    public void save(User user, boolean isBulkLoad) throws SQLException, IOException, ValidationException;
-    public void delete(User user, Container c) throws SQLException;
-    public void delete(User user, Container c, boolean isBulkLoad) throws SQLException;
+    public Map<String, ObjectProperty> getProperties();
 }

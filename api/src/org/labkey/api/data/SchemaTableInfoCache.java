@@ -41,7 +41,7 @@ public class SchemaTableInfoCache
     SchemaTableInfo get(DbSchema schema, String tableName)
     {
         String key = getCacheKey(schema, tableName);
-        return _blockingCache.get(key, new Pair<DbSchema, String>(schema, tableName));
+        return _blockingCache.get(key, new Pair<>(schema, tableName));
     }
 
     void remove(DbSchema schema, String tableName)

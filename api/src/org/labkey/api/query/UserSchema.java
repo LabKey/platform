@@ -118,7 +118,7 @@ abstract public class UserSchema extends AbstractSchema
     /** if forWrite==true, do not return a cached version */
     public TableInfo getTable(String name, boolean includeExtraMetadata, boolean forWrite)
     {
-        ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        ArrayList<QueryException> errors = new ArrayList<>();
         Object o = _getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {

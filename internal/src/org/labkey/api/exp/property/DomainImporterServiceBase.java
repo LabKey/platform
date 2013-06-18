@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
@@ -128,7 +129,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
 
     private List<InferencedColumn> getColumns(DataLoader loader) throws ImportException
     {
-        List<InferencedColumn> result = new ArrayList<InferencedColumn>();
+        List<InferencedColumn> result = new ArrayList<>();
 
         try
         {
@@ -145,10 +146,14 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
                 if (name.length() > 2 && name.startsWith("\"") && name.endsWith("\""))
                     name = name.substring(1, name.length()-1);
                 prop.setName(name);
-                prop.setRangeURI(column.getRangeURI());
+                PropertyType rangeURI = PropertyType.fromName(column.getRangeURI());
+                if (null != rangeURI)
+                    prop.setRangeURI(rangeURI.getURI());
+                else
+                    prop.setRangeURI(column.getRangeURI());
                 prop.setMvEnabled(column.isMvEnabled());
 
-                List<String> columnData = new ArrayList<String>();
+                List<String> columnData = new ArrayList<>();
                 for (int rowIndex=1; rowIndex<numRows; rowIndex++)
                 {
                     String datum = "";
