@@ -81,6 +81,7 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
+        // A DataLoader created with this constructor does NOT close the reader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             return new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
@@ -101,6 +102,7 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
+        // A DataLoader created with this constructor does NOT close the reader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
