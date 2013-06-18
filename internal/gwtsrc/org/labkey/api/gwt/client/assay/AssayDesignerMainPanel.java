@@ -690,9 +690,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         if ("true".equals(PropertyUtil.getServerProperty("supportsBackgroundUpload")))
         {
             FlowPanel backgroundUploadPanel = new FlowPanel();
-            backgroundUploadPanel.add(new InlineHTML("Upload in Background"));
-            backgroundUploadPanel.add(new HelpPopup("Upload in Background", "If enabled, assay uploads will be processed as jobs in the data pipeline. " +
-                    "If there are any errors during the upload, they can be viewed from the log file for that job."));
+            backgroundUploadPanel.add(new InlineHTML("Import in Background"));
+            backgroundUploadPanel.add(new HelpPopup("Import in Background", "If enabled, assay imports will be processed as jobs in the data pipeline. " +
+                    "If there are any errors during the import, they can be viewed from the log file for that job."));
             table.setWidget(row, 0, backgroundUploadPanel);
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row++, 1, new BoundCheckBox("id_background_upload_properties", "backgroundUpload", _backgroundUpload, this));
