@@ -1,8 +1,4 @@
-ALTER TABLE exp.list DROP CONSTRAINT UQ_LIST;
-
 SELECT core.executeJavaUpgradeCode('upgradeListDomains');
-
-ALTER TABLE exp.list ADD CONSTRAINT UQ_LIST UNIQUE(Container, Name);
 
 DROP TABLE exp.indexinteger, exp.indexvarchar;
 

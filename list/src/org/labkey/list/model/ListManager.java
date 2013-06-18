@@ -908,6 +908,14 @@ public class ListManager implements SearchService.DocumentProvider
 
         for (ListDefinition listDef : definitionMap.values())
         {
+            ModuleUpgrader.getLogger().info("Starting migration of list [" + listDef.getName() + "] in [" + container.getPath() + "]");
+
+            if (isMigrated(listDef, container))
+            {
+                ModuleUpgrader.getLogger().info("List [" + listDef.getName() + "] has previously been migrated.");
+                continue;
+            }
+
             isAutoIncrement = listDef.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger;
 
             // Get the source table info -- original Ontology based list
@@ -969,6 +977,21 @@ public class ListManager implements SearchService.DocumentProvider
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private boolean isMigrated(ListDefinition listDef, Container c)
+    {
+        Domain d = listDef.getDomain();
+
+        if (null != d)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("storageschemaname"), "list");
+            filter.addCondition(FieldKey.fromParts("container"), c.getEntityId());
+            filter.addCondition(FieldKey.fromParts("domainid"), d.getTypeId());
+
+            return new TableSelector(OntologyManager.getTinfoDomainDescriptor(), Table.ALL_COLUMNS, filter, null).exists();
+        }
+        return false;
     }
 
     private Domain migrateDomainURI(ListDefinition fromListDef, ListDefinitionImpl toListDef)
