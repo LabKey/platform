@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
@@ -71,6 +72,7 @@ import java.util.Set;
 public class WikiModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Wiki";
+    public static final String EXPERIMENTAL_WIKI_INLINE_EDITOR = "wiki-inline-editor";
 
     private static final Logger _log = Logger.getLogger(WikiModule.class);
 
@@ -128,6 +130,9 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
 
         WikiSchema.register();
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_WIKI_INLINE_EDITOR, "Wiki webpart inline editor",
+                "This feature will allow inline editing of html wikis on portal pages", false);
     }
 
     private void bootstrap(ModuleContext moduleContext)

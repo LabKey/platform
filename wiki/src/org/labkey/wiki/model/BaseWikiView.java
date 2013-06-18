@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -27,8 +28,11 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
+import org.labkey.wiki.WikiModule;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.sql.SQLException;
@@ -199,8 +203,33 @@ public abstract class BaseWikiView extends JspView<Object>
         // Initialize Custom Menus
         if (perms.allowUpdate(wiki) && folderHasWikis && hasContent)
         {
-            NavTree edit = new NavTree("Edit", updateContentURL.toString(), getViewContext().getContextPath() + "/_images/partedit.png");
-            addCustomMenu(edit);
+            WikiVersion version = wiki.getLatestVersion();
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(WikiModule.EXPERIMENTAL_WIKI_INLINE_EDITOR) &&
+                version != null && version.getRendererTypeEnum() == WikiRendererType.HTML)
+            {
+                // Indlude wiki.js as a client dependency only for inline editing
+                addClientDepedency(ClientDependency.fromFilePath("wiki/js/wiki.js"));
+
+                NavTree edit = new NavTree("Edit", null, getViewContext().getContextPath() + "/_images/partedit.png");
+                edit.setScript("LABKEY.Internal.Wiki.createWebPartInlineEditor({" +
+                        "entityId: " + PageFlowUtil.jsString(wiki.getEntityId()) +
+                        ",pageVersionId: " + wiki.getPageVersionId() +
+                        ",name: " + PageFlowUtil.jsString(wiki.getName()) +
+                        ",title: " + PageFlowUtil.jsString(wiki.getLatestVersion().getTitle()) +
+                        ",rendererType: " + PageFlowUtil.jsString(wiki.getLatestVersion().getRendererTypeEnum().name()) +
+                        ",parentId: " + wiki.getParent() +
+                        ",showAttachments: " + wiki.isShowAttachments() +
+                        ",shouldIndex: " + wiki.isShouldIndex() +
+                        ",webPartId:" + _webPartId +
+                "});");
+                addCustomMenu(edit);
+            }
+            else
+            {
+                // other render types get the standard editor
+                NavTree edit = new NavTree("Edit", updateContentURL.toString(), getViewContext().getContextPath() + "/_images/partedit.png");
+                addCustomMenu(edit);
+            }
         }
 
         setTitle(title.getSource());

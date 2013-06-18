@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
 
 import java.util.Map;
 

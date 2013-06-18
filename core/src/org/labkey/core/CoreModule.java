@@ -358,7 +358,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         {
                             NavTree customize = new NavTree("");
                             customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
-                            customize.setDisplay("Large Icons");
                             view.setCustomize(customize);
                         }
                         return view;

@@ -25,7 +25,20 @@
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("tiny_mce/tiny_mce.js"));
+        resources.add(ClientDependency.fromFilePath("wiki/js/wikiEdit.js"));
+        return resources;
+    }
+%>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -33,15 +46,7 @@
     String sep;
     String saveButtonCaption = "Save";
 %>
-
-<script type="text/javascript">
-    LABKEY.requiresScript('tiny_mce/tiny_mce.js');
-
-</script>
-<script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
-
+<labkey:scriptDependency/>
 <script type="text/javascript">
     //page-level variables defined by the server
     var _idPrefix = <%=PageFlowUtil.jsString(ID_PREFIX)%>;
@@ -94,9 +99,6 @@
     var _useVisualEditor = <%=model.useVisualEditor()%>;
     var _redirUrl = <%=model.getRedir()%>;
     var _cancelUrl = <%=model.getCancelRedir()%>;
-</script>
-<script type="text/javascript">
-    LABKEY.requiresScript("wiki/js/wikiEdit.js", true);
 </script>
 
 <div id="status" class="labkey-status-info" style="display:none;" width="99%">(status)</div>
