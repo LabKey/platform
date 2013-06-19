@@ -22,7 +22,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Map<String, String> props = new HashMap<String, String>();
+    Map<String, String> props = new HashMap<>();
     props.put("style", "float: left;");
 
     NavTree tree = new NavTree("First");

@@ -137,7 +137,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
      */
     public RequeueLostJobsRequest getRequeueRequest(ConnectionFactory connectionFactory, Collection<String> locations)
     {
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         Connection conn = null;
         try
         {

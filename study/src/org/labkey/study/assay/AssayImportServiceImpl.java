@@ -118,7 +118,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             _importFile = files.get(0);
         }
 
-        List<ColumnDescriptor> descriptors = new ArrayList<ColumnDescriptor>();
+        List<ColumnDescriptor> descriptors = new ArrayList<>();
         for (InferencedColumn col : columns)
         {
             GWTPropertyDescriptor prop = col.getPropertyDescriptor();
@@ -184,7 +184,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
                     DomainProperty dp = domain.getPropertyByName(entry.getValue().toLowerCase());
                     if (dp != null)
                     {
-                        Set<String> alias = new LinkedHashSet<String>();
+                        Set<String> alias = new LinkedHashSet<>();
                         alias.addAll(dp.getImportAliasSet());
 
                         alias.add(entry.getKey());
@@ -341,9 +341,9 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         {
             throw new IllegalStateException("Must set LSID before setting domain URIs");
         }
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         // First prune out any domains of the same type that aren't in the new set
-        for (String uri : new HashSet<String>(props.keySet()))
+        for (String uri : new HashSet<>(props.keySet()))
         {
             Lsid lsid = new Lsid(uri);
             if (lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX) && !uris.contains(uri))
@@ -388,7 +388,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws ImportException
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
-        List<GWTPropertyDescriptor> baseColumns = new ArrayList<GWTPropertyDescriptor>();
+        List<GWTPropertyDescriptor> baseColumns = new ArrayList<>();
 
         // don't import columns already included in the base results domain
         Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getViewContext().getUser(), getContainer());
@@ -412,7 +412,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     @Override
     public List<Map<String, String>> getAssayLocations() throws ImportException
     {
-        List<Map<String, String>> locations = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> locations = new ArrayList<>();
         boolean isDefault = true;
 
         for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))

@@ -39,13 +39,13 @@ public class StudyExportContext extends AbstractContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
-    private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
-    private final Set<Integer> _datasetIds = new HashSet<Integer>();
+    private final List<DataSetDefinition> _datasets = new LinkedList<>();
+    private final Set<Integer> _datasetIds = new HashSet<>();
     private final boolean _removeProtected;
     private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
     private Set<Integer> _visitIds = null;
-    private List<String> _participants = new ArrayList<String>();
+    private List<String> _participants = new ArrayList<>();
     private List<Specimen> _specimens = null;
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, LoggerGetter logger)

@@ -171,7 +171,7 @@ public class CohortController extends BaseStudyController
                 assert cohorts.length == participants.length : "Submitted different numbers of " +
                         StudyService.get().getSubjectNounPlural(study.getContainer()) + " and cohorts";
 
-                Map<String, Integer> p2c = new HashMap<String, Integer>();
+                Map<String, Integer> p2c = new HashMap<>();
 
                 for (int i=0; i<participants.length; i++)
                 {

@@ -98,12 +98,12 @@ public class ReportImporter implements FolderImporter
             Study study = StudyService.get().getStudy(ctx.getContainer());
             if (study != null)
             {
-                List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<QueryChangeListener.QueryPropertyChange>();
+                List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
                 for (DataSet dataSet : study.getDataSets())
                 {
                     if (!dataSet.getName().equals(dataSet.getLabel()))
                     {
-                        queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<String>(
+                        queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<>(
                                 QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study").getQueryDefForTable(dataSet.getName()),
                                 QueryChangeListener.QueryProperty.Name,
                                 dataSet.getLabel(),

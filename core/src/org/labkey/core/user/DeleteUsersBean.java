@@ -29,7 +29,7 @@ import java.util.Collections;
 */
 public class DeleteUsersBean
 {
-    private List<User> _users = new ArrayList<User>();
+    private List<User> _users = new ArrayList<>();
 
     public List<User> getUsers()
     {

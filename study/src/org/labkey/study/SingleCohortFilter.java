@@ -135,9 +135,9 @@ public class SingleCohortFilter extends BaseCohortFilter
 
         Pair<FieldKey, String> filter;
         if (null != _label)
-            filter = new Pair<FieldKey, String>(new FieldKey(cohortFK.getParent(),"Label"), _label);
+            filter = new Pair<>(new FieldKey(cohortFK.getParent(),"Label"), _label);
         else
-            filter = new Pair<FieldKey, String>(cohortFK, String.valueOf(_cohortId));
+            filter = new Pair<>(cohortFK, String.valueOf(_cohortId));
         return filter;
     }
 

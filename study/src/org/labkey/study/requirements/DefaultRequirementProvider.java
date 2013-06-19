@@ -53,7 +53,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public R[] getDefaultRequirements(Container container)
     {
-        Set<R> defaultRequirements = new HashSet<R>();
+        Set<R> defaultRequirements = new HashSet<>();
         for (RequirementType type : getRequirementTypes())
             defaultRequirements.addAll(Arrays.asList(getDefaultRequirements(container, type)));
         return defaultRequirements.toArray((R[]) Array.newInstance(_requirementClass, defaultRequirements.size()));
@@ -140,7 +140,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     public Collection<A> getActorsInUse(Container c)
     {
         Requirement[] requirements = getRequirements(c);
-        Map<Object, A> actors = new HashMap<Object, A>();
+        Map<Object, A> actors = new HashMap<>();
         for (Requirement requirement : requirements)
         {
             A actor = getActor(c, requirement.getActorPrimaryKey());

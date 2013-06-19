@@ -228,7 +228,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             // create the dataset in clause if we are configured for advanced security
             if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
             {
-                List<Integer> readDatasets = new ArrayList<Integer>();
+                List<Integer> readDatasets = new ArrayList<>();
                 for (DataSet ds : study.getDataSets())
                 {
                     if (ds.canRead(user))
@@ -252,7 +252,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList<FieldKey>();
+        List<FieldKey> columns = new ArrayList<>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));

@@ -65,7 +65,7 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
                 MissingValueIndicatorsType.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
 
                 // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()
-                Map<String, String> newMvMap = new HashMap<String, String>(mvs.length);
+                Map<String, String> newMvMap = new HashMap<>(mvs.length);
 
                 for (MissingValueIndicatorsType.MissingValueIndicator mv : mvs)
                     newMvMap.put(mv.getIndicator(), mv.getLabel());

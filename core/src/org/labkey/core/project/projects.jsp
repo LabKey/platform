@@ -31,7 +31,7 @@
 
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
       resources.add(ClientDependency.fromFilePath("/extWidgets/IconPanel.js"));
       resources.add(ClientDependency.fromFilePath("extWidgets/IconPanel.css"));

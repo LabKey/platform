@@ -96,7 +96,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         // DomainProperty has a hashCode() based on its propertyId. If they were added to the map before they were
         // saved to the database, they'll be in the bucket for values with hashCode() 0 (their uninserted propertyId)
         // so we won't look them up correctly. Recreate the map to rebucket them appropriately.
-        values = new HashMap<DomainProperty, Object>(values);
+        values = new HashMap<>(values);
 
         assert getDomainCount(values) == 1 : "Default values must be saved one domain at a time.";
         Domain domain = values.keySet().iterator().next().getDomain();
@@ -124,7 +124,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         // DomainProperty has a hashCode() based on its propertyId. If they were added to the map before they were
         // saved to the database, they'll be in the bucket for values with hashCode() 0 (their uninserted propertyId)
         // so we won't look them up correctly. Recreate the map to rebucket them appropriately.
-        values = new HashMap<DomainProperty, Object>(values);
+        values = new HashMap<>(values);
 
         assert getDomainCount(values) == 1 : "Default values must be saved one domain at a time.";
         Domain domain = values.keySet().iterator().next().getDomain();
@@ -143,7 +143,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
             {
                 OntologyManager.deleteOntologyObject(objectLSID, container, true);
                 OntologyManager.ensureObject(container, objectLSID, parentLSID);
-                List<ObjectProperty> objectProperties = new ArrayList<ObjectProperty>();
+                List<ObjectProperty> objectProperties = new ArrayList<>();
 
                 for (DomainProperty property : domain.getProperties())
                 {
@@ -184,11 +184,11 @@ public class DefaultValueServiceImpl extends DefaultValueService
     private Map<DomainProperty, Object> getObjectValues(Container container, Domain domain, String objectLSID)
     {
         Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, objectLSID);
-        Map<String, DomainProperty> propertyURIToProperty = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> propertyURIToProperty = new HashMap<>();
         for (DomainProperty dp : domain.getProperties())
             propertyURIToProperty.put(dp.getPropertyDescriptor().getPropertyURI(), dp);
 
-        Map<DomainProperty, Object> values = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> values = new HashMap<>();
         for (Map.Entry<String, ObjectProperty> entry : properties.entrySet())
         {
             DomainProperty property = propertyURIToProperty.get(entry.getValue().getPropertyURI());
@@ -208,7 +208,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         if (userValues == null || userValues.isEmpty())
             return globalValues != null ? globalValues : Collections.<DomainProperty, Object>emptyMap();
 
-        Map<DomainProperty, Object> result = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> result = new HashMap<>();
         for (DomainProperty property : domain.getProperties())
         {
             if (property.getDefaultValueTypeEnum() == DefaultValueType.LAST_ENTERED && userValues.containsKey(property))
@@ -316,7 +316,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     protected int getDomainCount(Map<DomainProperty, Object> values)
     {
-        Set<Domain> domains = new HashSet<Domain>();
+        Set<Domain> domains = new HashSet<>();
         for (DomainProperty prop : values.keySet())
             domains.add(prop.getDomain());
         return domains.size();
@@ -335,7 +335,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     public List<Container> getDefaultValueOverriders(Container currentContainer, Domain domain)
     {
-        List<Container> overriders = new ArrayList<Container>();
+        List<Container> overriders = new ArrayList<>();
         getDefaultValueOverriders(currentContainer, domain, overriders);
         return overriders;
     }
@@ -352,7 +352,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     public List<Container> getDefaultValueOverridees(Container currentContainer, Domain domain)
     {
-        List<Container> overridees = new ArrayList<Container>();
+        List<Container> overridees = new ArrayList<>();
         getDefaultValueOverridees(currentContainer.getParent(), domain, overridees);
         return overridees;
     }

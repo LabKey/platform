@@ -209,7 +209,7 @@ public class WikiSelectManager
     // Only use if a full wiki is needed (otherwise, use WikiTree)
     public static @NotNull List<Wiki> getChildWikis(Container c, int rowId)
     {
-        List<Wiki> wikis = new LinkedList<Wiki>();
+        List<Wiki> wikis = new LinkedList<>();
 
         for (WikiTree tree : getChildren(c, rowId))
             wikis.add(getWiki(c, tree.getName()));

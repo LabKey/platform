@@ -184,7 +184,7 @@ public class SpecimenTypeSummary
 
     public List<? extends TypeCount> getPrimaryTypes()
     {
-        List<PrimaryTypeCount> counts = new ArrayList<PrimaryTypeCount>();
+        List<PrimaryTypeCount> counts = new ArrayList<>();
         PrimaryTypeCount current = null;
         for (SpecimenTypeSummaryRow row : _rows)
         {
@@ -205,7 +205,7 @@ public class SpecimenTypeSummary
 
     public List<? extends TypeCount> getDerivatives(PrimaryTypeCount primaryType)
     {
-        Map<String, DerivativeTypeCount> counts = new TreeMap<String, DerivativeTypeCount>();
+        Map<String, DerivativeTypeCount> counts = new TreeMap<>();
         DerivativeTypeCount current;
         for (SpecimenTypeSummaryRow row : _rows)
         {
@@ -221,7 +221,7 @@ public class SpecimenTypeSummary
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
             }
         }
-        List<DerivativeTypeCount> returnValues = new ArrayList<DerivativeTypeCount>();
+        List<DerivativeTypeCount> returnValues = new ArrayList<>();
         returnValues.addAll(counts.values());
         return returnValues;
     }
@@ -238,7 +238,7 @@ public class SpecimenTypeSummary
 
     public List<? extends TypeCount> getAdditives(PrimaryTypeCount primaryType, DerivativeTypeCount derivativeType)
     {
-        Map<String, AdditiveTypeCount> counts = new TreeMap<String, AdditiveTypeCount>();
+        Map<String, AdditiveTypeCount> counts = new TreeMap<>();
         AdditiveTypeCount current;
         for (SpecimenTypeSummaryRow row : _rows)
         {
@@ -261,7 +261,7 @@ public class SpecimenTypeSummary
             if (label == null || label.length() == 0 || "None".equalsIgnoreCase(label))
                 return Collections.emptyList();
         }
-        List<AdditiveTypeCount> returnValues = new ArrayList<AdditiveTypeCount>();
+        List<AdditiveTypeCount> returnValues = new ArrayList<>();
         returnValues.addAll(counts.values());
         return returnValues;
     }

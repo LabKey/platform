@@ -43,7 +43,7 @@ public class AssayListPortalView extends AssayListQueryView
     {
         DataRegion rgn = super.createDataRegion();
         rgn.setShowRecordSelectors(false);
-        List<DisplayColumn> displayCols = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> displayCols = new ArrayList<>();
         String[] displayColNames = { "name", "description", "type", "created", "modified"};
 
         for (DisplayColumn col : rgn.getDisplayColumns())

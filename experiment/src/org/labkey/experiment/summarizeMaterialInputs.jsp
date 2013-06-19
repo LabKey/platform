@@ -33,7 +33,7 @@
 <%
     JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
-    List<ExpMaterial> sameTypeInputs = new ArrayList<ExpMaterial>();
+    List<ExpMaterial> sameTypeInputs = new ArrayList<>();
     DerivedSamplePropertyHelper helper = bean.getPropertyHelper();
     if (helper.getSampleSet() != null)
     {

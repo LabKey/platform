@@ -427,11 +427,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             Collections.sort(_materialOutputs);
             Collections.sort(_dataOutputs);
 
-            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<ExpMaterial, String>();
+            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<>();
             sortedMaterialInputs.putAll(_materialInputs);
             _materialInputs = sortedMaterialInputs;
 
-            Map<ExpData, String> sortedDataInputs = new TreeMap<ExpData, String>();
+            Map<ExpData, String> sortedDataInputs = new TreeMap<>();
             sortedDataInputs.putAll(_dataInputs);
             _dataInputs = sortedDataInputs;
 
@@ -448,11 +448,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void trimRunTree(Integer id, String type) throws ExperimentException
     {
         ensureUnlocked();
-        List<ExpProtocolApplication> listPA = new ArrayList<ExpProtocolApplication>();
-        List<ExpMaterial> listM = new ArrayList<ExpMaterial>();
-        List<ExpData> listD = new ArrayList<ExpData>();
-        Set<ExpProtocolApplication> ancestorPAStack = new LinkedHashSet<ExpProtocolApplication>();
-        Set<ExpProtocolApplication> descendantPAStack = new LinkedHashSet<ExpProtocolApplication>();
+        List<ExpProtocolApplication> listPA = new ArrayList<>();
+        List<ExpMaterial> listM = new ArrayList<>();
+        List<ExpData> listD = new ArrayList<>();
+        Set<ExpProtocolApplication> ancestorPAStack = new LinkedHashSet<>();
+        Set<ExpProtocolApplication> descendantPAStack = new LinkedHashSet<>();
         ExpProtocolApplicationImpl[] apps = getProtocolApplications();
 
         boolean found = false;
@@ -609,7 +609,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             listPA.add(pa);
         }
 
-        ArrayList<ExpProtocolApplicationImpl> allPA = new ArrayList<ExpProtocolApplicationImpl>();
+        ArrayList<ExpProtocolApplicationImpl> allPA = new ArrayList<>();
         ArrayList<ExpProtocolApplication> deletePA;
         ArrayList<ExpMaterial> deleteM;
         ArrayList<ExpData> deleteD;
@@ -621,12 +621,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             if (listPA.contains(app))
             {
                 allPA.add(app);
-                deleteM = new ArrayList<ExpMaterial>();
+                deleteM = new ArrayList<>();
                 for (ExpMaterial m : app.getInputMaterials())
                 {
                     if (listM.contains(m))
                     {
-                        deletePA = new ArrayList<ExpProtocolApplication>();
+                        deletePA = new ArrayList<>();
                         for (ExpProtocolApplication p : m.getSuccessorApps())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
@@ -642,12 +642,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     getMaterialInputs().remove(m);
                 }
 
-                deleteD = new ArrayList<ExpData>();
+                deleteD = new ArrayList<>();
                 for (ExpData d : app.getInputDatas())
                 {
                     if (listD.contains(d))
                     {
-                        deletePA = new ArrayList<ExpProtocolApplication>();
+                        deletePA = new ArrayList<>();
                         for (ExpProtocolApplication p : d.getSuccessorApps())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
@@ -663,7 +663,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     getDataInputs().remove(d);
                 }
 
-                deleteM = new ArrayList<ExpMaterial>();
+                deleteM = new ArrayList<>();
                 for (ExpMaterial m : app.getOutputMaterials())
                 {
                     if (!listM.contains(m))
@@ -673,7 +673,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     app.getOutputMaterials().remove(m);
 
 
-                deleteD = new ArrayList<ExpData>();
+                deleteD = new ArrayList<>();
                 for (ExpData d : app.getOutputDatas())
                 {
                     if (!listD.contains(d))
@@ -718,10 +718,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void clearCache()
     {
         _populated = false;
-        _dataInputs = new HashMap<ExpData, String>();
-        _materialInputs = new HashMap<ExpMaterial, String>();
-        _materialOutputs = new ArrayList<ExpMaterial>();
-        _dataOutputs = new ArrayList<ExpData>();
+        _dataInputs = new HashMap<>();
+        _materialInputs = new HashMap<>();
+        _materialOutputs = new ArrayList<>();
+        _dataOutputs = new ArrayList<>();
         _protocolSteps = null;
     }
 

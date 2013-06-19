@@ -48,13 +48,13 @@ public class WikiTOCFactory extends BaseWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/wiki/view/customizeWikiToc.jsp", webPart);
+        return new JspView<>("/org/labkey/wiki/view/customizeWikiToc.jsp", webPart);
     }
 
     @Override
     public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
         // for webPartContainer property, use the container path instead of container id
         if (serializedPropertyMap.containsKey("webPartContainer"))
@@ -72,7 +72,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
     @Override
     public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
         // for the webPartContainer property, try to get the container ID from the specified path
         // if a container does not exist for the given path, use the container parameter (i.e. the current container)

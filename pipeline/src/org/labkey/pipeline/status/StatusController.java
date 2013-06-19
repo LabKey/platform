@@ -176,14 +176,14 @@ public class StatusController extends SpringActionController
             }
             else
             {
-                Set<String> locations = new TreeSet<String>();
+                Set<String> locations = new TreeSet<>();
                 TaskPipelineRegistry registry = PipelineJobService.get();
                 for (TaskFactory taskFactory : registry.getTaskFactories())
                 {
                     locations.add(taskFactory.getExecutionLocation());
                 }
                 EnterprisePipelineBean bean = new EnterprisePipelineBean(locations);
-                JspView<EnterprisePipelineBean> overview = new JspView<EnterprisePipelineBean>("/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp", bean);
+                JspView<EnterprisePipelineBean> overview = new JspView<>("/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp", bean);
                 overview.setTitle("Pipeline Overview");
                 result.addView(overview);
             }
@@ -744,7 +744,7 @@ public class StatusController extends SpringActionController
             {
                 throw new NotFoundException();
             }
-            view.addView(new JspView<PipelineStatusFileImpl>("/org/labkey/pipeline/status/escalateJobFailure.jsp", sf));
+            view.addView(new JspView<>("/org/labkey/pipeline/status/escalateJobFailure.jsp", sf));
 
             return view;
         }

@@ -311,7 +311,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             AdminBean bean = new AdminBean(getUser());
-            return new JspView<AdminBean>("/org/labkey/core/admin/admin.jsp", bean);
+            return new JspView<>("/org/labkey/core/admin/admin.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -349,7 +349,7 @@ public class AdminController extends SpringActionController
             //noinspection ConstantConditions,AssertWithSideEffects
             assert null != (asserts = "enabled");
             userEmail = user.getEmail();
-            modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+            modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             Collections.sort(modules, new Comparator<Module>()
             {
                 public int compare(Module o1, Module o2)
@@ -604,10 +604,10 @@ public class AdminController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            List<Map<String, Object>> qinfos = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> qinfos = new ArrayList<>();
 
             FolderType folderType = c.getFolderType();
-            List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+            List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             Collections.sort(allModules, new Comparator<Module>()
             {
                 public int compare(Module o1, Module o2)
@@ -623,7 +623,7 @@ public class AdminController extends SpringActionController
 
             for (Module m : allModules)
             {
-                Map<String, Object> qinfo = new HashMap<String, Object>();
+                Map<String, Object> qinfo = new HashMap<>();
 
                 qinfo.put("name", m.getName());
                 qinfo.put("required", requiredModules.contains(m));
@@ -791,7 +791,7 @@ public class AdminController extends SpringActionController
         private String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
-            Set<String> documentedFilenamesCopy = new HashSet<String>();
+            Set<String> documentedFilenamesCopy = new HashSet<>();
 
             Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
             Matcher m = p.matcher(wikiSource);
@@ -1073,7 +1073,7 @@ public class AdminController extends SpringActionController
             SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
             setHelpTopic("configAdmin");
             getPageConfig().setFocusId("defaultDomain");
-            return new JspView<SiteSettingsBean>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1810,7 +1810,7 @@ public class AdminController extends SpringActionController
         {
             // Log to labkey.log as well as showing through the browser
             BreakpointThread.requestThreadDumpsToLogFile();
-            return new JspView<ThreadsBean>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
+            return new JspView<>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1838,14 +1838,14 @@ public class AdminController extends SpringActionController
 
     public static class ThreadsBean
     {
-        public Map<Thread, Set<Integer>> spids = new HashMap<Thread, Set<Integer>>();
+        public Map<Thread, Set<Integer>> spids = new HashMap<>();
         public List<Thread> threads;
         public Map<Thread, StackTraceElement[]> stackTraces;
 
         ThreadsBean()
         {
             stackTraces =  Thread.getAllStackTraces();
-            threads = new ArrayList<Thread>(stackTraces.keySet());
+            threads = new ArrayList<>(stackTraces.keySet());
             Collections.sort(threads, new Comparator<Thread>()
             {
                 public int compare(Thread o1, Thread o2)
@@ -1854,7 +1854,7 @@ public class AdminController extends SpringActionController
                 }
             });
 
-            spids = new HashMap<Thread, Set<Integer>>();
+            spids = new HashMap<>();
 
             for (Thread t : threads)
             {
@@ -1928,7 +1928,7 @@ public class AdminController extends SpringActionController
             }
 
             getPageConfig().setTemplate(Template.Dialog);
-            return new JspView<TestNetworkDriveBean>("/org/labkey/core/admin/testNetworkDrive.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/admin/testNetworkDrive.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2041,7 +2041,7 @@ public class AdminController extends SpringActionController
     {
         public List<NavTree> getTabList()
         {
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
+            List<NavTree> tabs = new ArrayList<>(2);
 
             tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
             tabs.add(new TabInfo("Details", "details", getActionsURL()));
@@ -2268,8 +2268,8 @@ public class AdminController extends SpringActionController
             }
 
             List<TrackingCache> caches = CacheManager.getKnownCaches();
-            List<CacheStats> cacheStats = new ArrayList<CacheStats>();
-            List<CacheStats> transactionStats = new ArrayList<CacheStats>();
+            List<CacheStats> cacheStats = new ArrayList<>();
+            List<CacheStats> transactionStats = new ArrayList<>();
 
             for (TrackingCache cache : caches)
             {
@@ -2390,7 +2390,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<Map<String, String>>("/org/labkey/core/admin/properties.jsp", System.getenv());
+            return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2468,7 +2468,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ConfigureSystemMaintenanceForm form, boolean reshow, BindException errors) throws Exception
         {
             SystemMaintenanceProperties prop = SystemMaintenance.getProperties();
-            return new JspView<SystemMaintenanceProperties>("/org/labkey/core/admin/systemMaintenance.jsp", prop, errors);
+            return new JspView<>("/org/labkey/core/admin/systemMaintenance.jsp", prop, errors);
         }
 
         @Override
@@ -2564,7 +2564,7 @@ public class AdminController extends SpringActionController
                 LOG.info("Cache clearing and garbage collecting complete");
             }
 
-            return new JspView<MemBean>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
+            return new JspView<>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2605,10 +2605,10 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
-        public final List<Pair<String, Object>> systemProperties = new ArrayList<Pair<String,Object>>();
+        public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
         public final List<MemTracker.HeldReference> references;
-        public final List<String> graphNames = new ArrayList<String>();
-        public final List<String> activeThreads = new LinkedList<String>();
+        public final List<String> graphNames = new ArrayList<>();
+        public final List<String> activeThreads = new LinkedList<>();
 
         public boolean assertsEnabled = false;
 
@@ -2647,7 +2647,7 @@ public class AdminController extends SpringActionController
 
             // ignore recently allocated
             long start = ViewServlet.getRequestStartTime(request) - 2000;
-            references = new ArrayList<MemTracker.HeldReference>(all.size());
+            references = new ArrayList<>(all.size());
 
             for (MemTracker.HeldReference r : all)
             {
@@ -2833,7 +2833,7 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException();
 
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-            List<MemoryCategory> types = new ArrayList<MemoryCategory>(4);
+            List<MemoryCategory> types = new ArrayList<>(4);
 
             types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
             types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
@@ -3027,7 +3027,7 @@ public class AdminController extends SpringActionController
 
         private boolean upgradeInProgress;
 
-        ArrayList<String> _errorList = new ArrayList<String>();
+        ArrayList<String> _errorList = new ArrayList<>();
 
         public boolean isUpgradeInProgress()
         {
@@ -3337,7 +3337,7 @@ public class AdminController extends SpringActionController
                 form.setNotificationEmail(props.getSystemEmailAddress());
             }
 
-            JspView<NewInstallSiteSettingsForm> view = new JspView<NewInstallSiteSettingsForm>("/org/labkey/core/admin/newInstallSiteSettings.jsp", form, errors);
+            JspView<NewInstallSiteSettingsForm> view = new JspView<>("/org/labkey/core/admin/newInstallSiteSettings.jsp", form, errors);
 
             getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
             getPageConfig().setTitle("Set Defaults");
@@ -3383,7 +3383,7 @@ public class AdminController extends SpringActionController
 
     public static List<NavTree> getInstallUpgradeWizardSteps()
     {
-        List<NavTree> navTrail = new ArrayList<NavTree>();
+        List<NavTree> navTrail = new ArrayList<>();
         if (ModuleLoader.getInstance().isNewInstall())
         {
             navTrail.add(new NavTree("Account Setup"));
@@ -3403,7 +3403,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<DataCheckForm>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
+            return new JspView<>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
         }
 
 
@@ -3558,7 +3558,7 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(FolderAliasesForm form, BindException errors) throws Exception
         {
-            List<String> aliases = new ArrayList<String>();
+            List<String> aliases = new ArrayList<>();
             if (form.getAliases() != null)
             {
                 StringTokenizer st = new StringTokenizer(form.getAliases(), "\n\r", false);
@@ -3634,7 +3634,7 @@ public class AdminController extends SpringActionController
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
             }
-            return new JspView<CustomEmailForm>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
+            return new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
         }
 
         public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
@@ -3919,7 +3919,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/renameFolder.jsp", form, errors);
+            return new JspView<>("/org/labkey/core/admin/renameFolder.jsp", form, errors);
         }
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
@@ -3938,7 +3938,7 @@ public class AdminController extends SpringActionController
                     if (form.isAddAlias())
                     {
                         String[] originalAliases = ContainerManager.getAliasesForContainer(c);
-                        List<String> newAliases = new ArrayList<String>(Arrays.asList(originalAliases));
+                        List<String> newAliases = new ArrayList<>(Arrays.asList(originalAliases));
                         newAliases.add(c.getPath());
                         ContainerManager.saveAliasesForContainer(c, newAliases);
                     }
@@ -4050,7 +4050,7 @@ public class AdminController extends SpringActionController
             if (!oldProject.getId().equals(newProject.getId()) && !form.isConfirmed())
             {
                 getPageConfig().setTemplate(Template.Dialog);
-                return new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+                return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
             }
 
             ContainerManager.move(c, newParent, getUser());
@@ -4058,7 +4058,7 @@ public class AdminController extends SpringActionController
             if (form.isAddAlias())
             {
                 String[] originalAliases = ContainerManager.getAliasesForContainer(c);
-                List<String> newAliases = new ArrayList<String>(Arrays.asList(originalAliases));
+                List<String> newAliases = new ArrayList<>(Arrays.asList(originalAliases));
                 newAliases.add(c.getPath());
                 ContainerManager.saveAliasesForContainer(c, newAliases);
             }
@@ -4081,7 +4081,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(Template.Dialog);
-            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+            return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4216,7 +4216,7 @@ public class AdminController extends SpringActionController
 
                         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
                         {
-                            Set<Module> activeModules = new HashSet<Module>();
+                            Set<Module> activeModules = new HashSet<>();
                             for (String moduleName : modules)
                             {
                                 Module module = ModuleLoader.getInstance().getModule(moduleName);
@@ -4267,7 +4267,7 @@ public class AdminController extends SpringActionController
         {
             VBox vbox = new VBox();
 
-            JspView statusView = new JspView<SetFolderPermissionsForm>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
+            JspView statusView = new JspView<>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = this.getViewContext().getContainer();
@@ -4417,7 +4417,7 @@ public class AdminController extends SpringActionController
             VBox vbox = new VBox();
             Container c = getViewContext().getContainer();
 
-            JspView statusView = new JspView<ProjectSettingsForm>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
+            JspView statusView = new JspView<>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
             vbox.addView(statusView);
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
@@ -4517,7 +4517,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(Template.Dialog);
-            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/deleteFolder.jsp", form);
+            return new JspView<>("/org/labkey/core/admin/deleteFolder.jsp", form);
         }
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
@@ -4614,10 +4614,10 @@ public class AdminController extends SpringActionController
         {
             List<Container> children = parent.getChildren();
             String[] order = form.getOrder().split(";");
-            Map<String, Container> nameToContainer = new HashMap<String, Container>();
+            Map<String, Container> nameToContainer = new HashMap<>();
             for (Container child : children)
                 nameToContainer.put(child.getName(), child);
-            List<Container> sorted = new ArrayList<Container>(children.size());
+            List<Container> sorted = new ArrayList<>(children.size());
             for (String childName : order)
             {
                 Container child = nameToContainer.get(childName);
@@ -4735,7 +4735,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors) throws Exception
         {
-            JspView<EmailTestForm> testView = new JspView<EmailTestForm>("/org/labkey/core/admin/emailTest.jsp", form);
+            JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
             if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
@@ -4859,12 +4859,12 @@ public class AdminController extends SpringActionController
             }
             catch (NumberFormatException x) {}
             LoggingEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>(events.length);
+            ArrayList<Map<String, Object>> list = new ArrayList<>(events.length);
             for (LoggingEvent e : events)
             {
                 if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
                 {
-                    HashMap<String, Object> m = new HashMap<String, Object>();
+                    HashMap<String, Object> m = new HashMap<>();
                     m.put("eventId", e.getProperty("eventId"));
                     m.put("level", e.getLevel().toString());
                     m.put("message", e.getMessage());
@@ -5055,7 +5055,7 @@ public class AdminController extends SpringActionController
 
             private ModulesView(Collection<ModuleContext> contexts, String type, String description, String noModulesDescription)
             {
-                List<ModuleContext> sorted = new ArrayList<ModuleContext>(contexts);
+                List<ModuleContext> sorted = new ArrayList<>(contexts);
                 Collections.sort(sorted, new Comparator<ModuleContext>(){
                     @Override
                     public int compare(ModuleContext mc1, ModuleContext mc2)
@@ -5246,7 +5246,7 @@ public class AdminController extends SpringActionController
                 props.save();
             }
 
-            Map<String, Object> ret = new HashMap<String, Object>();
+            Map<String, Object> ret = new HashMap<>();
             ret.put("feature", form.getFeature());
             ret.put("enabled", AppProps.getInstance().isExperimentalFeatureEnabled(form.getFeature()));
             return new ApiSimpleResponse(ret);
@@ -5264,7 +5264,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
         {
-            JspView<Object> view = new JspView<Object>("/org/labkey/core/admin/experimentalFeatures.jsp", null);
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp", null);
             return view;
         }
 
@@ -5422,8 +5422,8 @@ public class AdminController extends SpringActionController
             else
             {
                 String name = form.getTabName();
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), false));
-                CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer(), false));
+                CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
 
                 for (FolderTab tab : getContainer().getFolderType().getDefaultTabs())
                 {
@@ -5481,7 +5481,7 @@ public class AdminController extends SpringActionController
                 // TabType is really pageId of hidden page
                 Portal.showPage(container, form.getTabType());
 
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container));
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container));
                 Portal.PortalPage page = pages.get(form.getTabType());
 
                 if (null == page)
@@ -5518,7 +5518,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(AddTabForm form, boolean reshow, BindException errors) throws Exception
         {
-            HttpView view = new JspView<AddTabForm>("/org/labkey/core/admin/addTab.jsp", form, errors);
+            HttpView view = new JspView<>("/org/labkey/core/admin/addTab.jsp", form, errors);
 
             return view;
         }
@@ -5573,7 +5573,7 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(MoveTabForm form, BindException errors) throws Exception
         {
-            final Map<String, Object> properties = new HashMap<String, Object>();
+            final Map<String, Object> properties = new HashMap<>();
             Container tabContainer;
 
             if (getContainer().isContainerTab())
@@ -5585,7 +5585,7 @@ public class AdminController extends SpringActionController
                 tabContainer = getContainer();
             }
 
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(tabContainer));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer));
             Portal.PortalPage tab = pages.get(form.getPageId());
 
             if (null != tab)
@@ -5662,7 +5662,7 @@ public class AdminController extends SpringActionController
     private Portal.PortalPage handleMovePortalPage(Container c, Portal.PortalPage page, int direction)
     {
         Map<String, Portal.PortalPage> pages = Portal.getPages(c, false);
-        ArrayList<Portal.PortalPage> pagesList = new ArrayList<Portal.PortalPage>(pages.values());
+        ArrayList<Portal.PortalPage> pagesList = new ArrayList<>(pages.values());
 
         Collections.sort(pagesList, new Comparator<Portal.PortalPage>()
         {
@@ -5729,7 +5729,7 @@ public class AdminController extends SpringActionController
                     return;
                 }
 
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), true));
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer(), true));
                 Portal.PortalPage pageToChange = pages.get(form.getPageId());
                 if (null == pageToChange)
                 {
@@ -5774,7 +5774,7 @@ public class AdminController extends SpringActionController
         {
             Container container = getContainer();
             String name = form.getTabName();
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container));
             Portal.PortalPage page = pages.get(form.getPageId());
 
             if (null == page)
@@ -5795,7 +5795,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(RenameTabForm form, boolean reshow, BindException errors) throws Exception
         {
-            HttpView view = new JspView<RenameTabForm>("/org/labkey/core/admin/renameTab.jsp", form, errors);
+            HttpView view = new JspView<>("/org/labkey/core/admin/renameTab.jsp", form, errors);
 
             return view;
         }

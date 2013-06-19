@@ -101,15 +101,15 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
     private static final Logger _log = Logger.getLogger(ReportService.class);
-    private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<ReportService.ViewFactory>();
-    private static List<ReportService.UIProvider> _uiProviders = new ArrayList<ReportService.UIProvider>();
-    private static Map<String, ReportService.UIProvider> _typeToProviderMap = new HashMap<String, ReportService.UIProvider>();
+    private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<>();
+    private static List<ReportService.UIProvider> _uiProviders = new ArrayList<>();
+    private static Map<String, ReportService.UIProvider> _typeToProviderMap = new HashMap<>();
 
     /** maps descriptor types to providers */
-    private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<String, Class>();
+    private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<>();
 
     /** maps report types to implementations */
-    private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<String, Class>();
+    private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<>();
 
     private final ReportQueryChangeListener _listener = new ReportQueryChangeListener();
 
@@ -178,11 +178,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         Set<Resource> reportFiles = module.getReportFiles();
 
-        ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(reportFiles.size());
+        ArrayList<ReportDescriptor> list = new ArrayList<>(reportFiles.size());
 
         // Keep files that might be Query reports (end in .xml);
         // below we'll remove ones that are associated with R or JS reports
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
         for (Resource file : reportFiles)
         {
             if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
@@ -272,14 +272,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             reportDirectory = module.getModuleResource(reportDirectory.getPath().getParent());
         }
 
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
         for (Resource file : reportDirectory.list())
         {
             if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
                 possibleQueryReportFiles.put(file.getName(), file);
         }
 
-        List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
+        List<ReportDescriptor> reportDescriptors = new ArrayList<>();
         ReportDescriptor descriptor;
         for (Resource file : reportDirectory.list())
         {
@@ -352,7 +352,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     @NotNull
     private List<ReportDescriptor> getDescriptorsHelper(Collection<? extends Resource> files, Module module, Container container, User user)
     {
-        List<ReportDescriptor> list = new ArrayList<ReportDescriptor>();
+        List<ReportDescriptor> list = new ArrayList<>();
         ReportDescriptor descriptor;
 
         for (Resource file : files)
@@ -544,7 +544,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public void validateReportPermissions(ContainerUser context, Report report)
     {
-        List<ValidationError> errors = new ArrayList<ValidationError>();
+        List<ValidationError> errors = new ArrayList<>();
 
         tryValidateReportPermissions(context, report, errors);
 
@@ -720,7 +720,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         if (rawReports.length > 0)
         {
-            List<Report> descriptors = new ArrayList<Report>();
+            List<Report> descriptors = new ArrayList<>();
             for (ReportDB r : rawReports)
             {
                 Report report = _getInstance(r);
@@ -747,7 +747,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report[] getReports(User user, Container c, String key)
     {
-        List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
+        List<ReportDescriptor> moduleReportDescriptors = new ArrayList<>();
 
         List<ReportDescriptor> descriptors;
         for (Module module : c.getActiveModules())
@@ -757,7 +757,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             moduleReportDescriptors.addAll(descriptors);
         }
 
-        List<Report> reports = new ArrayList<Report>();
+        List<Report> reports = new ArrayList<>();
 
         for (ReportDescriptor descriptor : moduleReportDescriptors)
         {

@@ -120,7 +120,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
     public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Integer... objectIds) throws SQLException
     {
         Domain dataDomain = provider.getResultsDomain(protocol);
-        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        List<FieldKey> fieldKeys = new ArrayList<>();
         for (DomainProperty property : dataDomain.getProperties())
         {
             fieldKeys.add(FieldKey.fromParts(property.getName()));

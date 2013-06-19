@@ -133,12 +133,12 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     {
         if (mapFieldKeyToSiblings == null)
         {
-            mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
+            mapFieldKeyToSiblings = new TreeMap<>();
             Query query = _relation._query;
             for (Map.Entry<QueryTable,Map<FieldKey,QueryRelation.RelationColumn>> maps : query.qtableColumnMaps.entrySet())
             {
                 Map<FieldKey,QueryRelation.RelationColumn> map = maps.getValue();
-                Map<FieldKey,FieldKey> flippedMap = new TreeMap<FieldKey, FieldKey>();
+                Map<FieldKey,FieldKey> flippedMap = new TreeMap<>();
                 for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
                 {
                     flippedMap.put(e.getValue().getFieldKey(), e.getKey());

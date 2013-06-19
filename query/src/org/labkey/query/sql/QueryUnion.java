@@ -41,9 +41,9 @@ public class QueryUnion extends QueryRelation
     QLimit _limit;
 
 
-    List<QueryRelation> _termList = new ArrayList<QueryRelation>();
-    Map<String, UnionColumn> _unionColumns = new LinkedHashMap<String, UnionColumn>();
-    List<UnionColumn> _allColumns = new ArrayList<UnionColumn>();
+    List<QueryRelation> _termList = new ArrayList<>();
+    Map<String, UnionColumn> _unionColumns = new LinkedHashMap<>();
+    List<UnionColumn> _allColumns = new ArrayList<>();
 
 
 	QueryUnion(Query query, QUnion qunion)

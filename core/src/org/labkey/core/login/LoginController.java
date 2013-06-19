@@ -825,7 +825,7 @@ public class LoginController extends SpringActionController
             NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
             SetPasswordBean bean = new SetPasswordBean(form, getEmailForForm(form), _unrecoverableError, getMessage(form), nonPasswordInputs, passwordInputs, getClass(), isCancellable(form), buttonText);
-            HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", bean, errors);
+            HttpView view = new JspView<>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
@@ -850,7 +850,7 @@ public class LoginController extends SpringActionController
             String password = request.getParameter("password");
             String password2 = request.getParameter("password2");
 
-            Collection<String> messages = new LinkedList<String>();
+            Collection<String> messages = new LinkedList<>();
             User user = UserManager.getUser(_email);
 
             if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
@@ -1172,7 +1172,7 @@ public class LoginController extends SpringActionController
 
         private static List<String> getAttributions()
         {
-            List<String> attributions = new ArrayList<String>();
+            List<String> attributions = new ArrayList<>();
 
             for (Module module : ModuleLoader.getInstance().getModules())
             {
@@ -1374,7 +1374,7 @@ public class LoginController extends SpringActionController
             if (null != _finishView)
                 return _finishView;
 
-            JspView view = new JspView<LoginForm>("/org/labkey/core/login/resetPassword.jsp", form, errors);
+            JspView view = new JspView<>("/org/labkey/core/login/resetPassword.jsp", form, errors);
 
             if (null == form.getEmail())
             {
@@ -1435,7 +1435,7 @@ public class LoginController extends SpringActionController
                 UserManager.addToUserHistory(UserManager.getUser(_email), _email + " attempted to reset the password, but the reset failed: " + e.getMessage());
             }
 
-            _finishView = new JspView<String>("/org/labkey/core/login/finishResetPassword.jsp", sbReset.toString());
+            _finishView = new JspView<>("/org/labkey/core/login/finishResetPassword.jsp", sbReset.toString());
 
             return false;
         }
@@ -1727,7 +1727,7 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<Config>("/org/labkey/core/login/configureDbLogin.jsp", form);
+            return new JspView<>("/org/labkey/core/login/configureDbLogin.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)

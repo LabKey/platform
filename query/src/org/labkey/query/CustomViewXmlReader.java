@@ -69,7 +69,7 @@ public class CustomViewXmlReader
 
     private String _schema;
     private String _query;
-    private List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> _colList = new ArrayList<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>>();
+    private List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> _colList = new ArrayList<>();
     private boolean _hidden = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
@@ -283,7 +283,7 @@ public class CustomViewXmlReader
 
     protected static List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)
     {
-        List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>>();
+        List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<>();
 
         if(null == columns)
             return ret;
@@ -295,7 +295,7 @@ public class CustomViewXmlReader
                 continue;
 
             //load any column properties that might be there
-            Map<CustomView.ColumnProperty,String> props = new HashMap<CustomView.ColumnProperty,String>();
+            Map<CustomView.ColumnProperty,String> props = new HashMap<>();
 
             PropertiesType propsList = column.getProperties();
             if(null != propsList)
@@ -322,13 +322,13 @@ public class CustomViewXmlReader
         if(null == filters)
             return null;
 
-        List<Pair<String,String>> ret = new ArrayList<Pair<String,String>>();
+        List<Pair<String,String>> ret = new ArrayList<>();
         for(FilterType filter : filters.getFilterArray())
         {
             if(null == filter.getColumn() || null == filter.getOperator())
                 continue;
 
-            ret.add(new Pair<String,String>(filter.getColumn() + "~" + filter.getOperator().toString(), filter.getValue()));
+            ret.add(new Pair<>(filter.getColumn() + "~" + filter.getOperator().toString(), filter.getValue()));
         }
 
         return ret;
@@ -344,7 +344,7 @@ public class CustomViewXmlReader
         if(null == sorts)
             return null;
 
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for(SortType sort : sorts.getSortArray())
         {
             if(null == sort.getColumn())
@@ -360,7 +360,7 @@ public class CustomViewXmlReader
         if (null == aggregates)
             return null;
 
-        List<Aggregate> ret = new ArrayList<Aggregate>();
+        List<Aggregate> ret = new ArrayList<>();
         for (AggregateType aggregate : aggregates.getAggregateArray())
         {
             String column = StringUtils.trimToNull(aggregate.getColumn());

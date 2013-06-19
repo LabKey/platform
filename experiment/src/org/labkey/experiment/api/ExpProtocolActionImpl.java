@@ -72,7 +72,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         ResultSet rs = null;
         try
         {
-            List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
+            List<ExpProtocolAction> ret = new ArrayList<>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("ActionId", getRowId());
             rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null);
@@ -99,7 +99,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         ResultSet rs = null;
         try
         {
-            List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
+            List<ExpProtocolAction> ret = new ArrayList<>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PredecessorId", getRowId());
             rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null);
@@ -122,7 +122,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
 
     public void addSuccessor(User user, ExpProtocolAction successor) throws Exception
     {
-        Map<String, Integer> map = new HashMap<String, Integer>();
+        Map<String, Integer> map = new HashMap<>();
         map.put("PredecessorId", getRowId());
         map.put("ActionId", successor.getRowId());
         Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), map);

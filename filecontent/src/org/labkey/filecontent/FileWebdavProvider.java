@@ -67,7 +67,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             return null;
         }
         // Check for the default file location
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         File root = svc.getFileRoot(c);
         if (root != null && NetworkDrive.exists(root))
         {
@@ -167,8 +167,8 @@ public class FileWebdavProvider implements WebdavService.Provider
     class _FilesetsFolder extends AbstractWebdavResourceCollection
     {
         Container _c;
-        HashMap<String,AttachmentDirectory> _map = new HashMap<String, AttachmentDirectory>();
-        ArrayList<String> _names = new ArrayList<String>();
+        HashMap<String,AttachmentDirectory> _map = new HashMap<>();
+        ArrayList<String> _names = new ArrayList<>();
         
         _FilesetsFolder(Container c, Path folder)
         {

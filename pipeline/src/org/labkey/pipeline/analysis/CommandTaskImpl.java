@@ -45,9 +45,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     {
         private String _statusName = "COMMAND";
         private String _protocolActionName;
-        private Map<String, String> _environment = new HashMap<String, String>();
-        private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
-        private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
+        private Map<String, String> _environment = new HashMap<>();
+        private Map<String, TaskPath> _inputPaths = new HashMap<>();
+        private Map<String, TaskPath> _outputPaths = new HashMap<>();
         private ListToCommandArgs _converter = new ListToCommandArgs();
         private boolean _copyInput;
         private boolean _removeInput;
@@ -232,7 +232,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             {
                 // If the config doesn't specify that only one of the inputs should have a button next to it,
                 // use them all
-                List<FileType> result = new ArrayList<FileType>(_inputPaths.size());
+                List<FileType> result = new ArrayList<>(_inputPaths.size());
                 for (TaskPath taskPath : _inputPaths.values())
                 {
                     result.add(taskPath.getType());
@@ -310,7 +310,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
                 _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
 
-        ArrayList<String> paths = new ArrayList<String>();
+        ArrayList<String> paths = new ArrayList<>();
         for (File file : _wd.getWorkFiles(f, tp))
             paths.add(_wd.getRelativePath(file));
         return paths.toArray(new String[paths.size()]);
@@ -469,7 +469,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
     private void applyEnvironment(ProcessBuilder pb)
     {
-        Map<String, String> originalEnvironment = new HashMap<String, String>(pb.environment());
+        Map<String, String> originalEnvironment = new HashMap<>(pb.environment());
         for (Map.Entry<String, String> entry : _factory._environment.entrySet())
         {
             pb.environment().put(entry.getKey(), variableSubstitution(entry.getValue(), originalEnvironment));

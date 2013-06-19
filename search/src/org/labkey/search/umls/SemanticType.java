@@ -111,7 +111,7 @@ public class SemanticType // MRSTY
             @Override
             public ArrayList<SemanticType> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<SemanticType> list = new ArrayList<SemanticType>();
+                ArrayList<SemanticType> list = new ArrayList<>();
                 while (rs.next())
                     list.add(new SemanticType(ResultSetUtil.mapRow(rs)));
                 return list;

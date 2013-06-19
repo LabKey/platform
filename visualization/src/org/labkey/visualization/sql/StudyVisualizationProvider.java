@@ -105,7 +105,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         if (!first.getContainer().equals(second.getContainer()))
             throw new IllegalArgumentException("Can't yet join across containers.");
 
-        List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
+        List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = new ArrayList<>();
 
         String firstSubjectColumnName = StudyService.get().getSubjectColumnName(first.getContainer());
         String firstSubjectNounSingular = StudyService.get().getSubjectNounSingular(first.getContainer());
@@ -116,7 +116,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         // allow null results for this column so as to follow the lead of the primary measure column for this query:
         VisualizationSourceColumn secondSubjectCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectColName, true);
 
-        joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSubjectCol, secondSubjectCol));
+        joinCols.add(new Pair<>(firstSubjectCol, secondSubjectCol));
 
         // attempt to lookup the dataset using the queryName by label and then by name
         int firstDatasetId  = StudyService.get().getDatasetIdByQueryName(first.getContainer(), first.getQueryName());
@@ -130,7 +130,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         {
             VisualizationSourceColumn firstSequenceCol = getVisitJoinColumn(factory, first, firstSubjectNounSingular);
             VisualizationSourceColumn secondSequenceCol = getVisitJoinColumn(factory, second, secondSubjectNounSingular);
-            joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
+            joinCols.add(new Pair<>(firstSequenceCol, secondSequenceCol));
 
             // for datasets with matching 3rd keys, join on subject/visit/key (if neither are pivoted), allowing null results for this column so as to follow the lead of the primary measure column for this query:
             if (firstDataSet != null && firstDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
@@ -139,7 +139,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             {
                 VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataSet.getKeyPropertyName(), true);
                 VisualizationSourceColumn secondKeyCol = factory.create(second.getSchema(), second.getQueryName(), secondDataSet.getKeyPropertyName(), true);
-                joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstKeyCol, secondKeyCol));
+                joinCols.add(new Pair<>(firstKeyCol, secondKeyCol));
             }
         }
 
@@ -206,7 +206,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         }
         else if (type == ColumnMatchType.All_VISIBLE)
         {
-            List<Pair<FieldKey, ColumnInfo>> colsToRemove = new ArrayList<Pair<FieldKey, ColumnInfo>>();
+            List<Pair<FieldKey, ColumnInfo>> colsToRemove = new ArrayList<>();
             String subjectColName = StudyService.get().getSubjectColumnName(container);
             String visitColName = StudyService.get().getSubjectVisitColumnName(container);
 
@@ -228,7 +228,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     @Override
     protected Set<String> getTableNames(UserSchema schema)
     {
-        Set<String> tables = new HashSet<String>(super.getTableNames(schema));
+        Set<String> tables = new HashSet<>(super.getTableNames(schema));
         tables.remove("StudyData");
         return tables;
     }
@@ -237,7 +237,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         // For studies, valid zero date columns are found in demographic datasets only:
-        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
         Study study = StudyService.get().getStudy(context.getContainer());
         if (study != null)
         {
@@ -288,7 +288,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     {
         if (queryType == VisualizationController.QueryType.datasets)
         {
-            Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
+            Map<QueryDefinition, TableInfo> queries = new HashMap<>();
             Study study = StudyService.get().getStudy(context.getContainer());
             UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             addDatasetQueryDefinitions(context, schema, study, queries);
@@ -306,7 +306,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     {
         if (queryType == VisualizationController.QueryType.builtIn || queryType == VisualizationController.QueryType.datasets)
         {
-            Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
+            Map<QueryDefinition, TableInfo> queries = new HashMap<>();
             Study study = StudyService.get().getStudy(context.getContainer());
             UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             if (study != null)

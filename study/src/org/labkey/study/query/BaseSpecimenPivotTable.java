@@ -52,8 +52,8 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         // Map of names to normalized and legalized names
         // If normalized name is duplicated, it is added to the Duplicated set
-        private HashMap<String, String> _nameToNormalName = new HashMap<String, String>();
-        private HashSet<String> _normalNameDuplicated = new HashSet<String>();
+        private HashMap<String, String> _nameToNormalName = new HashMap<>();
+        private HashSet<String> _normalNameDuplicated = new HashSet<>();
 
         public void putName(String key)
         {
@@ -221,7 +221,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
      */
     protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
@@ -248,7 +248,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
      */
     protected Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container) throws SQLException
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         List<PrimaryType> primaryTypes = SampleManager.getInstance().getPrimaryTypes(container);
 
@@ -270,7 +270,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
      */
     protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
         List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
@@ -295,7 +295,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
      */
     protected Map<Integer, NameLabelPair> getSiteMap(Container container)
     {
-        Map<Integer, NameLabelPair> siteMap = new HashMap<Integer, NameLabelPair>();
+        Map<Integer, NameLabelPair> siteMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         LocationImpl[] locations = SampleManager.getInstance().getSites(container);
 

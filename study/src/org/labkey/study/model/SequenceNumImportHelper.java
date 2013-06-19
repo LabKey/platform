@@ -46,7 +46,7 @@ public class SequenceNumImportHelper
     final Date _startDate;
     final int _startDaysSinceEpoch;
     final Double _defaultSequenceNum;
-    final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<String>();
+    final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<>();
     final SequenceVisitMap _sequenceNumMap;
 
 
@@ -292,7 +292,7 @@ translateToDouble:
         @Test
         public void testVisitBasedNonDemographic()
         {
-            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<Double>();
+            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             map.put("Enrollment",1.0000);
             map.put("SR",9999.0000);
             SequenceNumImportHelper h = new SequenceNumImportHelper(
@@ -323,7 +323,7 @@ translateToDouble:
         @Test
         public void testVisitBasedDemographic()
         {
-            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<Double>();
+            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             map.put("Enrollment",1.0000);
             map.put("SR",9999.0000);
             SequenceNumImportHelper h = new SequenceNumImportHelper(
@@ -345,7 +345,7 @@ translateToDouble:
         @Test
         public void testDateBasedNotDemographic()
         {
-            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<Double>();
+            CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             SequenceNumImportHelper h = new SequenceNumImportHelper(
                     TimepointType.DATE,
                     parseDateTime("1 Jan 2000 1:00pm"),

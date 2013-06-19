@@ -98,7 +98,7 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     public Set<String> getParticipantSet()
     {
         Participant[] participants = CohortManager.getInstance().getParticipantsForCohort(getContainer(), _rowId);
-        Set<String> ptids = new HashSet<String>();
+        Set<String> ptids = new HashSet<>();
         for (Participant p : participants)
         {
             ptids.add(p.getParticipantId());

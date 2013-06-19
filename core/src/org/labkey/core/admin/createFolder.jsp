@@ -470,7 +470,7 @@
 
         var folderTemplateWriters = [];
         <%
-            Collection<FolderWriter> writers = new LinkedList<FolderWriter>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
+            Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
             for (FolderWriter writer : writers)
             {
                 String parent = writer.getSelectionText();

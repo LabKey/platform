@@ -70,17 +70,17 @@ public class DotGraph
     {
         pwOut = out;
         urlBase = url;
-        pendingMNodes = new TreeMap<Integer, DotNode>();
-        pendingDNodes = new TreeMap<Integer, DotNode>();
-        pendingProcNodes = new TreeMap<Integer, DotNode>();
-        groupMNodes = new HashMap<Integer, GroupedNode>();
-        groupDNodes = new HashMap<Integer, GroupedNode>();
-        groupPANodes = new HashMap<Integer, GroupedNode>();
-        writtenMNodes = new HashMap<Integer, DotNode>();
-        writtenDNodes = new HashMap<Integer, DotNode>();
-        writtenProcNodes = new HashMap<Integer, DotNode>();
-        pendingConnects = new HashSet<String>();
-        writtenConnects = new HashSet<String>();
+        pendingMNodes = new TreeMap<>();
+        pendingDNodes = new TreeMap<>();
+        pendingProcNodes = new TreeMap<>();
+        groupMNodes = new HashMap<>();
+        groupDNodes = new HashMap<>();
+        groupPANodes = new HashMap<>();
+        writtenMNodes = new HashMap<>();
+        writtenDNodes = new HashMap<>();
+        writtenProcNodes = new HashMap<>();
+        pendingConnects = new HashSet<>();
+        writtenConnects = new HashSet<>();
 
         if (bSmallFonts)
             pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
@@ -356,7 +356,7 @@ public class DotGraph
 
     public void writePending(Map<Integer, DotNode> pendingMap, Map<Integer, DotNode> writtenMap)
     {
-        Set<Integer> nodesToMove = new HashSet<Integer>();
+        Set<Integer> nodesToMove = new HashSet<>();
         for (Integer key : pendingMap.keySet())
         {
             DotNode node = pendingMap.get(key);
@@ -587,7 +587,7 @@ public class DotGraph
             super(GROUP_ID_PREFIX + actionseq + node.type, node.id, "More... ");
             gid = groupId;
             sequence = actionseq;
-            gMap = new TreeMap<Integer, DotNode>();
+            gMap = new TreeMap<>();
             gMap.put(node.id, node);
             //setShape(node.shape, node.color + GROUP_OPACITY);
             setShape(node.shape, GROUP_COLOR);

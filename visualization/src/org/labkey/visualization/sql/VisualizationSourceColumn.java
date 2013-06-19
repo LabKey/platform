@@ -51,7 +51,7 @@ public class VisualizationSourceColumn
 
     public Map<String, String> toJSON(String measureName)
     {
-        Map<String, String> info = new HashMap<String, String>();
+        Map<String, String> info = new HashMap<>();
         info.put("measureName", getOriginalName());
         if (getClientAlias() != null)
         {

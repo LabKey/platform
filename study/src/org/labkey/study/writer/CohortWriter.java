@@ -78,7 +78,7 @@ public class CohortWriter implements InternalStudyWriter
         cohortsXml.setFile(COHORTS_FILENAME);
 
         List<CohortImpl> cohorts = study.getCohorts(ctx.getUser());
-        MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.size());
+        MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<>(cohorts.size());
         ParticipantMapper participantMapper = ctx.getParticipantMapper();
 
         for (Participant participant : StudyManager.getInstance().getParticipants(study))

@@ -103,7 +103,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         ExperimentServiceImpl.get().getSchema().getScope().ensureTransaction();
         try
         {
-            Map<String,Integer> dataFiles = new HashMap<String,Integer>();
+            Map<String,Integer> dataFiles = new HashMap<>();
 
             for (ExpData oldData : experimentRun.getAllDataUsedByRun())
             {

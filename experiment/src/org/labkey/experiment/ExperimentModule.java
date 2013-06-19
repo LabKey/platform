@@ -128,7 +128,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> result = new ArrayList<WebPartFactory>();
+        List<WebPartFactory> result = new ArrayList<>();
 
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME)
         {
@@ -186,7 +186,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", WebPartFactory.LOCATION_MENUBAR, false, false) {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {
-                WebPartView view = new JspView<Portal.WebPart>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }
@@ -291,7 +291,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public Collection<String> getSummary(Container c)
     {
-        Collection<String> list = new LinkedList<String>();
+        Collection<String> list = new LinkedList<>();
         int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).length;
         if (runGroupCount > 0)
             list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));

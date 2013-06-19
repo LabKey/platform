@@ -77,7 +77,7 @@ public class DatasetImportRunnable implements Runnable
 
     public String validate()
     {
-        List<String> errors = new ArrayList<String>(5);
+        List<String> errors = new ArrayList<>(5);
         validate(errors);
         return errors.isEmpty() ? null : errors.get(0);
     }
@@ -116,7 +116,7 @@ public class DatasetImportRunnable implements Runnable
         QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
                 StudyManager.getInstance().getQCStateForRowId(_job.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         validate(errors);
 
         if (!errors.isEmpty())

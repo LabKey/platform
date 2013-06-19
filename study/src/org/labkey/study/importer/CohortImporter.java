@@ -135,7 +135,7 @@ public class CohortImporter implements InternalStudyImporter
             throw new InvalidFileException(root.getRelativePath(cohortFileName), e);
         }
 
-        Map<String, Integer> p2c = new HashMap<String, Integer>();
+        Map<String, Integer> p2c = new HashMap<>();
         CohortsDocument.Cohorts.Cohort[] cohortXmls = cohortAssignmentXml.getCohorts().getCohortArray();
 
         for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)

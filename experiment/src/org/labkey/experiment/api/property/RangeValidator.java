@@ -86,7 +86,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
     @SuppressWarnings("unchecked")
     private Pair<String, String>[] parseExpression(String expression)
     {
-        List<Pair<String, String>> constraints = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> constraints = new ArrayList<>();
         String[] parts = expression.split("&");
         for (String part : parts)
         {
@@ -102,7 +102,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         String[] parts = expression.split("=");
         if (parts.length == 2)
         {
-            return new Pair<String, String>(parts[0], parts[1]);
+            return new Pair<>(parts[0], parts[1]);
         }
         return null;
     }

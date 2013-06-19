@@ -97,10 +97,10 @@ public class SpecimenApiController extends BaseStudyController
 
     private List<Map<String, Object>> getSpecimenListResponse(List<Specimen> vials) throws SQLException
     {
-        List<Map<String, Object>> response = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> response = new ArrayList<>();
         for (Specimen vial : vials)
         {
-            Map<String, Object> vialProperties = new HashMap<String, Object>();
+            Map<String, Object> vialProperties = new HashMap<>();
             response.add(vialProperties);
             vialProperties.put("rowId", vial.getRowId());
             vialProperties.put("globalUniqueId", vial.getGlobalUniqueId());
@@ -142,13 +142,13 @@ public class SpecimenApiController extends BaseStudyController
 
     private Map<String, Object> getRequestResponse(ViewContext context, SampleRequest request) throws SQLException
     {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         map.put("requestId", request.getRowId());
         map.put("comments", request.getComments());
         map.put("created", request.getCreated());
         map.put("createdBy", request.getCreatedBy());
         User user = UserManager.getUser(request.getCreatedBy());
-        Map<String, Object> userMap = new HashMap<String, Object>();
+        Map<String, Object> userMap = new HashMap<>();
         userMap.put("userId", request.getCreatedBy());
         userMap.put("displayName", user.getDisplayName(context.getUser()));
         map.put("createdBy", userMap);
@@ -172,7 +172,7 @@ public class SpecimenApiController extends BaseStudyController
 
     private Map<String, Object> getLocation(LocationImpl location1)
     {
-        Map<String, Object> locationMap = new HashMap<String, Object>();
+        Map<String, Object> locationMap = new HashMap<>();
         locationMap.put("endpoint", location1.isEndpoint());
         locationMap.put("entityId", location1.getEntityId());
         locationMap.put("label", location1.getLabel());
@@ -189,7 +189,7 @@ public class SpecimenApiController extends BaseStudyController
 
     private List<Map<String, Object>> getRequestListResponse(ViewContext context, List<SampleRequest> requests) throws SQLException
     {
-        List<Map<String, Object>> response = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> response = new ArrayList<>();
         for (SampleRequest request : requests)
             response.add(getRequestResponse(context, request));
         return response;
@@ -201,7 +201,7 @@ public class SpecimenApiController extends BaseStudyController
     {
         public ApiResponse execute(SampleApiForm form, BindException errors) throws Exception
         {
-            final List<Map<String, Object>> repositories = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> repositories = new ArrayList<>();
             for (LocationImpl location : StudyManager.getInstance().getSites(getContainer()))
             {
                 if (location.isRepository())
@@ -211,7 +211,7 @@ public class SpecimenApiController extends BaseStudyController
             {
                 public Map<String, ?> getProperties()
                 {
-                    Map<String, Object> result = new HashMap<String, Object>();
+                    Map<String, Object> result = new HashMap<>();
                     result.put("repositories", repositories);
                     return result;
                 }
@@ -228,14 +228,14 @@ public class SpecimenApiController extends BaseStudyController
             Container container = requestsForm.getViewContext().getContainer();
             User user = requestsForm.getViewContext().getUser();
             SampleRequestStatus shoppingCartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(container, user);
-            final Map<String, Object> response = new HashMap<String, Object>();
+            final Map<String, Object> response = new HashMap<>();
             if (user != null && shoppingCartStatus != null)
             {
                 boolean allUsers = getContainer().hasPermission(getUser(), ManageRequestsPermission.class);
                 if (requestsForm.isAllUsers() != null)
                     allUsers = requestsForm.isAllUsers().booleanValue();
                 List<SampleRequest> allUserRequests = SampleManager.getInstance().getRequests(container, allUsers ? null : user);
-                List<SampleRequest> nonFinalRequests = new ArrayList<SampleRequest>();
+                List<SampleRequest> nonFinalRequests = new ArrayList<>();
                 for (SampleRequest request : allUserRequests)
                 {
                     if (SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) && !SampleManager.getInstance().isInFinalState(request))
@@ -265,7 +265,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors) throws Exception
         {
             SampleRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
-            final Map<String, Object> response = new HashMap<String, Object>();
+            final Map<String, Object> response = new HashMap<>();
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
             return new ApiResponse()
             {
@@ -316,8 +316,8 @@ public class SpecimenApiController extends BaseStudyController
             Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
-            final Map<String, Object> response = new HashMap<String, Object>();
-            List<Map<String, Object>> locations = new ArrayList<Map<String, Object>>();
+            final Map<String, Object> response = new HashMap<>();
+            List<Map<String, Object>> locations = new ArrayList<>();
             for (Integer locationId : preferredLocations)
                 locations.add(getLocation(getContainer(), locationId));
             response.put("locations", locations);
@@ -338,7 +338,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(GetVialsByRowIdForm form, BindException errors) throws Exception
         {
             Container container = form.getViewContext().getContainer();
-            final Map<String, Object> response = new HashMap<String, Object>();
+            final Map<String, Object> response = new HashMap<>();
             List<Map<String, Object>> vialList;
             if (form.getRowIds() != null && form.getRowIds().length > 0)
             {
@@ -511,7 +511,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
             SampleRequest request = getRequest(getUser(), getContainer(), vialRequestForm.getRequestId(), true, true);
-            List<Integer> rowIds = new ArrayList<Integer>();
+            List<Integer> rowIds = new ArrayList<>();
             List<Specimen> currentSpecimens = request.getSpecimens();
             for (String vialId : vialRequestForm.getVialIds())
             {
@@ -621,7 +621,7 @@ public class SpecimenApiController extends BaseStudyController
         // Recursively decend through the vial type hierarchy, adding a count property and a list of children for each type.
         for (SpecimenTypeSummary.TypeCount count : types)
         {
-            Map<String, Object> countProperties = new TreeMap<String, Object>();
+            Map<String, Object> countProperties = new TreeMap<>();
             summary.add(countProperties);
             countProperties.put("label", count.getLabel() != null ? count.getLabel() : "[unknown]");
             countProperties.put("count", count.getVialCount());
@@ -629,7 +629,7 @@ public class SpecimenApiController extends BaseStudyController
             List<? extends SpecimenTypeSummary.TypeCount> childCounts = count.getChildren();
             if (childCounts != null && !childCounts.isEmpty())
             {
-                List<Map<String, Object>> childList = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> childList = new ArrayList<>();
                 buildTypeSummary(childList, childCounts);
                 if (!childList.isEmpty())
                     countProperties.put("children", childList);
@@ -645,17 +645,17 @@ public class SpecimenApiController extends BaseStudyController
         {
             Container container = form.getViewContext().getContainer();
             SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(container);
-            final Map<String, Object> response = new HashMap<String, Object>();
+            final Map<String, Object> response = new HashMap<>();
 
-            List<Map<String, Object>> primaryTypes = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> primaryTypes = new ArrayList<>();
             buildTypeSummary(primaryTypes, summary.getPrimaryTypes());
             response.put("primaryTypes", primaryTypes);
 
-            List<Map<String, Object>> derivativeTypes = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> derivativeTypes = new ArrayList<>();
             buildTypeSummary(derivativeTypes, summary.getDerivatives());
             response.put("derivativeTypes", derivativeTypes);
 
-            List<Map<String, Object>> additiveTypes = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> additiveTypes = new ArrayList<>();
             buildTypeSummary(additiveTypes, summary.getAdditives());
             response.put("additiveTypes", additiveTypes);
 
@@ -694,10 +694,10 @@ public class SpecimenApiController extends BaseStudyController
             RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
             ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
 
-            final Map<String, Object> response = new HashMap<String, Object>();
+            final Map<String, Object> response = new HashMap<>();
 
             SampleManager sampleManager = SampleManager.getInstance();
-            List<Map<String, Object>> groupingsJSON = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> groupingsJSON = new ArrayList<>();
             for (String[] grouping: groupings)
             {
                 if (null != StringUtils.trimToNull(grouping[0]))        // Do nothing if no columns were specified

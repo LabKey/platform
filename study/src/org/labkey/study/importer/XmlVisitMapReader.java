@@ -84,14 +84,14 @@ public class XmlVisitMapReader implements VisitMapReader
     public List<VisitMapRecord> getVisitMapRecords() throws VisitMapParseException
     {
         VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
-        List<VisitMapRecord> visits = new ArrayList<VisitMapRecord>(visitsXml.length);
+        List<VisitMapRecord> visits = new ArrayList<>(visitsXml.length);
 
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
         {
             double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
 
-            List<Integer> required = new ArrayList<Integer>();
-            List<Integer> optional = new ArrayList<Integer>();
+            List<Integer> required = new ArrayList<>();
+            List<Integer> optional = new ArrayList<>();
 
             if (null != visitXml.getDatasets())
             {
@@ -121,7 +121,7 @@ public class XmlVisitMapReader implements VisitMapReader
     @NotNull
     public List<StudyManager.VisitAlias> getVisitImportAliases()
     {
-        List<StudyManager.VisitAlias> ret = new LinkedList<StudyManager.VisitAlias>();
+        List<StudyManager.VisitAlias> ret = new LinkedList<>();
         ImportAliases importAliasesXml = _visitMapXml.getImportAliases();
 
         if (null != importAliasesXml)

@@ -23,7 +23,7 @@
 <%
     JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();
     Map<String, String> properties = me.getModelBean();
-    Map<String, String> sortedProperties = new CaseInsensitiveTreeMap<String>(properties);
+    Map<String, String> sortedProperties = new CaseInsensitiveTreeMap<>(properties);
 %>
 <table>
     <% for (Map.Entry<String, String> entry : sortedProperties.entrySet())

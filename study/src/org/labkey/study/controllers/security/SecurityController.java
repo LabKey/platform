@@ -87,7 +87,7 @@ public class SecurityController extends SpringActionController
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             HttpServletRequest request = getViewContext().getRequest();
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> set = new HashSet<Integer>(groups.length*2);
+            HashSet<Integer> set = new HashSet<>(groups.length*2);
 
             for (Group g : groups)
                 set.add(g.getUserId());
@@ -162,7 +162,7 @@ public class SecurityController extends SpringActionController
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> groupsInProject = new HashSet<Integer>(groups.length*2);
+            HashSet<Integer> groupsInProject = new HashSet<>(groups.length*2);
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
@@ -189,7 +189,7 @@ public class SecurityController extends SpringActionController
             if (permsAndGroups == null)
                 return null;
 
-            Map<Integer, String> groupToPermission = new HashMap<Integer, String>();
+            Map<Integer, String> groupToPermission = new HashMap<>();
 
             for (String permAndGroup : permsAndGroups)
             {
@@ -264,7 +264,7 @@ public class SecurityController extends SpringActionController
 
         public List<NavTree> getTabList()
         {
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
+            List<NavTree> tabs = new ArrayList<>(2);
 
             tabs.add(new TabInfo("Permissions", SecurityController.TAB_REPORT, getViewContext().getActionURL()));
             tabs.add(new TabInfo("Study Security", SecurityController.TAB_STUDY, getViewContext().getActionURL()));
@@ -283,7 +283,7 @@ public class SecurityController extends SpringActionController
             {
                 ReportIdentifier reportId = _bean.getReportId();
                 if (reportId != null)
-                    return new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport(getViewContext()));
+                    return new JspView<>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport(getViewContext()));
                 else
                 {
                     throw new NotFoundException();
@@ -463,7 +463,7 @@ public class SecurityController extends SpringActionController
         // use group (multi values) to set acl all at once
         public void setGroup(int[] groupArray)
         {
-            groups = new TreeSet<Integer>();
+            groups = new TreeSet<>();
 
             for (int group : groupArray)
                 groups.add(group);
@@ -523,18 +523,18 @@ public class SecurityController extends SpringActionController
 
         Overview(StudyImpl study, ActionURL redirect)
         {
-            JspView<StudyImpl> studySecurityView = new JspView<StudyImpl>("/org/labkey/study/security/studySecurity.jsp", study);
-            JspView<StudyImpl> studyView = new JspView<StudyImpl>("/org/labkey/study/security/study.jsp", study);
+            JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
+            JspView<StudyImpl> studyView = new JspView<>("/org/labkey/study/security/study.jsp", study);
             studyView.setTitle("Study Security");
             if (redirect != null)
                 studyView.addObject("redirect", redirect.getLocalURIString());
 
-            JspView<StudyImpl> dsView = new JspView<StudyImpl>("/org/labkey/study/security/datasets.jsp", study);
+            JspView<StudyImpl> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", study);
             dsView.setTitle("Per Dataset Permissions");
             if (redirect != null)
                 dsView.addObject("redirect", redirect.getLocalURIString());
 
-            JspView<StudyImpl> siteView = new JspView<StudyImpl>("/org/labkey/study/security/locations.jsp", study);
+            JspView<StudyImpl> siteView = new JspView<>("/org/labkey/study/security/locations.jsp", study);
             siteView.setTitle("Restricted Dataset Permissions (per Location)");
 
             VBox v = new VBox();

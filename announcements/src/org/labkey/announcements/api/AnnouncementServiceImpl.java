@@ -107,7 +107,7 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     @Override
     public List<Announcement> getAnnouncements(Container... containers)
     {
-        List<Announcement> announcements = new ArrayList<Announcement>();
+        List<Announcement> announcements = new ArrayList<>();
 
         AnnouncementModel[] announcementModels = AnnouncementManager.getAnnouncements(containers); // doesn't allow a filter to be applied
 

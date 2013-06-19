@@ -62,7 +62,7 @@ import java.util.Map;
  */
 public class ReportUIProvider extends DefaultReportUIProvider
 {
-    private static Map<String, String> _typeToIconMap = new HashMap<String, String>();
+    private static Map<String, String> _typeToIconMap = new HashMap<>();
     static {
 
         _typeToIconMap.put(RReport.TYPE, "/reports/r.gif");
@@ -79,7 +79,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
 
         if (RReport.isEnabled())
         {
@@ -122,7 +122,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
 
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);

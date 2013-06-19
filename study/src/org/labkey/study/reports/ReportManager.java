@@ -111,7 +111,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 continue;
 
             String label = report.getDescriptor().getReportName();
-            labels.add(new Pair<String, String>(label, report.getDescriptor().getReportId().toString()));
+            labels.add(new Pair<>(label, report.getDescriptor().getReportId().toString()));
         }
     }
 
@@ -121,7 +121,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         Container container = context.getContainer();
         String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
 
-        List<Pair<String, String>> labels = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> labels = new ArrayList<>();
 
         // reports in this container
         filter.addWhereClause(_datasetLabelQuery, new Object[]{
@@ -162,7 +162,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         {
             for (CustomView view: views.values())
                 if (null != view.getName())
-                    labels.add(new Pair<String, String>(view.getName(), view.getName()));
+                    labels.add(new Pair<>(view.getName(), view.getName()));
         }
 
         Collections.sort(labels, new Comparator<Pair<String, String>>()
@@ -178,7 +178,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         });
 
         // add the default grid as the first element
-        labels.add(0, new Pair<String, String>("Default Grid View", ""));
+        labels.add(0, new Pair<>("Default Grid View", ""));
 
         return labels;
     }
@@ -264,7 +264,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         if (propertyColumns == null || propertyColumns.isEmpty())
             throw new IllegalArgumentException("No columns for type: " + typeURI);
 
-        ArrayList<ColumnInfo> columns = new ArrayList<ColumnInfo>();
+        ArrayList<ColumnInfo> columns = new ArrayList<>();
         columns.add(tinfo.getColumn("ParticipantId"));
         columns.add(tinfo.getColumn("SequenceNum"));
         columns.addAll(propertyColumns);
@@ -343,7 +343,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         {
             if (_datasets == null)
             {
-                _datasets = new CaseInsensitiveHashMap<DataSetDefinition>();
+                _datasets = new CaseInsensitiveHashMap<>();
 
                 Study study = StudyManager.getInstance().getStudy(c);
                 if (study == null)

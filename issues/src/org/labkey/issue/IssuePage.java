@@ -395,7 +395,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)
     {
-        List<Attachment> attachments = new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
+        List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(parent));
 
         StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");

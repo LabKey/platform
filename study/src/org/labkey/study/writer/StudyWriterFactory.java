@@ -117,7 +117,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public Collection<Writer> getChildren()
         {
-            Collection<Writer> children = new LinkedList<Writer>();
+            Collection<Writer> children = new LinkedList<>();
             Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
             children.addAll(writers);
             return children;

@@ -387,7 +387,7 @@ public class PipelineController extends SpringActionController
                     }
                 }
             }
-            JspView<FORM> emailView = new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form);
+            JspView<FORM> emailView = new JspView<>("/org/labkey/pipeline/emailNotificationSetup.jsp", form);
             emailView.setFrame(WebPartView.FrameType.PORTAL);
             emailView.setTitle("Email Notification");
             view.addView(emailView);
@@ -632,7 +632,7 @@ public class PipelineController extends SpringActionController
     private List<GWTPropertyDescriptor> getFileProperties(Container container, FilesAdminOptions.fileConfig config)
     {
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
+        List<GWTPropertyDescriptor> properties = new ArrayList<>();
 
         switch (config) {
             case useCustom:
@@ -695,7 +695,7 @@ public class PipelineController extends SpringActionController
                 if (form.isEnable())
                 {
                     Group[] groupsAll = SecurityManager.getGroups(c.getProject(), true);
-                    Map<Integer,Group> map = new HashMap<Integer,Group>(groupsAll.length * 2);
+                    Map<Integer,Group> map = new HashMap<>(groupsAll.length * 2);
                     for (Group g : groupsAll)
                         map.put(g.getUserId(),g);
 
@@ -740,7 +740,7 @@ public class PipelineController extends SpringActionController
                 return Integer.valueOf(Integer.MIN_VALUE);
             }
         };
-        private ArrayList<String> perms = new FormArrayList<String>(String.class);
+        private ArrayList<String> perms = new FormArrayList<>(String.class);
 
         private boolean enable = false;
 
@@ -866,7 +866,7 @@ public class PipelineController extends SpringActionController
         private String getValidEmailList(String emailString, BindException errors)
         {
             String[] rawEmails = StringUtils.trimToEmpty(emailString).split("\n");
-            List<String> invalidEmails = new ArrayList<String>();
+            List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
             StringBuilder builder = new StringBuilder();
 
@@ -1030,7 +1030,7 @@ public class PipelineController extends SpringActionController
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
                 completions.add(completion.toJSON());
@@ -1093,7 +1093,7 @@ public class PipelineController extends SpringActionController
             setHelpTopic(getHelpTopic("pipeline/status"));
 
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
-            return new JspView<StatusModel>("/org/labkey/pipeline/pipelineStatus.jsp",
+            return new JspView<>("/org/labkey/pipeline/pipelineStatus.jsp",
                     new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
         }
 

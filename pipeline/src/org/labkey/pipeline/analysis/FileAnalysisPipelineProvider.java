@@ -86,7 +86,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     @Override
     public List<PipelineActionConfig> getDefaultActionConfig(Container container)
     {
-        List<PipelineActionConfig> result = new ArrayList<PipelineActionConfig>();
+        List<PipelineActionConfig> result = new ArrayList<>();
         FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {

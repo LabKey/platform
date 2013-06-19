@@ -327,7 +327,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         if (newFilter)
-            selectionCache = new Pair<Container, Set<String>>(getContainer(), lsids);
+            selectionCache = new Pair<>(getContainer(), lsids);
 
         session.setAttribute(SELECTED_SAMPLES_SESSION_ATTRIB_KEY, selectionCache);
         return selectionCache.getValue();
@@ -350,7 +350,7 @@ public class SpecimenController extends BaseStudyController
         protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull();
-            Set<Pair<String, String>> ptidVisits = new HashSet<Pair<String, String>>();
+            Set<Pair<String, String>> ptidVisits = new HashSet<>();
             if (getFilterPds() != null)
             {
                 for (ParticipantDataset pd : getFilterPds())
@@ -361,17 +361,17 @@ public class SpecimenController extends BaseStudyController
                     }
                     else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                     {
-                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), DateUtil.formatDate(pd.getVisitDate())));
+                        ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getVisitDate())));
                     }
                     else
                     {
                         VisitImpl visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
-                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + VisitImpl.formatSequenceNum(pd.getSequenceNum())));
+                        ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + VisitImpl.formatSequenceNum(pd.getSequenceNum())));
                     }
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp",
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/samples/samplesHeader.jsp",
                     new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
             return new VBox(header, view);
         }
@@ -452,7 +452,7 @@ public class SpecimenController extends BaseStudyController
             // Get last selected request
             if (null != study.getLastSpecimenRequest())
                 bean.setSelectedRequest(study.getLastSpecimenRequest());
-            JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
             return new VBox(header, view);
         }
 
@@ -683,7 +683,7 @@ public class SpecimenController extends BaseStudyController
             if (specimen == null)
                 throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
 
-            JspView<SpecimenEventBean> summaryView = new JspView<SpecimenEventBean>("/org/labkey/study/view/samples/sample.jsp",
+            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/samples/sample.jsp",
                     new SpecimenEventBean(specimen, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
 
@@ -804,10 +804,10 @@ public class SpecimenController extends BaseStudyController
 
             // get list of specimens that are not already part of the request: we don't want to double-add
             List<Specimen> currentSpecimens = SampleManager.getInstance().getRequestSpecimens(request);
-            Set<Integer> currentSpecimenIds = new HashSet<Integer>();
+            Set<Integer> currentSpecimenIds = new HashSet<>();
             for (Specimen specimen : currentSpecimens)
                 currentSpecimenIds.add(specimen.getRowId());
-            List<Specimen> specimensToAdd = new ArrayList<Specimen>();
+            List<Specimen> specimensToAdd = new ArrayList<>();
             for (int id : ids)
             {
                 if (!currentSpecimenIds.contains(id))
@@ -970,7 +970,7 @@ public class SpecimenController extends BaseStudyController
 
             if (_specimenQueryView != null)
             {
-                List<DisplayElement> buttons = new ArrayList<DisplayElement>();
+                List<DisplayElement> buttons = new ArrayList<>();
 
                 MenuButton exportMenuButton = new MenuButton("Export");
                 ActionURL exportExcelURL = context.getActionURL().clone().addParameter("export", "excel");
@@ -1066,7 +1066,7 @@ public class SpecimenController extends BaseStudyController
         {
             if (_providingLocations == null)
             {
-                Set<Integer> locationSet = new HashSet<Integer>();
+                Set<Integer> locationSet = new HashSet<>();
                 for (Specimen specimen : _samples)
                 {
                     Integer locationId = specimen.getCurrentLocation();
@@ -1121,7 +1121,7 @@ public class SpecimenController extends BaseStudyController
                 SpecimenQueryView queryView = bean.getSpecimenQueryView();
                 if (null != queryView)
                     queryView.setTitle("Associated Specimens");
-                HBox hbox = new HBox(new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequest.jsp", bean), attachmentsGrid);
+                HBox hbox = new HBox(new JspView<>("/org/labkey/study/view/samples/manageRequest.jsp", bean), attachmentsGrid);
                 hbox.setTableWidth("");
                 return new VBox(hbox, queryView);
             }
@@ -1219,7 +1219,7 @@ public class SpecimenController extends BaseStudyController
             }
             else
                 grid.setButtons(Collections.<DisplayElement>emptyList());
-            JspView<ViewRequestsHeaderBean> header = new JspView<ViewRequestsHeaderBean>("/org/labkey/study/view/samples/viewRequestsHeader.jsp",
+            JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/study/view/samples/viewRequestsHeader.jsp",
                     new ViewRequestsHeaderBean(getViewContext(), grid));
 
             return new VBox(header, grid);
@@ -1336,7 +1336,7 @@ public class SpecimenController extends BaseStudyController
             if (_sampleRequest == null)
                 throw new NotFoundException();
 
-            return new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequestStatus.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/manageRequestStatus.jsp",
                     new ManageRequestBean(getViewContext(), _sampleRequest, false, null, null), errors);
         }
 
@@ -1625,7 +1625,7 @@ public class SpecimenController extends BaseStudyController
             }
             else if (_sampleIds != null && _sampleIds.length > 0)
             {
-                ids = new HashSet<String>();
+                ids = new HashSet<>();
                 Collections.addAll(ids, _sampleIds);
                 if (isFromGroupedView())
                     return utils.getRequestableBySampleHash(ids, getPreferredLocation());
@@ -1770,7 +1770,7 @@ public class SpecimenController extends BaseStudyController
                 List<Specimen> samples;
                 if (sampleIds != null && sampleIds.length > 0)
                 {
-                    samples = new ArrayList<Specimen>();
+                    samples = new ArrayList<>();
                     for (int sampleId : sampleIds)
                     {
                         Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
@@ -1908,11 +1908,11 @@ public class SpecimenController extends BaseStudyController
             // Even though this method (getCreateSampleRequestView) is used from multiple places, only HandleCreateSampleRequestAction
             // receives a post; therefore, it's safe to say that the selectSpecimenProvider.jsp form should always post to
             // HandleCreateSampleRequestAction.
-            return new JspView<SelectSpecimenProviderBean>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
                     new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSampleRequestAction.class, getContainer())), errors);
         }
 
-        return new JspView<NewRequestBean>("/org/labkey/study/view/samples/requestSamples.jsp",
+        return new JspView<>("/org/labkey/study/view/samples/requestSamples.jsp",
                 new NewRequestBean(getViewContext(), requested, form, errors));
     }
 
@@ -2049,14 +2049,14 @@ public class SpecimenController extends BaseStudyController
                     }
                     catch (SpecimenUtils.AmbiguousLocationException e)
                     {
-                        return new JspView<SelectSpecimenProviderBean>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
+                        return new JspView<>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
                                 new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowAddToSampleRequestAction.class, getContainer())));
                     }
                 }
                 else
                     specimens = getUtils().getRequestableByVialRowIds(DataRegionSelection.getSelected(getViewContext(), true));
             }
-            return new JspView<AddToExistingRequestBean>("/org/labkey/study/view/samples/addSamplesToRequest.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/addSamplesToRequest.jsp",
                     new AddToExistingRequestBean(getViewContext(), specimens));
         }
 
@@ -2284,7 +2284,7 @@ public class SpecimenController extends BaseStudyController
             if (_sampleRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
-            return new JspView<ManageRequirementBean>("/org/labkey/study/view/samples/manageRequirement.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/manageRequirement.jsp",
                     new ManageRequirementBean(getViewContext(), _sampleRequest, requirement));
         }
 
@@ -2552,7 +2552,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(DefaultRequirementsForm defaultRequirementsForm, boolean reshow, BindException errors) throws Exception
         {
             getUtils().ensureSpecimenRequestsConfigured();
-            return new JspView<ManageReqsBean>("/org/labkey/study/view/samples/manageDefaultReqs.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/manageDefaultReqs.jsp",
                 new ManageReqsBean(getUser(), getContainer()));
         }
 
@@ -2789,7 +2789,7 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException();
             }
 
-            Map<LocationImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<LocationImpl, List<ActorNotificationRecipientSet>>();
+            Map<LocationImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<>();
             if (form.getNotify() != null)
             {
                 for (String tuple : form.getNotify())
@@ -2808,7 +2808,7 @@ public class SpecimenController extends BaseStudyController
                     List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
                     if (emailRecipients == null)
                     {
-                        emailRecipients = new ArrayList<ActorNotificationRecipientSet>();
+                        emailRecipients = new ArrayList<>();
                         notifications.put(originatingOrProvidingLocation, emailRecipients);
                     }
                     emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifyLocation));
@@ -3028,7 +3028,7 @@ public class SpecimenController extends BaseStudyController
             LabSpecimenListsBean bean = new LabSpecimenListsBean(getUtils(), request, _type);
             bean.setExportAsWebPage(form.isExportAsWebPage());
 
-            return new JspView<LabSpecimenListsBean>("/org/labkey/study/view/samples/labSpecimenLists.jsp", bean);
+            return new JspView<>("/org/labkey/study/view/samples/labSpecimenLists.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3112,7 +3112,7 @@ public class SpecimenController extends BaseStudyController
         {
             if (_specimensBySiteId == null)
             {
-                _specimensBySiteId = new HashMap<Integer, List<Specimen>>();
+                _specimensBySiteId = new HashMap<>();
                 List<Specimen> specimens = _sampleRequest.getSpecimens();
                 for (Specimen specimen : specimens)
                 {
@@ -3126,7 +3126,7 @@ public class SpecimenController extends BaseStudyController
                         List<Specimen> current = _specimensBySiteId.get(location.getRowId());
                         if (current == null)
                         {
-                            current = new ArrayList<Specimen>();
+                            current = new ArrayList<>();
                             _specimensBySiteId.put(location.getRowId(), current);
                         }
                         current.add(specimen);
@@ -3146,7 +3146,7 @@ public class SpecimenController extends BaseStudyController
         public Set<LocationImpl> getLabs()
         {
             Map<Integer, List<Specimen>> siteIdToSpecimens = getSpecimensBySiteId();
-            Set<LocationImpl> locations = new HashSet<LocationImpl>(siteIdToSpecimens.size());
+            Set<LocationImpl> locations = new HashSet<>(siteIdToSpecimens.size());
             for (Integer locationId : siteIdToSpecimens.keySet())
                 locations.add(StudyManager.getInstance().getLocation(_sampleRequest.getContainer(), locationId));
             return locations;
@@ -3199,13 +3199,13 @@ public class SpecimenController extends BaseStudyController
             }
             else
             {
-                JspView<FormType> reportView = new JspView<FormType>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
+                JspView<FormType> reportView = new JspView<>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
                 reportView.setIsWebPart(false);
                 if (this.isPrint())
                     return reportView;
                 else
                 {
-                    return new VBox(new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp",
+                    return new VBox(new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp",
                                     new ReportConfigurationBean(specimenVisitReportForm, false)), reportView);
                 }
             }
@@ -3333,7 +3333,7 @@ public class SpecimenController extends BaseStudyController
     {
         private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
         private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
-        private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<String, List<SpecimenVisitReportParameters>>();
+        private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<>();
         private boolean _listView = true;
         private ViewContext _viewContext;
         private boolean _hasReports = true;
@@ -3380,7 +3380,7 @@ public class SpecimenController extends BaseStudyController
 
             if (factories == null)
             {
-                factories = new ArrayList<SpecimenVisitReportParameters>();
+                factories = new ArrayList<>();
                 _reportFactories.put(category, factories);
             }
 
@@ -3421,7 +3421,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
-            return new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
+            return new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3579,7 +3579,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _mixedComments;
         private boolean _currentFlagState;
         private boolean _mixedFlagState;
-        private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<String, Map<String, Integer>>();
+        private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<>();
 
         public UpdateSpecimenCommentsBean(ViewContext context, List<Specimen> samples, String referrer) throws ServletException
         {
@@ -3617,7 +3617,7 @@ public class SpecimenController extends BaseStudyController
 
         protected Map<String, Map<String, Integer>> generateParticipantVisitMap(List<Specimen> samples, Study study)
         {
-            Map<String, Map<String, Integer>> pvMap = new TreeMap<String, Map<String, Integer>>();
+            Map<String, Map<String, Integer>> pvMap = new TreeMap<>();
 
             for (Specimen sample : samples)
             {
@@ -3733,7 +3733,7 @@ public class SpecimenController extends BaseStudyController
                     return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
             }
 
-            return new JspView<UpdateSpecimenCommentsBean>("/org/labkey/study/view/samples/updateComments.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/updateComments.jsp",
                     new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
         }
 
@@ -3841,8 +3841,8 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(PipelineForm form, BindException bindErrors) throws Exception
         {
             List<File> dataFiles = form.getValidatedFiles(getContainer());
-            List<SpecimenArchive> archives = new ArrayList<SpecimenArchive>();
-            List<String> errors = new ArrayList<String>();
+            List<SpecimenArchive> archives = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
             _filePaths = form.getFile();
             for (File dataFile : dataFiles)
             {
@@ -3865,7 +3865,7 @@ public class SpecimenController extends BaseStudyController
                 bean.setNoSpecimens(true);
             }
 
-            return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp", bean);
+            return new JspView<>("/org/labkey/study/view/samples/importSpecimens.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4039,7 +4039,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
+            return new JspView<>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4170,7 +4170,7 @@ public class SpecimenController extends BaseStudyController
     private Map<Integer, SampleRequestActor> getIdToRequestActorMap(Container container) throws SQLException
     {
         SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(container);
-        Map<Integer, SampleRequestActor> idToStatus = new HashMap<Integer, SampleRequestActor>();
+        Map<Integer, SampleRequestActor> idToStatus = new HashMap<>();
         for (SampleRequestActor actor : actors)
             idToStatus.put(actor.getRowId(), actor);
         return idToStatus;
@@ -4318,10 +4318,10 @@ public class SpecimenController extends BaseStudyController
                 // get a map of id to status objects before starting our updates; this prevents us from
                 // blowing then repopulating the cache with each update:
                 Map<Integer, SampleRequestStatus> idToStatus = getIdToRequestStatusMap(getContainer());
-                Set<Integer> finalStates = new HashSet<Integer>(form.getFinalStateIds().length);
+                Set<Integer> finalStates = new HashSet<>(form.getFinalStateIds().length);
                 for (int id : form.getFinalStateIds())
                     finalStates.add(id);
-                Set<Integer> lockedSpecimenStates = new HashSet<Integer>(form.getSpecimensLockedIds().length);
+                Set<Integer> lockedSpecimenStates = new HashSet<>(form.getSpecimensLockedIds().length);
                 for (int id : form.getSpecimensLockedIds())
                     lockedSpecimenStates.add(id);
 
@@ -4440,7 +4440,7 @@ public class SpecimenController extends BaseStudyController
     private Map<Integer, SampleRequestStatus> getIdToRequestStatusMap(Container container) throws SQLException
     {
         List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(container, getUser());
-        Map<Integer, SampleRequestStatus> idToStatus = new HashMap<Integer, SampleRequestStatus>();
+        Map<Integer, SampleRequestStatus> idToStatus = new HashMap<>();
         for (SampleRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
         return idToStatus;
@@ -4606,7 +4606,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
         {
-            return new JspView<ManageRequestInputsBean>("/org/labkey/study/view/samples/manageRequestInputs.jsp",
+            return new JspView<>("/org/labkey/study/view/samples/manageRequestInputs.jsp",
                     new ManageRequestInputsBean(getViewContext()));
         }
 
@@ -4724,7 +4724,7 @@ public class SpecimenController extends BaseStudyController
             if (settings == null || settings.getReplyTo() == null)
                 settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
 
-            return new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp", settings, errors);
+            return new JspView<>("/org/labkey/study/view/samples/manageNotifications.jsp", settings, errors);
         }
 
         public boolean handlePost(RequestNotificationSettings settings, BindException errors) throws Exception
@@ -4785,7 +4785,7 @@ public class SpecimenController extends BaseStudyController
             if (settings == null || settings.getLastVialEnum() == null)
                 settings = SampleManager.getInstance().getDisplaySettings(getContainer());
 
-            return new JspView<DisplaySettings>("/org/labkey/study/view/samples/manageDisplay.jsp", settings);
+            return new JspView<>("/org/labkey/study/view/samples/manageDisplay.jsp", settings);
         }
 
         public boolean handlePost(DisplaySettingsForm form, BindException errors) throws Exception
@@ -5253,7 +5253,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors) throws Exception
         {
-            final List<RequestabilityManager.RequestableRule> rules = new ArrayList<RequestabilityManager.RequestableRule>();
+            final List<RequestabilityManager.RequestableRule> rules = new ArrayList<>();
             for (int i = 0; i < form.getRuleType().length; i++)
             {
                 String typeName = form.getRuleType()[i];
@@ -5305,8 +5305,8 @@ public class SpecimenController extends BaseStudyController
         {
             TypeSummaryReportFactory specimenVisitReportForm = new TypeSummaryReportFactory();
 
-            JspView<TypeSummaryReportFactory> reportView = new JspView<TypeSummaryReportFactory>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
-            WebPartView configView = new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false));
+            JspView<TypeSummaryReportFactory> reportView = new JspView<>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
+            WebPartView configView = new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false));
             HtmlView emptySpace = new HtmlView("<div id=\"specimenReportEmptySpace\">&nbsp;</div>");
 
             VBox outer = new VBox(configView, reportView);
@@ -5381,7 +5381,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
-            List<String> errorList = new LinkedList<String>();
+            List<String> errorList = new LinkedList<>();
 
             ColumnDescriptor[] columns = new ColumnDescriptor[2];   // Only 1 actual column of type String
             columns[0] = new ColumnDescriptor("Actual", String.class);
@@ -5437,7 +5437,7 @@ public class SpecimenController extends BaseStudyController
 
                         if (errorList.size() == 0)
                         {
-                            ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.size());
+                            ArrayList<Specimen> specimenList = new ArrayList<>(specimens.size());
                             specimenList.addAll(specimens);
                             sampleManager.createRequestSampleMapping(getUser(), request, specimenList, true, true);
                         }
@@ -5532,7 +5532,7 @@ public class SpecimenController extends BaseStudyController
             if (study == null)
                 throw new NotFoundException("No study exists in this folder.");
 
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
             for (AjaxCompletion completion : getAjaxCompletions(study))
                 completions.add(completion.toJSON());
 
@@ -5543,7 +5543,7 @@ public class SpecimenController extends BaseStudyController
 
     public static List<AjaxCompletion> getAjaxCompletions(Study study) throws SQLException
     {
-        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+        List<AjaxCompletion> completions = new ArrayList<>();
         String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
 
         completions.add(new AjaxCompletion(allString, allString));
@@ -5564,7 +5564,7 @@ public class SpecimenController extends BaseStudyController
             form.setGrouping1(groupings.get(0));
             form.setGrouping2(groupings.get(1));
             form.setColumns(SampleManager.getInstance().getGroupedValueAllowedColumns());
-            return new JspView<SpecimenWebPartForm>("/org/labkey/study/view/samples/manageSpecimenWebPart.jsp", form);
+            return new JspView<>("/org/labkey/study/view/samples/manageSpecimenWebPart.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -5588,7 +5588,7 @@ public class SpecimenController extends BaseStudyController
             if (study != null)
             {
                 RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
-                ArrayList<String[]> groupings = new ArrayList<String[]>(2);
+                ArrayList<String[]> groupings = new ArrayList<>(2);
                 groupings.add(form.getGrouping1());
                 groupings.add(form.getGrouping2());
                 settings.setSpecimenWebPartGroupings(groupings);

@@ -122,7 +122,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
     private void addDetailsColumn(AuditLogQueryView view)
     {
-        Map<String, ColumnInfo> params = new HashMap<String, ColumnInfo>();
+        Map<String, ColumnInfo> params = new HashMap<>();
 
         params.put("listId", view.getTable().getColumn("IntKey1"));
         params.put("entityId", view.getTable().getColumn("Key2"));
@@ -134,7 +134,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList<FieldKey>();
+        List<FieldKey> columns = new ArrayList<>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));

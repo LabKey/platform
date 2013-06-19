@@ -102,7 +102,7 @@ public enum Operator
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
-            ArrayList<SQLFragment> terms = new ArrayList<SQLFragment>();
+            ArrayList<SQLFragment> terms = new ArrayList<>();
             for (QNode operand : operands)
             {
                 SQLFragment sqlf = ((QExpr)operand).getSqlFragment(builder.getDbSchema());
@@ -190,7 +190,7 @@ public enum Operator
     static HashMap<Integer,Operator> tokenTypeOperatorMap;
     static
     {
-        tokenTypeOperatorMap = new HashMap<Integer, Operator>();
+        tokenTypeOperatorMap = new HashMap<>();
         for (Operator op : values())
         {
             tokenTypeOperatorMap.put(op._tokenType, op);

@@ -100,7 +100,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             {
                 QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
                 DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job);
-                List<String> errors = new ArrayList<String>();
+                List<String> errors = new ArrayList<>();
 
                 try
                 {
@@ -118,7 +118,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 List<DatasetImportRunnable> runnables = reader.getRunnables();
                 ctx.getLogger().info("Start batch " + datasetsFileName);
 
-                List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
+                List<DataSetDefinition> datasets = new ArrayList<>();
 
                 for (DatasetImportRunnable runnable : runnables)
                 {

@@ -39,6 +39,6 @@ public class SasExportScriptFactory implements ExportScriptFactory
 
     public WebPartView getView(QueryView queryView)
     {
-        return new JspView<SasExportScriptModel>("/org/labkey/bigiron/sas/sasExportScript.jsp", new SasExportScriptModel(queryView));
+        return new JspView<>("/org/labkey/bigiron/sas/sasExportScript.jsp", new SasExportScriptModel(queryView));
     }
 }

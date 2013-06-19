@@ -32,7 +32,7 @@
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       //Need to include the Helper for a use of the form panel configuration.
       resources.add(ClientDependency.fromFilePath("/extWidgets/Ext4Helper.js"));
       return resources;

@@ -60,7 +60,7 @@ public class CohortTable extends BaseStudyTable
         enrolledColumn.setNullable(false);
 
         // Add extended columns
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> visibleColumns = new ArrayList<>();
 
         // Label and enrolled are the only things visible from the hard table
         visibleColumns.add(FieldKey.fromParts(labelColumn.getName()));

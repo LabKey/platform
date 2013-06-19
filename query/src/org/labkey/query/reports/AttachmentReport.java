@@ -420,7 +420,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
                 {
                     InputStream is = reportDir.getInputStream(attachments[0]);
                     AttachmentFile attachmentFile = new InputStreamAttachmentFile(is, attachments[0]);
-                    AttachmentService.get().addAttachments(this, new ArrayList<AttachmentFile>(Collections.singleton(attachmentFile)), user);
+                    AttachmentService.get().addAttachments(this, new ArrayList<>(Collections.singleton(attachmentFile)), user);
                 }
                 catch (Exception e)
                 {

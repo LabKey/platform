@@ -110,7 +110,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public List<FieldKey> getColumns()
     {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
+        List<FieldKey> ret = new ArrayList<>();
         for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : getColumnProperties())
         {
             ret.add(entry.getKey());
@@ -125,7 +125,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
             return Collections.emptyList();
         }
         String[] values = StringUtils.split(value, "&");
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<>();
         for (String entry : values)
         {
             int ichEquals = entry.indexOf("=");
@@ -138,7 +138,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
             }
             else
             {
-                properties = new EnumMap<ColumnProperty,String>(ColumnProperty.class);
+                properties = new EnumMap<>(ColumnProperty.class);
                 field = FieldKey.fromString(PageFlowUtil.decode(entry.substring(0, ichEquals)));
                 for (Map.Entry<String, String> e : PageFlowUtil.fromQueryString(PageFlowUtil.decode(entry.substring(ichEquals + 1))))
                 {

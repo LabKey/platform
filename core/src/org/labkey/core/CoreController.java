@@ -145,10 +145,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class CoreController extends SpringActionController
 {
-    private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
+    private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<>();
+    private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
+    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<>();
+    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<>();
     private static final Logger _log = Logger.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -319,7 +319,7 @@ public class CoreController extends SpringActionController
             Portal.WebPart config = new Portal.WebPart();
             config.setIndex(1);
             config.setRowId(-1);
-            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projects.jsp", config);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", config);
             view.setTitle("Projects");
             return view;
         }
@@ -712,7 +712,7 @@ public class CoreController extends SpringActionController
     }
 
 
-    static AtomicReference<Content> _combinedJavascript = new AtomicReference<Content>();
+    static AtomicReference<Content> _combinedJavascript = new AtomicReference<>();
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -728,10 +728,10 @@ public class CoreController extends SpringActionController
                 // get the root resolver
                 WebdavResolver r = ModuleStaticResolverImpl.get();
                 
-                Set<String> scripts = new LinkedHashSet<String>();
-                Set<String> includes = new LinkedHashSet<String>();
+                Set<String> scripts = new LinkedHashSet<>();
+                Set<String> includes = new LinkedHashSet<>();
                 PageFlowUtil.getJavaScriptPaths(getContainer(), getUser(), scripts, includes);
-                List<String> concat = new ArrayList<String>();
+                List<String> concat = new ArrayList<>();
                 for (String path : scripts)
                 {
                     WebdavResource script = r.lookup(Path.parse(path));
@@ -1136,7 +1136,7 @@ public class CoreController extends SpringActionController
             JSONObject object = form.getJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
             
-            List<String> aliasList = new ArrayList<String>();
+            List<String> aliasList = new ArrayList<>();
             aliasList.addAll(Arrays.asList(ContainerManager.getAliasesForContainer(target)));
             aliasList.add(target.getPath());
             
@@ -1151,7 +1151,7 @@ public class CoreController extends SpringActionController
                     ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList);
 
                 // Prepare response
-                Map<String, Object> response = new HashMap<String, Object>();
+                Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("newPath", afterMoveTarget.getPath());
                 return new ApiSimpleResponse(response);                
@@ -1173,7 +1173,7 @@ public class CoreController extends SpringActionController
                 bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDate(new Date()));
             }
 
-            return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1252,7 +1252,7 @@ public class CoreController extends SpringActionController
                     bean.addWorkbook(wb);
             }
 
-            return new JspView<MoveWorkbooksBean>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1592,16 +1592,16 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
-            Map<String, Object> folderTypes = new HashMap<String, Object>();
+            Map<String, Object> folderTypes = new HashMap<>();
             for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
             {
-                Map<String, Object> folderTypeJSON = new HashMap<String, Object>();
+                Map<String, Object> folderTypeJSON = new HashMap<>();
                 folderTypeJSON.put("name", folderType.getName());
                 folderTypeJSON.put("description", folderType.getDescription());
                 folderTypeJSON.put("defaultModule", folderType.getDefaultModule() == null ? null : folderType.getDefaultModule().getName());
                 folderTypeJSON.put("label", folderType.getLabel());
                 folderTypeJSON.put("workbookType", folderType.isWorkbookType());
-                List<String> activeModulesJSON = new ArrayList<String>();
+                List<String> activeModulesJSON = new ArrayList<>();
                 for (Module module : folderType.getActiveModules())
                 {
                     activeModulesJSON.add(module.getName());
@@ -1616,10 +1616,10 @@ public class CoreController extends SpringActionController
 
         private List<Map<String, Object>> toJSON(List<Portal.WebPart> webParts)
         {
-            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> result = new ArrayList<>();
             for (Portal.WebPart webPart : webParts)
             {
-                Map<String, Object> webPartJSON = new HashMap<String, Object>();
+                Map<String, Object> webPartJSON = new HashMap<>();
                 webPartJSON.put("name", webPart.getName());
                 webPartJSON.put("properties", webPart.getPropertyMap());
                 result.add(webPartJSON);

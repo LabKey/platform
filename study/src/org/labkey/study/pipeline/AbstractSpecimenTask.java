@@ -264,7 +264,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 return;
             DataLoader dl = df.createLoader(source, true, study.getContainer());
             DataIteratorBuilder sampleminded = StudyService.get().wrapSampleMindedTransform(dl, context, study, target);
-            Map<String,Object> empty = new HashMap<String,Object>();
+            Map<String,Object> empty = new HashMap<>();
 
             // would be nice to have deleteAll() in QueryUpdateService
             new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());

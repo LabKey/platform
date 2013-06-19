@@ -45,7 +45,7 @@
 
     // group by category name
     List<ViewInfo> allViews = ReportManager.get().getViews(context, null, null, true, false);
-    Map<String, List<ViewInfo>> groups = new TreeMap<String, List<ViewInfo>>();
+    Map<String, List<ViewInfo>> groups = new TreeMap<>();
     for (ViewInfo view : allViews)
     {
         List<ViewInfo> views;
@@ -57,7 +57,7 @@
         }
         else
         {
-            views = new ArrayList<ViewInfo>();
+            views = new ArrayList<>();
             groups.put(category, views);
         }
         views.add(view);

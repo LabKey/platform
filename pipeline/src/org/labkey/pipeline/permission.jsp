@@ -50,10 +50,10 @@ These permissions control whether pipeline files can be downloaded and updated v
     Group[] groups = SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]
     {
-        new Pair<String,Role>("no access", RoleManager.getRole(NoPermissionsRole.class)),
-        new Pair<String,Role>("read files", RoleManager.getRole(ReaderRole.class)),
-        new Pair<String,Role>("create files", RoleManager.getRole(AuthorRole.class)),
-        new Pair<String, Role>("create and delete", RoleManager.getRole(EditorRole.class))
+        new Pair<>("no access", RoleManager.getRole(NoPermissionsRole.class)),
+        new Pair<>("read files", RoleManager.getRole(ReaderRole.class)),
+        new Pair<>("create files", RoleManager.getRole(AuthorRole.class)),
+        new Pair<>("create and delete", RoleManager.getRole(EditorRole.class))
     };
     Pair[] optionsGuest = new Pair[] {optionsFull[0],optionsFull[1]};
 

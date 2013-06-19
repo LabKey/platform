@@ -39,7 +39,7 @@ public class MenuWikiWebPartFactory extends WikiWebPartFactory
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = new HashMap<String,String>(webPart.getPropertyMap());
+        Map<String, String> props = new HashMap<>(webPart.getPropertyMap());
         if (null == props.get("webPartContainer"))
             props.put("webPartContainer", portalCtx.getContainer().getProject().getId());
         WikiWebPart v = new WikiWebPart(webPart.getRowId(), props);

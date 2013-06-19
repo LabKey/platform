@@ -70,16 +70,16 @@ public class QueryPivot extends QueryRelation
     final boolean usePivotForeignKey = false;
     final QuerySelect _from;
     final AliasManager _manager;
-    final Map<FieldKey,String> pivotColumnAliases = new HashMap<FieldKey,String>();
+    final Map<FieldKey,String> pivotColumnAliases = new HashMap<>();
 
     // all columns in the select except the pivot column, in original order
-    LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<String,RelationColumn>();
+    LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<>();
 
     // the grouping keys (except the pivot column) (aka. row axis CrosstabDimension)
-    final HashMap<String,RelationColumn> _grouping = new HashMap<String,RelationColumn>();
+    final HashMap<String,RelationColumn> _grouping = new HashMap<>();
 
     // pivoted aggregate columms (aka. CrosstabMeasure)
-    final Map<String,QAggregate.Type> _aggregates = new HashMap<String,QAggregate.Type>();
+    final Map<String,QAggregate.Type> _aggregates = new HashMap<>();
 
     // the pivot column (aka. column axis CrosstabDimension)
     RelationColumn _pivotColumn;
@@ -115,7 +115,7 @@ public class QueryPivot extends QueryRelation
         Map<String,RelationColumn> allFromColumns = _from.getAllColumns();
         for (RelationColumn r : allFromColumns.values())
             _manager.claimAlias(r.getAlias(), null);
-        _select = new LinkedHashMap<String,RelationColumn>();
+        _select = new LinkedHashMap<>();
         _select.putAll(allFromColumns);
         _select.remove(_pivotColumn.getFieldKey().getName());
 
@@ -173,7 +173,7 @@ public class QueryPivot extends QueryRelation
         else if (inList instanceof QSelect)
         {
             // simple in list
-            CaseInsensitiveMapWrapper<IConstant> pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+            CaseInsensitiveMapWrapper<IConstant> pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
             for (QNode node : inList.childList())
             {
                 IConstant constant;
@@ -249,7 +249,7 @@ public class QueryPivot extends QueryRelation
         ResultSet rs = null;
         try
         {
-            _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+            _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
             SQLFragment sqlPivotValues;
 
             if (null != _inQuery)
@@ -490,8 +490,8 @@ public class QueryPivot extends QueryRelation
                 pivotValues = Collections.EMPTY_MAP;
             }
 
-            _columns = new CaseInsensitiveMapWrapper<RelationColumn>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
-            List<Map.Entry<String,RelationColumn>> aggs = new ArrayList<Map.Entry<String,RelationColumn>>(_aggregates.size());
+            _columns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
+            List<Map.Entry<String,RelationColumn>> aggs = new ArrayList<>(_aggregates.size());
             for (Map.Entry<String,RelationColumn> entry : _select.entrySet())
             {
                 String name = entry.getKey();
@@ -811,7 +811,7 @@ public class QueryPivot extends QueryRelation
                 pivotValues = Collections.EMPTY_MAP;
             }
 
-            ArrayList<FieldKey> list = new ArrayList<FieldKey>();
+            ArrayList<FieldKey> list = new ArrayList<>();
 
             if (usePivotForeignKey)
             {
@@ -910,7 +910,7 @@ public class QueryPivot extends QueryRelation
                     throw new RuntimeSQLException(x);
                 }
 
-                _members = new ArrayList<CrosstabMember>(pivotValues.size());
+                _members = new ArrayList<>(pivotValues.size());
                 for (Map.Entry<String, IConstant> pivotValue : pivotValues.entrySet())
                 {
                     Object value = pivotValue.getValue().getValue();

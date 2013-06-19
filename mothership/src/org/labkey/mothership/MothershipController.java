@@ -215,7 +215,7 @@ public class MothershipController extends SpringActionController
 
             TimeSeries externalPings = new TimeSeries("External active");
             TimeSeries repeatPings = new TimeSeries("External that also pinged the previous week");
-            Set<String> repeatServerGUIDs = new HashSet<String>();
+            Set<String> repeatServerGUIDs = new HashSet<>();
 
             while(cal.compareTo(start) < 0)
             {
@@ -406,7 +406,7 @@ public class MothershipController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.getBaseSort().insertSortColumn("-LastPing");
 
-            List<Aggregate> aggregates = new ArrayList<Aggregate>();
+            List<Aggregate> aggregates = new ArrayList<>();
             aggregates.add(new Aggregate("DaysActive", Aggregate.Type.AVG));
             aggregates.add(new Aggregate("ExceptionCount", Aggregate.Type.AVG));
             settings.setAggregates(aggregates);
@@ -452,7 +452,7 @@ public class MothershipController extends SpringActionController
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
 
             HtmlView linkView = new HtmlView(getLinkBarHTML());
-            return new VBox(linkView, new JspView<UpgradeMessageForm>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
+            return new VBox(linkView, new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
         public NavTree appendNavTrail(NavTree root)

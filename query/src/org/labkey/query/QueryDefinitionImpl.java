@@ -99,7 +99,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     // Cached the parsed TableInfos (with and without metadata)
     private boolean _useCache = true;
-    private Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<Pair<String, Boolean>, TableInfo>();
+    private Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
     public QueryDefinitionImpl(User user, QueryDef queryDef)
     {
@@ -191,7 +191,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly)
     {
-        Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
+        Map<String, CustomView> ret = new LinkedHashMap<>();
 
         if (includeHidden)
         {
@@ -269,13 +269,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public List<QueryParseException> getParseErrors(QuerySchema schema)
     {
-        List<QueryParseException> ret = new ArrayList<QueryParseException>();
+        List<QueryParseException> ret = new ArrayList<>();
 
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            List<XmlError> errors = new ArrayList<XmlError>();
+            List<XmlError> errors = new ArrayList<>();
             options.setErrorListener(errors);
             try
             {
@@ -407,7 +407,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 {
                     _schema = schema;
                 }
-                Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
+                Pair<String,Boolean> key = new Pair<>(getName().toLowerCase(), includeMetadata);
                 TableInfo table = _cache.get(key);
                 if (table == null)
                 {
@@ -711,7 +711,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     List<String> pkColumnNames = table.getPkColumnNames();
                     if (pkColumnNames.size() > 0)
                     {
-                        Map<String, String> params = new HashMap<String, String>();
+                        Map<String, String> params = new HashMap<>();
                         for (String columnName : pkColumnNames)
                         {
                             params.put(columnName, columnName);
@@ -759,11 +759,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
             if (!map.isEmpty())
             {
-                return new ArrayList<ColumnInfo>(map.values());
+                return new ArrayList<>(map.values());
             }
         }
 
-        return new ArrayList<ColumnInfo>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
+        return new ArrayList<>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
     }
 
     public List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table)
@@ -793,7 +793,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
             }
         }
-        ret = new ArrayList<DisplayColumn>();
+        ret = new ArrayList<>();
         // Fall back on the table's default set of columns
         for (ColumnInfo column : QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values())
         {
@@ -808,7 +808,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         QueryDocument ret = query.getDesignDocument();
         if (ret == null)
             return null;
-        Map<String, DgColumn> columns = new HashMap<String, DgColumn>();
+        Map<String, DgColumn> columns = new HashMap<>();
         for (DgColumn dgColumn : ret.getQuery().getSelect().getColumnArray())
         {
             columns.put(dgColumn.getAlias(), dgColumn);
@@ -846,7 +846,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public boolean updateDesignDocument(QuerySchema schema, QueryDocument doc, List<QueryException> errors)
     {
-        Map<String, DgColumn> columns = new LinkedHashMap<String, DgColumn>();
+        Map<String, DgColumn> columns = new LinkedHashMap<>();
         DgQuery dgQuery = doc.getQuery();
         DgQuery.Select select = dgQuery.getSelect();
         for (DgColumn column : select.getColumnArray())
@@ -913,7 +913,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             xbColumns = xbTable.addNewColumns();
         }
-        List<ColumnType> lstColumns = new ArrayList<ColumnType>();
+        List<ColumnType> lstColumns = new ArrayList<>();
         for (Map.Entry<String, DgColumn> entry : columns.entrySet())
         {
             ColumnType xbColumn = entry.getValue().getMetadata();
@@ -995,7 +995,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
         public List<ViewFilterItem> getViewFilterItems()
         {
-            List<ViewFilterItem> items = new ArrayList<ViewFilterItem>();
+            List<ViewFilterItem> items = new ArrayList<>();
 
             org.labkey.data.xml.ViewOptions options = _document.getTables().getTableArray()[0].getViewOptions();
             if (options == null)
@@ -1010,7 +1010,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
         public void setViewFilterItems(List<ViewFilterItem> items)
         {
-            List<org.labkey.data.xml.ViewOptions.ViewFilterItem> filterItems = new ArrayList<org.labkey.data.xml.ViewOptions.ViewFilterItem>();
+            List<org.labkey.data.xml.ViewOptions.ViewFilterItem> filterItems = new ArrayList<>();
 
             for (ViewFilterItem item : items)
             {

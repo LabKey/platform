@@ -159,12 +159,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         DomainProperty dateProperty = addProperty(dataDomain, DATE_PROPERTY_NAME,  DATE_PROPERTY_CAPTION, PropertyType.DATE_TIME, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         dateProperty.setImportAliasSet(dateImportAliases);
 
-        return new Pair<Domain, Map<DomainProperty, Object>>(dataDomain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(dataDomain, Collections.<DomainProperty, Object>emptyMap());
     }
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)
     {
-        return new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
+        return new JspView<>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
     }
 
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()
@@ -326,8 +326,8 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             _context.checking(new Expectations()
             {{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                Map<Pair<Container, Integer>, Collection> map = new HashMap<Pair<Container, Integer>, Collection>();
-                map.put(new Pair<Container, Integer>(_container, _protocol.getRowId()), Collections.singletonList(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile"))));
+                Map<Pair<Container, Integer>, Collection> map = new HashMap<>();
+                map.put(new Pair<>(_container, _protocol.getRowId()), Collections.singletonList(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile"))));
                 will(returnValue(map));
                 allowing(_uploadContext).getReRun();
                 will(returnValue(null));

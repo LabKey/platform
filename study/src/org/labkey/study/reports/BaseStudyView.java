@@ -55,9 +55,9 @@ public class BaseStudyView<T> extends HttpView<T>
 
 
     private List<VisitImpl> _visits;            // display ordered
-    private HashMap<Integer, VisitImpl> _visitMap = new HashMap<Integer, VisitImpl>();
+    private HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
     private DataSetDefinition[] _datasetDefs;
-    private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<Integer, DataSetDefinition>();
+    private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<>();
 
     protected List<VisitImpl> getVisits()
     {

@@ -57,7 +57,7 @@
         %>
     </tr>
 <%
-    Map<Integer, String> groupToColor = new HashMap<Integer, String>();
+    Map<Integer, String> groupToColor = new HashMap<>();
     char rowChar = 'A';
     for (int row = 0; row < template.getRows(); row++)
     {
@@ -69,7 +69,7 @@
             {
                 List<? extends WellGroupTemplate> groups = template.getWellGroups(template.getPosition(row, col));
                 StringBuilder wellDisplayString = new StringBuilder();
-                TreeMap<String, String> currentGroupColors = new TreeMap<String, String>();
+                TreeMap<String, String> currentGroupColors = new TreeMap<>();
                 for (WellGroupTemplate group : groups)
                 {
                     if (bean.getType() == null || bean.getType() == group.getType())

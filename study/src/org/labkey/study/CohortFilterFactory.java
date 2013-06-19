@@ -312,7 +312,7 @@ public class CohortFilterFactory
 
 
     // this is to speed up url parameter inspection
-    private static final HashMap<FieldKey,Object> cohortParameters= new HashMap<FieldKey,Object>();
+    private static final HashMap<FieldKey,Object> cohortParameters= new HashMap<>();
     static
     {
         for (Params p : Params.values())
@@ -451,13 +451,13 @@ public class CohortFilterFactory
             String first = parts.get(0);
             if (StringUtils.equalsIgnoreCase(first, subject))
             {
-                ArrayList<String> t = new ArrayList<String>(parts);
+                ArrayList<String> t = new ArrayList<>(parts);
                 t.set(0, "ParticipantId");
                 fk = FieldKey.fromParts(t);
             }
             else if (StringUtils.equalsIgnoreCase(first, subjectVisit))
             {
-                ArrayList<String> t = new ArrayList<String>(parts);
+                ArrayList<String> t = new ArrayList<>(parts);
                 t.set(0, "ParticipantVisit");
                 fk = FieldKey.fromParts(t);
             }

@@ -116,7 +116,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     // to work, but it is not totally clear that the resulting complexity is
     // worth the savings, especially now that all splitting and joining is
     // synchronized to avoid SQL deadlocks.
-    private ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<SplitRecord>();
+    private ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<>();
 
     public void split(PipelineJob job) throws IOException, SQLException
     {
@@ -231,7 +231,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         {
             _joinJob = job;
             // Need list with editable content.
-            _splitJobs = new ArrayList<PipelineJob>(Arrays.asList(splitJobs));
+            _splitJobs = new ArrayList<>(Arrays.asList(splitJobs));
         }
 
         public boolean isJoinJob(String jobId)

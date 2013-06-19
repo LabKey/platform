@@ -41,7 +41,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
-        List<ReportService.DesignerInfo> info = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> info = new ArrayList<>();
         info.addAll(super.getDesignerInfo(context, settings));
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if ("study".equalsIgnoreCase(settings.getSchemaName()))
@@ -72,7 +72,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
         Study study = StudyService.get().getStudy(context.getContainer());
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
 

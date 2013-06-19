@@ -57,7 +57,7 @@ public class StudySchedule implements CustomApiForm
 {
     List<VisitImpl> _visits;
     DataSetDefinition[] _datasets;
-    Map<String, DataViewInfo> _viewInfo = new HashMap<String, DataViewInfo>();
+    Map<String, DataViewInfo> _viewInfo = new HashMap<>();
     Map<Integer, List<VisitDataSet>> _schedule;
 
     public void setDatasets(DataSetDefinition[] datasets, List<DataViewInfo> views)
@@ -162,7 +162,7 @@ public class StudySchedule implements CustomApiForm
     private JSONArray serializeData(User user, DataSetDefinition[] datasets, List<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
-        Map<Integer, VisitImpl> visitMap = new HashMap<Integer, VisitImpl>();
+        Map<Integer, VisitImpl> visitMap = new HashMap<>();
 
         for (VisitImpl visit : visits)
             visitMap.put(visit.getRowId(), visit);
@@ -188,7 +188,7 @@ public class StudySchedule implements CustomApiForm
     public void bindProperties(Map<String, Object> props)
     {
         Object schedule = props.get("schedule");
-        _schedule = new LinkedHashMap<Integer, List<VisitDataSet>>();
+        _schedule = new LinkedHashMap<>();
         Container container = HttpView.currentContext().getContainer();
 
         if (schedule instanceof JSONArray)
@@ -197,7 +197,7 @@ public class StudySchedule implements CustomApiForm
             for (int i=0; i < schedules.length(); i++)
             {
                 JSONObject rec = schedules.getJSONObject(i);
-                List<VisitDataSet> timepoints = new ArrayList<VisitDataSet>();
+                List<VisitDataSet> timepoints = new ArrayList<>();
                 Integer datasetId = null;
 
                 for (Map.Entry<String, Object> entry : rec.entrySet())

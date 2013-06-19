@@ -83,7 +83,7 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
         {
             try {
                 Map<String, String> labels = getLabelMap(view);
-                Map<String, TimePeriodValues> datasets = new HashMap<String, TimePeriodValues>();
+                Map<String, TimePeriodValues> datasets = new HashMap<>();
                 for (String columnName : descriptor.getColumnYName())
                 {
                     if (!StringUtils.isEmpty(columnName))
@@ -204,7 +204,7 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
 
                 if (info != null && info.getImageMapCallbackColumns().length != 0)
                 {
-                    colMap = new HashMap<String, Object>();
+                    colMap = new HashMap<>();
                     for (String colName : info.getImageMapCallbackColumns())
                     {
                         if (rowMap.containsKey(colName))

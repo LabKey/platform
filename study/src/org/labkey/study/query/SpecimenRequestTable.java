@@ -63,7 +63,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         hiddenColumn.setHidden(true);
         hiddenColumn.setIsUnselectable(true);
 
-        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        List<FieldKey> fieldKeys = new ArrayList<>();
         fieldKeys.add(FieldKey.fromParts("RequestId"));
         fieldKeys.add(FieldKey.fromParts("Status"));
         fieldKeys.add(FieldKey.fromParts("Destination"));

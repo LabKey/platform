@@ -85,7 +85,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         // Password is correct for this user.  Now check password rules and expiration.
 
         PasswordRule rule = DbLoginManager.getPasswordRule();
-        Collection<String> messages = new LinkedList<String>();
+        Collection<String> messages = new LinkedList<>();
 
         if (!rule.isValidForLogin(password, user, messages))
         {

@@ -78,7 +78,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Created >= ? and Created < ?", start, end);
         Collection<String> containerIds = new SqlSelector(_comm.getSchema(), sql).getCollection(String.class);
 
-        List<Container> containers = new ArrayList<Container>(containerIds.size());
+        List<Container> containers = new ArrayList<>(containerIds.size());
 
         for (String id : containerIds)
         {
@@ -100,7 +100,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         for (User recipient : sel.getNotificationCandidates())
         {
-            List<AnnouncementModel> announcementModelList = new ArrayList<AnnouncementModel>(announcementModels.length);
+            List<AnnouncementModel> announcementModelList = new ArrayList<>(announcementModels.length);
 
             for (AnnouncementModel ann : announcementModels)
                 if (sel.shouldSend(ann, recipient))

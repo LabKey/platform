@@ -77,13 +77,13 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             }
             // Translate PlateTemplate to GWTPlate
             List<? extends WellGroupTemplate> groups = template.getWellGroups();
-            List<GWTWellGroup> translated = new ArrayList<GWTWellGroup>();
+            List<GWTWellGroup> translated = new ArrayList<>();
             for (WellGroupTemplate group : groups)
             {
-                List<GWTPosition> positions = new ArrayList<GWTPosition>(group.getPositions().size());
+                List<GWTPosition> positions = new ArrayList<>(group.getPositions().size());
                 for (Position position : group.getPositions())
                     positions.add(new GWTPosition(position.getRow(), position.getColumn()));
-                Map<String, Object> groupProperties = new HashMap<String, Object>();
+                Map<String, Object> groupProperties = new HashMap<>();
                 for (String propName : group.getPropertyNames())
                 {
                     groupProperties.put(propName, group.getProperty(propName));
@@ -95,7 +95,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             plate.setGroups(translated);
             plate.setTypesToDefaultGroups(handler.getDefaultGroupsForTypes());
             
-            Map<String, Object> templateProperties = new HashMap<String, Object>();
+            Map<String, Object> templateProperties = new HashMap<>();
             for (String propName : template.getPropertyNames())
             {
                 templateProperties.put(propName, template.getProperty(propName) == null ? null : template.getProperty(propName).toString());
@@ -111,7 +111,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
     private List<String> getTypeList(PlateTemplate template)
     {
-        List<String> types = new ArrayList<String>();
+        List<String> types = new ArrayList<>();
         WellGroup.Type[] wellTypes = new WellGroup.Type[]{
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
                 WellGroup.Type.REPLICATE, WellGroup.Type.OTHER};
@@ -146,7 +146,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             List<GWTWellGroup> groups = gwtPlate.getGroups();
             for (GWTWellGroup gwtGroup : groups)
             {
-                List<Position> positions = new ArrayList<Position>();
+                List<Position> positions = new ArrayList<>();
                 for (GWTPosition gwtPosition : gwtGroup.getPositions())
                     positions.add(template.getPosition(gwtPosition.getRow(), gwtPosition.getCol()));
 

@@ -83,7 +83,7 @@ public class UmlsController extends SpringActionController
             {
                 RRF_Reader l = new RRF_Reader(new File(form.getPath()));
                 Iterator<SemanticType> types = l.getTypes(null);
-                TreeMap<String, String> map = new TreeMap<String, String>();
+                TreeMap<String, String> map = new TreeMap<>();
                 while (types.hasNext())
                 {
                     SemanticType t = types.next();
@@ -141,7 +141,7 @@ public class UmlsController extends SpringActionController
         @Override
         public ModelAndView getView(ConceptForm conceptForm, BindException errors) throws Exception
         {
-            return new JspView<ConceptForm>(UmlsController.class, "concept.jsp", conceptForm, errors);
+            return new JspView<>(UmlsController.class, "concept.jsp", conceptForm, errors);
         }
     }
     
@@ -178,7 +178,7 @@ public class UmlsController extends SpringActionController
                         _key = job.getPollKey();
                 }
             }
-            return new JspView<IndexAction>(UmlsController.class,"index.jsp",this,errors);
+            return new JspView<>(UmlsController.class,"index.jsp",this,errors);
         }
 
         public URLHelper getSuccessURL(PathForm o)
@@ -307,7 +307,7 @@ public class UmlsController extends SpringActionController
             }
             sqlf.append(") GROUP BY CUI");
             rs = Table.executeQuery(umls, sqlf);
-            Map<String,String> map = new HashMap<String,String>();
+            Map<String,String> map = new HashMap<>();
             while (rs.next())
                 map.put(rs.getString(1), rs.getString(2));
             return map;

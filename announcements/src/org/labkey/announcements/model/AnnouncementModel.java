@@ -68,7 +68,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     private int _responseCount = 0;
 
-    private Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
+    private Collection<AnnouncementModel> _responses = new ArrayList<>();
     private Set<User> _authors;
 
 
@@ -377,7 +377,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
             }
 
             Collection<AnnouncementModel> responses = a.getResponses();
-            Set<User> responderSet = new HashSet<User>();
+            Set<User> responderSet = new HashSet<>();
 
             //add creator of each response to responder set
             for (AnnouncementModel response : responses)

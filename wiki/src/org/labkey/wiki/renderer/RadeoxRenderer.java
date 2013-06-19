@@ -113,7 +113,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         if (text == null)
             text = "";
 
-        Set<String> dependencies = new HashSet<String>();
+        Set<String> dependencies = new HashSet<>();
         RenderContext context = new BaseRenderContext();
         context.setRenderEngine(this);
         context.set(WIKI_DEPENDENCIES_KEY, dependencies);

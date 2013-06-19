@@ -83,9 +83,9 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
-    private static final Map<String, Boolean> _factoryInitialized = new HashMap<String, Boolean>();
+    private static final Map<String, Boolean> _factoryInitialized = new HashMap<>();
 
-    private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
+    private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<>();
     private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
 
@@ -189,7 +189,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         if (map.containsKey(OBJECT_XML_KEY))
         {
-            map = new CaseInsensitiveHashMap<Object>(map);
+            map = new CaseInsensitiveHashMap<>(map);
             addObjectProperties((String)map.get(OBJECT_XML_KEY), map);
         }
         return ObjectFactory.Registry.getFactory(clz).fromMap(map);
@@ -262,7 +262,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                         return LogManager.get().insertEvent(user, event);
                     }
                     else
-                        _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));
+                        _eventQueue.add(new Pair<>(user, event));
                 }
             }
             else

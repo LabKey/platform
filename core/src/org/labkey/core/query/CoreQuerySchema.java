@@ -156,7 +156,7 @@ public class CoreQuerySchema extends UserSchema
         col.setReadOnly(true);
         groups.addColumn(col);
 
-        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        List<FieldKey> defCols = new ArrayList<>();
         defCols.add(FieldKey.fromParts("Name"));
         defCols.add(FieldKey.fromParts("Type"));
         defCols.add(FieldKey.fromParts("Container"));
@@ -226,7 +226,7 @@ public class CoreQuerySchema extends UserSchema
         col.setReadOnly(true);
         principals.addColumn(col);
 
-        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        List<FieldKey> defCols = new ArrayList<>();
         defCols.add(FieldKey.fromParts("Name"));
         defCols.add(FieldKey.fromParts("Type"));
         defCols.add(FieldKey.fromParts("Container"));
@@ -293,7 +293,7 @@ public class CoreQuerySchema extends UserSchema
                     + " WHERE Container=? OR Container IS NULL)", project.getId()));
         }
 
-        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        List<FieldKey> defCols = new ArrayList<>();
         defCols.add(FieldKey.fromParts("UserId"));
         defCols.add(FieldKey.fromParts("GroupId"));
         members.setDefaultVisibleColumns(defCols);
@@ -321,7 +321,7 @@ public class CoreQuerySchema extends UserSchema
         {
             if (_projectUserIds == null)
             {
-                _projectUserIds = new HashSet<Integer>(SecurityManager.getFolderUserids(getContainer()));
+                _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
                 for (UserPrincipal adminUser : SecurityManager.getGroupMembers(siteAdminGroup, MemberType.USERS))
@@ -450,7 +450,7 @@ public class CoreQuerySchema extends UserSchema
                         "    </ns:columns>\n" +
                         "  </ns:table>\n" +
                         "</ns:tables>");
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo t;
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())

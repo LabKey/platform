@@ -55,7 +55,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         {
             TimeChartReportDescriptor descriptor = (TimeChartReportDescriptor) report.getDescriptor();
 
-            JspView timeChartWizard = new JspView<VisualizationController.GetVisualizationForm>(descriptor.getViewClass(), form);
+            JspView timeChartWizard = new JspView<>(descriptor.getViewClass(), form);
 
             timeChartWizard.setFrame(WebPartView.FrameType.NONE);
             return new HBox(timeChartWizard);

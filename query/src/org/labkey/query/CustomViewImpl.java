@@ -557,7 +557,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         DgQuery view = doc.getView();
         DgQuery.Select select = view.getSelect();
 
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList<>();
 
         for (DgColumn column : select.getColumnArray())
         {
@@ -566,7 +566,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
             if (column.getMetadata() != null)
             {
                 ColumnType metadata = column.getMetadata();
-                map = new EnumMap<ColumnProperty,String>(ColumnProperty.class);
+                map = new EnumMap<>(ColumnProperty.class);
                 if (metadata.getColumnTitle() != null)
                 {
                     map.put(ColumnProperty.columnTitle, metadata.getColumnTitle());

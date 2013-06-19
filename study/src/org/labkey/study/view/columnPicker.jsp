@@ -52,7 +52,7 @@ for (DataSetDefinition ds : bean.study.getDataSets())
 <%
 if (selectedDataset != null)
 {
-    HashMap<Integer, VisitImpl> visits = new HashMap<Integer, VisitImpl>();
+    HashMap<Integer, VisitImpl> visits = new HashMap<>();
     for (VisitImpl visit : bean.study.getVisits(Visit.Order.DISPLAY))
     {
         if (visit.getSequenceNumMin() == visit.getSequenceNumMax())

@@ -52,7 +52,7 @@ class SecurityFilter extends Filter
 
     private final User user;
     private final HashMap<String, Container> containerIds;
-    private final HashMap<String, Boolean> securableResourceIds = new HashMap<String,Boolean>();
+    private final HashMap<String, Boolean> securableResourceIds = new HashMap<>();
 
     SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive)
     {
@@ -61,7 +61,7 @@ class SecurityFilter extends Filter
         if (recursive)
         {
             List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-            containerIds = new HashMap<String, Container>(containers.size());
+            containerIds = new HashMap<>(containers.size());
 
             for (Container c : containers)
             {
@@ -71,7 +71,7 @@ class SecurityFilter extends Filter
         }
         else
         {
-            containerIds = new HashMap<String, Container>();
+            containerIds = new HashMap<>();
             containerIds.put(searchRoot.getId(), searchRoot);
         }
     }

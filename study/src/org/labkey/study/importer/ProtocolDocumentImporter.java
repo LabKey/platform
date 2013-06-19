@@ -49,8 +49,8 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
         if (null != protocolXml)
         {
             VirtualFile folder = root.getDir(protocolXml.getDir());
-            List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
-            List<String> existing = new ArrayList<String>();
+            List<AttachmentFile> attachments = new ArrayList<>();
+            List<String> existing = new ArrayList<>();
 
             for (Attachment attachment : study.getProtocolDocuments())
                 existing.add(attachment.getName());

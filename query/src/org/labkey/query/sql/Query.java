@@ -103,7 +103,7 @@ public class Query
     private final QuerySchema _schema;
 	String _querySource;
     boolean _strictColumnList = false;
-	private ArrayList<QueryException> _parseErrors = new ArrayList<QueryException>();
+	private ArrayList<QueryException> _parseErrors = new ArrayList<>();
 
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
@@ -114,7 +114,7 @@ public class Query
 
     private int _aliasCounter = 0;
 
-    IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>>();
+    IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -320,7 +320,7 @@ public class Query
                     assert null != table.getColumn(field.getName());
                     if (null == table.getColumn(field.getName()))
                         continue;
-                    List<String> parts = new ArrayList<String>();
+                    List<String> parts = new ArrayList<>();
                     parts.add(key.getName());
                     parts.addAll(field.getParts());
                     QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
@@ -332,7 +332,7 @@ public class Query
                     FieldKey oorFieldKey = new FieldKey(field.getParent(), field.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
                     if (table.getColumn(oorFieldKey.getName()) != null && !defaultVisibleColumns.contains(oorFieldKey))
                     {
-                        List<String> oorParts = new ArrayList<String>();
+                        List<String> oorParts = new ArrayList<>();
                         oorParts.add(key.getName());
                         oorParts.addAll(oorFieldKey.getParts());
                         QFieldKey oorQField = QFieldKey.of(FieldKey.fromParts(oorParts));
@@ -352,7 +352,7 @@ public class Query
                 {
                     for (String pkName : pkNames)
                     {
-                        List<String> parts = new ArrayList<String>();
+                        List<String> parts = new ArrayList<>();
                         parts.add(key.getName());
                         parts.add(pkName);
                         QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
@@ -454,7 +454,7 @@ public class Query
         if (_parseErrors.size() > 0)
             return null;
         // don't return hidden parameters
-        ArrayList<QueryService.ParameterDecl> ret = new ArrayList<QueryService.ParameterDecl>(_parameters.size());
+        ArrayList<QueryService.ParameterDecl> ret = new ArrayList<>(_parameters.size());
         for (QParameter p : _parameters)
         {
            if (!p.getName().startsWith("@@"))
@@ -575,7 +575,7 @@ public class Query
         }
 
 		List<String> parts = key.getParts();
-		List<String> names = new ArrayList<String>(parts.size());
+		List<String> names = new ArrayList<>(parts.size());
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
@@ -627,7 +627,7 @@ public class Query
         if (t instanceof QueryDefinition)
         {
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
-            List<QueryException> tableErrors = new ArrayList<QueryException>();
+            List<QueryException> tableErrors = new ArrayList<>();
             Query query = def.getQuery(schema, tableErrors, this, true);
 
             if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
@@ -686,9 +686,9 @@ public class Query
 
     void mergeParameters(Query fromQuery)
     {
-        CaseInsensitiveHashMap<QParameter> map = new CaseInsensitiveHashMap<QParameter>();
+        CaseInsensitiveHashMap<QParameter> map = new CaseInsensitiveHashMap<>();
         if (null == _parameters)
-            _parameters = new ArrayList<QParameter>();
+            _parameters = new ArrayList<>();
         for (QParameter p : _parameters)
             map.put(p.getName(),p);
         if (null != fromQuery._parameters)
@@ -717,7 +717,7 @@ public class Query
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
         private String[][] data;
-        private ArrayListMap<String, Object> templateRow = new ArrayListMap<String, Object>();
+        private ArrayListMap<String, Object> templateRow = new ArrayListMap<>();
 
 		// UNDONE: need some NULLS in here
         @SuppressWarnings({"UnusedAssignment"})
@@ -766,7 +766,7 @@ public class Query
 
             public Map<String, Object> next()
             {
-                return new ArrayListMap<String, Object>(templateRow, Arrays.asList((Object[])data[i++]));
+                return new ArrayListMap<>(templateRow, Arrays.asList((Object[])data[i++]));
             }
 
             public void remove()

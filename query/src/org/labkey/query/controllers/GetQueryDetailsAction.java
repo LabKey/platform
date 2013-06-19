@@ -173,7 +173,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)
             {
                 String[] additionalFields = form.getAdditionalFields();
-                fields = new ArrayList<FieldKey>(additionalFields.length);
+                fields = new ArrayList<>(additionalFields.length);
                 for (String additionalField : additionalFields)
                     fields.add(FieldKey.fromString(additionalField));
             }
@@ -193,7 +193,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             //now the columns in the user's default view for this query
             resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
 
-            List<Map<String, Object>> viewInfos = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> viewInfos = new ArrayList<>();
             String[] viewNames;
             if (form.getViewName() != null && form.getViewName().length > 0)
                 viewNames = form.getViewName();
@@ -276,14 +276,14 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
         QueryView view = new QueryView(schema, settings, null);
 
-        Map<String,Object> defViewProps = new HashMap<String,Object>();
+        Map<String,Object> defViewProps = new HashMap<>();
         defViewProps.put("columns", getDefViewColProps(view));
         return defViewProps;
     }
 
     protected List<Map<String,Object>> getDefViewColProps(QueryView view)
     {
-        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> colProps = new ArrayList<>();
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             if (dc.isQueryColumn() && null != dc.getColumnInfo())

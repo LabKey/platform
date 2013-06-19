@@ -284,7 +284,7 @@ public class ExperimentController extends SpringActionController
         {
             Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
             ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.<ExpProtocol>emptyList());
-            JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
             VBox result = new VBox(chooserView, view);
@@ -320,7 +320,7 @@ public class ExperimentController extends SpringActionController
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            List<ExpRun> runs = new ArrayList<ExpRun>();
+            List<ExpRun> runs = new ArrayList<>();
             JSONArray runIds = form.getJsonObject().getJSONArray("runIds");
             for (int i = 0; i < runIds.length(); i++)
             {
@@ -386,11 +386,11 @@ public class ExperimentController extends SpringActionController
 
             List<ExpProtocol> protocols = _experiment.getAllProtocols();
 
-            Set<ExperimentRunType> types = new TreeSet<ExperimentRunType>(ExperimentService.get().getExperimentRunTypes(getContainer()));
+            Set<ExperimentRunType> types = new TreeSet<>(ExperimentService.get().getExperimentRunTypes(getContainer()));
             ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
 
             ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone(), protocols);
-            JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runListView.getRunTable().setExperiment(_experiment);
@@ -502,7 +502,7 @@ public class ExperimentController extends SpringActionController
                     PanelButton result = super.createExportButton(exportAsWebPage);
                     ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
                     url.addParameter("sampleSetId", _source.getRowId());
-                    result.addSubPanel("XAR", new JspView<ActionURL>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
+                    result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
                     return result;
                 }
             };
@@ -639,7 +639,7 @@ public class ExperimentController extends SpringActionController
         public List<Map<String, Object>> getMaterials()
         {
             JSONArray materials = json.getJSONArray("materials");
-            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> result = new ArrayList<>();
             for (int i=0; i<materials.length(); i++)
             {
                 Map<String, Object> props = materials.getJSONObject(i).getJSONObject("properties");
@@ -718,10 +718,10 @@ public class ExperimentController extends SpringActionController
         {
             VBox vbox = super.getView(form, errors);
 
-            List<ExpMaterial> materialsToInvestigate = new ArrayList<ExpMaterial>();
-            final List<ExpRun> successorRuns = new ArrayList<ExpRun>();
+            List<ExpMaterial> materialsToInvestigate = new ArrayList<>();
+            final List<ExpRun> successorRuns = new ArrayList<>();
             materialsToInvestigate.add(_material);
-            Set<ExpMaterial> investigatedMaterials = new HashSet<ExpMaterial>();
+            Set<ExpMaterial> investigatedMaterials = new HashSet<>();
             while (!materialsToInvestigate.isEmpty())
             {
                 ExpMaterial m = materialsToInvestigate.remove(0);
@@ -840,7 +840,7 @@ public class ExperimentController extends SpringActionController
                     // to view
                     table.setContainerFilter(ContainerFilter.EVERYTHING);
 
-                    List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>();
+                    List<FieldKey> defaultVisibleColumns = new ArrayList<>();
                     if (ss == null)
                     {
                         // The table columns without any of the active SampleSet property columns
@@ -875,11 +875,11 @@ public class ExperimentController extends SpringActionController
             {
                 return Collections.emptySet();
             }
-            List<ExpRun> runsToInvestigate = new ArrayList<ExpRun>();
+            List<ExpRun> runsToInvestigate = new ArrayList<>();
             runsToInvestigate.addAll(Arrays.asList(ExperimentServiceImpl.get().getRunsUsingMaterials(_material.getRowId())));
             runsToInvestigate.remove(_material.getRun());
-            Set<ExpMaterial> result = new HashSet<ExpMaterial>();
-            Set<ExpRun> investigatedRuns = new HashSet<ExpRun>();
+            Set<ExpMaterial> result = new HashSet<>();
+            Set<ExpRun> investigatedRuns = new HashSet<>();
 
             while (!runsToInvestigate.isEmpty())
             {
@@ -913,7 +913,7 @@ public class ExperimentController extends SpringActionController
         {
             // Filter out the generic unknown material, which is just a placeholder and doesn't represent a real
             // parent
-            ArrayList<ExpMaterial> result = new ArrayList<ExpMaterial>();
+            ArrayList<ExpMaterial> result = new ArrayList<>();
             for (ExpMaterial material : materials)
             {
                 if (!isUnknownMaterial(material))
@@ -930,14 +930,14 @@ public class ExperimentController extends SpringActionController
             {
                 return Collections.emptySet();
             }
-            List<ExpRun> runsToInvestigate = new ArrayList<ExpRun>();
+            List<ExpRun> runsToInvestigate = new ArrayList<>();
             ExpRun parentRun = _material.getRun();
             if (parentRun != null)
             {
                 runsToInvestigate.add(parentRun);
             }
-            Set<ExpRun> investigatedRuns = new HashSet<ExpRun>();
-            final Set<ExpMaterial> parentMaterials = new HashSet<ExpMaterial>();
+            Set<ExpRun> investigatedRuns = new HashSet<>();
+            final Set<ExpMaterial> parentMaterials = new HashSet<>();
             while (!runsToInvestigate.isEmpty())
             {
                 ExpRun predecessorRun = runsToInvestigate.remove(0);
@@ -1671,7 +1671,7 @@ public class ExperimentController extends SpringActionController
                 {
                     Object[] oa = ((JSONArray)rowsArray.get(i)).toArray();
                     ArrayIterator it = new ArrayIterator(oa);
-                    List<String> list = new ArrayList<String>();
+                    List<String> list = new ArrayList<>();
 
                     while (it.hasNext())
                     {
@@ -1770,7 +1770,7 @@ public class ExperimentController extends SpringActionController
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 
             // UNDONE: strip script
-            List<String> tidyErrors = new ArrayList<String>();
+            List<String> tidyErrors = new ArrayList<>();
             String tidy = TidyUtil.tidyHTML(html, false, tidyErrors);
 
             if (!tidyErrors.isEmpty())
@@ -1848,7 +1848,7 @@ public class ExperimentController extends SpringActionController
             Container c = getContainer();
             ApplicationOutputGrid outMGrid = new ApplicationOutputGrid(c, _app.getRowId(), ExperimentServiceImpl.get().getTinfoMaterial());
             ApplicationOutputGrid outDGrid = new ApplicationOutputGrid(c, _app.getRowId(), ExperimentServiceImpl.get().getTinfoData());
-            Map<String, AbstractParameter> map = new HashMap<String, AbstractParameter>();
+            Map<String, AbstractParameter> map = new HashMap<>();
             for (ProtocolApplicationParameter param : ExperimentService.get().getProtocolApplicationParameters(_app.getRowId()))
             {
                 map.put(param.getOntologyEntryURI(), param);
@@ -1899,7 +1899,7 @@ public class ExperimentController extends SpringActionController
             }
             ensureCorrectContainer(getContainer(), _protocol, getViewContext());
 
-            JspView<ExpProtocol> detailsView = new JspView<ExpProtocol>("/org/labkey/experiment/ProtocolDetails.jsp", _protocol);
+            JspView<ExpProtocol> detailsView = new JspView<>("/org/labkey/experiment/ProtocolDetails.jsp", _protocol);
             detailsView.setTitle("Standard Properties");
 
             CustomPropertiesView cpv = new CustomPropertiesView(_protocol.getLSID(), getContainer());
@@ -1966,7 +1966,7 @@ public class ExperimentController extends SpringActionController
 
             ExpProtocol childProtocol = ExperimentService.get().getExpProtocol(_actionStep.getChildProtocolLSID());
 
-            JspView<ExpProtocol> detailsView = new JspView<ExpProtocol>("/org/labkey/experiment/ProtocolDetails.jsp", childProtocol);
+            JspView<ExpProtocol> detailsView = new JspView<>("/org/labkey/experiment/ProtocolDetails.jsp", childProtocol);
             detailsView.setTitle("Standard Properties");
 
             CustomPropertiesView cpv = new CustomPropertiesView(childProtocol.getLSID(), getContainer());
@@ -2109,7 +2109,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
-            List<ExpRun> runs = new ArrayList<ExpRun>();
+            List<ExpRun> runs = new ArrayList<>();
             for (int runId : deleteForm.getIds(false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
@@ -2119,8 +2119,8 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<Pair<SecurableResource, ActionURL>>();
-            List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
             for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
             {
                 ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDataSetId());
@@ -2234,8 +2234,8 @@ public class ExperimentController extends SpringActionController
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
             List<ExpProtocol> protocols = getProtocols(deleteForm);
             String noun = "Assay Design";
-            List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<Pair<SecurableResource, ActionURL>>();
-            List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
             for (ExpProtocol protocol : protocols)
             {
                 if (AssayService.get().getProvider(protocol) == null)
@@ -2261,7 +2261,7 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpProtocol> getProtocols(DeleteForm deleteForm)
         {
-            List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
+            List<ExpProtocol> protocols = new ArrayList<>();
             for (int protocolId : deleteForm.getIds(false))
             {
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
@@ -2327,7 +2327,7 @@ public class ExperimentController extends SpringActionController
         {
             // We don't actually delete runs that use the materials - we just disconnect the material from the run
             // In some cases (such as flow) this is required. In others, it's not as sensible
-            List<ExpRun> runsToDelete = new ArrayList<ExpRun>();
+            List<ExpRun> runsToDelete = new ArrayList<>();
             ExpRun[] runArray = ExperimentService.get().getRunsUsingMaterials(materials);
             for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
                 runsToDelete.add(run);
@@ -2337,7 +2337,7 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpMaterial> getMaterials(DeleteForm deleteForm, boolean clear)
         {
-            List<ExpMaterial> materials = new ArrayList<ExpMaterial>();
+            List<ExpMaterial> materials = new ArrayList<>();
             for (int materialId : deleteForm.getIds(clear))
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(materialId);
@@ -2384,7 +2384,7 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
         {
-            List<ExpData> datas = new ArrayList<ExpData>();
+            List<ExpData> datas = new ArrayList<>();
             for (int dataId : deleteForm.getIds(clear))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
@@ -2417,7 +2417,7 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpExperiment> experiments = lookupExperiments(deleteForm);
 
-            List<ExpRun> runs = new ArrayList<ExpRun>();
+            List<ExpRun> runs = new ArrayList<>();
             boolean allBatches = true;
             for (ExpExperiment experiment : experiments)
             {
@@ -2437,7 +2437,7 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)
         {
-            List<ExpExperiment> experiments = new ArrayList<ExpExperiment>();
+            List<ExpExperiment> experiments = new ArrayList<>();
             for (int experimentId : deleteForm.getIds(false))
             {
                 ExpExperiment experiment = ExperimentService.get().getExpExperiment(experimentId);
@@ -2512,7 +2512,7 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpSampleSet> getSampleSets(DeleteForm deleteForm)
         {
-            List<ExpSampleSet> sources = new ArrayList<ExpSampleSet>();
+            List<ExpSampleSet> sources = new ArrayList<>();
             for (int rowId : deleteForm.getIds(false))
             {
                 ExpSampleSet sampleSet = ExperimentServiceImpl.get().getSampleSet(rowId);
@@ -2810,7 +2810,7 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
-            return new JspView<UploadMaterialSetForm>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
+            return new JspView<>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2900,7 +2900,7 @@ public class ExperimentController extends SpringActionController
                 return new NoPipelineRootSetView(getContainer(), "upload a XAR");
             }
 
-            return new JspView<Object>("/org/labkey/experiment/addXarFile.jsp", null, errors);
+            return new JspView<>("/org/labkey/experiment/addXarFile.jsp", null, errors);
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception
@@ -3219,7 +3219,7 @@ public class ExperimentController extends SpringActionController
 
         public List<ExpProtocol> lookupProtocols(ViewContext context, boolean clearSelection)
         {
-            List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
+            List<ExpProtocol> protocols = new ArrayList<>();
 
             if (_protocolId != null)
             {
@@ -3497,7 +3497,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                List<ExpData> files = new ArrayList<ExpData>();
+                List<ExpData> files = new ArrayList<>();
                 for (int id : dataIds)
                 {
                     ExpData data = ExperimentService.get().getExpData(id);
@@ -3557,7 +3557,7 @@ public class ExperimentController extends SpringActionController
             throws SQLException
     {
         int[] runIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), true));
-        List<ExpRun> runs = new ArrayList<ExpRun>();
+        List<ExpRun> runs = new ArrayList<>();
         for (int runId : runIds)
         {
             ExpRun run = ExperimentServiceImpl.get().getExpRun(runId);
@@ -3781,9 +3781,9 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                Set<String> materialInputRoles = new TreeSet<String>();
+                Set<String> materialInputRoles = new TreeSet<>();
                 materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer()));
-                Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<ExpMaterial, String>();
+                Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<>();
                 for (ExpMaterial material : _materials)
                 {
                     materialsWithRoles.put(material, null);
@@ -3792,7 +3792,7 @@ public class ExperimentController extends SpringActionController
                 List<ExpSampleSet> sampleSets = getUploadableSampleSets();
 
                 DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
-                view = new JspView<DeriveSamplesChooseTargetBean>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
+                view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
         }
@@ -3845,7 +3845,7 @@ public class ExperimentController extends SpringActionController
 
     private List<ExpSampleSet> getUploadableSampleSets()
     {
-        List<ExpSampleSet> sampleSets = new ArrayList<ExpSampleSet>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true)));
+        List<ExpSampleSet> sampleSets = new ArrayList<>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true)));
         Iterator<ExpSampleSet> iter = sampleSets.iterator();
         while (iter.hasNext())
         {
@@ -3926,7 +3926,7 @@ public class ExperimentController extends SpringActionController
             insertView.getDataRegion().setButtonBar(bar);
             insertView.setTitle("Output Samples");
 
-            Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<ExpMaterial, String>();
+            Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<>();
             List<ExpMaterial> materials = form.lookupMaterials();
             for (int i = 0; i < materials.size(); i++)
             {
@@ -3934,7 +3934,7 @@ public class ExperimentController extends SpringActionController
             }
 
             DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.<String>emptyList(), helper);
-            JspView<DeriveSamplesChooseTargetBean> view = new JspView<DeriveSamplesChooseTargetBean>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
+            JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 
             return new VBox(view, insertView);
@@ -3950,7 +3950,7 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
-            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<ExpMaterial, String>();
+            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
             int unknownMaterialCount = 0;
             for (int i = 0; i < materials.size(); i++)
             {
@@ -3965,7 +3965,7 @@ public class ExperimentController extends SpringActionController
 
             ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(form.getTargetSampleSetId());
 
-            Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
+            Map<ExpMaterial, String> outputMaterials = new HashMap<>();
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
@@ -4053,7 +4053,7 @@ public class ExperimentController extends SpringActionController
 
         public List<ExpMaterial> lookupMaterials()
         {
-            List<ExpMaterial> result = new ArrayList<ExpMaterial>();
+            List<ExpMaterial> result = new ArrayList<>();
             for (int rowId : getRowIds())
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
@@ -4316,7 +4316,7 @@ public class ExperimentController extends SpringActionController
             ct.setInitialLevel(1);
 
             MoveRunsBean bean = new MoveRunsBean(ct, form.getDataRegionSelectionKey());
-            JspView<MoveRunsBean> result = new JspView<MoveRunsBean>("/org/labkey/experiment/moveRunsLocation.jsp", bean);
+            JspView<MoveRunsBean> result = new JspView<>("/org/labkey/experiment/moveRunsLocation.jsp", bean);
             result.setTitle("Choose Destination Folder");
             result.setFrame(WebPartView.FrameType.PORTAL);
             return result;
@@ -4347,7 +4347,7 @@ public class ExperimentController extends SpringActionController
             }
 
             Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
-            List<ExpRun> runs = new ArrayList<ExpRun>();
+            List<ExpRun> runs = new ArrayList<>();
             for (String runId : runIds)
             {
                 try

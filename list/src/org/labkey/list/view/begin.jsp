@@ -59,7 +59,7 @@
         }
         else
         {
-            for (ListDefinition list : new TreeSet<ListDefinition>(lists.values()))
+            for (ListDefinition list : new TreeSet<>(lists.values()))
             {
                 links = new NavTree("");
                 links.addChild("View Data", list.urlShowData());

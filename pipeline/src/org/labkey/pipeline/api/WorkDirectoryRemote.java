@@ -44,7 +44,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     
     private final File _lockDirectory;
 
-    private static final Map<File, Lock> _locks = new HashMap<File, Lock>();
+    private static final Map<File, Lock> _locks = new HashMap<>();
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {

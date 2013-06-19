@@ -123,11 +123,11 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     private List<Map<String, Object>> writePostedFiles(Container container, List<Map<String, Object>> originalRows)
             throws QueryUpdateServiceException, ValidationException
     {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>(originalRows.size());
+        List<Map<String, Object>> rows = new ArrayList<>(originalRows.size());
         // Iterate through all of the values in all of the rows, looking for MultipartFiles
         for (Map<String, Object> originalRow : originalRows)
         {
-            Map<String, Object> row = new CaseInsensitiveHashMap<Object>();
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
             for (Map.Entry<String, Object> entry : originalRow.entrySet())
             {
                 Object value = entry.getValue();
@@ -180,7 +180,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
             result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k)));
@@ -195,7 +195,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         try
         {
             List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
-            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+            List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {
                 result.add(getMaterialMap(material.getRowId(), material.getLSID()));
@@ -216,7 +216,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         try
         {
             List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
-            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+            List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {
                 result.add(getMaterialMap(material.getRowId(), material.getLSID()));
@@ -234,7 +234,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         int[] ids = new int[keys.size()];
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (int i = 0; i < keys.size(); i++)
         {
             Map<String, Object> k = keys.get(i);

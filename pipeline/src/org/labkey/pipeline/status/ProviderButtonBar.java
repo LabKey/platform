@@ -42,7 +42,7 @@ public class ProviderButtonBar extends ButtonBar
     private String _providerCurrent;
     private String _containerCurrent;
     private Map<String, Map<String, List<DisplayElement>>> _providerContainerElements =
-            new HashMap<String, Map<String, List<DisplayElement>>>();
+            new HashMap<>();
     private PipelineStatusFile _statusFile;
 
     public ProviderButtonBar(PipelineStatusFile sf)
@@ -80,7 +80,7 @@ public class ProviderButtonBar extends ButtonBar
                     if (actions != null && actions.size() > 0)
                     {
                         List<DisplayElement> baseElements = elements;
-                        elements = new ArrayList<DisplayElement>();
+                        elements = new ArrayList<>();
                         for (DisplayElement element : baseElements)
                             elements.add(element);
 
@@ -105,7 +105,7 @@ public class ProviderButtonBar extends ButtonBar
                 Map<String, List<DisplayElement>> containerElements = _providerContainerElements.get(_providerCurrent);
                 if (containerElements == null)
                 {
-                    containerElements = new HashMap<String, List<DisplayElement>>();
+                    containerElements = new HashMap<>();
                     _providerContainerElements.put(_providerCurrent, containerElements);
                 }
                 containerElements.put(_containerCurrent, elements);

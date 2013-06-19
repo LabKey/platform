@@ -56,7 +56,7 @@ public class QCase extends QExpr
             return getChildrenSqlType();
 
         // skip the first expression
-        ArrayList<QNode> list = new ArrayList<QNode>(childList());
+        ArrayList<QNode> list = new ArrayList<>(childList());
         list.remove(0);
         return getChildrenSqlType(list);
     }

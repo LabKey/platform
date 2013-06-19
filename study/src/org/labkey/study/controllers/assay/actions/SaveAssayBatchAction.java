@@ -228,14 +228,14 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             }
         }
 
-        Map<ExpData, String> inputData = new HashMap<ExpData, String>();
+        Map<ExpData, String> inputData = new HashMap<>();
         for (int i = 0; i < inputDataArray.length(); i++)
         {
             JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
-        Map<ExpMaterial, String> inputMaterial = new HashMap<ExpMaterial, String>();
+        Map<ExpMaterial, String> inputMaterial = new HashMap<>();
         for (int i=0; i < inputMaterialArray.length(); i++)
         {
             JSONObject materialObject = inputMaterialArray.getJSONObject(i);
@@ -248,7 +248,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
-        Map<ExpData, String> outputData = new HashMap<ExpData, String>();
+        Map<ExpData, String> outputData = new HashMap<>();
 
         //other data outputs
         for (int i=0; i < outputDataArray.length(); i++)
@@ -267,7 +267,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }
 
-        Map<ExpMaterial, String> outputMaterial = new HashMap<ExpMaterial, String>();
+        Map<ExpMaterial, String> outputMaterial = new HashMap<>();
         for (int i=0; i < outputMaterialArray.length(); i++)
         {
             JSONObject materialObject = outputMaterialArray.getJSONObject(i);
@@ -504,7 +504,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         handleStandardProperties(batchJsonObject, batch, provider.getBatchDomain(protocol).getProperties());
 
-        List<ExpRun> runs = new ArrayList<ExpRun>();
+        List<ExpRun> runs = new ArrayList<>();
         if (batchJsonObject.has(RUNS))
         {
             JSONArray runsArray = batchJsonObject.getJSONArray(RUNS);
@@ -518,12 +518,12 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         List<ExpRun> existingRuns = Arrays.asList(batch.getRuns());
 
         // Make sure that all the runs are considered part of the batch
-        List<ExpRun> runsToAdd = new ArrayList<ExpRun>(runs);
+        List<ExpRun> runsToAdd = new ArrayList<>(runs);
         runsToAdd.removeAll(existingRuns);
         batch.addRuns(getViewContext().getUser(), runsToAdd.toArray(new ExpRun[runsToAdd.size()]));
 
         // Remove any runs that are no longer part of the batch
-        List<ExpRun> runsToRemove = new ArrayList<ExpRun>(existingRuns);
+        List<ExpRun> runsToRemove = new ArrayList<>(existingRuns);
         runsToRemove.removeAll(runs);
         for (ExpRun runToRemove : runsToRemove)
         {

@@ -135,7 +135,7 @@ public class ModulePropertiesTestCase extends Assert
         @Override
         protected Collection<WebPartFactory> createWebPartFactories()
         {
-            return new HashSet<WebPartFactory>();
+            return new HashSet<>();
         }
 
         @Override

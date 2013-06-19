@@ -40,8 +40,8 @@ import java.util.*;
 
 public class PropertyServiceImpl implements PropertyService.Interface
 {
-    List<DomainKind> _domainTypes = new ArrayList<DomainKind>();
-    Map<String, ValidatorKind> _validatorTypes = new HashMap<String, ValidatorKind>();
+    List<DomainKind> _domainTypes = new ArrayList<>();
+    Map<String, ValidatorKind> _validatorTypes = new HashMap<>();
 
 
     public IPropertyType getType(Container container, String typeURI)
@@ -112,13 +112,13 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
     public List<DomainKind> getDomainKinds()
     {
-        ArrayList<DomainKind> l = new ArrayList<DomainKind>(_domainTypes);
+        ArrayList<DomainKind> l = new ArrayList<>(_domainTypes);
         return Collections.unmodifiableList(l);
     }
 
     public Domain[] getDomains(Container container)
     {
-        List<DomainDescriptor> dds = new ArrayList<DomainDescriptor>(OntologyManager.getDomainDescriptors(container));
+        List<DomainDescriptor> dds = new ArrayList<>(OntologyManager.getDomainDescriptors(container));
         Domain[] ret = new Domain[dds.size()];
         for (int i = 0; i < dds.size(); i ++)
         {
@@ -150,7 +150,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
     public List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
     {
-        List<IPropertyValidator> validators = new ArrayList<IPropertyValidator>();
+        List<IPropertyValidator> validators = new ArrayList<>();
 
         for (PropertyValidator v : DomainPropertyManager.get().getValidators(desc))
         {
@@ -202,7 +202,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
             lsid = LsidUtils.resolveLsidFromTemplate(lsid, context, "Domain");
         Domain domain = createDomain(c, lsid, xDomain.getName());
         domain.setDescription(xDomain.getDescription());
-        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
 
         if (xDomain.getPropertyDescriptorArray() != null)
         {
@@ -212,7 +212,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
             }
         }
 
-        return new Pair<Domain, Map<DomainProperty, Object>>(domain, defaultValues);
+        return new Pair<>(domain, defaultValues);
     }
 
     private static DomainProperty loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp, Map<DomainProperty, Object> defaultValues)
@@ -250,7 +250,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
         prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
         prop.setURL(xProp.getURL());
-        Set<String> importAliases = new LinkedHashSet<String>();
+        Set<String> importAliases = new LinkedHashSet<>();
         if (xProp.isSetImportAliases())
         {
             importAliases.addAll(Arrays.asList(xProp.getImportAliases().getImportAliasArray()));

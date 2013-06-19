@@ -49,8 +49,8 @@ public class MuleListenerHelper implements ServletContext
     private MuleXmlBuilderContextListener _muleContextListener;
 
     private ServletContext _parentContext = null;
-    private HashMap<String,Object> _attributes = new HashMap<String,Object>();
-    private HashMap<String,String> _initParameters = new HashMap<String,String>();
+    private HashMap<String,Object> _attributes = new HashMap<>();
+    private HashMap<String,String> _initParameters = new HashMap<>();
     private static final Logger _log = Logger.getLogger(MuleListenerHelper.class);
 
     public MuleListenerHelper(ServletContext parentContext, String muleConfigPaths)

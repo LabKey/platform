@@ -496,7 +496,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
         // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
-        List<IVisualizationSourceQuery> reorderedQueries = new ArrayList<IVisualizationSourceQuery>();
+        List<IVisualizationSourceQuery> reorderedQueries = new ArrayList<>();
         for (IVisualizationSourceQuery query : queries)
         {
             if (query.getJoinTarget() == null)
@@ -511,7 +511,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         queries = reorderedQueries;
 
         // Now that we have the full list of columns we want to select, we can generate our select list
-        Map<String, Set<VisualizationSourceColumn>> allAliases = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
+        Map<String, Set<VisualizationSourceColumn>> allAliases = new LinkedHashMap<>();
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : getColumnMapping(factory, queries).entrySet())
         {
             if (entry.getValue().size() > 1)
@@ -766,7 +766,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     private static Map<String, Set<VisualizationSourceColumn>> getColumnMapping(VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries)
     {
-        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<>();
 
         // Add the sort columns first, since these are generally important to the user and should appear
         // on the left-hand side of any data grids.  (Subject ID is the most common sort column.)

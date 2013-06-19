@@ -55,7 +55,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
                 form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
         }
         setHelpTopic("setRoots");
-        return new JspView<FileSettingsForm>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);
+        return new JspView<>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);
     }
 
     public ActionURL getSuccessURL(FileSettingsForm form)

@@ -140,7 +140,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
         {
             ExpRun[] existingRuns = getRuns();
-            Set<Integer> existingRunIds = new HashSet<Integer>();
+            Set<Integer> existingRunIds = new HashSet<>();
             for (ExpRun run : newRuns)
             {
                 if (_object.getBatchProtocolId() != null && run.getProtocol().getRowId() != _object.getBatchProtocolId().intValue())

@@ -86,7 +86,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
 
-        List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> defaultVisibleColumns = new ArrayList<>();
         defaultVisibleColumns.add(FieldKey.fromParts(Column.RunGroup));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Run));
         setDefaultVisibleColumns(defaultVisibleColumns);
@@ -154,7 +154,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
                 throw new InvalidKeyException("No value specified for column '" + Column.RunGroup + "'");
             }
 
-            return new Pair<Integer, Integer>(runId, runGroupId);
+            return new Pair<>(runId, runGroupId);
         }
 
         private Pair<ExpRunImpl, ExpExperimentImpl> getObjects(Map<String, Object> values) throws InvalidKeyException, QueryUpdateServiceException
@@ -174,7 +174,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
             {
                 throw new UnauthorizedException();
             }
-            return new Pair<ExpRunImpl, ExpExperimentImpl>(run, runGroup);
+            return new Pair<>(run, runGroup);
         }
 
         @Override
@@ -188,7 +188,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
             {
                 return null;
             }
-            Map<String, Object> result = new CaseInsensitiveHashMap<Object>();
+            Map<String, Object> result = new CaseInsensitiveHashMap<>();
             result.put(Column.Run.toString(), ids.first);
             result.put(Column.RunGroup.toString(), ids.second);
             result.put(Column.Created.toString(), row.get(Column.Created.toString()));

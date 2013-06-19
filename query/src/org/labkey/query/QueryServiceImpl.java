@@ -213,7 +213,7 @@ public class QueryServiceImpl extends QueryService
 
     public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table)
     {
-        Map<String, FieldKey> params = new LinkedHashMap<String, FieldKey>();
+        Map<String, FieldKey> params = new LinkedHashMap<>();
         for (ColumnInfo pkCol : table.getPkColumns())
             params.put(pkCol.getColumnName(), pkCol.getFieldKey());
 
@@ -227,7 +227,7 @@ public class QueryServiceImpl extends QueryService
 
     public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schemaName)
     {
-        Map<String, QueryDefinition> ret = new LinkedHashMap<String,QueryDefinition>();
+        Map<String, QueryDefinition> ret = new LinkedHashMap<>();
 
         for (QueryDefinition queryDef : getAllQueryDefs(user, container, schemaName, true, false).values())
             ret.put(queryDef.getName(), queryDef);
@@ -237,12 +237,12 @@ public class QueryServiceImpl extends QueryService
 
     public List<QueryDefinition> getQueryDefs(User user, Container container)
     {
-        return new ArrayList<QueryDefinition>(getAllQueryDefs(user, container, null, true, false).values());
+        return new ArrayList<>(getAllQueryDefs(user, container, null, true, false).values());
     }
 
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
-        Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
+        Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
 
         // session queries have highest priority
         HttpServletRequest request = HttpView.currentRequest();
@@ -250,7 +250,7 @@ public class QueryServiceImpl extends QueryService
         {
             for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
             {
-                Map.Entry<String, String> key = new Pair<String,String>(schemaName, qdef.getName());
+                Map.Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
                 ret.put(key, qdef);
             }
         }
@@ -261,7 +261,7 @@ public class QueryServiceImpl extends QueryService
             Path path = new Path(MODULE_QUERIES_DIRECTORY, schemaName);
             for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
             {
-                Map.Entry<String, String> key = new Pair<String, String>(schemaName, queryDef.getName());
+                Map.Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
                 if (!ret.containsKey(key))
                     ret.put(key, queryDef);
             }
@@ -270,7 +270,7 @@ public class QueryServiceImpl extends QueryService
         // look in the database for query definitions
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
         {
-            Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
+            Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
             if (!ret.containsKey(key))
                 ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
         }
@@ -287,7 +287,7 @@ public class QueryServiceImpl extends QueryService
 
             for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
             {
-                Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
+                Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
                 if (!ret.containsKey(key))
                     ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
@@ -297,7 +297,7 @@ public class QueryServiceImpl extends QueryService
         // look in the Shared project
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
-            Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
+            Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
             if (!ret.containsKey(key))
                 ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
@@ -309,7 +309,7 @@ public class QueryServiceImpl extends QueryService
     public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path)
     {
         Collection<Module> modules = container.getActiveModules();
-        List<QueryDefinition> ret = new ArrayList<QueryDefinition>();
+        List<QueryDefinition> ret = new ArrayList<>();
         for (Module module : modules)
         {
             Collection<? extends Resource> queries;
@@ -363,7 +363,7 @@ public class QueryServiceImpl extends QueryService
             return Collections.emptyList();
 
         Collection<? extends Resource> queries = schemaDir.list();
-        List<Resource> result = new ArrayList<Resource>(queries.size());
+        List<Resource> result = new ArrayList<>(queries.size());
         for (Resource query : queries)
             if (query.getName().endsWith(fileExtension))
                 result.add(query);
@@ -373,7 +373,7 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(User user, Container container, String schema, String name)
     {
-        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>();
+        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>();
 
         for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true).values())
             ret.put(queryDef.getName(), queryDef);
@@ -385,7 +385,7 @@ public class QueryServiceImpl extends QueryService
     {
         // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(owner, container, schema, false, true);
-        QueryDefinition qd = queryDefs.get(new Pair<String, String>(schema, query));
+        QueryDefinition qd = queryDefs.get(new Pair<>(schema, query));
         if (qd == null)
         {
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
@@ -405,7 +405,7 @@ public class QueryServiceImpl extends QueryService
 
     protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd, boolean inheritable, boolean sharedOnly)
     {
-        Map<String, CustomView> views = new HashMap<String, CustomView>();
+        Map<String, CustomView> views = new HashMap<>();
 
         // module query views have lower precedence, so add them first
         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
@@ -448,12 +448,12 @@ public class QueryServiceImpl extends QueryService
         {
             // TODO - include module-based custom views (.qview.xml) in this list. Currently it only finds views
             // stored in the database
-            List<CustomView> result = new ArrayList<CustomView>();
-            Map<String, UserSchema> schemas = new HashMap<String, UserSchema>();
-            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<Pair<String, String>, QueryDefinition>();
+            List<CustomView> result = new ArrayList<>();
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
             for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, owner, includeInherited, sharedOnly))
             {
-                Pair<String, String> key = new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName());
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
                 QueryDefinition queryDef = queryDefs.get(key);
                 if (queryDef == null)
                 {
@@ -478,12 +478,12 @@ public class QueryServiceImpl extends QueryService
             return result;
         }
 
-        return new ArrayList<CustomView>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
+        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
     }
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query)
     {
-        List<CustomView> customViews = new ArrayList<CustomView>();
+        List<CustomView> customViews = new ArrayList<>();
 
         String schema = qd.getSchema().getSchemaName();
 
@@ -546,7 +546,7 @@ public class QueryServiceImpl extends QueryService
         if (queryDir == null || !queryDir.isCollection())
             return Collections.emptyList();
 
-        List<Resource> ret = new ArrayList<Resource>();
+        List<Resource> ret = new ArrayList<>();
         for (String name : queryDir.listNames())
         {
             if (name.toLowerCase().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
@@ -618,7 +618,7 @@ public class QueryServiceImpl extends QueryService
         if (view == null)
             return null;
 
-        Map<String, Object> ret = new LinkedHashMap<String, Object>();
+        Map<String, Object> ret = new LinkedHashMap<>();
         ret.put("name", view.getName() == null ? "" : view.getName());
         ret.put("label", view.getLabel());
         ret.put("default", view.getName() == null);
@@ -653,7 +653,7 @@ public class QueryServiceImpl extends QueryService
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
-        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String, QuerySnapshotDefinition>();
+        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<>();
 
         for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schemaName))
             ret.put(queryDef.getName(), new QuerySnapshotDefImpl(queryDef));
@@ -673,7 +673,7 @@ public class QueryServiceImpl extends QueryService
 
     public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema)
     {
-        List<QuerySnapshotDefinition> ret = new ArrayList<QuerySnapshotDefinition>();
+        List<QuerySnapshotDefinition> ret = new ArrayList<>();
 
         for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schema))
             ret.add(new QuerySnapshotDefImpl(queryDef));
@@ -793,14 +793,14 @@ public class QueryServiceImpl extends QueryService
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
         if (containerQueries == null)
         {
-            containerQueries = new ConcurrentHashMap<ContainerSchemaKey, Map<String, SessionQuery>>();
+            containerQueries = new ConcurrentHashMap<>();
             session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
         }
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
         Map<String, SessionQuery> queries = containerQueries.get(key);
         if (queries == null)
         {
-            queries = new ConcurrentHashMap<String, SessionQuery>();
+            queries = new ConcurrentHashMap<>();
             containerQueries.put(key, queries);
         }
         return queries;
@@ -809,7 +809,7 @@ public class QueryServiceImpl extends QueryService
     private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, String schemaName)
     {
         Map<String, SessionQuery> sessionQueries = getSessionQueryMap(request, container, schemaName, false);
-        List<QueryDefinition> ret = new ArrayList<QueryDefinition>();
+        List<QueryDefinition> ret = new ArrayList<>();
         for (Map.Entry<String, SessionQuery> entry : sessionQueries.entrySet())
             ret.add(createTempQueryDefinition(user, container, schemaName, entry.getKey(), entry.getValue()));
         return ret;
@@ -852,7 +852,7 @@ public class QueryServiceImpl extends QueryService
             if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getEffectiveURL() == null)
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
-                Set<FieldKey> pkColumnMap = new HashSet<FieldKey>();
+                Set<FieldKey> pkColumnMap = new HashSet<>();
                 ContainerContext cc = table.getContainerContext();
                 if (cc instanceof ContainerContext.FieldKeyContext)
                 {
@@ -913,8 +913,8 @@ public class QueryServiceImpl extends QueryService
         assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums", false);
 
         AliasManager manager = new AliasManager(table, existingColumns);
-        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
-        Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>();
+        Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
 
         for (ColumnInfo existingColumn : existingColumns)
         {
@@ -940,8 +940,8 @@ public class QueryServiceImpl extends QueryService
 
     public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
-        List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+        List<DisplayColumn> ret = new ArrayList<>();
+        Set<FieldKey> fieldKeys = new HashSet<>();
 
         for (Map.Entry<FieldKey, ?> entry : fields)
             fieldKeys.add(entry.getKey());
@@ -970,7 +970,7 @@ public class QueryServiceImpl extends QueryService
 
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
-        HashMap<FieldKey,ColumnInfo> hm = new HashMap<FieldKey, ColumnInfo>();
+        HashMap<FieldKey,ColumnInfo> hm = new HashMap<>();
         return ensureRequiredColumns(table,columns,filter,sort,unresolvedColumns,hm);
     }
 
@@ -983,7 +983,7 @@ public class QueryServiceImpl extends QueryService
         for (ColumnInfo column : columns)
             columnMap.put(column.getFieldKey(), column);
 
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+        Set<FieldKey> fieldKeys = new HashSet<>();
 
         if (filter != null)
             fieldKeys.addAll(filter.getWhereParamFieldKeys());
@@ -1020,7 +1020,7 @@ public class QueryServiceImpl extends QueryService
                 }
 
                 if (null == ret)
-                    ret = new ArrayList<ColumnInfo>(columns);
+                    ret = new ArrayList<>(columns);
 
                 ret.add(column);
             }
@@ -1051,7 +1051,7 @@ public class QueryServiceImpl extends QueryService
 
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
-        Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
+        Map<String, UserSchema> ret = new HashMap<>();
         ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(c);
 
         for (ExternalSchemaDef def : defs)
@@ -1091,7 +1091,7 @@ public class QueryServiceImpl extends QueryService
 
     public Map<String, UserSchema> getLinkedSchemas(User user, Container c)
     {
-        Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
+        Map<String, UserSchema> ret = new HashMap<>();
         LinkedSchemaDef[] defs = QueryManager.get().getLinkedSchemaDefs(c);
 
         for (LinkedSchemaDef def : defs)
@@ -1184,7 +1184,7 @@ public class QueryServiceImpl extends QueryService
      */
     public Map<String, TemplateSchemaType> getSchemaTemplates(Container c)
     {
-        Map<String, TemplateSchemaType> ret = new HashMap<String, TemplateSchemaType>();
+        Map<String, TemplateSchemaType> ret = new HashMap<>();
         for (Module module : c.getActiveModules())
         {
             Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
@@ -1251,7 +1251,7 @@ public class QueryServiceImpl extends QueryService
 
     public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns)
     {
-        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(columns.size());
+        List<ColumnInfo> ret = new ArrayList<>(columns.size());
 
         for (ColumnInfo column : columns)
         {
@@ -1272,7 +1272,7 @@ public class QueryServiceImpl extends QueryService
 
     public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
     {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
+        List<FieldKey> ret = new ArrayList<>();
 
         for (ColumnInfo column : getDefaultVisibleColumnInfos(columns))
         {
@@ -1297,7 +1297,7 @@ public class QueryServiceImpl extends QueryService
             return null;
 
         XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-        List<XmlError> xmlErrors = new ArrayList<XmlError>();
+        List<XmlError> xmlErrors = new ArrayList<>();
         options.setErrorListener(xmlErrors);
         try
         {
@@ -1372,8 +1372,8 @@ public class QueryServiceImpl extends QueryService
         Map<String, QueryDef> queryDefs = ref == null ? null : ref.get();
         if (queryDefs == null)
         {
-            queryDefs = new CaseInsensitiveHashMap<QueryDef>();
-            ref = new WeakReference<Map<String, QueryDef>>(queryDefs);
+            queryDefs = new CaseInsensitiveHashMap<>();
+            ref = new WeakReference<>(queryDefs);
             _metadataCache.put(schemaCacheKey, ref);
         }
         // Check if we've already cached the QueryDef for this specific UserSchema object
@@ -1408,7 +1408,7 @@ public class QueryServiceImpl extends QueryService
 
         if (dir == null)
         {
-            List<String> subDirs = new ArrayList<String>(schema.getSchemaPath().getParts().size() + 1);
+            List<String> subDirs = new ArrayList<>(schema.getSchemaPath().getParts().size() + 1);
             subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
             subDirs.addAll(schema.getSchemaPath().getParts());
             dir = new Path(subDirs.toArray(new String[subDirs.size()]));
@@ -1493,7 +1493,7 @@ public class QueryServiceImpl extends QueryService
     {
         Map<String, Object> params = null == in ? Collections.<String, Object>emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
-                new CaseInsensitiveHashMap<Object>(in);
+                new CaseInsensitiveHashMap<>(in);
 
         List<Object> list = frag.getParams();
         for (int i=0 ; i<list.size() ; i++)
@@ -1563,9 +1563,9 @@ public class QueryServiceImpl extends QueryService
         assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
 
         SqlDialect dialect = table.getSqlDialect();
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-        List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
-        Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey, ColumnInfo>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<>();
+        List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
+        Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
         allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
@@ -1599,7 +1599,7 @@ public class QueryServiceImpl extends QueryService
         }
         else
         {
-            CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<ColumnInfo>();
+            CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<>();
             ColumnInfo prev;
             for (ColumnInfo column : allColumns)
             {
@@ -1786,7 +1786,7 @@ public class QueryServiceImpl extends QueryService
         @Override
         protected HashMap<Environment, Object> initialValue()
         {
-            return new HashMap<Environment, Object>();
+            return new HashMap<>();
         }
     };
 
@@ -1808,7 +1808,7 @@ public class QueryServiceImpl extends QueryService
     public Object cloneEnvironment()
     {
         HashMap<Environment,Object> env = environments.get();
-        return new HashMap<Environment,Object>(env);
+        return new HashMap<>(env);
     }
 
     @Override
@@ -1891,7 +1891,7 @@ public class QueryServiceImpl extends QueryService
                 List<Map<String, Object>> rows = params[0];
                 for (int i=0; i < rows.size(); i++)
                 {
-                    Map<String,Object> dataMap = new HashMap<String,Object>();
+                    Map<String,Object> dataMap = new HashMap<>();
                     Map<String, Object> row = rows.get(i);
                     String comment = String.format(action.getCommentDetailed(), row.size());
 

@@ -52,7 +52,7 @@ public class FolderListImporter implements FolderImporter
 
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
-            List<String> errors = new LinkedList<String>();
+            List<String> errors = new LinkedList<>();
             importer.process(listsDir, ctx.getContainer(), ctx.getUser(), errors, log);
 
             for (String error : errors)

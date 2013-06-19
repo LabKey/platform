@@ -241,7 +241,7 @@ public class AssayController extends SpringActionController
         public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
         {
             Container c = getViewContext().getContainer();
-            HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<ExpProtocol, AssayProvider>();
+            HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
             List<ExpProtocol> protocols = AssayManager.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
@@ -259,7 +259,7 @@ public class AssayController extends SpringActionController
 
     public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
-        List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> assayList = new ArrayList<>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
         {
             ExpProtocol protocol = entry.getKey();
@@ -274,7 +274,7 @@ public class AssayController extends SpringActionController
 
     public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
-        Map<String, Object> assayProperties = new HashMap<String, Object>();
+        Map<String, Object> assayProperties = new HashMap<>();
         assayProperties.put("type", provider.getName());
         assayProperties.put("projectLevel", protocol.getContainer().isProject());
         assayProperties.put("description", protocol.getDescription());
@@ -290,7 +290,7 @@ public class AssayController extends SpringActionController
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
         Set<String> tableNames = schema.getTableNames();
-        Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
+        Map<String, TableInfo> tableInfoMap = new HashMap<>();
         for (String tableName : tableNames)
         {
             TableInfo table = schema.getTable(tableName, true);
@@ -302,7 +302,7 @@ public class AssayController extends SpringActionController
             }
         }
 
-        Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
+        Map<String, List<Map<String, Object>>> domains = new HashMap<>();
         for (Pair<Domain, Map<DomainProperty, Object>> domain : provider.getDomains(protocol))
         {
             TableInfo table = tableInfoMap.get(domain.getKey().getTypeURI());
@@ -318,24 +318,24 @@ public class AssayController extends SpringActionController
         {
             // Serialize the Domain properties using TableInfo columns which may include metadata overrides.
             // Issue 14546: Don't include all TableInfo columns in the response -- just Domain properties.
-            Collection<FieldKey> fields = new ArrayList<FieldKey>();
+            Collection<FieldKey> fields = new ArrayList<>();
             for (DomainProperty property : domain.getProperties())
             {
                 fields.add(FieldKey.fromParts(property.getName()));
             }
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(tableInfo, fields);
-            Collection<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columnMap.size());
+            Collection<DisplayColumn> displayColumns = new ArrayList<>(columnMap.size());
             for (ColumnInfo column : columnMap.values())
             {
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }
-            return new ArrayList<Map<String, Object>>(JsonWriter.getNativeColProps(displayColumns, null, true).values());
+            return new ArrayList<>(JsonWriter.getNativeColProps(displayColumns, null, true).values());
         }
 
-        List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> propertyList = new ArrayList<>();
         for (DomainProperty property : domain.getProperties())
         {
-            HashMap<String, Object> properties = new HashMap<String, Object>();
+            HashMap<String, Object> properties = new HashMap<>();
             properties.put("name", property.getName());
             properties.put("typeName", property.getType().getLabel());
             properties.put("typeURI", property.getType().getTypeURI());
@@ -353,7 +353,7 @@ public class AssayController extends SpringActionController
                 properties.put("lookupQuery", l.getQueryName());
 
                 // let's be consistent with Query metadata
-                HashMap<String,String> lookup = new HashMap<String,String>();
+                HashMap<String,String> lookup = new HashMap<>();
                 lookup.put("schema", l.getSchemaName());
                 lookup.put("table", l.getQueryName());
                 lookup.put("container", null!=l.getContainer() ? l.getContainer().getPath() : null);
@@ -513,7 +513,7 @@ public class AssayController extends SpringActionController
 
         public List<AssayProvider> getProviders()
         {
-            List<AssayProvider> providers = new ArrayList<AssayProvider>(AssayManager.get().getAssayProviders());
+            List<AssayProvider> providers = new ArrayList<>(AssayManager.get().getAssayProviders());
 
             // Remove AssayProviders without a designer action
             ListIterator<AssayProvider> iter = providers.listIterator();
@@ -571,7 +571,7 @@ public class AssayController extends SpringActionController
         {
             ChooseAssayBean bean = new ChooseAssayBean();
             bean.returnURL = form.getReturnActionURL();
-            return new JspView<ChooseAssayBean>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
+            return new JspView<>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -625,7 +625,7 @@ public class AssayController extends SpringActionController
         {
             boolean duplicate = false;   // if there is a filename conflict, set to true
             String newFileName = null;   // if there is a filename conflict, this alternate filename will be used.
-            List<String> runNames = new ArrayList<String>();
+            List<String> runNames = new ArrayList<>();
             AssayFileWriter writer = new AssayFileWriter();
             try
             {
@@ -655,7 +655,7 @@ public class AssayController extends SpringActionController
             {
                 throw new AbstractFileUploadAction.UploadException(e.getMessage(), HttpServletResponse.SC_NOT_FOUND);
             }
-            Map<String,Object> map = new HashMap<String, Object>();
+            Map<String,Object> map = new HashMap<>();
             map.put("duplicate", duplicate);
             map.put("newFileName", newFileName);
             map.put("runNames", runNames);
@@ -1135,7 +1135,7 @@ public class AssayController extends SpringActionController
                 return Arrays.asList(resultRowIds);
             if (null == lsids)
                 return Collections.EMPTY_LIST;
-            ArrayList<Integer> ret = new ArrayList<Integer>(lsids.length);
+            ArrayList<Integer> ret = new ArrayList<>(lsids.length);
             for (String lsid : lsids)
             {
                 try

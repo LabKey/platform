@@ -89,9 +89,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     }
     
     private HashMap<TaskId, TaskPipeline> _taskPipelineStore =
-            new HashMap<TaskId, TaskPipeline>();
+            new HashMap<>();
     private HashMap<TaskId, TaskFactory> _taskFactoryStore =
-            new HashMap<TaskId, TaskFactory>();
+            new HashMap<>();
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
@@ -100,7 +100,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
     private RemoteServerProperties _remoteServerProperties;
-    private List<GlobusClientPropertiesImpl> _globusClientProperties = new ArrayList<GlobusClientPropertiesImpl>();
+    private List<GlobusClientPropertiesImpl> _globusClientProperties = new ArrayList<>();
     private PathMapperImpl _clusterPathMapper = new PathMapperImpl(new LinkedHashMap<String, String>());
 
     private PipelineStatusFile.StatusWriter _statusWriter;
@@ -208,7 +208,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public <T extends TaskPipeline> T[] getTaskPipelines(Class<T> inter)
     {
-        ArrayList<T> pipelineList = new ArrayList<T>();
+        ArrayList<T> pipelineList = new ArrayList<>();
         for (TaskPipeline tp : _taskPipelineStore.values())
         {
             if (inter.isInstance(tp))

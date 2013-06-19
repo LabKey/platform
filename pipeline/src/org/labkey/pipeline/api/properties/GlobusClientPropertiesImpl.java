@@ -39,7 +39,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     private String _globusEndpoint;
     private String _jobFactoryType;
     private PathMapper _pathMapper;
-    private List<String> _availableQueues = new ArrayList<String>();
+    private List<String> _availableQueues = new ArrayList<>();
 
     public GlobusClientPropertiesImpl()
     {
@@ -119,7 +119,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
 
     public List<String> getAvailableQueues()
     {
-        return new ArrayList<String>(_availableQueues);
+        return new ArrayList<>(_availableQueues);
     }
 
     /** setQueue has priority in determining the default queue if a value is specified for both it and availableQueues */

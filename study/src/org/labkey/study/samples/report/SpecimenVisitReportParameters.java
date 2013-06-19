@@ -345,7 +345,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             }
         }
         builder.append("</select>");
-        return new Pair<String, String>("Enrollment site", builder.toString());
+        return new Pair<>("Enrollment site", builder.toString());
     }
 
     public String getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
@@ -465,7 +465,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 builder.append(sb.toString());
             }
 
-            return new Pair<String, String>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
+            return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
         }
         catch (SQLException e)
         {

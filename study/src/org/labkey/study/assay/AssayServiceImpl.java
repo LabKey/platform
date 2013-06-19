@@ -100,7 +100,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (copy)
                 assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
             else
-                assayInfo = new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(protocol, provider.getDomains(protocol));
+                assayInfo = new Pair<>(protocol, provider.getDomains(protocol));
             return getAssayTemplate(provider, assayInfo, copy);
         }
     }
@@ -119,14 +119,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
     {
         ExpProtocol protocol = template.getKey();
-        List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<GWTDomain<GWTPropertyDescriptor>>();
+        List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain);
             if (provider.allowDefaultValues(domain))
                 gwtDomain.setDefaultValueOptions(provider.getDefaultValueOptions(domain), provider.getDefaultValueDefault(domain));
-            Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
+            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
             if (copy)
             {
                 gwtDomain.setDomainId(0);
@@ -136,7 +136,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomains.add(gwtDomain);
-            List<GWTPropertyDescriptor> gwtProps = new ArrayList<GWTPropertyDescriptor>();
+            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
 
             DomainProperty[] properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
@@ -183,7 +183,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
-        Map<String, String> gwtProtocolParams = new HashMap<String, String>();
+        Map<String, String> gwtProtocolParams = new HashMap<>();
         for (ProtocolParameter property : protocol.getProtocolParameters().values())
         {
             if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
@@ -217,7 +217,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
         if (!typeScripts.isEmpty())
         {
-            List<String> scriptNames = new ArrayList<String>();
+            List<String> scriptNames = new ArrayList<>();
             for (File script : typeScripts)
                 scriptNames.add(script.getAbsolutePath());
 
@@ -231,7 +231,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
-        List<String> transformScriptStrings = new ArrayList<String>();
+        List<String> transformScriptStrings = new ArrayList<>();
         for (File transformScript : transformScripts)
         {
             transformScriptStrings.add(transformScript.getAbsolutePath());
@@ -285,7 +285,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         if (provider instanceof PlateBasedAssayProvider)
         {
-            List<String> plateTemplates = new ArrayList<String>();
+            List<String> plateTemplates = new ArrayList<>();
             for (PlateTemplate template : PlateService.get().getPlateTemplates(getContainer()))
                 plateTemplates.add(template.getName());
             protocol.setAvailablePlateTemplates(plateTemplates);
@@ -302,7 +302,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             throw new IllegalStateException("Must set LSID before setting domain URIs");
         }
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         // First prune out any domains of the same type that aren't in the new set
         for (String uri : new HashSet<>(props.keySet()))
         {
@@ -406,7 +406,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     }
 
                     // data transform scripts
-                    List<File> transformScripts = new ArrayList<File>();
+                    List<File> transformScripts = new ArrayList<>();
                     for (String script : assay.getProtocolTransformScripts())
                     {
                         if (!StringUtils.isBlank(script))
@@ -421,7 +421,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setEditableRuns(protocol, assay.isEditableRuns());
                     provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
 
-                    Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+                    Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
                     String autoCopyTargetContainerId = null;
                     if (assay.getAutoCopyTargetContainer() != null)
                     {
@@ -504,12 +504,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         Set<Study> publishTargets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
         // Use a tree set so they're sorted nicely
-        Set<Container> containers = new TreeSet<Container>();
+        Set<Container> containers = new TreeSet<>();
         for (Study study : publishTargets)
         {
             containers.add(study.getContainer());
         }
-        List<GWTContainer> result = new ArrayList<GWTContainer>();
+        List<GWTContainer> result = new ArrayList<>();
         for (Container container : containers)
         {
             result.add(convertToGWTContainer(container));

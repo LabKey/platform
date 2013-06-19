@@ -55,7 +55,7 @@ import java.util.List;
 public class StudyPropertiesTable extends BaseStudyTable
 {
     private Domain _domain;
-    private List<FieldKey> _visibleColumns = new ArrayList<FieldKey>();
+    private List<FieldKey> _visibleColumns = new ArrayList<>();
 
     public StudyPropertiesTable(StudyQuerySchema schema)
     {

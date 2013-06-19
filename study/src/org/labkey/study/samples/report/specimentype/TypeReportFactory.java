@@ -31,7 +31,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 {
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> inputs = new ArrayList<>();
         inputs.addAll(super.getAdditionalFormInputHtml());
 
         StringBuilder builder = new StringBuilder();
@@ -46,7 +46,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
             builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
         }
         builder.append("</select>");
-        inputs.add(new Pair<String, String>("Type breakdown", builder.toString()));
+        inputs.add(new Pair<>("Type breakdown", builder.toString()));
         return inputs;
     }
 }

@@ -117,7 +117,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
 
                 ensurePermission(user, targetUser, announcement.lookupContainer());
 
-                return new Pair<User, AnnouncementModel>(targetUser, announcement);
+                return new Pair<>(targetUser, announcement);
             }
             catch (NumberFormatException e)
             {
@@ -168,7 +168,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         /** Translate to the real database column names */
         private Map<String, Object> createDatabaseMap(Pair<User, AnnouncementModel> targets)
         {
-            Map<String, Object> insertMap = new HashMap<String, Object>();
+            Map<String, Object> insertMap = new HashMap<>();
             insertMap.put("UserId", targets.getKey().getUserId());
             insertMap.put("MessageId", targets.getValue().getRowId());
             return insertMap;
@@ -182,7 +182,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
             {
                 Pair<User, AnnouncementModel> oldTargets = getTargets(oldRow, user);
                 Pair<User, AnnouncementModel> newTargets = getTargets(row, user);
-                Map<String, Object> pks = new CaseInsensitiveHashMap<Object>();
+                Map<String, Object> pks = new CaseInsensitiveHashMap<>();
                 pks.put("UserId", oldTargets.getKey().getUserId());
                 pks.put("MessageId", oldTargets.getValue().getRowId());
                 Table.update(user, getRealTable(), createDatabaseMap(newTargets), pks);

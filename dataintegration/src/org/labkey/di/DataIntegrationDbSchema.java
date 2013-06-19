@@ -63,7 +63,7 @@ public class DataIntegrationDbSchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return new HashSet<String>(getDbSchema().getTableNames());
+        return new HashSet<>(getDbSchema().getTableNames());
     }
 
     @Override

@@ -499,7 +499,7 @@ public class DatasetController extends BaseStudyController
     {
         public ModelAndView getView(DatasetIdForm form, BindException errors) throws Exception
         {
-            Map<String,String> props = new HashMap<String,String>();
+            Map<String,String> props = new HashMap<>();
 
             Study study = getStudyRedirectIfNull();
             DataSet def = study.getDataSet(form.getDatasetId());

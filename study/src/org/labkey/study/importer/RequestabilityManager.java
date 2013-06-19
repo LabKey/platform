@@ -521,7 +521,7 @@ public class RequestabilityManager
 
             if (specimens != null && specimens.size() > 0)
             {
-                Set<String> globalUniqueIds = new HashSet<String>();
+                Set<String> globalUniqueIds = new HashSet<>();
                 for (Specimen specimen : specimens)
                     globalUniqueIds.add(specimen.getGlobalUniqueId());
                 viewFilter.addCondition(new SimpleFilter.InClause("GlobalUniqueId", globalUniqueIds));

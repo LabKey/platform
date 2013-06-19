@@ -141,7 +141,7 @@
                 %><div style="padding-left:6px;"><%=h(module.getDescription())%></div><%
             }
             %><table cellpadding="0"><%
-                for (Map.Entry<String, String> entry : new TreeMap<String, String>(module.getProperties()).entrySet())
+                for (Map.Entry<String, String> entry : new TreeMap<>(module.getProperties()).entrySet())
                 {
                 %><tr>
                     <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>

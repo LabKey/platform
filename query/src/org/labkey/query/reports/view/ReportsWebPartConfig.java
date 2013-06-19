@@ -37,7 +37,7 @@ public class ReportsWebPartConfig extends HttpView
 
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
-        JspView view = new JspView<Portal.WebPart>("/org/labkey/query/reports/view/reportsWebPartConfig.jsp", _webPart);
+        JspView view = new JspView<>("/org/labkey/query/reports/view/reportsWebPartConfig.jsp", _webPart);
         include(view);
     }
 }

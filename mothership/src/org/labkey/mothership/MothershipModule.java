@@ -111,7 +111,7 @@ public class MothershipModule extends DefaultModule
             ExceptionUtil.logExceptionToMothership(null, e);
         }
 
-        Set<Module> modules = new HashSet<Module>(c.getActiveModules());
+        Set<Module> modules = new HashSet<>(c.getActiveModules());
         modules.add(this);
         c.setActiveModules(modules);
         c.setDefaultModule(this);

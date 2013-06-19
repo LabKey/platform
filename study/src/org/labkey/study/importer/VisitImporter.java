@@ -73,7 +73,7 @@ public class VisitImporter implements InternalStudyImporter
 
             VisitMapImporter importer = new VisitMapImporter();
             importer.setEnsureDataSets(_ensureDataSets);
-            List<String> errorMsg = new LinkedList<String>();
+            List<String> errorMsg = new LinkedList<>();
 
             if (!importer.process(ctx.getUser(), study, vf, visitMapFile, VisitMapImporter.Format.getFormat(visitMapFile), errorMsg, ctx.getLogger()))
             {

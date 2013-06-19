@@ -56,7 +56,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
         if ("root".equals(form.getNode()))
         {
-            final Map<DbScope, JSONArray> map = new LinkedHashMap<DbScope, JSONArray>();
+            final Map<DbScope, JSONArray> map = new LinkedHashMap<>();
 
             // Initialize a JSONArray for each scope; later, we'll enumerate and skip the scopes that aren't actually
             // used in this folder.  This approach ensures we order the scopes naturally (i.e., labkey scope first).
@@ -112,7 +112,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     JSONArray builtIn = new JSONArray();
 
                     //get built-in queries
-                    List<String> queryNames = new ArrayList<String>(uschema.getVisibleTableNames());
+                    List<String> queryNames = new ArrayList<>(uschema.getVisibleTableNames());
                     Collections.sort(queryNames, new Comparator<String>(){
                         public int compare(String name1, String name2)
                         {
@@ -146,7 +146,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
-                    queryNames = new ArrayList<String>(queryDefMap.keySet());
+                    queryNames = new ArrayList<>(queryDefMap.keySet());
                     Collections.sort(queryNames, new Comparator<String>(){
                         public int compare(String name1, String name2)
                         {

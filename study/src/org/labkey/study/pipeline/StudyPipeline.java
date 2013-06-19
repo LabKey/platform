@@ -110,8 +110,8 @@ public class StudyPipeline extends PipelineProvider
 
     private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files, boolean includeAll) throws IOException
     {
-        List<File> lockFiles = new ArrayList<File>();
-        List<File> datasetFiles = new ArrayList<File>();
+        List<File> lockFiles = new ArrayList<>();
+        List<File> datasetFiles = new ArrayList<>();
 
         for (File f : files)
         {

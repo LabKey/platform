@@ -63,8 +63,8 @@ import java.util.Set;
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
     private final DataSetDefinition _dataset;
-    private Set<String> _potentiallyNewParticipants = new HashSet<String>();
-    private Set<String> _potentiallyDeletedParticipants = new HashSet<String>();
+    private Set<String> _potentiallyNewParticipants = new HashSet<>();
+    private Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
     public DatasetUpdateService(DataSetTableImpl table)
@@ -247,7 +247,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);

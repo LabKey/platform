@@ -51,7 +51,7 @@ public class RRF_Reader
         @Override
         protected Collection<String> createValueCollection()
         {
-            return new TreeSet<String>();
+            return new TreeSet<>();
         }
     };
 
@@ -256,7 +256,7 @@ public class RRF_Reader
         
         ConcatIterator(Iterator<T>...iters)
         {
-            _iterators = new LinkedList<Iterator<T>>(Arrays.asList(iters));
+            _iterators = new LinkedList<>(Arrays.asList(iters));
             _current = _iterators.isEmpty() ? null : _iterators.removeFirst();
             _next = readNext();
         }
@@ -399,7 +399,7 @@ public class RRF_Reader
 
     Iterator iterator(String type)
     {
-        ArrayList<Iterator> list = new ArrayList<Iterator>();
+        ArrayList<Iterator> list = new ArrayList<>();
         Collection<String> names = files.get(type);
         if (null == names || names.isEmpty())
             return Collections.emptyList().iterator();
@@ -417,7 +417,7 @@ public class RRF_Reader
 
     Iterator makeIterator(String type, Class cls, Filter filter)
     {
-        ArrayList<Iterator> list = new ArrayList<Iterator>();
+        ArrayList<Iterator> list = new ArrayList<>();
         Collection<String> names = files.get(type);
         if (names.isEmpty())
             return Collections.emptyList().iterator();

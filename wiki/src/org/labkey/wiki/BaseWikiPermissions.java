@@ -56,7 +56,7 @@ public class BaseWikiPermissions
 
     protected Set<Role> getContextualRoles(Wiki wiki)
     {
-        Set<Role> roles = new HashSet<Role>();
+        Set<Role> roles = new HashSet<>();
         if (userIsCreator(wiki))
             roles.add(RoleManager.getRole(OwnerRole.class));
         return roles;

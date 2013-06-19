@@ -196,7 +196,7 @@ public abstract class VisitManager
         {
             rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false);
 
-            Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<VisitMapKey, VisitStatistics>();
+            Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
             VisitMapKey key = null;
             VisitStatistics statistics = new VisitStatistics();
 
@@ -316,7 +316,7 @@ public abstract class VisitManager
 
         public VisitStatistics()
         {
-            _map = new EnumMap<VisitStatistic, Integer>(VisitStatistic.class);
+            _map = new EnumMap<>(VisitStatistic.class);
 
             for (VisitStatistic stat : VisitStatistic.values())
                 _map.put(stat, 0);
@@ -340,7 +340,7 @@ public abstract class VisitManager
     {
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
         ResultSet rs = null;
-        Map<Integer, List<Double>> ret = new HashMap<Integer, List<Double>>();
+        Map<Integer, List<Double>> ret = new HashMap<>();
 
         try
         {
@@ -352,7 +352,7 @@ public abstract class VisitManager
                 List<Double> l = ret.get(datasetId);
                 if (null == l)
                 {
-                    l = new ArrayList<Double>();
+                    l = new ArrayList<>();
                     ret.put(datasetId, l);
                 }
                 l.add(sequenceNum);
@@ -377,7 +377,7 @@ public abstract class VisitManager
     public TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
-        TreeMap<Double, VisitImpl> visitMap = new TreeMap<Double, VisitImpl>();
+        TreeMap<Double, VisitImpl> visitMap = new TreeMap<>();
         for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(),v);
         return visitMap;
@@ -489,7 +489,7 @@ public abstract class VisitManager
             {
                 if (null != potentiallyInsertedParticipants)
                 {
-                    final ArrayList<String> ptids = new ArrayList<String>(potentiallyInsertedParticipants);
+                    final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
                     Runnable r = new Runnable(){ public void run(){
                         StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
                     }};
@@ -554,7 +554,7 @@ public abstract class VisitManager
             else
             {
                 // This is the only request for this study in the queue, so copy the set of participants
-                mergedPTIDs = new HashSet<String>(potentiallyDeletedParticipants);
+                mergedPTIDs = new HashSet<>(potentiallyDeletedParticipants);
             }
             POTENTIALLY_DELETED_PARTICIPANTS.put(container, mergedPTIDs);
 
@@ -572,7 +572,7 @@ public abstract class VisitManager
     }
 
     /** Study container -> set of participants that may no longer be referenced. Set is null if we don't know specific PTIDs. */
-    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<Container, Set<String>>();
+    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
     private static Timer TIMER;
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;

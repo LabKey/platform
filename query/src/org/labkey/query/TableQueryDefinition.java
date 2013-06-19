@@ -73,7 +73,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     public ActionURL urlFor(QueryAction action, Container container)
     {
         ActionURL url = null;
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo table = getTable(errors, true);
         if (table != null)
         {
@@ -104,7 +104,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
     {
         ActionURL url = null;
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo table = getTable(errors, true);
         if (table != null)
         {

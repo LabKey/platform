@@ -91,7 +91,7 @@ public class OpenSSOManager
         // dbProps will be null if settings have never been saved
         Map<String, String> dbProps = PropertyManager.getProperties(OPENSSO_PROPERTIES_KEY);
         // Map we will return -- sort by key
-        Map<String, String> map = new TreeMap<String, String>();
+        Map<String, String> map = new TreeMap<>();
         Set<Object> keys = fileProps.keySet();
 
         for (Object o : keys)

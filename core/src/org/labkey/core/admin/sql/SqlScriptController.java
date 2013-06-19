@@ -178,7 +178,7 @@ public class SqlScriptController extends SpringActionController
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
 
-            List<SqlScript> allRun = new ArrayList<SqlScript>();
+            List<SqlScript> allRun = new ArrayList<>();
 
             for (Module module : ModuleLoader.getInstance().getModules())
             {
@@ -194,7 +194,7 @@ public class SqlScriptController extends SpringActionController
                 }
             }
 
-            List<SqlScript> incrementalRun = new ArrayList<SqlScript>();
+            List<SqlScript> incrementalRun = new ArrayList<>();
 
             for (SqlScript script : allRun)
                 if (script.isIncremental())
@@ -203,8 +203,8 @@ public class SqlScriptController extends SpringActionController
             appendScripts(c, html, allRun);
             appendScripts(c, html, incrementalRun);
 
-            List<SqlScript> allNotRun = new ArrayList<SqlScript>();
-            List<SqlScript> incrementalNotRun = new ArrayList<SqlScript>();
+            List<SqlScript> allNotRun = new ArrayList<>();
+            List<SqlScript> incrementalNotRun = new ArrayList<>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
@@ -303,7 +303,7 @@ public class SqlScriptController extends SpringActionController
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
             List<Module> modules = ModuleLoader.getInstance().getModules();
-            List<ScriptConsolidator> consolidators = new ArrayList<ScriptConsolidator>();
+            List<ScriptConsolidator> consolidators = new ArrayList<>();
 
             double fromVersion = form.getFromVersion();
             double toVersion = form.getToVersion();
@@ -606,8 +606,8 @@ public class SqlScriptController extends SpringActionController
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
-            Set<SqlScript> orphanedScripts = new TreeSet<SqlScript>();
-            Map<SqlScript, SqlScript> successors = new HashMap<SqlScript, SqlScript>();
+            Set<SqlScript> orphanedScripts = new TreeSet<>();
+            Map<SqlScript, SqlScript> successors = new HashMap<>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
@@ -624,7 +624,7 @@ public class SqlScriptController extends SpringActionController
 
                         for (String schemaName : schemaNames)
                         {
-                            Set<SqlScript> scripts = new TreeSet<SqlScript>(provider.getScripts(schemaName));
+                            Set<SqlScript> scripts = new TreeSet<>(provider.getScripts(schemaName));
                             SqlScript previous = null;
 
                             for (SqlScript script : scripts)
@@ -830,7 +830,7 @@ public class SqlScriptController extends SpringActionController
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
             List<Module> modules = ModuleLoader.getInstance().getModules();
-            Set<SqlScript> unreachableScripts = new TreeSet<SqlScript>(new Comparator<SqlScript>() {
+            Set<SqlScript> unreachableScripts = new TreeSet<>(new Comparator<SqlScript>() {
                 public int compare(SqlScript s1, SqlScript s2)
                 {
                     // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
@@ -859,8 +859,8 @@ public class SqlScriptController extends SpringActionController
 
                         for (String schemaName : schemaNames)
                         {
-                            Set<SqlScript> allSchemaScripts = new HashSet<SqlScript>(provider.getScripts(schemaName));
-                            Set<SqlScript> reachableScripts = new HashSet<SqlScript>(allSchemaScripts.size());
+                            Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schemaName));
+                            Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
 
                             for (double fromVersion : fromVersions)
                             {

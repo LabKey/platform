@@ -59,7 +59,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
         form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
         form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
 
-        return new JspView<EmailConfigForm>("/org/labkey/announcements/view/announcementNotifySettings.jsp", form);
+        return new JspView<>("/org/labkey/announcements/view/announcementNotifySettings.jsp", form);
     }
 
     @Override

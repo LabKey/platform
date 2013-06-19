@@ -71,7 +71,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(context.getContainer());
-        return new JspView<Bean>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
+        return new JspView<>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
@@ -88,7 +88,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
             ExpProtocol[] protocols = ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(portalCtx.getContainer());
             if (protocols.length > 1)
             {
-                Set<ExperimentRunType> runTypes = new TreeSet<ExperimentRunType>();
+                Set<ExperimentRunType> runTypes = new TreeSet<>();
                 for (ExpProtocol protocol : protocols)
                 {
                     runTypes.add(ChooseExperimentTypeBean.getBestTypeSelection(types, selectedType, Arrays.asList(protocol)));

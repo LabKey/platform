@@ -104,13 +104,13 @@ public class GlobusJobWrapper
 
         JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, _settings);
 
-        List<QName> topicPath = new ArrayList<QName>();
+        List<QName> topicPath = new ArrayList<>();
         topicPath.add(ManagedJobConstants.RP_STATE);
 
         ResourceSecurityDescriptor resourceSecDesc = new ResourceSecurityDescriptor();
         resourceSecDesc.setAuthz(Authorization.AUTHZ_NONE);
 
-        List<GSITransportAuthMethod> authMethods = new ArrayList<GSITransportAuthMethod>();
+        List<GSITransportAuthMethod> authMethods = new ArrayList<>();
         resourceSecDesc.setAuthMethods(authMethods);
 
         if (jobDescription == null)
@@ -482,14 +482,14 @@ public class GlobusJobWrapper
             catch (IllegalArgumentException ignored) {}
 
             // Requesting a duplicate queue name is fine if you also specify the location
-            Map<String, String> params7 = new HashMap<String, String>();
+            Map<String, String> params7 = new HashMap<>();
             params7.put("UnitTestGroup, globus queue", "duplicateQueue2");
             params7.put("UnitTestGroup, globus location", "location2");
             PipelineJobService.GlobusClientProperties taskSettings7 = runner.getGlobusSettings(factory, params7, tripleGlobusSettings);
             assertEquals("location", "location2", taskSettings7.getLocation());
             assertEquals("location", "duplicateQueue2", taskSettings7.getQueue());
 
-            Map<String, String> params8 = new HashMap<String, String>();
+            Map<String, String> params8 = new HashMap<>();
             params8.put("UnitTestGroup, globus queue", "duplicateQueue2");
             params8.put("UnitTestGroup, globus location", "location3");
             PipelineJobService.GlobusClientProperties taskSettings8 = runner.getGlobusSettings(factory, params8, tripleGlobusSettings);

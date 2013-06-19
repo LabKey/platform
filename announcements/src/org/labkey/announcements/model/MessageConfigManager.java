@@ -99,7 +99,7 @@ public class MessageConfigManager
     public static EmailPref[] getUserEmailPrefs(Container c, String type)
     {
         SQLFragment sql = new SQLFragment();
-        List<EmailPref> prefs = new ArrayList<EmailPref>();
+        List<EmailPref> prefs = new ArrayList<>();
 
         // This query returns one row for every site user, left joined to that user's folder preference (null if no preference has been selected, in which case the caller will fill in the default)
         sql.append("SELECT u.UserId, EmailOptionId, ? AS SrcIdentifier FROM ");

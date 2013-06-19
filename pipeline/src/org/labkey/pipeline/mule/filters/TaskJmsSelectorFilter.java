@@ -34,7 +34,7 @@ import java.util.Set;
  */
 public class TaskJmsSelectorFilter extends JmsSelectorFilter
 {
-    private static Set<String> ALL_LOCAL_LOCATIONS = new HashSet<String>(); 
+    private static Set<String> ALL_LOCAL_LOCATIONS = new HashSet<>();
 
     private static Logger _log = Logger.getLogger(TaskJmsSelectorFilter.class);
 

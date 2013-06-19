@@ -73,7 +73,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         }
         if (locations == null)
             return Collections.emptyList();
-        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        List<SpecimenVisitReport> reports = new ArrayList<>();
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
@@ -94,7 +94,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
                     (isCompletedRequestsOnly() ? "     Status.FinalState = ? AND\n" : "") +
                     "     Specimen.Container = ? AND\n" +
                     "     Participant.EnrollmentSiteId ";
-            List<Object> paramList = new ArrayList<Object>();
+            List<Object> paramList = new ArrayList<>();
             paramList.add(Boolean.TRUE);
             if (isCompletedRequestsOnly())
                 paramList.add(Boolean.TRUE);
@@ -123,7 +123,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);

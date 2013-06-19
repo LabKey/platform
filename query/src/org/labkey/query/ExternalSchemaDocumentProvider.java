@@ -112,7 +112,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         // Use the canonical name for search display, etc.
                         String tableName = table.getName();
                         StringBuilder body = new StringBuilder();
-                        Map<String, Object> props = new HashMap<String,Object>();
+                        Map<String, Object> props = new HashMap<>();
 
                         props.put(SearchService.PROPERTY.categories.toString(), externalTableCategory.toString());
                         props.put(SearchService.PROPERTY.title.toString(), "Table " + schemaName + "." + tableName);

@@ -55,8 +55,8 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
                 throw new NotFoundException("Can't find pipelineId: " + pipelineId);
             }
 
-            Map<String, GWTPipelineLocation> locations = new CaseInsensitiveHashMap<GWTPipelineLocation>();
-            Map<String, GlobusClientPropertiesImpl> globusProperties = new CaseInsensitiveHashMap<GlobusClientPropertiesImpl>();
+            Map<String, GWTPipelineLocation> locations = new CaseInsensitiveHashMap<>();
+            Map<String, GlobusClientPropertiesImpl> globusProperties = new CaseInsensitiveHashMap<>();
             for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
             {
                 globusProperties.put(globus.getLocation(), globus);
@@ -64,7 +64,7 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
                 locations.put(name, new GWTPipelineLocation(name, globus.getAvailableQueues()));
             }
 
-            List<GWTPipelineTask> tasks = new ArrayList<GWTPipelineTask>();
+            List<GWTPipelineTask> tasks = new ArrayList<>();
             for (TaskId taskId : taskPipeline.getTaskProgression())
             {
                 TaskFactory taskFactory = PipelineJobServiceImpl.get().getTaskFactory(taskId);
@@ -77,7 +77,7 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
                 tasks.add(new GWTPipelineTask(taskId.toString(), taskFactory.getStatusName(), taskFactory.getGroupParameterName(), location.isCluster(), location));
             }
 
-            return new GWTPipelineConfig(tasks, new ArrayList<GWTPipelineLocation>(locations.values()));
+            return new GWTPipelineConfig(tasks, new ArrayList<>(locations.values()));
         }
         catch (ClassNotFoundException e)
         {

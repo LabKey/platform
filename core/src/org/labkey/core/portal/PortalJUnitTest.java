@@ -82,7 +82,7 @@ public class PortalJUnitTest extends Assert
         assertEquals("Wiki Table of Contents", rightParts[0].getName());
 
         //Delete a part
-        List<Portal.WebPart> modifiedParts = new LinkedList<Portal.WebPart>();
+        List<Portal.WebPart> modifiedParts = new LinkedList<>();
         modifiedParts.add(parts.get(0));
         modifiedParts.add(parts.get(2));
         Portal.saveParts(folder, modifiedParts);

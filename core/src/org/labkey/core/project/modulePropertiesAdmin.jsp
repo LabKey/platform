@@ -40,7 +40,7 @@
     Container target = ctx.getContainerNoTab();
     hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
 
-    List<String> modules = new ArrayList<String>();
+    List<String> modules = new ArrayList<>();
     for (Module m : target.getActiveModules())
     {
         if(m.getModuleProperties().size() > 0)

@@ -34,7 +34,7 @@
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("dataviews"));
       return resources;
   }
@@ -48,10 +48,10 @@
     String storeId = "dataset-visibility-category-store";
     Gson gson = new Gson();
 
-    List<Map<String, Object>> datasetInfo = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> datasetInfo = new ArrayList<>();
     for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
     {
-        Map<String, Object> ds = new HashMap<String, Object>();
+        Map<String, Object> ds = new HashMap<>();
         ViewCategory category = entry.getValue().viewCategory;
 
         ds.put("id", entry.getKey() + "-viewcategory");

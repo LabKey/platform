@@ -38,7 +38,7 @@ import java.io.IOException;
  */
 public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 {
-    private final AtomicReference<XStream> _xstream = new AtomicReference<XStream>();
+    private final AtomicReference<XStream> _xstream = new AtomicReference<>();
 
     public final XStream getXStream()
     {

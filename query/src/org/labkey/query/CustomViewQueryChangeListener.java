@@ -158,7 +158,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     private void _updateCustomViewQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
-        Map<String, String> queryNameChangeMap = new HashMap<String, String>();
+        Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
@@ -179,7 +179,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
 
                 // update custom view column list based on fieldKey parts
                 boolean columnsUpdated = false;
-                List<FieldKey> updatedColumns = new ArrayList<FieldKey>();
+                List<FieldKey> updatedColumns = new ArrayList<>();
                 for (FieldKey origFieldKey : customView.getColumns())
                 {
                     FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);

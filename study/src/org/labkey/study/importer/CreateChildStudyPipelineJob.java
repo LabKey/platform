@@ -84,8 +84,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
     private ChildStudyDefinition _form;
     private boolean _destFolderCreated;
 
-    private transient Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
-    private transient List<ParticipantGroup> _participantGroups = new ArrayList<ParticipantGroup>();
+    private transient Set<DataSetDefinition> _datasets = new HashSet<>();
+    private transient List<ParticipantGroup> _participantGroups = new ArrayList<>();
 
     private static final String REPORT_WRITER_TYPE = "Reports";
     private static final String LIST_WRITER_TYPE = "Lists";
@@ -151,7 +151,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 HashSet<Integer> selectedVisits = null;
                 if (null != _form.getVisits())
                 {
-                    selectedVisits = new HashSet<Integer>(Arrays.asList(_form.getVisits()));
+                    selectedVisits = new HashSet<>(Arrays.asList(_form.getVisits()));
                 }
 
                 // Force snapshots for datasets referenced by the parent study's visit map.  This ensures that
@@ -309,7 +309,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
     private Set<String> getDataTypesToExport(ChildStudyDefinition form)
     {
-        Set<String> dataTypes = new HashSet<String>();
+        Set<String> dataTypes = new HashSet<>();
         String[] folderProps = form.getFolderProps();
         String[] studyProps = form.getStudyProps();
 
@@ -440,7 +440,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
             QuerySnapshotService.I svc = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName());
 
-            List<Integer> participantGroups = new ArrayList<Integer>();
+            List<Integer> participantGroups = new ArrayList<>();
             if (!_participantGroups.isEmpty())
             {
                 // get the participant categories that were copied to the ancillary study
@@ -491,7 +491,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
     private void exportParticipantGroups(ChildStudyDefinition form, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        List<ParticipantGroup> groupsToCopy = new ArrayList<ParticipantGroup>();
+        List<ParticipantGroup> groupsToCopy = new ArrayList<>();
         if (form.isCopyParticipantGroups())
             groupsToCopy.addAll(_participantGroups);
 
@@ -539,7 +539,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
             if (form.isUseAlternateParticipantIds())
             {
-                List<String> alternateIds = new ArrayList<String>();
+                List<String> alternateIds = new ArrayList<>();
                 ParticipantMapper mapper = ctx.getParticipantMapper();
                 for (String id : selector.getArray(String.class))
                     alternateIds.add(mapper.getMappedParticipantId(id));
@@ -554,7 +554,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
     private List<String> getSpecimenParticipants(ChildStudyDefinition form)
     {
-        Set<String> ptids = new HashSet<String>();
+        Set<String> ptids = new HashSet<>();
 
         for (Specimen specimen : form.getSpecimens())
         {
@@ -565,7 +565,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 ptids.add(specimen.getPtid());
         }
 
-        return new LinkedList<String>(ptids);
+        return new LinkedList<>(ptids);
     }
 
     /**

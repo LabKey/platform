@@ -61,7 +61,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
         addColumn(Column.TargetProtocolApplication);
         addColumn(Column.Role);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Data));
         defaultCols.add(FieldKey.fromParts(Column.Role));
         setDefaultVisibleColumns(defaultCols);

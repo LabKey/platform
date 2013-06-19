@@ -84,7 +84,7 @@ the vaccine study.
                 <select name="parentFolderId">
             <%
                 Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), AdminPermission.class);
-                SortedSet<Container> sortedContainers = new TreeSet<Container>(new Comparator<Container>()
+                SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>()
                 {
                     public int compare(Container o1, Container o2)
                     {

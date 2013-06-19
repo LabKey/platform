@@ -51,7 +51,7 @@ public class EPipelineQueueImpl implements PipelineQueue
     private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
     private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
-    private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<List<PipelineJob>>();
+    private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<>();
 
     public static List<PipelineJob> getOutboundJobs()
     {
@@ -205,7 +205,7 @@ public class EPipelineQueueImpl implements PipelineQueue
             return Collections.emptyList();
         }
 
-        List<PipelineJob> result = new ArrayList<PipelineJob>();
+        List<PipelineJob> result = new ArrayList<>();
         Connection conn = null;
         try
         {

@@ -142,7 +142,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         public Collection<String> listNames()
         {
             List<HString> names = WikiSelectManager.getPageNames(_c);
-            ArrayList<String> strs = new ArrayList<String>();
+            ArrayList<String> strs = new ArrayList<>();
             strs.add(WikiWriterFactory.WIKIS_FILENAME);
 
             if (names != null)
@@ -281,7 +281,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
                     out.write(buffer, 0, length);
                 }
                 result = out.toByteArray();
-                _content = new WeakReference<byte[]>(result);
+                _content = new WeakReference<>(result);
             }
 
             return result;
@@ -349,7 +349,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             if (!exists())
                 return Collections.emptyList();
-            List<String> ret = new ArrayList<String>();
+            List<String> ret = new ArrayList<>();
             ret.addAll(_attachments.listNames());
             ret.add(getDocumentName(_wiki));
             return ret;
@@ -565,7 +565,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         public List<WebdavResolver.History> getHistory()
         {
             WikiVersion[] versions = WikiSelectManager.getAllVersions(_wiki);
-            List<WebdavResolver.History> list = new ArrayList<WebdavResolver.History>();
+            List<WebdavResolver.History> list = new ArrayList<>();
             for (WikiVersion v : versions)
                 list.add(new WikiHistory(_wiki, v));
             return list;

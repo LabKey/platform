@@ -229,7 +229,7 @@ public class TestController extends SpringActionController
         {
             if (complexForm.getBeans().size() == 0)
             {
-                ArrayList<TestBean> a = new ArrayList<TestBean>(2);
+                ArrayList<TestBean> a = new ArrayList<>(2);
                 a.add(new TestBean());
                 a.add(new TestBean());
                 complexForm.setBeans(a);
@@ -412,7 +412,7 @@ public class TestController extends SpringActionController
     {
         private String[] strings = new String[3];
 
-        private ArrayList<TestBean> beans = new FormArrayList<TestBean>(TestBean.class);
+        private ArrayList<TestBean> beans = new FormArrayList<>(TestBean.class);
 
         public String[] getStrings()
         {

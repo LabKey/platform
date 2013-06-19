@@ -201,7 +201,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 }
             }
 
-            return new JspView<SurveyForm>("/org/labkey/survey/view/surveyWizard.jsp", form, errors);
+            return new JspView<>("/org/labkey/survey/view/surveyWizard.jsp", form, errors);
         }
 
         @Override
@@ -225,7 +225,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 if (survey != null)
                     _title = "Update Survey Design : " + survey.getLabel();
             }
-            JspView view = new JspView<SurveyDesignForm>("/org/labkey/survey/view/surveyDesignWizard.jsp", form);
+            JspView view = new JspView<>("/org/labkey/survey/view/surveyDesignWizard.jsp", form);
 
             return view;
         }
@@ -594,7 +594,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                         {
                             if (survey.getResponsesPk() != null)
                             {
-                                Map<String, Object> keys = new HashMap<String, Object>();
+                                Map<String, Object> keys = new HashMap<>();
 
                                 keys.put(pk.toString(), survey.getResponsesPk());
                                 tvf.setOldValues(keys);
@@ -662,8 +662,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
     public static class SurveyResponseForm extends SurveyForm implements CustomApiForm
     {
-        private Map<String, Object> _responses = new HashMap<String, Object>();
-        private BeanObjectFactory<Survey> _factory = new BeanObjectFactory<Survey>(Survey.class);
+        private Map<String, Object> _responses = new HashMap<>();
+        private BeanObjectFactory<Survey> _factory = new BeanObjectFactory<>(Survey.class);
         private Survey _bean;
 
         @Override
@@ -727,7 +727,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 {
                     oldValues = (Map<String, Object>)form.getOldValues();
                     if (!(oldValues instanceof CaseInsensitiveMapWrapper))
-                        oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
+                        oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
                 }
                 List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
 
@@ -813,7 +813,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                             false, false, false);
 
                                     // add some of the survey record information to the response
-                                    Map<String, Object> extraProps = new HashMap<String, Object>();
+                                    Map<String, Object> extraProps = new HashMap<>();
                                     extraProps.put("rowId", survey.getRowId());
                                     extraProps.put("label", survey.getLabel());
                                     extraProps.put("status", survey.getStatus());
@@ -909,7 +909,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                     tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)af), false);
 
                                     // add the survey answer row pk
-                                    Map<String, Object> keys = new HashMap<String, Object>();
+                                    Map<String, Object> keys = new HashMap<>();
                                     keys.put(pk.toString(), survey.getResponsesPk());
                                     tvf.setOldValues(keys);
 
@@ -1050,7 +1050,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         public ApiResponse execute(QueryForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<Map<String, Object>> queries = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> queries = new ArrayList<>();
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
@@ -1064,7 +1064,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     {
                         if (table.getAuditRowPk() != null)
                         {
-                            Map<String, Object> query = new HashMap<String, Object>();
+                            Map<String, Object> query = new HashMap<>();
 
                             query.put("name", tableName);
                             query.put("isUserDefined", false);

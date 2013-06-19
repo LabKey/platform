@@ -38,7 +38,7 @@ public class AuditQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "auditLog";
     public static final String SCHEMA_DESCR = "Contains data about audit log events.";
     public static final String AUDIT_TABLE_NAME = "audit";
-    private static Set<String> _tables = new HashSet<String>();
+    private static Set<String> _tables = new HashSet<>();
 
     static public void register()
     {

@@ -121,7 +121,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         qs.setViewName(chart.getViewName());
 
         QueryView view = new QueryView(schema, qs, null);
-        List<GWTChartRenderer> gwtRenderers = new ArrayList<GWTChartRenderer>();
+        List<GWTChartRenderer> gwtRenderers = new ArrayList<>();
 
         for (ChartRenderer renderer : ChartRendererFactory.get().getChartRenderers())
         {
@@ -139,7 +139,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
 
     private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)
     {
-        List<GWTChartColumn> columns = new ArrayList<GWTChartColumn>();
+        List<GWTChartColumn> columns = new ArrayList<>();
 
         for (Map.Entry<String, String> entry : columnMap.entrySet())
             columns.add(new GWTChartColumn(entry.getKey(), entry.getValue()));

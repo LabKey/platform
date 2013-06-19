@@ -68,7 +68,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
 
     public List<WellGroup> getWellGroups(WellGroup.Type type)
     {
-        List<WellGroup> groups = new ArrayList<WellGroup>();
+        List<WellGroup> groups = new ArrayList<>();
         for (WellGroupTemplate entry : getWellGroupTemplates())
         {
             if (entry.getType() == type)

@@ -150,7 +150,7 @@ public class CoreUpgradeCode implements UpgradeCode
         Map<String, String> props = PropertyManager.getProperties(AbstractSettingsGroup.SITE_CONFIG_USER, ContainerManager.getRoot(), "SiteConfig");
 
         String interval = props.get("systemMaintenanceInterval");
-        Set<String> enabled = new HashSet<String>();
+        Set<String> enabled = new HashSet<>();
 
         for (SystemMaintenance.MaintenanceTask task : SystemMaintenance.getTasks())
             if (!task.canDisable() || !"never".equals(interval))

@@ -107,7 +107,7 @@ public class DomainPropertyManager
 
     public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor property)
     {
-        List<ConditionalFormat> result = new ArrayList<ConditionalFormat>();
+        List<ConditionalFormat> result = new ArrayList<>();
         if (property != null && property.getPropertyId() != 0)
         {
             List<ConditionalFormatWithPropertyId> containerConditionalFormats = _conditionalFormatCache.get(property.getContainer().getEntityId());
@@ -298,7 +298,7 @@ public class DomainPropertyManager
             for (ConditionalFormat format : formats)
             {
                 // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
-                Map<String, Object> row = new HashMap<String, Object>();
+                Map<String, Object> row = new HashMap<>();
                 row.put("Bold", format.isBold());
                 row.put("Italic", format.isItalic());
                 row.put("Strikethrough", format.isStrikethrough());

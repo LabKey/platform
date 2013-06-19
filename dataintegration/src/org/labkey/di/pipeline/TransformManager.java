@@ -138,7 +138,7 @@ public class TransformManager implements DataIntegrationService
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getRegisteredDescriptors()
     {
-        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<ScheduledPipelineJobDescriptor>(_etls.size());
+        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<>(_etls.size());
         synchronized (_etls)
         {
             for (Pair<Module,ScheduledPipelineJobDescriptor> d : _etls.values())
@@ -152,7 +152,7 @@ public class TransformManager implements DataIntegrationService
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
         Set<Module> modules = c.getActiveModules();
-        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<ScheduledPipelineJobDescriptor>(_etls.size());
+        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<>(_etls.size());
         synchronized (_etls)
         {
             for (Pair<Module,ScheduledPipelineJobDescriptor> p : _etls.values())
@@ -481,7 +481,7 @@ public class TransformManager implements DataIntegrationService
     {
         if (null == descriptors || descriptors.isEmpty())
             return;
-        Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> m = new TreeMap<String,Pair<Module,ScheduledPipelineJobDescriptor>>();
+        Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> m = new TreeMap<>();
         for (ScheduledPipelineJobDescriptor d : descriptors)
             m.put(d.getId(), new Pair(module,d));
         _etls.putAll(m);
@@ -493,7 +493,7 @@ public class TransformManager implements DataIntegrationService
     {
         Path etlsDirPath = new Path("etls");
         Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-        ArrayList<ScheduledPipelineJobDescriptor> l = new ArrayList<ScheduledPipelineJobDescriptor>();
+        ArrayList<ScheduledPipelineJobDescriptor> l = new ArrayList<>();
 
         if (etlsDir != null && etlsDir.isCollection())
         {

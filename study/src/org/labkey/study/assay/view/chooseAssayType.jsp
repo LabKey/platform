@@ -35,7 +35,7 @@
     AssayController.ChooseAssayBean bean = (AssayController.ChooseAssayBean)getModelBean();
     ViewContext context = getViewContext();
     List<AssayProvider> providers = bean.getProviders();
-    Map<String, String> locations = new LinkedHashMap<String, String>();
+    Map<String, String> locations = new LinkedHashMap<>();
     String defaultLocation = null;
 
     for (Pair<Container, String> entry : AssayService.get().getLocationOptions(context.getContainer(), context.getUser()))

@@ -61,8 +61,8 @@ public class AssaySchemaImpl extends AssaySchema
     private List<AssayProvider> _allProviders;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
-    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<ExpProtocol, AssayProtocolSchema>();
-    private Map<AssayProvider, AssayProviderSchema> _providerSchemas = new HashMap<AssayProvider, AssayProviderSchema>();
+    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
+    private Map<AssayProvider, AssayProviderSchema> _providerSchemas = new HashMap<>();
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -90,7 +90,7 @@ public class AssaySchemaImpl extends AssaySchema
 
     public Set<String> getTableNames()
     {
-        Set<String> names = new TreeSet<String>(new Comparator<String>()
+        Set<String> names = new TreeSet<>(new Comparator<String>()
         {
             public int compare(String o1, String o2)
             {
@@ -107,7 +107,7 @@ public class AssaySchemaImpl extends AssaySchema
     {
         if (_protocols == null)
         {
-            _protocols = new HashMap<ExpProtocol, AssayProvider>();
+            _protocols = new HashMap<>();
             for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
             {
                 _protocols.put(protocol, AssayService.get().getProvider(protocol));
@@ -152,7 +152,7 @@ public class AssaySchemaImpl extends AssaySchema
         if (_restricted)
             return Collections.emptySet();
 
-        Set<String> names = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         names.addAll(super.getSchemaNames());
         for (AssayProvider provider : getProtocols().values())
             names.add(provider.getResourceName());
@@ -275,7 +275,7 @@ public class AssaySchemaImpl extends AssaySchema
                 allowing(_provider1).createProviderSchema(with(any(User.class)), with(any(Container.class)), (Container) with(same(null)));
             }});
 
-            Map<ExpProtocol, AssayProvider> designs = new HashMap<ExpProtocol, AssayProvider>();
+            Map<ExpProtocol, AssayProvider> designs = new HashMap<>();
             designs.put(_protocol1, _provider1);
 
             _schemaImpl = new AssaySchemaImpl(User.guest, ContainerManager.createMockContainer(), null, null);

@@ -48,7 +48,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         _root = root;
         _relativePath = relativePath;
         _href = href;
-        _actions = new ArrayList<PipelineAction>();
+        _actions = new ArrayList<>();
     }
 
     public ActionURL cloneHref()
@@ -71,7 +71,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         // See if file list needs initialization.
         if (_files == null)
         {
-            _files = new LinkedHashMap<String, File>();
+            _files = new LinkedHashMap<>();
 
             for (File rootPath : _root.getRootPaths())
             {
@@ -106,7 +106,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         ensureFiles();
 
         // Actually do the filtering.
-        ArrayList<File> listFiles = new ArrayList<File>();
+        ArrayList<File> listFiles = new ArrayList<>();
         if (filter instanceof PipelineProvider.FileEntryFilter)
             ((PipelineProvider.FileEntryFilter)filter).setFileEntry(this);
         for (File f : _files.values())

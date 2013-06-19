@@ -37,11 +37,11 @@ import java.util.List;
  */
 public class XarExportSelection implements Serializable
 {
-    private List<Integer> _expIds = new ArrayList<Integer>();
-    private List<Integer> _runIds = new ArrayList<Integer>();
-    private List<Integer> _dataIds = new ArrayList<Integer>();
-    private List<Integer> _sampleSetIds = new ArrayList<Integer>();
-    private List<Integer> _protocolIds = new ArrayList<Integer>();
+    private List<Integer> _expIds = new ArrayList<>();
+    private List<Integer> _runIds = new ArrayList<>();
+    private List<Integer> _dataIds = new ArrayList<>();
+    private List<Integer> _sampleSetIds = new ArrayList<>();
+    private List<Integer> _protocolIds = new ArrayList<>();
     private boolean _includeXarXml = true;
     private List<String> _roles;
 
@@ -91,7 +91,7 @@ public class XarExportSelection implements Serializable
     {
         if (_roles == null)
         {
-            _roles = new ArrayList<String>();
+            _roles = new ArrayList<>();
         }
         _roles.addAll(Arrays.asList(roles));
     }

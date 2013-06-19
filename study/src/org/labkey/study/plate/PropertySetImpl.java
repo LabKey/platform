@@ -28,7 +28,7 @@ import java.util.*;
  */
 public class PropertySetImpl implements PropertySet
 {
-    private Map<String, Object> _properties = new HashMap<String, Object>();
+    private Map<String, Object> _properties = new HashMap<>();
     private String _lsid;
     protected Container _container;
 

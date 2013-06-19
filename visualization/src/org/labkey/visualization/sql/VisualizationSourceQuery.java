@@ -37,11 +37,11 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private String _alias = null;
     private TableInfo _tinfo;
     private VisualizationSourceColumn _pivot;
-    private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<VisualizationSourceColumn>();
-    private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<VisualizationSourceColumn>();
+    private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<>();
+    private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<>();
     private Set<VisualizationSourceColumn> _allSelects = null;
-    private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<VisualizationAggregateColumn>();
-    private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<VisualizationSourceColumn>();
+    private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<>();
+    private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<>();
     private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
     private SimpleFilter _filter;
@@ -122,7 +122,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             if (_allSelects == null)
             {
-                _allSelects = new LinkedHashSet<VisualizationSourceColumn>(_selects);
+                _allSelects = new LinkedHashSet<>(_selects);
                 _allSelects.addAll(getOORColumns(factory));
             }
             return _allSelects;
@@ -161,7 +161,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         Set<VisualizationSourceColumn> aliases = colMap.get(name);
         if (aliases == null)
         {
-            aliases = new LinkedHashSet<VisualizationSourceColumn>();
+            aliases = new LinkedHashSet<>();
             colMap.put(name, aliases);
         }
         aliases.add(alias);
@@ -205,7 +205,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     @Override
     public Map<String, Set<VisualizationSourceColumn>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
     {
-        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<>();
         Set<VisualizationAggregateColumn> aggregates = getAggregates();
         if (!aggregates.isEmpty())
         {
@@ -338,7 +338,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     public String getSelectClause(VisualizationSourceColumn.Factory factory)
     {
         StringBuilder selectList = new StringBuilder("SELECT ");
-        Set<VisualizationSourceColumn> selects = new LinkedHashSet<VisualizationSourceColumn>();
+        Set<VisualizationSourceColumn> selects = new LinkedHashSet<>();
         if (_pivot != null)
             selects.add(_pivot);
         selects.addAll(getSelects(factory, true));
@@ -363,7 +363,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             StringBuilder groupBy = new StringBuilder("GROUP BY ");
 
-            Set<VisualizationSourceColumn> groupBys = new LinkedHashSet<VisualizationSourceColumn>();
+            Set<VisualizationSourceColumn> groupBys = new LinkedHashSet<>();
             if (_pivot != null)
                     groupBys.add(_pivot);
             groupBys.addAll(_allSelects);
@@ -431,14 +431,14 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
      */
     private Set<VisualizationSourceColumn> getOORColumns(VisualizationSourceColumn.Factory factory)
     {
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+        Set<FieldKey> fieldKeys = new HashSet<>();
         for (VisualizationSourceColumn selectCol : this.getSelects(factory, false))
         {
             FieldKey oorSelect = FieldKey.fromString(selectCol.getOriginalName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
             fieldKeys.add(oorSelect);
         }
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getTableInfo(), fieldKeys);
-        Set<VisualizationSourceColumn> oorSelects = new HashSet<VisualizationSourceColumn>();
+        Set<VisualizationSourceColumn> oorSelects = new HashSet<>();
         for (FieldKey key : cols.keySet())
             oorSelects.add(factory.create(getSchema(), getQueryName(), key.toString(), true));
         return oorSelects;
@@ -446,7 +446,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     private Map<FieldKey, ColumnInfo> getFilterColumns(SimpleFilter filter)
     {
-        Map<FieldKey, String> fieldKeys = new HashMap<FieldKey, String>();
+        Map<FieldKey, String> fieldKeys = new HashMap<>();
         for (SimpleFilter.FilterClause clause : filter.getClauses())
         {
             for (String colName : clause.getColumnNames())
@@ -458,7 +458,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private String appendSimpleFilter(StringBuilder where, SimpleFilter filter, String separator)
     {
         Map<FieldKey, ColumnInfo> filterColTypes = getFilterColumns(filter);
-        List<SimpleFilter.FilterClause> clauses = new ArrayList<SimpleFilter.FilterClause>(filter.getClauses());
+        List<SimpleFilter.FilterClause> clauses = new ArrayList<>(filter.getClauses());
         for (SimpleFilter.FilterClause clause : clauses)
         {
             List<String> colNames = clause.getColumnNames();

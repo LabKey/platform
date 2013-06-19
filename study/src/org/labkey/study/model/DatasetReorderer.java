@@ -46,7 +46,7 @@ public class DatasetReorderer
     public void reorderDatasets(List<Integer> orderedIds) throws SQLException
     {
         DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(_study);
-        Map<Integer, DataSetDefinition> map = new LinkedHashMap<Integer, DataSetDefinition>(defs.length);
+        Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.length);
 
         for (DataSetDefinition def : defs)
             map.put(def.getDataSetId(), def);

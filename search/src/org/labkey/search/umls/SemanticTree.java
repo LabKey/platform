@@ -164,7 +164,7 @@ enum SemanticTree
     final String STN;
     final String STY;
     SemanticTree _parent;
-    final static Map<String, SemanticTree> semanticTreeMap = new HashMap<String, SemanticTree>();
+    final static Map<String, SemanticTree> semanticTreeMap = new HashMap<>();
 
     SemanticTree(String stn, String sty)
     {

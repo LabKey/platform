@@ -54,7 +54,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
-        List<DataViewInfo> dataViews = new ArrayList<DataViewInfo>();
+        List<DataViewInfo> dataViews = new ArrayList<>();
 
         for (CustomViewInfo view : getCustomViews(context))
         {
@@ -95,7 +95,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
     protected List<CustomViewInfo> getCustomViews(ViewContext context)
     {
-        List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
+        List<CustomViewInfo> views = new ArrayList<>();
 
         for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true))
         {

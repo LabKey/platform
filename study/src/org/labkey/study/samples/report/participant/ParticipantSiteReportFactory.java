@@ -43,7 +43,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
-        List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
+        List<ParticipantVisitReport> reports = new ArrayList<>();
         Set<LocationImpl> enrollmentLocations;
         if (_enrollmentSiteId == null)
         {
@@ -87,7 +87,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);

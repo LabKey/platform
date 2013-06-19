@@ -283,7 +283,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
             rs = Table.executeQuery(ExperimentService.get().getSchema(), sql);
 
-            Set<Container> containers = new TreeSet<Container>();
+            Set<Container> containers = new TreeSet<>();
             while (rs.next())
             {
                 String containerId = rs.getString("Container");

@@ -63,7 +63,7 @@
                     ((FilteredTable)table).addCondition(new SimpleFilter("ParticipantID", bean.getParticipantId()));
 
                 // remove 'ParticipantId' from the default column list
-                List<FieldKey> visible = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
+                List<FieldKey> visible = new ArrayList<>(table.getDefaultVisibleColumns());
                 visible.remove(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
                 table.setDefaultVisibleColumns(visible);
             }

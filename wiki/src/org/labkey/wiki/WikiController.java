@@ -244,7 +244,7 @@ public class WikiController extends SpringActionController
         MultiMap<Container, Container> mm = ContainerManager.getContainerTree();
 
         //get wikis for containers recursively
-        List<Container> children = new ArrayList<Container>();
+        List<Container> children = new ArrayList<>();
         populateWikiContainerListRecursive(context, ContainerManager.getRoot(), children, mm);
 
         return children;
@@ -366,7 +366,7 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
-            return new JspView<Wiki>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
+            return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
         }
 
         public boolean handlePost(WikiNameForm form, BindException errors) throws Exception
@@ -454,7 +454,7 @@ public class WikiController extends SpringActionController
             bean.possibleParents = WikiSelectManager.getPossibleParents(getContainer(), _wiki);
             bean.showChildren = SHOW_CHILD_REORDERING;
 
-            HttpView manageView = new JspView<ManageBean>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
+            HttpView manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
             getPageConfig().setFocusId("name");
 
             return manageView;
@@ -666,7 +666,7 @@ public class WikiController extends SpringActionController
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
 
-            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
+            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.Print);
@@ -699,7 +699,7 @@ public class WikiController extends SpringActionController
             // build a set of all descendants of the root page
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, _rootWiki);
 
-            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
+            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.Print);
 
@@ -741,7 +741,7 @@ public class WikiController extends SpringActionController
 
             //just want to re-use same jsp
             Set<WikiTree> wikis = Collections.singleton(tree);
-            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
+            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.Print);
 
@@ -762,7 +762,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
-            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
+            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.Print);
 
@@ -778,7 +778,7 @@ public class WikiController extends SpringActionController
 
     private static List<Wiki> namesToWikis(Container c, List<HString> names)
     {
-        LinkedList<Wiki> wikis = new LinkedList<Wiki>();
+        LinkedList<Wiki> wikis = new LinkedList<>();
 
         for (HString name : names)
             wikis.add(WikiSelectManager.getWiki(c, name));
@@ -889,7 +889,7 @@ public class WikiController extends SpringActionController
 
     private void displayWikiModuleInDestContainer(Container cDest) throws SQLException
     {
-        Set<Module> activeModules = new HashSet<Module>(cDest.getActiveModules());
+        Set<Module> activeModules = new HashSet<>(cDest.getActiveModules());
         Module module = ModuleLoader.getInstance().getModule("Wiki");
 
         if (module != null)
@@ -961,7 +961,7 @@ public class WikiController extends SpringActionController
                 List<HString> destPageNames = WikiSelectManager.getPageNames(cDest);
 
                 //map source page row ids to new page row ids
-                Map<Integer, Integer> pageIdMap = new HashMap<Integer, Integer>();
+                Map<Integer, Integer> pageIdMap = new HashMap<>();
                 //shortcut for root topics
                 pageIdMap.put(-1, -1);
 
@@ -1046,7 +1046,7 @@ public class WikiController extends SpringActionController
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setShowHeader(true);
 
-            return new JspView<CopyBean>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
+            return new JspView<>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1158,7 +1158,7 @@ public class WikiController extends SpringActionController
             }
             else if (isPrint())
             {
-                JspView<Wiki> view = new JspView<Wiki>("/org/labkey/wiki/view/wikiPrint.jsp", _wiki);
+                JspView<Wiki> view = new JspView<>("/org/labkey/wiki/view/wikiPrint.jsp", _wiki);
                 view.setFrame(WebPartView.FrameType.NONE);
                 return view;
             }
@@ -1274,7 +1274,7 @@ public class WikiController extends SpringActionController
 
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
-            return new JspView<VersionBean>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
+            return new JspView<>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1547,8 +1547,8 @@ public class WikiController extends SpringActionController
             gridView.setSort(sort);
 
             LinkBarView lb = new LinkBarView(
-                    new Pair<String, String>("return to page", getViewContext().cloneActionURL().setAction("page").toString()),
-                    new Pair<String, String>("view current version", getViewContext().cloneActionURL().setAction("version").toString())
+                    new Pair<>("return to page", getViewContext().cloneActionURL().setAction("page").toString()),
+                    new Pair<>("view current version", getViewContext().cloneActionURL().setAction("version").toString())
                     );
             lb.setDrawLine(true);
             lb.setTitle("History");
@@ -1913,13 +1913,13 @@ public class WikiController extends SpringActionController
             if (null == wikiMap)
                 return new ApiSimpleResponse("pages", null);
 
-            List<Map<String, String>> pages = new ArrayList<Map<String, String>>(wikiMap.size());
+            List<Map<String, String>> pages = new ArrayList<>(wikiMap.size());
 
             for (Map.Entry<HString, HString> entry : wikiMap.entrySet())
             {
                 String name = entry.getKey().getSource();
                 String title = entry.getValue().getSource();
-                Map<String, String> pageMap = new HashMap<String, String>();
+                Map<String, String> pageMap = new HashMap<>();
                 pageMap.put("name", name);
                 pageMap.put("title", title);
                 pages.add(pageMap);
@@ -2063,7 +2063,7 @@ public class WikiController extends SpringActionController
             _wiki = wiki;
             _wikiVer = curVersion;
 
-            return new JspView<WikiEditModel>("/org/labkey/wiki/view/wikiEdit.jsp", model);
+            return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2283,13 +2283,13 @@ public class WikiController extends SpringActionController
             }
 
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-            Set<Role> contextualRoles = new HashSet<Role>();
+            Set<Role> contextualRoles = new HashSet<>();
 
             //if HTML body, must be valid according to tidy
             if (null != form.getBody() && (null == form.getRendererType() || WikiRendererType.valueOf(form.getRendererType()) == WikiRendererType.HTML))
             {
                 String body = form.getBody();
-                ArrayList<String> tidyErrors = new ArrayList<String>();
+                ArrayList<String> tidyErrors = new ArrayList<>();
 
                 if (user.isDeveloper())
                     contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
@@ -2361,7 +2361,7 @@ public class WikiController extends SpringActionController
 
         protected HashMap<String, Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
         {
-            HashMap<String, Object> wikiProps = new HashMap<String,Object>();
+            HashMap<String, Object> wikiProps = new HashMap<>();
             wikiProps.put("entityId", wiki.getEntityId());
             wikiProps.put("rowId", wiki.getRowId());
             wikiProps.put("name", wiki.getName().getSource()); //HString source will be JS encoded
@@ -2393,7 +2393,7 @@ public class WikiController extends SpringActionController
             LOG.debug("Updating wiki " + wikiUpdate.getName());
 
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(getViewContext().getContainer());
-            Set<Role> contextualRoles = new HashSet<Role>();
+            Set<Role> contextualRoles = new HashSet<>();
             if (wikiUpdate.getCreatedBy() == user.getUserId())
                 contextualRoles.add(RoleManager.getRole(OwnerRole.class));
 
@@ -2489,7 +2489,7 @@ public class WikiController extends SpringActionController
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new IllegalArgumentException("You must use the 'multipart/form-data' mimetype when posting to attachFiles.api");
 
-            Map<String, Object> warnings = new HashMap<String,Object>();
+            Map<String, Object> warnings = new HashMap<>();
 
             String[] deleteNames = form.getToDelete();
             List<String> names;
@@ -2516,13 +2516,13 @@ public class WikiController extends SpringActionController
 
             Wiki wikiUpdated = WikiSelectManager.getWiki(getViewContext().getContainer(), wiki.getName());
             assert(null != wikiUpdated);
-            List<Object> attachments = new ArrayList<Object>();
+            List<Object> attachments = new ArrayList<>();
 
             if (null != wikiUpdated.getAttachments())
             {
                 for (Attachment att : wikiUpdated.getAttachments())
                 {
-                    Map<String, Object> attProps = new HashMap<String,Object>();
+                    Map<String, Object> attProps = new HashMap<>();
                     attProps.put("name", att.getName());
                     attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
                     attProps.put("downloadUrl", att.getDownloadUrl(DownloadAction.class).toString());
@@ -2642,7 +2642,7 @@ public class WikiController extends SpringActionController
             applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
 
             //include info about the current container
-            Map<String, Object> containerProps = new HashMap<String,Object>();
+            Map<String, Object> containerProps = new HashMap<>();
             containerProps.put("name", container.getName());
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
@@ -2674,7 +2674,7 @@ public class WikiController extends SpringActionController
                 Wiki wiki = WikiSelectManager.getWiki(getViewContext().getContainer(), currentPage);
                 if (null != wiki && null != wiki.getLatestVersion())
                 {
-                    LinkedList<String> path = new LinkedList<String>();
+                    LinkedList<String> path = new LinkedList<>();
                     Wiki parent = wiki.getParentWiki();
                     while (null != parent && null != parent.getLatestVersion())
                     {
@@ -2711,11 +2711,11 @@ public class WikiController extends SpringActionController
 
         public List<Map<String, Object>> getChildrenProps(NavTree[] pages)
         {
-            List<Map<String, Object>> ret = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> ret = new ArrayList<>();
 
             for (NavTree page : pages)
             {
-                Map<String, Object> props = new HashMap<String,Object>();
+                Map<String, Object> props = new HashMap<>();
                 ActionURL pageLink = new ActionURL(page.getHref());
                 props.put("name", pageLink.getParameter("name"));
                 props.put("title", page.getText());
@@ -2807,7 +2807,7 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-            MultiMap<String, Wiki> mmap = new MultiHashMap<String, Wiki>();
+            MultiMap<String, Wiki> mmap = new MultiHashMap<>();
             Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
             WikiManager mgr = getWikiManager();
 
@@ -2830,7 +2830,7 @@ public class WikiController extends SpringActionController
         private StringBuilder renderTable(Container c, MultiMap<String, Wiki> mmap, String title, boolean validWiki)
         {
             StringBuilder html = new StringBuilder();
-            Set<String> names =  new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            Set<String> names =  new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
             names.addAll(mmap.keySet());
 
             for (String name : names)

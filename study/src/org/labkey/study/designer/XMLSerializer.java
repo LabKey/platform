@@ -69,17 +69,17 @@ public class XMLSerializer
         if (xdesign.isSetSampleTypes())
         {
             SampleType[] xsampleTypes = xdesign.getSampleTypes().getSampleTypeArray();
-            List<GWTSampleType> gsampleTypes = new ArrayList<GWTSampleType>(xsampleTypes.length);
+            List<GWTSampleType> gsampleTypes = new ArrayList<>(xsampleTypes.length);
             for (SampleType sampleType : xsampleTypes)
                 gsampleTypes.add(new GWTSampleType(sampleType.getName(), sampleType.getPrimaryType(), sampleType.getCode()));
             def.setSampleTypes(gsampleTypes);
         }
 
-        List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
+        List<GWTImmunogen> immunogens = new ArrayList<>();
         for (Immunogen immunogen : xdesign.getImmunogens().getImmunogenArray())
         {
             GWTImmunogen gimmunogen = new GWTImmunogen(immunogen.getName(), immunogen.getDose(), immunogen.getType(), immunogen.getAdmin());
-            List<GWTAntigen> antigens = new ArrayList<GWTAntigen>();
+            List<GWTAntigen> antigens = new ArrayList<>();
             for (Antigen antigen : immunogen.getAntigens().getAntigenArray())
                 antigens.add(new GWTAntigen(antigen.getName(), antigen.getGene(), antigen.getSubtype(), antigen.getGenBankId(), antigen.getSequence()));
             gimmunogen.setAntigens(antigens);
@@ -87,14 +87,14 @@ public class XMLSerializer
         }
         def.setImmunogens(immunogens);
 
-        List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
+        List<GWTAdjuvant> adjuvants = new ArrayList<>();
         for (Adjuvant adjuvant : xdesign.getAdjuvants().getAdjuvantArray())
             adjuvants.add(new GWTAdjuvant(adjuvant.getName(), adjuvant.getDose(), adjuvant.getAdmin()));
         def.setAdjuvants(adjuvants);
 
         if (null  != template)
         {
-            List<GWTAssayDefinition> validatedAssays = new ArrayList<GWTAssayDefinition>();
+            List<GWTAssayDefinition> validatedAssays = new ArrayList<>();
             for (GWTAssayDefinition templateAssay : (List<GWTAssayDefinition>) template.getAssays())
             {
                 GWTAssayDefinition copy = new GWTAssayDefinition(templateAssay);
@@ -294,7 +294,7 @@ public class XMLSerializer
             GWTImmunizationSchedule gSchedule = def.getImmunizationSchedule();
 
             ImmunizationSchedule.Timepoints timepointsElem = xImmunizationSchedule.addNewTimepoints();
-            List<Timepoint> immunizationTimepoints = new ArrayList<Timepoint>();
+            List<Timepoint> immunizationTimepoints = new ArrayList<>();
             for (GWTTimepoint gtp : gSchedule.getTimepoints())
                 immunizationTimepoints.add(createTimepoint(gtp));
             timepointsElem.setTimepointArray(immunizationTimepoints.toArray(new Timepoint[immunizationTimepoints.size()]));
@@ -328,7 +328,7 @@ public class XMLSerializer
             if (null != gAssaySchedule.getDescription())
                 xAssaySchedule.setDescription(gAssaySchedule.getDescription());
 
-            List<Timepoint> scheduleTimepoints = new ArrayList<Timepoint>();
+            List<Timepoint> scheduleTimepoints = new ArrayList<>();
             for (GWTTimepoint gtp : gAssaySchedule.getTimepoints())
                 scheduleTimepoints.add(createTimepoint(gtp));
             timepoints.setTimepointArray(scheduleTimepoints.toArray(new Timepoint[scheduleTimepoints.size()]));

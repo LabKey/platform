@@ -162,7 +162,7 @@ class VisitMapRecord
             return emptyIntArray;
 
         StringTokenizer st = new StringTokenizer(list, ", \t;");
-        ArrayList<Integer> values = new ArrayList<Integer>(st.countTokens());
+        ArrayList<Integer> values = new ArrayList<>(st.countTokens());
 
         while (st.hasMoreTokens())
         {

@@ -49,7 +49,7 @@ if (null == datasets || datasets.length == 0)
     return;
 }
 
-List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();
+List<DataSetDefinition> userDatasets = new ArrayList<>();
 for (DataSetDefinition dataSet : datasets)
 {
     if (!dataSet.isShowByDefault())

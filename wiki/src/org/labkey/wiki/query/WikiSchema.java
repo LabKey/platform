@@ -40,7 +40,7 @@ public class WikiSchema extends UserSchema
 
     static
     {
-        Set<String> names = new TreeSet<String>();
+        Set<String> names = new TreeSet<>();
         names.add(WikiService.RENDERER_TYPE_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
@@ -66,7 +66,7 @@ public class WikiSchema extends UserSchema
     {
         if (WikiService.RENDERER_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<WikiRendererType> result = new EnumTableInfo<WikiRendererType>(WikiRendererType.class, CommSchema.getInstance().getSchema(), "Contains the type of renderers available to format content", false);
+            EnumTableInfo<WikiRendererType> result = new EnumTableInfo<>(WikiRendererType.class, CommSchema.getInstance().getSchema(), "Contains the type of renderers available to format content", false);
             result.setPublicSchemaName(getName());
             result.setName(WikiService.RENDERER_TYPE_TABLE_NAME);
             return result;

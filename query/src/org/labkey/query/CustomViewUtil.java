@@ -65,7 +65,7 @@ public class CustomViewUtil
 {
     public static void update(CustomView view, JSONObject jsonView, boolean saveFilterAndSort)
     {
-        List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>>();
+        List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> fields = new ArrayList<>();
 
         JSONArray jsonColumns = jsonView.optJSONArray("columns");
         if (jsonColumns == null || jsonColumns.length() == 0)
@@ -78,7 +78,7 @@ public class CustomViewUtil
             Map<CustomViewInfo.ColumnProperty, String> map = Collections.emptyMap();
             if (title != null)
             {
-                map = new EnumMap<CustomViewInfo.ColumnProperty,String>(CustomViewInfo.ColumnProperty.class);
+                map = new EnumMap<>(CustomViewInfo.ColumnProperty.class);
                 map.put(CustomViewInfo.ColumnProperty.columnTitle, title);
             }
             fields.add(Pair.of(key, map));
@@ -215,20 +215,20 @@ public class CustomViewUtil
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> columns = view.getColumnProperties();
         if (columns.size() == 0 && tinfo != null)
         {
-            columns = new ArrayList<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>>();
+            columns = new ArrayList<>();
             for (FieldKey key : tinfo.getDefaultVisibleColumns())
             {
                 columns.add(Pair.of(key, Collections.<CustomViewInfo.ColumnProperty, String>emptyMap()));
             }
         }
 
-        Set<FieldKey> allKeys = new LinkedHashSet<FieldKey>();
-        List<Map<String, Object>> colInfos = new ArrayList<Map<String, Object>>();
+        Set<FieldKey> allKeys = new LinkedHashSet<>();
+        List<Map<String, Object>> colInfos = new ArrayList<>();
         for (Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>> entry : columns)
         {
             allKeys.add(entry.getKey());
 
-            Map<String, Object> colInfo = new LinkedHashMap<String, Object>();
+            Map<String, Object> colInfo = new LinkedHashMap<>();
             colInfo.put("name", entry.getKey().getName());
             colInfo.put("key", entry.getKey().toString());
             colInfo.put("fieldKey", entry.getKey().toString());
@@ -242,15 +242,15 @@ public class CustomViewUtil
         }
         ret.put("columns", colInfos);
 
-        List<Map<String, Object>> filterInfos = new ArrayList<Map<String, Object>>();
-        List<Map<String, Object>> sortInfos = new ArrayList<Map<String, Object>>();
-        List<Map<String, Object>> aggInfos = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> filterInfos = new ArrayList<>();
+        List<Map<String, Object>> sortInfos = new ArrayList<>();
+        List<Map<String, Object>> aggInfos = new ArrayList<>();
         try
         {
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
             for (FilterInfo filter : fas.getFilter())
             {
-                Map<String, Object> filterInfo = new HashMap<String, Object>();
+                Map<String, Object> filterInfo = new HashMap<>();
                 filterInfo.put("fieldKey", filter.getField().toString());
                 filterInfo.put("op", filter.getOp() != null ? filter.getOp().getPreferredUrlKey() : "");
                 filterInfo.put("value", filter.getValue());
@@ -260,7 +260,7 @@ public class CustomViewUtil
 
             for (Sort.SortField sf : fas.getSort())
             {
-                Map<String, Object> sortInfo = new HashMap<String, Object>();
+                Map<String, Object> sortInfo = new HashMap<>();
                 sortInfo.put("fieldKey", sf.getFieldKey());
                 sortInfo.put("dir", sf.getSortDirection().getDir());
                 allKeys.add(FieldKey.fromString(sf.getFieldKey().toString()));
@@ -269,7 +269,7 @@ public class CustomViewUtil
 
             for (Aggregate agg : fas.getAggregates())
             {
-                Map<String, Object> aggInfo = new HashMap<String, Object>();
+                Map<String, Object> aggInfo = new HashMap<>();
                 aggInfo.put("fieldKey", agg.getFieldKey());
                 aggInfo.put("type", agg.getType().toString());
                 aggInfo.put("label", agg.getLabel());
@@ -289,7 +289,7 @@ public class CustomViewUtil
 
         if (includeFieldMeta)
         {
-            Set<FieldKey> uncachedFieldKeys = new HashSet<FieldKey>();
+            Set<FieldKey> uncachedFieldKeys = new HashSet<>();
             for (FieldKey key : allKeys)
             {
                 if (!columnMetadata.containsKey(key))
@@ -299,7 +299,7 @@ public class CustomViewUtil
             }
 
 
-            List<Map<String, Object>> allColMaps = new ArrayList<Map<String, Object>>(allKeys.size());
+            List<Map<String, Object>> allColMaps = new ArrayList<>(allKeys.size());
             if (tinfo != null)
             {
                 Map<FieldKey, ColumnInfo> allCols = QueryService.get().getColumns(tinfo, uncachedFieldKeys);

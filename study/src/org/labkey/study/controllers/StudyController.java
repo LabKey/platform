@@ -268,7 +268,7 @@ public class StudyController extends BaseStudyController
         private DataSet _def;
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<ImportTypeForm>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
         }
 
         public void validateCommand(ImportTypeForm form, Errors errors)
@@ -418,7 +418,7 @@ public class StudyController extends BaseStudyController
             {
                 throw new NotFoundException("Invalid Dataset ID");
             }
-            return  new StudyJspView<DataSetDefinition>(StudyManager.getInstance().getStudy(getContainer()),
+            return  new StudyJspView<>(StudyManager.getInstance().getStudy(getContainer()),
                     "datasetDetails.jsp", _def, errors);
         }
 
@@ -851,7 +851,7 @@ public class StudyController extends BaseStudyController
             }
             HtmlView header = new HtmlView(sb.toString());
 
-            LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<ClientDependency>();
+            LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
             dependencies.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
 
             header.addClientDependencies(dependencies);
@@ -1127,7 +1127,7 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(TSVForm form, BindException errors) throws Exception
         {
             VisitMapImporter importer = new VisitMapImporter();
-            List<String> errorMsg = new LinkedList<String>();
+            List<String> errorMsg = new LinkedList<>();
             if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg, _log))
             {
                 for (String error : errorMsg)
@@ -1172,7 +1172,7 @@ public class StudyController extends BaseStudyController
             {
                 form.setDefaultTimepointDuration(1);
             }
-            return new StudyJspView<StudyPropertiesForm>(null, "createStudy.jsp", form, errors);
+            return new StudyJspView<>(null, "createStudy.jsp", form, errors);
         }
 
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1401,7 +1401,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudy();
             if (null == study)
                 throw new RedirectException(new ActionURL(CreateStudyAction.class, getContainer()));
-            return new StudyJspView<Study>(getStudy(), "manageStudyPropertiesExt.jsp", study, null);
+            return new StudyJspView<>(getStudy(), "manageStudyPropertiesExt.jsp", study, null);
         }
 
         @Override
@@ -1604,7 +1604,7 @@ public class StudyController extends BaseStudyController
             if (ids != null && ids.length > 0)
             {
                 String[] labels = form.getLabels();
-                Map<Integer, String> labelLookup = new HashMap<Integer, String>();
+                Map<Integer, String> labelLookup = new HashMap<>();
                 for (int i = 0; i < ids.length; i++)
                     labelLookup.put(ids[i], labels[i]);
 
@@ -1716,7 +1716,7 @@ public class StudyController extends BaseStudyController
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
 
-            return new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit", study), visitSummary, errors);
+            return new StudyJspView<>(study, getVisitJsp("edit", study), visitSummary, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -1752,7 +1752,7 @@ public class StudyController extends BaseStudyController
 
             StudyManager.getInstance().updateVisit(getUser(), postedVisit);
 
-            HashMap<Integer,VisitDataSetType> visitTypeMap = new HashMap<Integer,VisitDataSetType>();
+            HashMap<Integer,VisitDataSetType> visitTypeMap = new HashMap<>();
             for (VisitDataSet vds :  postedVisit.getVisitDataSets())
                 visitTypeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 
@@ -1862,7 +1862,7 @@ public class StudyController extends BaseStudyController
             if (null == _visit)
                 throw new NotFoundException();
 
-            ModelAndView view = new StudyJspView<VisitImpl>(study, "confirmDeleteVisit.jsp", _visit, errors);
+            ModelAndView view = new StudyJspView<>(study, "confirmDeleteVisit.jsp", _visit, errors);
             return view;
         }
 
@@ -1913,7 +1913,7 @@ public class StudyController extends BaseStudyController
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
-            return new StudyJspView<VisitForm>(study, getVisitJsp("create", study), form, errors);
+            return new StudyJspView<>(study, getVisitJsp("create", study), form, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -1957,7 +1957,7 @@ public class StudyController extends BaseStudyController
                 return action.getView(form, errors);
             }
 
-            return new JspView<DataSetDefinition>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
+            return new JspView<>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
         }
 
         public boolean handlePost(DatasetForm form, BindException errors) throws Exception
@@ -2066,7 +2066,7 @@ public class StudyController extends BaseStudyController
                 return -1;
             }
 
-            Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
+            Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
             Pair<List<String>, UploadLog> result;
             try
             {
@@ -2379,7 +2379,7 @@ public class StudyController extends BaseStudyController
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
             // Need to handle this by groups of source lsids -- each assay container needs logging
-            MultiMap<String,String> sourceLsid2datasetLsid = new MultiHashMap<String,String>();
+            MultiMap<String,String> sourceLsid2datasetLsid = new MultiHashMap<>();
 
 
             if (originalSourceLsid != null)
@@ -2485,7 +2485,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
-                List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>(lsids.size());
+                List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
@@ -2658,7 +2658,7 @@ public class StudyController extends BaseStudyController
         Map<String, PropertyDescriptor[]> map = (Map<String, PropertyDescriptor[]>) session.getAttribute(PARTICIPANT_PROPS_CACHE);
         if (map == null)
         {
-            map = new HashMap<String, PropertyDescriptor[]>();
+            map = new HashMap<>();
             session.setAttribute(PARTICIPANT_PROPS_CACHE, map);
         }
         return map;
@@ -2683,7 +2683,7 @@ public class StudyController extends BaseStudyController
         Map<String, Map<String, Integer>> map = (Map<String, Map<String, Integer>>) session.getAttribute(DATASET_SORT_COLUMN_CACHE);
         if (map == null)
         {
-            map = new HashMap<String, Map<String, Integer>>();
+            map = new HashMap<>();
             session.setAttribute(DATASET_SORT_COLUMN_CACHE, map);
         }
         return map;
@@ -2705,7 +2705,7 @@ public class StudyController extends BaseStudyController
             CustomView cview = qd.getCustomView(context.getUser(), context.getRequest(), null);
             if (cview != null)
             {
-                sortMap = new HashMap<String, Integer>();
+                sortMap = new HashMap<>();
                 int i = 0;
                 for (FieldKey key : cview.getColumns())
                 {
@@ -2722,7 +2722,7 @@ public class StudyController extends BaseStudyController
                 map.put(dsd.getLabel(), Collections.<String,Integer>emptyMap());
             }
         }
-        return new CaseInsensitiveHashMap<Integer>(sortMap);
+        return new CaseInsensitiveHashMap<>(sortMap);
     }
 
     private static String getParticipantListCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
@@ -2751,7 +2751,7 @@ public class StudyController extends BaseStudyController
         Map<String, List<String>> map = (Map<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
         if (map == null)
         {
-            map = new HashMap<String, List<String>>();
+            map = new HashMap<>();
             session.setAttribute(PARTICIPANT_CACHE_PREFIX, map);
         }
         return map;
@@ -2764,14 +2764,14 @@ public class StudyController extends BaseStudyController
         Map<Integer, Map<Integer, String>> map = (Map<Integer, Map<Integer, String>>) session.getAttribute(EXPAND_CONTAINERS_KEY);
         if (map == null)
         {
-            map = new HashMap<Integer, Map<Integer, String>>();
+            map = new HashMap<>();
             session.setAttribute(EXPAND_CONTAINERS_KEY, map);
         }
 
         Map<Integer, String> expandedMap = map.get(datasetId);
         if (expandedMap == null)
         {
-            expandedMap = new HashMap<Integer, String>();
+            expandedMap = new HashMap<>();
             map.put(datasetId, expandedMap);
         }
         return expandedMap;
@@ -2859,13 +2859,13 @@ public class StudyController extends BaseStudyController
                     rs = ctx.getResultSet(columns, table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
                     int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
 
-                    Set<String> participantSet = new LinkedHashSet<String>();
+                    Set<String> participantSet = new LinkedHashSet<>();
                     while (rs.next() && ptidIndex > 0)
                     {
                         String ptid = rs.getString(ptidIndex);
                         participantSet.add(ptid);
                     }
-                    return new ArrayList<String>(participantSet);
+                    return new ArrayList<>(participantSet);
                 }
             }
             catch (Exception x)
@@ -3270,13 +3270,13 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp",
+            return new JspView<>("/org/labkey/study/view/manageQCStates.jsp",
                     new ManageQCStatesBean(getStudyRedirectIfNull(), manageQCStatesForm.getReturnUrl()), errors);
         }
 
         public void validateCommand(ManageQCStatesForm form, Errors errors)
         {
-            Set<String> labels = new HashSet<String>();
+            Set<String> labels = new HashSet<>();
             if (form.getLabels() != null)
             {
                 for (String label : form.getLabels())
@@ -3311,7 +3311,7 @@ public class StudyController extends BaseStudyController
                 // omitted from the request entirely if they aren't checked, we use a different
                 // method for keeping track of the checked values (by posting the rowid of the item as the
                 // checkbox value).
-                Set<Integer> publicDataSet = new HashSet<Integer>();
+                Set<Integer> publicDataSet = new HashSet<>();
                 if (form.getPublicData() != null)
                 {
                     for (int i = 0; i < form.getPublicData().length; i++)
@@ -3564,14 +3564,14 @@ public class StudyController extends BaseStudyController
                         filter = new SimpleFilter();
                         view.getRenderContext().setBaseFilter(filter);
                     }
-                    filter.addInClause("lsid", new ArrayList<String>(finalLsids));
+                    filter.addInClause("lsid", new ArrayList<>(finalLsids));
                     return view;
                 }
             };
             queryView.setShowDetailsColumn(false);
             updateQCForm.setQueryView(queryView);
             updateQCForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
-            return new JspView<UpdateQCStateForm>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
+            return new JspView<>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
         }
 
         public boolean handlePost(UpdateQCStateForm updateQCForm, BindException errors) throws Exception
@@ -3832,7 +3832,7 @@ public class StudyController extends BaseStudyController
                     }
 
                     ViewPrefsBean bean = new ViewPrefsBean(views, def);
-                    return new StudyJspView<ViewPrefsBean>(study, "viewPreferences.jsp", bean, errors);
+                    return new StudyJspView<>(study, "viewPreferences.jsp", bean, errors);
                 }
             }
             throw new NotFoundException("Invalid dataset ID");
@@ -3889,13 +3889,13 @@ public class StudyController extends BaseStudyController
 
             if (!errors.hasErrors())
             {
-                List<String> parseErrors = new ArrayList<String>();
+                List<String> parseErrors = new ArrayList<>();
                 reader.validate(parseErrors);
                 for (String error : parseErrors)
                     errors.reject("importStudyBatch", error);
             }
 
-            return new StudyJspView<ImportStudyBatchBean>(
+            return new StudyJspView<>(
                     getStudyRedirectIfNull(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
@@ -4182,7 +4182,7 @@ public class StudyController extends BaseStudyController
             Map<Integer, Integer> order = null;
             if (orderedIds != null && orderedIds.length() > 0)
             {
-                order = new HashMap<Integer, Integer>();
+                order = new HashMap<>();
                 String[] idArray = orderedIds.split(",");
                 for (int i = 0; i < idArray.length; i++)
                 {
@@ -4197,7 +4197,7 @@ public class StudyController extends BaseStudyController
 
         private Map<Integer, Integer> getVisitIdToZeroMap(List<VisitImpl> visits) throws ServletException
         {
-            Map<Integer, Integer> order = new HashMap<Integer, Integer>();
+            Map<Integer, Integer> order = new HashMap<>();
             for (VisitImpl visit : visits)
                 order.put(visit.getRowId(), 0);
             return order;
@@ -4274,7 +4274,7 @@ public class StudyController extends BaseStudyController
             String[] labels = form.getLabel() == null ? new String[0] : form.getLabel();
             String[] typeStrs = form.getExtraData()== null ? new String[0] : form.getExtraData();
 
-            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+            Set<Integer> visible = new HashSet<>(visibleIds.length);
             for (int id : visibleIds)
                 visible.add(id);
             if (allIds.length != form.getLabel().length)
@@ -4314,7 +4314,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
-            Map<Integer, DatasetVisibilityData> bean = new HashMap<Integer,DatasetVisibilityData>();
+            Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
             for (DataSet def : getStudyRedirectIfNull().getDataSets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
@@ -4334,7 +4334,7 @@ public class StudyController extends BaseStudyController
                 int[] visibleIds = form.getVisible();
                 if (visibleIds == null)
                     visibleIds = new int[0];
-                Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+                Set<Integer> visible = new HashSet<>(visibleIds.length);
                 for (int id : visibleIds)
                     visible.add(id);
                 int[] cohorts = form.getCohort();
@@ -4360,7 +4360,7 @@ public class StudyController extends BaseStudyController
                     data.visible = visible.contains(id);
                 }
             }
-            return new StudyJspView<Map<Integer,StudyController.DatasetVisibilityData>>(
+            return new StudyJspView<>(
                     getStudyRedirectIfNull(), "dataSetVisibility.jsp", bean, errors);
         }
 
@@ -4383,7 +4383,7 @@ public class StudyController extends BaseStudyController
                 return false;
             }
 
-            Set<String> labels = new HashSet<String>();
+            Set<String> labels = new HashSet<>();
             for (String label : form.getLabel())
             {
                 if (label == null)
@@ -4405,7 +4405,7 @@ public class StudyController extends BaseStudyController
             int[] visibleIds = form.getVisible();
             if (visibleIds == null)
                 visibleIds = new int[0];
-            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+            Set<Integer> visible = new HashSet<>(visibleIds.length);
             for (int id : visibleIds)
                   visible.add(id);
             String[] statuses = form.getStatuses();
@@ -4481,7 +4481,7 @@ public class StudyController extends BaseStudyController
             if (order != null && order.length() > 0 && !form.isResetOrder())
             {
                 String[] ids = order.split(",");
-                List<Integer> orderedIds = new ArrayList<Integer>(ids.length);
+                List<Integer> orderedIds = new ArrayList<>(ids.length);
 
                 for (String id : ids)
                     orderedIds.add(Integer.parseInt(id));
@@ -4668,7 +4668,7 @@ public class StudyController extends BaseStudyController
                 form.setEditable(!view.isModuleParticipantView());
             }
 
-            return new JspView<CustomizeParticipantViewForm>("/org/labkey/study/view/customizeParticipantView.jsp", form);
+            return new JspView<>("/org/labkey/study/view/customizeParticipantView.jsp", form);
         }
 
         public boolean handlePost(CustomizeParticipantViewForm form, BindException errors) throws Exception
@@ -4784,7 +4784,7 @@ public class StudyController extends BaseStudyController
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
+            List<DataSetDefinition> datasets = new ArrayList<>();
 
             if (null != jsonDatasets)
             {
@@ -4828,7 +4828,7 @@ public class StudyController extends BaseStudyController
 
             if (null != jsonWebParts)
             {
-                List<Portal.WebPart> webParts = new ArrayList<Portal.WebPart>();
+                List<Portal.WebPart> webParts = new ArrayList<>();
                 for (JSONObject obj : jsonWebParts.toJSONObjectArray())
                 {
                     WebPartFactory factory = Portal.getPortalPartCaseInsensitive(obj.getString("partName"));
@@ -6542,7 +6542,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(VisitAliasesForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setFocusId("tsv");
-            return new JspView<Object>("/org/labkey/study/view/importVisitAliases.jsp", null, errors);
+            return new JspView<>("/org/labkey/study/view/importVisitAliases.jsp", null, errors);
         }
 
         @Override
@@ -6671,7 +6671,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudyRedirectIfNull());
-            return new JspView<ChangeAlternateIdsForm>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
+            return new JspView<>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -6710,7 +6710,7 @@ public class StudyController extends BaseStudyController
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
-            Map<String, Map<String, Object>> types = new TreeMap<String, Map<String, Object>>();
+            Map<String, Map<String, Object>> types = new TreeMap<>();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
@@ -6719,7 +6719,7 @@ public class StudyController extends BaseStudyController
             if (webPart != null)
             {
                 props = webPart.getPropertyMap();
-                Map<String, String> webPartProps = new HashMap<String, String>();
+                Map<String, String> webPartProps = new HashMap<>();
                 webPartProps.put("name", webPart.getName());
                 if (props.containsKey("webpart.title"))
                     webPartProps.put("title", props.get("webpart.title"));
@@ -6734,10 +6734,10 @@ public class StudyController extends BaseStudyController
                 props = resolveJSONProperties(form.getProps());
             }
 
-            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
+            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
-                Map<String, Object> info = new HashMap<String, Object>();
+                Map<String, Object> info = new HashMap<>();
                 boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
 
                 info.put("name", type.getName());
@@ -6761,7 +6761,7 @@ public class StudyController extends BaseStudyController
             if (form.includeMetadata())
             {
                 // visible columns
-                Map<String, Map<String, Boolean>> columns = new LinkedHashMap<String, Map<String, Boolean>>();
+                Map<String, Map<String, Boolean>> columns = new LinkedHashMap<>();
 
                 columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
                 columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
@@ -6774,14 +6774,14 @@ public class StudyController extends BaseStudyController
                 response.put("visibleColumns", columns);
 
                 // provider editor information
-                Map<String, Map<String, Object>> viewTypeProps = new HashMap<String, Map<String, Object>>();
+                Map<String, Map<String, Object>> viewTypeProps = new HashMap<>();
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
                     DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
                     DataViewProvider.EditInfo editInfo = provider.getEditInfo();
                     if (editInfo != null)
                     {
-                        Map<String, Object> info = new HashMap<String, Object>();
+                        Map<String, Object> info = new HashMap<>();
                         for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
                         {
                             info.put(propName, true);
@@ -6796,7 +6796,7 @@ public class StudyController extends BaseStudyController
             if (form.includeData())
             {
                 int startingDefaultDisplayOrder = 0;
-                Set<String> defaultCategories = new TreeSet<String>(new Comparator<String>(){
+                Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
                     @Override
                     public int compare(String s1, String s2)
                     {
@@ -6807,7 +6807,7 @@ public class StudyController extends BaseStudyController
                 getViewContext().put("returnUrl", form.getReturnUrl());
 
                 // get the data view information from all visible providers
-                List<DataViewInfo> views = new ArrayList<DataViewInfo>();
+                List<DataViewInfo> views = new ArrayList<>();
 
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
@@ -6829,7 +6829,7 @@ public class StudyController extends BaseStudyController
                 }
 
                 // add the default categories after the explicit categories
-                Map<String, Integer> defaultCategoryMap = new HashMap<String, Integer>();
+                Map<String, Integer> defaultCategoryMap = new HashMap<>();
                 for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
                 {
                     defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);                    
@@ -6863,7 +6863,7 @@ public class StudyController extends BaseStudyController
         private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
         {
             JSONObject jsonProps = (JSONObject) formProps;
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
             if (null != jsonProps && jsonProps.size() > 0)
@@ -6924,7 +6924,7 @@ public class StudyController extends BaseStudyController
             List<DataViewProvider.Type> visibleDataTypes = getVisibleDataTypes(form);
 
             int startingDefaultDisplayOrder = 0;
-            Set<String> defaultCategories = new TreeSet<String>(new Comparator<String>(){
+            Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
                 @Override
                 public int compare(String s1, String s2)
                 {
@@ -6936,7 +6936,7 @@ public class StudyController extends BaseStudyController
                 getViewContext().put("returnUrl", form.getReturnUrl());
 
             // get the data view information from all visible providers
-            List<DataViewInfo> views = new ArrayList<DataViewInfo>();
+            List<DataViewInfo> views = new ArrayList<>();
 
             for (DataViewProvider.Type type : visibleDataTypes)
             {
@@ -6959,7 +6959,7 @@ public class StudyController extends BaseStudyController
             }
 
             // add the default categories after the explicit categories
-            Map<String, Integer> defaultCategoryMap = new HashMap<String, Integer>();
+            Map<String, Integer> defaultCategoryMap = new HashMap<>();
             for (String cat : defaultCategories)
             {
                 defaultCategoryMap.put(cat, ++startingDefaultDisplayOrder);
@@ -7006,9 +7006,9 @@ public class StudyController extends BaseStudyController
             };
 
             // Get all categories -- group views by them
-            Map<Integer, List<DataViewInfo>> groups = new HashMap<Integer, List<DataViewInfo>>();
-            Map<Integer, ViewCategory> categories = new HashMap<Integer, ViewCategory>();
-            TreeSet<ViewCategory> order = new TreeSet<ViewCategory>(t);
+            Map<Integer, List<DataViewInfo>> groups = new HashMap<>();
+            Map<Integer, ViewCategory> categories = new HashMap<>();
+            TreeSet<ViewCategory> order = new TreeSet<>(t);
 
             for (DataViewInfo view : views)
             {
@@ -7040,7 +7040,7 @@ public class StudyController extends BaseStudyController
             }
 
             // Construct category tree
-            Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<Integer, TreeSet<ViewCategory>>();
+            Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<>();
 
             for (Integer ckey : groups.keySet())
             {
@@ -7048,7 +7048,7 @@ public class StudyController extends BaseStudyController
 
                 if (!tree.containsKey(ckey))
                 {
-                    tree.put(ckey, new TreeSet<ViewCategory>(t));
+                    tree.put(ckey, new TreeSet<>(t));
                 }
 
                 ViewCategory p = c.getParent();
@@ -7056,7 +7056,7 @@ public class StudyController extends BaseStudyController
                 {
                     if (!tree.containsKey(p.getRowId()))
                     {
-                        tree.put(p.getRowId(), new TreeSet<ViewCategory>(t));
+                        tree.put(p.getRowId(), new TreeSet<>(t));
                     }
                     tree.get(p.getRowId()).add(c);
                 }
@@ -7123,7 +7123,7 @@ public class StudyController extends BaseStudyController
 
         private List<DataViewProvider.Type> getVisibleDataTypes(BrowseDataForm form)
         {
-            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
+            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
             Map<String, String> props;
             Portal.WebPart webPart = getWebPart(form);
 
@@ -7161,7 +7161,7 @@ public class StudyController extends BaseStudyController
         private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
         {
             JSONObject jsonProps = (JSONObject) formProps;
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
             if (null != jsonProps && jsonProps.size() > 0)
@@ -7286,10 +7286,10 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> categoryList = new ArrayList<JSONObject>();
+            List<JSONObject> categoryList = new ArrayList<>();
 
-            List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<ViewCategory>();
-            List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<ViewCategory>();
+            List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<>();
+            List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<>();
 
             ViewCategory[] categories;
             int parent = form.getParent();
@@ -7360,7 +7360,7 @@ public class StudyController extends BaseStudyController
 
     public static class CategoriesForm implements CustomApiForm
     {
-        List<ViewCategory> _categories = new ArrayList<ViewCategory>();
+        List<ViewCategory> _categories = new ArrayList<>();
 
         public List<ViewCategory> getCategories()
         {
@@ -7470,7 +7470,7 @@ public class StudyController extends BaseStudyController
 
         public Map<String, Object> getPropertyMap(PropertyValues pv, List<String> editableValues, Map<String, MultipartFile> files) throws ValidationException
         {
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
 
             for (PropertyValue value : pv.getPropertyValues())
             {
@@ -8072,7 +8072,7 @@ public class StudyController extends BaseStudyController
                 StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
 
                 TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
-                List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+                List<ColumnInfo> cols = new ArrayList<>();
                 cols.add(ti.getColumn("participantid"));
                 cols.add(ti.getColumn("alternateid"));
                 cols.add(ti.getColumn("dateoffset"));
@@ -8154,7 +8154,7 @@ public class StudyController extends BaseStudyController
             form.setClinic(study.isAllowReqLocClinic());
             form.setSal(study.isAllowReqLocSal());
             form.setEndpoint(study.isAllowReqLocEndpoint());
-            return new JspView<ManageLocationTypesForm>("/org/labkey/study/view/manageLocationTypes.jsp", form);
+            return new JspView<>("/org/labkey/study/view/manageLocationTypes.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)

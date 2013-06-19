@@ -716,7 +716,7 @@ public class DavController extends SpringActionController
             Set<String> includeNames = null;
             if (request.getParameterValues("file") != null)
             {
-                includeNames = new HashSet<String>(Arrays.asList(request.getParameterValues("file")));
+                includeNames = new HashSet<>(Arrays.asList(request.getParameterValues("file")));
             }
 
             //-1 means infinite (...well, as deep as max int)
@@ -902,7 +902,7 @@ public class DavController extends SpringActionController
                         @Override
                         protected Pair<Integer, Boolean> getDepthParameter()
                         {
-                            return new Pair<Integer,Boolean>(0,Boolean.FALSE);
+                            return new Pair<>(0,Boolean.FALSE);
                         }
                     };
                     action.setResource(dest);
@@ -985,7 +985,7 @@ public class DavController extends SpringActionController
             if (null == depthStr)
                 depthStr = getRequest().getParameter("depth");
             if (null == depthStr)
-                return new Pair<Integer, Boolean>(defaultDepth, defaultListRoot);
+                return new Pair<>(defaultDepth, defaultListRoot);
             int depth = defaultDepth;
             boolean noroot = depthStr.endsWith(",noroot");
             if (noroot)
@@ -997,7 +997,7 @@ public class DavController extends SpringActionController
             catch (NumberFormatException x)
             {
             }
-            return new Pair<Integer,Boolean>(depth, depth>0 && noroot);
+            return new Pair<>(depth, depth>0 && noroot);
         }
 
 
@@ -1130,7 +1130,7 @@ public class DavController extends SpringActionController
                         type = Find.FIND_BY_PROPERTY;
                         if (propNames != null && propNames.length > 0)
                         {
-                            properties = new Vector<String>();
+                            properties = new Vector<>();
                             properties.addAll(Arrays.asList(getRequest().getParameterValues("propname")));
                         }
                     }
@@ -1142,7 +1142,7 @@ public class DavController extends SpringActionController
             }
             else if (Find.FIND_BY_PROPERTY == type && null != propNode)
             {
-                properties = new Vector<String>();
+                properties = new Vector<>();
                 NodeList childList = propNode.getChildNodes();
 
                 for (int i = 0; i < childList.getLength(); i++)
@@ -1189,13 +1189,13 @@ public class DavController extends SpringActionController
                 else
                 {
                     // The stack always contains the object of the current level
-                    LinkedList<Path> stack = new LinkedList<Path>();
+                    LinkedList<Path> stack = new LinkedList<>();
                     stack.addLast(root.getPath());
 
                     // Stack of the objects one level below
                     boolean skipFirst = noroot;
                     WebdavResource resource;
-                    LinkedList<Path> stackBelow = new LinkedList<Path>();
+                    LinkedList<Path> stackBelow = new LinkedList<>();
 
                     while ((!stack.isEmpty()) && (depth >= 0))
                     {
@@ -1239,7 +1239,7 @@ public class DavController extends SpringActionController
                         {
                             depth--;
                             stack = stackBelow;
-                            stackBelow = new LinkedList<Path>();
+                            stackBelow = new LinkedList<>();
                         }
 
                         resourceWriter.sendData();
@@ -1360,7 +1360,7 @@ public class DavController extends SpringActionController
                 if (resource.isCollection())
                 {
                     Collection<String> listPaths = resource.listNames();  // 17749
-                    ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>();
+                    ArrayList<WebdavResource> resources = new ArrayList<>();
 
                     // Build resource set
                     for (String p : listPaths)
@@ -1672,7 +1672,7 @@ public class DavController extends SpringActionController
 
                 case FIND_BY_PROPERTY:
 
-                    List<String> propertiesNotFound = new Vector<String>();
+                    List<String> propertiesNotFound = new Vector<>();
 
                     // Parse the list of properties
 
@@ -2023,7 +2023,7 @@ public class DavController extends SpringActionController
 
                 case FIND_BY_PROPERTY:
 
-                    List<String> propertiesNotFound = new Vector<String>();
+                    List<String> propertiesNotFound = new Vector<>();
 
                     // Parse the list of properties
 
@@ -2125,7 +2125,7 @@ public class DavController extends SpringActionController
                 out = (BufferedWriter)writer;
             out = new BufferedWriter(writer);
             json = new JSONWriter(writer);
-            extraProps = new HashMap<String, Object>();
+            extraProps = new HashMap<>();
         }
 
         public void beginResponse(WebdavResponse response) throws Exception
@@ -2467,8 +2467,8 @@ public class DavController extends SpringActionController
                         FileUtil.copyData(getFileStream().openInputStream(), bos);
                         byte[] buf = bos.toByteArray();
                         String html = new String(buf, "UTF-8");
-                        List<String> errors = new ArrayList<String>();
-                        List<String> script = new ArrayList<String>();
+                        List<String> errors = new ArrayList<>();
+                        List<String> script = new ArrayList<>();
                         PageFlowUtil.validateHtml(html, errors, script);
                         if (!script.isEmpty())
                             throw new DavException(WebdavStatus.SC_FORBIDDEN, "User is not allowed to save script in html files.");
@@ -2589,7 +2589,7 @@ public class DavController extends SpringActionController
         }
         else
         {
-            LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<Path,WebdavStatus>();
+            LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
 
             deleteCollection(resource, errorList);
             removeFromDataObject(resource);
@@ -3095,7 +3095,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private static final Map<Path, Boolean> hasZipMap = new ConcurrentHashMap<Path, Boolean>();
+    private static final Map<Path, Boolean> hasZipMap = new ConcurrentHashMap<>();
 
 /*
     InputStream getGzipStream(WebdavResource r) throws DavException, IOException
@@ -3693,7 +3693,7 @@ public class DavController extends SpringActionController
 
     
     // per request cache
-    Map<Path, WebdavResource> resourceCache = new HashMap<Path, WebdavResource>();
+    Map<Path, WebdavResource> resourceCache = new HashMap<>();
     WebdavResource nullDavFileInfo = (WebdavResource)Proxy.newProxyInstance(DavController.class.getClassLoader(), new Class[]{WebdavResource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
 
     @Nullable WebdavResource resolvePath(String path) throws DavException
@@ -4057,7 +4057,7 @@ public class DavController extends SpringActionController
 
         // Vector which will contain all the ranges which are successfully
         // parsed.
-        ArrayList<Range> result = new ArrayList<Range>();
+        ArrayList<Range> result = new ArrayList<>();
         StringTokenizer commaTokenizer = new StringTokenizer(rangeHeader, ",");
 
         // Parsing the range list
@@ -4150,14 +4150,14 @@ public class DavController extends SpringActionController
 
             if ("html".equals(getViewContext().getRequest().getParameter("listing")))
             {
-                JspView<ListPage> v = new JspView<ListPage>(DavController.class, "list.jsp", page);
+                JspView<ListPage> v = new JspView<>(DavController.class, "list.jsp", page);
                 v.setFrame(WebPartView.FrameType.NONE);
                 PrintTemplate print = new PrintTemplate(v, config);
                 print.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             else
             {
-                JspView<ListPage> v = new JspView<ListPage>(DavController.class, "davListing.jsp", page);
+                JspView<ListPage> v = new JspView<>(DavController.class, "davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
                 BodyTemplate template = new BodyTemplate(v, config);
                 template.render(getViewContext().getRequest(), getViewContext().getResponse());
@@ -4358,7 +4358,7 @@ public class DavController extends SpringActionController
             throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot create 'text/html' file using copy.");
 
         // Copying source to destination
-        LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<Path,WebdavStatus>();
+        LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
         WebdavStatus ret = copyResource(resource, errorList, destinationPath);
         boolean result = ret == null;
 
@@ -4546,7 +4546,7 @@ public class DavController extends SpringActionController
     // UNDONE: what is the scope of these variables???
     private Map lockNullResources = new Hashtable();
     private Map resourceLocks = new Hashtable();
-    private List<LockInfo> collectionLocks = new Vector<LockInfo>();
+    private List<LockInfo> collectionLocks = new Vector<>();
              
 
 
@@ -4851,7 +4851,7 @@ public class DavController extends SpringActionController
 
 
 
-    Map<Closeable,Throwable> closables = new IdentityHashMap<Closeable,Throwable>();
+    Map<Closeable,Throwable> closables = new IdentityHashMap<>();
 
     boolean track(Closeable c)
     {
@@ -4901,8 +4901,8 @@ public class DavController extends SpringActionController
     }
 
 
-    private static final Set<String> _tempFiles = new ConcurrentSkipListSet<String>();
-    private static final Set<Path> _tempResources = new ConcurrentHashSet<Path>();
+    private static final Set<String> _tempFiles = new ConcurrentSkipListSet<>();
+    private static final Set<Path> _tempResources = new ConcurrentHashSet<>();
 
     private void markTempFile(WebdavResource r)
     {

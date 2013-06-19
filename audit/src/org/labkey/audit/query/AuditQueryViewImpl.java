@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class AuditQueryViewImpl extends AuditLogQueryView
 {
-    protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap<Integer, DisplayColumn>();
+    protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap<>();
 
     public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {

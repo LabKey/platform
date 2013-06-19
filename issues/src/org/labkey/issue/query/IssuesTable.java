@@ -143,7 +143,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
     // Returns the default list of visible columns
     private List<FieldKey> getDefaultColumns()
     {
-        Set<FieldKey> visibleColumns = new LinkedHashSet<FieldKey>();
+        Set<FieldKey> visibleColumns = new LinkedHashSet<>();
 
         CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
 
@@ -153,7 +153,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         for (CustomColumn column : ccc.getCustomColumns(_userSchema.getUser()))
             visibleColumns.add(FieldKey.fromParts(column.getCaption()));
 
-        return new ArrayList<FieldKey>(visibleColumns);
+        return new ArrayList<>(visibleColumns);
     }
 
     @Override

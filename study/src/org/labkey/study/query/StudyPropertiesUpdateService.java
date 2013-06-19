@@ -74,7 +74,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         study.savePropertyBag(row);
 
         // update the base table, but only some columns StudyPropertiesTable
-        CaseInsensitiveHashMap<Object> updateRow = new CaseInsensitiveHashMap<Object>();
+        CaseInsensitiveHashMap<Object> updateRow = new CaseInsensitiveHashMap<>();
         boolean recalculateVisits = false;
         for (Map.Entry<String,Object> entry : row.entrySet())
         {

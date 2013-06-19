@@ -84,7 +84,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private List<QExpr> _onExpressions;
 
     private Map<FieldKey, QueryRelation> _tables;
-    private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
+    private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
     private SQLTableInfo _subqueryTable;
     private AliasManager _aliasManager;
 
@@ -94,7 +94,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
      */
     private Boolean _generateSelectSQL = true;
 
-    private Set<FieldKey> parametersInScope = new HashSet<FieldKey>(); 
+    private Set<FieldKey> parametersInScope = new HashSet<>();
 
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
@@ -140,10 +140,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
         _limit = limit;
         
         QTable t = new QTable(from, alias);
-        _parsedJoins = new ArrayList<QJoinOrTable>();
+        _parsedJoins = new ArrayList<>();
         _parsedJoins.add(t);
         _onExpressions = Collections.EMPTY_LIST;
-        _parsedTables = new LinkedHashMap<FieldKey, QTable>();
+        _parsedTables = new LinkedHashMap<>();
         _parsedTables.put(t.getTableKey(), t);
         _select = new QSelect();
         _select.childList().add(new QRowStar());
@@ -179,7 +179,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     Map<String,SelectColumn> getGroupByColumns()
     {
         // CONSIDER: find selected group keys if they are already in the select list
-        Map<String,SelectColumn> ret = new HashMap<String,SelectColumn>();
+        Map<String,SelectColumn> ret = new HashMap<>();
         int index = 0;
 groupByLoop:        
         for (QNode gb : _groupBy.childList())
@@ -234,8 +234,8 @@ groupByLoop:
 
     private void initializeSelect()
     {
-        _columns = new LinkedHashMap<FieldKey,SelectColumn>();
-        _tables = new HashMap<FieldKey, QueryRelation>();
+        _columns = new LinkedHashMap<>();
+        _tables = new HashMap<>();
 
         for (QTable qtable : _parsedTables.values())
         {
@@ -272,7 +272,7 @@ groupByLoop:
             _tables.put(qtable.getAlias(), relation);
         }
 
-        ArrayList<SelectColumn> columnList = new ArrayList<SelectColumn>();
+        ArrayList<SelectColumn> columnList = new ArrayList<>();
         if (_select != null)
         {
             LinkedList<QNode> process = new LinkedList(_select.childList());
@@ -344,7 +344,7 @@ groupByLoop:
         // two passes to maintain ordering and avoid the odd name collision
         // create unique aliases where missing
         int expressionUniq = 0;
-        Map<FieldKey,FieldKey> fieldKeys = new HashMap<FieldKey,FieldKey>();
+        Map<FieldKey,FieldKey> fieldKeys = new HashMap<>();
         for (SelectColumn column : columnList)
         {
             String name = column.getName();
@@ -464,9 +464,9 @@ groupByLoop:
         
         FromParser(QFrom from)
         {
-            _tables = new LinkedHashMap<FieldKey, QTable>();
-            _joins = new ArrayList<QJoinOrTable>();
-            _ons = new ArrayList<QExpr>();
+            _tables = new LinkedHashMap<>();
+            _joins = new ArrayList<>();
+            _ons = new ArrayList<>();
             parseFrom(from);
         }
 
@@ -1134,7 +1134,7 @@ groupByLoop:
 
 //        SqlDialect dialect = getSqlDialect();
 
-        CaseInsensitiveHashMap<SelectColumn> aliasSet = new CaseInsensitiveHashMap<SelectColumn>();
+        CaseInsensitiveHashMap<SelectColumn> aliasSet = new CaseInsensitiveHashMap<>();
 
         for (SelectColumn col : _columns.values())
         {
@@ -1277,7 +1277,7 @@ groupByLoop:
 
 
         // keep track of mapping from source alias to generated alias (used by ORDER BY)
-        CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<String>();
+        CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<>();
 
         if (null == _distinct)
             sql.pushPrefix("SELECT ");
@@ -1565,7 +1565,7 @@ groupByLoop:
 
     protected Map<String,RelationColumn> getAllColumns()
     {
-        LinkedHashMap<String,RelationColumn> ret = new LinkedHashMap<String, RelationColumn>(_columns.size()*2);
+        LinkedHashMap<String,RelationColumn> ret = new LinkedHashMap<>(_columns.size()*2);
         for (Map.Entry<FieldKey,SelectColumn> e : _columns.entrySet())
         {
             if (null == e.getKey().getParent())
@@ -1631,8 +1631,8 @@ groupByLoop:
         if (this._parent instanceof QueryUnion || this._parent instanceof QueryPivot)
             return Collections.emptySet();
 
-        MultiHashMap<QueryRelation, RelationColumn> maps = new MultiHashMap<QueryRelation, RelationColumn>();
-        Set<RelationColumn> ret = new HashSet<RelationColumn>();
+        MultiHashMap<QueryRelation, RelationColumn> maps = new MultiHashMap<>();
+        Set<RelationColumn> ret = new HashSet<>();
 
         for (SelectColumn sc : _columns.values())
         {
@@ -1649,7 +1649,7 @@ groupByLoop:
 
         for (Map.Entry<QueryRelation, Collection<RelationColumn>> e : maps.entrySet())
         {
-            IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<RelationColumn,RelationColumn>();
+            IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<>();
             for (RelationColumn rc : e.getValue())
                 h.put(rc, rc);
             Set<RelationColumn> suggestedColumns = e.getKey().getSuggestedColumns(h.keySet());

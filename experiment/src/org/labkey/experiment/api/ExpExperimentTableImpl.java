@@ -158,7 +158,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.RunCount);
         addColumn(Column.BatchProtocolId);
         addContainerColumn(Column.Folder, new ActionURL(ExperimentController.ShowRunGroupsAction.class, getContainer()));
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Hypothesis.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Comments.toString()));

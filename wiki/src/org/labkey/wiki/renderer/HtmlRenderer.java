@@ -46,7 +46,7 @@ public class HtmlRenderer implements WikiRenderer
     Map<HString, HString> _nameTitleMap;
     Map<String, Attachment> _attachments;
 
-    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<String, SubstitutionHandler>();
+    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
 
     static
     {
@@ -60,7 +60,7 @@ public class HtmlRenderer implements WikiRenderer
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
         _nameTitleMap = nameTitleMap == null ? new HashMap<HString, HString>() : nameTitleMap;
-        _attachments = new HashMap<String, Attachment>();
+        _attachments = new HashMap<>();
 
         if (null != attachments)
             for (Attachment a : attachments)
@@ -70,7 +70,7 @@ public class HtmlRenderer implements WikiRenderer
 
     public FormattedHtml format(String text)
     {
-        LinkedList<String> errors = new LinkedList<String>();
+        LinkedList<String> errors = new LinkedList<>();
         if (text == null)
             return new FormattedHtml("");
 
@@ -80,7 +80,7 @@ public class HtmlRenderer implements WikiRenderer
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
-        Map<Element, String> linkExceptions = new HashMap<Element, String>();
+        Map<Element, String> linkExceptions = new HashMap<>();
         for (int i=0 ; i<nl.getLength() ; i++)
         {
             Element a = (Element)nl.item(i);
@@ -204,21 +204,21 @@ public class HtmlRenderer implements WikiRenderer
         if (!webPartMatcher.find())
             return new FormattedHtml(text);
 
-        List<Definition> definitions = new ArrayList<Definition>(10);
-        Map<Definition, List<String>> wikiErrors = new HashMap<Definition, List<String>>();
+        List<Definition> definitions = new ArrayList<>(10);
+        Map<Definition, List<String>> wikiErrors = new HashMap<>();
         do
         {
-            List<String> paramErrors = new ArrayList<String>();
+            List<String> paramErrors = new ArrayList<>();
             String substitutionType = webPartMatcher.group(1);          // type
             String params = webPartMatcher.group(2).replace(",", "");
             // Parse the parameters with the symbols in parseWith, they can be used in any order
             // as long as they are the same symbol starts and completes a parameter value
-            List<String> paramList = new ArrayList<String>();
+            List<String> paramList = new ArrayList<>();
             paramList.add(params);
             String[] parseWith = { "&#39;", "'" };
             for (String parser : parseWith)
             {
-                List<String> paramListTemp = new ArrayList<String>();
+                List<String> paramListTemp = new ArrayList<>();
                 for (String paramSection : paramList)
                 {
                     String[] paramSplit = paramSection.split(parser);
@@ -230,7 +230,7 @@ public class HtmlRenderer implements WikiRenderer
                 paramList = paramListTemp;
             }
 
-            Map<String, String> paramMap = new HashMap<String, String>(10);
+            Map<String, String> paramMap = new HashMap<>(10);
             for (String param : paramList)
             {
                 Matcher paramMatcher = _paramPattern.matcher(param);

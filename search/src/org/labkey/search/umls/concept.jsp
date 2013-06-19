@@ -130,12 +130,12 @@ if (null != CUI)
     {
         %><%=h(t.toString())%><br><%
     }
-    Set<String> relatedCUI = new HashSet<String>();
-    Set<String> parents = new HashSet<String>();
-    Set<String> children = new HashSet<String>();
-    Set<String> siblings = new HashSet<String>();
-    ArrayList<Related> remaining = new ArrayList<Related>();
-    Set<Relationship> other = new TreeSet<Relationship>();
+    Set<String> relatedCUI = new HashSet<>();
+    Set<String> parents = new HashSet<>();
+    Set<String> children = new HashSet<>();
+    Set<String> siblings = new HashSet<>();
+    ArrayList<Related> remaining = new ArrayList<>();
+    Set<Relationship> other = new TreeSet<>();
     for (Related r : related)
     {
         try

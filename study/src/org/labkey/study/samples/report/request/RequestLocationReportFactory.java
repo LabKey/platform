@@ -68,7 +68,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
             locations = SampleManager.getInstance().getSitesWithRequests(getContainer());
         if (locations == null)
             return Collections.emptyList();
-        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        List<SpecimenVisitReport> reports = new ArrayList<>();
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
@@ -115,8 +115,8 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
             builder.append("</option>\n");
         }
         builder.append("</select>");
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
-        inputs.add(new Pair<String, String>("Requesting location(s)", builder.toString()));
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        inputs.add(new Pair<>("Requesting location(s)", builder.toString()));
         return inputs;
     }
 }

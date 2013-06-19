@@ -36,7 +36,7 @@ import java.util.*;
 public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 {
     private List<String> _names;
-    private final Map<Integer, String> _lsids = new HashMap<Integer, String>();
+    private final Map<Integer, String> _lsids = new HashMap<>();
     private final ExpSampleSet _sampleSet;
     private final Container _container;
     private final User _user;
@@ -47,7 +47,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         _sampleSet = sampleSet;
         _container = c;
         _user = user;
-        _names = new ArrayList<String>();
+        _names = new ArrayList<>();
         for (int i = 1; i <= sampleCount; i++)
         {
             _names.add("Output Sample " + i);
@@ -123,7 +123,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 
     public static DomainProperty[] getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
     {
-        List<DomainProperty> dps = new ArrayList<DomainProperty>();
+        List<DomainProperty> dps = new ArrayList<>();
 
         if (sampleSet != null && sampleSet.getType() != null)
         {
@@ -144,10 +144,10 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
     {
         if (_sampleSet != null)
         {
-            Set<String> idColNames = new HashSet<String>();
+            Set<String> idColNames = new HashSet<>();
             for (DomainProperty pd : _sampleSet.getIdCols())
                 idColNames.add(pd.getName());
-            List<DomainProperty> properties = new ArrayList<DomainProperty>();
+            List<DomainProperty> properties = new ArrayList<>();
             for (DomainProperty dp : _sampleSet.getType().getProperties())
             {
                 if (idColNames.contains(dp.getName()))

@@ -69,7 +69,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SurveyManager
 {
     private static final SurveyManager _instance = new SurveyManager();
-    private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<SurveyListener>();
+    private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
 
     private SurveyManager()
     {
@@ -96,7 +96,7 @@ public class SurveyManager
     {
         BindException errors = new NullSafeBindException(this, "form");
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
-        Map<String, Object> survey = new HashMap<String, Object>();
+        Map<String, Object> survey = new HashMap<>();
 
         if (schema != null)
         {
@@ -108,7 +108,7 @@ public class SurveyManager
                 survey.put("layout", "auto");
                 survey.put("showCounts", false); // whether or not to show the count of completed questions next to the section header
 
-                Map<String, Object> panel = new HashMap<String, Object>();
+                Map<String, Object> panel = new HashMap<>();
 
                 panel.put("title", queryName);
                 panel.put("description", null);
@@ -116,7 +116,7 @@ public class SurveyManager
                 panel.put("collapsible", true);
                 panel.put("defaultLabelWidth", 350);
 
-                List<Map<String, Object>> columns = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> columns = new ArrayList<>();
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     if (dc.isQueryColumn() && dc.isEditable())
@@ -160,7 +160,7 @@ public class SurveyManager
     {
         // trim the metadata property map to just those properties needed for rendering the Survey questions
         List<String> props = getKeyMetaDataProps();
-        Map<String, Object> trimmedMap = new LinkedHashMap<String, Object>();
+        Map<String, Object> trimmedMap = new LinkedHashMap<>();
         for (String property : props)
         {
             if (origMap.get(property) != null)
@@ -215,7 +215,7 @@ public class SurveyManager
             table.setAuditBehavior(AuditBehaviorType.DETAILED);
 
             Survey ret;
-            BeanObjectFactory<Survey> objectFactory = new BeanObjectFactory<Survey>(Survey.class);
+            BeanObjectFactory<Survey> objectFactory = new BeanObjectFactory<>(Survey.class);
             if (survey.isNew())
             {
                 survey.beforeInsert(user, container.getId());
@@ -406,7 +406,7 @@ public class SurveyManager
 
     public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
         SurveyDesign design = SurveyManager.get().getSurveyDesign(c, user, survey.getSurveyDesignId());
 
         for (SurveyListener l : _surveyListeners)
@@ -432,7 +432,7 @@ public class SurveyManager
         if (qus != null && pk != null)
         {
             try {
-                List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> keys = new ArrayList<>();
 
                 if (survey.getResponsesPk() != null)
                 {
@@ -449,7 +449,7 @@ public class SurveyManager
 
     public List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> oldRow, Map<String, Object> row)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -466,7 +466,7 @@ public class SurveyManager
 
     public List<Throwable> fireCreatedSurvey(Container c, User user, Survey survey, Map<String, Object> rowData)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -483,7 +483,7 @@ public class SurveyManager
 
     public List<Throwable> fireBeforeUpdateSurveyResponses(Container c, User user, Survey survey)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -500,7 +500,7 @@ public class SurveyManager
 
     public List<Throwable> fireUpdateSurveyResponses(Container c, User user, Survey survey, Map<String, Object> rowData)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -517,7 +517,7 @@ public class SurveyManager
 
     public ArrayList<String> getSurveyLockedStates()
     {
-        ArrayList<String> states = new ArrayList<String>();
+        ArrayList<String> states = new ArrayList<>();
         for (SurveyListener l : _surveyListeners)
         {
             states.addAll(l.getSurveyLockedStates());

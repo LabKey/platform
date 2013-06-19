@@ -102,7 +102,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
-    private static final BlockingQueue<SnapshotDependency.SourceDataType> _queue = new LinkedBlockingQueue<SnapshotDependency.SourceDataType>(1000);
+    private static final BlockingQueue<SnapshotDependency.SourceDataType> _queue = new LinkedBlockingQueue<>(1000);
     private static final QuerySnapshotDependencyThread _dependencyThread = new QuerySnapshotDependencyThread();
 
     // query snapshot dependency checkers
@@ -133,7 +133,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     public List<DisplayColumn> getDisplayColumns(QueryForm form, BindException errors) throws Exception
     {
         QueryView view = QueryView.create(form, errors);
-        List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> columns = new ArrayList<>();
 
         for (DisplayColumn c : view.getDisplayColumns())
         {
@@ -169,7 +169,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         SimpleFilter filter = new SimpleFilter();
         if (!groups.isEmpty())
         {
-            Set<String> ptids = new HashSet<String>();
+            Set<String> ptids = new HashSet<>();
 
             for (Integer groupId : groups)
             {
@@ -253,7 +253,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
-        Map<FieldKey, ColumnInfo> colMap = new HashMap<FieldKey, ColumnInfo>();
+        Map<FieldKey, ColumnInfo> colMap = new HashMap<>();
         Integer optionsId = qsDef.getOptionsId();
         StudySnapshot snapshot = null;
 
@@ -347,14 +347,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
      */
     private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> fieldKeys, Map<FieldKey, ColumnInfo> fieldMap)
     {
-        Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
+        Map<String, String> columnMap = new CaseInsensitiveHashMap<>();
         Study study = StudyManager.getInstance().getStudy(view.getContainer());
 
         if (fieldMap != null)
         {
             if (fieldKeys.isEmpty())
             {
-                fieldKeys = new ArrayList<FieldKey>();
+                fieldKeys = new ArrayList<>();
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     ColumnInfo colInfo = dc.getColumnInfo();
@@ -410,7 +410,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         int numRowsDeleted;
                         List<String> newRows;
 
-                        List<String> importErrors = new ArrayList<String>();
+                        List<String> importErrors = new ArrayList<>();
                         numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
 
                         // import the new data
@@ -570,7 +570,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.get(snapshotDef.getContainer());
             if (deferredQuerySnapshots == null)
             {
-                deferredQuerySnapshots = new LinkedList<QuerySnapshotDefinition>();
+                deferredQuerySnapshots = new LinkedList<>();
                 deferredStudies.put(snapshotDef.getContainer(), deferredQuerySnapshots);
             }
             deferredQuerySnapshots.add(snapshotDef);
@@ -579,7 +579,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private static List<QuerySnapshotDefinition> getDependencies(SnapshotDependency.SourceDataType sourceData)
     {
-        List<QuerySnapshotDefinition> dependencies = new ArrayList<QuerySnapshotDefinition>();
+        List<QuerySnapshotDefinition> dependencies = new ArrayList<>();
 
         switch (sourceData.getType())
         {
@@ -648,7 +648,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // container where the dataset change events are generated.  The value is a map from the study that
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
     private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap =
-            new HashMap<Container, Map<Container, List<QuerySnapshotDefinition>>>();
+            new HashMap<>();
 
     public void pauseUpdates(Container sourceContainer)
     {
@@ -668,7 +668,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Container snapshotContainer = snapshotEntry.getKey();
             StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
             List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
-            Set<DataSetDefinition> deferredDatasets = new HashSet<DataSetDefinition>(snapshotDefs.size());
+            Set<DataSetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
             for (QuerySnapshotDefinition def : snapshotDefs)
             {
                 deferredDatasets.add(StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName()));

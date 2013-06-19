@@ -33,13 +33,13 @@ ViewContext context = HttpView.currentContext();
 
 
 List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(context.getContainer());
-Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
+Map<String,TransformConfiguration> configurationsMap = new HashMap<>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
 
 // It's possible to have configurations for transforms whose modules are in active, so make sure we get those
 Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(context.getContainer());
-TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<String, ScheduledPipelineJobDescriptor>();
+TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<>();
 for (ScheduledPipelineJobDescriptor d : descriptorsList)
     descriptorsMap.put(d.getId(), d);
 for (TransformConfiguration c : configurationsList)

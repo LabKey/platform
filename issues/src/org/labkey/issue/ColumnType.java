@@ -256,9 +256,9 @@ public enum ColumnType
     private final boolean _customString;   // Is this a custom String column?
     private final boolean _customInteger;  // Is this a custom Integer column?
 
-    private static final Map<String, ColumnType> mapByColumnName = new CaseInsensitiveHashMap<ColumnType>(15);
-    private static final Map<Integer, ColumnType> mapByOrdinal = new HashMap<Integer, ColumnType>(15);
-    private static final Collection<ColumnType> customStringColumns = new LinkedList<ColumnType>();
+    private static final Map<String, ColumnType> mapByColumnName = new CaseInsensitiveHashMap<>(15);
+    private static final Map<Integer, ColumnType> mapByOrdinal = new HashMap<>(15);
+    private static final Collection<ColumnType> customStringColumns = new LinkedList<>();
     private static final String[] noKeywords = new String[0];
 
     static

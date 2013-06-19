@@ -73,7 +73,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
             columnMap.put(dateColName, "Date");
         }
 
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         DataLoader loader = getDataLoader();
 
         try

@@ -102,7 +102,7 @@ public class Concept
     }
 
 
-    static HashSet<String> excludedTerms = new HashSet<String>();
+    static HashSet<String> excludedTerms = new HashSet<>();
 
     static
     {
@@ -154,7 +154,7 @@ public class Concept
             words = words.toLowerCase();
             String[] terms = words.toLowerCase().split("[\\|\\_, ]");
             StringBuffer searchTerms = new StringBuffer();
-            HashSet<String> set = new HashSet<String>();
+            HashSet<String> set = new HashSet<>();
             for (String term : terms)
             {
                 term = StringUtils.trimToEmpty(term);

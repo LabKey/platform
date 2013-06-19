@@ -47,7 +47,7 @@ public class PlateTable extends BasePlateTable
         super(schema, StudySchema.getInstance().getTableInfoPlate());
         setPublicSchemaName(PlateSchema.SCHEMA_NAME);
         FieldKey keyProp = new FieldKey(null, "Property");
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> visibleColumns = new ArrayList<>();
         addWrapColumn(_rootTable.getColumn("RowId"));
         addWrapColumn(_rootTable.getColumn("Name"));
         setTitleColumn("Name");
@@ -70,7 +70,7 @@ public class PlateTable extends BasePlateTable
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
             PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
-            Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
+            Map<String, PropertyDescriptor> map = new TreeMap<>();
             for(PropertyDescriptor pd : pds)
             {
                 if (pd.getPropertyType() == PropertyType.DOUBLE)

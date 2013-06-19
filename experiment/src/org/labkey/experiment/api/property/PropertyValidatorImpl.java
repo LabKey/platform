@@ -140,7 +140,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     public IPropertyValidator save(User user, Container container) throws ValidationException, SQLException
     {
         ValidatorKind kind = getType();
-        List<ValidationError> errors = new ArrayList<ValidationError>();
+        List<ValidationError> errors = new ArrayList<>();
 
         if (!kind.isValid(this, errors))
         {

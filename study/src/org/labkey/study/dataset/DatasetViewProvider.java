@@ -85,7 +85,7 @@ public class DatasetViewProvider implements DataViewProvider
     @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
-        List<DataViewInfo> datasets = new ArrayList<DataViewInfo>();
+        List<DataViewInfo> datasets = new ArrayList<>();
         Container container = context.getContainer();
         User user = context.getUser();
 
@@ -161,7 +161,7 @@ public class DatasetViewProvider implements DataViewProvider
         public void validateProperties(Container container, User user, String id, Map<String, Object> props) throws ValidationException
         {
             StudyImpl study = StudyManager.getInstance().getStudy(container);
-            List<ValidationError> errors = new ArrayList<ValidationError>();
+            List<ValidationError> errors = new ArrayList<>();
 
             if (study != null)
             {

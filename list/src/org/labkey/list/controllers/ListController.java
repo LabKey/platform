@@ -326,7 +326,7 @@ public class ListController extends SpringActionController
     {
         ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), null);
         List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(defaultGridColumns.size());
+        List<DisplayColumn> displayColumns = new ArrayList<>(defaultGridColumns.size());
 
         // Save old grid column list
         List<String> currentColumns = rgn.getDisplayColumnNames();

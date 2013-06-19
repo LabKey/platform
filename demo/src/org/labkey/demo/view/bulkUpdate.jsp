@@ -33,7 +33,7 @@
     if (null != errors)
     {
         // since we're not showing errors field-by-field don't show duplicates
-        Set<String> messages = new HashSet<String>();
+        Set<String> messages = new HashSet<>();
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
             String message = getMessage(e);

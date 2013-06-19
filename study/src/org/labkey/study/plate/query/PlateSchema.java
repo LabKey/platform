@@ -60,7 +60,7 @@ public class PlateSchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        Set<String> tableSet = new HashSet<String>();
+        Set<String> tableSet = new HashSet<>();
         tableSet.add("Plate");
         tableSet.add("WellGroup");
         for (WellGroup.Type type : WellGroup.Type.values())

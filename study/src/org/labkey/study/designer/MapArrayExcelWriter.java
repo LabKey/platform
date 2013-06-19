@@ -40,7 +40,7 @@ public class MapArrayExcelWriter extends ExcelWriter
     {
         super(ExcelDocumentType.xls);
         this.maps = maps;
-        List<DisplayColumn> xlcols = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> xlcols = new ArrayList<>();
         for (ColumnDescriptor col : cols)
             xlcols.add(new MapArrayDisplayColumn(col.name, col.clazz));
 

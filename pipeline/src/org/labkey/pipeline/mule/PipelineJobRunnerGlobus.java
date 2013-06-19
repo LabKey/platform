@@ -109,7 +109,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
             {
                 TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
-                final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<String, List<PipelineStatusFileImpl>>();
+                final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<>();
                 Set<String> configuredGlobusLocations = new CaseInsensitiveHashSet();
                 for (PipelineJobService.GlobusClientProperties globusConfig : PipelineJobService.get().getGlobusClientPropertiesList())
                 {
@@ -260,7 +260,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     public static List<String> checkGlobusConfiguration(GlobusKeyPair keyPair)
     {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (AppProps.getInstance().getBaseServerUrl().indexOf("//localhost") != -1)
         {
             result.add("You have not set your base server URL. Unless the Globus server is running on the same machine" +

@@ -44,7 +44,7 @@
         showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY));
     }
 
-    Map<String, Integer> nameToId = new TreeMap<String, Integer>();
+    Map<String, Integer> nameToId = new TreeMap<>();
     for (ExpProtocol protocol : AssayService.get().getAssayProtocols(ctx.getContainer()))
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);

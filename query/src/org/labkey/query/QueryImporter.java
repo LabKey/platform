@@ -75,8 +75,8 @@ public class QueryImporter implements FolderImporter
 
             // get the list of files and split them into sql and xml file name arrays
             String[] queryFileNames = queriesDir.list();
-            ArrayList<String> sqlFileNames = new ArrayList<String>();
-            Map<String, QueryDocument> metaFilesMap = new HashMap<String, QueryDocument>();
+            ArrayList<String> sqlFileNames = new ArrayList<>();
+            Map<String, QueryDocument> metaFilesMap = new HashMap<>();
             for (String fileName : queryFileNames)
             {
                 if (fileName.endsWith(QueryWriter.FILE_EXTENSION))
@@ -195,7 +195,7 @@ public class QueryImporter implements FolderImporter
 
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
+        List<PipelineJobWarning> warnings = new ArrayList<>();
 
         //validate all queries in all schemas in the container
         ctx.getLogger().info("Post-processing " + getDescription());

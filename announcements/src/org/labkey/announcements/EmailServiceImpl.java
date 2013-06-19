@@ -199,9 +199,9 @@ public class EmailServiceImpl implements EmailService.I
     {
         private String _from;
         private String _subject;
-        private Map<contentType, String> _contentMap = new HashMap<contentType, String>();
-        private Map<String, String> _headers = new HashMap<String, String>();
-        private Map<Message.RecipientType, String[]> _recipients = new HashMap<Message.RecipientType, String[]>();
+        private Map<contentType, String> _contentMap = new HashMap<>();
+        private Map<String, String> _headers = new HashMap<>();
+        private Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
         private List<File> _files;
 
         public EmailMessageImpl(String from, String[] to, String subject)
@@ -304,7 +304,7 @@ public class EmailServiceImpl implements EmailService.I
 
             for (Map.Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
             {
-                List<InternetAddress> addresses = new ArrayList<InternetAddress>();
+                List<InternetAddress> addresses = new ArrayList<>();
 
                 for (String email : entry.getValue())
                     addresses.add(new InternetAddress(email));
@@ -357,7 +357,7 @@ public class EmailServiceImpl implements EmailService.I
     // Sends one or more email messages in a background thread.  Add message(s) to the emailer, then call start().
     public static class BulkEmailer extends Thread
     {
-        private List<EmailMessage> _messages = new ArrayList<EmailMessage>();
+        private List<EmailMessage> _messages = new ArrayList<>();
         private Container _container;
         private User _user;
 

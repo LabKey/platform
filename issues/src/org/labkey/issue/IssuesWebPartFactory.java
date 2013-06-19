@@ -47,6 +47,6 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/issue/issuesCustomize.jsp", webPart);
+        return new JspView<>("/org/labkey/issue/issuesCustomize.jsp", webPart);
     }
 }

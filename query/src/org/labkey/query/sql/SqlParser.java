@@ -93,7 +93,7 @@ public class SqlParser
     // for testing only
     public Tree rawQuery(String str) throws Exception
     {
-        _parseErrors = new ArrayList<Exception>();
+        _parseErrors = new ArrayList<>();
         _SqlParser parser = new _SqlParser(str, _parseErrors);
         ParserRuleReturnScope selectScope = parser.statement();
         if (!_parseErrors.isEmpty())
@@ -104,7 +104,7 @@ public class SqlParser
 
 	public QNode parseQuery(String str, List<? super QueryParseException> errors)
 	{
-		_parseErrors = new ArrayList<Exception>();
+		_parseErrors = new ArrayList<>();
 		try
 		{
  			_SqlParser parser = new _SqlParser(str, _parseErrors);
@@ -139,7 +139,7 @@ public class SqlParser
                 CommonTree parameters;
                 if (parseRoot.getChildCount() == 2)
                 {
-                    _parameters = new ArrayList<QParameter>();
+                    _parameters = new ArrayList<>();
                     parameters = (CommonTree)parseRoot.getChild(0);
                     for (Object parameter : parameters.getChildren())
                     {
@@ -198,7 +198,7 @@ public class SqlParser
 	
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
     {
-        _parseErrors = new ArrayList<Exception>();
+        _parseErrors = new ArrayList<>();
         try
         {
             _SqlParser parser = new _SqlParser(str, _parseErrors);
@@ -629,7 +629,7 @@ public class SqlParser
 
 	private QNode convertParseTree(CommonTree node)
 	{
-		LinkedList<QNode> l = new LinkedList<QNode>();
+		LinkedList<QNode> l = new LinkedList<>();
 		for (int i=0 ; i<node.getChildCount() ; i++)
 		{
             CommonTree child = (CommonTree)node.getChild(i);
@@ -679,7 +679,7 @@ public class SqlParser
                         _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
                     }
-                    LinkedList<QNode> args = new LinkedList<QNode>();
+                    LinkedList<QNode> args = new LinkedList<>();
                     args.add(exprList.childList().get(0));
                     args.add(constantToStringNode(exprList.childList().get(1)));
                     QNode qNodeLength = null;
@@ -699,7 +699,7 @@ public class SqlParser
                         break;
                     }
                     assert exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<QNode>();
+                    LinkedList<QNode> args = new LinkedList<>();
                     args.add(constantToStringNode(exprList.childList().get(0)));
                     args.add(exprList.childList().get(1));
                     args.add(exprList.childList().get(2));
@@ -714,7 +714,7 @@ public class SqlParser
                         break;
                     }
                     assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<QNode>();
+                    LinkedList<QNode> args = new LinkedList<>();
                     args.add(exprList.childList().get(0));
                     args.add(exprList.childList().get(1));
                     if (exprList.childList().size() == 3)
@@ -1350,7 +1350,7 @@ public class SqlParser
 
         private void good(String sql)
         {
-            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            List<QueryParseException> errors = new ArrayList<>();
 			QNode q = (new SqlParser()).parseQuery(sql,errors);
 			if (errors.size() > 0)
 				fail(errors.get(0).getMessage() + "\n" + sql);
@@ -1361,7 +1361,7 @@ public class SqlParser
 
 		private void bad(String sql)
 		{
-			List<QueryParseException> errors = new ArrayList<QueryParseException>();
+			List<QueryParseException> errors = new ArrayList<>();
 			QNode q = (new SqlParser()).parseQuery(sql,errors);
 			if (errors.size() == 0)
 				fail("BAD: " + sql);
@@ -1373,7 +1373,7 @@ public class SqlParser
         {
             for (Pair<String,String> test : parseExprs)
             {
-                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                List<QueryParseException> errors = new ArrayList<>();
                 QExpr e = new SqlParser().parseExpr(test.first,errors);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
@@ -1388,7 +1388,7 @@ public class SqlParser
         {
             for (Pair<String,JdbcType> test : typeExprs)
             {
-                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                List<QueryParseException> errors = new ArrayList<>();
                 QExpr parsed = new SqlParser().parseExpr(test.first,errors);
                 QExpr e = SqlParser.resolveMethods(parsed);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
@@ -1404,7 +1404,7 @@ public class SqlParser
         {
             for (Pair<String,String> test : parseStmts)
             {
-                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                List<QueryParseException> errors = new ArrayList<>();
                 QNode e = new SqlParser().parseQuery(test.first,errors);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());

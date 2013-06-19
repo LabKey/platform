@@ -53,7 +53,7 @@ import java.util.Set;
 public class UsersDomainKind extends SimpleTableDomainKind
 {
     public static final String NAME = "CoreUsersTable";
-    private static final Set<String> _reservedNames = new HashSet<String>();
+    private static final Set<String> _reservedNames = new HashSet<>();
 
     static {
         _reservedNames.add("Email");
@@ -163,7 +163,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
      */
     public Set<String> getWrappedColumns()
     {
-        Set<String> columns = new HashSet<String>();
+        Set<String> columns = new HashSet<>();
 
         columns.add("FirstName");
         columns.add("LastName");
@@ -182,8 +182,8 @@ public class UsersDomainKind extends SimpleTableDomainKind
         try
         {
             scope.ensureTransaction();
-            Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
-            Map<String, Boolean> requiredMap = new HashMap<String, Boolean>();
+            Map<String, DomainProperty> existingProps = new HashMap<>();
+            Map<String, Boolean> requiredMap = new HashMap<>();
             boolean dirty = false;
 
             if (user == null)

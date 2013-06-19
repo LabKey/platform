@@ -50,7 +50,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
             SampleManager.RequestSummaryByVisitType[] countSummary =
                     SampleManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
                             isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
-            Map<String, Row> rows = new TreeMap<String, Row>();
+            Map<String, Row> rows = new TreeMap<>();
             for (SampleManager.RequestSummaryByVisitType count : countSummary)
             {
                 String key = count.getSiteLabel() + "/" + count.getPrimaryType() + "/" +

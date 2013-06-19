@@ -139,7 +139,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
         // Sort based on full container path
-        Set<Study> result = new TreeSet<Study>(new Comparator<Study>()
+        Set<Study> result = new TreeSet<>(new Comparator<Study>()
         {
             @Override
             public int compare(Study s1, Study s2)
@@ -156,7 +156,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     {
         TimepointType timetype = StudyManager.getInstance().getStudy(targetContainer).getTimepointType();
         
-        List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
+        List<PropertyDescriptor> propertyDescriptors = new ArrayList<>();
         for (Map.Entry<String, PropertyType> entry : types.entrySet())
         {
             String pdName = entry.getKey();
@@ -181,8 +181,8 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSet dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
     {
-        List<PropertyDescriptor> targetPds = new ArrayList<PropertyDescriptor>(sourcePds.size());
-        Set<String> legalNames = new HashSet<String>();
+        List<PropertyDescriptor> targetPds = new ArrayList<>(sourcePds.size());
+        Set<String> legalNames = new HashSet<>();
         for (PropertyDescriptor sourcePd : sourcePds)
         {
             PropertyDescriptor targetPd = sourcePd.clone();
@@ -353,7 +353,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                     event.setKey1(targetContainer.getId());
                     event.setContainerId(sourceContainer.getId());
 
-                    Map<String, Object> dataMap = new HashMap<String, Object>();
+                    Map<String, Object> dataMap = new HashMap<>();
                     dataMap.put("datasetId", dataset.getDataSetId());
 
                     dataMap.put("sourceLsid", entry.getKey());
@@ -384,7 +384,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
     {
-        Map<String, int[]> lsidMap = new HashMap<String, int[]>();
+        Map<String, int[]> lsidMap = new HashMap<>();
 
         for (Map<String, Object> map : dataMaps)
         {
@@ -411,7 +411,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     {
         for (Map<String, Object> dataMap : dataMaps)
         {
-            Set<String> lcaseSet = new HashSet<String>();
+            Set<String> lcaseSet = new HashSet<>();
             for (String key : dataMap.keySet())
                 lcaseSet.add(key.toLowerCase());
             assert lcaseSet.contains("participantid") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
@@ -424,10 +424,10 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris)
     {
-        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
+        List<Map<String, Object>> ret = new ArrayList<>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)
         {
-            Map<String, Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
+            Map<String, Object> newMap = new CaseInsensitiveHashMap<>(dataMap.size());
             for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 String uri = propertyNamesToUris.get(entry.getKey());
@@ -496,7 +496,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         }
 
         // we'll return a mapping from column name to column uri
-        Map<String, String> propertyNamesToUris = new CaseInsensitiveHashMap<String>();
+        Map<String, String> propertyNamesToUris = new CaseInsensitiveHashMap<>();
 
         // add ontology properties to our return map
         for (DomainProperty property : domain.getProperties())
@@ -516,14 +516,14 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         // create a set of all columns that will be required, so we can detect
         // if any of these are new
-        Set<String> newPdNames = new TreeSet<String>();
+        Set<String> newPdNames = new TreeSet<>();
         for (Map<String, Object> dataMap : dataMaps)
             newPdNames.addAll(dataMap.keySet());
         if (dataset.getStudy().getTimepointType() != TimepointType.VISIT)  // don't try to create a propertydescriptor for date
             newPdNames.remove("Date");
         newPdNames.remove(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
 
-        Map<String, PropertyDescriptor> typeMap = new HashMap<String, PropertyDescriptor>();
+        Map<String, PropertyDescriptor> typeMap = new HashMap<>();
         for (PropertyDescriptor pd : types)
             typeMap.put(pd.getName(), pd);
 
@@ -929,7 +929,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         try
                         {
                             rs = Table.executeQuery(resultTable.getSchema(), sql);
-                            Map<Integer, AssayPublishKey> keys = new HashMap<Integer, AssayPublishKey>();
+                            Map<Integer, AssayPublishKey> keys = new HashMap<>();
                             while (rs.next())
                             {
                                 // Be careful to not assume that we have participant or visit columns in our data domain
@@ -953,7 +953,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                     keys.put(objectId, key);
                                 }
                             }
-                            List<String> copyErrors = new ArrayList<String>();
+                            List<String> copyErrors = new ArrayList<>();
                             provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
                             return copyErrors;
                         }

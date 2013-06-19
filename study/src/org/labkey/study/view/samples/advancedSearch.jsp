@@ -38,7 +38,7 @@
     String hideExtraColumnsLabel = "Hide extra columns";
     String showExtraColumnsLabel = "Show all columns";
 
-    Set<String> availableColumns = new HashSet<String>();
+    Set<String> availableColumns = new HashSet<>();
     for (DisplayColumn dc : bean.getDisplayColumns())
         availableColumns.add(dc.getColumnInfo().getName());
 %>

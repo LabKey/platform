@@ -184,7 +184,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             addProperty(resultDomain, ddp.name, ddp.label, ddp.type, ddp.description);
         }
 
-        result.add(new Pair<Domain, Map<DomainProperty, Object>>(resultDomain, Collections.<DomainProperty, Object>emptyMap()));
+        result.add(new Pair<>(resultDomain, Collections.<DomainProperty, Object>emptyMap()));
         return result;
     }
 
@@ -193,7 +193,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         Map<String, Set<String>> domainMap = super.getRequiredDomainProperties();
 
-        HashSet<String> domainProperties = new HashSet<String>();
+        HashSet<String> domainProperties = new HashSet<>();
         for (ResultDomainProperty ddp : RESULT_DOMAIN_PROPERTIES)
             domainProperties.add(ddp.name);
         domainMap.put(RESULT_DOMAIN_NAME, domainProperties);
@@ -244,7 +244,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         PropertyDescriptor[] props = new PropertyDescriptor[] {
                 CBCDataProperty.MinValue.getPropertyDescriptor(), CBCDataProperty.MaxValue.getPropertyDescriptor(), CBCDataProperty.Units.getPropertyDescriptor() };
 
-        Map<String, Object> row = new HashMap<String, Object>();
+        Map<String, Object> row = new HashMap<>();
         if (min != null)
             row.put(CBCDataProperty.MinValue.getPropertyDescriptor().getPropertyURI(), min);
         if (max != null)
@@ -275,7 +275,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)
     {
-        return new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
+        return new JspView<>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
     }
 
     public static ActionURL getResultUpdateUrl(ViewContext context)
@@ -326,7 +326,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             throw new NotFoundException("Data '" + dataRowId + "' does not exist.");
         }
 
-        return new JspView<CBCData>("/org/labkey/cbcassay/view/showDetails.jsp", cbcData);
+        return new JspView<>("/org/labkey/cbcassay/view/showDetails.jsp", cbcData);
     }
 
     public PipelineProvider getPipelineProvider()

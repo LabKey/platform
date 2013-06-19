@@ -540,7 +540,7 @@ public class DomainPropertyImpl implements DomainProperty
 
                 if (propRenamed)
                 {
-                    Map<DomainProperty, String> renames = new HashMap<DomainProperty, String>();
+                    Map<DomainProperty, String> renames = new HashMap<>();
                     renames.put(this, _pdOld.getName());
                     StorageProvisioner.renameProperties(this.getDomain(), renames);
                 }
@@ -650,7 +650,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_validators == null)
         {
-            _validators = new ArrayList<PropertyValidatorImpl>();
+            _validators = new ArrayList<>();
             for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
             {
                 _validators.add(new PropertyValidatorImpl(validator));
@@ -663,7 +663,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_formats == null)
         {
-            _formats = new ArrayList<ConditionalFormat>();
+            _formats = new ArrayList<>();
             _formats.addAll(DomainPropertyManager.get().getConditionalFormats(this));
         }
         return _formats;

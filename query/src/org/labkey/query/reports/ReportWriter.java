@@ -49,7 +49,7 @@ public class ReportWriter extends BaseFolderWriter
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        Set<Report> reports = new LinkedHashSet<Report>(Arrays.asList(ReportService.get().getReports(ctx.getUser(), ctx.getContainer())));
+        Set<Report> reports = new LinkedHashSet<>(Arrays.asList(ReportService.get().getReports(ctx.getUser(), ctx.getContainer())));
 
         if (ctx.getClass().equals(FolderExportContext.class))
         {

@@ -44,12 +44,12 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
     public List<GWTSampleSet> getSampleSets()
     {
         ExpSampleSet[] sets = ExperimentService.get().getSampleSets(getContainer(), _context.getUser(), true);
-        List<GWTSampleSet> result = new ArrayList<GWTSampleSet>(sets.length);
+        List<GWTSampleSet> result = new ArrayList<>(sets.length);
         for (ExpSampleSet set : sets)
         {
             GWTSampleSet gwtSet = new GWTSampleSet(set.getName(), set.getLSID());
             gwtSet.setRowId(set.getRowId());
-            List<String> columnNames = new ArrayList<String>();
+            List<String> columnNames = new ArrayList<>();
             for (DomainProperty propertyDescriptor : set.getPropertiesForType())
             {
                 columnNames.add(propertyDescriptor.getName());
@@ -74,7 +74,7 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
         }
 
         ExpMaterial[] materials = set.getSamples();
-        List<GWTMaterial> result = new ArrayList<GWTMaterial>(materials.length);
+        List<GWTMaterial> result = new ArrayList<>(materials.length);
         for (ExpMaterial material : materials)
         {
             GWTMaterial gwtMaterial = new GWTMaterial();

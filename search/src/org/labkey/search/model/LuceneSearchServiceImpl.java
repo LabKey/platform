@@ -1058,11 +1058,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     
 
     private static final String[] standardFields;
-    private static final Map<String, Float> boosts = new HashMap<String, Float>();
+    private static final Map<String, Float> boosts = new HashMap<>();
 
     static
     {
-        Map<FIELD_NAME, Float> enumMap = new HashMap<FIELD_NAME, Float>();
+        Map<FIELD_NAME, Float> enumMap = new HashMap<>();
         enumMap.put(FIELD_NAME.body, 1.0f);
         enumMap.put(FIELD_NAME.keywordsLo, 1.0f);
         enumMap.put(FIELD_NAME.identifiersLo, 1.0f);

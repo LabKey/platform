@@ -58,7 +58,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
         // replace the reportId with the reportName and the reportKey (i.e. schemaName/queryName/viewName)
         if (serializedPropertyMap.containsKey("reportId"))
@@ -88,7 +88,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
         // try to resolve the reportId from the reportName and reportKey
         if (deserializedPropertyMap.containsKey("reportName"))

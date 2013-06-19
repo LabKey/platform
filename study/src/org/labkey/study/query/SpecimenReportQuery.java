@@ -118,7 +118,7 @@ public class SpecimenReportQuery
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo tinfo = qdef.getTable(errors, true);
 
         if (!errors.isEmpty())
@@ -150,7 +150,7 @@ public class SpecimenReportQuery
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo tinfo = qdef.getTable(errors, true);
 
         if (!errors.isEmpty())
@@ -182,7 +182,7 @@ public class SpecimenReportQuery
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo tinfo = qdef.getTable(errors, true);
 
         if (!errors.isEmpty())

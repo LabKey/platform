@@ -121,7 +121,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         try
         {
             // Keep track of all of the runs that have been created by this task
-            Set<ExpRun> importedRuns = new HashSet<ExpRun>();
+            Set<ExpRun> importedRuns = new HashSet<>();
 
             File permanentXAR = _factory.getXarFile(getJob());
             if (NetworkDrive.exists(permanentXAR))

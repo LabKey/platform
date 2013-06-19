@@ -123,7 +123,7 @@ public class SurveyModule extends DefaultModule
     @Override
     public Collection<String> getSummary(Container c)
     {
-        Collection<String> results = new ArrayList<String>();
+        Collection<String> results = new ArrayList<>();
 
         SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.CURRENT);
         if(surveyDesigns.length > 0)
@@ -188,7 +188,7 @@ public class SurveyModule extends DefaultModule
         @Override
         public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
         {
-            return new JspView<Portal.WebPart>("/org/labkey/survey/view/customizeSurveysWebPart.jsp", webPart);
+            return new JspView<>("/org/labkey/survey/view/customizeSurveysWebPart.jsp", webPart);
         }
 
         public WebPartView getWebPartView(ViewContext context, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -243,7 +243,7 @@ public class SurveyModule extends DefaultModule
     @Override
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<Class>();
+        Set<Class> set = new HashSet<>();
         set.add(SurveyManager.TestCase.class);
         return set;
     }

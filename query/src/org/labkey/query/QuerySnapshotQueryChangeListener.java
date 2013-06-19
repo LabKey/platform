@@ -66,7 +66,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
     private void _updateQuerySnapshotQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
-        Map<String, String> queryNameChangeMap = new HashMap<String, String>();
+        Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());

@@ -200,7 +200,7 @@ public class WikiTOC extends NavTreeMenu
         {
             HString path = HString.EMPTY;
             Wiki page = selectedPage;
-            Stack<HString> stkPages = new Stack<HString>();
+            Stack<HString> stkPages = new Stack<>();
 
             page = page.getParentWiki();
 

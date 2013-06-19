@@ -59,7 +59,7 @@ public class StackTraceDisplayColumn extends DataColumn
         out.write("<pre style=\"margin: 4px 0px\">");
         StringBuilder sb = new StringBuilder();
         LineNumberReader reader = new LineNumberReader(new StringReader(stackTrace));
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         String line;
         while ((line = reader.readLine()) != null)
         {

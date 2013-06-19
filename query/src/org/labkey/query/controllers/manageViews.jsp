@@ -52,7 +52,7 @@
     String schemaName = form.getSchemaName().equals("") ? null : form.getSchemaName();
     String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();
-    List<CstmView> views = new ArrayList<CstmView>();
+    List<CstmView> views = new ArrayList<>();
     if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
         views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true)));
@@ -119,7 +119,7 @@
     {
         for (CstmView view : views)
         {
-            List<String> flags = new ArrayList<String>();
+            List<String> flags = new ArrayList<>();
             if (view.getCustomViewId() == 0)
                 flags.add("<em>session</em>");
             if (mgr.canInherit(view.getFlags()))

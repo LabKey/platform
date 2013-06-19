@@ -31,7 +31,7 @@
     CreateWorkbookBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 
-    Set<FolderType> folderTypes = new LinkedHashSet<FolderType>();
+    Set<FolderType> folderTypes = new LinkedHashSet<>();
     for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
     {
         if (folderType.isWorkbookType())

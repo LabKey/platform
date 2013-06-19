@@ -34,7 +34,7 @@ import java.util.*;
  */
 public abstract class URLRewriter
 {
-    protected Map<File, FileInfo> _files = new HashMap<File, FileInfo>();
+    protected Map<File, FileInfo> _files = new HashMap<>();
 
     private boolean _includeXarXml;
 

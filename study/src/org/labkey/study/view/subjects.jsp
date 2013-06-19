@@ -48,7 +48,7 @@
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4"));
         resources.add(ClientDependency.fromFilePath("study/ParticipantFilterPanel.js"));
         return resources;
@@ -158,7 +158,7 @@ li.ptid a.unhighlight
     var _isWide = <%= bean.getWide()%>;
     var _ptids = [<%
         final String[] commas = new String[]{"\n"};
-        final HashMap<String,Integer> ptidMap = new HashMap<String,Integer>();
+        final HashMap<String,Integer> ptidMap = new HashMap<>();
         (new SqlSelector(dbschema, "SELECT participantId FROM study.participant WHERE container=? ORDER BY 1", container)).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             public void exec(ResultSet rs) throws SQLException
@@ -174,7 +174,7 @@ li.ptid a.unhighlight
         int index = 0;
 
         // cohorts
-        final HashMap<Integer,Integer> cohortMap = new HashMap<Integer,Integer>();
+        final HashMap<Integer,Integer> cohortMap = new HashMap<>();
         List<CohortImpl> cohorts = Collections.emptyList();
         if (StudyManager.getInstance().showCohorts(container, user))
             cohorts = StudyManager.getInstance().getCohorts(container, user);
@@ -200,7 +200,7 @@ li.ptid a.unhighlight
         }
 
         // groups/categories
-        final HashMap<Integer,Integer> groupMap = new HashMap<Integer,Integer>();
+        final HashMap<Integer,Integer> groupMap = new HashMap<>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
         ParticipantCategoryImpl[] categories = m.getParticipantCategories(container, user);
         boolean hasGroups = categories.length > 0;

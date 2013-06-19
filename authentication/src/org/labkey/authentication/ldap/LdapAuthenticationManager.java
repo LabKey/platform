@@ -107,7 +107,7 @@ public class LdapAuthenticationManager
     // Careful... blank principal or password will switch to "anonymous bind", meaning it will always succeed
     public static DirContext connectToLdap(String url, @NotNull String principal, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
-        Hashtable<String, String> env = new Hashtable<String, String>();
+        Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, url);
         env.put(Context.SECURITY_AUTHENTICATION, saslAuthentication ? "DIGEST-MD5 CRAM-MD5 GSSAPI" : "simple");

@@ -97,14 +97,14 @@ public class ReportWebdavProvider implements WebdavService.Provider
         public Collection<String> listNames()
         {
             Map<String, Report> map = getReportMap();
-            return new ArrayList<String>(map.keySet());
+            return new ArrayList<>(map.keySet());
         }
 
         private Map<String, Report> getReportMap()
         {
             if (_map == null)
             {
-                _map = new HashMap<String, Report>();
+                _map = new HashMap<>();
                 for (Report report : ReportService.get().getReports(null, _c))
                 {
                     _map.put(report.getDescriptor().getReportName() + ".xml", report);

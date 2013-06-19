@@ -179,7 +179,7 @@ public class FileLinkFileListener implements FileListener
     @Override
     public Collection<File> listFiles(@Nullable Container container)
     {
-        Collection<File> files = new ArrayList<File>();
+        Collection<File> files = new ArrayList<>();
 
         files.addAll(listObjectPropertyFiles(container));
         files.addAll(listHardTableFiles(container));
@@ -213,7 +213,7 @@ public class FileLinkFileListener implements FileListener
 
     private Collection<File> listHardTableFiles(@NotNull final Container container)
     {
-        final Collection<File> files = new ArrayList<File>();
+        final Collection<File> files = new ArrayList<>();
         hardTableFileLinkColumns(new ForEachFileLinkColumn()
         {
             @Override

@@ -78,7 +78,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER)
         };
 
-        BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
+        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
 
         PropertyStorageSpec.Index[] indices = {
           new PropertyStorageSpec.Index(false, QCSTATE),
@@ -86,7 +86,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
           new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY)
         };
 
-        PROPERTY_INDICES = new HashSet<PropertyStorageSpec.Index>(Arrays.asList(indices));
+        PROPERTY_INDICES = new HashSet<>(Arrays.asList(indices));
     }
 
 
@@ -184,7 +184,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new HashSet<PropertyStorageSpec>(BASE_PROPERTIES);
+        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
         specs.addAll(super.getBaseProperties());
         return specs;
     }

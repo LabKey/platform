@@ -194,7 +194,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/study/view/customizeParticipantWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/study/view/customizeParticipantWebPart.jsp", webPart);
     }
 
 }

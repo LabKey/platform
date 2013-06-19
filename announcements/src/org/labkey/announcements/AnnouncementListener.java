@@ -112,7 +112,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
             if (!memberList.contains(user))
             {
                 //find all containers for which this user could have an entry in EmailPrefs
-                List<Container> containerList = new ArrayList<Container>(cProject.getChildren());
+                List<Container> containerList = new ArrayList<>(cProject.getChildren());
                 //add project container to list
                 containerList.add(cProject);
                 MessageConfigManager.deleteUserEmailPref(user, containerList);

@@ -37,8 +37,8 @@
     ViewContext context = HttpView.currentContext();
     List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true).getColumns();
 
-    List<ColumnInfo> systemColumns = new ArrayList<ColumnInfo>();
-    List<ColumnInfo> userColumns = new ArrayList<ColumnInfo>();
+    List<ColumnInfo> systemColumns = new ArrayList<>();
+    List<ColumnInfo> userColumns = new ArrayList<>();
 
     for (ColumnInfo col : allCols)
     {

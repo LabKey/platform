@@ -44,7 +44,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             "^modifiedFields^\n" +
             "^comment^\n" +
             "^attachments^";
-    private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+    private List<ReplacementParam> _replacements = new ArrayList<>();
     private Issue _newIssue;
     private ActionURL _detailsURL;
     private String _change;

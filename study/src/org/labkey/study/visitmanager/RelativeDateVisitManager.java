@@ -235,7 +235,7 @@ public class RelativeDateVisitManager extends VisitManager
                 "WHERE container = ? AND VisitRowId IS NULL");
             sql.add(getStudy().getContainer());
 
-            List<Integer> days = new ArrayList<Integer>();
+            List<Integer> days = new ArrayList<>();
             Table.TableResultSet rs = Table.executeQuery(schema, sql);
 
             try

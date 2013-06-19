@@ -53,7 +53,7 @@ public class AttachmentCache
                     new SimpleFilter("Parent", parent.getEntityId()),
                     new Sort("+RowId")).getCollection(Attachment.class);
 
-            Map<String, Attachment> map = new LinkedHashMap<String, Attachment>(attachments.size());
+            Map<String, Attachment> map = new LinkedHashMap<>(attachments.size());
 
             for (Attachment attachment : attachments)
                 map.put(attachment.getName(), attachment);

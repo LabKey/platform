@@ -57,7 +57,7 @@ public class QueryTable extends QueryRelation
 
     final AliasManager _aliasManager;
     final TableInfo _tableInfo;
-    final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<FieldKey,TableColumn>();
+    final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
     String _innerAlias;
 
     Boolean _generateSelectSQL = null;
@@ -130,7 +130,7 @@ public class QueryTable extends QueryRelation
     protected Map<String,RelationColumn> getAllColumns()
     {
         List<ColumnInfo> columns = _tableInfo.getColumns();
-        LinkedHashMap<String,RelationColumn> map = new LinkedHashMap<String,RelationColumn>(columns.size()*2);
+        LinkedHashMap<String,RelationColumn> map = new LinkedHashMap<>(columns.size()*2);
         for (ColumnInfo ci : columns)
         {
             if (ci.isUnselectable())
@@ -262,9 +262,9 @@ public class QueryTable extends QueryRelation
     private SQLFragment _getSql()
     {
         // set of non-lookup columns
-        Set<FieldKey> tableColumns = new TreeSet<FieldKey>();
+        Set<FieldKey> tableColumns = new TreeSet<>();
 
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<>();
         SQLFragment sql = new SQLFragment();
 
         String selectName = _tableInfo.getSelectName();
@@ -425,7 +425,7 @@ public class QueryTable extends QueryRelation
 
             if (null == _mapOutputColToTableColumn)
             {
-                _mapOutputColToTableColumn = new TreeMap<FieldKey, RelationColumn>();
+                _mapOutputColToTableColumn = new TreeMap<>();
                 _query.qtableColumnMaps.put(QueryTable.this, _mapOutputColToTableColumn);
             }
             _mapOutputColToTableColumn.put(to.getFieldKey(), this);
@@ -506,8 +506,8 @@ public class QueryTable extends QueryRelation
         if (_query._strictColumnList)
             return Collections.emptySet();
 
-        Set<RelationColumn> suggested = new HashSet<RelationColumn>();
-        Set<FieldKey> suggestedContainerColumns = new HashSet<FieldKey>();
+        Set<RelationColumn> suggested = new HashSet<>();
+        Set<FieldKey> suggestedContainerColumns = new HashSet<>();
 
         for (RelationColumn rc : selected)
         {

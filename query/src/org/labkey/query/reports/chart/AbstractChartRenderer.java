@@ -107,7 +107,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
 
     protected Map<String, String> getLabelMap(QueryView view)
     {
-        Map<String, String> labelMap = new CaseInsensitiveHashMap<String>();
+        Map<String, String> labelMap = new CaseInsensitiveHashMap<>();
         if (view != null)
         {
             for (DisplayColumn column : view.getDisplayColumns())
@@ -130,7 +130,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
 
     protected Map<String, String> getDisplayColumns(QueryView view, boolean isNumber, boolean isDate)
     {
-        List<ColumnInfo> columns = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> columns = new ArrayList<>();
         for (DisplayColumn col : view.getDisplayColumns())
         {
             ColumnInfo prop = col.getColumnInfo();
@@ -160,7 +160,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
             }
         });
 
-        Map<String, String> displayColumns = new LinkedHashMap<String, String>();
+        Map<String, String> displayColumns = new LinkedHashMap<>();
         for (ColumnInfo col : columns)
             displayColumns.put(col.getLabel(), col.getAlias());
 

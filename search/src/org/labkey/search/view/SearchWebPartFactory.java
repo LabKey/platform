@@ -52,7 +52,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/search/view/customizeSearchWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/search/view/customizeSearchWebPart.jsp", webPart);
     }
 
 

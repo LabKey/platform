@@ -57,7 +57,7 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
         if (_runProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            _runProperties = new HashMap<DomainProperty, String>();
+            _runProperties = new HashMap<>();
 
             if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
@@ -77,7 +77,7 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
         if (_uploadSetProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            _uploadSetProperties = new HashMap<DomainProperty, String>();
+            _uploadSetProperties = new HashMap<>();
 
             if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {

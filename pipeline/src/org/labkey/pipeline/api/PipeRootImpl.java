@@ -293,7 +293,7 @@ public class PipeRootImpl implements PipeRoot
     public Set<Class<? extends Permission>> getRelevantPermissions()
     {
         //TODO: review this--what are the relevant permissions for a pipeline root?
-        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> perms = new HashSet<>();
         perms.add(ReadPermission.class);
         perms.add(InsertPermission.class);
         perms.add(UpdatePermission.class);
@@ -348,7 +348,7 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public List<String> validate()
     {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         int i = 0;
         for (File rootPath : getRootPaths())
         {

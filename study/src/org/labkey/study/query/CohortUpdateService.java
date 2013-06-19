@@ -87,7 +87,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
         cohort.savePropertyBag(row);
 
-        Map<String,Object> keys = new HashMap<String,Object>();
+        Map<String,Object> keys = new HashMap<>();
         keys.put("rowId", cohort.getRowId());
 
         try

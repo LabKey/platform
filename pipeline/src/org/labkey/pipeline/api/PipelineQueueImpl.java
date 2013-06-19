@@ -49,12 +49,12 @@ public class PipelineQueueImpl implements PipelineQueue
     private static Logger _log = Logger.getLogger(PipelineQueueImpl.class);
     private int MAX_RUNNING_JOBS = 10;
 
-    List<PipelineJob> _pending = new ArrayList<PipelineJob>();
-    List<PipelineJob> _running = new ArrayList<PipelineJob>();
+    List<PipelineJob> _pending = new ArrayList<>();
+    List<PipelineJob> _running = new ArrayList<>();
 
     // This is the list of jobs that have been submitted to JobRunner-- they
     // may be either running or pending.
-    HashSet<PipelineJob> _submitted = new HashSet<PipelineJob>();
+    HashSet<PipelineJob> _submitted = new HashSet<>();
 
     JobRunner _runner = new JobRunner(MAX_RUNNING_JOBS);
 
@@ -139,7 +139,7 @@ public class PipelineQueueImpl implements PipelineQueue
     {
         if (_pending.size() == 0)
             return;
-        HashSet<String> containers = new HashSet<String>();
+        HashSet<String> containers = new HashSet<>();
         boolean singleThreadedJobFound = false;
         for (PipelineJob job : _submitted)
         {
@@ -226,7 +226,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
         // For the mini-pipeline the only location is the default location.
         // Just return an empty list for any other location that is requested.
-        List<PipelineJob> result = new ArrayList<PipelineJob>();
+        List<PipelineJob> result = new ArrayList<>();
         if (location.equals(locationDefault))
         {
             for (PipelineJob job : _pending)

@@ -31,9 +31,9 @@
 
 <table>
 <%
-List<List<ObjectProperty>> stack = new ArrayList<List<ObjectProperty>>();
-stack.add(new ArrayList<ObjectProperty>(form.getCustomProperties().values()));
-List<Integer> indices = new ArrayList<Integer>();
+List<List<ObjectProperty>> stack = new ArrayList<>();
+stack.add(new ArrayList<>(form.getCustomProperties().values()));
+List<Integer> indices = new ArrayList<>();
 indices.add(0);
 
 while (!stack.isEmpty())
@@ -59,7 +59,7 @@ while (!stack.isEmpty())
         }
         if (value.retrieveChildProperties().size() > 0)
         {
-            stack.add(new ArrayList<ObjectProperty>(value.retrieveChildProperties().values()));
+            stack.add(new ArrayList<>(value.retrieveChildProperties().values()));
             indices.add(0);
         }
     }

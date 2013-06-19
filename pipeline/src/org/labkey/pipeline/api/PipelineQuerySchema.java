@@ -36,7 +36,7 @@ public class PipelineQuerySchema extends UserSchema
 
     static
     {
-        Set<String> names = new TreeSet<String>();
+        Set<String> names = new TreeSet<>();
         names.add(JOB_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
@@ -132,7 +132,7 @@ public class PipelineQuerySchema extends UserSchema
                 }
             });
 
-            List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+            List<FieldKey> defaultCols = new ArrayList<>();
             defaultCols.add(FieldKey.fromParts("Status"));
             defaultCols.add(FieldKey.fromParts("Created"));
             if (getContainer().isRoot())

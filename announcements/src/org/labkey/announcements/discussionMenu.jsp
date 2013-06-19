@@ -45,7 +45,7 @@
     URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
-    Set<String> menuItems = new HashSet<String>();
+    Set<String> menuItems = new HashSet<>();
 
     if (me.allowMultipleDiscussions)
     {

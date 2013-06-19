@@ -104,7 +104,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			if (_schemaNames == null)
 			{
 				DefaultSchema folderSchema = DefaultSchema.get(null, _c);
-				ArrayList<String> names = new ArrayList<String>();
+				ArrayList<String> names = new ArrayList<>();
 				Set<SchemaKey> keys = folderSchema.getUserSchemaPaths();
 				if (null != keys)
                     for (SchemaKey key : keys)
@@ -156,7 +156,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		public Collection<String> listNames()
 		{
 			Map<String, QueryDefinition> m = QueryService.get().getQueryDefs(null, _parent._c, getName());
-			ArrayList<String> list = new ArrayList<String>(m.size());
+			ArrayList<String> list = new ArrayList<>(m.size());
 			for (String name : m.keySet())
 				list.add(name + ".sql");
 			return list;

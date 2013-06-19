@@ -70,7 +70,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     {
         int regionWidth = lowerRight.getColumn() - upperLeft.getColumn() + 1;
         int regionHeight = lowerRight.getRow() - upperLeft.getRow();
-        List<Position> allPositions = new ArrayList<Position>(regionWidth * regionHeight);
+        List<Position> allPositions = new ArrayList<>(regionWidth * regionHeight);
         for (int col = upperLeft.getColumn(); col <= lowerRight.getColumn(); col++)
         {
             for (int row = upperLeft.getRow(); row <= lowerRight.getRow(); row++)
@@ -97,17 +97,17 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     protected WellGroupTemplate storeWellGroup(WellGroupTemplateImpl template)
     {
         if (_groups == null)
-            _groups = new HashMap<WellGroup.Type, Map<String, WellGroupTemplateImpl>>();
+            _groups = new HashMap<>();
         Map<String, WellGroupTemplateImpl> templatesByType = _groups.get(template.getType());
         if (templatesByType == null)
         {
-            templatesByType = new LinkedHashMap<String, WellGroupTemplateImpl>();
+            templatesByType = new LinkedHashMap<>();
             _groups.put(template.getType(), templatesByType);
         }
         templatesByType.put(template.getName(), template);
         if (!wellGroupsInOrder(templatesByType))
         {
-            List<WellGroupTemplateImpl> sortedWellGroups = new ArrayList<WellGroupTemplateImpl>();
+            List<WellGroupTemplateImpl> sortedWellGroups = new ArrayList<>();
             sortedWellGroups.addAll(templatesByType.values());
             Collections.sort(sortedWellGroups, new PlateManager.WellGroupTemplateComparator());
             templatesByType.clear();
@@ -142,7 +142,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
 
     public List<? extends WellGroupTemplateImpl> getWellGroups(Position position)
     {
-        List<WellGroupTemplateImpl> groups = new ArrayList<WellGroupTemplateImpl>();
+        List<WellGroupTemplateImpl> groups = new ArrayList<>();
         for (WellGroupTemplateImpl template : getWellGroupTemplates())
         {
             if (template.contains(position))
@@ -168,7 +168,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
 
     public List<WellGroupTemplateImpl> getWellGroupTemplates()
     {
-        List<WellGroupTemplateImpl> allGroupTemplates = new ArrayList<WellGroupTemplateImpl>();
+        List<WellGroupTemplateImpl> allGroupTemplates = new ArrayList<>();
         if (_groups != null)
         {
             for (Map<String, WellGroupTemplateImpl> typedGroupTemplates : _groups.values())

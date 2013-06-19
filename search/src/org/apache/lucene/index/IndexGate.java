@@ -26,7 +26,7 @@ import java.util.HashMap;
  *
  */
 public class IndexGate {
-  static HashMap<String, String> knownExtensions = new HashMap<String, String>();
+  static HashMap<String, String> knownExtensions = new HashMap<>();
 
   // old version constants
   public static final int OLD_FORMAT = -1;

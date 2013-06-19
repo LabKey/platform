@@ -75,7 +75,7 @@ public class UploadSamplesHelper
             try
             {
                 ColumnDescriptor[] cds = _form.getLoader().getColumns();
-                Map<Integer, String> ret = new LinkedHashMap<Integer, String>();
+                Map<Integer, String> ret = new LinkedHashMap<>();
                 if (allowBlank)
                 {
                     ret.put(-1, "");
@@ -198,14 +198,14 @@ public class UploadSamplesHelper
             }
 
             boolean usingNameAsUniqueColumn = false;
-            List<String> idColPropertyURIs = new ArrayList<String>();
+            List<String> idColPropertyURIs = new ArrayList<>();
             if (_materialSource != null && _materialSource.getIdCol1() != null)
             {
                 usingNameAsUniqueColumn = getIdColPropertyURIs(_materialSource, idColPropertyURIs);
             }
             else
             {
-                idColPropertyURIs = new ArrayList<String>();
+                idColPropertyURIs = new ArrayList<>();
                 if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= columns.length)
                     throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
 
@@ -276,7 +276,7 @@ public class UploadSamplesHelper
 
             // Remember the actual set of properties that we received, so we don't end up deleting
             // unspecified values
-            Set<PropertyDescriptor> descriptors = new HashSet<PropertyDescriptor>();
+            Set<PropertyDescriptor> descriptors = new HashSet<>();
             descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
 
             Set<String> newNames = new CaseInsensitiveHashSet();
@@ -308,7 +308,7 @@ public class UploadSamplesHelper
                 }
             }
 
-            Set<String> reusedMaterialLSIDs = new HashSet<String>();
+            Set<String> reusedMaterialLSIDs = new HashSet<>();
             if (_materialSource == null)
             {
                 assert _form.isCreateNewSampleSet();
@@ -384,7 +384,7 @@ public class UploadSamplesHelper
                         String newComment = (String)map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
                         if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
                         {
-                            Map<String, Object> newMap = new HashMap<String, Object>(map);
+                            Map<String, Object> newMap = new HashMap<>(map);
                             newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
                             li.set(newMap);
                         }
@@ -416,7 +416,7 @@ public class UploadSamplesHelper
             ExperimentService.get().getSchema().getScope().closeConnection();
         }
 
-        return new Pair<MaterialSource, List<ExpMaterial>>(_materialSource, materials);
+        return new Pair<>(_materialSource, materials);
     }
 
     private boolean isNameHeader(String name)
@@ -572,7 +572,7 @@ public class UploadSamplesHelper
                 {
                     // Need to create a new derivation run
                     List<ExpMaterial> parentMaterials = resolveParentMaterials(newParent, potentialParents);
-                    Map<ExpMaterial, String> parentMap = new HashMap<ExpMaterial, String>();
+                    Map<ExpMaterial, String> parentMap = new HashMap<>();
                     int index = 1;
                     for (ExpMaterial parentMaterial : parentMaterials)
                     {
@@ -601,7 +601,7 @@ public class UploadSamplesHelper
 
     private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
     {
-        List<ExpMaterial> parents = new ArrayList<ExpMaterial>();
+        List<ExpMaterial> parents = new ArrayList<>();
 
         String[] parentNames = newParent.split(",");
         for (String parentName : parentNames)
@@ -669,12 +669,12 @@ public class UploadSamplesHelper
         private User _user;
         private MaterialSource _source;
         private final Set<String> _reusedMaterialLSIDs;
-        private List<ExpMaterial> _materials = new ArrayList<ExpMaterial>();
+        private List<ExpMaterial> _materials = new ArrayList<>();
 
         MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
         {
             _container = container;
-            _idCols = new ArrayList<String>();
+            _idCols = new ArrayList<>();
             getIdColPropertyURIs(source, _idCols);
             _source = source;
             _user = user;

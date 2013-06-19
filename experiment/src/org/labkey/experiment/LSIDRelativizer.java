@@ -176,7 +176,7 @@ public enum LSIDRelativizer
     {
         private final LSIDRelativizer _relativizer;
 
-        private Map<String, String> _lsids = new HashMap<String, String>();
+        private Map<String, String> _lsids = new HashMap<>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;

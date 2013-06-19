@@ -376,7 +376,7 @@ public class PipelineStatusManager
             }
         }
 
-        List<PipelineStatusFileImpl> result = new ArrayList<PipelineStatusFileImpl>();
+        List<PipelineStatusFileImpl> result = new ArrayList<>();
         TaskPipelineRegistry registry = PipelineJobService.get();
         for (TaskFactory taskFactory : registry.getTaskFactories())
         {
@@ -506,7 +506,7 @@ public class PipelineStatusManager
         try
         {
             scope.ensureTransaction();
-            Set<Integer> ids = new HashSet<Integer>(rowIds.length);
+            Set<Integer> ids = new HashSet<>(rowIds.length);
             for (int rowId : rowIds)
             {
                 ids.add(rowId);
@@ -538,7 +538,7 @@ public class PipelineStatusManager
 
         // Use a set instead of a list since the incoming set of rowIds may contain child and parent jobs, and
         // we don't want to double-log the deletion of the child jobs
-        Set<PipelineStatusFile> deleteable = new HashSet<PipelineStatusFile>();
+        Set<PipelineStatusFile> deleteable = new HashSet<>();
         for (int rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
@@ -588,7 +588,7 @@ public class PipelineStatusManager
                     .append("WHERE JobId IN (");
 
             String separator = "";
-            List<Object> params = new ArrayList<Object>();
+            List<Object> params = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
                 // Allow the provider to do any necessary clean-up

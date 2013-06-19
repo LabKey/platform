@@ -127,7 +127,7 @@ public class JunitController extends SpringActionController
         {
             List<Class> testClasses = getTestClasses(form);
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
-            List<Result> results = new LinkedList<Result>();
+            List<Result> results = new LinkedList<>();
 
             for (Class testClass : testClasses)
             {
@@ -149,7 +149,7 @@ public class JunitController extends SpringActionController
                 return JunitManager.getTestCases().get(module);
 
             Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
-            List<Class> testClasses = new LinkedList<Class>();
+            List<Class> testClasses = new LinkedList<>();
             String testCase = form.getTestCase();
 
             if (null == testCase || 0 != testCase.length())
@@ -197,7 +197,7 @@ public class JunitController extends SpringActionController
                 List<Class> testClasses = getTestClasses(form);
                 TestContext.setTestContext(getViewContext().getRequest(), getUser());
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
-                results = new LinkedList<Result>();
+                results = new LinkedList<>();
                 HttpServletResponse response = getViewContext().getResponse();
                 response.setContentType("text/plain");
 
@@ -226,7 +226,7 @@ public class JunitController extends SpringActionController
             if (null != module)
                 return JunitManager.getTestCases().get(module);
 
-            List<Class> testClasses = new LinkedList<Class>();
+            List<Class> testClasses = new LinkedList<>();
             String testCase = form.getTestCase();
 
             if (null == testCase || 0 != testCase.length())
@@ -264,7 +264,7 @@ public class JunitController extends SpringActionController
             if (null != module)
                 return JunitManager.getTestCases().get(module);
 
-            List<Class> testClasses = new LinkedList<Class>();
+            List<Class> testClasses = new LinkedList<>();
             String testCase = form.getTestCase();
 
             if (null == testCase || 0 != testCase.length())
@@ -287,7 +287,7 @@ public class JunitController extends SpringActionController
         protected StatusReportingRunnable newStatusReportingRunnable()
         {
             List<Class> testClasses = getTestClasses(new TestForm());
-            List<Result> results = new LinkedList<Result>();
+            List<Result> results = new LinkedList<>();
             return new JunitRunnable(testClasses, results, getViewContext().getRequest(), getUser());
         }
     }
@@ -346,10 +346,10 @@ public class JunitController extends SpringActionController
         {
             Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
-            Map<String, List<Map<String, Object>>> values = new HashMap<String, List<Map<String, Object>>>();
+            Map<String, List<Map<String, Object>>> values = new HashMap<>();
             for (String module : testCases.keySet())
             {
-                List<Map<String, Object>> tests = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> tests = new ArrayList<>();
                 values.put("Remote " + module, tests);
                 for (Class<Object> clazz : testCases.get(module))
                 {
@@ -361,7 +361,7 @@ public class JunitController extends SpringActionController
                         timeout = testTimeout.value();
                     }
                     // Send back both the class name and the timeout
-                    Map<String, Object> testClass = new HashMap<String, Object>();
+                    Map<String, Object> testClass = new HashMap<>();
                     testClass.put("className", clazz.getName());
                     testClass.put("timeout", timeout);
                     tests.add(testClass);
@@ -390,7 +390,7 @@ public class JunitController extends SpringActionController
             if (!result.wasSuccessful())
                 status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
 
             map.put("runCount", result.getRunCount());
             map.put("failureCount", result.getFailureCount());
@@ -415,11 +415,11 @@ public class JunitController extends SpringActionController
 
         private static List<Map<String, Object>> toList(List<Failure> failures)
         {
-            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>(failures.size());
+            List<Map<String, Object>> list = new ArrayList<>(failures.size());
 
             for (Failure failure : failures)
             {
-                Map<String, Object> map = new HashMap<String, Object>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("failedTest", failure.getTestHeader());
                 map.put("isFailure", true);
                 //noinspection ThrowableResultOfMethodCallIgnored
@@ -483,7 +483,7 @@ public class JunitController extends SpringActionController
     }
 
 
-    private static final LinkedList<String> list = new LinkedList<String>();
+    private static final LinkedList<String> list = new LinkedList<>();
     private static final Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -540,7 +540,7 @@ public class JunitController extends SpringActionController
 
     private static class TestResultView extends HttpView
     {
-        private final List<Failure> _failures = new LinkedList<Failure>();
+        private final List<Failure> _failures = new LinkedList<>();
         private int _runCount = 0;
         private int _failureCount = 0;
 

@@ -49,7 +49,7 @@ public class WikiTree
         _rowId = rowId;
         _name = name;
         _title = title;
-        _children = new LinkedHashSet<WikiTree>();
+        _children = new LinkedHashSet<>();
     }
 
     public int getRowId()

@@ -90,7 +90,7 @@ public class AnalysisController extends SpringActionController
             try
             {
                 _taskPipeline = PipelineJobService.get().getTaskPipeline(new TaskId(analyzeForm.getTaskId()));
-                return new JspView<ActionURL>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
+                return new JspView<>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
             }
             catch (ClassNotFoundException e)
             {
@@ -188,7 +188,7 @@ public class AnalysisController extends SpringActionController
                         }
                         ParamParser parser = PipelineJobService.get().createParamParser();
                         JSONObject o = new JSONObject(form.getConfigureJson());
-                        Map<String, String> params = new HashMap<String, String>();
+                        Map<String, String> params = new HashMap<>();
                         for (Map.Entry<String, Object> entry : o.entrySet())
                         {
                             params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());

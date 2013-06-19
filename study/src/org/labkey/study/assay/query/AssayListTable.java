@@ -73,7 +73,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         });
         addColumn(typeColumn);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Name"));
         defaultCols.add(FieldKey.fromParts("Description"));
         defaultCols.add(FieldKey.fromParts("Type"));

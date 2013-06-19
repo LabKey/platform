@@ -44,7 +44,7 @@ public class RepositorySettings
     private boolean _simple;
     private boolean _enableRequests;
     private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
-    private Map<String, String> _mapOldNamesToNewNames = new HashMap<String, String>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
+    private Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
 
     private Container _container;
 
@@ -128,7 +128,7 @@ public class RepositorySettings
     {
         // List of groupings
         //      Each grouping is a list of Strings that name the columns
-        ArrayList<String[]> groupings = new ArrayList<String[]>(2);
+        ArrayList<String[]> groupings = new ArrayList<>(2);
         for (int i = 0; i < 2; i += 1)      // Only 2 grouping supported
         {
             String[] grouping = new String[3];

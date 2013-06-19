@@ -118,7 +118,7 @@ public class DatasetFileReader
         }
 
         DataSetDefinition[] dsArray = _studyManager.getDataSetDefinitions(_study);
-        HashMap<String, DataSetDefinition> dsMap = new HashMap<String, DataSetDefinition>(dsArray.length * 3);
+        HashMap<String, DataSetDefinition> dsMap = new HashMap<>(dsArray.length * 3);
         // UNDONE: duplicate labels? dataset named participant?
         for (DataSetDefinition ds : dsArray)
         {
@@ -142,7 +142,7 @@ public class DatasetFileReader
         DataSetDefinition dsParticipant = new DataSetDefinition(_study, -1, "Participant", "Participant", null, null, "StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
-        IdentityHashMap<DataSetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<DataSetDefinition, DatasetImportRunnable>();
+        IdentityHashMap<DataSetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<>();
 
         //
         // load defaults
@@ -280,7 +280,7 @@ public class DatasetFileReader
                 runnable._tsvName = name;
         }
 
-        _runnables = new ArrayList<DatasetImportRunnable>(jobMap.values());
+        _runnables = new ArrayList<>(jobMap.values());
         Collections.sort(_runnables, new Comparator<DatasetImportRunnable>()
         {
             public int compare(DatasetImportRunnable j1, DatasetImportRunnable j2)
@@ -370,8 +370,8 @@ public class DatasetFileReader
      */
     public static class OneToOneStringMap extends AbstractMap<String,String>
     {
-        private final CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<Pair<String,String>>();
-        private final CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<Pair<String,String>>();
+        private final CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<>();
+        private final CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<>();
 
         @Override
         public String get(Object key)
@@ -391,7 +391,7 @@ public class DatasetFileReader
         @Override
         public String put(String key, String value)
         {
-            Pair<String,String> p = new Pair<String,String>(key,value);
+            Pair<String,String> p = new Pair<>(key,value);
             String ret = _remove(p).getValue();
             _put(p);
             return ret;
@@ -419,7 +419,7 @@ public class DatasetFileReader
                     valMap.remove(oldKey);
             }
 
-            return new Pair<String,String>(oldKey,oldValue);
+            return new Pair<>(oldKey,oldValue);
         }
 
 
@@ -461,7 +461,7 @@ public class DatasetFileReader
 
         public Set<Entry<String, String>> entrySet()
         {
-            Set<Entry<String,String>> set = new HashSet<Entry<String,String>>();
+            Set<Entry<String,String>> set = new HashSet<>();
             set.addAll(keyMap.values());
             return Collections.unmodifiableSet(set);
         }

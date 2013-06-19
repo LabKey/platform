@@ -277,7 +277,7 @@ public class VisitMapImporter
         // NOTE: the only visit map setting for now is REQUIRED/OPTIONAL so...
         Container container = study.getContainer();
         Map<VisitMapKey, Boolean> requiredMapCurr = StudyManager.getInstance().getRequiredMap(study);
-        Map<VisitMapKey, Boolean> requiredMapNew = new HashMap<VisitMapKey, Boolean>();
+        Map<VisitMapKey, Boolean> requiredMapNew = new HashMap<>();
 
         for (VisitMapRecord record : records)
         {
@@ -327,11 +327,11 @@ public class VisitMapImporter
     private void saveDataSets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
         DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
-        Set<Integer> existingSet = new HashSet<Integer>();
+        Set<Integer> existingSet = new HashSet<>();
         for (DataSet def : defs)
             existingSet.add(def.getDataSetId());
 
-        Set<Integer> addDatasetIds = new HashSet<Integer>();
+        Set<Integer> addDatasetIds = new HashSet<>();
         for (VisitMapRecord record : records)
         {
             for (int id : record.getRequiredPlates())

@@ -68,7 +68,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     private static class SpecimenDataRegion extends DataRegion
     {
-        private Map<String, ColumnInfo> _requiredColumns = new HashMap<String, ColumnInfo>();
+        private Map<String, ColumnInfo> _requiredColumns = new HashMap<>();
 
         @Override
         protected boolean isErrorRow(RenderContext ctx, int rowIndex)
@@ -105,7 +105,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         protected List<String> getRequiredColumns()
         {
-            List<String> cols = new ArrayList<String>();
+            List<String> cols = new ArrayList<>();
             cols.add("QualityControlFlag");
             return cols;
         }
@@ -438,9 +438,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
         if (null  == _availableSpecimenCounts)
             try
             {
-                _availableSpecimenCounts = new HashMap<String, Integer>();
+                _availableSpecimenCounts = new HashMap<>();
                 ResultSet rs = ctx.getResultSet();
-                Set<String> specimenHashes = new HashSet<String>();
+                Set<String> specimenHashes = new HashSet<>();
                 int originalRow = rs.getRow();
                 rs.last();
                 if (rs.getRow() - originalRow < 1000)
@@ -456,7 +456,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         if (specimenHashes.size() > 150)
                         {
                             _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
-                            specimenHashes = new HashSet<String>();
+                            specimenHashes = new HashSet<>();
                         }
                     }
                     while(rs.next());
@@ -517,7 +517,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         if (participantDatasets != null && participantDatasets.length > 0)
         {
             StringBuilder whereClause = new StringBuilder();
-            List<Object> params = new ArrayList<Object>();
+            List<Object> params = new ArrayList<>();
             String sep = "";
             for (ParticipantDataset pd : participantDatasets)
             {
@@ -658,7 +658,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (_showRecordSelectors)
             {
                 if (null == _hiddenFormFields)
-                    _hiddenFormFields = new HashMap<String, String>();
+                    _hiddenFormFields = new HashMap<>();
                 _hiddenFormFields.put("fromGroupedView", Boolean.TRUE.toString());
             }
         }
@@ -803,7 +803,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public void addHiddenFormField(String name, String value)
     {
         if (_hiddenFormFields == null)
-            _hiddenFormFields = new HashMap<String, String>();
+            _hiddenFormFields = new HashMap<>();
         _hiddenFormFields.put(name, value);
     }
 
@@ -854,7 +854,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             rs = rgn.getResultSet(renderContext);
             List<DisplayColumn> allColumns = getExportColumns(rgn.getDisplayColumns());
-            List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+            List<DisplayColumn> columns = new ArrayList<>();
             for (DisplayColumn col : allColumns)
             {
                 if (col.shouldRender(renderContext))

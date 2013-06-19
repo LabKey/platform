@@ -44,14 +44,14 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
         @Override
         protected Stack<Map> initialValue()
         {
-            return new Stack<Map>();
+            return new Stack<>();
         }
     };
 
 
     public FormattedHtml getSubstitution(Map<String, String> params)
     {
-        params = new CaseInsensitiveHashMap<String>(params);
+        params = new CaseInsensitiveHashMap<>(params);
         Stack<Map> stack = _paramsStack.get();
 
         if (stack.contains(params))

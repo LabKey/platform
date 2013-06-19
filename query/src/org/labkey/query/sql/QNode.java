@@ -49,7 +49,7 @@ abstract public class QNode implements Cloneable
 	private int _column;
 
 	private Class _validChildrenClass = QNode.class;
-	private LinkedList<QNode> _children = new LinkedList<QNode>();
+	private LinkedList<QNode> _children = new LinkedList<>();
 
 	protected QNode()
 	{
@@ -165,7 +165,7 @@ abstract public class QNode implements Cloneable
 	public void removeChildren()
 	{
 		if (!_children.isEmpty())
-			_children = new LinkedList<QNode>();
+			_children = new LinkedList<>();
 	}
 
     public String getTokenText()
@@ -182,7 +182,7 @@ abstract public class QNode implements Cloneable
     {
         if (null == a)
             return null;
-        HashMap<String,Object> annotations = new HashMap<String,Object>();
+        HashMap<String,Object> annotations = new HashMap<>();
         for (Map.Entry<String,Object> e : a.entrySet())
             annotations.put(e.getKey(), constant(e.getValue()));
         return annotations;
@@ -225,7 +225,7 @@ abstract public class QNode implements Cloneable
         try
         {
             QNode ret = (QNode) super.clone();
-			ret._children = new LinkedList<QNode>();
+			ret._children = new LinkedList<>();
             return ret;
         }
         catch (CloneNotSupportedException e)
@@ -317,7 +317,7 @@ abstract public class QNode implements Cloneable
 
     public void dump(PrintWriter out)
     {
-        dump(out, "\n", new IdentityHashMap<Object,Object>());
+        dump(out, "\n", new IdentityHashMap<>());
         out.println();
     }
 
@@ -351,7 +351,7 @@ abstract public class QNode implements Cloneable
         SqlParser parser = new SqlParser();
         private QNode p(String x)
         {
-            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            List<QueryParseException> errors = new ArrayList<>();
             QNode node = parser.parseExpr(x, errors);
             assertTrue(errors.isEmpty());
             return node;

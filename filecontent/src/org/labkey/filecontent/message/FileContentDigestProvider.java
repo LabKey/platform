@@ -67,7 +67,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     public List<Container> getContainersWithNewMessages(Date start, Date end) throws Exception
     {
         List<AuditLogEvent> events = getAuditEvents(null, start, end);
-        Set<Container> containers = new HashSet<Container>();
+        Set<Container> containers = new HashSet<>();
 
         for (AuditLogEvent event : events)
         {
@@ -97,7 +97,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     public void sendDigest(Container c, Date min, Date max) throws Exception
     {
         List<AuditLogEvent> events = getAuditEvents(c, min, max);
-        Map<Path, List<AuditLogEvent>> recordMap = new LinkedHashMap<Path, List<AuditLogEvent>>();
+        Map<Path, List<AuditLogEvent>> recordMap = new LinkedHashMap<>();
 
         // group audit events by webdav resource
         for (AuditLogEvent event : events)
@@ -131,7 +131,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
             if (users != null && users.length > 0)
             {
-                List<EmailMessage> messages = new ArrayList<EmailMessage>();
+                List<EmailMessage> messages = new ArrayList<>();
 
                 for (User user : users)
                 {
@@ -140,9 +140,9 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                             new String[]{user.getEmail()}, subject);
 
                     msg.addContent(EmailMessage.contentType.HTML, request,
-                            new JspView<FileDigestForm>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
+                            new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
                     msg.addContent(EmailMessage.contentType.PLAIN, request,
-                            new JspView<FileDigestForm>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
+                            new JspView<>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
 
                     messages.add(msg);
                 }
@@ -168,7 +168,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     private User[] getUsersToEmail(Container c) throws Exception
     {
-        List<User> users = new ArrayList<User>();
+        List<User> users = new ArrayList<>();
         String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
         int folderDefault = NumberUtils.toInt(pref);
 

@@ -189,7 +189,7 @@ public class PipelineCommandTestCase extends Assert
         final PipelineJob j = _context.mock(PipelineJob.class);
         _context.checking(new Expectations() {{
             allowing(j).getParameters();
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put("test, boolean to switch", "yes");
             params.put("test, value with switch", "testing");
             params.put("test, value to switch with multi args", "testing2 100 -999");
@@ -212,7 +212,7 @@ public class PipelineCommandTestCase extends Assert
         final PipelineJob j2 = _context.mock(PipelineJob.class, "job2");
         _context.checking(new Expectations() {{
             allowing(j2).getParameters();
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put("test, boolean to switch", "no");
             params.put("test, value with switch", null);
             params.put("test, value to switch with multi args", "");

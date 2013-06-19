@@ -52,7 +52,7 @@ import java.util.Set;
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
     private boolean _allowUnregisteredUser;
-    private Map<String, Set<String>> _recipientMap = new HashMap<String, Set<String>>();
+    private Map<String, Set<String>> _recipientMap = new HashMap<>();
 
     enum Props
     {

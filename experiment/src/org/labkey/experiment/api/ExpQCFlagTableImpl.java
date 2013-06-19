@@ -40,7 +40,7 @@ import java.util.Map;
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
     private ExpProtocol _assayProtocol;
-    private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<String>();
+    private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
     public ExpQCFlagTableImpl(String name, UserSchema schema)
     {

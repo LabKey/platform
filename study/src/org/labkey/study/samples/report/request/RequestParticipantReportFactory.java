@@ -72,7 +72,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> inputs = new ArrayList<>();
         inputs.addAll(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;
@@ -100,7 +100,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
                 return Collections.<SpecimenVisitReport>emptyList();
         }
 
-        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        List<SpecimenVisitReport> reports = new ArrayList<>();
         Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visit
         boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
         List<VisitImpl> allVisits = null;

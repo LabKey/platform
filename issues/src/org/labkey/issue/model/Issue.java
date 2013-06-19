@@ -73,7 +73,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected Integer int1;
     protected Integer int2;
 
-    protected List<Comment> _comments = new ArrayList<Comment>();
+    protected List<Comment> _comments = new ArrayList<>();
     protected List<Comment> _added = null;
 
     protected String _notifyList;
@@ -467,7 +467,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Collection<Issue.Comment> getComments()
     {
-        List<Issue.Comment> result = new ArrayList<Issue.Comment>(_comments);
+        List<Issue.Comment> result = new ArrayList<>(_comments);
         final Sort.SortDirection sort = IssueManager.getCommentSortDirection(ContainerManager.getForId(getContainerId()));
         Collections.sort(result, new Comparator<Comment>()
         {
@@ -522,7 +522,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
         _comments.add(comment);
         if (null == _added)
-            _added = new ArrayList<Issue.Comment>(1);
+            _added = new ArrayList<>(1);
         _added.add(comment);
         return comment;
     }
@@ -539,7 +539,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void parseNotifyList(String notifyList)
     {
         String[] names = StringUtils.split(StringUtils.trimToEmpty(notifyList), ";\n");
-        ArrayList<String> parsed = new ArrayList<String>();
+        ArrayList<String> parsed = new ArrayList<>();
         for (String name : names)
         {
             if (null == (name = StringUtils.trimToNull(name)))
@@ -562,7 +562,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public List<String> getNotifyListDisplayNames(User user)
     {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         String[] raw = StringUtils.split(null == _notifyList ? "" :_notifyList, ";\n");
         for (String id : raw)
         {
@@ -593,7 +593,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public List<ValidEmail> getNotifyListEmail()
     {
-        ArrayList<ValidEmail> ret = new ArrayList<ValidEmail>();
+        ArrayList<ValidEmail> ret = new ArrayList<>();
         String[] raw = StringUtils.split(null == _notifyList ? "" : _notifyList, ";\n");
         for (String id : raw)
         {

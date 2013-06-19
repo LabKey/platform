@@ -205,7 +205,7 @@ public class PathMapperImpl implements PathMapper
         @Test
         public void testCaseSensitiveMapping()
         {
-            Map<String, String> m = new HashMap<String, String>();
+            Map<String, String> m = new HashMap<>();
             m.put("file:/T:/edi", "file:/home/edi");
             m.put("file:/T:/data", "file:/data");
             PathMapper mapper = new PathMapperImpl(m, false, false);
@@ -223,7 +223,7 @@ public class PathMapperImpl implements PathMapper
         @Test
         public void testCaseInsensitiveMapping()
         {
-            Map<String, String> m = new HashMap<String, String>();
+            Map<String, String> m = new HashMap<>();
             m.put("file:/T:/edi", "file:/home/edi");
             m.put("file:/T:/data", "file:/data");
             PathMapper mapper = new PathMapperImpl(m, true, true);
@@ -240,7 +240,7 @@ public class PathMapperImpl implements PathMapper
         @Test
         public void testLongestPrefixMapping()
         {
-            Map<String, String> m = new LinkedHashMap<String, String>();
+            Map<String, String> m = new LinkedHashMap<>();
             m.put("file:/T:", "file:/home/stedi");
             m.put("file:/T:/data", "file:/data");
             m.put("file:/T:/edi", "file:/home/edi");

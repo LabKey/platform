@@ -222,7 +222,7 @@ public class DesignerController extends SpringActionController
         {
             if (null == form.getPanel()) //Old code to handle deprecated case of designs not affiliated with studies
             {
-                Map<String, String> params = new HashMap<String,String>();
+                Map<String, String> params = new HashMap<>();
                 params.put("studyId", Integer.toString(form.getStudyId()));
                 StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
                 //If url is to source container and we've moved to study folder throw the new container
@@ -318,13 +318,13 @@ public class DesignerController extends SpringActionController
     {
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            List<Map<String,Object>> participantGroup = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> participantGroup = new ArrayList<>();
             int participantNum = 1;
             for (GWTCohort cohort : getStudyDefinition(form).getGroups())
             {
                 for (int i = 0; i < cohort.getCount(); i++)
                 {
-                    HashMap<String,Object> hm = new HashMap<String,Object>();
+                    HashMap<String,Object> hm = new HashMap<>();
                     hm.put("SubjectId", participantNum++);
                     hm.put("Cohort", cohort.getName());
                     hm.put("StartDate", form.getBeginDate());
@@ -468,10 +468,10 @@ public class DesignerController extends SpringActionController
                     break;
                 case CONFIRM:
                     //Put visitids back on uploaded participant info...
-                    List<Map<String,Object>> participantMaps = new ArrayList<Map<String, Object>>(getParticipants().size());
+                    List<Map<String,Object>> participantMaps = new ArrayList<>(getParticipants().size());
                     for (int i = 0; i < getParticipants().size(); i++)
                     {
-                        HashMap<String, Object> newMap = new HashMap<String, Object>(getParticipants().get(i));
+                        HashMap<String, Object> newMap = new HashMap<>(getParticipants().get(i));
                         newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
                         participantMaps.add(newMap);
                     }
@@ -485,7 +485,7 @@ public class DesignerController extends SpringActionController
             titleForNav = form.getWizardStep().getTitle();
             if (titleForNav == null)
                 titleForNav = form.getStudyName();
-            return new JspView<CreateRepositoryForm>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
+            return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -584,9 +584,9 @@ public class DesignerController extends SpringActionController
         }
         TabLoader loader = new TabLoader(form.getParticipantTSV(), true);
         fixupParticipantCols(loader);
-        List<String> errors = new ArrayList<String>();
-        Set<String> participants = new HashSet<String>();
-        Map<String,Integer> cohortCounts = new CaseInsensitiveHashMap<Integer>();
+        List<String> errors = new ArrayList<>();
+        Set<String> participants = new HashSet<>();
+        Map<String,Integer> cohortCounts = new CaseInsensitiveHashMap<>();
         GWTStudyDefinition def = getStudyDefinition(form);
         for (GWTCohort group : def.getGroups())
             cohortCounts.put(group.getName(), 0);
@@ -660,7 +660,7 @@ public class DesignerController extends SpringActionController
     private static void fixupParticipantCols(TabLoader loader) throws IOException
     {
         ColumnDescriptor[] loaderCols = loader.getColumns();
-        Map<String, ColumnDescriptor> colMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
+        Map<String, ColumnDescriptor> colMap = new CaseInsensitiveHashMap<>();
         for (ColumnDescriptor col : PARTICIPANT_COLS)
             colMap.put(col.name, col);
         colMap.put("ptid", colMap.get("ParticipantId"));
@@ -713,7 +713,7 @@ public class DesignerController extends SpringActionController
     private void handleUploadSamples(CreateRepositoryForm form)
             throws SQLException, IOException
     {
-        Set<String> errors = new LinkedHashSet<String>();
+        Set<String> errors = new LinkedHashSet<>();
         String specimenTSV = StringUtils.trimToNull(form.getSpecimenTSV());
         if (null == specimenTSV)
         {
@@ -747,7 +747,7 @@ public class DesignerController extends SpringActionController
 
         List<Map<String, Object>> specimenRows = loader.load();
         setSpecimens(specimenRows);
-        Set<String> participants = new HashSet<String>();
+        Set<String> participants = new HashSet<>();
         int rowNum = 1;
         for (Map<String,Object> row : specimenRows)
         {

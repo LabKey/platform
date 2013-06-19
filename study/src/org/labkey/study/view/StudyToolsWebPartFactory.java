@@ -64,7 +64,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
         protected List<StudyToolsWebPart.Item> getItems(ViewContext portalCtx)
         {
             String iconBase = portalCtx.getContextPath() + "/study/tools/";
-            List<StudyToolsWebPart.Item> items = new ArrayList<StudyToolsWebPart.Item>();
+            List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
             ActionURL vialSearchURL = new ActionURL(ShowSearchAction.class, portalCtx.getContainer());
             vialSearchURL.addParameter("showVials", true);
@@ -101,7 +101,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
         protected List<StudyToolsWebPart.Item> getItems(ViewContext portalCtx)
         {
             String iconBase = portalCtx.getContextPath() + "/study/tools/";
-            List<StudyToolsWebPart.Item> items = new ArrayList<StudyToolsWebPart.Item>();
+            List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
             URLHelper timeChartURL = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(portalCtx.getContainer());
             items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timeline_chart.png", timeChartURL));
@@ -120,7 +120,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 
         private StudyToolsWebPart.Item getParticipantListItem(ViewContext context, String noun, String iconBase)
         {
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(context.getContainer()));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(context.getContainer()));
             Portal.PortalPage participantPage = pages.get(StudyFolderTabs.ParticipantsPage.PAGE_ID);
             if (null != participantPage && !participantPage.isHidden())
             {

@@ -70,7 +70,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         if (_commands == null)
             _commands = new TaskId[0];
 
-        ArrayList<FileType> types = new ArrayList<FileType>();
+        ArrayList<FileType> types = new ArrayList<>();
         // Output type is allowed as an initial type, but this conversion will
         // be skipped, if the input is of the desired output type.
         types.add(_outputType);
@@ -132,7 +132,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
 
     public List<String> getProtocolActionNames()
     {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (TaskId tid : _commands)
         {
             TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);

@@ -493,7 +493,7 @@ public class PlateManager implements PlateService.Service
                 try
                 {
                     rs = Table.executeQuery(schema, "SELECT DISTINCT Name FROM " + schema.getName() + "." + plateTable.getName(), null);
-                    _distinctTemplateNames = new HashSet<String>();
+                    _distinctTemplateNames = new HashSet<>();
                     while (rs.next())
                         _distinctTemplateNames.add(rs.getString("Name"));
                 }
@@ -570,7 +570,7 @@ public class PlateManager implements PlateService.Service
 
     public List<PlateTypeHandler> getPlateTypeHandlers()
     {
-        List<PlateTypeHandler> result = new ArrayList<PlateTypeHandler>(_plateTypeHandlers.values());
+        List<PlateTypeHandler> result = new ArrayList<>(_plateTypeHandlers.values());
         Collections.sort(result, new Comparator<PlateTypeHandler>()
         {
             public int compare(PlateTypeHandler o1, PlateTypeHandler o2)
@@ -717,7 +717,7 @@ public class PlateManager implements PlateService.Service
             destination.setProperty(property, source.getProperty(property));
         for (WellGroupTemplate originalGroup : source.getWellGroups())
         {
-            List<Position> positions = new ArrayList<Position>();
+            List<Position> positions = new ArrayList<>();
             for (Position position : originalGroup.getPositions())
                 positions.add(destination.getPosition(position.getRow(), position.getColumn()));
             WellGroupTemplate copyGroup = destination.addWellGroup(originalGroup.getName(), originalGroup.getType(), positions);

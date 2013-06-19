@@ -139,14 +139,14 @@ public class SampleSearchBean
         SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
                 SpecimenQueryView.ViewType.SUMMARY);
 
-        _displayColumns = new ArrayList<DisplayColumn>();
+        _displayColumns = new ArrayList<>();
         for (DisplayColumn dc : view.getDisplayColumns())
             if (dc.getColumnInfo() != null)
                 _displayColumns.add(dc);
         _dataRegionName = view.getDataRegionName();
         _baseViewURL = view.getBaseViewURL();
 
-        _defaultDetailCols = new HashMap<String, DisplayColumnInfo>();
+        _defaultDetailCols = new HashMap<>();
         _defaultDetailCols.put("PrimaryType", new DisplayColumnInfo(true, true));
         _defaultDetailCols.put("AdditiveType", new DisplayColumnInfo(true, true));
         DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
@@ -164,7 +164,7 @@ public class SampleSearchBean
         _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));
         _defaultDetailCols.put("Clinic", new DisplayColumnInfo(true, true));
 
-        _defaultSummaryCols = new HashMap<String, DisplayColumnInfo>();
+        _defaultSummaryCols = new HashMap<>();
         _defaultSummaryCols.put("PrimaryType", new DisplayColumnInfo(true, true));
         _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
         _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));

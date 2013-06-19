@@ -199,7 +199,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             // select the base 'comments' column (our bound column is an exprcolumn that doesn't simply select the base value):
             FieldKey commentsHashKey = new FieldKey(me.getParent(), "Comments");
             FieldKey participantCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.COLUMN_NAME);
-            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            Set<FieldKey> fieldKeys = new HashSet<>();
             fieldKeys.add(specimenHashKey);
             fieldKeys.add(commentsHashKey);
             fieldKeys.add(participantCommentKey);
@@ -225,7 +225,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 List<SpecimenComment> commentList = hashToComments.get(comment.getSpecimenHash());
                 if (commentList == null)
                 {
-                    commentList = new ArrayList<SpecimenComment>();
+                    commentList = new ArrayList<>();
                     hashToComments.put(comment.getSpecimenHash(), commentList);
                 }
                 commentList.add(comment);
@@ -237,15 +237,15 @@ public class SpecimenSummaryTable extends BaseStudyTable
         {
             if (_commentCache == null)
             {
-                Set<String> columns = new HashSet<String>();
+                Set<String> columns = new HashSet<>();
                 columns.add("Comments");
                 columns.add("SpecimenHash");
                 ResultSet rs = null;
                 try
                 {
                     rs = Table.select(_summaryTable, columns, ctx.getBaseFilter(), ctx.getBaseSort());
-                    Set<String> hashes = new HashSet<String>();
-                    Map<String, List<SpecimenComment>> hashToComments = new HashMap<String, List<SpecimenComment>>();
+                    Set<String> hashes = new HashSet<>();
+                    Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
                     while (rs.next())
                     {
                         String maxPossibleCount = rs.getString("Comments");
@@ -260,7 +260,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                     }
                     addComments(ctx.getContainer(), hashes, hashToComments);
 
-                    _commentCache = new HashMap<String, String>();
+                    _commentCache = new HashMap<>();
                     for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
                     {
                         List<SpecimenComment> commentList = entry.getValue();
@@ -282,7 +282,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             StringBuilder builder = new StringBuilder();
             if (comments != null && comments.length > 0)
             {
-                Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();
+                Map<String, List<String>> commentToIds = new TreeMap<>();
                 for (SpecimenComment comment : comments)
                 {
                     if (comment.getComment() != null)
@@ -290,7 +290,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                         List<String> ids = commentToIds.get(comment.getComment());
                         if (ids == null)
                         {
-                            ids = new ArrayList<String>();
+                            ids = new ArrayList<>();
                             commentToIds.put(comment.getComment(), ids);
                         }
                         ids.add(comment.getGlobalUniqueId());

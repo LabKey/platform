@@ -35,16 +35,16 @@ public class FileResolver implements Replacer
 {
     private final File _rootDir;
 
-    private Map<String, List<File>> _unusedFileNames = new HashMap<String, List<File>>();
-    private Map<String, List<String>> _unusedFileNameVariations = new HashMap<String, List<String>>();
-    private Map<String, List<String>> _unusedFileBaseNames = new HashMap<String, List<String>>();
+    private Map<String, List<File>> _unusedFileNames = new HashMap<>();
+    private Map<String, List<String>> _unusedFileNameVariations = new HashMap<>();
+    private Map<String, List<String>> _unusedFileBaseNames = new HashMap<>();
 
-    private Set<String> _fileNamesToAdvance = new HashSet<String>();
-    private Set<String> _fileNameVariationsToAdvance = new HashSet<String>();
-    private Set<String> _fileBaseNamesToAdvance = new HashSet<String>();
+    private Set<String> _fileNamesToAdvance = new HashSet<>();
+    private Set<String> _fileNameVariationsToAdvance = new HashSet<>();
+    private Set<String> _fileBaseNamesToAdvance = new HashSet<>();
 
-    private Map<File, String> _relativePathsCache = new HashMap<File, String>();
-    private Map<File, File[]> _dirContentsCache = new HashMap<File, File[]>();
+    private Map<File, String> _relativePathsCache = new HashMap<>();
+    private Map<File, File[]> _dirContentsCache = new HashMap<>();
 
     public FileResolver(File rootDir)
     {
@@ -62,14 +62,14 @@ public class FileResolver implements Replacer
                 throw new XarFormatException("No files found for FileBaseName filter " + filter);
             }
 
-            nameVariations = new ArrayList<String>(files.size());
+            nameVariations = new ArrayList<>(files.size());
             if (files.size() == 1)
             {
                 nameVariations.add("");
             }
             else
             {
-                List<String> names = new ArrayList<String>(files.size());
+                List<String> names = new ArrayList<>(files.size());
                 for (File f : files)
                 {
                     names.add(f.getName());
@@ -187,7 +187,7 @@ public class FileResolver implements Replacer
             allFiles = dir.listFiles();
             _dirContentsCache.put(dir, allFiles);
         }
-        List<File> result = new ArrayList<File>();
+        List<File> result = new ArrayList<>();
         if (allFiles != null)
         {
             for (File f : allFiles)
@@ -203,7 +203,7 @@ public class FileResolver implements Replacer
 
     private List<File> calculateFileList(String fullFilter) throws XarFormatException
     {
-        List<File> result = new ArrayList<File>();
+        List<File> result = new ArrayList<>();
         String[] filters = fullFilter.split(";");
         for (String filter : filters)
         {
@@ -327,7 +327,7 @@ public class FileResolver implements Replacer
 
             List<File> files = calculateFileList(originalFilter);
 
-            names = new ArrayList<String>(files.size());
+            names = new ArrayList<>(files.size());
             for (File f : files)
             {
                 try

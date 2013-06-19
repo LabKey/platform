@@ -44,7 +44,7 @@ final ViewContext context = HttpView.currentContext();
 Container c = context.getContainerNoTab();
 FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
-List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
 {
     public int compare(Module o1, Module o2)

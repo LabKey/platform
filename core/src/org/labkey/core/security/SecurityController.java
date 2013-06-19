@@ -479,7 +479,7 @@ public class SecurityController extends SpringActionController
 
     private HttpView getGroupsView(Container container, Group expandedGroup, BindException errors, List<String> messages)
     {
-        JspView<GroupsBean> groupsView = new JspView<GroupsBean>("/org/labkey/core/security/groups.jsp", new GroupsBean(getViewContext(), expandedGroup, messages), errors);
+        JspView<GroupsBean> groupsView = new JspView<>("/org/labkey/core/security/groups.jsp", new GroupsBean(getViewContext(), expandedGroup, messages), errors);
         if (null == container || container.isRoot())
             groupsView.setTitle("Site Groups");
         else
@@ -688,14 +688,14 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(ProjectAction.class, container));
 
-            List<String> messages = new ArrayList<String>();
+            List<String> messages = new ArrayList<>();
 
             //check for new users to add.
             String[] addNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
 
             // split the list of names to add into groups and users (emails)
-            List<Group> addGroups = new ArrayList<Group>();
-            List<String> emails = new ArrayList<String>();
+            List<Group> addGroups = new ArrayList<>();
+            List<String> emails = new ArrayList<>();
             for (String name : addNames)
             {
                 // check for the groupId in the global group list or in the project
@@ -713,7 +713,7 @@ public class SecurityController extends SpringActionController
                 }
             }
 
-            List<String> invalidEmails = new ArrayList<String>();
+            List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> addEmails = SecurityManager.normalizeEmails(emails, invalidEmails);
 
             for (String rawEmail : invalidEmails)
@@ -728,7 +728,7 @@ public class SecurityController extends SpringActionController
             invalidEmails.clear();
             
             // delete group members by ID (can be both groups and users)
-            List<UserPrincipal> removeIds = new ArrayList<UserPrincipal>();
+            List<UserPrincipal> removeIds = new ArrayList<>();
             if (removeNames != null && removeNames.length > 0)
             {
                 for (String removeName : removeNames)
@@ -769,7 +769,7 @@ public class SecurityController extends SpringActionController
                             && !form.isConfirmed())
                     {
                         //display warning form, including users to delete and add
-                        HttpView<UpdateMembersBean> v = new JspView<UpdateMembersBean>("/org/labkey/core/security/deleteUser.jsp", new UpdateMembersBean());
+                        HttpView<UpdateMembersBean> v = new JspView<>("/org/labkey/core/security/deleteUser.jsp", new UpdateMembersBean());
 
                         UpdateMembersBean bean = v.getModelBean();
                         bean.addnames = addNames;
@@ -789,7 +789,7 @@ public class SecurityController extends SpringActionController
                 if (addGroups.size() > 0 || addEmails.size() > 0)
                 {
                     // add new users
-                    List<User> addUsers = new ArrayList<User>(addEmails.size());
+                    List<User> addUsers = new ArrayList<>(addEmails.size());
                     for (ValidEmail email : addEmails)
                     {
                         String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix(), null);
@@ -1023,7 +1023,7 @@ public class SecurityController extends SpringActionController
 
             Collection<User> validUsers = SecurityManager.getValidPrincipals(form.getGroup(), UserManager.getActiveUsers());
 
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getViewContext().getUser(), true, false))
                 completions.add(completion.toJSON());
@@ -1056,7 +1056,7 @@ public class SecurityController extends SpringActionController
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
                 completions.add(completion.toJSON());
@@ -1084,8 +1084,8 @@ public class SecurityController extends SpringActionController
             List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(UserController.getUserColumnNames(getUser(), c));
             rgn.setColumns(columns);
             RenderContext ctx = new RenderContext(getViewContext());
-            List<Integer> userIds = new ArrayList<Integer>();
-            final List<Pair<Integer, String>> memberGroups = new ArrayList<Pair<Integer, String>>();
+            List<Integer> userIds = new ArrayList<>();
+            final List<Pair<Integer, String>> memberGroups = new ArrayList<>();
             for (Pair<Integer, String> member : members)
             {
                 Group g = SecurityManager.getGroup(member.getKey());
@@ -1109,7 +1109,7 @@ public class SecurityController extends SpringActionController
                     RenderContext ctx = new RenderContext(HttpView.currentContext());
                     for (Pair<Integer, String> memberGroup : memberGroups)
                     {
-                        Map<String, Object> row = new CaseInsensitiveHashMap<Object>();
+                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
                         row.put("displayName", memberGroup.getValue());
                         row.put("userId", memberGroup.getKey());
                         ctx.setRow(row);
@@ -1133,8 +1133,8 @@ public class SecurityController extends SpringActionController
 
         public ModelAndView getView(GroupAccessForm form, BindException errors) throws Exception
         {
-            List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
-            Set<Container> containersInList = new HashSet<Container>();
+            List<UserController.AccessDetailRow> rows = new ArrayList<>();
+            Set<Container> containersInList = new HashSet<>();
             _requestedGroup = form.getGroupFor(getContainer());
             if (_requestedGroup != null)
             {
@@ -1144,7 +1144,7 @@ public class SecurityController extends SpringActionController
                 }
 
                 List<Container> projects = getContainer().isRoot() ? getContainer().getChildren() : Collections.singletonList(getContainer().getProject());
-                Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
+                Map<Container, Group[]> projectGroupCache = new HashMap<>();
                 buildAccessDetailList(projects, rows, containersInList, _requestedGroup, 0, projectGroupCache, form.getShowAll());
             }
             else
@@ -1155,10 +1155,10 @@ public class SecurityController extends SpringActionController
             accessForm.setShowAll(form.getShowAll());
             accessForm.setShowCaption("show all folders");
             accessForm.setHideCaption("hide unassigned folders");
-            view.addView(new JspView<SecurityController.FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
+            view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
 
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, false);
-            view.addView(new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors));
+            view.addView(new JspView<>("/org/labkey/core/user/userAccess.jsp", bean, errors));
             return view;
         }
 
@@ -1172,7 +1172,7 @@ public class SecurityController extends SpringActionController
             {
                 if (child != null)
                 {
-                    Map<String, List<Group>> groupAccessGroups = new TreeMap<String, List<Group>>();
+                    Map<String, List<Group>> groupAccessGroups = new TreeMap<>();
                     SecurityPolicy policy = child.getPolicy();
                     Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
                     roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
@@ -1458,7 +1458,7 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(AddUsersForm form, BindException errors) throws Exception
         {
             String[] rawEmails = form.getNewUsers() == null ? null : form.getNewUsers().split("\n");
-            List<String> invalidEmails = new ArrayList<String>();
+            List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
             User userToClone = null;
 
@@ -1490,15 +1490,15 @@ public class SecurityController extends SpringActionController
                     errors.addError(new FormattedError("Failed to create user " + PageFlowUtil.filter(rawEmail.trim()) + ": Invalid email address"));
             }
 
-            List<Pair<String, String>> extraParams = new ArrayList<Pair<String, String>>(2);
+            List<Pair<String, String>> extraParams = new ArrayList<>(2);
             if (form.isSkipProfile())
-                extraParams.add(new Pair<String, String>("skipProfile", "1"));
+                extraParams.add(new Pair<>("skipProfile", "1"));
 
             URLHelper returnURL = null;
 
             if (null != form.getReturnUrl())
             {
-                extraParams.add(new Pair<String, String>(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource()));
+                extraParams.add(new Pair<>(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource()));
                 returnURL = form.getReturnURLHelper();
             }
 
@@ -1853,14 +1853,14 @@ public class SecurityController extends SpringActionController
             VBox view = new VBox();
             form.setShowCaption("show all users");
             form.setHideCaption("hide unassigned users");
-            view.addView(new JspView<FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", form));
+            view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", form));
 
-            List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
+            List<UserController.AccessDetailRow> rows = new ArrayList<>();
             Collection<User> activeUsers = UserManager.getActiveUsers();
             buildAccessDetailList(activeUsers, rows, form.showAll());
             Collections.sort(rows); // the sort is done using the user display name
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
-            view.addView(new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors));
+            view.addView(new JspView<>("/org/labkey/core/user/userAccess.jsp", bean, errors));
             
             view.addView(GroupAuditViewFactory.getInstance().createFolderView(getViewContext(), getContainer()));
             return view;
@@ -1877,7 +1877,7 @@ public class SecurityController extends SpringActionController
             for (User user : activeUsers)
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
-                Map<String, List<Group>> userAccessGroups = new TreeMap<String, List<Group>>();
+                Map<String, List<Group>> userAccessGroups = new TreeMap<>();
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms

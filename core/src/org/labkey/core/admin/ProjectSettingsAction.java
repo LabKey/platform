@@ -390,7 +390,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         public List<NavTree> getTabList()
         {
             ActionURL url = new AdminController.AdminUrlsImpl().getProjectSettingsURL(getViewContext().getContainer());
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
+            List<NavTree> tabs = new ArrayList<>(2);
 
             tabs.add(new TabInfo("Properties", "properties", url));
             tabs.add(new TabInfo("Resources", "resources", url));
@@ -411,12 +411,12 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 if ("resources".equals(tabId))
                 {
                     LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
-                    return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
+                    return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
                 }
                 else if ("properties".equals(tabId))
                 {
                     LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
-                    return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
+                    return new JspView<>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
                 }
                 else if ("menubar".equals(tabId))
                 {
@@ -446,7 +446,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         }
                     }
                     VBox box = new VBox();
-                    box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
+                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
 
                     // only site admins can configure the pipeline root
                     if (getViewContext().getUser().isAdministrator())
@@ -476,7 +476,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     }
 
                     // add the folder tree view to show all folders and file content settings for this project
-                    box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
+                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
                     
                     return box;
                 }

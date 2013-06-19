@@ -413,7 +413,7 @@ public class ParticipantGroupController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             try
             {
-                Set<String> ptids = new LinkedHashSet<String>();
+                Set<String> ptids = new LinkedHashSet<>();
 
                 QuerySettings settings = form.getQuerySettings();
                 ActionURL url = new ActionURL();
@@ -511,12 +511,12 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(BrowseGroupsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<JSONObject> groups = new ArrayList<JSONObject>();
+            List<JSONObject> groups = new ArrayList<>();
 
             for (String type : form.getType())
             {
                 GroupType groupType = GroupType.valueOf(type);
-                Set<String> selectedParticipants = new HashSet<String>();
+                Set<String> selectedParticipants = new HashSet<>();
                 switch(groupType)
                 {
                     case participantGroup:
@@ -572,7 +572,7 @@ public class ParticipantGroupController extends BaseStudyController
         {
             if (form.isIncludePrivateGroups() || category.isShared())
             {
-                Set<String> selectedParticipants = new HashSet<String>();
+                Set<String> selectedParticipants = new HashSet<>();
 
                 for (ParticipantGroup group : category.getGroups())
                 {
@@ -603,7 +603,7 @@ public class ParticipantGroupController extends BaseStudyController
             if (_allParticipants == null)
                 _allParticipants = StudyManager.getInstance().getParticipantIds(_study);
 
-            Set<String> participants = new HashSet<String>();
+            Set<String> participants = new HashSet<>();
             participants.addAll(Arrays.asList(_allParticipants));
 
             return !CollectionUtils.isEqualCollection(selectedParticipants, Arrays.asList(_allParticipants));
@@ -619,7 +619,7 @@ public class ParticipantGroupController extends BaseStudyController
         private int _categoryId;
         private String _filters;
         private String _description;
-        private Set<String> _participantIds = new HashSet<String>();
+        private Set<String> _participantIds = new HashSet<>();
         private ParticipantCategoryImpl _category;
         private Integer _createdBy;
         private Integer _modifiedBy;
@@ -757,7 +757,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     public static class GroupsForm implements CustomApiForm
     {
-        private List<Group> _groups = new ArrayList<Group>();
+        private List<Group> _groups = new ArrayList<>();
 
         public List<Group> getGroups()
         {
@@ -824,7 +824,7 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(GroupsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            Map<String, Set<String>> categoryToSubjectMap = new HashMap<String, Set<String>>();
+            Map<String, Set<String>> categoryToSubjectMap = new HashMap<>();
 
             for (GroupsForm.Group group : form.getGroups())
             {
@@ -860,7 +860,7 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             // we want to OR subjects within a category and AND them across categories
-            Collection<String> subjects = new ArrayList<String>();
+            Collection<String> subjects = new ArrayList<>();
             for (Set<String> participants : categoryToSubjectMap.values())
             {
                 if (!subjects.isEmpty())
@@ -873,7 +873,7 @@ public class ParticipantGroupController extends BaseStudyController
                     subjects.addAll(participants);
             }
 
-            List<String> sortedSubjects = new ArrayList<String>();
+            List<String> sortedSubjects = new ArrayList<>();
             sortedSubjects.addAll(subjects);
 
             Collections.sort(sortedSubjects);
@@ -897,7 +897,7 @@ public class ParticipantGroupController extends BaseStudyController
             if(!form.getParticipantCategorySpecification().isNew())
             {
                 ParticipantGroup[] participantGroups  = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
-                Set<String> formParticipants = new HashSet<String>(Arrays.asList(form.getParticipantIds()));
+                Set<String> formParticipants = new HashSet<>(Arrays.asList(form.getParticipantIds()));
                 
                 for(ParticipantGroup group : participantGroups)
                 {

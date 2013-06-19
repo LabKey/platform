@@ -71,7 +71,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
         User user = ctx.getUser();
         Container container = ctx.getContainer();
         ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
-        Set<ParticipantCategoryImpl> categoriesToCopy = new HashSet<ParticipantCategoryImpl>();
+        Set<ParticipantCategoryImpl> categoriesToCopy = new HashSet<>();
 
         for (ParticipantGroup pg : _groupsToCopy)
         {

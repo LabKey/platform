@@ -46,7 +46,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ThumbnailServiceImpl implements ThumbnailService
 {
     private static final Logger LOG = Logger.getLogger(ThumbnailServiceImpl.class);
-    private static final BlockingQueue<DynamicThumbnailProvider> QUEUE = new LinkedBlockingQueue<DynamicThumbnailProvider>(1000);
+    private static final BlockingQueue<DynamicThumbnailProvider> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final ThumbnailGeneratingThread THREAD = new ThumbnailGeneratingThread();
 
     static

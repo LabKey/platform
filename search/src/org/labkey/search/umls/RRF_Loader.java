@@ -173,11 +173,11 @@ public class RRF_Loader extends Job
 
         String sqlInsert = sbInsert.toString();
         int count=0;
-        ArrayList<Collection<String>> paramList = new ArrayList<Collection<String>>();
+        ArrayList<Collection<String>> paramList = new ArrayList<>();
         while (it.hasNext())
         {
             String[] strs = it.next();
-            ArrayList<String> params = new ArrayList<String>(colCount);
+            ArrayList<String> params = new ArrayList<>(colCount);
             for (int i=0 ; i<colCount ; i++)
                 params.add(i<strs.length ? StringUtils.trimToNull(strs[i]) : null);
             
@@ -220,7 +220,7 @@ public class RRF_Loader extends Job
         });
 
         CaseInsensitiveHashSet nameSet = new CaseInsensitiveHashSet();
-        ArrayList<NavTree> links = new ArrayList<NavTree>();
+        ArrayList<NavTree> links = new ArrayList<>();
 
         RRF_Reader.MergeIterator concept = new RRF_Reader.MergeIterator(names, defs, types);
         int count = 0;
@@ -278,7 +278,7 @@ public class RRF_Loader extends Job
             String title = CUI + " " + StringUtils.defaultString(preferredSTR, STR);
             String body = sbSemanticTypes.toString() + "\n" + sbDefinition.toString();
 
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
             map.put(SearchService.PROPERTY.categories.toString(), UmlsController.umlsCategory.toString());
             map.put(SearchService.PROPERTY.title.toString(), title);
             if (!links.isEmpty())

@@ -145,7 +145,7 @@ if (!pipelineSet)
 <% WebPartView.endTitleFrame(out); %>
 <p>
 <%
-    JspView typeSummary = new StudyController.StudyJspView<DataSetDefinition>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
+    JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
     typeSummary.setTitle("Dataset Fields");
     typeSummary.setFrame(WebPartView.FrameType.TITLE);
     me.include(typeSummary, out);
@@ -155,7 +155,7 @@ if (!pipelineSet)
 <% WebPartView.startTitleFrame(out, "Visit Associations", null, "100%", null); %>
 <table><%
     List<VisitDataSet> visitList = StudyManager.getInstance().getMapping(dataset);
-    HashMap<Integer,VisitDataSet> visitMap = new HashMap<Integer, VisitDataSet>();
+    HashMap<Integer,VisitDataSet> visitMap = new HashMap<>();
     for (VisitDataSet vds : visitList)
         visitMap.put(vds.getVisitRowId(), vds);
     boolean hasVisitAssociations = false;

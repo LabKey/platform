@@ -45,7 +45,7 @@ public class AnnouncementSchema extends UserSchema
 
     static
     {
-        Set<String> names = new TreeSet<String>();
+        Set<String> names = new TreeSet<>();
         names.add(ANNOUNCEMENT_TABLE_NAME);
         names.add(FORUM_SUBSCRIPTION_TABLE_NAME);
         names.add(ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME);

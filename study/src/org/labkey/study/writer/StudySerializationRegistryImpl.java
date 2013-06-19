@@ -29,8 +29,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
 {
     private static final StudySerializationRegistryImpl INSTANCE = new StudySerializationRegistryImpl();
-    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<FolderWriterFactory>();
-    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<FolderImporterFactory>();
+    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<>();
+    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<>();
 
     private StudySerializationRegistryImpl()
     {
@@ -59,7 +59,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
     public Collection<FolderImporter> getRegisteredStudyImporters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
+        Collection<FolderImporter> importers = new LinkedList<>();
 
         for (FolderImporterFactory factory : IMPORTER_FACTORIES)
             importers.add(factory.create());

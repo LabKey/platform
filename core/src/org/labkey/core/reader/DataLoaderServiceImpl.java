@@ -59,9 +59,9 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 
     public DataLoaderServiceImpl()
     {
-        _fileTypeToFactory = new LinkedHashMap<FileType, DataLoaderFactory>();
-        _extensionToFactory = new MultiHashMap<String, DataLoaderFactory>();
-        _factories = new ArrayList<DataLoaderFactory>(10);
+        _fileTypeToFactory = new LinkedHashMap<>();
+        _extensionToFactory = new MultiHashMap<>();
+        _factories = new ArrayList<>(10);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 
     private Collection<DataLoaderFactory> matches(String filename, String contentType, byte[] header, Collection<DataLoaderFactory> factories)
     {
-        ArrayList<DataLoaderFactory> matches = new ArrayList<DataLoaderFactory>(10);
+        ArrayList<DataLoaderFactory> matches = new ArrayList<>(10);
         for (DataLoaderFactory f : factories)
         {
             FileType fileType = f.getFileType();
@@ -148,7 +148,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     @Override
     public DataLoaderFactory findFactory(String filename, String contentType, InputStream is, FileType guessFormat)
     {
-        List<DataLoaderFactory> matches = new ArrayList<DataLoaderFactory>(10);
+        List<DataLoaderFactory> matches = new ArrayList<>(10);
         byte[] header = null;
 
         // Attempt guessFormat first

@@ -82,7 +82,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 ctx.getLogger().info("Loading " + getDescription());
 
                 Set<String> importedWikiNames = new CaseInsensitiveHashSet();
-                Map<Wiki, String> parentsToBeSet = new HashMap<Wiki, String>();
+                Map<Wiki, String> parentsToBeSet = new HashMap<>();
 
                 // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
                 InputStream wikisIS = wikisDir.getInputStream(WikiWriterFactory.WIKIS_FILENAME);
@@ -155,7 +155,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
-            List<String> existingAttachmentNames = new ArrayList<String>();
+            List<String> existingAttachmentNames = new ArrayList<>();
 
             Wiki wiki;
 
@@ -184,7 +184,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam));
             wikiversion.setRendererTypeEnum(WikiRendererType.getType(contentFileName));
 
-            List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
+            List<AttachmentFile> attachments = new ArrayList<>();
             for (String fileName : wikiSubDir.list())
             {
                 if (!fileName.equals(contentFileName) && null != wikiSubDir.getInputStream(fileName))
@@ -214,7 +214,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 InputStream is = dir.getInputStream(wikiRendererType.getDocumentName(wikiName));
                 if (null != is)
                 {
-                    return new Pair<String, InputStream>(wikiRendererType.getDocumentName(wikiName), is);
+                    return new Pair<>(wikiRendererType.getDocumentName(wikiName), is);
                 }
             }
 

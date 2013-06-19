@@ -75,7 +75,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public void addColumns()
     {
-        _defaultColumns = new ArrayList<FieldKey>();
+        _defaultColumns = new ArrayList<>();
 
         wrapAllColumns();
 
@@ -131,7 +131,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         if (_illegalColumns == null)
         {
-            _illegalColumns = new HashSet<String>();
+            _illegalColumns = new HashSet<>();
 
             // handle the email column through a different code path
             _illegalColumns.add("Email");

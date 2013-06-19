@@ -27,11 +27,11 @@
 <%
     HttpView<List<KeywordPicker>> me = (HttpView<List<KeywordPicker>>) HttpView.currentView();
     List<KeywordPicker> keywordPickers = me.getModelBean();
-    Map<String, String> delete = new HashMap<String, String>();
+    Map<String, String> delete = new HashMap<>();
     delete.put("title", "Delete this keyword");
-    Map<String, String> clear = new HashMap<String, String>();
+    Map<String, String> clear = new HashMap<>();
     clear.put("title", "Clear the default values");
-    Map<String, String> set = new HashMap<String, String>();
+    Map<String, String> set = new HashMap<>();
     set.put("title", "Set as the default value");
 %>
 <table>

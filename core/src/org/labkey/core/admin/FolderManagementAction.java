@@ -196,7 +196,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return false;
         }
 
-        Set<Module> activeModules = new HashSet<Module>();
+        Set<Module> activeModules = new HashSet<>();
         for (String moduleName : modules)
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
@@ -910,7 +910,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public List<NavTree> getTabList()
         {
             ActionURL url = new AdminController.AdminUrlsImpl().getFolderManagementURL(getViewContext().getContainer());
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
+            List<NavTree> tabs = new ArrayList<>(2);
 
             if (!_container.isRoot())
             {
@@ -1010,9 +1010,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 @Override
                 public List<DisplayColumn> getDisplayColumns()
                 {
-                    List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+                    List<DisplayColumn> columns = new ArrayList<>();
                     SecurityPolicy policy = getContainer().getPolicy();
-                    Set<String> assignmentSet = new HashSet<String>();
+                    Set<String> assignmentSet = new HashSet<>();
 
                     assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
                     assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());

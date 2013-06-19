@@ -48,18 +48,18 @@ a display value, select the display value from the linked table.
 <br>
 
 <%
-    Map<String, String> schemaOptions = new TreeMap<String, String>();
+    Map<String, String> schemaOptions = new TreeMap<>();
 
-    Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
+    Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<>();
     DefaultSchema defSchema = DefaultSchema.get(ctx.getUser(), ctx.getContainer());
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
         UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), name);
-        Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
-        for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
+        Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<>();
+        for (String tableName : new TreeSet<>(schema.getTableAndQueryNames(true)))
         {
-            List<String> viewNames = new LinkedList<String>();
+            List<String> viewNames = new LinkedList<>();
             viewNames.add(""); // default view
 
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
@@ -202,7 +202,7 @@ Ext.onReady(function()
                                 Map<String, List<String>> tableNames = schemaTableNames.get(settings.getSchemaName());
                                 if (tableNames != null)
                                 {
-                                    for (String queryName : new TreeSet<String>(tableNames.keySet()))
+                                    for (String queryName : new TreeSet<>(tableNames.keySet()))
                                     {
                                         %><option value="<%=h(queryName)%>" <%=queryName.equals(settings.getQueryName()) ? "selected" : ""%>><%=h(queryName)%></option><%
                                     }

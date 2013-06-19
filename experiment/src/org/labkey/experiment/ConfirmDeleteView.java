@@ -155,8 +155,8 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 
-        Map<ExpRun, Container> runsWithPermission = new LinkedHashMap<ExpRun, Container>();
-        Map<ExpRun, Container> runsWithoutPermission = new LinkedHashMap<ExpRun, Container>();
+        Map<ExpRun, Container> runsWithPermission = new LinkedHashMap<>();
+        Map<ExpRun, Container> runsWithoutPermission = new LinkedHashMap<>();
         for (ExpRun run : runs)
         {
             Container c = run.getContainer();

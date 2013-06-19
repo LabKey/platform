@@ -68,7 +68,7 @@ public class FileEmailConfig extends AbstractConfigTypeProvider implements Messa
         form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
         form.setDefaultEmailOption(NumberUtils.toInt(pref));
 
-        return new JspView<EmailConfigForm>("/org/labkey/filecontent/view/fileNotifySettings.jsp", form);
+        return new JspView<>("/org/labkey/filecontent/view/fileNotifySettings.jsp", form);
     }
 
     @Override

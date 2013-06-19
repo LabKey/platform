@@ -268,7 +268,7 @@ public class Protocol extends IdentifiableEntity
 
     public List<Difference> diff(Protocol other) throws SQLException
     {
-        List<Difference> result = new ArrayList<Difference>();
+        List<Difference> result = new ArrayList<>();
         diff(_applicationType, other._applicationType, "Application Type", result);
         diff(_contact, other._contact, "Contact", result);
         diff(_contactId, other._contactId, "Contact Id", result);
@@ -363,7 +363,7 @@ public class Protocol extends IdentifiableEntity
         }
         else
         {
-            Map<String, ObjectProperty> newParams = new HashMap<String, ObjectProperty>();
+            Map<String, ObjectProperty> newParams = new HashMap<>();
             newParams.putAll(props);
             _objectProperties = Collections.unmodifiableMap(newParams);
         }
@@ -371,7 +371,7 @@ public class Protocol extends IdentifiableEntity
 
     public void storeProtocolParameters(Collection<ProtocolParameter> protocolParameters)
     {
-        Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>();
+        Map<String, ProtocolParameter> newParams = new HashMap<>();
         for (ProtocolParameter param : protocolParameters)
         {
             newParams.put(param.getOntologyEntryURI(), param);

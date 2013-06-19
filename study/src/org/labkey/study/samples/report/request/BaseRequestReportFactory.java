@@ -49,7 +49,7 @@ public abstract class BaseRequestReportFactory extends TypeReportFactory
         builder.append("<option value=\"true\"").append(_completedRequestsOnly ? " SELECTED" : "");
         builder.append(">Completed requests only</option>\n");
         builder.append("</select>");
-        superInputs.add(new Pair<String, String>("Request status", builder.toString()));
+        superInputs.add(new Pair<>("Request status", builder.toString()));
         return superInputs;
     }
 }

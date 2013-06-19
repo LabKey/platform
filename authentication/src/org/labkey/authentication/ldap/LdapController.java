@@ -66,7 +66,7 @@ public class LdapController extends SpringActionController
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
             form.setSASL(LdapAuthenticationManager.useSASL());
-            return new JspView<Config>("/org/labkey/authentication/ldap/configure.jsp", form);
+            return new JspView<>("/org/labkey/authentication/ldap/configure.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -169,7 +169,7 @@ public class LdapController extends SpringActionController
             if (!reshow)
                 form.setSASL(LdapAuthenticationManager.useSASL());
 
-            HttpView view = new JspView<TestLdapForm>("/org/labkey/authentication/ldap/testLdap.jsp", form, errors);
+            HttpView view = new JspView<>("/org/labkey/authentication/ldap/testLdap.jsp", form, errors);
             PageConfig page = getPageConfig();
             if (null == form.getMessage() || form.getMessage().length() < 200)
                 page.setFocusId("server");

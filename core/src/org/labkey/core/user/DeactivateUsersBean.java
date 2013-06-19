@@ -30,7 +30,7 @@ public class DeactivateUsersBean
     private boolean _activate = false;
     private ActionURL _redirUrl;
 
-    private List<User> _users = new ArrayList<User>();
+    private List<User> _users = new ArrayList<>();
 
     public DeactivateUsersBean(boolean activate, ActionURL redirUrl)
     {

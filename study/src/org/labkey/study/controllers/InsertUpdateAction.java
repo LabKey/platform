@@ -175,7 +175,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getViewContext().getContainer(), domain, getViewContext().getUser());
-                    Map<String, Object> formDefaults = new HashMap<String, Object>();
+                    Map<String, Object> formDefaults = new HashMap<>();
                     for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
                     {
                         if (entry.getValue() != null)
@@ -307,7 +307,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 Domain domain = PropertyService.get().getDomain(c, _ds.getTypeURI());
                 DomainProperty[] properties = domain.getProperties();
                 Map<String, Object> requestMap = updateForm.getTypedValues();
-                Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
+                Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
                 for (DomainProperty property : properties)
                 {
                     ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getViewContext().getContainer());

@@ -305,7 +305,7 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
         {
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             for (Pair<String, String> param : form.getParameters())
             {
                 props.put(param.getKey(), param.getValue());
@@ -485,13 +485,13 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            List<Map<String, String>> views = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> views = new ArrayList<>();
 
             ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
-                Map<String, String> record = new HashMap<String, String>();
+                Map<String, String> record = new HashMap<>();
 
                 record.put("name", factory.getEngineName());
                 record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
@@ -670,7 +670,7 @@ public class ReportsController extends SpringActionController
 
         public ExecuteScriptForm()
         {
-            _inputParams = new ArrayListMap<String, Object>();
+            _inputParams = new ArrayListMap<>();
         }
 
         public String getReportSessionId()
@@ -765,9 +765,9 @@ public class ReportsController extends SpringActionController
         //
         private ApiResponse buildResponse(List<ScriptOutput> outputs) throws Exception
         {
-            ArrayList<String> consoleOutputs = new ArrayList<String>();
-            ArrayList<String> errorOutputs = new ArrayList<String>();
-            ArrayList<ScriptOutput> removeItems = new ArrayList<ScriptOutput>();
+            ArrayList<String> consoleOutputs = new ArrayList<>();
+            ArrayList<String> errorOutputs = new ArrayList<>();
+            ArrayList<ScriptOutput> removeItems = new ArrayList<>();
 
             // collect any console and error output types and put them in their own collections
             for (ScriptOutput output : outputs)
@@ -831,7 +831,7 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
         {
             _report = form.getReport(getViewContext());
-            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+            List<ValidationError> reportErrors = new ArrayList<>();
             validatePermissions(getViewContext(), _report, reportErrors);
 
             if (reportErrors.isEmpty())
@@ -887,7 +887,7 @@ public class ReportsController extends SpringActionController
             {
                 if (report instanceof RReport)
                 {
-                    resultsView = new JspView<RReport>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", (RReport)report);
+                    resultsView = new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", (RReport)report);
                 }
             }
             else
@@ -906,8 +906,8 @@ public class ReportsController extends SpringActionController
                 Map<String, Object> resultProperties = new HashMap<>();
 
                 LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
-                LinkedHashSet<String> includes = new LinkedHashSet<String>();
-                LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
+                LinkedHashSet<String> includes = new LinkedHashSet<>();
+                LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
                 PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
 
                 MockHttpServletResponse mr = new MockHttpServletResponse();
@@ -1041,7 +1041,7 @@ public class ReportsController extends SpringActionController
             Report report = form.getReport(getViewContext());
             if (null != report)
             {
-                VBox box = new VBox(new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form));
+                VBox box = new VBox(new JspView<>("/org/labkey/query/reports/view/reportDetails.jsp", form));
 
                 DiscussionService.Service service = DiscussionService.get();
                 String title = "Discuss report - " + report.getDescriptor().getReportName();
@@ -1149,7 +1149,7 @@ public class ReportsController extends SpringActionController
                 else
                     report = form.getReport(getViewContext());
 
-                List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+                List<ValidationError> reportErrors = new ArrayList<>();
                 validatePermissions(getViewContext(), report, reportErrors);
 
                 if (!reportErrors.isEmpty())
@@ -1348,7 +1348,7 @@ public class ReportsController extends SpringActionController
                     Map<String, String> responseHeaders = Collections.emptyMap();
                     if (BooleanUtils.toBoolean(cacheFile))
                     {
-                        responseHeaders = new HashMap<String, String>();
+                        responseHeaders = new HashMap<>();
 
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private");
@@ -1504,7 +1504,7 @@ public class ReportsController extends SpringActionController
             //
             if (null == report.getDescriptor().getOwner())
             {
-                List<ValidationError> errors = new ArrayList<ValidationError>();
+                List<ValidationError> errors = new ArrayList<>();
                 report.getDescriptor().setOwner(getViewContext().getUser().getUserId());
                 form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
                 report.getDescriptor().setOwner(null);
@@ -1622,7 +1622,7 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
-            return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/attachmentReport.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/reports/view/attachmentReport.jsp", form, errors);
         }
 
         @Override
@@ -1877,7 +1877,7 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
-            return new JspView<LinkReportForm>("/org/labkey/query/reports/view/linkReport.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/reports/view/linkReport.jsp", form, errors);
         }
 
         @Override
@@ -2022,7 +2022,7 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(QueryReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
-            return new JspView<QueryReportForm>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
         }
 
         @Override
@@ -2086,7 +2086,7 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            JspView view = new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
+            JspView view = new JspView<>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
 
             view.setTitle("Manage Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
@@ -2122,7 +2122,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewOptionsForm form, BindException errors) throws Exception
         {
-            List<Map<String, String>> response = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> response = new ArrayList<>();
             QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), form.getSchemaName(), form.getQueryName());
             if (def == null)
             {
@@ -2132,8 +2132,8 @@ public class ReportsController extends SpringActionController
 
             if (def != null)
             {
-                Map<String, ViewOptions.ViewFilterItem> filterItemMap = new HashMap<String, ViewOptions.ViewFilterItem>();
-                Map<String, String> baseItemMap = new HashMap<String, String>();
+                Map<String, ViewOptions.ViewFilterItem> filterItemMap = new HashMap<>();
+                Map<String, String> baseItemMap = new HashMap<>();
 
                 if (!StringUtils.isBlank(form.getBaseFilterItems()))
                 {
@@ -2146,7 +2146,7 @@ public class ReportsController extends SpringActionController
                     filterItemMap.put(item.getViewType(), item);
 
                 Collection<ReportService.DesignerInfo> designers = getAvailableReportDesigners(form);
-                Map<String, Integer> duplicates = new HashMap<String, Integer>();
+                Map<String, Integer> duplicates = new HashMap<>();
 
                 for (ReportService.DesignerInfo info : designers)
                 {
@@ -2169,7 +2169,7 @@ public class ReportsController extends SpringActionController
 
                     for (ReportService.DesignerInfo info : getAvailableReportDesigners(form))
                     {
-                        Map<String, String> record = new HashMap<String, String>();
+                        Map<String, String> record = new HashMap<>();
                         String label = info.getLabel();
 
                         // if there are duplicates, let the view item filter choose which one to display
@@ -2197,7 +2197,7 @@ public class ReportsController extends SpringActionController
 
     private Collection<ReportService.DesignerInfo> getAvailableReportDesigners(ViewOptionsForm form)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
         QuerySettings settings = schema.getSettings(getViewContext(), null, form.getQueryName());
 
@@ -2232,8 +2232,8 @@ public class ReportsController extends SpringActionController
                 def = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
             }
             ViewOptions options = def.getViewOptions();
-            List<ViewOptions.ViewFilterItem> filterItems = new ArrayList<ViewOptions.ViewFilterItem>();
-            Map<String, String> viewItemMap = new HashMap<String, String>();
+            List<ViewOptions.ViewFilterItem> filterItems = new ArrayList<>();
+            Map<String, String> viewItemMap = new HashMap<>();
 
             for (String type : form.getViewItemTypes())
                 viewItemMap.put(type, type);
@@ -2513,7 +2513,7 @@ public class ReportsController extends SpringActionController
 
         public List<QueryForm> getQueryForms(ViewContext context)
         {
-            List<QueryForm> forms = new ArrayList<QueryForm>();
+            List<QueryForm> forms = new ArrayList<>();
 
             for (String viewId : _viewId)
             {
@@ -2830,7 +2830,7 @@ public class ReportsController extends SpringActionController
                 {
                     _reportName = null;
                 }
-                VBox view = new VBox(new JspView<Report>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
+                VBox view = new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
 
                 if (!isPrint())
                 {

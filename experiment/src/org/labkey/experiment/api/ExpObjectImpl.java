@@ -126,7 +126,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             else
             {
                 // We still need to validate blanks
-                List<ValidationError> errors = new ArrayList<ValidationError>();
+                List<ValidationError> errors = new ArrayList<>();
                 OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, value, errors, new ValidatorContext(pd.getContainer(), user));
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);

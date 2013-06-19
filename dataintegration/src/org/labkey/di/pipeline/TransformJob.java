@@ -168,7 +168,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport, Pr
     //
     public Map<PropertyDescriptor, Object> getProps()
     {
-        Map<PropertyDescriptor, Object> propMap = new LinkedHashMap<PropertyDescriptor, Object>();
+        Map<PropertyDescriptor, Object> propMap = new LinkedHashMap<>();
         Set<String> keys = _variableMap.keySet();
         for(String key : keys)
         {

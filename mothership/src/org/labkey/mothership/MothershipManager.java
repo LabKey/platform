@@ -494,7 +494,7 @@ public class MothershipManager
     public List<User> getAssignedToList(Container container)
     {
         List<User> projectUsers = org.labkey.api.security.SecurityManager.getProjectUsers(container.getProject());
-        List<User> list = new ArrayList<User>();
+        List<User> list = new ArrayList<>();
         // Filter list to only show active users
         for (User user : projectUsers)
         {

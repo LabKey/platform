@@ -51,7 +51,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
             CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
             SampleManager.SummaryByVisitParticipant[] countSummary =
                     SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
-            Map<String, Row> rows = new TreeMap<String, Row>();
+            Map<String, Row> rows = new TreeMap<>();
             for (SampleManager.SummaryByVisitParticipant count : countSummary)
             {
                 String cohort = _showCohorts ? count.getCohort() : "[cohort blinded]";

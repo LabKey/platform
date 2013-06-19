@@ -150,20 +150,20 @@ public class CrawlerTest extends Assert
 
     class TestSavePaths implements DavCrawler.SavePaths
     {
-        Map<Path, Pair<Date,Date>> collections = new HashMap<Path,Pair<Date,Date>>();
-        Map<Path, DavCrawler.ResourceInfo> files = new HashMap<Path, DavCrawler.ResourceInfo>();
+        Map<Path, Pair<Date,Date>> collections = new HashMap<>();
+        Map<Path, DavCrawler.ResourceInfo> files = new HashMap<>();
 
         public boolean insertPath(Path path, Date nextCrawl)
         {
             if (collections.containsKey(path))
                 return false;
-            Pair p = collections.put(path, new Pair<Date,Date>(nullDate,nextCrawl));
+            Pair p = collections.put(path, new Pair<>(nullDate,nextCrawl));
             return true;
         }
 
         public synchronized boolean updatePath(Path path, Date lastIndexed, Date nextCrawl, boolean create)
         {
-            collections.put(path, new Pair<Date, Date>(lastIndexed, nextCrawl));
+            collections.put(path, new Pair<>(lastIndexed, nextCrawl));
             return true;
         }
 
@@ -185,7 +185,7 @@ public class CrawlerTest extends Assert
         {
             long now = System.currentTimeMillis();
             limit = Math.min(limit,5);
-            Map<Path, Pair<Date,Date>> ret = new TreeMap<Path,Pair<Date,Date>>();
+            Map<Path, Pair<Date,Date>> ret = new TreeMap<>();
             for (Map.Entry<Path,Pair<Date,Date>> e : collections.entrySet())
             {
                 Date nextCrawl = e.getValue().second;
@@ -206,7 +206,7 @@ public class CrawlerTest extends Assert
 
         public synchronized Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
         {
-            Map<String,DavCrawler.ResourceInfo> ret = new TreeMap<String,DavCrawler.ResourceInfo>();
+            Map<String,DavCrawler.ResourceInfo> ret = new TreeMap<>();
             for (Map.Entry<Path,DavCrawler.ResourceInfo> e : files.entrySet())
             {
                 if (e.getKey().startsWith(path))

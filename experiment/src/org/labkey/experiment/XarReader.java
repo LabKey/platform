@@ -52,12 +52,12 @@ import java.util.*;
 
 public class XarReader extends AbstractXarImporter
 {
-    private Set<String> _experimentLSIDs = new HashSet<String>();
-    private Map<String, Integer> _propertyIdMap = new HashMap<String, Integer>();
+    private Set<String> _experimentLSIDs = new HashSet<>();
+    private Map<String, Integer> _propertyIdMap = new HashMap<>();
 
-    private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<DeferredDataLoad>();
+    private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
-    private List<ExpRun> _loadedRuns = new ArrayList<ExpRun>();
+    private List<ExpRun> _loadedRuns = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -67,7 +67,7 @@ public class XarReader extends AbstractXarImporter
 
     public static final String ORIGINAL_URL_PROPERTY = "terms.fhcrc.org#Data.OriginalURL";
     public static final String ORIGINAL_URL_PROPERTY_NAME = "OriginalURL";
-    private List<String> _processedRunsLSIDs = new ArrayList<String>();
+    private List<String> _processedRunsLSIDs = new ArrayList<>();
 
     public XarReader(XarSource source, PipelineJob job)
     {
@@ -84,7 +84,7 @@ public class XarReader extends AbstractXarImporter
 
             // Create an XmlOptions instance and set the error listener.
             XmlOptions validateOptions = new XmlOptions();
-            ArrayList<XmlError> errorList = new ArrayList<XmlError>();
+            ArrayList<XmlError> errorList = new ArrayList<>();
             validateOptions.setErrorListener(errorList);
 
             // Validate the XML.
@@ -259,8 +259,8 @@ public class XarReader extends AbstractXarImporter
                     getLog().debug("Protocol action set import complete");
                 }
 
-                List<ExpMaterial> startingMaterials = new ArrayList<ExpMaterial>();
-                List<Data> startingData = new ArrayList<Data>();
+                List<ExpMaterial> startingMaterials = new ArrayList<>();
+                List<Data> startingData = new ArrayList<>();
 
                 if (_experimentArchive.getStartingInputDefinitions() != null)
                 {
@@ -320,7 +320,7 @@ public class XarReader extends AbstractXarImporter
 
         if (existingMaterialSource != null)
         {
-            List<IdentifiableEntity.Difference> diffs = new ArrayList<IdentifiableEntity.Difference>();
+            List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
             IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
             IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
             IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
@@ -354,15 +354,15 @@ public class XarReader extends AbstractXarImporter
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
         if (existingDomain != null)
         {
-            Map<String, DomainProperty> newProps = new HashMap<String, DomainProperty>();
+            Map<String, DomainProperty> newProps = new HashMap<>();
             for (DomainProperty prop : domain.getProperties())
             {
                 newProps.put(prop.getPropertyURI(), prop);
             }
 
-            List<IdentifiableEntity.Difference> diffs = new ArrayList<IdentifiableEntity.Difference>();
+            List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
             IdentifiableEntity.diff(existingDomain.getName(), domain.getName(), "Name", diffs);
-            Map<String, DomainProperty> oldProps = new HashMap<String, DomainProperty>();
+            Map<String, DomainProperty> oldProps = new HashMap<>();
             for (DomainProperty oldProp : existingDomain.getProperties())
             {
                 oldProps.put(oldProp.getPropertyURI(), oldProp);
@@ -1135,7 +1135,7 @@ public class XarReader extends AbstractXarImporter
 
     private List<ProtocolParameter> readProtocolParameters(SimpleValueCollectionType xbParams)
     {
-        List<ProtocolParameter> result = new ArrayList<ProtocolParameter>();
+        List<ProtocolParameter> result = new ArrayList<>();
         for (SimpleValueType simple : xbParams.getSimpleValArray())
         {
             ProtocolParameter param = new ProtocolParameter();
@@ -1150,7 +1150,7 @@ public class XarReader extends AbstractXarImporter
     {
         String propertyURI = GUID.makeURN();
 
-        Map<String, ObjectProperty> childProps = new HashMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> childProps = new HashMap<>();
 
         if (null != contact.getContactId() && !contact.getContactId().equals(""))
         {
@@ -1200,7 +1200,7 @@ public class XarReader extends AbstractXarImporter
                                                                String parentLSID, boolean checkForDuplicates) throws XarFormatException
     {
         Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(getContainer(), parentLSID);
-        Map<String, ObjectProperty> result = new HashMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> result = new HashMap<>();
 
         for (SimpleValueType simpleProp : xbValues.getSimpleValArray())
         {
@@ -1287,7 +1287,7 @@ public class XarReader extends AbstractXarImporter
                                         String ownerLSID,
                                         ObjectProperty additionalProperty) throws SQLException, XarFormatException
     {
-        Map<String, ObjectProperty> propsToInsert = new HashMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> propsToInsert = new HashMap<>();
         if (xbProps != null)
         {
             propsToInsert.putAll(readPropertyCollection(xbProps, parentLSID, true));
@@ -1540,7 +1540,7 @@ public class XarReader extends AbstractXarImporter
         }
         protocol.storeProtocolParameters(params);
 
-        Map<String, ObjectProperty> properties = new HashMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> properties = new HashMap<>();
 
         // Protocol properties
         PropertyCollectionType xbProps = p.getProperties();
@@ -1565,7 +1565,7 @@ public class XarReader extends AbstractXarImporter
 
     private Map<String, Object> getSimplePropertiesMap(PropertyCollectionType xbProps)
     {
-        Map<String, Object> mSimpleProperties = new HashMap<String, Object>();
+        Map<String, Object> mSimpleProperties = new HashMap<>();
         SimpleValueType[] aSVals = xbProps.getSimpleValArray();
         for (SimpleValueType sVal : aSVals)
         {

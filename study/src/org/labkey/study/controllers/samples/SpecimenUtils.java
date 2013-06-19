@@ -197,7 +197,7 @@ public class SpecimenUtils
         if (forExport)
             return gridView;
 
-        List<DisplayElement> buttons = new ArrayList<DisplayElement>();
+        List<DisplayElement> buttons = new ArrayList<>();
 
         ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName(), cohortFilter, false);
         if (ptidListButton != null)
@@ -340,13 +340,13 @@ public class SpecimenUtils
 
     public List<ActorNotificationRecipientSet> getPossibleNotifications(SampleRequest sampleRequest)
     {
-        List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<ActorNotificationRecipientSet>();
+        List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<>();
         // allow notification of all parties listed in the request requirements:
         for (SampleRequestRequirement requirement : sampleRequest.getRequirements())
             addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, LocationImpl> relevantSites = new HashMap<Integer, LocationImpl>();
+        Map<Integer, LocationImpl> relevantSites = new HashMap<>();
         if (sampleRequest.getDestinationSiteId() == null)
         {
             throw new IllegalStateException("Request " + sampleRequest.getRowId() + " in folder " +
@@ -476,7 +476,7 @@ public class SpecimenUtils
 
     public List<? extends NotificationRecipientSet> getNotifications(SampleRequest sampleRequest, String[] notificationIdPairs)
     {
-        List<ActorNotificationRecipientSet> siteActors = new ArrayList<ActorNotificationRecipientSet>();
+        List<ActorNotificationRecipientSet> siteActors = new ArrayList<>();
         if (notificationIdPairs == null || notificationIdPairs.length == 0)
             return siteActors;
         for (String notificationIdPair : notificationIdPairs)
@@ -646,7 +646,7 @@ public class SpecimenUtils
 
     public static <T> Set<T> intersect(Set<T> left, Set<T> right)
     {
-        Set<T> intersection = new HashSet<T>();
+        Set<T> intersection = new HashSet<>();
         for (T item : left)
         {
             if (right.contains(item))
@@ -660,7 +660,7 @@ public class SpecimenUtils
         Set<Integer> locationIntersection = null;
         for (List<Specimen> vials : specimensBySample)
         {
-            Set<Integer> currentLocations = new HashSet<Integer>();
+            Set<Integer> currentLocations = new HashSet<>();
             for (Specimen vial : vials)
             {
                 if (vial.getCurrentLocation() != null)
@@ -690,7 +690,7 @@ public class SpecimenUtils
         List<Specimen> requestedSpecimens = null;
         if (requestedSampleIds != null)
         {
-            List<Specimen> specimens = new ArrayList<Specimen>();
+            List<Specimen> specimens = new ArrayList<>();
             for (int requestedSampleId : requestedSampleIds)
             {
                 Specimen current = SampleManager.getInstance().getSpecimen(getContainer(), requestedSampleId);

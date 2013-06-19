@@ -36,8 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class FolderSerializationRegistryImpl implements FolderSerializationRegistry
 {
     private static final FolderSerializationRegistryImpl INSTANCE = new FolderSerializationRegistryImpl();
-    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<FolderWriterFactory>();
-    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<FolderImporterFactory>();
+    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<>();
+    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<>();
 
     private FolderSerializationRegistryImpl()
     {
@@ -53,7 +53,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     public Collection<FolderWriter> getRegisteredFolderWriters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<FolderWriter> writers = new LinkedList<FolderWriter>();
+        Collection<FolderWriter> writers = new LinkedList<>();
 
         for (FolderWriterFactory factory : WRITER_FACTORIES)
             writers.add(factory.create());
@@ -67,7 +67,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     public Collection<FolderImporter> getRegisteredFolderImporters()
     {
         // New up the importers every time since these classes can be stateful
-        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
+        Collection<FolderImporter> importers = new LinkedList<>();
 
         for (FolderImporterFactory factory : getSortedFactories())
             importers.add(factory.create());
@@ -77,7 +77,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
 
     private List<FolderImporterFactory> getSortedFactories()
     {
-        List<FolderImporterFactory> factories = new ArrayList<FolderImporterFactory>();
+        List<FolderImporterFactory> factories = new ArrayList<>();
         factories.addAll(IMPORTER_FACTORIES);
 
         // sort the factories by priority in ascending order

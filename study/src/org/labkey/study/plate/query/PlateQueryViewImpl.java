@@ -94,7 +94,7 @@ public class PlateQueryViewImpl extends PlateQueryView
     public void addHiddenFormField(String key, String value)
     {
         if (_hiddenFormFields == null)
-            _hiddenFormFields = new HashMap<String, String>();
+            _hiddenFormFields = new HashMap<>();
         _hiddenFormFields.put(key, value);
     }
 

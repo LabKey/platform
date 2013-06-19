@@ -217,7 +217,7 @@ public class QueryManager
      */
     public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User owner, boolean inheritable, boolean sharedOnly)
     {
-        List<CstmView> views = new ArrayList<CstmView>();
+        List<CstmView> views = new ArrayList<>();
 
         getCstmViewsInContainer(views, container, schemaName, queryName, owner, false, sharedOnly);
 
@@ -674,7 +674,7 @@ public class QueryManager
     public void validateQuery(TableInfo table, boolean testAllColumns) throws SQLException, QueryParseException
     {
         Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
-        Map<String,Object> parameters = new HashMap<String,Object>();
+        Map<String,Object> parameters = new HashMap<>();
         for (QueryService.ParameterDecl p : params)
         {
             if (!p.isRequired())
@@ -688,7 +688,7 @@ public class QueryManager
         {
             List<FieldKey> defVisCols = table.getDefaultVisibleColumns();
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(table, defVisCols);
-            cols = new ArrayList<ColumnInfo>(colMap.values());
+            cols = new ArrayList<>(colMap.values());
         }
 
         //try to execute it with a rowcount of 0 (will throw SQLException to client if it fails
@@ -722,8 +722,8 @@ public class QueryManager
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
         //validate foreign keys and other metadata warnings
-        Set<String> queryErrors = new HashSet<String>();
-        Set<ColumnInfo> columns = new HashSet<ColumnInfo>();
+        Set<String> queryErrors = new HashSet<>();
+        Set<ColumnInfo> columns = new HashSet<>();
         columns.addAll(table.getColumns());
         columns.addAll(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
 
@@ -740,7 +740,7 @@ public class QueryManager
      */
     public Set<String> validateColumn(ColumnInfo col, User user, Container container, @Nullable TableInfo parentTable)
     {
-        Set<String> queryErrors = new HashSet<String>();
+        Set<String> queryErrors = new HashSet<>();
         if(parentTable == null)
             parentTable = col.getParentTable();
 
@@ -750,7 +750,7 @@ public class QueryManager
 
         queryErrors.addAll(validateFk(col, user, container, parentTable));
 
-        List<String> specialCols = new ArrayList<String>();
+        List<String> specialCols = new ArrayList<>();
         specialCols.add("container");
         specialCols.add("created");
         specialCols.add("createdby");
@@ -804,7 +804,7 @@ public class QueryManager
      */
     public Set<String> validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable)
     {
-        Set<String> queryErrors = new HashSet<String>();
+        Set<String> queryErrors = new HashSet<>();
 
         //NOTE: this is the same code that writes JSON to the client
         JSONObject o = JsonWriter.getLookupInfo(col, false);
@@ -922,7 +922,7 @@ public class QueryManager
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schema.getSchemaName() + "'!");
 
         //validate views
-        Set<String> queryErrors = new HashSet<String>();
+        Set<String> queryErrors = new HashSet<>();
         List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
         for (CustomView v : views)
         {
@@ -932,14 +932,14 @@ public class QueryManager
                 try
                 {
                     CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(v.getFilterAndSort());
-                    List<FieldKey> filterCols = new ArrayList<FieldKey>();
+                    List<FieldKey> filterCols = new ArrayList<>();
                     for (FilterInfo f : fs.getFilter())
                     {
                         filterCols.add(f.getField());
                     }
                     validateViewColumns(user, container, v, "filter", filterCols, queryErrors, table);
 
-                    List<FieldKey> sortCols = new ArrayList<FieldKey>();
+                    List<FieldKey> sortCols = new ArrayList<>();
                     for (Sort.SortField f : fs.getSort())
                     {
                         sortCols.add(f.getFieldKey());

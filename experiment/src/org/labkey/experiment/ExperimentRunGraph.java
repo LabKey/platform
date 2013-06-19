@@ -203,11 +203,11 @@ public class ExperimentRunGraph
 
                     // add starting inputs to graph if they need grouping
                     Map<ExpMaterial, String> materialRoles = run.getMaterialInputs();
-                    List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(materialRoles.keySet());
-                    Collections.sort(inputMaterials, new RoleAndNameComparator<ExpMaterial>(materialRoles));
+                    List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
+                    Collections.sort(inputMaterials, new RoleAndNameComparator<>(materialRoles));
                     Map<ExpData, String> dataRoles = run.getDataInputs();
-                    List<ExpData> inputDatas = new ArrayList<ExpData>(dataRoles.keySet());
-                    Collections.sort(inputDatas, new RoleAndNameComparator<ExpData>(dataRoles));
+                    List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
+                    Collections.sort(inputDatas, new RoleAndNameComparator<>(dataRoles));
                     if (run.getProtocolApplications().length > 0)
                     {
                         int groupId = run.getProtocolApplications()[0].getRowId();
@@ -386,8 +386,8 @@ public class ExperimentRunGraph
         Integer groupIdPA = null;
 
         // We're going to remove entries as we use them, so we need our own copy
-        Map<ExpData, String> runDataInputs = new HashMap<ExpData, String>(expRun.getDataInputs());
-        Map<ExpMaterial, String> runMaterialInputs = new HashMap<ExpMaterial, String>(expRun.getMaterialInputs());
+        Map<ExpData, String> runDataInputs = new HashMap<>(expRun.getDataInputs());
+        Map<ExpMaterial, String> runMaterialInputs = new HashMap<>(expRun.getMaterialInputs());
 
         int prevseq = 0;
         boolean firstApp = true;
@@ -414,8 +414,8 @@ public class ExperimentRunGraph
             List<ExpMaterial> outputMaterials = protApp.getOutputMaterials();
             List<ExpData> outputDatas = protApp.getOutputDatas();
 
-            Collections.sort(inputMaterials, new RoleAndNameComparator<ExpMaterial>(runMaterialInputs));
-            Collections.sort(inputDatas, new RoleAndNameComparator<ExpData>(runDataInputs));
+            Collections.sort(inputMaterials, new RoleAndNameComparator<>(runMaterialInputs));
+            Collections.sort(inputDatas, new RoleAndNameComparator<>(runDataInputs));
 
             if (sequence != prevseq)
             {
@@ -630,7 +630,7 @@ public class ExperimentRunGraph
 
         public GraphCtrlProps()
         {
-            mPANodesPerSequence = new TreeMap<Integer, Integer>();
+            mPANodesPerSequence = new TreeMap<>();
         }
         public int getPACountForSequence(int seq)
         {

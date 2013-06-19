@@ -57,7 +57,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected final WorkDirFactory _factory;
     protected File _dir;
     protected Logger _jobLog;
-    protected HashMap<File, File> _copiedInputs = new HashMap<File, File>();
+    protected HashMap<File, File> _copiedInputs = new HashMap<>();
 
     protected CopyingResource _copyingResource;
 
@@ -204,7 +204,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         else
             baseNames = Collections.singletonList(_support.getBaseName());
 
-        ArrayList<File> files = new ArrayList<File>();
+        ArrayList<File> files = new ArrayList<>();
         for (String baseName : baseNames)
             files.add(newWorkFile(f, tp, baseName));
         return files;

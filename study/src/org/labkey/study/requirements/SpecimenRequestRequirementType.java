@@ -39,12 +39,12 @@ public enum SpecimenRequestRequirementType implements RequirementType
             {
                 public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
                 {
-                    List<SampleRequestRequirement> requirements = new ArrayList<SampleRequestRequirement>();
+                    List<SampleRequestRequirement> requirements = new ArrayList<>();
                     List<Specimen> specimens = owner.getSpecimens();
                     if (specimens != null && specimens.size() > 0)
                     {
                         // get a list of all providing and originating sites:
-                        Set<Integer> originatingLocationIds = new HashSet<Integer>();
+                        Set<Integer> originatingLocationIds = new HashSet<>();
                         for (Specimen specimen : specimens)
                         {
                             LocationImpl originatingLocation = SampleManager.getInstance().getOriginatingLocation(specimen);
@@ -66,12 +66,12 @@ public enum SpecimenRequestRequirementType implements RequirementType
             {
                 public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
                 {
-                    List<SampleRequestRequirement> requirements = new ArrayList<SampleRequestRequirement>();
+                    List<SampleRequestRequirement> requirements = new ArrayList<>();
                     List<Specimen> specimens = owner.getSpecimens();
                     if (specimens != null && specimens.size() > 0)
                     {
                         // get a list of all providing and originating sites:
-                        Set<Integer> providerLocationIds = new HashSet<Integer>();
+                        Set<Integer> providerLocationIds = new HashSet<>();
                         for (Specimen specimen : specimens)
                         {
                             LocationImpl providingLocation = SampleManager.getInstance().getCurrentLocation(specimen);

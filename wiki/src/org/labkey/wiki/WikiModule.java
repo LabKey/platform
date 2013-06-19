@@ -150,14 +150,14 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
         loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
 
-        Map<String, String> homeProps = new HashMap<String, String>();
+        Map<String, String> homeProps = new HashMap<>();
         homeProps.put("webPartContainer", homeContainer.getId());
         homeProps.put("name", defaultPageName);
         addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
 
         addWebPart("Projects", homeContainer, HttpView.BODY, 1);
 
-        Map<String, String> supportProps = new HashMap<String, String>();
+        Map<String, String> supportProps = new HashMap<>();
         supportProps.put("webPartContainer", supportContainer.getId());
         supportProps.put("name", defaultPageName);
         addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
@@ -165,7 +165,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     public Collection<String> getSummary(Container c)
     {
-        Collection<String> list = new LinkedList<String>();
+        Collection<String> list = new LinkedList<>();
         try
         {
             int count = WikiSelectManager.getPageCount(c);

@@ -123,7 +123,7 @@ public class ReportViewProvider implements DataViewProvider
         if (schemaName != null && queryName != null)
             reportKey = ReportUtil.getReportKey(schemaName, queryName);
 
-        List<DataViewInfo> views = new ArrayList<DataViewInfo>();
+        List<DataViewInfo> views = new ArrayList<>();
 
         try
         {
@@ -269,7 +269,7 @@ public class ReportViewProvider implements DataViewProvider
 
             if (report != null)
             {
-                List<ValidationError> errors = new ArrayList<ValidationError>();
+                List<ValidationError> errors = new ArrayList<>();
 
                 if (!report.canEdit(user, container, errors))
                 {

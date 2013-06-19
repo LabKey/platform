@@ -67,7 +67,7 @@ public class DataFaxVisitMapReader implements VisitMapReader
             });
 
             // Apply a filter to the iterator
-            CloseableFilteredIterator<Map<String, Object>> filtered = new CloseableFilteredIterator<Map<String, Object>>(loader.iterator(), new Filter<Map<String, Object>>()
+            CloseableFilteredIterator<Map<String, Object>> filtered = new CloseableFilteredIterator<>(loader.iterator(), new Filter<Map<String, Object>>()
             {
                 public boolean accept(Map<String, Object> map)
                 {
@@ -76,7 +76,7 @@ public class DataFaxVisitMapReader implements VisitMapReader
             });
 
             // Convert to an iterator of VisitMapRecord beans
-            BeanIterator<VisitMapRecord> iterator = new BeanIterator<VisitMapRecord>(filtered, VisitMapRecord.class);
+            BeanIterator<VisitMapRecord> iterator = new BeanIterator<>(filtered, VisitMapRecord.class);
 
             return IteratorUtil.toList(iterator);
         }

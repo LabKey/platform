@@ -28,13 +28,13 @@ class ActionsHelper
 {
     static Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> getActionStatistics() throws InstantiationException, IllegalAccessException
     {
-        Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> moduleMap = new LinkedHashMap<String, Map<String, Map<String, SpringActionController.ActionStats>>>();
+        Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> moduleMap = new LinkedHashMap<>();
 
         List<Module> modules = ModuleLoader.getInstance().getModules();
 
         for (Module module : modules)
         {
-            Map<String, Map<String, SpringActionController.ActionStats>> controllerMap = new LinkedHashMap<String, Map<String, SpringActionController.ActionStats>>();
+            Map<String, Map<String, SpringActionController.ActionStats>> controllerMap = new LinkedHashMap<>();
             moduleMap.put(module.getName(), controllerMap);
             Map<String, Class<? extends Controller>> pageFlows = module.getControllerNameToClass();
             Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
@@ -43,11 +43,11 @@ class ActionsHelper
             {
                 if (SpringActionController.class.isAssignableFrom(controllerClass))
                 {
-                    Map<String, SpringActionController.ActionStats> actionMap = new LinkedHashMap<String, SpringActionController.ActionStats>();
+                    Map<String, SpringActionController.ActionStats> actionMap = new LinkedHashMap<>();
                     controllerMap.put(controllerClass.getSimpleName(), actionMap);
                     SpringActionController controller = (SpringActionController) ViewServlet.getController(module, controllerClass);
                     SpringActionController.ActionResolver ar = controller.getActionResolver();
-                    Set<SpringActionController.ActionDescriptor> set = new TreeSet<SpringActionController.ActionDescriptor>(comp);
+                    Set<SpringActionController.ActionDescriptor> set = new TreeSet<>(comp);
                     set.addAll(ar.getActionDescriptors());
 
                     for (SpringActionController.ActionDescriptor ad : set)

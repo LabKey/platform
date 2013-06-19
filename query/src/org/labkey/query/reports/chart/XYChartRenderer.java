@@ -73,7 +73,7 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
             try
             {
                 Map<String, String> labels = getLabelMap(view);
-                Map<String, XYSeries> datasets = new HashMap<String, XYSeries>();
+                Map<String, XYSeries> datasets = new HashMap<>();
                 for (String columnName : descriptor.getColumnYName())
                 {
                     if (!StringUtils.isEmpty(columnName))
@@ -194,7 +194,7 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
 
                 if (info != null && info.getImageMapCallbackColumns().length != 0)
                 {
-                    colMap = new HashMap<String, Object>();
+                    colMap = new HashMap<>();
                     for (String colName : info.getImageMapCallbackColumns())
                     {
                         if (rowMap.containsKey(colName))

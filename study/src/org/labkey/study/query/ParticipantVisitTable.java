@@ -47,7 +47,7 @@ public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema);
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
-        _demographicsColumns = new CaseInsensitiveHashMap<ColumnInfo>();
+        _demographicsColumns = new CaseInsensitiveHashMap<>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
         ColumnInfo participantSequenceNumColumn = null;

@@ -55,7 +55,7 @@ import java.util.Map;
  */
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
-    private static Map<String, String> _typeToIconMap = new HashMap<String, String>();
+    private static Map<String, String> _typeToIconMap = new HashMap<>();
     static {
         _typeToIconMap.put(StudyRReport.TYPE, "/reports/r.gif");
         _typeToIconMap.put(ChartReportView.TYPE, "/reports/chart.gif");
@@ -93,7 +93,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
 
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
 
@@ -148,7 +148,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
 
         // crosstab designer
         ActionURL crossTabURL = new ActionURL(ReportsController.ParticipantCrosstabAction.class, context.getContainer());

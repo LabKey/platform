@@ -114,7 +114,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList<FieldKey>();
+        List<FieldKey> columns = new ArrayList<>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
@@ -148,7 +148,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             ColumnInfo propCol = table.getColumn("Property");
             if (propCol != null)
             {
-                final List<FieldKey> keys = new ArrayList<FieldKey>();
+                final List<FieldKey> keys = new ArrayList<>();
                 keys.add(FieldKey.fromParts("Property", "sourceLsid"));
                 keys.add(FieldKey.fromParts("Property", "datasetId"));
                 keys.add(FieldKey.fromParts("Property", "recordCount"));
@@ -205,12 +205,12 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col = view.getTable().getColumn("Property");
         if (col != null)
         {
-            List<FieldKey> keys = new ArrayList<FieldKey>();
+            List<FieldKey> keys = new ArrayList<>();
             keys.add(FieldKey.fromParts("Property", "sourceLsid"));
             keys.add(FieldKey.fromParts("Property", "datasetId"));
             keys.add(FieldKey.fromParts("Property", "recordCount"));
 
-            Map<String, ColumnInfo> params = new HashMap<String, ColumnInfo>();
+            Map<String, ColumnInfo> params = new HashMap<>();
             for (Map.Entry<FieldKey, ColumnInfo> entry : QueryService.get().getColumns(view.getTable(), keys).entrySet())
             {
                 params.put(entry.getKey().getName(), entry.getValue());

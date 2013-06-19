@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class ReferenceCount
 {
-    private final IdentityHashMap<Object,Object> _refs = new IdentityHashMap<Object, Object>();
+    private final IdentityHashMap<Object,Object> _refs = new IdentityHashMap<>();
     private final Set<Class> _legal;
 
     public ReferenceCount(Set<Class> legal)

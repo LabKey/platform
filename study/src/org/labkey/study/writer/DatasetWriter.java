@@ -254,7 +254,7 @@ public class DatasetWriter implements InternalStudyWriter
 
     public static void createDateShiftColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
     {
-        Map<ColumnInfo, ExprColumn> exprColumnMap = new HashMap<ColumnInfo, ExprColumn>();
+        Map<ColumnInfo, ExprColumn> exprColumnMap = new HashMap<>();
         for (ColumnInfo column : columns)
         {
             if (column.isDateTimeType() && !column.isExcludeFromShifting())
@@ -322,7 +322,7 @@ public class DatasetWriter implements InternalStudyWriter
             return Collections.emptyList();
 
         List<ColumnInfo> inColumns = tinfo.getColumns();
-        Collection<ColumnInfo> outColumns = new LinkedHashSet<ColumnInfo>(inColumns.size());
+        Collection<ColumnInfo> outColumns = new LinkedHashSet<>(inColumns.size());
 
         ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
         ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
@@ -330,7 +330,7 @@ public class DatasetWriter implements InternalStudyWriter
 
         if (def.isAssayData())
         {
-            inColumns = new ArrayList<ColumnInfo>(QueryService.get().getColumns(tinfo, tinfo.getDefaultVisibleColumns(), inColumns).values());
+            inColumns = new ArrayList<>(QueryService.get().getColumns(tinfo, tinfo.getDefaultVisibleColumns(), inColumns).values());
         }
 
         for (ColumnInfo in : inColumns)

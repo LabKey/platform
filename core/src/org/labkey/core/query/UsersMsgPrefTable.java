@@ -82,7 +82,7 @@ public class UsersMsgPrefTable extends UsersTable
 
         // add all of the active users who have read permission to this container to an in clause, this avoids
         // having to do the permission checking at render time and fixes the pagination display issues
-        List<Integer> userIds = new ArrayList<Integer>();
+        List<Integer> userIds = new ArrayList<>();
 
         for (User user : UserManager.getActiveUsers())
         {
@@ -104,7 +104,7 @@ public class UsersMsgPrefTable extends UsersTable
 
     private List<FieldKey> getDefaultColumns()
     {
-        List<FieldKey> columns = new ArrayList<FieldKey>();
+        List<FieldKey> columns = new ArrayList<>();
 
         columns.add(FieldKey.fromParts("UserId"));
         columns.add(FieldKey.fromParts("DisplayName"));

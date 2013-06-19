@@ -33,7 +33,7 @@ public class EPipelineQueueMessageSplitter extends FilteringListMessageSplitter
         EPipelineQueueImpl.resetOutboundJobs();
         if (outboundJobs == null)
         {
-            outboundJobs = new ArrayList<PipelineJob>();
+            outboundJobs = new ArrayList<>();
             outboundJobs.add((PipelineJob) message.getPayload());
         }
         super.initialise(new MuleMessage(outboundJobs, message));

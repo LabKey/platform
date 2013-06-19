@@ -59,7 +59,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
         // for the webPartContainer property, use the container path instead of container id
         // omit the container path in the common case where a wiki webpart is pointed at a wiki in its own container
@@ -82,7 +82,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
         // for the webPartContainer property, try to get the container ID from the specified path
         // if a container does not exist for the given path, use the current container ID

@@ -118,7 +118,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     {
         _log.info("Upgrading existing file roots to @files");
 
-        Map<String, Container> fileSets = new HashMap<String, Container>();
+        Map<String, Container> fileSets = new HashMap<>();
         findExistingFileSets(ContainerManager.getRoot(), fileSets);
 
         for (Map.Entry<String, Container> entry : fileSets.entrySet())

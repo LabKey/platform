@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class MessageConfigServiceImpl implements MessageConfigService.I
 {
-    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new ConcurrentSkipListMap<String, MessageConfigService.ConfigTypeProvider>();
+    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new ConcurrentSkipListMap<>();
 
     @Override
     public void savePreference(User currentUser, Container c, User projectUser, MessageConfigService.ConfigTypeProvider provider, int preference, String srcIdentifier)

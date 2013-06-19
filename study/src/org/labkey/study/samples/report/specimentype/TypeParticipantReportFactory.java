@@ -84,7 +84,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
             if (participantIds == null)
                 return Collections.<SpecimenVisitReport>emptyList();
         }
-        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        List<SpecimenVisitReport> reports = new ArrayList<>();
         Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visits
         boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
         List<VisitImpl> allVisits = null;
@@ -126,7 +126,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> inputs = new ArrayList<>();
         inputs.addAll(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;

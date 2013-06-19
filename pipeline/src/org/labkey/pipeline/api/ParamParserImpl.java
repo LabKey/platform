@@ -104,7 +104,7 @@ public class ParamParserImpl implements ParamParser
     protected void addError(Error error)
     {
         if (_errors == null)
-            _errors = new ArrayList<Error>();
+            _errors = new ArrayList<>();
         _errors.add(error);
     }
 
@@ -318,7 +318,7 @@ public class ParamParserImpl implements ParamParser
 
     public String[] getInputParameterNames()
     {
-        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<String> names = new ArrayList<>();
         Element el = _doc.getDocumentElement();
         NodeList notes = el.getElementsByTagName(TAG_NOTE);
         for (int i = 0; i < notes.getLength(); i++)
@@ -334,7 +334,7 @@ public class ParamParserImpl implements ParamParser
 
     public Map<String, String> getInputParameters()
     {
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         if (_doc != null)
         {
             Element el = _doc.getDocumentElement();

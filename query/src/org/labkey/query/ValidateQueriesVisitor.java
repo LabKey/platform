@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
 {
-    private List<Pair<String, Throwable>> _warnings = new ArrayList<Pair<String, Throwable>>();
+    private List<Pair<String, Throwable>> _warnings = new ArrayList<>();
     private int _totalCount = 0;
     private int _validCount = 0;
     private QueryManager _mgr;

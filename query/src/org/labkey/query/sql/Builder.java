@@ -32,7 +32,7 @@ public class Builder extends SQLFragment
     {
         _cIndent = 0;
         _fNewLine = true;
-        _prefix = new ArrayList<String>();
+        _prefix = new ArrayList<>();
     }
 
     /**

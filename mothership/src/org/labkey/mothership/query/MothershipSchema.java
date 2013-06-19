@@ -75,7 +75,7 @@ public class MothershipSchema extends UserSchema
     public static final String EXCEPTION_STACK_TRACE_TABLE_NAME = "ExceptionStackTrace";
     public static final String SOFTWARE_RELEASES_TABLE_NAME = "SoftwareReleases";
 
-    private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<String>(
+    private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<>(
         Arrays.asList(
             SERVER_INSTALLATIONS_TABLE_NAME,
             SERVER_SESSIONS_TABLE_NAME,
@@ -141,12 +141,12 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createSoftwareReleasesTable()
     {
-        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoSoftwareRelease(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this);
         result.wrapAllColumns(true);
 
         result.getColumn("SVNURL").setWidth("500");
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Description"));
         defaultCols.add(FieldKey.fromParts("SVNRevision"));
         defaultCols.add(FieldKey.fromParts("SVNURL"));
@@ -159,7 +159,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createServerSessionTable()
     {
-        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerSession(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
@@ -194,7 +194,7 @@ public class MothershipSchema extends UserSchema
         exceptionCountCol.setFormat("#.#");
         result.addColumn(exceptionCountCol);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromString("SVNRevision"));
         defaultCols.add(FieldKey.fromString("Duration"));
         defaultCols.add(FieldKey.fromString("LastKnownTime"));
@@ -216,7 +216,7 @@ public class MothershipSchema extends UserSchema
 
     public TableInfo createServerInstallationTable()
     {
-        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerInstallation(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerInstallation(), this);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
@@ -295,7 +295,7 @@ public class MothershipSchema extends UserSchema
         });
         result.addColumn(currentVersionColumn);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromString("ServerHostName"));
         defaultCols.add(FieldKey.fromString("ServerIP"));
         defaultCols.add(FieldKey.fromString("Note"));
@@ -311,7 +311,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionStackTraceTable()
     {
-        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
         result.wrapAllColumns(true);
         result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -379,7 +379,7 @@ public class MothershipSchema extends UserSchema
 
         result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
         defaultCols.add(FieldKey.fromParts("MaxSVNRevision"));
@@ -416,7 +416,7 @@ public class MothershipSchema extends UserSchema
     public FilteredTable createExceptionReportTableWithStack()
     {
         FilteredTable result = createExceptionReportTable();
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>(result.getDefaultVisibleColumns());
+        List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
         for (Iterator<FieldKey> i = defaultCols.iterator(); i.hasNext(); )
         {
             if (i.next().getParts().get(0).equals("ServerSessionId"))
@@ -433,7 +433,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionReportTable()
     {
-        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoExceptionReport(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
         result.wrapAllColumns(true);
         result.getColumn("URL").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -513,7 +513,7 @@ public class MothershipSchema extends UserSchema
         fk.setPrefixColumnCaption(false);
         result.getColumn("ServerSessionId").setFk(fk);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ServerSessionId"));
         defaultCols.add(FieldKey.fromParts("Created"));
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "SoftwareReleaseId"));

@@ -64,7 +64,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
         User[] members = actor.getMembers(location);
 
-        return new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",
+        return new JspView<>("/org/labkey/study/view/samples/groupMembers.jsp",
                 new GroupMembersBean(actor, location, members, form.getReturnUrl()), errors);
     }
 
@@ -76,7 +76,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
         if (emailsToDelete != null && emailsToDelete.length > 0)
         {
-            List<String> invalidEmails = new ArrayList<String>();
+            List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> emails = SecurityManager.normalizeEmails(emailsToDelete, invalidEmails);
 
             if (invalidEmails.isEmpty())
@@ -97,7 +97,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         if (form.getNames() != null)
         {
             String[] names = form.getNames().split("\n");
-            List<String> invalidEmails = new ArrayList<String>();
+            List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> emails = SecurityManager.normalizeEmails(names, invalidEmails);
 
             for (String rawEmail : invalidEmails)
@@ -109,7 +109,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 }
             }
 
-            List<User> newMembers = new ArrayList<User>();
+            List<User> newMembers = new ArrayList<>();
 
             for (ValidEmail email : emails)
             {

@@ -45,7 +45,7 @@ public class QCStateSet
 
     private QCStateSet(Container container, QCState[] stateSet, boolean includeUnmarked, String label)
     {
-        _states = new HashSet<QCState>(Arrays.asList(stateSet));
+        _states = new HashSet<>(Arrays.asList(stateSet));
         _includeUnmarked = includeUnmarked;
         _label = label;
         if (_label == null)
@@ -85,7 +85,7 @@ public class QCStateSet
 
     private static QCState[] getStatesForIds(Container container, int[] stateRowIds)
     {
-        List<QCState> stateSet = new ArrayList<QCState>();
+        List<QCState> stateSet = new ArrayList<>();
         for (int stateRowId : stateRowIds)
         {
             QCState state = StudyManager.getInstance().getQCStateForRowId(container, stateRowId);
@@ -102,7 +102,7 @@ public class QCStateSet
 
     public List<Integer> getStateIds()
     {
-        List<Integer> ids = new ArrayList<Integer>();
+        List<Integer> ids = new ArrayList<>();
         for (QCState state : _states)
             ids.add(state.getRowId());
         return ids;
@@ -198,7 +198,7 @@ public class QCStateSet
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         QCState[] states = StudyManager.getInstance().getQCStates(container);
-        List<QCState> selectedStates = new ArrayList<QCState>();
+        List<QCState> selectedStates = new ArrayList<>();
         for (QCState state : states)
         {
             if (state.isPublicData())
@@ -213,7 +213,7 @@ public class QCStateSet
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         QCState[] states = StudyManager.getInstance().getQCStates(container);
-        List<QCState> selectedStates = new ArrayList<QCState>();
+        List<QCState> selectedStates = new ArrayList<>();
         for (QCState state : states)
         {
             if (!state.isPublicData())
@@ -248,7 +248,7 @@ public class QCStateSet
             return getDefaultStates(container);
 
         String[] rowIdStrings = formValue.split(",");
-        List<Integer> rowIds = new ArrayList<Integer>();
+        List<Integer> rowIds = new ArrayList<>();
         boolean includeUnmarked = false;
         try
         {
@@ -275,7 +275,7 @@ public class QCStateSet
 
     public static List<QCStateSet> getSelectableSets(Container container)
     {
-        List<QCStateSet> set = new ArrayList<QCStateSet>();
+        List<QCStateSet> set = new ArrayList<>();
 
         QCStateSet publicStates = getPublicStates(container);
         if (publicStates.getStates().size() > 1 || publicStates.isIncludeUnmarked())

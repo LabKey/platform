@@ -52,7 +52,7 @@
 <table width="100%"><tr><td align="left">
 <b><%
 {
-    ArrayList<WebdavResource> dirs = new ArrayList<WebdavResource>();
+    ArrayList<WebdavResource> dirs = new ArrayList<>();
     WebdavResource dir = resource;
     while (null != dir)
     {
@@ -92,8 +92,8 @@
 <th align="right" width="240">Last Modified</th>
 </thead>
 <tr><%
-    TreeMap<String, WebdavResource> dirs = new TreeMap<String, WebdavResource>();
-    TreeMap<String, WebdavResource> files = new TreeMap<String, WebdavResource>();
+    TreeMap<String, WebdavResource> dirs = new TreeMap<>();
+    TreeMap<String, WebdavResource> files = new TreeMap<>();
     WebdavResource parent = (WebdavResource)resource.parent();
 
     if (resource.canList(user, true))
@@ -157,7 +157,7 @@
 %>
 This is a WebDav enabled directory.<br>
 <%
-    ArrayList<String> can = new ArrayList<String>();
+    ArrayList<String> can = new ArrayList<>();
     if (resource.canRead(user,false)) can.add("read");
     if (resource.canWrite(user,false)) can.add("update");
     if (resource.canCreate(user,false)) can.add("create");

@@ -84,11 +84,11 @@ public class ParticipantGroupImporter implements InternalStudyImporter
 
                 scope.ensureTransaction();
 
-                Map<String, ParticipantCategoryImpl> existingGroups = new HashMap<String, ParticipantCategoryImpl>();
+                Map<String, ParticipantCategoryImpl> existingGroups = new HashMap<>();
                 for (ParticipantCategoryImpl group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
                     existingGroups.put(group.getLabel(), group);
 
-                Map<String, String> existingParticipants = new HashMap<String, String>();
+                Map<String, String> existingParticipants = new HashMap<>();
                 for (String id : StudyManager.getInstance().getParticipantIds(study))
                     existingParticipants.put(id, id);
 
@@ -125,7 +125,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                         pg.setLabel(group.getLabel());
                         pg.setCategoryLabel(pc.getLabel());
 
-                        List<String> ids = new ArrayList<String>();
+                        List<String> ids = new ArrayList<>();
                         for (String id : group.getParticipantIdArray())
                         {
                             if (existingParticipants.containsKey(id))

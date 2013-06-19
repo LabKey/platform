@@ -66,7 +66,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeXml.getName());
 
                 org.labkey.folder.xml.FolderType.Modules modulesXml = folderTypeXml.getModules();
-                Set<Module> activeModules = new HashSet<Module>();
+                Set<Module> activeModules = new HashSet<>();
                 for (String moduleName : modulesXml.getModuleNameArray())
                 {
                     Module module = ModuleLoader.getInstance().getModule(moduleName);

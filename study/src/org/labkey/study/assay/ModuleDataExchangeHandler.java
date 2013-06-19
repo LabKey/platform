@@ -37,7 +37,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
     @Override
     protected Set<File> writeRunData(AssayRunUploadContext form, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        Set<File> result = new HashSet<File>();
+        Set<File> result = new HashSet<>();
         for (ExpData expData : run.getDataInputs().keySet())
         {
             // the original uploaded path

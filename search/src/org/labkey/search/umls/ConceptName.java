@@ -146,7 +146,7 @@ public class ConceptName  // MRCONSO
             @Override
             public ArrayList<ConceptName> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<ConceptName> list = new ArrayList<ConceptName>();
+                ArrayList<ConceptName> list = new ArrayList<>();
                 while (rs.next())
                     list.add(new ConceptName(ResultSetUtil.mapRow(rs)));
                 return list;

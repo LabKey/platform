@@ -53,7 +53,7 @@ public class SchemaXmlReader implements SchemaReader
 {
     private static final String NAME_KEY = "PlateName";
 
-    private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
+    private final List<Map<String, Object>> _importMaps = new LinkedList<>();
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
 
     public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
@@ -79,7 +79,7 @@ public class SchemaXmlReader implements SchemaReader
 
         TablesType tablesXml = tablesDoc.getTables();
 
-        _datasetInfoMap = new HashMap<Integer, DatasetImportInfo>(tablesXml.getTableArray().length);
+        _datasetInfoMap = new HashMap<>(tablesXml.getTableArray().length);
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
@@ -109,7 +109,7 @@ public class SchemaXmlReader implements SchemaReader
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
+            RowMapFactory<Object> mapFactory = new RowMapFactory<>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
                     "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected", "ExcludeFromShifting");
@@ -157,7 +157,7 @@ public class SchemaXmlReader implements SchemaReader
                     else
                         dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
 
-                    Set<String> importAliases = new LinkedHashSet<String>();
+                    Set<String> importAliases = new LinkedHashSet<>();
                     if (columnXml.isSetImportAliases())
                     {
                         importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));

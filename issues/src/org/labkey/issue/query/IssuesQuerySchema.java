@@ -50,7 +50,7 @@ public class IssuesQuerySchema extends UserSchema
 
         public abstract TableInfo createTable(IssuesQuerySchema schema);
     }
-    static private Set<String> tableNames = new LinkedHashSet<String>();
+    static private Set<String> tableNames = new LinkedHashSet<>();
     static
     {
         for (TableType type : TableType.values())

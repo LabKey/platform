@@ -136,7 +136,7 @@ public class DomainForm extends ViewForm
 
     public Map<String, String> getTypeOptions(String currentValue)
     {
-        LinkedHashMap<String, String> ret = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> ret = new LinkedHashMap<>();
         for (PropertyType pt : new PropertyType[] {
                 PropertyType.STRING,
                 PropertyType.MULTI_LINE,

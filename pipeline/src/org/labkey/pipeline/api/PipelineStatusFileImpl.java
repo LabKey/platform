@@ -36,7 +36,7 @@ import java.util.HashSet;
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
-    private static HashSet<String> _inactiveStatuses = new HashSet<String>(Arrays.asList(
+    private static HashSet<String> _inactiveStatuses = new HashSet<>(Arrays.asList(
             PipelineJob.COMPLETE_STATUS,
             PipelineJob.CANCELLED_STATUS,
             PipelineJob.WAITING_FOR_FILES,
@@ -44,7 +44,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
     ));
 
-    private static HashSet<String> _emailStatuses = new HashSet<String>(Arrays.asList(
+    private static HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
             PipelineJob.COMPLETE_STATUS,
             PipelineJob.ERROR_STATUS,
             PipelineJob.CANCELLED_STATUS

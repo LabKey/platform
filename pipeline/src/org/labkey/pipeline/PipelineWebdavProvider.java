@@ -96,7 +96,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             _shouldIndex = root.isSearchable();
             setPolicy(SecurityPolicyManager.getPolicy(root));
 
-            _files = new ArrayList<FileInfo>();
+            _files = new ArrayList<>();
             for (File file : root.getRootPaths())
             {
                 _files.add(new FileInfo(file));

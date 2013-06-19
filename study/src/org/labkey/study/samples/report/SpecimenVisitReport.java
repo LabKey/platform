@@ -52,7 +52,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
     private boolean _viewPtidList = false;
-    private Map<Integer, Integer> _nonEmptyColumns = new HashMap<Integer, Integer>();
+    private Map<Integer, Integer> _nonEmptyColumns = new HashMap<>();
 
     public SpecimenVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
@@ -103,7 +103,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         {
             if (_nonEmptyVisits == null)
             {
-                List<VisitImpl> visits = new ArrayList<VisitImpl>();
+                List<VisitImpl> visits = new ArrayList<>();
                 for (VisitImpl visit : _visits)
                 {
                     if (_nonEmptyColumns.containsKey(visit.getRowId()))
@@ -246,7 +246,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     public class Row
     {
         private final SpecimenReportTitle[] _titleHierarchy;
-        private Map<Integer, CELLDATA> _visitData = new HashMap<Integer, CELLDATA>();
+        private Map<Integer, CELLDATA> _visitData = new HashMap<>();
 
         public Row(String[] stringHierarchy)
         {

@@ -153,7 +153,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
         {
             sql.append("\n AND ParticipantVisitLookup.VisitRowId IN (");
-            sql.append(convertListToString(new ArrayList<Integer>(ctx.getVisitIds()), false));
+            sql.append(convertListToString(new ArrayList<>(ctx.getVisitIds()), false));
             sql.append(")");
         }
 
@@ -171,7 +171,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         if (null != ctx.getSpecimens() && !ctx.getSpecimens().isEmpty())
         {
             List<Specimen> specimens = ctx.getSpecimens();
-            List<String> uniqueIds = new LinkedList<String>();
+            List<String> uniqueIds = new LinkedList<>();
 
             for (Specimen specimen : specimens)
                 uniqueIds.add(specimen.getGlobalUniqueId());
@@ -250,14 +250,14 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         @Test
         public void testConvertListToString()
         {
-            List<Integer> ints = new ArrayList<Integer>();
+            List<Integer> ints = new ArrayList<>();
             ints.add(1);
             ints.add(2);
             ints.add(3);
             assertEquals("1,2,3", convertListToString(ints, false));
             assertEquals("'1','2','3'", convertListToString(ints, true));
 
-            List<String> ptids = new ArrayList<String>();
+            List<String> ptids = new ArrayList<>();
             ptids.add("Ptid1");
             ptids.add("Ptid2");
             ptids.add("Ptid3");

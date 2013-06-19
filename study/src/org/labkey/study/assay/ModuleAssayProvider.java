@@ -93,9 +93,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private FieldKey dateKey;
     private FieldKey specimenIdKey;
 
-    private List<ScriptMetadata> _scriptMetadata = new ArrayList<ScriptMetadata>();
+    private List<ScriptMetadata> _scriptMetadata = new ArrayList<>();
 
-    private Set<String> _missingScriptWarnings = new HashSet<String>();
+    private Set<String> _missingScriptWarnings = new HashSet<>();
 
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
@@ -216,7 +216,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         {
             DomainDocument doc = DomainDocument.Factory.parse(domainFile.getInputStream());
             DomainDescriptorType xDomain = doc.getDomain();
-            ArrayList<XmlError> errors = new ArrayList<XmlError>();
+            ArrayList<XmlError> errors = new ArrayList<>();
             XmlOptions options = new XmlOptions().setErrorListener(errors);
             if (xDomain != null && xDomain.validate(options))
             {
@@ -302,7 +302,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
-        Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new LinkedHashMap<IAssayDomainType, DomainDescriptorType>(AssayDomainTypes.values().length);
+        Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new LinkedHashMap<>(AssayDomainTypes.values().length);
         for (IAssayDomainType domainType : AssayDomainTypes.values())
         {
             DomainDescriptorType xDomain = parseDomain(domainType);
@@ -310,13 +310,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 domainsDescriptors.put(domainType, xDomain);
         }
 
-        Map<String, Set<String>> required = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> required = new HashMap<>();
         for (Map.Entry<IAssayDomainType, DomainDescriptorType> domainDescriptor : domainsDescriptors.entrySet())
         {
             IAssayDomainType domainType = domainDescriptor.getKey();
             DomainDescriptorType xDescriptor = domainDescriptor.getValue();
             PropertyDescriptorType[] xProperties = xDescriptor.getPropertyDescriptorArray();
-            LinkedHashSet<String> properties = new LinkedHashSet<String>(xProperties.length);
+            LinkedHashSet<String> properties = new LinkedHashSet<>(xProperties.length);
             for (PropertyDescriptorType xProp : xProperties)
                 properties.add(xProp.getName());
 
@@ -384,7 +384,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.provider = this;
         bean.expProtocol = protocol;
 
-        JspView<AssayPageBean> view = new JspView<AssayPageBean>("/org/labkey/study/assay/view/moduleAssayListView.jsp", bean);
+        JspView<AssayPageBean> view = new JspView<>("/org/labkey/study/assay/view/moduleAssayListView.jsp", bean);
         view.setView("nested", nestedView);
         return view;
     }
@@ -400,7 +400,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.provider = this;
         bean.expProtocol = protocol;
 
-        JspView<BatchDetailsBean> view = new JspView<BatchDetailsBean>("/org/labkey/study/assay/view/begin.jsp", bean);
+        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/begin.jsp", bean);
         view.setView("nested", beginView);
         return view;
     }
@@ -428,7 +428,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expProtocol = protocol;
         bean.expExperiment = batch;
 
-        JspView<BatchDetailsBean> view = new JspView<BatchDetailsBean>("/org/labkey/study/assay/view/batchDetails.jsp", bean);
+        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/batchDetails.jsp", bean);
         view.setView("nested", batchDetailsView);
         return view;
     }
@@ -456,7 +456,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expProtocol = protocol;
         bean.expRun = run;
 
-        JspView<RunDetailsBean> view = new JspView<RunDetailsBean>("/org/labkey/study/assay/view/runDetails.jsp", bean);
+        JspView<RunDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/runDetails.jsp", bean);
         view.setView("nested", runDetailsView);
         return view;
     }
@@ -504,7 +504,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
         }
 
-        JspView<ResultDetailsBean> view = new JspView<ResultDetailsBean>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
+        JspView<ResultDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
         view.setView("nested", resultDetailsView);
         return view;
     }
@@ -537,7 +537,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             return HttpView.redirect(url);
         }
 
-        JspView<AssayRunUploadForm> view = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/moduleAssayUpload.jsp", form);
+        JspView<AssayRunUploadForm> view = new JspView<>("/org/labkey/study/assay/view/moduleAssayUpload.jsp", form);
         view.setView("nested", uploadView);
         return view;
     }
@@ -552,7 +552,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
         // Start with the standard set
-        List<File> result = new ArrayList<File>(super.getValidationAndAnalysisScripts(protocol, scope));
+        List<File> result = new ArrayList<>(super.getValidationAndAnalysisScripts(protocol, scope));
 
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
@@ -564,7 +564,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 final ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
                 Collection<? extends Resource> scripts = scriptDir.list();
-                List<File> moduleScriptFiles = new ArrayList<File>(scripts.size());
+                List<File> moduleScriptFiles = new ArrayList<>(scripts.size());
                 for (Resource r : scripts)
                 {
                     if (r instanceof FileResource)
@@ -576,7 +576,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 }
 
                 // Put the scripts in the order specified by the config.xml file
-                List<File> sortedModuleScripts = new ArrayList<File>();
+                List<File> sortedModuleScripts = new ArrayList<>();
                 for (ScriptMetadata scriptMetadata : _scriptMetadata)
                 {
                     File matchingScript = findAndRemove(moduleScriptFiles, scriptMetadata.getFileName());

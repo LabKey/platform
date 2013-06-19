@@ -42,7 +42,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
-        List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
+        List<ParticipantVisitReport> reports = new ArrayList<>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {
             String displayLabel = type.geDisplayLabel();
@@ -166,7 +166,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
         appendOptions(summary.getPrimaryTypes(), builder, null, _selectedType, 0);
         builder.append("</select>");
-        return new Pair<String, String>("Specimen type", builder.toString());
+        return new Pair<>("Specimen type", builder.toString());
     }
 
     public String getLabel()

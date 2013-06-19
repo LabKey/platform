@@ -120,7 +120,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 }
 
                 PagesDocument.Pages.Page[] pageXmls = pagesDocXml.getPages().getPageArray();
-                List<FolderTab> tabs = new ArrayList<FolderTab>();
+                List<FolderTab> tabs = new ArrayList<>();
                 for (PagesDocument.Pages.Page pageXml : pageXmls)
                 {
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
@@ -137,7 +137,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     tabs.add(tab);
 
                     PagesDocument.Pages.Page.Webpart[] webpartXmls = pageXml.getWebpartArray();
-                    List<Portal.WebPart> webparts = new ArrayList<Portal.WebPart>();
+                    List<Portal.WebPart> webparts = new ArrayList<>();
                     for (PagesDocument.Pages.Page.Webpart webpartXml : webpartXmls)
                     {
                         Portal.WebPart webPart = new Portal.WebPart();

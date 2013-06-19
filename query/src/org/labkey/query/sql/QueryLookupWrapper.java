@@ -158,7 +158,7 @@ public class QueryLookupWrapper extends QueryRelation
     protected Map<String,RelationColumn> getAllColumns()
     {
         Map<String,RelationColumn> all = _source.getAllColumns();
-        Map<String,RelationColumn> ret = new LinkedHashMap<String,RelationColumn>(2*all.size());
+        Map<String,RelationColumn> ret = new LinkedHashMap<>(2*all.size());
         for (Map.Entry<String,RelationColumn> e : all.entrySet())
         {
             RelationColumn out = getColumn(e.getKey());
@@ -246,7 +246,7 @@ public class QueryLookupWrapper extends QueryRelation
         if (null == sourceFromSql || !_query.getParseErrors().isEmpty())
             return null;
 
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<>();
         SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
         assert sql.appendComment("<QueryLookupWrapper>");
 
@@ -293,7 +293,7 @@ public class QueryLookupWrapper extends QueryRelation
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         // TODO handle lookup columns
-        HashSet<RelationColumn> unwrapped = new HashSet<RelationColumn>();
+        HashSet<RelationColumn> unwrapped = new HashSet<>();
         for (RelationColumn rc : selected)
         {
             if (rc instanceof PassThroughColumn)

@@ -40,7 +40,7 @@ public class ParticipantGroup extends Entity
     private int _categoryId;  // fk to participant category
     private String _categoryLabel;
 
-    private Set<String> _participantIds = new LinkedHashSet<String>();
+    private Set<String> _participantIds = new LinkedHashSet<>();
     private String _filters;
     private String _description;
 
@@ -81,12 +81,12 @@ public class ParticipantGroup extends Entity
 
     public Set<String> getParticipantSet()
     {
-        return new LinkedHashSet<String>(_participantIds);
+        return new LinkedHashSet<>(_participantIds);
     }
 
     public void setParticipantSet(Set<String> participantSet)
     {
-        _participantIds = new LinkedHashSet<String>(participantSet);
+        _participantIds = new LinkedHashSet<>(participantSet);
     }
 
     public String[] getParticipantIds()
@@ -96,8 +96,8 @@ public class ParticipantGroup extends Entity
 
     public void setParticipantIds(String[] participantIds)
     {
-        Set<String> participants = new LinkedHashSet<String>();
-        Set<String> duplicates = new LinkedHashSet<String>();
+        Set<String> participants = new LinkedHashSet<>();
+        Set<String> duplicates = new LinkedHashSet<>();
 
         // validate that there are no duplicates
         for (String id : participantIds)
@@ -180,7 +180,7 @@ public class ParticipantGroup extends Entity
     public Pair<FieldKey, String> getFilterColAndValue(Container container)
     {
         FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), getCategoryLabel());
-        return new Pair<FieldKey, String>(key, getLabel());
+        return new Pair<>(key, getLabel());
     }
 
     public String getURLFilterParameterName(FieldKey filterColumn, String dataRegionName)

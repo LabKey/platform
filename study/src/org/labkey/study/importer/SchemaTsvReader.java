@@ -48,8 +48,8 @@ public class SchemaTsvReader implements SchemaReader
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
 
-        _importMaps = new ArrayList<Map<String, Object>>(mapsLoad.size());
-        _datasetInfoMap = new HashMap<Integer, DatasetImportInfo>();
+        _importMaps = new ArrayList<>(mapsLoad.size());
+        _datasetInfoMap = new HashMap<>();
         _typeNameColumn = typeNameColumn;
 
         if (mapsLoad.size() > 0)
@@ -60,7 +60,7 @@ public class SchemaTsvReader implements SchemaReader
 
             for (Map<String, Object> props : mapsLoad)
             {
-                props = new CaseInsensitiveHashMap<Object>(props);
+                props = new CaseInsensitiveHashMap<>(props);
 
                 String typeName = (String) props.get(typeNameColumn);
                 Object typeIdObj = props.get(typeIdColumn);

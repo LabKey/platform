@@ -196,7 +196,7 @@ public class ExternalSchema extends SimpleUserSchema
             return tableNames;
 
         // Translate database names to XML table names
-        List<String> xmlTableNames = new LinkedList<String>();
+        List<String> xmlTableNames = new LinkedList<>();
 
         for (String tableName : tableNames)
         {
@@ -232,7 +232,7 @@ public class ExternalSchema extends SimpleUserSchema
                     if (tableNames.length == 1 && tableNames[0].equals("*"))
                         return tableSource.getTableNames();
                     else
-                        allowed = new HashSet<String>(Arrays.asList(tableNames));
+                        allowed = new HashSet<>(Arrays.asList(tableNames));
                 }
             }
         }
@@ -241,7 +241,7 @@ public class ExternalSchema extends SimpleUserSchema
             return Collections.emptySet();
 
         // Some tables in the "allowed" list may no longer exist or may be query names, so check each table in the schema.  #13002
-        Set<String> available = new HashSet<String>(allowed.size());
+        Set<String> available = new HashSet<>(allowed.size());
         for (String name : allowed)
             if (tableSource.isTableAvailable(name))
                 available.add(name);
@@ -284,7 +284,7 @@ public class ExternalSchema extends SimpleUserSchema
 
         // The "allowed" list contains both query and table names, so check each query in the schema.
         Collection<String> queryNames = tableSource.getQueryNames();
-        Set<String> available = new HashSet<String>(allowed.size());
+        Set<String> available = new HashSet<>(allowed.size());
         for (String queryName : queryNames)
             if (allowed.contains(queryName))
                 available.add(queryName);
@@ -294,7 +294,7 @@ public class ExternalSchema extends SimpleUserSchema
 
     protected static @NotNull Collection<String> getHiddenTables(TableType[] tableTypes)
     {
-        Set<String> hidden = new HashSet<String>();
+        Set<String> hidden = new HashSet<>();
 
         if (tableTypes != null)
         {
@@ -308,7 +308,7 @@ public class ExternalSchema extends SimpleUserSchema
 
     protected static @NotNull Map<String, TableType> getMetaDataMap(TableType[] tableTypes)
     {
-        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
+        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<>();
         if (tableTypes != null)
         {
             for (TableType tt : tableTypes)

@@ -43,7 +43,7 @@ import java.util.Set;
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
 {
     private final ExpObjectImpl _objectType;
-    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<Class<? extends Permission>>();
+    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
 
     protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
@@ -206,7 +206,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             addColumn(colProperty);
         }
 
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
+        List<FieldKey> visibleColumns = new ArrayList<>(getDefaultVisibleColumns());
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();

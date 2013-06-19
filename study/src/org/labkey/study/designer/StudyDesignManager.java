@@ -402,14 +402,14 @@ public class StudyDesignManager
             previousDay = endDay;
         }
 
-        Map<String, PropertyType> nameMap = new HashMap<String, PropertyType>();
+        Map<String, PropertyType> nameMap = new HashMap<>();
         //TODO: Not quite right. Really should use types culled from tabloader
         for (String propertyId : participantDataset.get(0).keySet())
         {
             Object val = participantDataset.get(0).get(propertyId);
             nameMap.put(propertyId, null == val ? PropertyType.STRING : PropertyType.getFromClass(val.getClass()));
         }
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
 
         DataSet subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
@@ -448,7 +448,7 @@ public class StudyDesignManager
         for (GWTCohort cohort : cohorts)
             count += cohort.getCount();
 
-        List<Map<String,Object>> participantInfo = new ArrayList<Map<String, Object>>(count);
+        List<Map<String,Object>> participantInfo = new ArrayList<>(count);
         for (int cohortNum = 0; cohortNum < cohorts.size(); cohortNum++)
         {
             GWTCohort cohort = cohorts.get(cohortNum);
@@ -457,7 +457,7 @@ public class StudyDesignManager
             for (int participantNum = 0; participantNum < cohort.getCount(); participantNum++)
             {
                 participantId = sprintf("%03d%02d%02d", def.getCavdStudyId(), cohortNum + 1, participantNum + 1);
-                Map<String,Object> m = new HashMap<String,Object>();
+                Map<String,Object> m = new HashMap<>();
                 m.put("ParticipantId", participantId);
                 m.put("Cohort", cohort.getName());
                 m.put("Index", participantNum + 1);
@@ -486,7 +486,7 @@ public class StudyDesignManager
         GWTAssaySchedule assaySchedule = studyDefinition.getAssaySchedule();
         List<GWTTimepoint> timepoints = assaySchedule.getTimepoints();
         Collections.sort(timepoints);
-        Map<GWTTimepoint, Map<GWTSampleType,Integer>> vialsPerSampleType = new HashMap<GWTTimepoint, Map<GWTSampleType,Integer>>();
+        Map<GWTTimepoint, Map<GWTSampleType,Integer>> vialsPerSampleType = new HashMap<>();
         for (GWTAssayDefinition def : (List<GWTAssayDefinition>) assaySchedule.getAssays())
         {
             for (GWTTimepoint tp : timepoints)
@@ -494,7 +494,7 @@ public class StudyDesignManager
                 Map<GWTSampleType, Integer> timepointSamples = vialsPerSampleType.get(tp);
                 if (null == timepointSamples)
                 {
-                    timepointSamples = new HashMap<GWTSampleType, Integer>();
+                    timepointSamples = new HashMap<>();
                     vialsPerSampleType.put(tp, timepointSamples);
                 }
                 GWTAssayNote note = assaySchedule.getAssayPerformed(def, tp);
@@ -516,7 +516,7 @@ public class StudyDesignManager
         }
 
         //CONSIDER: Use something like ArrayListMap to share hash table space
-        List<Map<String,Object>> rows = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> rows = new ArrayList<>();
         int timepointIndex = 1; //Use one based
         for (GWTTimepoint tp : timepoints)
         {
@@ -535,7 +535,7 @@ public class StudyDesignManager
                 for (GWTSampleType st : timepointSamples.keySet())
                 {
                     String sampleId = ptid + "-" + tp.getDays();
-                    Map<String,Object> m = new HashMap<String,Object>();
+                    Map<String,Object> m = new HashMap<>();
                     m.put(SimpleSpecimenImporter.VISIT, timepointIndex);
                     m.put(SimpleSpecimenImporter.PARTICIPANT_ID, ptid);
                     m.put(SimpleSpecimenImporter.SAMPLE_ID, sampleId);

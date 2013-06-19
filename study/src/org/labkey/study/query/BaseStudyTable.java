@@ -435,7 +435,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     ptidVisitCommentAlias = ColumnInfo.legalNameFromName(ptidVisitCommentProperty);
             }
 
-            List<String> commentFields = new ArrayList<String>();
+            List<String> commentFields = new ArrayList<>();
 
             if (_includeVialComments)
             {

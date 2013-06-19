@@ -110,9 +110,9 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         _dsd = dsd;
         _title = dsd.getLabel();
 
-        List<FieldKey> defaultVisibleCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultVisibleCols = new ArrayList<>();
 
-        HashSet<String> standardURIs = new HashSet<String>();
+        HashSet<String> standardURIs = new HashSet<>();
         for (PropertyDescriptor pd :  DataSetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
 
@@ -733,7 +733,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         {
             if (_qcStateCache == null)
             {
-                _qcStateCache = new HashMap<Integer, QCState>();
+                _qcStateCache = new HashMap<>();
                 QCState[] states = StudyManager.getInstance().getQCStates(ctx.getContainer());
                 for (QCState state : states)
                     _qcStateCache.put(state.getRowId(), state);
@@ -843,7 +843,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             TableInfo assayResultTable = getAssayResultTable();
             if (assayResultTable != null)
             {
-                columns = new LinkedHashMap<FieldKey, ColumnInfo>(columns);
+                columns = new LinkedHashMap<>(columns);
                 columns.putAll(assayResultTable.getExtendedColumns(hidden));
             }
         }

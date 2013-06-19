@@ -43,7 +43,7 @@ import java.util.concurrent.Callable;
 
 public abstract class Method
 {
-    private final static HashMap<String, Method> labkeyMethod = new HashMap<String, Method>();
+    private final static HashMap<String, Method> labkeyMethod = new HashMap<>();
 
     static
     {
@@ -881,7 +881,7 @@ public abstract class Method
     }
 
 
-    static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<Method>();
+    static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<>();
     static
     {
         postgresMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
@@ -920,7 +920,7 @@ public abstract class Method
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
     }
 
-    static CaseInsensitiveHashMap<Method> mssqlMethods = new CaseInsensitiveHashMap<Method>();
+    static CaseInsensitiveHashMap<Method> mssqlMethods = new CaseInsensitiveHashMap<>();
     static
     {
         mssqlMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
@@ -942,7 +942,7 @@ public abstract class Method
         mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
     }
 
-    static CaseInsensitiveHashMap<Method> oracleMethods = new CaseInsensitiveHashMap<Method>();
+    static CaseInsensitiveHashMap<Method> oracleMethods = new CaseInsensitiveHashMap<>();
     static
     {
 /*  Standard Oracle Functions

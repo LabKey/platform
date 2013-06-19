@@ -42,7 +42,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     final private AtomicInteger _estimate = new AtomicInteger();
     final private AtomicInteger _indexed = new AtomicInteger();
     final private AtomicInteger _failed = new AtomicInteger();
-    final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<Object,Object>());
+    final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<>());
     final StringWriter _sw = new StringWriter();
     final PrintWriter _out = new PrintWriter(_sw);
 
@@ -224,7 +224,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
             else
             {
                 if (null == onSuccess)
-                    onSuccess = new ArrayList<Runnable>(1);
+                    onSuccess = new ArrayList<>(1);
                 onSuccess.add(r);
             }
         }

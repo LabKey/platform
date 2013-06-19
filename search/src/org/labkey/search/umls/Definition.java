@@ -115,7 +115,7 @@ public class Definition // MRDEF
             @Override
             public ArrayList<Definition> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<Definition> list = new ArrayList<Definition>();
+                ArrayList<Definition> list = new ArrayList<>();
                 while (rs.next())
                     list.add(new Definition(ResultSetUtil.mapRow(rs)));
                 return list;

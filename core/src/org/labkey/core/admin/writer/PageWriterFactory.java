@@ -62,7 +62,7 @@ public class PageWriterFactory implements FolderWriterFactory
             // duplicate subfolders (same name) to exist
             // Get list of child containers that are not container tabs, but match container tabs; these are bad
             FolderType folderType = ContainerManager.getFolderType(c);
-            List<String> errorStrings = new ArrayList<String>();
+            List<String> errorStrings = new ArrayList<>();
             List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
             if (!containersMatchingTabs.isEmpty())
             {

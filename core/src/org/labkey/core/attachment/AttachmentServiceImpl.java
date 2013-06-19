@@ -303,7 +303,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             if (null == files || files.isEmpty())
                 return;
 
-            Set<String> filesToSkip = new TreeSet<String>();
+            Set<String> filesToSkip = new TreeSet<>();
             File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
 
             for (AttachmentFile file : files)
@@ -314,7 +314,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     continue;
                 }
 
-                HashMap<String, Object> hm = new HashMap<String, Object>();
+                HashMap<String, Object> hm = new HashMap<>();
                 if (null == fileLocation)
                 {
                     int maxSize = AppProps.getInstance().getMaxBLOBSize();
@@ -500,7 +500,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
-        List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
+        List<AttachmentFile> files = new ArrayList<>(attachments.size());
 
         for (Attachment attachment : attachments)
         {
@@ -533,7 +533,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     private List<String> findDuplicates(List<AttachmentFile> files)
     {
         Set fileNames = new HashSet<String>();
-        List<String> duplicates = new ArrayList<String>();
+        List<String> duplicates = new ArrayList<>();
         for (AttachmentFile file : files)
         {
             if(fileNames.add(file.getFilename()) == false)
@@ -548,7 +548,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public @NotNull List<Attachment> getAttachments(AttachmentParent parent)
     {
         Map<String, Attachment> mapFromDatabase = AttachmentCache.getAttachments(parent);
-        List<Attachment> attachmentsFromDatabase = Collections.unmodifiableList(new ArrayList<Attachment>(mapFromDatabase.values()));
+        List<Attachment> attachmentsFromDatabase = Collections.unmodifiableList(new ArrayList<>(mapFromDatabase.values()));
 
         File parentDir = null;
 
@@ -568,7 +568,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             att.setFile(new File(parentDir, att.getName()));
 
         //OK, make sure that the list really reflects what is in the file system.
-        List<Attachment> attList = new ArrayList<Attachment>();
+        List<Attachment> attList = new ArrayList<>();
 
         File[] fileList = parentDir.listFiles(new FileFilter()
         {
@@ -617,7 +617,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     filter,
                     new Sort("+Created"));
 
-            ArrayList<Pair<String,String>> ret = new ArrayList<Pair<String, String>>();
+            ArrayList<Pair<String,String>> ret = new ArrayList<>();
             while (rs.next())
             {
                 String parent = rs.getString(1);
@@ -625,7 +625,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 java.util.Date last = rs.getTimestamp(3);
                 if (last != null && last.getTime() == SearchService.failDate.getTime())
                     continue;
-                ret.add(new Pair<String,String>(parent, name));
+                ret.add(new Pair<>(parent, name));
             }
             return ret;
         }
@@ -989,7 +989,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         public Collection<String> listNames()
         {
             List<Attachment> attachments = getAttachments(_parent);
-            ArrayList<String> names = new ArrayList<String>(attachments.size());
+            ArrayList<String> names = new ArrayList<>(attachments.size());
 
             for (Attachment a : attachments)
             {
@@ -1005,7 +1005,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         public Collection<? extends WebdavResource> list()
         {
             List<Attachment> attachments = getAttachments(_parent);
-            ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>(attachments.size());
+            ArrayList<WebdavResource> resources = new ArrayList<>(attachments.size());
 
             for (Attachment a : attachments)
             {
@@ -1385,7 +1385,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             assertTrue(attachDir.exists());
 
             MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
-            Map<String, MultipartFile> fileMap = new HashMap<String, MultipartFile>();
+            Map<String, MultipartFile> fileMap = new HashMap<>();
             fileMap.put("file.txt", f);
             List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
 

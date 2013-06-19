@@ -149,12 +149,12 @@ public class ExpGeneratorHelper
         try
         {
             RecordedActionSet actionSet = job.getActionSet();
-            Set<RecordedAction> actions = new LinkedHashSet<RecordedAction>(actionSet.getActions());
+            Set<RecordedAction> actions = new LinkedHashSet<>(actionSet.getActions());
 
-            Map<String, ExpProtocol> protocolCache = new HashMap<String, ExpProtocol>();
-            List<String> protocolSequence = new ArrayList<String>();
-            Map<URI, String> runOutputsWithRoles = new LinkedHashMap<URI, String>();
-            Map<URI, String> runInputsWithRoles = new HashMap<URI, String>();
+            Map<String, ExpProtocol> protocolCache = new HashMap<>();
+            List<String> protocolSequence = new ArrayList<>();
+            Map<URI, String> runOutputsWithRoles = new LinkedHashMap<>();
+            Map<URI, String> runInputsWithRoles = new HashMap<>();
 
             runInputsWithRoles.putAll(actionSet.getOtherInputs());
 
@@ -271,14 +271,14 @@ public class ExpGeneratorHelper
         run.setJobId(PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID()));
         run.save(job.getUser());
 
-        Map<String, ExpProtocolAction> expActionMap = new HashMap<String, ExpProtocolAction>();
+        Map<String, ExpProtocolAction> expActionMap = new HashMap<>();
         List<ExpProtocolAction> expActions = parentProtocol.getSteps();
         for (ExpProtocolAction action : expActions)
         {
             expActionMap.put(action.getChildProtocol().getName(), action);
         }
 
-        Map<URI, ExpData> datas = new LinkedHashMap<URI, ExpData>();
+        Map<URI, ExpData> datas = new LinkedHashMap<>();
 
         // Set up the inputs to the whole run
         ExpProtocolApplication inputApp = run.addProtocolApplication(job.getUser(), expActions.get(0), parentProtocol.getApplicationType(), "Run inputs");

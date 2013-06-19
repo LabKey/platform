@@ -115,7 +115,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                         //
                         // Chart
                         //
-                        ArrayList<Date> dates = new ArrayList<Date>();
+                        ArrayList<Date> dates = new ArrayList<>();
                         Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
                         while (rs.next())
                         {

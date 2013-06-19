@@ -49,7 +49,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
             SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
             SampleManager.SummaryByVisitType[] countSummary =
                     SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
-            Map<String, Row> rows = new TreeMap<String, Row>();
+            Map<String, Row> rows = new TreeMap<>();
             for (SampleManager.SummaryByVisitType count : countSummary)
             {
                 String key = count.getPrimaryType() + "/" +

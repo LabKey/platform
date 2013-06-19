@@ -317,7 +317,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addColumn(ExpMaterialTable.Column.Modified);
         addColumn(ExpMaterialTable.Column.ModifiedBy);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));

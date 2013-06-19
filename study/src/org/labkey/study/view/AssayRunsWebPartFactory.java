@@ -61,7 +61,7 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
     @Override
     public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
         // serialize the assay name instead of Id, we'll try to resolve the protocolId on import based on the name
         if (serializedPropertyMap.containsKey("viewProtocolId"))
@@ -80,7 +80,7 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
     @Override
     public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
         // try to resolve the protocolId from the assayName that was exported
         if (deserializedPropertyMap.containsKey("assayName"))

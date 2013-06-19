@@ -341,8 +341,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                 key.setRangeURI(KeyType.valueOf(def.getKeyType()).getPropertyType().getTypeUri());
             } catch (Exception x) {/* */}
 
-            GWTDomain<GWTPropertyDescriptor> update = new GWTDomain<GWTPropertyDescriptor>(domain);
-            List<GWTPropertyDescriptor> fields = new ArrayList<GWTPropertyDescriptor>(domain.getFields());
+            GWTDomain<GWTPropertyDescriptor> update = new GWTDomain<>(domain);
+            List<GWTPropertyDescriptor> fields = new ArrayList<>(domain.getFields());
             fields.add(0,key);
             update.setFields(fields);
             try

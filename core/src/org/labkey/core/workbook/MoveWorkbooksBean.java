@@ -27,7 +27,7 @@ import java.util.List;
 */
 public class MoveWorkbooksBean
 {
-    private List<Container> _workbooks = new ArrayList<Container>();
+    private List<Container> _workbooks = new ArrayList<>();
 
     public void addWorkbook(Container workbook)
     {

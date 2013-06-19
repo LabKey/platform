@@ -137,7 +137,7 @@ for (ObjectError e : getAllErrors(pageContext))
 <%!
     List<ObjectError> getAllErrors(PageContext pageContext)
     {
-        List<ObjectError> l = new ArrayList<ObjectError>();
+        List<ObjectError> l = new ArrayList<>();
 
         Enumeration e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
         while (e.hasMoreElements())

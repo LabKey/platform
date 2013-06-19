@@ -275,7 +275,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    private Map<Container, Boolean> _propertyMap = new HashMap<Container, Boolean>();
+    private Map<Container, Boolean> _propertyMap = new HashMap<>();
 
     private void ensureProperties(Container container, User user) throws Exception
     {
@@ -354,13 +354,13 @@ public class StudyUpgradeCode implements UpgradeCode
                 Study study = StudyManager.getInstance().getStudy(container);
                 if (study != null)
                 {
-                    List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<QueryChangeListener.QueryPropertyChange>();
+                    List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
                     DataSetDefinition[] datasetDefs = StudyManager.getInstance().getDataSetDefinitions(study);
                     for (DataSetDefinition dsd : datasetDefs)
                     {
                         if (!dsd.getName().equals(dsd.getLabel()))
                         {
-                            queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<String>(
+                            queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<>(
                                     QueryService.get().getUserSchema(context.getUpgradeUser(), container, StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dsd.getName()),
                                     QueryChangeListener.QueryProperty.Name,
                                     dsd.getLabel(),

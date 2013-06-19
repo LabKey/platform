@@ -81,7 +81,7 @@ public class SecurityApiActions
         protected Map<String,Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
         {
             SecurityPolicy policy = container.getPolicy();
-            Map<String,Object> containerPerms = new HashMap<String,Object>();
+            Map<String,Object> containerPerms = new HashMap<>();
             containerPerms.put("path", container.getPath());
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
@@ -90,7 +90,7 @@ public class SecurityApiActions
 
             if(recurse && container.hasChildren())
             {
-                List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
+                List<Map<String,Object>> childPerms = new ArrayList<>();
                 for (Container child : container.getChildren())
                 {
                     if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
@@ -115,11 +115,11 @@ public class SecurityApiActions
             if (null == groups)
                 return null;
 
-            List<Map<String, Object>> groupsPerms = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> groupsPerms = new ArrayList<>();
 
             for (Group group : groups)
             {
-                Map<String, Object> groupPerms = new HashMap<String,Object>();
+                Map<String, Object> groupPerms = new HashMap<>();
                 groupPerms.put("id", group.getUserId());
                 groupPerms.put("name", SecurityManager.getDisambiguatedGroupName(group));
                 groupPerms.put("type", group.getPrincipalType().getTypeChar());
@@ -138,7 +138,7 @@ public class SecurityApiActions
 
                 //add effective roles array
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(group);
-                ArrayList<String> effectiveRoleList = new ArrayList<String>();
+                ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
                     effectiveRoleList.add(effectiveRole.getUniqueName());
@@ -217,7 +217,7 @@ public class SecurityApiActions
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Map<String, Object> userInfo = new HashMap<String, Object>();
+            Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("userId", user.getUserId());
             userInfo.put("displayName", user.getDisplayName(currentUser));
             response.put("user", userInfo);
@@ -228,7 +228,7 @@ public class SecurityApiActions
 
         protected Map<String, Object> getContainerPerms(Container container, User user, boolean recurse)
         {
-            Map<String, Object> permsInfo = new HashMap<String,Object>();
+            Map<String, Object> permsInfo = new HashMap<>();
 
             //add container info
             permsInfo.put("id", container.getId());
@@ -254,7 +254,7 @@ public class SecurityApiActions
             }
 
             //effective roles
-            List<String> effectiveRoles = new ArrayList<String>();
+            List<String> effectiveRoles = new ArrayList<>();
             for(Role effectiveRole : policy.getEffectiveRoles(user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
@@ -264,11 +264,11 @@ public class SecurityApiActions
 
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
-            List<Map<String, Object>> groupsInfo = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> groupsInfo = new ArrayList<>();
 
             for(Group group : groups)
             {
-                Map<String,Object> groupInfo = new HashMap<String,Object>();
+                Map<String,Object> groupInfo = new HashMap<>();
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
 
@@ -283,7 +283,7 @@ public class SecurityApiActions
                 }
 
                 //effective roles
-                List<String> groupEffectiveRoles = new ArrayList<String>();
+                List<String> groupEffectiveRoles = new ArrayList<>();
                 for(Role effectiveRole : policy.getEffectiveRoles(group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
@@ -299,7 +299,7 @@ public class SecurityApiActions
             //recurse children if desired
             if(recurse && container.hasChildren())
             {
-                List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
+                List<Map<String,Object>> childPerms = new ArrayList<>();
                 for(Container child : container.getChildren())
                 {
                     if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
@@ -320,12 +320,12 @@ public class SecurityApiActions
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            List<Map<String, Object>> groupInfos = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> groupInfos = new ArrayList<>();
             //include both project and global groups
             List<Group> groups = SecurityManager.getGroups(getViewContext().getContainer(), getViewContext().getUser());
             for(Group group : groups)
             {
-                Map<String, Object> groupInfo = new HashMap<String, Object>();
+                Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
                 groupInfo.put("isProjectGroup", group.isProjectGroup());
@@ -348,7 +348,7 @@ public class SecurityApiActions
 
             //return similar info as is already exposed on LABKEY.user & LABKEY.Security.currentUser
             //so we can swap it out
-            Map<String, Object> userInfo = new HashMap<String, Object>();
+            Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("id", user.getUserId());
             userInfo.put("displayName", user.getDisplayName(user));
             userInfo.put("email", user.getEmail());
@@ -366,11 +366,11 @@ public class SecurityApiActions
     @RequiresPermissionClass(ReadPermission.class)
     public static class GetRolesAction extends ApiAction
     {
-        private Set<Permission> _allPermissions = new HashSet<Permission>();
+        private Set<Permission> _allPermissions = new HashSet<>();
 
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            ArrayList<Map<String,Object>> rolesProps = new ArrayList<Map<String,Object>>();
+            ArrayList<Map<String,Object>> rolesProps = new ArrayList<>();
 
             for(Role role : RoleManager.getAllRoles())
             {
@@ -378,7 +378,7 @@ public class SecurityApiActions
                     rolesProps.add(getRoleProps(role));
             }
 
-            List<Map<String,Object>> permsProps = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> permsProps = new ArrayList<>();
             for(Permission perm : _allPermissions)
             {
                 permsProps.add(getPermissionProps(perm));
@@ -391,14 +391,14 @@ public class SecurityApiActions
 
         public Map<String,Object> getRoleProps(Role role)
         {
-            Map<String,Object> props = new HashMap<String,Object>();
+            Map<String,Object> props = new HashMap<>();
             props.put("uniqueName", role.getUniqueName());
             props.put("name", role.getName());
             props.put("description", role.getDescription());
             if (null != role.getSourceModule())
                 props.put("sourceModule", role.getSourceModule().getName());
 
-            List<String> permissions = new ArrayList<String>();
+            List<String> permissions = new ArrayList<>();
             for(Class<? extends Permission> permClass : role.getPermissions())
             {
                 Permission perm = RoleManager.getPermission(permClass);
@@ -408,7 +408,7 @@ public class SecurityApiActions
 
             props.put("permissions", permissions);
 
-            List<Integer> excludedPrincipals = new ArrayList<Integer>();
+            List<Integer> excludedPrincipals = new ArrayList<>();
             for(UserPrincipal principal : role.getExcludedPrincipals())
             {
                 excludedPrincipals.add(principal.getUserId());
@@ -420,7 +420,7 @@ public class SecurityApiActions
 
         public Map<String,Object> getPermissionProps(Permission perm)
         {
-            Map<String,Object> props = new HashMap<String,Object>();
+            Map<String,Object> props = new HashMap<>();
             props.put("uniqueName", perm.getUniqueName());
             props.put("name", perm.getName());
             props.put("description", perm.getDescription());
@@ -472,7 +472,7 @@ public class SecurityApiActions
 
         protected Map<String,Object> getResourceProps(SecurableResource resource)
         {
-            Map<String,Object> props = new HashMap<String,Object>();
+            Map<String,Object> props = new HashMap<>();
             props.put("resourceClass", resource.getClass().getName());
             props.put("id", resource.getResourceId());
             props.put("name", resource.getResourceName());
@@ -490,7 +490,7 @@ public class SecurityApiActions
             if (_includePermissions)
             {
                 User user = getViewContext().getUser();
-                List<String> permNames = new ArrayList<String>();
+                List<String> permNames = new ArrayList<>();
 
                 //horrible, nasty, icky, awful HACK! See bug 8183.
                 //Study datasets use special logic for determining read/write so we need to ask it directly.
@@ -520,7 +520,7 @@ public class SecurityApiActions
 
         protected List<Map<String,Object>> getChildrenProps(SecurableResource resource)
         {
-            List<Map<String,Object>> childProps = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> childProps = new ArrayList<>();
             for(SecurableResource child : resource.getChildResources(getViewContext().getUser()))
             {
                 if(_includeSubfolders || !(child instanceof Container))
@@ -587,7 +587,7 @@ public class SecurityApiActions
             else
                 resp.put("policy", policy.toMap());
 
-            List<String> relevantRoles = new ArrayList<String>();
+            List<String> relevantRoles = new ArrayList<>();
 
             if (container.isRoot())
             {
@@ -972,7 +972,7 @@ public class SecurityApiActions
             {
                 throw new NotFoundException();
             }
-            return new JspView<Group>(SecurityController.class, "renameGroup.jsp", group, errors);
+            return new JspView<>(SecurityController.class, "renameGroup.jsp", group, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

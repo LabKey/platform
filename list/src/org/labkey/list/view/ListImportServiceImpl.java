@@ -154,7 +154,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         public List<String> call() throws ImportException
         {
-            List<String> messages = new ArrayList<String>();
+            List<String> messages = new ArrayList<>();
             BatchValidationException errors = new BatchValidationException();
 
             try
@@ -261,7 +261,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
                     }
                     catch (Exception e)
                     {
-                        messages = new LinkedList<String>();
+                        messages = new LinkedList<>();
                         messages.add(e.getMessage());
                     }
 

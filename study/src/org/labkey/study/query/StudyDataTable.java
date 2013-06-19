@@ -45,7 +45,7 @@ public class StudyDataTable extends FilteredTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), schema);
 
-        List<FieldKey> defaultColumns = new LinkedList<FieldKey>();
+        List<FieldKey> defaultColumns = new LinkedList<>();
 
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
         datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "entityId", "entityId", "Name") {
@@ -123,7 +123,7 @@ public class StudyDataTable extends FilteredTable<StudyQuerySchema>
         setDescription("Contains one row for every row in every dataset in this folder with the columns that are common " +
                 "across all the datasets");
 
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("lsid", "LSID");
         params.put("datasetId", "Dataset");
         setDetailsURL(new DetailsURL(new ActionURL(StudyController.DatasetDetailRedirectAction.class, getContainer()), params));

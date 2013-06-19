@@ -81,7 +81,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         super("/org/labkey/experiment/CustomProperties.jsp");
         setTitle("Custom Properties");
         Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(c, parentLSID);
-        Map<String, ObjectProperty> map = new TreeMap<String, ObjectProperty>();
+        Map<String, ObjectProperty> map = new TreeMap<>();
         for (Map.Entry<String, ObjectProperty> entry : props.entrySet())
         {
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), c);

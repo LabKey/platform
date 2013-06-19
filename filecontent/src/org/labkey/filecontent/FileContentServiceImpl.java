@@ -814,10 +814,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     @Override
     public Map<String, Collection<File>> listFiles(@NotNull Container container)
     {
-        Map<String, Collection<File>> files = new LinkedHashMap<String, Collection<File>>();
+        Map<String, Collection<File>> files = new LinkedHashMap<>();
         for (FileListener fileListener : _fileListeners)
         {
-            files.put(fileListener.getSourceName(), new HashSet<File>(fileListener.listFiles(container)));
+            files.put(fileListener.getSourceName(), new HashSet<>(fileListener.listFiles(container)));
         }
         return files;
     }
@@ -884,7 +884,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             //pre-clean
             cleanup();
 
-            _expectedPaths = new HashMap<Container, File>();
+            _expectedPaths = new HashMap<>();
 
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             Assert.assertNotNull(svc);
@@ -962,7 +962,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             //pre-clean
             cleanup();
 
-            _expectedPaths = new HashMap<Container, File>();
+            _expectedPaths = new HashMap<>();
 
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             Assert.assertNotNull(svc);

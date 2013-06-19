@@ -105,7 +105,7 @@ public class PlateController extends SpringActionController
         {
             setHelpTopic(new HelpTopic("editPlateTemplate"));
             PlateTemplate[] plateTemplates = PlateService.get().getPlateTemplates(getContainer());
-            return new JspView<PlateTemplateListBean>("/org/labkey/study/plate/view/plateTemplateList.jsp",
+            return new JspView<>("/org/labkey/study/plate/view/plateTemplateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
 
@@ -201,7 +201,7 @@ public class PlateController extends SpringActionController
     {
         public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
         {
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
             if (form.getTemplateName() != null)
             {
                 properties.put("copyTemplate", Boolean.toString(form.isCopy()));
@@ -337,7 +337,7 @@ public class PlateController extends SpringActionController
             if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
                 return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
 
-            return new JspView<CopyTemplateBean>("/org/labkey/study/plate/view/copyTemplate.jsp",
+            return new JspView<>("/org/labkey/study/plate/view/copyTemplate.jsp",
                     new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()), errors);
         }
 
@@ -409,7 +409,7 @@ public class PlateController extends SpringActionController
     private String getUniqueName(Container container, String originalName) throws SQLException
     {
         PlateTemplate[] templates = PlateService.get().getPlateTemplates(container);
-        Set<String> existing = new HashSet<String>();
+        Set<String> existing = new HashSet<>();
         for (PlateTemplate template : templates)
             existing.add(template.getName());
         String baseUniqueName;

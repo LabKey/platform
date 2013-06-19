@@ -102,6 +102,6 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         EditViewBean bean = new EditViewBean();
         bean.description = getDescription();
         bean.webPart = webPart;
-        return new JspView<EditViewBean>("/org/labkey/study/view/customizeAssayDetailsWebPart.jsp", bean);
+        return new JspView<>("/org/labkey/study/view/customizeAssayDetailsWebPart.jsp", bean);
     }
 }

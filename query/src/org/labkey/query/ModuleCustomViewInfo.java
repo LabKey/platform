@@ -157,7 +157,7 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     @Override
     public List<FieldKey> getColumns()
     {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
+        List<FieldKey> ret = new ArrayList<>();
         for(Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>> entry : getColumnProperties())
         {
             ret.add(entry.getKey());

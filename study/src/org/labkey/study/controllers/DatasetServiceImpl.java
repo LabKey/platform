@@ -83,7 +83,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != DataSet.KeyManagementType.None);
 
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
-            Map<String, String> cohortMap = new HashMap<String, String>();
+            Map<String, String> cohortMap = new HashMap<>();
             if (cohorts != null && cohorts.size() > 0)
             {
                 cohortMap.put("All", "");
@@ -92,7 +92,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             }
             ds.setCohortMap(cohortMap);
 
-            Map<String, String> visitDateMap = new HashMap<String, String>();
+            Map<String, String> visitDateMap = new HashMap<>();
             TableInfo tinfo = dd.getTableInfo(getUser(), false);
             for (ColumnInfo col : tinfo.getColumns())
             {
@@ -133,7 +133,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
 
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
         {
@@ -176,7 +176,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
     private List updateDataset(GWTDataset ds, String domainURI)
     {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         try
         {
             // CONSIDER: optimistic concurrency validate against current
@@ -276,7 +276,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     {
         try
         {
-            List<String> errors = new ArrayList<String>();
+            List<String> errors = new ArrayList<>();
 
             if (!getContainer().hasPermission(getUser(), AdminPermission.class))
             {

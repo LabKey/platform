@@ -522,7 +522,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ExternalReportForm form, boolean reshow, BindException errors) throws Exception
         {
             ExternalReport extReport = form.getBean();
-            JspView<ExternalReportBean> designer = new JspView<ExternalReportBean>("/org/labkey/study/view/externalReportDesigner.jsp", new ExternalReportBean(getViewContext(), extReport, "Dataset"));
+            JspView<ExternalReportBean> designer = new JspView<>("/org/labkey/study/view/externalReportDesigner.jsp", new ExternalReportBean(getViewContext(), extReport, "Dataset"));
             HttpView resultView = extReport.renderReport(getViewContext());
 
             VBox v = new VBox(designer, resultView);
@@ -678,7 +678,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setErrors(errors);
-            return new JspView<SaveReportViewForm>("/org/labkey/study/view/saveReportView.jsp", form);
+            return new JspView<>("/org/labkey/study/view/saveReportView.jsp", form);
         }
 
         public void validateCommand(SaveReportViewForm form, Errors errors)
@@ -849,7 +849,7 @@ public class ReportsController extends BaseStudyController
         {
             form.setColumns(getColumns(form));
 
-            JspView<CrosstabDesignBean> view = new JspView<CrosstabDesignBean>("/org/labkey/study/view/crosstabDesigner.jsp", form);
+            JspView<CrosstabDesignBean> view = new JspView<>("/org/labkey/study/view/crosstabDesigner.jsp", form);
             VBox v = new VBox(view);
 
             if (reshow)
@@ -877,7 +877,7 @@ public class ReportsController extends BaseStudyController
 
                     if (!getUser().isGuest())
                     {
-                        JspView<SaveReportViewForm> saveWidget = new JspView<SaveReportViewForm>("/org/labkey/study/view/saveReportView.jsp", bean);
+                        JspView<SaveReportViewForm> saveWidget = new JspView<>("/org/labkey/study/view/saveReportView.jsp", bean);
                         v.addView(saveWidget);
                     }
                 }
@@ -888,7 +888,7 @@ public class ReportsController extends BaseStudyController
         private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form) throws ServletException
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
-            Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
+            Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
 
             if (schema != null)
             {
@@ -1016,7 +1016,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(QueryReportForm form, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("datasetViews"));
-            return new JspView<CreateQueryReportBean>("/org/labkey/study/view/createQueryReport.jsp",
+            return new JspView<>("/org/labkey/study/view/createQueryReport.jsp",
                     new CreateQueryReportBean(getViewContext(), form.getQueryName()));
         }
 
@@ -1033,7 +1033,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("crosstabReports"));
-            return new JspView<CreateCrosstabBean>("/org/labkey/study/view/createCrosstabReport.jsp",
+            return new JspView<>("/org/labkey/study/view/createCrosstabReport.jsp",
                     new CreateCrosstabBean(getViewContext()));
         }
 
@@ -1650,7 +1650,7 @@ public class ReportsController extends BaseStudyController
                 throw new NotFoundException("schema not found");
             }
 
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             for (Pair<String, String> param : form.getParameters())
                 props.put(param.getKey(), param.getValue());
 
@@ -2045,7 +2045,7 @@ public class ReportsController extends BaseStudyController
 
             if (StudyService.get().getStudy(getContainer()) != null)
             {
-                JspView<ParticipantReportForm> view = new JspView<ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
+                JspView<ParticipantReportForm> view = new JspView<>("/org/labkey/study/view/participantReport.jsp", form);
 
                 view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
@@ -2079,7 +2079,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public void validateForm(ParticipantReportForm form, Errors errors)
         {
-            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+            List<ValidationError> reportErrors = new ArrayList<>();
 
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "A report name is required");

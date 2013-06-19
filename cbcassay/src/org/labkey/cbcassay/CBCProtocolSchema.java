@@ -53,13 +53,13 @@ public class CBCProtocolSchema extends AssayProtocolSchema
 
         ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, getContainer());
         showDetailsUrl.addParameter("rowId", getProtocol().getRowId());
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
         table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
 
         ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
         updateUrl.addParameter("rowId", getProtocol().getRowId());
-        Map<String, Object> updateParams = new HashMap<String, Object>();
+        Map<String, Object> updateParams = new HashMap<>();
         updateParams.put("dataRowId", FieldKey.fromString(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
         table.setUpdateURL(new DetailsURL(updateUrl, updateParams));
 

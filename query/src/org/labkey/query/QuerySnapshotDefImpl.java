@@ -166,7 +166,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public List<FieldKey> getColumns()
     {
         String[] values = StringUtils.split(_snapshotDef.getColumns(), "&");
-        List<FieldKey> ret = new ArrayList<FieldKey>();
+        List<FieldKey> ret = new ArrayList<>();
         if (values != null)
         {
             for (String entry : values)
@@ -184,7 +184,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public List<Integer> getParticipantGroups()
     {
         String[] values = StringUtils.split(_snapshotDef.getParticipantGroups(), ",");
-        List<Integer> ret = new ArrayList<Integer>();
+        List<Integer> ret = new ArrayList<>();
         if (values != null)
             for (String entry : values)
             {

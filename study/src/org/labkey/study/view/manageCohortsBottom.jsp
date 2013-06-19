@@ -49,7 +49,7 @@
 <%
     }
     // Need all participants and cohorts for both versions
-    Map<Participant, CohortImpl> participant2Cohort = new LinkedHashMap<Participant, CohortImpl>();
+    Map<Participant, CohortImpl> participant2Cohort = new LinkedHashMap<>();
     for (Participant participant : manager.getParticipants(study))
     {
         CohortImpl cohort = manager.getCurrentCohortForParticipant(

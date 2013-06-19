@@ -150,7 +150,7 @@ public class RadeoxMacroProxy extends BaseMacro
 
         public Set<String> keySet()
         {
-            HashSet<String> keys = new HashSet<String>();
+            HashSet<String> keys = new HashSet<>();
 
             Set<String> baseKeys = (Set<String>) baseMap.keySet();
             for (String key : baseKeys)
@@ -162,7 +162,7 @@ public class RadeoxMacroProxy extends BaseMacro
 
         public Collection<String> values()
         {
-            ArrayList<String> values = new ArrayList<String>();
+            ArrayList<String> values = new ArrayList<>();
             Set<String> baseKeys = (Set<String>) baseMap.keySet();
 
             for (String key : baseKeys)
@@ -174,7 +174,7 @@ public class RadeoxMacroProxy extends BaseMacro
 
         public Set<Entry<String, String>> entrySet()
         {
-            Set<Entry<String, String>> values = new HashSet<Entry<String, String>>();
+            Set<Entry<String, String>> values = new HashSet<>();
             Set<Entry<String, String>> baseEntries = (Set<Entry<String, String>>) baseMap.entrySet();
 
             for (Entry<String, String> entry : baseEntries)

@@ -49,7 +49,7 @@ public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
 
         wrapAllColumns(true);
 
-        List<FieldKey> defaultColumns = new ArrayList<FieldKey>(Arrays.asList(
+        List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
                 FieldKey.fromParts("Label"),
                 FieldKey.fromParts("CreatedBy"),
                 FieldKey.fromParts("Created"),

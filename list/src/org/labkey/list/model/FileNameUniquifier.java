@@ -22,7 +22,7 @@ import java.util.HashSet;
 // Uniquify filenames by inserting _n immediately before the extension
 public class FileNameUniquifier
 {
-    private Set<String> _previous = new HashSet<String>();
+    private Set<String> _previous = new HashSet<>();
 
     public String uniquify(String name)
     {

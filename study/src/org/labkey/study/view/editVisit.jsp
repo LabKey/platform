@@ -164,7 +164,7 @@
             <td>
                 <table>
                 <%
-                    HashMap<Integer, VisitDataSetType> typeMap = new HashMap<Integer, VisitDataSetType>();
+                    HashMap<Integer, VisitDataSetType> typeMap = new HashMap<>();
                     for (VisitDataSet vds : visit.getVisitDataSets())
                         typeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 

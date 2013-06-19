@@ -49,9 +49,9 @@
 
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
 
-    ArrayList<Group> readGroups = new ArrayList<Group>();
-    ArrayList<Group> restrictedGroups = new ArrayList<Group>();
-    ArrayList<Group> noReadGroups = new ArrayList<Group>();
+    ArrayList<Group> readGroups = new ArrayList<>();
+    ArrayList<Group> restrictedGroups = new ArrayList<>();
+    ArrayList<Group> noReadGroups = new ArrayList<>();
     for (Group g : groups)
     {
         if (g.getUserId() == Group.groupAdministrators)
@@ -149,7 +149,7 @@ else
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
 
-    java.util.List<Role> possibleRoles = new ArrayList<Role>();
+    java.util.List<Role> possibleRoles = new ArrayList<>();
     List<org.labkey.study.model.DataSetDefinition> datasets = study.getDataSets();
     if (!datasets.isEmpty())
     {

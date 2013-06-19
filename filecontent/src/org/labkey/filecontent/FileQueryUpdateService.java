@@ -95,7 +95,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         Set<String> queryColumns = getQueryColumns(container);
 
         Map<String, Object>[] rows = Table.select(getQueryTable(), queryColumns, filter, null, Map.class);
-        Map<String, Object> rowMap = new HashMap<String, Object>();
+        Map<String, Object> rowMap = new HashMap<>();
 
         if (rows.length > 0)
         {
@@ -202,7 +202,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     {
         if (_columns == null)
         {
-            _columns = new HashSet<String>();
+            _columns = new HashSet<>();
 
             _columns.add(ExpDataTable.Column.Flag.name());
             _columns.add(ExpDataTable.Column.DataFileUrl.name());
@@ -275,7 +275,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
 
         ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
-        return new Pair<ExpData, String>(data, dataFileUrl);
+        return new Pair<>(data, dataFileUrl);
     }
 
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException

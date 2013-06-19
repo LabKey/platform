@@ -69,7 +69,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             form.setNoSpecimens(true);
             form.setReplaceOrMerge("replace");
         }
-        return new JspView<UploadSpecimensForm>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form, errors);
+        return new JspView<>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form, errors);
      }
 
     public boolean handlePost(UploadSpecimensForm form, BindException errors) throws Exception
@@ -77,7 +77,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
 
         TabLoader loader = new TabLoader(form.getTsv(), true);
-        Map<String, String> columnAliases = new CaseInsensitiveHashMap<String>();
+        Map<String, String> columnAliases = new CaseInsensitiveHashMap<>();
         //Make sure we accept the labels
         for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
@@ -112,7 +112,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
-        Map<String, String> labels = new HashMap<String, String>();
+        Map<String, String> labels = new HashMap<>();
         ColumnDescriptor[] columns;
         try
         {
@@ -147,10 +147,10 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             return false;
         }
 
-        Set<String> participants = new HashSet<String>();
-        Set<Object> vialIds = new HashSet<Object>();
+        Set<String> participants = new HashSet<>();
+        Set<Object> vialIds = new HashSet<>();
         Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-        Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<Object, Pair<Object, Object>>();
+        Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<>();
         String visitKey = study.getTimepointType() == TimepointType.VISIT ? SimpleSpecimenImporter.VISIT : SimpleSpecimenImporter.DRAW_TIMESTAMP;
 
         if (specimenRows.size() == 0)

@@ -43,8 +43,8 @@
 
     Map<String, String> pm = webPart.getPropertyMap();
 
-    Map<String, String> reportMap = new LinkedHashMap<String, String>();
-    ArrayList<String> reportNames = new ArrayList<String>();
+    Map<String, String> reportMap = new LinkedHashMap<>();
+    ArrayList<String> reportNames = new ArrayList<>();
 
     ReportUtil.ReportFilter filter = new ReportUtil.DefaultReportFilter();
     Container c = context.getContainer();

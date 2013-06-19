@@ -84,7 +84,7 @@
     String fileSetName = parent.getLabel();
 
     // Make a copy to modify
-    List<Attachment> attachments = new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
+    List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(parent));
 
     Collections.sort(attachments, new Comparator<Attachment>() {
         public int compare(Attachment a1, Attachment a2)

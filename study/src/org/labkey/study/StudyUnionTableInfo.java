@@ -59,7 +59,7 @@ public class StudyUnionTableInfo extends VirtualTable
             "participantsequencenum"
     };
 
-    final Set<String> unionColumns = new HashSet<String>(Arrays.asList(COLUMN_NAMES));
+    final Set<String> unionColumns = new HashSet<>(Arrays.asList(COLUMN_NAMES));
     SQLFragment unionSql;
     private User _user;
 

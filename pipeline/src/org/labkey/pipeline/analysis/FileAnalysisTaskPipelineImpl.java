@@ -93,7 +93,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Convert any input extension hierarchy into file types.
         Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
         if (extHierarchy != null || _typeHierarchy == null)
-            _typeHierarchy = new HashMap<FileType, FileType[]>();
+            _typeHierarchy = new HashMap<>();
 
         // Add the initial types to the hierarchy
         for (FileType ft : _initialFileTypes)

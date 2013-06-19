@@ -46,7 +46,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

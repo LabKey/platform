@@ -48,7 +48,7 @@ var formItems = [];
 
 formItems.push({xtype: "label", text: "Folder objects to export:"});
 <%
-    Collection<FolderWriter> writers = new LinkedList<FolderWriter>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
+    Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
     boolean showStudyOptions = false;
     for (FolderWriter writer : writers)
     {

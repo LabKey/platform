@@ -136,7 +136,7 @@ public class Related
             @Override
             public ArrayList<Related> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<Related> list = new ArrayList<Related>();
+                ArrayList<Related> list = new ArrayList<>();
                 while (rs.next())
                     list.add(new Related(ResultSetUtil.mapRow(rs)));
                 return list;

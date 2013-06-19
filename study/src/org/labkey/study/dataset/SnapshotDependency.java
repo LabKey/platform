@@ -111,7 +111,7 @@ public abstract class SnapshotDependency
                     DataSet dsDef = (DataSet)sourceData.getValue();
 
                     // check if container is still valid
-                    Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
+                    Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<>();
                     if (isContainerValid(sourceData.getContainer()))
                     {
                         List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
@@ -142,7 +142,7 @@ public abstract class SnapshotDependency
                     else
                         _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
 
-                    return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
+                    return new ArrayList<>(dependencies.values());
                 }
                 catch (ConvertHelper.ContainerConversionException e)
                 {
@@ -155,7 +155,7 @@ public abstract class SnapshotDependency
         }
 
         // map of property uri to dataset id
-        private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<Integer, Map<String, String>>();
+        private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<>();
 
         private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
         {
@@ -165,7 +165,7 @@ public abstract class SnapshotDependency
             {
                 if (!_snapshotPropertyMap.containsKey(def.getId()))
                 {
-                    propertyMap = new HashMap<String, String>();
+                    propertyMap = new HashMap<>();
                     _snapshotPropertyMap.put(def.getId(), propertyMap);
 
                     // can't assume that the dependency check is coming from the same container that
@@ -211,8 +211,8 @@ public abstract class SnapshotDependency
             if (sourceData.getType() == SourceDataType.Type.participantCategory)
             {
                 ParticipantCategoryImpl category = (ParticipantCategoryImpl)sourceData.getValue();
-                List<QuerySnapshotDefinition> dependencies = new ArrayList<QuerySnapshotDefinition>();
-                List<Integer> groups = new ArrayList<Integer>();
+                List<QuerySnapshotDefinition> dependencies = new ArrayList<>();
+                List<Integer> groups = new ArrayList<>();
 
                 // check if container is still valid
                 if (isContainerValid(sourceData.getContainer()))

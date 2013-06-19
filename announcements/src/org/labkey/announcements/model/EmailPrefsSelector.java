@@ -56,7 +56,7 @@ public abstract class EmailPrefsSelector
     {
         int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
         UserPreference[] upArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
-        Map<User, PreferencePicker> map = new HashMap<User, PreferencePicker>();
+        Map<User, PreferencePicker> map = new HashMap<>();
 
         for (UserPreference up : upArray)
         {
@@ -147,7 +147,7 @@ public abstract class EmailPrefsSelector
     public Set<User> getNotificationUsers(@Nullable AnnouncementModel ann)
     {
         Collection<User> candidates = getNotificationCandidates();
-        Set<User> sendUsers = new HashSet<User>(candidates.size());
+        Set<User> sendUsers = new HashSet<>(candidates.size());
 
         for (User user : candidates)
             if (shouldSend(ann, user))
@@ -161,7 +161,7 @@ public abstract class EmailPrefsSelector
     {
         private final Container _c;
         // srcIdentifier -> UserPreference map for all of this user's preferences
-        private final Map<String, UserPreference> _preferenceMap = new HashMap<String, UserPreference>();
+        private final Map<String, UserPreference> _preferenceMap = new HashMap<>();
 
         private PreferencePicker(Container c)
         {

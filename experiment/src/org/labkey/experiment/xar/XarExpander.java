@@ -44,12 +44,12 @@ import java.util.*;
 public class XarExpander extends AbstractXarImporter
 {
     private final ExperimentRun _run;
-    private final Map<PredecessorStep, List<String>> _materialOutputs = new HashMap<PredecessorStep, List<String>>();
-    private final Map<PredecessorStep, List<String>> _dataOutputs = new HashMap<PredecessorStep, List<String>>();
+    private final Map<PredecessorStep, List<String>> _materialOutputs = new HashMap<>();
+    private final Map<PredecessorStep, List<String>> _dataOutputs = new HashMap<>();
     private final List<Data> _startingData;
     private final List<ExpMaterial> _startingMaterials;
-    private final Map<String, Data> _allData = new HashMap<String, Data>();
-    private final Map<String, ExpMaterial> _allMaterial = new HashMap<String, ExpMaterial>();
+    private final Map<String, Data> _allData = new HashMap<>();
+    private final Map<String, ExpMaterial> _allMaterial = new HashMap<>();
 
     public static final String OUTPUT_MATERIAL_PER_INSTANCE_EXPRESSION_PARAMETER = "terms.fhcrc.org#XarTemplate.OutputMaterialPerInstanceExpression";
     public static final String OUTPUT_DATA_PER_INSTANCE_EXPRESSION_PARAMETER = "terms.fhcrc.org#XarTemplate.OutputDataPerInstanceExpression";
@@ -331,7 +331,7 @@ public class XarExpander extends AbstractXarImporter
         // First get the map with declarations and defaults specified in protocol
         xbProtApp.addNewProtocolApplicationParameters();
         ExpProtocol protocol = _xarSource.getProtocol(pbStep.stepProtocolLSID, "Protocol application step");
-        Map<String, ProtocolParameter> mEffectiveParameters = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
+        Map<String, ProtocolParameter> mEffectiveParameters = new HashMap<>(protocol.getProtocolParameters());
 
         //add the parameter values specified for all instances of this step.
         SimpleValueCollectionType xbCommonParams = step.getCommonParametersApplied();
@@ -478,7 +478,7 @@ public class XarExpander extends AbstractXarImporter
         List<String> outputs = _materialOutputs.get(step);
         if (outputs == null)
         {
-            outputs = new ArrayList<String>();
+            outputs = new ArrayList<>();
             _materialOutputs.put(step, outputs);
         }
         outputs.add(materialLSID);
@@ -554,7 +554,7 @@ public class XarExpander extends AbstractXarImporter
         List<String> outputs = _dataOutputs.get(step);
         if (outputs == null)
         {
-            outputs = new ArrayList<String>();
+            outputs = new ArrayList<>();
             _dataOutputs.put(step, outputs);
         }
         outputs.add(dataLSID);
@@ -637,7 +637,7 @@ public class XarExpander extends AbstractXarImporter
     private List<String> getMaterialOutputs(String protocolStepLSID) throws SQLException
     {
         ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(_run.getProtocolLSID(), protocolStepLSID);
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (ProtocolActionPredecessor predecessor : predecessors)
         {
             PredecessorStep step = new PredecessorStep(predecessor.getPredecessorChildLSID(), predecessor.getPredecessorSequence());
@@ -653,7 +653,7 @@ public class XarExpander extends AbstractXarImporter
     private List<String> getDataOutputs(String protocolStepLSID) throws SQLException
     {
         ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(_run.getProtocolLSID(), protocolStepLSID);
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (ProtocolActionPredecessor predecessor : predecessors)
         {
             PredecessorStep step = new PredecessorStep(predecessor.getPredecessorChildLSID(), predecessor.getPredecessorSequence());

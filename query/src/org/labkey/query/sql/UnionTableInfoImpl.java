@@ -29,7 +29,7 @@ import java.util.List;
 */
 public class UnionTableInfoImpl extends QueryTableInfo implements UnionTableInfo
 {
-    protected List<ColumnInfo> _unionColumns = new ArrayList<ColumnInfo>();
+    protected List<ColumnInfo> _unionColumns = new ArrayList<>();
 
     public UnionTableInfoImpl(QueryRelation r, String name)
     {

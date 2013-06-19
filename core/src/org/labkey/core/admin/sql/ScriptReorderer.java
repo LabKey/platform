@@ -50,8 +50,8 @@ class ScriptReorderer
         }
     }
 
-    private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<Map<String, Collection<Statement>>>();
-    private final List<String> _endingStatements = new LinkedList<String>();
+    private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<>();
+    private final List<String> _endingStatements = new LinkedList<>();
 
     private Map<String, Collection<Statement>> _currentStatements;
 
@@ -68,13 +68,13 @@ class ScriptReorderer
 
     private void newStatementList()
     {
-        _currentStatements = new LinkedHashMap<String, Collection<Statement>>();
+        _currentStatements = new LinkedHashMap<>();
         _statementLists.add(_currentStatements);
     }
 
     public String getReorderedScript(boolean isHtml)
     {
-        List<SqlPattern> patterns = new LinkedList<SqlPattern>();
+        List<SqlPattern> patterns = new LinkedList<>();
 
         patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))", Type.Table, Operation.InsertRows));
         patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX, Type.Table, Operation.InsertRows));
@@ -271,7 +271,7 @@ class ScriptReorderer
 
         if (null == tableStatements)
         {
-            tableStatements = new LinkedList<Statement>();
+            tableStatements = new LinkedList<>();
             _currentStatements.put(key, tableStatements);
         }
 

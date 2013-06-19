@@ -60,8 +60,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
     public GWTTableInfo getMetadata(String schemaName, String tableName) throws MetadataUnavailableException
     {
-        Map<String, GWTColumnInfo> columnInfos = new CaseInsensitiveHashMap<GWTColumnInfo>();
-        List<GWTColumnInfo> orderedPDs = new ArrayList<GWTColumnInfo>();
+        Map<String, GWTColumnInfo> columnInfos = new CaseInsensitiveHashMap<>();
+        List<GWTColumnInfo> orderedPDs = new ArrayList<>();
         Set<String> injectedColumnNames = new CaseInsensitiveHashSet();
         GWTTableInfo gwtTableInfo = new GWTTableInfo();
         gwtTableInfo.setName(tableName);
@@ -229,7 +229,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         if (column.isSetConditionalFormats())
                         {
                             List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
-                            List<GWTConditionalFormat> gwtFormats = new ArrayList<GWTConditionalFormat>();
+                            List<GWTConditionalFormat> gwtFormats = new ArrayList<>();
                             for (ConditionalFormat serverFormat : serverFormats)
                             {
                                 gwtFormats.add(new GWTConditionalFormat(serverFormat));
@@ -272,7 +272,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
     private List<GWTConditionalFormat> convertToGWT(List<ConditionalFormat> formats)
     {
-        List<GWTConditionalFormat> result = new ArrayList<GWTConditionalFormat>();
+        List<GWTConditionalFormat> result = new ArrayList<>();
         for (ConditionalFormat format : formats)
         {
             result.add(new GWTConditionalFormat(format));
@@ -359,7 +359,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             xmlTable.setTableDbType("NOT_IN_DB");
         }
 
-        Map<String, ColumnType> columnsToDelete = new CaseInsensitiveHashMap<ColumnType>();
+        Map<String, ColumnType> columnsToDelete = new CaseInsensitiveHashMap<>();
         for (ColumnType columnType : xmlTable.getColumns().getColumnArray())
         {
             // Remember all the columns in the metadata overrides so that we can delete any that the user

@@ -263,7 +263,7 @@ public class TableWriter
             ArrayList<String> queries = new ArrayList<>();
             queries.add("Containers");
             queries.add("Users");
-            HashMap<String, ArrayList<String>> schemas = new HashMap<>();
+            HashMap<String, ArrayList<String>> schemas = new HashMap<String, ArrayList<String>>();
             schemas.put("core", queries);
             form.setSchemas(schemas);
 

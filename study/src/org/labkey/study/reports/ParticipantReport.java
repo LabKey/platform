@@ -84,7 +84,7 @@ public class ParticipantReport extends AbstractReport
         form.setReportId(getReportId());
         form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
 
-        JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
+        JspView<ReportsController.ParticipantReportForm> view = new JspView<>("/org/labkey/study/view/participantReport.jsp", form);
 
         String rwp = (String)context.get("reportWebPart");
         form.setExpanded(!(rwp != null));
@@ -153,8 +153,8 @@ public class ParticipantReport extends AbstractReport
         if (groupsConfig != null)
         {
             JSONArray groups = new JSONArray(groupsConfig);
-            Map<String, CohortImpl> cohortMap = new HashMap<String, CohortImpl>();
-            Map<String, ParticipantGroup> groupMap = new HashMap<String, ParticipantGroup>();
+            Map<String, CohortImpl> cohortMap = new HashMap<>();
+            Map<String, ParticipantGroup> groupMap = new HashMap<>();
 
             for (CohortImpl cohort : StudyManager.getInstance().getCohorts(container, user))
                 cohortMap.put(cohort.getLabel(), cohort);

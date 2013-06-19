@@ -83,7 +83,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     public List getStudyDatasets()
     {
-        List<GWTPair> datasets = new ArrayList<GWTPair>();
+        List<GWTPair> datasets = new ArrayList<>();
         final Study study = StudyManager.getInstance().getStudy(_context.getContainer());
 
         if (study != null)
@@ -225,7 +225,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         qs.setViewName(chart.getViewName());
 
         QueryView view = new QueryView(schema, qs, null);
-        List<GWTChartRenderer> gwtRenderers = new ArrayList<GWTChartRenderer>();
+        List<GWTChartRenderer> gwtRenderers = new ArrayList<>();
 
         for (ChartRenderer renderer : ChartRendererFactory.get().getChartRenderers())
         {
@@ -243,7 +243,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)
     {
-        List<GWTChartColumn> columns = new ArrayList<GWTChartColumn>();
+        List<GWTChartColumn> columns = new ArrayList<>();
 
         for (Map.Entry<String, String> entry : columnMap.entrySet())
             columns.add(new GWTChartColumn(entry.getKey(), entry.getValue()));

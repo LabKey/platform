@@ -45,7 +45,7 @@ public abstract class AbstractXarImporter
     protected final PipelineJob _job;
     protected ExperimentArchiveType _experimentArchive;
 
-    protected Map<String, Domain> _loadedDomains = new HashMap<String, Domain>();
+    protected Map<String, Domain> _loadedDomains = new HashMap<>();
 
     public AbstractXarImporter(XarSource source, PipelineJob job)
     {

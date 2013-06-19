@@ -94,7 +94,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.FileExists);
         addColumn(Column.FileSize);
 
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
         defaultCols.add(FieldKey.fromParts(Column.Run));
         defaultCols.add(FieldKey.fromParts(Column.DataFileUrl));

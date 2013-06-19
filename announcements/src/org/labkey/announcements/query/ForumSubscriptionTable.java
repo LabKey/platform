@@ -255,7 +255,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         /** Translate to the real database column names */
         private Map<String, Object> createDatabaseMap(User user, Map<String, Object> row, SubscriptionTarget targets)
         {
-            Map<String, Object> insertMap = new HashMap<String, Object>();
+            Map<String, Object> insertMap = new HashMap<>();
             insertMap.put("UserId", targets.getUser().getUserId());
             insertMap.put("Container", targets.getContainer().getEntityId());
             insertMap.put("SrcIdentifier", targets.getSrcIdentifier());
@@ -280,7 +280,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             {
                 SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
                 SubscriptionTarget newTargets = getTargets(row, user, container);
-                Map<String, Object> pks = new CaseInsensitiveHashMap<Object>();
+                Map<String, Object> pks = new CaseInsensitiveHashMap<>();
                 pks.put("UserId", oldTargets.getUser().getUserId());
                 pks.put("Container", oldTargets.getContainer().getEntityId());
                 pks.put("Type", "messages");

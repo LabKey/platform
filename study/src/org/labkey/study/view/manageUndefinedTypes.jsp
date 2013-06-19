@@ -21,7 +21,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    List<DataSetDefinition> undefined = new ArrayList<DataSetDefinition>();
+    List<DataSetDefinition> undefined = new ArrayList<>();
     for (DataSetDefinition def : getDataSets())
     {
         if (def.getTypeURI() == null)

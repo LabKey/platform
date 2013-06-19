@@ -32,7 +32,7 @@
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("Ext4"));
       resources.add(ClientDependency.fromFilePath("sqv"));
       return resources;
@@ -363,7 +363,7 @@
         };
 
         <%
-        ArrayList<String> tables = new ArrayList<String>();
+        ArrayList<String> tables = new ArrayList<>();
         if (def.getTables() != null && def.getTables().length() > 0)
         {
             tables.addAll(Arrays.asList(def.getTables().split(",")));

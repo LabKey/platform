@@ -79,11 +79,11 @@ public abstract class AbstractPipelineStartup
             modules.add(1, experimentModule);
         }
 
-        Map<String, BeanFactory> result = new CaseInsensitiveHashMap<BeanFactory>();
+        Map<String, BeanFactory> result = new CaseInsensitiveHashMap<>();
 
         for (Module module : modules)
         {
-            List<String> springConfigPaths = new ArrayList<String>();
+            List<String> springConfigPaths = new ArrayList<>();
             File moduleConfig = findFile(moduleConfigFiles, module.getName() + "Context.xml");
             if (moduleConfig != null)
             {

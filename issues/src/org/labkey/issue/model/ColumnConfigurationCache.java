@@ -44,7 +44,7 @@ public class ColumnConfigurationCache
         @Override
         public CustomColumnConfiguration load(Container c, @Nullable Object argument)
         {
-            final Map<String, CustomColumn> map = new HashMap<String, CustomColumn>();
+            final Map<String, CustomColumn> map = new HashMap<>();
             Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
             new TableSelector(IssuesSchema.getInstance().getTableInfoCustomColumns(), filter, null).forEach(
                 new Selector.ForEachBlock<CustomColumn>() {

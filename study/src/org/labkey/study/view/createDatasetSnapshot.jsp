@@ -37,13 +37,13 @@
     StudyController.StudySnapshotForm bean = me.getModelBean();
     ViewContext context = HttpView.currentContext();
 
-    Map<String, String> columnMap = new HashMap<String, String>();
+    Map<String, String> columnMap = new HashMap<>();
     for (String name : bean.getSnapshotColumns())
         columnMap.put(name, name);
 
     boolean isAutoUpdateable = QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
 
-    Map<String, String> updateDelay = new LinkedHashMap<String, String>();
+    Map<String, String> updateDelay = new LinkedHashMap<>();
     updateDelay.put("30", "30 seconds");
     updateDelay.put("60", "1 minute");
     updateDelay.put("300", "5 minutes");

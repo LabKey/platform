@@ -79,7 +79,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         else
             throw new IllegalArgumentException("Completion type " + form.getType() + " not recognized.");
 
-        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+        List<AjaxCompletion> completions = new ArrayList<>();
         ResultSet rs = null;
         try
         {
@@ -97,7 +97,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
                 completions.add(new AjaxCompletion(rs.getObject(1).toString()));
 
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> jsonCompletions = new ArrayList<JSONObject>();
+            List<JSONObject> jsonCompletions = new ArrayList<>();
             for (AjaxCompletion completion : completions)
                 jsonCompletions.add(completion.toJSON());
 

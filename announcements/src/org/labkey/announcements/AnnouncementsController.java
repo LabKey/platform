@@ -694,7 +694,7 @@ public class AnnouncementsController extends SpringActionController
                 bean.securityWarning = "Warning: all site users have been granted editor permissions in this folder.  As a result, any logged in user will be able to view, create, and respond to posts, regardless of the security setting below.  You may want to change permissions in this folder.";
 
             setHelpTopic("adminMessages");
-            return new JspView<CustomizeBean>("/org/labkey/announcements/customize.jsp", bean);
+            return new JspView<>("/org/labkey/announcements/customize.jsp", bean);
         }
 
         public boolean handlePost(DiscussionService.Settings form, BindException errors) throws Exception
@@ -1011,7 +1011,7 @@ public class AnnouncementsController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            List<JSONObject> completions = new ArrayList<JSONObject>();
+            List<JSONObject> completions = new ArrayList<>();
             Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
 
@@ -1657,7 +1657,7 @@ public class AnnouncementsController extends SpringActionController
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
             if (provider != null)
             {
-                List<Map> options = new ArrayList<Map>();
+                List<Map> options = new ArrayList<>();
 
                 // if the list of options is not for the folder default, add an option to use the folder default
                 if (getViewContext().get("isDefault") == null)
@@ -1808,7 +1808,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != emailList)
             {
                 String[] rawEmails = emailList.split("\n");
-                List<String> invalidEmails = new ArrayList<String>();
+                List<String> invalidEmails = new ArrayList<>();
                 List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
                 for (String rawEmail : invalidEmails)
@@ -1818,7 +1818,7 @@ public class AnnouncementsController extends SpringActionController
                         errors.reject(ERROR_MSG, rawEmail.trim() + ": Invalid email address");
                 }
 
-                memberList = new ArrayList<User>(emails.size());
+                memberList = new ArrayList<>(emails.size());
 
                 for (ValidEmail email : emails)
                 {
@@ -1870,7 +1870,7 @@ public class AnnouncementsController extends SpringActionController
 
             if ("HTML".equals(bean.getRendererType()))
             {
-                Collection<String> validateErrors = new LinkedList<String>();
+                Collection<String> validateErrors = new LinkedList<>();
                 PageFlowUtil.validateHtml(bean.getBody(), validateErrors, getUser().isDeveloper());
                 for (String err : validateErrors)
                     errors.reject(ERROR_MSG, err);

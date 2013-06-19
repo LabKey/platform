@@ -59,7 +59,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     {
         if (_overlappingGroups == null)
         {
-            _overlappingGroups = new LinkedHashSet<WellGroup>();
+            _overlappingGroups = new LinkedHashSet<>();
             for (Position position : getPositions())
             {
                 List<? extends WellGroup> groups = _plate.getWellGroups(position);
@@ -75,7 +75,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Set<WellGroup> getOverlappingGroups(Type type)
     {
-        Set<WellGroup> typedGroups = new LinkedHashSet<WellGroup>();
+        Set<WellGroup> typedGroups = new LinkedHashSet<>();
         for (WellGroup overlappingGroup : getOverlappingGroups())
         {
             if (type == overlappingGroup.getType())
@@ -88,7 +88,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     {
         if (!combineReplicates)
         {
-            List<WellData> returnList = new ArrayList<WellData>(_positions.size());
+            List<WellData> returnList = new ArrayList<>(_positions.size());
             for (Position position : _positions)
                 returnList.add(_plate.getWell(position.getRow(), position.getColumn()));
             return returnList;
@@ -97,18 +97,18 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         {
             if (_replicateWellData == null)
             {
-                _replicateWellData = new ArrayList<WellData>();
+                _replicateWellData = new ArrayList<>();
                 // first, we find all replicate groups that overlap with this group:
                 Set<WellGroup> replicateGroups = getOverlappingGroups(Type.REPLICATE);
                 // create a mapping from each position to its replicate group, if one exists:
-                Map<Position, WellGroup> positionToReplicateGroup = new HashMap<Position, WellGroup>();
+                Map<Position, WellGroup> positionToReplicateGroup = new HashMap<>();
                 for (WellGroup replicateGroup : replicateGroups)
                 {
                     for (Position position : replicateGroup.getPositions())
                         positionToReplicateGroup.put(position, replicateGroup);
                 }
 
-                Set<WellGroup> addedReplicateGroups = new HashSet<WellGroup>();
+                Set<WellGroup> addedReplicateGroups = new HashSet<>();
                 // go through each well in order, adding the well to our data list if there is no
                 // associated replicate group, or adding the replicate group if that position's
                 // group hasn't been added before:

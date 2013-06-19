@@ -67,20 +67,20 @@ public class TypeCohortReportFactory extends TypeReportFactory
                 cohortTypeSelect.append("</option>\n");
             }
             cohortTypeSelect.append("</select>\n");
-            inputs.add(new Pair<String, String>("Cohort Filter Type", cohortTypeSelect.toString()));
+            inputs.add(new Pair<>("Cohort Filter Type", cohortTypeSelect.toString()));
         }
         return inputs;
     }
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        List<CohortFilter> reportCohorts = new ArrayList<CohortFilter>();
+        List<CohortFilter> reportCohorts = new ArrayList<>();
         CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
             reportCohorts.add(new SingleCohortFilter(type, cohort));
         reportCohorts.add(CohortFilterFactory.UNASSIGNED);
 
-        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        List<SpecimenVisitReport> reports = new ArrayList<>();
         for (CohortFilter cohortFilter : reportCohorts)
         {
             CohortImpl cohort = cohortFilter.getCohort(getContainer(), getUser());

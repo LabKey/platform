@@ -103,7 +103,7 @@ public class SampleSetDomainType extends AbstractDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         ExpMaterialTable.Column[] columns = ExpMaterialTable.Column.values();
-        Set<String> reserved = new HashSet<String>(columns.length);
+        Set<String> reserved = new HashSet<>(columns.length);
         for (ExpMaterialTable.Column column : columns)
             reserved.add(column.name());
         reserved.add("CpasType");

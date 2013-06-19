@@ -119,12 +119,12 @@ public abstract class VisualizationProvider
             queryDef = QueryService.get().createQueryDefForTable(schema, queryName);
         if (queryDef != null && !queryDef.isHidden())
         {
-            List<QueryException> errors = new ArrayList<QueryException>();
+            List<QueryException> errors = new ArrayList<>();
             TableInfo table = queryDef.getTable(errors, true);
             if (table != null)
             {
                 if (isValid(table, queryDef, matchType))
-                    return new Pair<QueryDefinition, TableInfo>(queryDef, table);
+                    return new Pair<>(queryDef, table);
             }
         }
         return null;
@@ -132,7 +132,7 @@ public abstract class VisualizationProvider
 
     protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
     {
-        Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
+        Map<QueryDefinition, TableInfo> queries = new HashMap<>();
         UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
         if (queryType == VisualizationController.QueryType.all || queryType == VisualizationController.QueryType.custom)
         {
@@ -142,7 +142,7 @@ public abstract class VisualizationProvider
                 QueryDefinition qdef = entry.getValue();
                 if (!qdef.isHidden())
                 {
-                    List<QueryException> errors = new ArrayList<QueryException>();
+                    List<QueryException> errors = new ArrayList<>();
                     TableInfo table = qdef.getTable(schema, errors, true);
                     // Ignore specific errors- failed queries won't produce a table
                     if (table != null && isValid(table, qdef, matchType))
@@ -177,7 +177,7 @@ public abstract class VisualizationProvider
 
     protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
     {
-        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = new HashMap<>();
         for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
         {
             QueryDefinition query = entry.getKey();

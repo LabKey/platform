@@ -39,7 +39,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     StudyQuerySchema _schema;
     DataSetDefinition _dataset;
     ColumnInfo _colParticipantId;
-    Map<Double,ColumnInfo> _seqColumnMap = new HashMap<Double,ColumnInfo>();
+    Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
 
     public ParticipantVisitDataSetTable(StudyQuerySchema schema, DataSetDefinition dsd, ColumnInfo colParticipantId)
     {
@@ -54,15 +54,15 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         // all visits
         VisitManager visitManager = studyManager.getVisitManager(_study);
         TreeMap<Double, VisitImpl> visitSequenceMap = visitManager.getVisitSequenceMap();
-        TreeMap<Integer, VisitImpl> visitRowIdMap = new TreeMap<Integer, VisitImpl>();
+        TreeMap<Integer, VisitImpl> visitRowIdMap = new TreeMap<>();
         for (VisitImpl v : visitSequenceMap.values())
             visitRowIdMap.put(v.getRowId(), v);
 
         // visits for this dataset
         // NOTE vdsList (and therefore visitList) is in display order
         List<VisitDataSet> vdsList = _dataset.getVisitDataSets();
-        Set<Integer> visitIds = new HashSet<Integer>();
-        List<VisitImpl> visitList = new ArrayList<VisitImpl>(vdsList.size());
+        Set<Integer> visitIds = new HashSet<>();
+        List<VisitImpl> visitList = new ArrayList<>(vdsList.size());
         for (VisitDataSet vds : vdsList)
         {
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
@@ -73,7 +73,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             }
         }
 
-        Set<Double> sequenceSet = new TreeSet<Double>();
+        Set<Double> sequenceSet = new TreeSet<>();
         for (VisitDataSet vds : vdsList)
         {
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
@@ -104,7 +104,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
-        MultiMap<String, Double> labelMap = new MultiHashMap<String, Double>();
+        MultiMap<String, Double> labelMap = new MultiHashMap<>();
 
         for (double seq : sequenceSet)
         {

@@ -35,7 +35,7 @@ import java.util.List;
 */
 public class ProtocolSuccessorPredecessorView extends GridView
 {
-    private Map<String, ExpProtocol> _protocolCache = new HashMap<String, ExpProtocol>();
+    private Map<String, ExpProtocol> _protocolCache = new HashMap<>();
 
     protected ProtocolSuccessorPredecessorView(String parentProtocolLSID, int actionSequence, Container c, String lsidSelectColumn, String sequenceSelectColumn, String filterColumn, String title)
     {

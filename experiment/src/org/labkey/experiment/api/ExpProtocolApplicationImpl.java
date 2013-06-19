@@ -94,7 +94,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         if (_inputDatas == null)
         {
             ExpDataRunInput[] inputs = getDataInputs();
-            _inputDatas= new ArrayList<ExpData>(inputs.length);
+            _inputDatas= new ArrayList<>(inputs.length);
             for (ExpDataRunInput input : inputs)
             {
                 _inputDatas.add(input.getData());
@@ -110,7 +110,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         if (_inputMaterials == null)
         {
             ExpMaterialRunInput[] inputs = getMaterialInputs();
-            _inputMaterials = new ArrayList<ExpMaterial>(inputs.length);
+            _inputMaterials = new ArrayList<>(inputs.length);
             for (ExpMaterialRunInput input : inputs)
             {
                 _inputMaterials.add(input.getMaterial());

@@ -75,7 +75,7 @@ public class AuditController extends SpringActionController
 
             VBox view = new VBox();
 
-            JspView<String> jspView = new JspView<String>("/org/labkey/audit/auditLog.jsp", form.getView());
+            JspView<String> jspView = new JspView<>("/org/labkey/audit/auditLog.jsp", form.getView());
 
             view.addView(jspView);
             view.addView(createInitializedQueryView(form, errors, false, null));
@@ -156,7 +156,7 @@ public class AuditController extends SpringActionController
 
             //create the model and view
             SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(event, eventProps);
-            return new JspView<SiteSettingsAuditDetailsModel>("/org/labkey/audit/siteSettingsAuditDetails.jsp", model);
+            return new JspView<>("/org/labkey/audit/siteSettingsAuditDetails.jsp", model);
         }
 
         public NavTree appendNavTrail(NavTree root)

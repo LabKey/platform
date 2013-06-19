@@ -51,7 +51,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
 
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
-        List<? extends Position> sortedPositions = new ArrayList<Position>(positions);
+        List<? extends Position> sortedPositions = new ArrayList<>(positions);
         Collections.sort(sortedPositions, new Comparator<Position>()
         {
             public int compare(Position first, Position second)

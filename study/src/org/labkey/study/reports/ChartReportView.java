@@ -120,10 +120,10 @@ public class ChartReportView extends AbstractReportView
         if (dataset != null)
             setShowWithDataset(Integer.parseInt(dataset));
         
-        List<Pair<String, String>> params = new ArrayList<Pair<String, String>>();
-        params.add(new Pair<String, String>("datasetId", dataset));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("datasetId", dataset));
         if (!StringUtils.isEmpty(chartsPerRow))
-            params.add(new Pair<String, String>("chartsPerRow", chartsPerRow));
+            params.add(new Pair<>("chartsPerRow", chartsPerRow));
 
         ReportDescriptor descriptor = getDescriptor();
         descriptor.setProperty(QueryParam.schemaName.toString(), StudySchema.getInstance().getSchemaName());
@@ -283,7 +283,7 @@ public class ChartReportView extends AbstractReportView
                 if (chartsPerRow != null)
                     form.setChartsPerRow(Integer.parseInt(chartsPerRow));
 
-                return new JspView<ReportsController.PlotForm>("/org/labkey/study/view/datasetCharts.jsp", form);
+                return new JspView<>("/org/labkey/study/view/datasetCharts.jsp", form);
             }
         }
         return new HtmlView("The requested report is obsolete and could not be rendered.");

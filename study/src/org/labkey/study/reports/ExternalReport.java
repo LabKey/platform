@@ -364,7 +364,7 @@ public class ExternalReport extends AbstractReport
     private String[] getCommandStrings()
     {
         StringTokenizer tokenizer = new StringTokenizer(getCommandLine(), " ");
-        List<String> tokens = new ArrayList<String>();
+        List<String> tokens = new ArrayList<>();
 
         while (tokenizer.hasMoreTokens())
             tokens.add(tokenizer.nextToken());

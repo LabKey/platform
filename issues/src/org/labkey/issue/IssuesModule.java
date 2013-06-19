@@ -79,7 +79,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        ArrayList<WebPartFactory> result = new ArrayList<WebPartFactory>();
+        ArrayList<WebPartFactory> result = new ArrayList<>();
         result.add(new IssuesWebPartFactory());
         result.add(new AlwaysAvailableWebPartFactory("Issues List")
         {
@@ -125,7 +125,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public Collection<String> getSummary(Container c)
     {
-        Collection<String> list = new LinkedList<String>();
+        Collection<String> list = new LinkedList<>();
         long count = IssueManager.getIssueCount(c);
         if (count > 0)
             list.add("" + count + " Issue" + (count > 1 ? "s" : ""));

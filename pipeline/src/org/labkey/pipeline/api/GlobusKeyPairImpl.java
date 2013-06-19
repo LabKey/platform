@@ -122,7 +122,7 @@ public class GlobusKeyPairImpl implements GlobusKeyPair
         {
             return new X509Certificate[0];
         }
-        List<X509Certificate> certs = new ArrayList<X509Certificate>();
+        List<X509Certificate> certs = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(_certBytes)));
         X509Certificate cert;
         try

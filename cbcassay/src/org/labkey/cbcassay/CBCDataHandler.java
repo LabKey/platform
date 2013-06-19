@@ -67,8 +67,8 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
 
     protected Map<String, PropertyDescriptor> getPropertyMap(Map<String, DomainProperty> importMap)
     {
-        Map<String, PropertyDescriptor> map = new CaseInsensitiveHashMap<PropertyDescriptor>(importMap.size());
-        Set<PropertyDescriptor> seen = new HashSet<PropertyDescriptor>(importMap.size());
+        Map<String, PropertyDescriptor> map = new CaseInsensitiveHashMap<>(importMap.size());
+        Set<PropertyDescriptor> seen = new HashSet<>(importMap.size());
         for (Map.Entry<String, DomainProperty> entry : importMap.entrySet())
         {
             PropertyDescriptor pd = entry.getValue().getPropertyDescriptor();
@@ -112,7 +112,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
         while (rowsIter.hasNext())
         {
             Map<String, Object> row = rowsIter.next();
-            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(row);
+            Map<String, Object> map = new CaseInsensitiveHashMap<>(row);
             Double percentLymph = (Double) map.get("PercentLYMPH");
             Double percentLuc = (Double) map.get("PercentLUC");
             if (percentLymph != null && percentLuc != null)
@@ -141,7 +141,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
             rowsIter.set(map);
         }
 
-        Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
+        Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
         datas.put(getDataType(), rows);
         return datas;
     }

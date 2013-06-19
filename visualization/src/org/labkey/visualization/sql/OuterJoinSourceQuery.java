@@ -40,7 +40,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public Set<VisualizationSourceColumn> getSelects(VisualizationSourceColumn.Factory factory, boolean includeRequiredExtraCols)
     {
-        Set<VisualizationSourceColumn> selects = new LinkedHashSet<VisualizationSourceColumn>();
+        Set<VisualizationSourceColumn> selects = new LinkedHashSet<>();
         for (IVisualizationSourceQuery query : _queries)
             selects.addAll(query.getSelects(factory, includeRequiredExtraCols));
         return selects;
@@ -86,7 +86,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinConditions()
     {
-        List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
+        List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<>();
         for (IVisualizationSourceQuery query : _queries)
         {
             if (query.getJoinConditions() != null)
@@ -98,7 +98,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public Set<VisualizationSourceColumn> getSorts()
     {
-        Set<VisualizationSourceColumn> sorts = new LinkedHashSet<VisualizationSourceColumn>();
+        Set<VisualizationSourceColumn> sorts = new LinkedHashSet<>();
         for (IVisualizationSourceQuery query : _queries)
             sorts.addAll(query.getSorts());
         return sorts;
@@ -153,7 +153,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
             {
                 Set<VisualizationSourceColumn> set = super.get(o);
                 if (null == set)
-                    put((String)o, set = new LinkedHashSet<VisualizationSourceColumn>());
+                    put((String)o, set = new LinkedHashSet<>());
                 return set;
             }
         };

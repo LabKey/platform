@@ -81,7 +81,7 @@ public class AssayManager implements AssayService.Interface
 {
     private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(100, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
-    private List<AssayProvider> _providers = new ArrayList<AssayProvider>();
+    private List<AssayProvider> _providers = new ArrayList<>();
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();
 
@@ -170,7 +170,7 @@ public class AssayManager implements AssayService.Interface
         if (result == null)
         {
             // Build up a set of containers so that we can query them all at once
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             containers.add(container);
             containers.add(ContainerManager.getSharedContainer());
             Container project = container.getProject();
@@ -184,7 +184,7 @@ public class AssayManager implements AssayService.Interface
             }
 
             ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
-            result = new ArrayList<ExpProtocol>();
+            result = new ArrayList<>();
 
             // Filter to just the ones that have an AssayProvider associated with them
             for (ExpProtocol protocol : protocols)
@@ -215,7 +215,7 @@ public class AssayManager implements AssayService.Interface
         }
 
         // Filter it down to just ones that match the provider
-        List<ExpProtocol> result = new ArrayList<ExpProtocol>();
+        List<ExpProtocol> result = new ArrayList<>();
         for (ExpProtocol p : allProtocols)
         {
             if (provider.equals(AssayService.get().getProvider(p)))
@@ -301,7 +301,7 @@ public class AssayManager implements AssayService.Interface
         if (containers.size() == 0)
             return Collections.emptyList(); // Nowhere to upload to, no button
 
-        List<ActionButton> result = new ArrayList<ActionButton>();
+        List<ActionButton> result = new ArrayList<>();
 
 
         if(currentContainer.isWorkbook())
@@ -473,7 +473,7 @@ public class AssayManager implements AssayService.Interface
 
             String searchTitle = StringUtils.trimToEmpty(name) + " " + StringUtils.trimToEmpty(instrument) + " " + StringUtils.trimToEmpty(provider.getName());
             String body = StringUtils.trimToEmpty(provider.getName()) + " " + StringUtils.trimToEmpty(description) + " " + StringUtils.trimToEmpty(comment) + runKeywords.toString();
-            Map<String, Object> m = new HashMap<String, Object>();
+            Map<String, Object> m = new HashMap<>();
             m.put(SearchService.PROPERTY.title.toString(), name);
             m.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
             m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
@@ -567,14 +567,14 @@ public class AssayManager implements AssayService.Interface
     @Override
     public List<Pair<Container, String>> getLocationOptions(Container container, User user)
     {
-        List<Pair<Container, String>> containers = new ArrayList<Pair<Container, String>>();
+        List<Pair<Container, String>> containers = new ArrayList<>();
 
         // project
         Container project = container.getProject();
         if (project != null && !container.equals(project))
         {
             if (project.hasPermission(user, DesignAssayPermission.class))
-                containers.add(new Pair<Container, String>(project, String.format("%s (%s)", "Project", project.getName())));
+                containers.add(new Pair<>(project, String.format("%s (%s)", "Project", project.getName())));
         }
 
         // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
@@ -587,12 +587,12 @@ public class AssayManager implements AssayService.Interface
 
         // current folder
         if (container != null && container.hasPermission(user, DesignAssayPermission.class))
-            containers.add(new Pair<Container, String>(container, String.format("%s (%s)", "Current Folder", container.getName())));
+            containers.add(new Pair<>(container, String.format("%s (%s)", "Current Folder", container.getName())));
 
         // shared project
         Container shared = ContainerManager.getSharedContainer();
         if (shared.hasPermission(user, DesignAssayPermission.class))
-            containers.add(new Pair<Container, String>(shared, "Shared Folder"));
+            containers.add(new Pair<>(shared, "Shared Folder"));
 
         return containers;
     }
@@ -605,7 +605,7 @@ public class AssayManager implements AssayService.Interface
             throw new ExperimentException("No protocol found for run");
 
         ExpExperiment batch = AssayService.get().findBatch(run);
-        Collection<ObjectProperty> properties = new ArrayList<ObjectProperty>(run.getObjectProperties().values());
+        Collection<ObjectProperty> properties = new ArrayList<>(run.getObjectProperties().values());
         if (batch != null)
         {
             properties.addAll(batch.getObjectProperties().values());

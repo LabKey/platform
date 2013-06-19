@@ -100,7 +100,7 @@
 
     User user = (User) request.getUserPrincipal();
     DataSetDefinition[] allDatasets = manager.getDataSetDefinitions(study);
-    ArrayList<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>(allDatasets.length);
+    ArrayList<DataSetDefinition> datasets = new ArrayList<>(allDatasets.length);
     for (DataSetDefinition def : allDatasets)
     {
         if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
@@ -118,8 +118,8 @@
 
     ResultSet rs;
 
-    Map<Pair<String,Double>,Integer> visitRowIdMap = new HashMap<Pair<String,Double>,Integer>();
-    Map<Double, Date> ptidVisitDates = new TreeMap<Double, Date>();
+    Map<Pair<String,Double>,Integer> visitRowIdMap = new HashMap<>();
+    Map<Double, Date> ptidVisitDates = new TreeMap<>();
     rs = Table.executeQuery(dbSchema,
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
             "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
@@ -138,8 +138,8 @@
     rs.close();
 
     VisitMultiMap visitSequenceMap = new VisitMultiMap();
-    Map<Double, Integer> countKeysForSequence = new HashMap<Double, Integer>();
-    Set<Integer> datasetSet = new HashSet<Integer>();
+    Map<Double, Integer> countKeysForSequence = new HashMap<>();
+    Set<Integer> datasetSet = new HashSet<>();
     SimpleFilter filter = new SimpleFilter(study.getSubjectColumnName(), bean.getParticipantId());
     Sort sort = new Sort("SequenceNum");
     SQLFragment f = new SQLFragment();
@@ -559,7 +559,7 @@ public static class VisitMultiMap extends MultiValueMap<Integer, Double>
     @Override
     protected Collection<Double> createValueCollection()
     {
-        return new TreeSet<Double>();
+        return new TreeSet<>();
     }
 }
 
