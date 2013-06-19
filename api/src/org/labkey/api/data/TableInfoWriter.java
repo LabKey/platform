@@ -154,7 +154,7 @@ public class TableInfoWriter
 
                     Container fkContainer = fk.getLookupContainer();
 
-                    // Null means current container... which means don't set anything in the XML
+                    // If null or explicitly set to current container then don't set anything in the XML
                     if (null != fkContainer || !fkContainer.equals(_c))
                     {
                         fkXml.setFkFolderPath(fkContainer.getPath());
