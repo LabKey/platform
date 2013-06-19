@@ -15,7 +15,7 @@
 <%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%
 /*
- * Copyright (c) 2012 LabKey Corporation
+ * Copyright (c) 2012-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
