@@ -160,7 +160,7 @@ public class ExcelWriter implements ExportWriter
     private List<String> _commentLines;
     private CaptionType _captionType = CaptionType.Label;
     private boolean _insertableColumnsOnly = false;
-    private ArrayList<ExcelColumn> _columns = new ArrayList<ExcelColumn>(10);
+    private ArrayList<ExcelColumn> _columns = new ArrayList<>(10);
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
 
@@ -169,7 +169,7 @@ public class ExcelWriter implements ExportWriter
     private CellStyle _wrappingTextFormat = null;
     private CellStyle _nonWrappingTextFormat = null;
 
-    private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, CellStyle>();
+    private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<>();
 
     /** Total number of data rows exported so far, which may span multiple sheets */
     private int _totalDataRows = 0;
@@ -266,7 +266,7 @@ public class ExcelWriter implements ExportWriter
     public void createColumns(ResultSetMetaData md) throws SQLException
     {
         int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new ArrayList<ColumnInfo>(columnCount);
+        List<ColumnInfo> cols = new ArrayList<>(columnCount);
 
         for (int i = 0; i < columnCount; i++)
         {
@@ -442,14 +442,14 @@ public class ExcelWriter implements ExportWriter
 
     public void setDisplayColumns(List<DisplayColumn> columns)
     {
-        _columns = new ArrayList<ExcelColumn>(10);
+        _columns = new ArrayList<>(10);
         addDisplayColumns(columns);
     }
 
 
     public void setColumns(List<ColumnInfo> columns)
     {
-        _columns = new ArrayList<ExcelColumn>(10);
+        _columns = new ArrayList<>(10);
         addColumns(columns);
     }
 
@@ -465,7 +465,7 @@ public class ExcelWriter implements ExportWriter
         if (null == _columns)
             return null;
 
-        List<ExcelColumn> visibleColumns = new ArrayList<ExcelColumn>(_columns.size());
+        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
 
         for (ExcelColumn column : _columns)
         {

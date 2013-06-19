@@ -67,7 +67,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
-        JspView view = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/dataUpload.jsp", _form);
+        JspView view = new JspView<>("/org/labkey/study/assay/view/dataUpload.jsp", _form);
         try
         {
             if (descriptionView != null)

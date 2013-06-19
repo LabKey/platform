@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
@@ -56,23 +57,30 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
     {
         StringBuilder sb = new StringBuilder();
         String separator = "";
-        PipeRoot pipeRoot = getPipelineRoot(context.getContainer());
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
             sb.append(separator);
             separator = ", ";
             sb.append(PageFlowUtil.filter(entry.getValue().getName()));
-            sb.append("<input name=\"");
-            sb.append(PATH_FORM_ELEMENT_NAME);
-            sb.append("\" type=\"hidden\" value=\"");
-            sb.append(PageFlowUtil.filter(pipeRoot.relativePath(entry.getValue()).replace('\\', '/')));
-            sb.append("\"/><input type=\"hidden\" name=\"");
-            sb.append(NAME_FORM_ELEMENT_NAME);
-            sb.append("\" value=\"");
-            sb.append(PageFlowUtil.filter(entry.getKey()));
-            sb.append("\"/>");
+            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
         }
         return new HtmlView(sb.toString());
+    }
+
+    public static String getHiddenFormElementHTML(Container container, String formElementName, File file)
+    {
+        PipeRoot pipeRoot = getPipelineRoot(container);
+        StringBuilder sb = new StringBuilder();
+        sb.append("<input name=\"");
+        sb.append(PATH_FORM_ELEMENT_NAME);
+        sb.append("\" type=\"hidden\" value=\"");
+        sb.append(PageFlowUtil.filter(pipeRoot.relativePath(file).replace('\\', '/')));
+        sb.append("\"/><input type=\"hidden\" name=\"");
+        sb.append(NAME_FORM_ELEMENT_NAME);
+        sb.append("\" value=\"");
+        sb.append(PageFlowUtil.filter(formElementName));
+        sb.append("\"/>");
+        return sb.toString();
     }
 
     public String getShortName()

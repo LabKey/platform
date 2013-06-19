@@ -174,8 +174,8 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames) throws ExperimentException, IOException
     {
-        Map<String, File> files = new TreeMap<String, File>();
-        Set<String> originalFileNames = new HashSet<String>();
+        Map<String, File> files = new TreeMap<>();
+        Set<String> originalFileNames = new HashSet<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();

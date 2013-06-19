@@ -535,17 +535,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             if (allowFileReuseOnReRun && context.getReRun() != null)
             {
+                // In the re-run scenario, figure out what files to offer up for reuse
+
+                Map<String, File> reusableFiles = new HashMap<>();
+                // Include any files that were uploaded as part of this request
                 if (uploadedFiles != null && !uploadedFiles.isEmpty())
                 {
-                    result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+                    reusableFiles.putAll(uploadedFiles);
                 }
                 else
                 {
+                    // Look for input data files to the original version of the run
                     ExpData[] inputDatas = context.getReRun().getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
-                    ExpData primaryInputData = null;
                     if (inputDatas.length == 1)
                     {
-                        primaryInputData = inputDatas[0];
+                        // There's exactly one input, so just use it
+                        reusableFiles.put(AssayDataCollector.PRIMARY_FILE, inputDatas[0].getFile());
                     }
                     else if (inputDatas.length > 1)
                     {
@@ -557,27 +562,42 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             // are created by the ExperimentRunOutput step, and will have a different ActionSequence
                             if (inputData.getSourceApplication().getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication && inputData.getSourceApplication().getActionSequence() == ExperimentService.Interface.SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE && inputData.getSourceApplication().getActionSequence() == ExperimentService.Interface.SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                             {
-                                if (primaryInputData != null)
+                                if (reusableFiles.size() >= getMaxFileInputs())
                                 {
-                                    throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId() + "(\"" + primaryInputData + "\" and \"" + inputData + "\")");
+                                    throw new IllegalStateException("More than " + getMaxFileInputs() + " primary data file(s) associated with run: " + context.getReRun().getRowId() + "(\"" + reusableFiles.values() + "\" and \"" + inputData + "\")");
                                 }
-                                primaryInputData = inputData;
+                                reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
                             }
                         }
                     }
-                    if (primaryInputData != null)
+                }
+
+                if (getMaxFileInputs() == 1)
+                {
+                    // This assay only allows for one input file, so keep it simple with separate options
+                    // to reuse or re-upload
+                    if (!reusableFiles.isEmpty())
                     {
-                        Map<String, File> oldFiles = new HashMap<>();
-                        oldFiles.put(AssayDataCollector.PRIMARY_FILE, primaryInputData.getFile());
-                        result.add(new PreviouslyUploadedDataCollector(oldFiles));
+                        result.add(new PreviouslyUploadedDataCollector(reusableFiles));
                     }
+                    result.add(new FileUploadDataCollector(getMaxFileInputs()));
+                }
+                else
+                {
+                    // We allow multiple files per assay run, so give a UI that lets the user mix and match
+                    // between existing ones and new ones
+                    result.add(new FileUploadDataCollector(getMaxFileInputs(), reusableFiles));
                 }
             }
-            else if (uploadedFiles != null)
+            else
             {
-                result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+                // Normal (non-rerun) scenario
+                if (uploadedFiles != null)
+                {
+                    result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+                }
+                result.add(new FileUploadDataCollector(getMaxFileInputs()));
             }
-            result.add(new FileUploadDataCollector(getMaxFileInputs()));
         }
         return result;
     }

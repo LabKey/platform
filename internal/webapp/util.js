@@ -336,7 +336,8 @@ function hideHelpDivDelay()
     _hideTimer = setTimeout("hideHelpDiv(false);", 500);
 }
 
-function showPathname(filechooser, id)
+/** Element is anything that can be resolved using Ext.get() - an element, an id, etc */
+function showPathname(filechooser, element)
 {
     var pathname = filechooser.value;
     var filename;
@@ -344,7 +345,7 @@ function showPathname(filechooser, id)
          filename = pathname.substring(pathname.lastIndexOf('/')+1,pathname.length);
     else
          filename = pathname.substring(pathname.lastIndexOf('\\')+1,pathname.length);
-    document.getElementById(id).innerHTML = "<table><tr><td><img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/></td><td>" + filename + "</td></tr></table>";
+    Ext4.get(element).dom.innerHTML = "<table><tr><td><img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/></td><td>" + filename + "</td></tr></table>";
     return(true);
 }
 

@@ -18,8 +18,6 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
-import javax.servlet.http.HttpServletResponse;
-
 public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
     boolean _useBasicAuthentication = false;
@@ -31,7 +29,7 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
 
     public UnauthorizedException(String message)
     {
-        super(StringUtils.defaultIfEmpty(message, "" + HttpServletResponse.SC_UNAUTHORIZED + ": User does not have permission to perform this operation"));
+        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation"));
     }
 
     public void setUseBasicAuthentication(boolean use)

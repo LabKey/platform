@@ -15,14 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
+<%@ page import="org.labkey.api.study.assay.FileUploadDataCollector" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.assay.FileUploadDataCollector" %>
-<%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
+<%@ page import="java.io.File" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.study.assay.PreviouslyUploadedDataCollector" %>
 
 <%
     JspView<FileUploadDataCollector> me = (JspView<FileUploadDataCollector>) HttpView.currentView();
-    FileUploadDataCollector bean = me.getModelBean();
+    FileUploadDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
 %>
 
 <table id="file-upload-tbl"></table>
@@ -32,14 +38,50 @@
 </script>
 
 <script type="text/javascript">
-    var _fileUploadIndex = 0;
-    var _maxFileInputs = <%= bean.getMaxFileInputs() %>;
-    var _prefix = "<%= AssayDataCollector.PRIMARY_FILE %>";
+    var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
+    var PREFIX = "<%= PageFlowUtil.filter(AssayDataCollector.PRIMARY_FILE) %>";
+
+    // Keep a list of all of the files (new uploads and reuse candidates so that we can track down their
+    // corresponding UI elements easily
+    var _files = [];
+
+    /**
+     * Spins through all of the files and sees how many are active and will be used. We immediately remove
+     * new uploads from the list, but leave previous uploads (with a strikethrough) - and we don't want to count them.
+     */
+    function getActiveFileCount()
+    {
+        var count = 0;
+        for (var i = 0; i < _files.length; i++)
+        {
+            if (_files[i].active)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Initialize the input with any previously uploaded files we want to offer for reuse
+     */
+    function initializeFileUploadInput()
+    {
+        // Add an entry for all files that can be reused from a previous upload
+        <% for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
+            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(PreviouslyUploadedDataCollector.getHiddenFormElementHTML(me.getViewContext().getContainer(), entry.getKey(), entry.getValue()))%>);
+        <% } %>
+
+        // Be sure that we always have at least one file in the list
+        <% if (bean.getReusableFiles().isEmpty()) { %>
+            addFileUploadInputRow();
+        <% } %>
+    }
 
     /**
      * Add a new row to the file upload table with a file input element
      */
-    function addFileUploadInputRow(btn)
+    function addFileUploadInputRow(btn, fileName, hiddenFormFields)
     {
         // if the add button was clicked and it was disabled, do nothing
         if (btn && btn.className.indexOf("labkey-file-add-icon-disabled") != -1)
@@ -48,55 +90,85 @@
         }
 
         // return without adding row if we have already reached the max
-        if (_fileUploadIndex >= _maxFileInputs)
+        if (getActiveFileCount() >= MAX_FILE_INPUTS)
         {
             return;
         }
 
+        var currentIndex = getActiveFileCount();
+
+        var file = {
+            active: true,
+            reused: fileName != null
+        };
+        _files.push(file);
+
         var tbl = document.getElementById("file-upload-tbl");
-        var row = tbl.insertRow(-1);
-        row.id = "file-upload-row" + _fileUploadIndex;
+        file.mainRow = tbl.insertRow(-1);
 
         // add a cell for the file upload input
-        var cell = row.insertCell(0);
-        var id = _prefix + _fileUploadIndex;
-        var name = _prefix + (_fileUploadIndex > 0 ? _fileUploadIndex : "");
-        cell.innerHTML = "<input type='file' size='40' id='" + id + "' name='" + name + "' onChange='checkForDuplicateFileName(this);' />";
-        var currentIndex = _fileUploadIndex;
+        var fileCell = file.mainRow.insertCell(0);
+        fileCell.style.whiteSpace = 'nowrap';
+
+        var name = PREFIX + (currentIndex > 0 ? currentIndex : "");
+
+        if (fileName)
+        {
+            fileCell.innerHTML = "<span>" + LABKEY.Utils.encodeHtml(fileName) + "</span>" + hiddenFormFields;
+            file.fileNameSpan = fileCell.children[0];
+            file.hidden1 = fileCell.children[1];
+            file.hidden2 = fileCell.children[2];
+        }
+        else
+        {
+            fileCell.innerHTML = "<input type='file' size='40' name='" + name + "' />";
+            file.fileInput = fileCell.children[0];
+            file.fileInput.onchange = function() {
+                checkForDuplicateFileName(file);
+            };
+        }
 
         // if the given assay type allows for multiple file uploads, add the add and remove buttons
-        if (_maxFileInputs > 1)
+        if (MAX_FILE_INPUTS > 1)
         {
             // add a cell with a button for removing the given row
-            cell = row.insertCell(1);
-            cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&nbsp;</span></a>";
+            var removeCell = file.mainRow.insertCell(1);
+            removeCell.innerHTML = "<a class='labkey-file-remove-icon labkey-file-remove-icon-disabled');'><span>&nbsp;</span></a>";
+            file.removeButtonAnchor = removeCell.children[0];
+            file.removeButtonAnchor.onclick = function() {
+                removeFileUploadInputRow(this, file);
+            };
 
             // add a cell with a button for adding another row
-            cell = row.insertCell(2);
-            cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-file-add-icon labkey-file-add-icon-disabled' onClick='addFileUploadInputRow(this);'><span>&nbsp;</span></a>";
-
-            _fileUploadIndex++;
+            var addCell = file.mainRow.insertCell(2);
+            addCell.innerHTML = "<a class='labkey-file-add-icon labkey-file-add-icon-disabled'><span>&nbsp;</span></a>";
+            file.addButtonAnchor = addCell.children[0];
+            file.addButtonAnchor.onclick = function() {
+                addFileUploadInputRow(this);
+            };
 
             toggleAddRemoveButtons();
         }
 
         // add a cell to show the file name after selection
-        cell = row.insertCell(-1);
-        cell.width = "100%";
-        cell.innerHTML = '<label id="label' + id + '"></label>'; 
+        var fileNameCell = file.mainRow.insertCell(-1);
+        fileNameCell.width = "100%";
+        fileNameCell.innerHTML = '<label"></label>';
+        file.fileNameLabel = fileNameCell.children[0];
 
-        // add a new row for file-upload-warning error messages, collapses by default
-        var row = tbl.insertRow(-1);
-        cell = row.insertCell(-1);
-        cell.colSpan = 20;
-        cell.innerHTML = "<label class='labkey-error' id='file-upload-warning" + currentIndex + "'></label>";
+        // add a new row for error messages, collapsed by default
+        file.errorRow = tbl.insertRow(-1);
+        var errorCell = file.errorRow.insertCell(-1);
+        errorCell.colSpan = 20;
+        errorCell.innerHTML = "<label class='labkey-error'></label>";
+        file.errorLabel = errorCell.children[0];
     }
 
     /**
      * Remove the specified row from the file upload table
      * @param index - the index of the row to be removed
      */
-    function removeFileUploadInputRow(btn, index)
+    function removeFileUploadInputRow(btn, file)
     {
         // if the remove button was clicked and it was disabled, do nothing
         if (btn && btn.className.indexOf("labkey-file-remove-icon-disabled") != -1)
@@ -104,24 +176,35 @@
             return;
         }
 
-        // don't allow removal of the last file ulpoad row
-        if (_fileUploadIndex <= 1)
+        // don't allow removal of the last file upload row
+        if (getActiveFileCount() <= 1)
         {
             return;
         }
 
-        //delete the entire table row for the selected index
-        var tbl = document.getElementById("file-upload-tbl");
-        var row = document.getElementById("file-upload-row" + index);
-        if (row)
+        if (file.reused)
         {
-            rowIndex = row.rowIndex;
-            tbl.deleteRow(rowIndex);  // delete a second row for the (possibly empty) error message row
-            tbl.deleteRow(rowIndex);
-            _fileUploadIndex--;
-
-            reindexFileUploadInputRows();
+            // This is a reused file. Don't remove it, but strike it out and disable the form fields so they don't
+            // actually post their values, which means the file won't be used
+            file.fileNameSpan.style['text-decoration'] = 'line-through';
+            file.hidden1.disabled = true;
+            file.hidden2.disabled = true;
+            file.active = false;
         }
+        else
+        {
+            //delete the entire table row for the selected file
+            var tbl = document.getElementById("file-upload-tbl");
+            var rowIndex = file.mainRow.rowIndex;
+            tbl.deleteRow(rowIndex);
+
+            // delete a second row for the (possibly empty) error message row
+            rowIndex = file.errorRow.rowIndex;
+            tbl.deleteRow(rowIndex);
+            _files.remove(file);
+        }
+
+        reindexFileUploadInputRows();
     }
 
     /**
@@ -129,24 +212,14 @@
      */
     function reindexFileUploadInputRows()
     {
-        var tbl = document.getElementById("file-upload-tbl");
-        for (var j = 0; j < tbl.rows.length; j=j+2)
+        var index = 0;
+        for (var i = 0; i < _files.length; i++)
         {
-            // A given file upload control consists of 2 rows, 1 upload 1 error
-            var i = j/2;
-            var row = tbl.rows[j];  // use j to select the appropriate row in the table
-
-            // get the previous row number for this row to help with resetting the input name
-            var prevRowNum = row.id.substring(row.id.indexOf("-row")+4);
-            row.id = "file-upload-row" + i;
-
-            // all elements for a give file-upload element should be reindexed
-            document.getElementById(_prefix + prevRowNum).name = _prefix + (i > 0 ? i : "");
-            document.getElementById(_prefix + prevRowNum).id = _prefix + i;
-            row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&nbsp;</span></a>";
-            document.getElementById("file-upload-add" + prevRowNum).id = "file-upload-add" + i;
-            document.getElementById("label" + _prefix + prevRowNum).id = "label" + _prefix + i;
-            document.getElementById("file-upload-warning" + prevRowNum).id = "file-upload-warning" + i;
+            var file = _files[i];
+            if (file.fileInput)
+            {
+                file.fileInput.name = PREFIX + (index > 0 ? index : "");
+            }
         }
 
         toggleAddRemoveButtons();
@@ -158,27 +231,27 @@
      */
     function toggleAddRemoveButtons()
     {
-        for (var i = _fileUploadIndex - 1; i >= 0; i--)
+        for (var i = _files.length - 1; i >= 0; i--)
         {
-            // disable the remove button if there is only one row
-            if (_fileUploadIndex <= 1)
+            // disable the remove button if there is only one file left in use
+            var file = _files[i];
+            if (getActiveFileCount() <= 1 || !file.active)
             {
-                enableDisableButton("remove", i, false);
+                enableDisableButton('remove', file.removeButtonAnchor, false);
             }
             else
             {
-                enableDisableButton("remove", i, true);
+                enableDisableButton('remove', file.removeButtonAnchor, true);
             }
 
             // only enable the add button that is on the last row (if the file input is available)
-            var inputEl = document.getElementById(_prefix + i);
-            if (i == _fileUploadIndex - 1 && inputEl.value != "")
+            if (i == _files.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!file.fileInput || file.fileInput.value != ""))
             {
-                enableDisableButton("add", i, true);
+                enableDisableButton('add', file.addButtonAnchor, true);
             }
             else
             {
-                enableDisableButton("add", i, false);
+                enableDisableButton('add', file.addButtonAnchor, false);
             }
         }
     }
@@ -186,9 +259,9 @@
     /**
      * Enable/disable the given add or remove button
      */
-    function enableDisableButton(type, index, enable)
+    function enableDisableButton(type, anchor, enable)
     {
-        var el = Ext.get("file-upload-" + type + index);
+        var el = Ext.get(anchor);
         if (el)
         {
             if (enable)
@@ -206,22 +279,22 @@
 
     /**
      * Update the label cell with the selected file name
-     * @param fileInput - the input element that was changed
+     * @param file - the file record that was changed
      */
-    function updateFileLabel(fileInput)
+    function updateFileLabel(file)
     {
-        if (fileInput.value)
-            showPathname(fileInput, "label" + fileInput.id);
+        if (file.fileInput.value)
+            showPathname(file.fileInput, file.fileNameLabel);
     }
 
     /**
      * Check if a file of the same name has already been uploaded to the server
      */
-    function checkServerForDuplicateFileName(currFileInput, index)
+    function checkServerForDuplicateFileName(file)
     {
         // Fire off an AJAX request
         var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
-        var fileName = currFileInput.value;
+        var fileName = file.fileInput.value;
         var slashIndex = Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\"));
         if (slashIndex != -1)
         {
@@ -234,7 +307,7 @@
             {
                 var jsonResponse = Ext.decode(response.responseText);
                 // Show or clear the warning
-                var element = Ext.get("file-upload-warning" + index);
+                var element = Ext.get(file.errorLabel);
                 if (jsonResponse.duplicate)
                 {
                     runNames = jsonResponse.runNames;
@@ -264,27 +337,25 @@
     /**
      * Check if the selected file name is already in the list of selected files
      */
-    function checkForDuplicateFileName(currFileInput)
+    function checkForDuplicateFileName(file)
     {
-        // get the file index from the input id
-        var index = parseInt(currFileInput.id.replace(_prefix, ""));
+        checkServerForDuplicateFileName(file);
 
-        checkServerForDuplicateFileName(currFileInput, index);
-
-        // loop through the other selected files to see if they are all unique
+        // loop through the other selected files to see if they are all unique within the current set of files to be
+        // uploaded
         var dupFound = false;
-        for (var i = 0; i < _fileUploadIndex; i++)
+        for (var i = 0; i < _files.length; i++)
         {
             // alert the user and remove the file input if the selected file has already been added to this run
-            var inputEl = document.getElementById(_prefix + i);
-            if (currFileInput.id != inputEl.id && currFileInput.value == inputEl.value)
+            var inputEl = _files[i].fileInput;
+            if (inputEl && file.fileInput != inputEl && file.fileInput.value == inputEl.value)
             {
                 Ext.Msg.show({
                    title:'Error',
                    msg: 'A file with the same name has already been selected for this run. The duplicate file input will be removed.',
                    buttons: Ext.Msg.OK,
                    fn: function() {
-                       removeFileUploadInputRow(null, index);
+                       removeFileUploadInputRow(null, file);
                    },
                    icon: Ext.MessageBox.ERROR
                 });
@@ -297,9 +368,9 @@
         if (!dupFound)
         {
             toggleAddRemoveButtons();
-            updateFileLabel(currFileInput);
+            updateFileLabel(file);
         }
     }
 
-    Ext.onReady(addFileUploadInputRow);
+    Ext.onReady(initializeFileUploadInput);
 </script>

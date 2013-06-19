@@ -17,15 +17,12 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,36 +34,45 @@ import java.util.Set;
  */
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private Set<String> _validExtensions = null;
     private int _maxFileInputs = 1;
+    private final Map<String, File> _reusableFiles;
     // Name of the form <input> for the file.
     private String _fileInputName;
 
     public FileUploadDataCollector()
     {
-        this(1, PRIMARY_FILE);
+        this(1);
     }
 
     public FileUploadDataCollector(int maxFileInputs)
     {
-        this(maxFileInputs, PRIMARY_FILE);
+        this(maxFileInputs, Collections.<String, File>emptyMap());
     }
 
-    public FileUploadDataCollector(int maxFileInputs, String fileInputName)
+    public FileUploadDataCollector(int maxFileInputs, Map<String, File> reusableFiles)
+    {
+        this(maxFileInputs, reusableFiles, PRIMARY_FILE);
+    }
+
+    public FileUploadDataCollector(int maxFileInputs, Map<String, File> reusableFiles, String fileInputName)
     {
         _maxFileInputs = maxFileInputs;
+        _reusableFiles = Collections.unmodifiableMap(reusableFiles);
         _fileInputName = fileInputName;
-    }
-
-    public FileUploadDataCollector(String... validExtensions)
-    {
-        _validExtensions = new CaseInsensitiveHashSet();
-        _validExtensions.addAll(Arrays.asList(validExtensions));
+        if (_reusableFiles.size() > _maxFileInputs)
+        {
+            throw new IllegalArgumentException("A max of " + _maxFileInputs + " is allowed, but " + _reusableFiles.size() + " are being offered for reuse.");
+        }
     }
 
     public HttpView getView(ContextType context)
     {
         return new JspView<FileUploadDataCollector>("/org/labkey/api/study/assay/fileUpload.jsp", this);
+    }
+
+    public Map<String, File> getReusableFiles()
+    {
+        return _reusableFiles;
     }
 
     public String getShortName()
@@ -85,10 +91,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         if (_uploadComplete)
             return Collections.emptyMap();
 
-        if (!(context.getRequest() instanceof MultipartHttpServletRequest))
-            throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
-
-        Set<String> fileInputs = new HashSet<String>();
+        Set<String> fileInputs = new HashSet<>();
         fileInputs.add(_fileInputName);
 
         // if assay type allows for > 1 file, add those inputs to the set as well
@@ -100,6 +103,15 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         }
 
         Map<String, File> files = savePostedFiles(context, fileInputs);
+
+        if (_maxFileInputs > 1)
+        {
+            // In the case that we're allowing reuse through this codepath
+            // use any previously uploaded files that are still selected
+            PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>();
+            files.putAll(previousCollector.createData(context));
+        }
+
         if (!files.containsKey(_fileInputName))
             throw new ExperimentException("No data file was uploaded. Please select a file.");
         return files;
