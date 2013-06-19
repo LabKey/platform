@@ -1103,7 +1103,8 @@ public class IssueManager
             out.write(PageFlowUtil.filter(title));
             out.write("\n");
             for (Issue.Comment c : _comments)
-                out.write(c.getComment());
+                if (null != c.getComment())
+                    out.write(c.getComment());
             out.close();
             return new FileStream.ByteArrayFileStream(bos.toByteArray());
         }
