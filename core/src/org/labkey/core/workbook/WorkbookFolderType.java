@@ -24,7 +24,6 @@ import org.labkey.api.view.Portal;
 import java.util.Arrays;
 
 /**
- * Created by IntelliJ IDEA.
  * User: labkey
  * Date: Jan 6, 2010
  * Time: 3:01:45 PM

@@ -21,7 +21,6 @@ import org.labkey.api.gwt.client.util.StringUtils;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 17, 2006
  * Time: 2:50:47 PM

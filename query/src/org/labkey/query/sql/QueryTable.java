@@ -46,7 +46,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 17, 2009
  * Time: 2:33:46 PM

@@ -22,7 +22,6 @@ import org.labkey.api.files.FileContentService;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 29, 2010
  * Time: 11:26:31 AM

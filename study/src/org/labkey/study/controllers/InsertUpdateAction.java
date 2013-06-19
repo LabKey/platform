@@ -80,7 +80,6 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 24, 2009
  */

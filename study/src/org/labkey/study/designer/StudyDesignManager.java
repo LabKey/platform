@@ -76,7 +76,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 12, 2007
  * Time: 5:06:04 PM

@@ -20,11 +20,9 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.xml.client.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jan 31, 2007
  * Time: 2:28:51 PM
- * To change this template use File | Settings | File Templates.
  */
 public class XMLUtils
 {

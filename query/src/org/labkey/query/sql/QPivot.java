@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 12, 2011
  * Time: 11:26:17 AM

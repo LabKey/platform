@@ -22,7 +22,6 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.RootPanel;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 21, 2010
  * Time: 1:43:55 PM

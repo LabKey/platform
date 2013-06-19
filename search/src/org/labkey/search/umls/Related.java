@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 10, 2010
  * Time: 10:46:44 AM

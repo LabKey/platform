@@ -33,7 +33,6 @@ import org.labkey.study.xml.viewCategory.ViewCategoryType;
 import org.springframework.validation.BindException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Oct 21, 2011
  */

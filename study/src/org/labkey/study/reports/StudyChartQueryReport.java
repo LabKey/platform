@@ -27,7 +27,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 24, 2007
  */

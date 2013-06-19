@@ -21,7 +21,6 @@ import org.labkey.api.view.ActionURL;
 
 /**
  * Context object for the wikiSearch.jsp view
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Oct 30, 2007
  * Time: 2:35:25 PM

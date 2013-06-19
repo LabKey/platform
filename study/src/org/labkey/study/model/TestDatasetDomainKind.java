@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: newton
  * Date: Oct 11, 2010
  * Time: 3:45:55 PM

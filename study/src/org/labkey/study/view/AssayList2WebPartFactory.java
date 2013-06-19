@@ -18,7 +18,6 @@ package org.labkey.study.view;
 import org.labkey.api.view.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Nov 17, 2008
  * Time: 9:28:08 PM

@@ -42,7 +42,6 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 4/25/12
  * Time: 6:17 PM

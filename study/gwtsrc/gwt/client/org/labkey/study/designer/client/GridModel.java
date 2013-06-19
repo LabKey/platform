@@ -19,11 +19,9 @@ package gwt.client.org.labkey.study.designer.client;
 import com.google.gwt.user.client.ui.Widget;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 14, 2006
  * Time: 2:39:57 PM
- * To change this template use File | Settings | File Templates.
  */
 public interface GridModel
 {

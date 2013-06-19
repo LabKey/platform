@@ -67,12 +67,6 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
             }
         }
 
-        /* for upgrade action */
-        public String getOldDomainURI(final Container c)
-        {
-            return new Lsid(getDomainPrefix(), "Folder-" + c.getRowId(), getDomainPrefix()).toString();
-        }
-
         public String getDomainName()
         {
             // for now, the prefix and name happen to be the same

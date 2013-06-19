@@ -21,7 +21,6 @@ import org.labkey.api.study.StudyService;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 9, 2012
  */

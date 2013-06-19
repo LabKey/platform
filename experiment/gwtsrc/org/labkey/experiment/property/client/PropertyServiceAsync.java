@@ -23,7 +23,6 @@ import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 26, 2007
  * Time: 1:36:23 PM

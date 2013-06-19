@@ -648,7 +648,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
-        Set<Class<? extends Permission>> result = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> result = new HashSet<>();
 
         //if the study security type is basic read or basic write, use the container's policy instead of the
         //study's policy. This will enable us to "remember" the study-level role assignments in case we want
@@ -869,7 +869,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     public String[] getDisplayKeyNames()
     {
-        List<String> keyNames = new ArrayList<String>();
+        List<String> keyNames = new ArrayList<>();
         keyNames.add(StudyService.get().getSubjectColumnName(getContainer()));
         if (!isDemographicData())
         {
@@ -1265,7 +1265,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
-             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
             
             // why did I add an underscore to the stored mv indicators???
             for (ColumnInfo col : getColumns())
@@ -1322,8 +1322,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private static final Set<PropertyDescriptor> standardPropertySet = new HashSet<PropertyDescriptor>();
-    private static final Map<String, PropertyDescriptor> standardPropertyMap = new CaseInsensitiveHashMap<PropertyDescriptor>();
+    private static final Set<PropertyDescriptor> standardPropertySet = new HashSet<>();
+    private static final Map<String, PropertyDescriptor> standardPropertyMap = new CaseInsensitiveHashMap<>();
 
     public static Set<PropertyDescriptor> getStandardPropertiesSet()
     {
@@ -2182,7 +2182,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 _indexInputQCState = index;
                 _defaultQCState = defaultQCState;
 
-                _qcLabels = new CaseInsensitiveHashMap<QCState>();
+                _qcLabels = new CaseInsensitiveHashMap<>();
                 for (QCState state : StudyManager.getInstance().getQCStates(getContainer()))
                     _qcLabels.put(state.getLabel(), state);
             }
@@ -2234,7 +2234,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Logger logger, boolean forUpdate)
             throws SQLException
     {
-        ArrayList<String> lsids = new ArrayList<String>();
+        ArrayList<String> lsids = new ArrayList<>();
         DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, forUpdate);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
@@ -2383,7 +2383,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == getStorageTableInfo())
             return new SQLFragment("''");
 
-        ArrayList<SQLFragment> parts = new ArrayList<SQLFragment>();
+        ArrayList<SQLFragment> parts = new ArrayList<>();
         parts.add(new SQLFragment("''"));
         parts.add(new SQLFragment("?", getURNPrefix()));
         parts.add(new SQLFragment("participantid"));
@@ -2434,14 +2434,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         try
         {
             // duplicate keys found that should be deleted
-            Set<String> deleteSet = new HashSet<String>();
+            Set<String> deleteSet = new HashSet<>();
 
             // duplicate keys found in error
-            LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<String,Object[]>();
+            LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
             StringBuffer sbIn = new StringBuffer();
             String sep = "";
-            Map<String, Object[]> uriMap = new HashMap<String, Object[]>();
+            Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
             {

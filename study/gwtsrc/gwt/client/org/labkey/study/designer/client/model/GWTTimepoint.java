@@ -21,11 +21,9 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import java.util.Comparator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 4, 2006
  * Time: 9:58:11 PM
- * To change this template use File | Settings | File Templates.
  */
 public class GWTTimepoint implements Comparable, IsSerializable
 {

@@ -19,7 +19,6 @@ package org.labkey.query.sql;
 import org.labkey.api.data.SQLFragment;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 1, 2010
  * Time: 3:21:19 PM

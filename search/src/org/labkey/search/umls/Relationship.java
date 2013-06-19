@@ -16,11 +16,10 @@
 package org.labkey.search.umls;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Mar 10, 2010
-* Time: 10:47:35 AM
-*/
+ * User: matthewb
+ * Date: Mar 10, 2010
+ * Time: 10:47:35 AM
+ */
 public enum Relationship
 {
     AQ("AQ", "Allowed qualifier"),

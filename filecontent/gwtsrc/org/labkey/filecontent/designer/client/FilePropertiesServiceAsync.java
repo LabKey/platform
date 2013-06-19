@@ -22,11 +22,9 @@ import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 25, 2010
  * Time: 12:44:09 PM
- * To change this template use File | Settings | File Templates.
  */
 public interface FilePropertiesServiceAsync extends LookupServiceAsync
 {

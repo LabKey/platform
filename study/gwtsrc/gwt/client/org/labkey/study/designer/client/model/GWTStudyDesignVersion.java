@@ -21,11 +21,9 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 15, 2007
  * Time: 9:17:41 PM
- * To change this template use File | Settings | File Templates.
  */
 public class GWTStudyDesignVersion implements IsSerializable
 {

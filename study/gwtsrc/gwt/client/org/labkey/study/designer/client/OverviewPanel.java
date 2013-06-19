@@ -29,7 +29,6 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 16, 2006
  * Time: 3:12:40 PM

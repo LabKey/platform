@@ -30,7 +30,6 @@ import java.io.OutputStream;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 27, 2011
  * Time: 1:14:06 PM

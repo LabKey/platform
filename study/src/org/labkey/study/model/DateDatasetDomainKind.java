@@ -16,7 +16,6 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.TimepointType;
 
@@ -24,7 +23,6 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 8, 2010
  * Time: 12:24:24 PM

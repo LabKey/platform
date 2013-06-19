@@ -32,13 +32,11 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
-import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 4, 2007
  * Time: 1:01:43 PM

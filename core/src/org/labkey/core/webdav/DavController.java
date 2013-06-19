@@ -132,7 +132,6 @@ import java.util.zip.ZipOutputStream;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 3, 2007
  * Time: 3:54:42 PM

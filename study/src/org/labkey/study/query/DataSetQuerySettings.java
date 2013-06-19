@@ -21,7 +21,6 @@ import org.labkey.study.model.QCStateSet;
 import org.springframework.beans.PropertyValues;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 30, 2011
  * Time: 4:48:11 PM

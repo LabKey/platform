@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DatasetManager
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<DatasetListener> _listeners = new CopyOnWriteArrayList<DatasetListener>();
+    private static final List<DatasetListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static void addDataSetListener(DatasetListener listener)
     {

@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 1, 2006
  * Time: 10:01:53 AM

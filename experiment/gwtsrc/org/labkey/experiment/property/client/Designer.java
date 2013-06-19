@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 4, 2007
  * Time: 3:21:44 PM

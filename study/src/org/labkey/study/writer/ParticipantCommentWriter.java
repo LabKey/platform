@@ -21,7 +21,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.writer.VirtualFile;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 30, 2009
  */

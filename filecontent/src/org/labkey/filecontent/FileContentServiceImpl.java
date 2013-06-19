@@ -74,7 +74,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Dec 9, 2009
  */

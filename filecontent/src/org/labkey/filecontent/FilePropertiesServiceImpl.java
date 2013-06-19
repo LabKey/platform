@@ -30,11 +30,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 25, 2010
  * Time: 12:50:26 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FilePropertiesServiceImpl extends DomainEditorServiceBase implements FilePropertiesService
 {

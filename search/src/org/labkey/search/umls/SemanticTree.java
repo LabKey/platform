@@ -19,11 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Mar 10, 2010
-* Time: 10:47:59 AM
-*/
+ * User: matthewb
+ * Date: Mar 10, 2010
+ * Time: 10:47:59 AM
+ */
 enum SemanticTree
 {
     entity("A", "Entity"),

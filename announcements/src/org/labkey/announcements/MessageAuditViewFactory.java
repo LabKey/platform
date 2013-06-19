@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 18, 2009
  * Event field documentation:

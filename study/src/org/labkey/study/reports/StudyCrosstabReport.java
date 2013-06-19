@@ -32,7 +32,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 8, 2007
  */

@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 15, 2007
  * Time: 4:45:19 PM

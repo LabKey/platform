@@ -61,7 +61,6 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 7, 2007
  */

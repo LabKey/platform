@@ -25,11 +25,9 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.DOM;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 21, 2006
  * Time: 4:57:04 PM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class ScheduleGrid extends EditableGrid
 {

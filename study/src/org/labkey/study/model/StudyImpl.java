@@ -170,7 +170,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<SecurableResource> getChildResources(User user)
     {
         List<DataSetDefinition> datasets = getDataSets();
-        ArrayList<SecurableResource> readableDatasets = new ArrayList<SecurableResource>(datasets.size());
+        ArrayList<SecurableResource> readableDatasets = new ArrayList<>(datasets.size());
         for (DataSetDefinition ds: datasets)
             if (ds.canRead(user))
                 readableDatasets.add(ds);
@@ -253,7 +253,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public Set<Integer> getSampleRequestActorsInUse()
     {
         Collection<SampleRequestActor> actors = SampleManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
-        Set<Integer> ids = new HashSet<Integer>();
+        Set<Integer> ids = new HashSet<>();
         for (SampleRequestActor actor : actors)
             ids.add(actor.getRowId());
         return ids;

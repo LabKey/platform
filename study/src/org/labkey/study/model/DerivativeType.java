@@ -15,7 +15,9 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.data.Container;/*
+import org.labkey.api.data.Container;
+
+/*
  * User: brittp
  * Date: Dec 18, 2008
  * Time: 12:48:03 PM

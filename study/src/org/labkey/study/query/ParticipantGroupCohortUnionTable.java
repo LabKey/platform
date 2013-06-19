@@ -33,7 +33,6 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 11/16/12
  */

@@ -28,7 +28,6 @@ import org.labkey.survey.SurveyController;
 import org.springframework.validation.BindException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 12/10/12
  */

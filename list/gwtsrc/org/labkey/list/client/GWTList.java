@@ -22,7 +22,6 @@ import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 30, 2007
  * Time: 9:51:51 AM

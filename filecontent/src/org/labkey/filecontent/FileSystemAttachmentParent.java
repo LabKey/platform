@@ -35,9 +35,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA.
-* User: klum
-* Date: Dec 10, 2009
+ * User: klum
+ * Date: Dec 10, 2009
 */
 public class FileSystemAttachmentParent implements AttachmentDirectory
 {

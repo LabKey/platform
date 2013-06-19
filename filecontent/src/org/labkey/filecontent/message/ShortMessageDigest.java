@@ -19,7 +19,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.message.digest.PeriodicMessageDigest;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 14, 2011
  * Time: 12:13:28 PM

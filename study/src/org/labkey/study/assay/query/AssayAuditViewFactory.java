@@ -44,7 +44,6 @@ import java.io.Writer;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 16, 2007
  *

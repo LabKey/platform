@@ -20,11 +20,9 @@ import org.labkey.api.study.Study;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 8/14/12
  * Time: 10:18 AM
- * To change this template use File | Settings | File Templates.
  *
  * Encapsulates whether date shifting and alternate ids are requested
  * and the mapping from participantId to the date shift and alternateId

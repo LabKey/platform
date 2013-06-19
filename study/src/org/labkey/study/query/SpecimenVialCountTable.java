@@ -21,7 +21,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 2, 2009
  */

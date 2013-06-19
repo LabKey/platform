@@ -36,7 +36,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-11-18
  * Time: 10:26 AM

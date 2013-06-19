@@ -31,7 +31,6 @@ import org.labkey.api.gwt.client.util.ServiceUtil;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 24, 2010
  * Time: 5:56:06 PM

@@ -38,7 +38,6 @@ import java.util.Set;
  *
  * Extend this class to do other kinds of permission checking.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Nov 7, 2007
  * Time: 4:01:58 PM

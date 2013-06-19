@@ -23,7 +23,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Dec 30, 2010
  * Time: 12:58:09 PM

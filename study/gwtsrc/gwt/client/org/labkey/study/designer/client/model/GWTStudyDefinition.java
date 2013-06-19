@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 14, 2006
  * Time: 11:47:11 AM

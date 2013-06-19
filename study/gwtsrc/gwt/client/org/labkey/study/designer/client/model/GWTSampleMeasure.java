@@ -21,11 +21,9 @@ import com.google.gwt.xml.client.Document;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jan 25, 2007
  * Time: 3:11:41 PM
- * To change this template use File | Settings | File Templates.
  */
 public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializable
 {

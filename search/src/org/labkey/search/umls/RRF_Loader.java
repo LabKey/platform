@@ -34,7 +34,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 8, 2010
  * Time: 5:27:20 PM

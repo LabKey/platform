@@ -33,7 +33,6 @@ import org.springframework.validation.Errors;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 19, 2011
  * Time: 3:01:52 PM

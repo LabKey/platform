@@ -23,7 +23,6 @@ import com.google.gwt.user.client.Element;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 14, 2006
  * Time: 2:38:59 PM

@@ -28,7 +28,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 8, 2011
  * Time: 2:49:27 PM
@@ -327,7 +326,7 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
         return canEdit(container, user);
     }
     
-    public boolean canRead(Container container, User user)
+    public boolean canRead(User user)
     {
         if (!isShared())
         {

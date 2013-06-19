@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 4/25/12
  * Time: 6:12 PM

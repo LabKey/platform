@@ -22,7 +22,6 @@ import org.labkey.api.gwt.client.ui.LookupService;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 26, 2007
  * Time: 1:34:56 PM

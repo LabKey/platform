@@ -29,7 +29,6 @@ import org.labkey.study.view.DatasetsWebPartView;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 27, 2006
  * Time: 2:16:44 PM

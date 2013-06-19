@@ -22,7 +22,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 3/17/13
  */

@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 17, 2006
  * Time: 12:56:46 PM

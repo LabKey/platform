@@ -66,7 +66,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 17, 2010
  * Time: 1:38:56 PM

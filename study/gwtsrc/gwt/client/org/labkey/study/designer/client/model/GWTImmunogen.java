@@ -24,11 +24,9 @@ import java.util.ArrayList;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 14, 2006
  * Time: 11:27:56 AM
- * To change this template use File | Settings | File Templates.
  */
 public class GWTImmunogen extends VaccineComponent implements IsSerializable
 {

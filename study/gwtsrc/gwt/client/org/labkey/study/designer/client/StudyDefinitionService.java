@@ -21,7 +21,6 @@ import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 14, 2007
  * Time: 8:46:26 PM

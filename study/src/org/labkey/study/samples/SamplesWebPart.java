@@ -20,7 +20,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jul 28, 2006
  * Time: 10:50:05 AM

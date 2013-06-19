@@ -108,7 +108,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 16, 2006
  * Time: 1:11:27 PM

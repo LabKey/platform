@@ -61,7 +61,6 @@ import java.util.Set;
  * key2 - schemaName
  * key3 - queryName
  *
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 10/24/12
  */

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 7/3/12
  * Time: 8:52 AM

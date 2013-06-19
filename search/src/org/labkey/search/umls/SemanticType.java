@@ -25,11 +25,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Mar 10, 2010
-* Time: 10:46:28 AM
-*/
+ * User: matthewb
+ * Date: Mar 10, 2010
+ * Time: 10:46:28 AM
+ */
 public class SemanticType // MRSTY
 {
     final String _type="STY";

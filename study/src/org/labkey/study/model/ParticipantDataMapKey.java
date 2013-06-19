@@ -17,7 +17,6 @@
 package org.labkey.study.model;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 1, 2006
  * Time: 10:12:34 AM

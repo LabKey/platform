@@ -68,7 +68,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 1, 2011
  * Time: 2:26:02 PM
@@ -143,7 +142,7 @@ public class ParticipantGroupManager
 
             for (ParticipantCategoryImpl pc : categories)
             {
-                if (pc.canRead(c, user))
+                if (pc.canRead(user))
                 {
                     pc.setGroups(getParticipantGroups(c, user, pc));
                     filtered.add(pc);
@@ -455,7 +454,7 @@ public class ParticipantGroupManager
             {
                 ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
                 if (!previous.isNew())
-                    throw new ValidationException("There is aready a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
+                    throw new ValidationException("There is already a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
             }
             else
@@ -520,7 +519,7 @@ public class ParticipantGroupManager
             {
                 ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
                 if (!previous.isNew())
-                    throw new ValidationException("There is aready a category named: " + def.getLabel() + " within this study. Please choose a unique category name.");
+                    throw new ValidationException("There is already a category named: " + def.getLabel() + " within this study. Please choose a unique category name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
             }
             else

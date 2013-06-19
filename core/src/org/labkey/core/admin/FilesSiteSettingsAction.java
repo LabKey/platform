@@ -30,7 +30,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Nov 24, 2009
  */

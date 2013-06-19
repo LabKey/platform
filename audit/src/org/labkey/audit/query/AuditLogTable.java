@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 19, 2007
  */

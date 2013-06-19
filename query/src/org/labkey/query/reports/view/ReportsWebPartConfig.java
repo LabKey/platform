@@ -23,7 +23,6 @@ import org.labkey.api.view.JspView;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Mar 2, 2008
  */

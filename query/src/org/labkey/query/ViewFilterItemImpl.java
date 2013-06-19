@@ -19,7 +19,6 @@ package org.labkey.query;
 import org.labkey.api.query.ViewOptions;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 21, 2009
  */

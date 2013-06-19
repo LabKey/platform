@@ -23,7 +23,6 @@ import java.sql.SQLException;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 5, 2012
  */

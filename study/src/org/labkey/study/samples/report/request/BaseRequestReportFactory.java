@@ -21,7 +21,6 @@ import org.labkey.api.util.Pair;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: brittp
  * Date: Jun 25, 2009
  * Time: 10:57:36 AM

@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Sep 3, 2009
  * Time: 3:36:07 PM

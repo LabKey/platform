@@ -40,7 +40,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 4, 2010
  * Time: 1:28:53 PM

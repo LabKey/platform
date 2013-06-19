@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Nick
  * Date: Jul 1, 2010
  * Time: 4:04:11 PM

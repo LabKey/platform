@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 18, 2009
  */

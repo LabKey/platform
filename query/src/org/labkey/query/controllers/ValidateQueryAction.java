@@ -31,7 +31,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Aug 4, 2009
  * Time: 5:17:26 PM

@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 14, 2007
  * Time: 9:21:22 PM

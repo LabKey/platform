@@ -23,7 +23,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 30, 2009
  */

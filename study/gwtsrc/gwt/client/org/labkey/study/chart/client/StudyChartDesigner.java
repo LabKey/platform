@@ -37,7 +37,6 @@ import gwt.client.org.labkey.study.chart.client.model.GWTPair;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 7, 2007
  */

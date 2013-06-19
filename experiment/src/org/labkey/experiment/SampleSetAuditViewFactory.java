@@ -26,7 +26,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 1/13/12
  * Time: 7:29 AM

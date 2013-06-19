@@ -30,7 +30,6 @@ import gwt.client.org.labkey.study.designer.client.model.*;
 import java.util.Arrays;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 20, 2006
  * Time: 4:20:46 PM

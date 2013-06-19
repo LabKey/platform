@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Nick
  * Date: Jun 30, 2010
  * Time: 5:39:12 PM

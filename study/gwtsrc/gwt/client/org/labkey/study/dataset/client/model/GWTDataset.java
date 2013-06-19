@@ -24,7 +24,6 @@ import org.labkey.api.gwt.client.util.StringProperty;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 30, 2007
  * Time: 9:51:51 AM

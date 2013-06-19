@@ -29,7 +29,6 @@ import org.labkey.data.xml.TableType;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 9, 2009
  * Time: 1:56:39 PM

@@ -186,7 +186,7 @@ public class StudyServiceImpl implements StudyService.Service
             }
 
 
-            Map<String,Object> mergeData = new CaseInsensitiveHashMap<Object>(oldData);
+            Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
             // don't default to using old qcstate
             mergeData.remove("qcstate");
 
@@ -210,7 +210,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             def.deleteRows(u, Collections.singletonList(lsid));
 
-            List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();
+            List<Map<String,Object>> dataMap = new ArrayList<>();
             dataMap.add(mergeData);
 
             List<String> result = StudyManager.getInstance().importDatasetData(
@@ -244,13 +244,13 @@ public class StudyServiceImpl implements StudyService.Service
     // change a map's keys to have proper casing just like the list of columns
     private static Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
     {
-        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<String>();
+        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<>();
         for (ColumnInfo col : columns)
         {
             keyNames.put(col.getName(), col.getName());
         }
 
-        Map<String,Object> result = new CaseInsensitiveHashMap<Object>();
+        Map<String,Object> result = new CaseInsensitiveHashMap<>();
 
         for (Map.Entry<String,Object> entry : source.entrySet())
         {
@@ -294,11 +294,12 @@ public class StudyServiceImpl implements StudyService.Service
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause("lsid", lsids);
 
-        Set<String> selectColumns = new TreeSet<String>();
+        Set<String> selectColumns = new TreeSet<>();
         List<ColumnInfo> columns = tInfo.getColumns();
         ColumnInfo colLSID = tInfo.getColumn("lsid");
         ColumnInfo colSourceLSID = tInfo.getColumn("sourcelsid");
         ColumnInfo colQCState = tInfo.getColumn("QCState");
+
         for (ColumnInfo col : columns)
         {
             // special handling for lsids and keys -- they're not user-editable,
@@ -315,7 +316,7 @@ public class StudyServiceImpl implements StudyService.Service
             selectColumns.add(col.getName());
         }
 
-        Map<String,Object>[] datas = Table.select(tInfo, selectColumns, filter, null, Map.class);
+        Map<String, Object>[] datas = new TableSelector(tInfo, selectColumns, filter, null).getMapArray();
 
         if (datas.length == 0)
             return datas;
@@ -325,65 +326,16 @@ public class StudyServiceImpl implements StudyService.Service
             ((ArrayListMap)datas[0]).getFindMap().remove("_key");
         }
 
-        Map<String,Object>[] canonicalDatas = new Map[datas.length];
+        Map<String, Object>[] canonicalDatas = new Map[datas.length];
+
         for (int i = 0; i < datas.length; i++)
         {
             Map<String, Object> data = datas[i];
             canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
         }
+
         return canonicalDatas;
     }
-
-/*    public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
-    {
-        StudyImpl study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-        QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(study);
-
-        try
-        {
-            ensureTransaction();
-
-            List<Map<String,Object>> dataMaps = new ArrayList<Map<String, Object>>();
-            Map<String,Object> mapIgnoreNulls = new CaseInsensitiveHashMap<Object>();
-            // SEE bug 12884
-            // this is somewhat inconsistent behavior IMHO, but we want to ignore null values
-            // Mostly this is a no-op except for columns with generated default values (e.g. managed keys)
-            for (Map.Entry<String,Object> e : data.entrySet())
-            {
-                if (e.getValue() != null)
-                    mapIgnoreNulls.put(e.getKey(), e.getValue());
-            }
-            dataMaps.add(mapIgnoreNulls);
-
-            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMaps, System.currentTimeMillis(), errors, true, true, defaultQCState, null, false);
-
-            if (result.size() > 0)
-            {
-                // Log to the audit log
-                Map<String, Object> auditDataMap = new HashMap<String, Object>();
-                auditDataMap.putAll(data);
-                auditDataMap.put("lsid", result.get(0));
-                addDatasetAuditEvent(u, c, def, null, auditDataMap);
-
-                commitTransaction();
-
-                return result.get(0);
-            }
-
-            // Update failed
-            return null;
-        }
-
-        // WTF?
-        finally
-        {
-            closeConnection();
-        }
-    }
-    */
-
 
     public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
@@ -540,7 +492,7 @@ public class StudyServiceImpl implements StudyService.Service
 
         event.setComment(auditComment);
 
-        Map<String,Object> dataMap = new HashMap<String,Object>();
+        Map<String,Object> dataMap = new HashMap<>();
         if (oldRecordString != null) dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecordString);
         if (newRecordString != null) dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, newRecordString);
 
@@ -650,7 +602,7 @@ public class StudyServiceImpl implements StudyService.Service
             return study != null ? Collections.singleton(study) : Collections.<Study>emptySet();
         }
 
-        Set<Study> result = new HashSet<Study>();
+        Set<Study> result = new HashSet<>();
         if (studyReference instanceof String)
         {
             String studyRef = (String)studyReference;
@@ -673,7 +625,7 @@ public class StudyServiceImpl implements StudyService.Service
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
-        Set<DataSetDefinition> result = new HashSet<DataSetDefinition>();
+        Set<DataSetDefinition> result = new HashSet<>();
         Map<String, Object>[] rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapArray();
         for (Map<String, Object> row : rows)
         {
@@ -688,7 +640,7 @@ public class StudyServiceImpl implements StudyService.Service
     public Map<DataSetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
     {
         Set<DataSetDefinition> dataSets = getDatasetsForAssayProtocol(protocol);
-        Map<DataSetDefinition, String> result = new HashMap<DataSetDefinition, String>();
+        Map<DataSetDefinition, String> result = new HashMap<>();
         for (DataSetDefinition dataSet : dataSets)
             result.put(dataSet, dataSet.getStorageTableInfo().getSelectName());
         return result;
@@ -698,9 +650,9 @@ public class StudyServiceImpl implements StudyService.Service
     public Set<DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
     {
         // Cache the datasets for a specific protocol (assay design)
-        Map<ExpProtocol, Set<DataSetDefinition>> protocolDatasets = new HashMap<ExpProtocol, Set<DataSetDefinition>>();
+        Map<ExpProtocol, Set<DataSetDefinition>> protocolDatasets = new HashMap<>();
         // Remember all of the run RowIds for a given protocol (assay design)
-        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<ExpProtocol, List<Integer>>();
+        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
 
         // Go through the runs and figure out what protocols they belong to, and what datasets they could have been copied to
         for (ExpRun run : runs)
@@ -715,14 +667,14 @@ public class StudyServiceImpl implements StudyService.Service
             List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
             if (protocolRunIds == null)
             {
-                protocolRunIds = new ArrayList<Integer>();
+                protocolRunIds = new ArrayList<>();
                 allProtocolRunIds.put(protocol, protocolRunIds);
             }
             protocolRunIds.add(run.getRowId());
         }
 
         // All of the datasets that have rows backed by data in the specified runs
-        Set<DataSet> result = new HashSet<DataSet>();
+        Set<DataSet> result = new HashSet<>();
 
         for (Map.Entry<ExpProtocol, Set<DataSetDefinition>> entry : protocolDatasets.entrySet())
         {
@@ -881,7 +833,7 @@ public class StudyServiceImpl implements StudyService.Service
 
     public Map<String, String> getAlternateIdMap(Container container)
     {
-        Map<String, String> alternateIdMap = new HashMap<String, String>();
+        Map<String, String> alternateIdMap = new HashMap<>();
         Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), false, true);
 
         for(String ptid : pairMap.keySet())
@@ -897,12 +849,15 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot){
-        try{
+    public boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot)
+    {
+        try
+        {
             PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
             return true;
         }
-        catch (PipelineValidationException e){
+        catch (PipelineValidationException e)
+        {
             return false;
         }
     }
@@ -919,8 +874,8 @@ public class StudyServiceImpl implements StudyService.Service
         // join to the study.participant table to get the participant's alternateId
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT p.AlternateId FROM ");
-        sql.append(StudySchema.getInstance().getTableInfoParticipant());
-        sql.append(" p  WHERE p.participantid = ");
+        sql.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
+        sql.append(" WHERE p.participantid = ");
         sql.append(column.getValueSql(ExprColumn.STR_TABLE_ALIAS));
         sql.append(" AND p.container = ?)");
         sql.add(c);

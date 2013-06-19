@@ -21,7 +21,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 14, 2007
  * Time: 8:47:24 PM

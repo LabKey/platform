@@ -18,7 +18,6 @@ package org.labkey.survey;
 import org.labkey.api.data.AttachmentParentEntity;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 12/27/12
  */

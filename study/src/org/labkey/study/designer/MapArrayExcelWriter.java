@@ -27,7 +27,6 @@ import java.io.Writer;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: May 4, 2007
  * Time: 3:08:34 PM

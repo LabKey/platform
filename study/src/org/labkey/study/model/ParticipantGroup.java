@@ -29,7 +29,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 10, 2011
  * Time: 3:16:27 PM

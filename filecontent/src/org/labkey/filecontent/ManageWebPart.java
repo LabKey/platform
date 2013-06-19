@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.view.FilesWebPart;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 15, 2009
  * Time: 12:47:02 PM

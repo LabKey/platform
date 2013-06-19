@@ -28,7 +28,6 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jan 28, 2007
  * Time: 10:56:47 AM

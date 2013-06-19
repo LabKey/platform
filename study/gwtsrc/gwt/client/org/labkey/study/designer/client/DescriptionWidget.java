@@ -20,11 +20,9 @@ import com.google.gwt.user.client.ui.TextArea;
 import gwt.client.org.labkey.study.designer.client.ActivatingLabel;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 21, 2006
  * Time: 12:10:05 AM
- * To change this template use File | Settings | File Templates.
  */
 public class DescriptionWidget extends ActivatingLabel
 {

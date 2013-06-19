@@ -25,11 +25,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Mar 10, 2010
-* Time: 10:45:44 AM
-*/
+ * User: matthewb
+ * Date: Mar 10, 2010
+ * Time: 10:45:44 AM
+ */
 public class Definition // MRDEF
 {
     final String _type="DEF";

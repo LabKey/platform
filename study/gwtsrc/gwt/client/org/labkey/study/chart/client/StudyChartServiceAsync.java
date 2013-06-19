@@ -23,7 +23,6 @@ import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 7, 2007
  */

@@ -22,7 +22,6 @@ import org.labkey.api.exp.Lsid;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 13, 2007
  * Time: 9:59:12 AM

@@ -25,11 +25,9 @@ import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 12, 2007
  * Time: 10:44:20 AM
- * To change this template use File | Settings | File Templates.
  */
 public class StudyDesignVersion
 {

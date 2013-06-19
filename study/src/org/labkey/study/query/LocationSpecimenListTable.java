@@ -21,11 +21,9 @@ import org.labkey.api.query.QueryService;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 11/16/12
  * Time: 11:21 AM
- * To change this template use File | Settings | File Templates.
  */
 public class LocationSpecimenListTable extends SpecimenDetailTable
 {

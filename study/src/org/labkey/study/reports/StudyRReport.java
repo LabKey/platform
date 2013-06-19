@@ -37,7 +37,6 @@ import org.labkey.study.model.StudyManager;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jul 25, 2007
  */

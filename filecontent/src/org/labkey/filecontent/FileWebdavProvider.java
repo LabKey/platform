@@ -47,7 +47,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 22, 2008
  * Time: 8:20:29 AM

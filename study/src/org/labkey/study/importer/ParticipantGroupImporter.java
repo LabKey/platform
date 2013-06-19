@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 31, 2011
  * Time: 12:57:55 PM

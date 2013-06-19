@@ -19,7 +19,6 @@ package gwt.client.org.labkey.study.chart.client.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 10, 2007
  */

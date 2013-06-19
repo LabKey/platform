@@ -27,8 +27,8 @@ public class Participant
 {
     private Container _container;
     private String _participantId;
-    private Integer _enrollmentSiteId;      // This is a locationId, but still needs to martch the column in the table
-    private Integer _currentSiteId;         // This is a locationId, but still needs to martch the column in the table
+    private Integer _enrollmentSiteId;      // This is a locationId, but still needs to match the column in the table
+    private Integer _currentSiteId;         // This is a locationId, but still needs to match the column in the table
     private Date _startDate;
     private Integer _initialCohortId;
     private Integer _currentCohortId;

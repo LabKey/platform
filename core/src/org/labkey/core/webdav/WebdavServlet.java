@@ -17,7 +17,6 @@
 package org.labkey.core.webdav;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 17, 2008
  * Time: 2:03:32 PM

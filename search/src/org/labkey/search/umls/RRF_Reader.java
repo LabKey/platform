@@ -38,7 +38,6 @@ import java.util.LinkedList;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Mar 3, 2010
  * Time: 4:59:46 PM

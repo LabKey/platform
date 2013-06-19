@@ -24,7 +24,6 @@ import org.labkey.study.xml.viewCategory.CategoryType;
 import org.labkey.study.xml.viewCategory.ViewCategoryType;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Oct 21, 2011
  * Time: 2:48:09 PM

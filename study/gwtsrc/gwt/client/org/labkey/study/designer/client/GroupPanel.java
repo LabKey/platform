@@ -21,11 +21,9 @@ import com.google.gwt.user.client.ui.*;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 15, 2006
  * Time: 3:23:17 PM
- * To change this template use File | Settings | File Templates.
  */
 public class GroupPanel extends VerticalPanel
 {

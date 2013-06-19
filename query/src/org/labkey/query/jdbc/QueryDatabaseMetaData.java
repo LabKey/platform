@@ -22,7 +22,6 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 4/25/12
  * Time: 8:19 PM

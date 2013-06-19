@@ -31,7 +31,6 @@ import org.springframework.validation.BindException;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 12/7/12
  */

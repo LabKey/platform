@@ -19,7 +19,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryService;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 3, 2011
  * Time: 1:49:21 PM

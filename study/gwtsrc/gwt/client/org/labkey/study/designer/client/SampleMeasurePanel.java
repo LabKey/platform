@@ -23,7 +23,6 @@ import gwt.client.org.labkey.study.designer.client.model.GWTSampleType;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jan 26, 2007
  * Time: 11:54:08 AM

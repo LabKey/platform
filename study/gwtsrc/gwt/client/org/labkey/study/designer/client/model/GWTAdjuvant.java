@@ -19,11 +19,9 @@ package gwt.client.org.labkey.study.designer.client.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Dec 14, 2006
  * Time: 11:31:18 AM
- * To change this template use File | Settings | File Templates.
  */
 public class GWTAdjuvant extends VaccineComponent implements IsSerializable
 {

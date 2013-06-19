@@ -22,7 +22,6 @@ import org.labkey.api.view.GWTView;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 31, 2010
  * Time: 2:21:17 PM

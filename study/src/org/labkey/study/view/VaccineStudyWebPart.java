@@ -27,7 +27,6 @@ import java.awt.*;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: markigra
  * Date: 11/17/11
  * Time: 3:43 PM

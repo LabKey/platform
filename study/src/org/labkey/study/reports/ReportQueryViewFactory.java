@@ -52,7 +52,6 @@ import javax.servlet.ServletException;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 24, 2007
  */

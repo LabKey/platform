@@ -18,7 +18,6 @@ package org.labkey.core.workbook;
 import org.labkey.api.view.JspView;
 
 /**
- * Created by IntelliJ IDEA.
  * User: labkey
  * Date: Jan 6, 2010
  * Time: 10:44:03 AM

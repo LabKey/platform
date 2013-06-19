@@ -17,7 +17,6 @@
 package org.labkey.study.controllers.reports;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Mar 1, 2007
  */

@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 8, 2010
  * Time: 12:28:23 PM
