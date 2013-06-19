@@ -2,6 +2,7 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -38,26 +39,39 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
     private void writeSettings(StudyImpl study, StudyExportContext ctx, VirtualFile dir) throws Exception
     {
-        SpecimensDocument settingsDoc = SpecimensDocument.Factory.newInstance();
-        SpecimenSettingsType settingsXml = settingsDoc.addNewSpecimens();
+        SpecimensDocument xmlSettingsDoc = SpecimensDocument.Factory.newInstance();
+        SpecimenSettingsType xmlSettings = xmlSettingsDoc.addNewSpecimens();
 
         RepositorySettings repositorySettings = study.getRepositorySettings();
-        settingsXml.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
-        settingsXml.setAllowReqLocRepository(study.isAllowReqLocRepository());
-        settingsXml.setAllowReqLocClinic(study.isAllowReqLocClinic());
-        settingsXml.setAllowReqLocSal(study.isAllowReqLocSal());
-        settingsXml.setAllowReqLocEndpoint(study.isAllowReqLocEndpoint());
+        xmlSettings.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
+
+        // specimen location types
+        SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.addNewLocationTypes();
+        xmlLocationTypes.addNewRepository().setAllowRequests(study.isAllowReqLocRepository());
+        xmlLocationTypes.addNewClinic().setAllowRequests(study.isAllowReqLocClinic());
+        xmlLocationTypes.addNewSiteAffiliatedLab().setAllowRequests(study.isAllowReqLocSal());
+        xmlLocationTypes.addNewEndpointLab().setAllowRequests(study.isAllowReqLocEndpoint());
+
+        // specimen webpart groupings
         ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
         if (groupings.size() > 0)
         {
-            SpecimenSettingsType.SpecimenWebPartGroupings specimenWebPartGroupings = settingsXml.addNewSpecimenWebPartGroupings();
+            SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = xmlSettings.addNewWebPartGroupings();
             for (String[] grouping : groupings)
             {
-                SpecimenSettingsType.SpecimenWebPartGroupings.Grouping specimenWebPartGrouping = specimenWebPartGroupings.addNewGrouping();
-                specimenWebPartGrouping.setGroupByArray(grouping);
+                SpecimenSettingsType.WebPartGroupings.Grouping xmlGrouping = xmlWebPartGroupings.addNewGrouping();
+                xmlGrouping.setGroupByArray(grouping);
             }
         }
-        dir.saveXmlBean(DEFAULT_SETTINGS_FILE, settingsDoc);
+
+        // UNDONE: request statuses
+
+        // UNDONE: request actors
+
+        // UNDONE: default requirements
+
+        // write out the xml
+        dir.saveXmlBean(DEFAULT_SETTINGS_FILE, xmlSettingsDoc);
     }
 
 }

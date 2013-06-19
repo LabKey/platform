@@ -1,10 +1,12 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:sec="http://labkey.org/security/xml"
            xmlns="http://labkey.org/study/xml"
            targetNamespace="http://labkey.org/study/xml"
            attributeFormDefault="unqualified"
            elementFormDefault="qualified">
 
     <xs:import namespace="http://labkey.org/study/xml" schemaLocation="../../../../schemas/study.xsd"/>
+    <xs:import namespace="http://labkey.org/security/xml" schemaLocation="../../../../schemas/security.xsd"/>
 
     <xs:element name="specimens" type="specimenSettingsType">
         <xs:annotation>
@@ -15,10 +17,106 @@
     </xs:element>
 
     <xs:complexType name="specimenSettingsType">
-        <xs:complexContent>
-            <xs:extension base="specimenSettingsBaseType">
-            </xs:extension>
-        </xs:complexContent>
+        <xs:sequence>
+            <xs:element name="webPartGroupings" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="grouping">
+                            <xs:complexType>
+                                <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="groupBy" type="xs:string"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="locationTypes" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="repository" type="locationTypeType" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="clinic" type="locationTypeType" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="siteAffiliatedLab" type="locationTypeType" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="endpointLab" type="locationTypeType" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="requestStatuses" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="status" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:attribute name="name" type="xs:string"/>
+                                <xs:attribute name="finalState" type="xs:boolean"/>
+                                <xs:attribute name="lockSpecimens" type="xs:boolean"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="multipleSearch" type="xs:boolean" />
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="requestActors" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="actor" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="group" type="sec:groupType" />
+                                </xs:sequence>
+                                <xs:attribute name="name" type="xs:string"/>
+                                <xs:attribute name="type">
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:string">
+                                            <xs:enumeration value="study"/>
+                                            <xs:enumeration value="location"/>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="defaultRequirements" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="originatingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
+                        <xs:element name="providingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
+                        <xs:element name="receivingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
+                        <xs:element name="general" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="repositoryType" type="specimenRepositoryType">
+            <xs:annotation>
+                <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                    Indicates the type of repository.
+                    See <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens" target="_top">Manage Specimens</a>.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="locationTypeType">
+        <xs:attribute name="allowRequests" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>True if specimen requests are allowed from this location type.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="defaultRequirementsType">
+        <xs:sequence>
+            <xs:element name="requirement" type="defaultRequirementType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="defaultRequirementType">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="actor" type="xs:string"/>
     </xs:complexType>
 
 </xs:schema>
