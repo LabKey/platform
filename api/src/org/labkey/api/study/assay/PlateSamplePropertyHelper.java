@@ -55,7 +55,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 
     protected List<WellGroupTemplate> getSampleWellGroups()
     {
-        List<WellGroupTemplate> samples = new ArrayList<WellGroupTemplate>();
+        List<WellGroupTemplate> samples = new ArrayList<>();
         for (WellGroupTemplate wellgroup : _template.getWellGroups())
         {
             if (wellgroup.getType() == WellGroup.Type.SPECIMEN)

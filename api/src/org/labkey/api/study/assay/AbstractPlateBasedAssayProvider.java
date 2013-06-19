@@ -205,7 +205,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             if (getMetadataInputFormat(context.getProtocol()) == SampleMetadataInputFormat.MANUAL)
                 helper = new PlateSamplePropertyHelper(selectedSampleProperties, template);
             else
-                helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template);
+                helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template, ((PlateBasedAssayProvider)context.getProvider()).getMetadataInputFormat(context.getProtocol()));
             context.setSamplePropertyHelper(helper);
         }
         else
@@ -216,9 +216,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return helper;
     }
 
-    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, DomainProperty[] sampleProperties, PlateTemplate template)
+    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, DomainProperty[] sampleProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
     {
-        return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template);
+        return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template, inputFormat);
     }
 
     @Override
