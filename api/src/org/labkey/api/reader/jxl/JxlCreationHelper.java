@@ -23,7 +23,6 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.RichTextString;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Nov 30, 2011
  * Time: 1:01:56 PM

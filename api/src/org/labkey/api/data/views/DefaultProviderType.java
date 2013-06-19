@@ -16,7 +16,6 @@
 package org.labkey.api.data.views;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 2, 2012
  */

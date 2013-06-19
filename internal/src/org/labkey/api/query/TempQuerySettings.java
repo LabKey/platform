@@ -20,7 +20,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Jun 11, 2009
  * Time: 11:32:35 AM

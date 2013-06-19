@@ -29,7 +29,6 @@ import java.util.Set;
 /**
  * Represents a ColumnInfo for an aggregate in a crosstab table info
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 29, 2008
  * Time: 4:39:51 PM

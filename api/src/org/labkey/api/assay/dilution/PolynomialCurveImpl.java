@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Collections;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 2, 2009
  */

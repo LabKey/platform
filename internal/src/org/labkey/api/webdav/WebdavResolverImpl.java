@@ -57,7 +57,6 @@ import java.util.TreeSet;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 28, 2008
  * Time: 2:07:13 PM
@@ -370,7 +369,7 @@ public class WebdavResolverImpl implements WebdavResolver
             if (null == _children)
             {
                 List<Container> list = ContainerManager.getChildren(_c);
-                _children = new ArrayList<String>(list.size() + 2);
+                _children = new ArrayList<>(list.size() + 2);
                 for (Container aList : list)
                     _children.add(aList.getName());
 
@@ -421,11 +420,11 @@ public class WebdavResolverImpl implements WebdavResolver
         @NotNull
         public Collection<String> listNames()
         {
-            Set<String> set = new TreeSet<String>();
+            Set<String> set = new TreeSet<>();
 //            if (null != _attachmentResource)
 //                set.addAll(_attachmentResource.listNames());
             set.addAll(getWebFoldersNames());
-            ArrayList<String> list = new ArrayList<String>(set);
+            ArrayList<String> list = new ArrayList<>(set);
             Collections.sort(list);
             return list;
         }

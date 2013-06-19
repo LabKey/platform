@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.Permission;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-11-29
  * Time: 12:25 PM

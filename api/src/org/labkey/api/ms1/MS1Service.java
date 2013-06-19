@@ -22,7 +22,7 @@ import org.labkey.api.security.User;
 
 /**
  * MS1 Module Service
- * Created by IntelliJ IDEA.
+ *
  * User: Dave
  * Date: Oct 26, 2007
  * Time: 10:26:10 AM

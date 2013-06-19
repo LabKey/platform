@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 2, 2012
  */

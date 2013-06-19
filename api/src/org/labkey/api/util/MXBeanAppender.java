@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-02-28
  * Time: 4:10 PM

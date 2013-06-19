@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.apache.commons.beanutils.ConversionException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 9, 2009
  * Time: 10:40:19 AM

@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.Converter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Apr 1, 2010
  * Time: 4:00:09 PM

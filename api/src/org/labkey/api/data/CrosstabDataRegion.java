@@ -30,7 +30,6 @@ import java.util.List;
  * Used in conjunction with the CrosstabView class to override rendering of
  * the column headers.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 25, 2008
  * Time: 10:09:00 AM

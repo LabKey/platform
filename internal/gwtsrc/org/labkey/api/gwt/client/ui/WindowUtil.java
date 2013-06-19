@@ -23,7 +23,6 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 26, 2007
  * Time: 9:56:50 PM

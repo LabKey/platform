@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 12, 2009
  * Time: 10:33:38 AM

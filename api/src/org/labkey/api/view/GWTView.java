@@ -19,7 +19,6 @@ package org.labkey.api.view;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jan 30, 2007
  * Time: 3:40:04 PM

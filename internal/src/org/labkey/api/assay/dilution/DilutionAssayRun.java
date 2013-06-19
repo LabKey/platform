@@ -58,7 +58,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 5/8/13
  */

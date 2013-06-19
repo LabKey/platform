@@ -41,7 +41,6 @@ import java.util.HashMap;
  * a reference to the single default instance. However, if you want to format Booleans using
  * a format string, create a new instance, passing the format string to the constructor.
  *
- * Created by IntelliJ IDEA.
  * User: DaveS
  * Date: Oct 5, 2007
  * Time: 4:05:51 PM

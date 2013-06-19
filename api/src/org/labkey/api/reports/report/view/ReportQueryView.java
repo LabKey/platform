@@ -29,7 +29,6 @@ import org.labkey.api.view.DataView;
 import java.sql.ResultSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 6, 2006
  */

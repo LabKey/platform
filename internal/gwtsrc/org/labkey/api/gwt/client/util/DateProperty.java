@@ -21,7 +21,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 25, 2007
  * Time: 4:44:09 PM

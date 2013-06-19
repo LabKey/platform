@@ -31,7 +31,6 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 23, 2008
  */

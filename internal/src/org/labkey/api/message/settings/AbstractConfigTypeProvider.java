@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 19, 2011
  * Time: 5:54:06 PM

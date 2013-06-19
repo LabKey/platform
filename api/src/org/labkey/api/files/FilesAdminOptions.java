@@ -35,7 +35,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Feb 2, 2010
  * Time: 9:35:36 AM

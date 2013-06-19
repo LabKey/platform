@@ -19,7 +19,7 @@ import org.labkey.api.view.ViewContext;
 
 /**
  * An error that has already been HTML encoded and may contain HTML formatting tags.
- * Created by IntelliJ IDEA.
+
  * User: Matthew
  * Date: Feb 5, 2009
  * Time: 7:44:01 PM

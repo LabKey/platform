@@ -20,7 +20,6 @@ import org.labkey.api.view.DisplayElement;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Apr 7, 2010
  * Time: 10:15:25 AM

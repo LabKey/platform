@@ -31,7 +31,6 @@ import java.util.List;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 16, 2007
  *

@@ -19,7 +19,6 @@ package org.labkey.api.gwt.client.util;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 25, 2007
  * Time: 4:43:06 PM

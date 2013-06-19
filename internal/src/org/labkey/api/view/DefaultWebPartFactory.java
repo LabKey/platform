@@ -21,7 +21,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 8, 2006
  * Time: 10:59:13 AM

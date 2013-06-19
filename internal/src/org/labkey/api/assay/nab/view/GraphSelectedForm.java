@@ -18,10 +18,9 @@ package org.labkey.api.assay.nab.view;
 import org.labkey.api.assay.dilution.DilutionCurve;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 6/11/13
-*/
+ * User: klum
+ * Date: 6/11/13
+ */
 public class GraphSelectedForm
 {
     private int _protocolId;

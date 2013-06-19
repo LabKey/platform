@@ -20,7 +20,6 @@ import org.labkey.api.util.DateUtil;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
 * User: brittp
 * Date: Jun 26, 2009
 * Time: 10:22:06 AM

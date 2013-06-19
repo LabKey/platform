@@ -31,7 +31,6 @@ import java.util.Collections;
  * Mostly this is used for the Column axis members.
  * CrosstabMembers are considered equal if the dimension, value, and caption are equal.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 25, 2008
  * Time: 4:16:03 PM

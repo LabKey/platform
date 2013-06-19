@@ -21,7 +21,6 @@ import org.labkey.api.security.UserManager;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 24, 2008
  * Time: 8:23:36 PM

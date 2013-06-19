@@ -39,7 +39,6 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: May 4, 2006
  * Time: 7:27:50 PM

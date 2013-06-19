@@ -18,7 +18,6 @@ package org.labkey.api.jsp.taglib;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 11/12/12
  */

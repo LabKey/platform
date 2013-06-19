@@ -35,7 +35,6 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dax
  * Date: May 7, 2008
  *

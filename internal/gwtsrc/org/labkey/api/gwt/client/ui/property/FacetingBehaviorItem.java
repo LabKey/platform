@@ -27,7 +27,6 @@ import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 11, 2012
  */

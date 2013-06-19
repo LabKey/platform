@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Oct 12, 2011
  * Time: 7:13:20 PM

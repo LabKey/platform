@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.ValidationException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 22, 2009
  */

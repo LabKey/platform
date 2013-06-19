@@ -35,10 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/15/13
-*/
+ * User: klum
+ * Date: 5/15/13
+ */
 public class RunDetailsHeaderView extends AssayHeaderView
 {
     private int _runId;

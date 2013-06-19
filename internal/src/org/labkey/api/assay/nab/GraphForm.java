@@ -16,10 +16,9 @@
 package org.labkey.api.assay.nab;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/15/13
-*/
+ * User: klum
+ * Date: 5/15/13
+ */
 public class GraphForm extends RenderAssayForm
 {
     private int _firstSample = 0;

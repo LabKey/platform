@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Sep 19, 2007
  */

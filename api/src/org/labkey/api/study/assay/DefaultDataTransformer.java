@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 22, 2009
  */

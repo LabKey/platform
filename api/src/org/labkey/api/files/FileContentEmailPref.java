@@ -18,11 +18,9 @@ package org.labkey.api.files;
 import org.labkey.api.notification.EmailPref;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 23, 2010
  * Time: 11:55:06 AM
- * To change this template use File | Settings | File Templates.
  */
 public class FileContentEmailPref extends EmailPref
 {

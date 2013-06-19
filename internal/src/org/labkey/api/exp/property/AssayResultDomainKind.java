@@ -27,7 +27,6 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: brittp
  * Date: June 25, 2007
  * Time: 1:01:43 PM

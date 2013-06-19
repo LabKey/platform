@@ -32,7 +32,6 @@ import java.io.PrintWriter;
 import java.util.Collections;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 7, 2008
  */

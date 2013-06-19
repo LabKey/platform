@@ -20,7 +20,6 @@ import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Nov 30, 2011
  * Time: 1:03:47 PM

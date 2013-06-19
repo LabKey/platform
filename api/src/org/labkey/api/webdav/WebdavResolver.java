@@ -24,7 +24,6 @@ import org.labkey.api.util.Path;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 28, 2008
  * Time: 2:02:25 PM

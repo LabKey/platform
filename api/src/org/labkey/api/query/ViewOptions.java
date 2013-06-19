@@ -22,7 +22,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 3, 2009
  */

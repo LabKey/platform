@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 21, 2008
  * Time: 10:00:49 AM

@@ -24,7 +24,6 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 2/5/12
  * Time: 8:39 PM

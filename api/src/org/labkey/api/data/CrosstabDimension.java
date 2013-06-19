@@ -28,7 +28,6 @@ import java.util.List;
  * Represents a dimension for a crosstab table info. A dimension maps to an
  * underlying ColumnInfo.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 28, 2008
  * Time: 9:24:49 AM

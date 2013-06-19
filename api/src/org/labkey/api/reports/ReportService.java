@@ -40,7 +40,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 21, 2007
  */

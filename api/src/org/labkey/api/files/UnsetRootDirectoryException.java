@@ -19,10 +19,9 @@ package org.labkey.api.files;
 import org.labkey.api.data.Container;
 
 /**
- * Created by IntelliJ IDEA.
-* User: klum
-* Date: Dec 10, 2009
-*/
+ * User: klum
+ * Date: Dec 10, 2009
+ */
 public class UnsetRootDirectoryException extends IllegalStateException
 {
     private Container project;

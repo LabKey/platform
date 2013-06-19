@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 24, 2007
  * Time: 2:10:20 PM

@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 5, 2008
  */

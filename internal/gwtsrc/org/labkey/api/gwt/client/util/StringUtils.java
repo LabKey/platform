@@ -19,7 +19,6 @@ package org.labkey.api.gwt.client.util;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Feb 15, 2007
  * Time: 10:20:35 PM

@@ -25,7 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 7/14/12
  * Time: 2:53 PM

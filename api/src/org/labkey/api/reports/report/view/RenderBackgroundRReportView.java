@@ -29,7 +29,6 @@ import java.io.*;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Feb 21, 2008
  */

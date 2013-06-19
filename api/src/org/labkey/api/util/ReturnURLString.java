@@ -21,7 +21,6 @@ import org.labkey.api.view.RedirectException;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 3, 2009
  * Time: 12:22:55 PM

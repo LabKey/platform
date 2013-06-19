@@ -25,7 +25,6 @@ import org.labkey.api.query.UserSchema;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 5, 2007
  */

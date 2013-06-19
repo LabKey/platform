@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.Collections;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 5, 2007
  */

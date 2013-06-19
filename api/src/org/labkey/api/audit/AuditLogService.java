@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Sep 19, 2007
  */

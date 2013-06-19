@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 16, 2011
  * Time: 2:03:45 PM

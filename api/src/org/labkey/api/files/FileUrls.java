@@ -21,7 +21,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Dec 23, 2009
  */

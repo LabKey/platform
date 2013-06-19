@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 10/21/12
  */

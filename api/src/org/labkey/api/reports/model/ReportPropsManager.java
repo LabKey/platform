@@ -38,7 +38,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Feb 13, 2012
  */

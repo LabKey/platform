@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
 * User: klum
 * Date: Dec 10, 2009
 */

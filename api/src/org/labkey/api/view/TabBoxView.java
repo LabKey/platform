@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 20, 2009
  * Time: 2:13:22 PM

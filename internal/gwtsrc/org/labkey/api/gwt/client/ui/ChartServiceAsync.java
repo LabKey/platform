@@ -21,7 +21,6 @@ import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 3, 2007
  */

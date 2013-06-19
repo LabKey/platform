@@ -16,11 +16,9 @@
 package org.labkey.api.files;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 23, 2010
  * Time: 3:34:02 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FileContentDefaultEmailPref extends FileContentEmailPref
 {

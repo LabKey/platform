@@ -22,7 +22,6 @@ import com.google.gwt.user.client.ui.CheckBox;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 29, 2010
  * Time: 11:36:09 AM

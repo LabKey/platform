@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 5, 2006
  */

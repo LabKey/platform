@@ -32,7 +32,6 @@ import java.util.List;
  * Note because this uses a SimpleDateFormat member variable, it is not thread-safe.
  * Do not share instances of this class between threads.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Mar 7, 2008
  * Time: 4:09:58 PM

@@ -19,7 +19,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 2/5/12
  * Time: 8:37 PM

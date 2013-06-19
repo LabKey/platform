@@ -20,7 +20,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 1/10/13
  */

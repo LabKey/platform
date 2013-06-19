@@ -16,11 +16,9 @@
 package org.labkey.api.notification;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 23, 2010
  * Time: 11:05:07 AM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class EmailPref
 {

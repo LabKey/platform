@@ -16,7 +16,6 @@
 package org.labkey.api.gwt.client.ui;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 10, 2010
  * Time: 12:25:18 PM

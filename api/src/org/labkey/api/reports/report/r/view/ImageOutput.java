@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 7, 2008
  */

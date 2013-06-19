@@ -31,7 +31,6 @@ import java.util.Map;
 /**
  * View class for rendering CrosstabTableInfos.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 25, 2008
  * Time: 9:49:51 AM

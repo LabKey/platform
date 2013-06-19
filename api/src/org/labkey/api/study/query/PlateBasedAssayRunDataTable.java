@@ -32,7 +32,6 @@ import org.labkey.api.study.assay.*;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 21, 2008
  */

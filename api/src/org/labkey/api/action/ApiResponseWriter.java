@@ -38,7 +38,6 @@ import java.util.Stack;
  * Note that this class is abstract--use the derived classes to write objects
  * in various formats (JSON, XML, etc.)
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 8, 2008
  * Time: 1:43:38 PM

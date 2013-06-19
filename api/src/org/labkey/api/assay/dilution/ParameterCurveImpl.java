@@ -22,7 +22,6 @@ import org.labkey.api.study.WellGroup;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Sep 2, 2009
  */

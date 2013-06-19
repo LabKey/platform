@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: kevink
  * Date: Jun 4, 2010
  * Time: 3:29:46 PM

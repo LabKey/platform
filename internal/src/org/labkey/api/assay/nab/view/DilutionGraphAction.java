@@ -34,7 +34,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 5/21/13
  */

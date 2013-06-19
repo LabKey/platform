@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Dax Hawkins
  * Date: Dec 14, 2012
  */

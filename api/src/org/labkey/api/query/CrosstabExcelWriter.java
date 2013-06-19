@@ -31,7 +31,6 @@ import java.util.List;
 /**
  * Used when exporting a crosstab view to Excel.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 5, 2008
  * Time: 5:01:41 PM

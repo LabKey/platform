@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 17, 2006
  */

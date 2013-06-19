@@ -23,7 +23,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.springframework.validation.BindException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Dec 14, 2009
  */

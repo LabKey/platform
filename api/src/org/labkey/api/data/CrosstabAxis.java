@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * Represents a result axis for a cross tab table info (column or row)
- * Created by IntelliJ IDEA.
+ *
  * User: Dave
  * Date: Jan 28, 2008
  * Time: 9:23:53 AM

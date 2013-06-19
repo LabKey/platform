@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.labkey.api.query.FieldKey;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 30, 2010
  * Time: 9:25:44 AM

@@ -19,7 +19,6 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jul 3, 2007
  * Time: 12:49:57 PM

@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Sep 20, 2007
  */

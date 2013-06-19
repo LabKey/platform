@@ -21,7 +21,7 @@ import org.labkey.api.data.Container;
 
 /**
  * UrlProvider for the MS1 controller
- * Created by IntelliJ IDEA.
+ *
  * User: Dave
  * Date: Jan 21, 2008
  * Time: 1:24:02 PM

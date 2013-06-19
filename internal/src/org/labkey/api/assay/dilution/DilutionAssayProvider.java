@@ -22,7 +22,6 @@ import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 5/6/13
  */

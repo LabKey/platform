@@ -22,7 +22,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 3/6/13
  */

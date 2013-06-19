@@ -32,10 +32,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/17/13
-*/
+ * User: klum
+ * Date: 5/17/13
+ */
 public class DuplicateDataFileRunView extends RunListQueryView
 {
     private Luc5Assay _assay;

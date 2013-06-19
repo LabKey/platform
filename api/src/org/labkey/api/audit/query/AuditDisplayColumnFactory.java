@@ -20,7 +20,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ColumnInfo;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 19, 2007
  */

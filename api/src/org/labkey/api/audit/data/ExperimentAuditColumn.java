@@ -22,7 +22,6 @@ import org.labkey.api.util.Pair;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 15, 2012
  */

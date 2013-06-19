@@ -22,7 +22,6 @@ import org.labkey.api.query.ValidationException;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-06-03
  * Time: 3:51 PM

@@ -59,7 +59,6 @@ import java.util.Map;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-06-10
  * Time: 2:39 PM

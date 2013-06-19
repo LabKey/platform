@@ -23,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 12/11/12
  */

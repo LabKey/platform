@@ -21,7 +21,6 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-11-09
  * Time: 1:28 PM

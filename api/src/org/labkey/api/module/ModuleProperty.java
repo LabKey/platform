@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 6/12/12
  * Time: 12:12 AM

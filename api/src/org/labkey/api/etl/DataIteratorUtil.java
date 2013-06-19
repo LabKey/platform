@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-05-31
  * Time: 12:52 PM

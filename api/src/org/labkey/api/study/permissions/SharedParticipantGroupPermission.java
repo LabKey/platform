@@ -18,7 +18,6 @@ package org.labkey.api.study.permissions;
 import org.labkey.api.security.permissions.AbstractPermission;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jul 27, 2011
  * Time: 9:40:45 AM

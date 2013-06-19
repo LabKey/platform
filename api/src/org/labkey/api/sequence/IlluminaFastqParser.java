@@ -42,7 +42,6 @@ import java.util.Set;
  * for each sample in that run.  Parsing that CSV file to obtain the sample list is upstream of this class.
  * It is designed to be called from a pipeline job, although it should not need to be.
  *
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 4/18/12
  * Time: 11:35 AM

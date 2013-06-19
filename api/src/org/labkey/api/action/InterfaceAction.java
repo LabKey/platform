@@ -33,7 +33,6 @@ import java.io.ObjectOutputStream;
 import java.io.ByteArrayOutputStream;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 24, 2007
  * Time: 3:48:55 PM
@@ -51,7 +50,7 @@ public abstract class InterfaceAction<I> implements Controller
             throw new IllegalArgumentException("interface expected");
 
         Method[] methods = cls.getMethods();
-        _methods = new HashMap<String,Method>(methods.length * 2);
+        _methods = new HashMap<>(methods.length * 2);
         for (Method m : methods)
         {
             if ("getClass".equals(m.getName()))

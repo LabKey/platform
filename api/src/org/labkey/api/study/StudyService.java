@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: markigra
  * Date: Oct 31, 2007
  * Time: 11:42:47 AM

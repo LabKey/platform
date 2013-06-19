@@ -24,7 +24,6 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 24, 2007
  * Time: 1:44:49 PM

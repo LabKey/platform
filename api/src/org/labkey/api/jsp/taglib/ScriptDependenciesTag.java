@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 3/22/13
  */

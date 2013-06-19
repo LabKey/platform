@@ -18,7 +18,6 @@ package org.labkey.api.announcements.permissions;
 import org.labkey.api.security.permissions.AbstractPermission;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Nick
  * Date: Dec 27, 2010
  * Time: 2:33:09 PM

@@ -29,7 +29,6 @@ import java.util.*;
  * a source table info and a {@link CrosstabSettings} object. Use this class
  * with a query view derived from {@link org.labkey.api.query.CrosstabView}.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 22, 2008
  * Time: 2:46:18 PM

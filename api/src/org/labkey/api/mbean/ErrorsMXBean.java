@@ -20,7 +20,6 @@ import org.apache.log4j.spi.LoggingEvent;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-02-28
  * Time: 4:06 PM

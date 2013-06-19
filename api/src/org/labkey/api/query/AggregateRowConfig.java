@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 2/10/12
  * Time: 12:36 PM

@@ -17,7 +17,6 @@
 package org.labkey.api.reports.report;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jul 12, 2007
  */

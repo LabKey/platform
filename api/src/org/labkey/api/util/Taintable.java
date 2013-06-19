@@ -16,7 +16,6 @@
 package org.labkey.api.util;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 6, 2009
  * Time: 1:05:11 PM

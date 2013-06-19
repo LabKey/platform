@@ -23,11 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
-* Created by IntelliJ IDEA.
 * User: matthewb
 * Date: Apr 27, 2010
 * Time: 9:28:41 AM
-* To change this template use File | Settings | File Templates.
 */
 public class CachingLookupService implements LookupServiceAsync
 {

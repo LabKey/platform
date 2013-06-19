@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import java.io.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 29, 2009
  * Time: 9:29:16 PM

@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 2, 2007
  */

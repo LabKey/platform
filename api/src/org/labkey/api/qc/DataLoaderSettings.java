@@ -16,7 +16,6 @@
 package org.labkey.api.qc;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Oct 9, 2011
  * Time: 2:07:48 PM

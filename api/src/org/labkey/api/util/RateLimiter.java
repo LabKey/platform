@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.Math.min;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 14, 2010
  * Time: 10:01:10 AM

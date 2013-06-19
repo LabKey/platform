@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: newton
  * Date: Aug 19, 2010
  * Time: 5:14:04 PM

@@ -16,7 +16,6 @@
 package org.labkey.api.gwt.client;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 11, 2012
  */

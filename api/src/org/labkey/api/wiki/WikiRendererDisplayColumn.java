@@ -26,7 +26,6 @@ import org.labkey.api.services.ServiceRegistry;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: markigra
  * Date: 10/25/11
  * Time: 7:57 PM

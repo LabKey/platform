@@ -18,10 +18,9 @@ package org.labkey.api.assay.dilution;
 import org.labkey.api.exp.PropertyType;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/8/13
-*/
+ * User: klum
+ * Date: 5/8/13
+ */
 public enum SampleProperty
 {
     InitialDilution(PropertyType.DOUBLE, false),

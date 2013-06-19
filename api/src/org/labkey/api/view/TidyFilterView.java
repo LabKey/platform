@@ -27,7 +27,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jun 10, 2007
  * Time: 9:26:55 AM

@@ -22,7 +22,6 @@ import org.labkey.api.study.PlateTemplate;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 10/9/12
  */

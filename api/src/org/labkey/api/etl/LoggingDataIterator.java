@@ -28,7 +28,6 @@ import java.util.Formatter;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-05-27
  * Time: 1:10 PM

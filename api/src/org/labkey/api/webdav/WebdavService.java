@@ -33,7 +33,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 21, 2008
  * Time: 10:45:23 AM

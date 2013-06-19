@@ -23,7 +23,6 @@ import org.labkey.api.query.BatchValidationException;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-09-09
  * Time: 4:21 PM

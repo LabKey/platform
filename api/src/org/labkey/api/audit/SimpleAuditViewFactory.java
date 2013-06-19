@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.zip.InflaterInputStream;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 23, 2007
  */

@@ -19,7 +19,6 @@ import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 
 /**
- * Created by IntelliJ IDEA.
  * User: newton
  * Date: Aug 24, 2010
  * Time: 4:08:39 PM

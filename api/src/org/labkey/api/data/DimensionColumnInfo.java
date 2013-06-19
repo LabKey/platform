@@ -19,7 +19,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpressionFactory;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Jan 29, 2008
  * Time: 5:35:17 PM

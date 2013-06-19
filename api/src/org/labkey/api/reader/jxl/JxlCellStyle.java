@@ -21,7 +21,6 @@ import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.ss.usermodel.Font;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 20, 2011
  * Time: 1:45:20 PM

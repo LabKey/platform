@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jun 11, 2007
  */

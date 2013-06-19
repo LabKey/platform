@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 31, 2009
  * Time: 10:14:40 AM

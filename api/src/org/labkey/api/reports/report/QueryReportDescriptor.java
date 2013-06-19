@@ -20,7 +20,6 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 6, 2006
  */

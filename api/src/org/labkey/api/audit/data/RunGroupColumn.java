@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Mar 15, 2012
  */

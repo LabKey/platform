@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 28, 2009
  * Time: 4:09:42 PM

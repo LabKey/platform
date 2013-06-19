@@ -22,7 +22,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.MutableSecurityPolicy;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Jun 6, 2006
  * Time: 2:57:59 PM

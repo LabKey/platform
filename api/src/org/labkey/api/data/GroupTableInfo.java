@@ -24,7 +24,6 @@ import java.util.*;
 /**
  * Allows group-by queries over source TableInfos, with optional aggregates
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 20, 2008
  * Time: 12:37:46 PM

@@ -24,7 +24,6 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Sep 27, 2006
  */

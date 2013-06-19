@@ -22,7 +22,6 @@ import org.labkey.api.action.BaseViewAction;
 import java.lang.reflect.Constructor;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 16, 2008
  * Time: 1:22:39 PM

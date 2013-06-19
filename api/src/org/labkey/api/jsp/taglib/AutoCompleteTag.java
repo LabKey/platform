@@ -24,7 +24,6 @@ import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 11/12/12
  */

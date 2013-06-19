@@ -48,7 +48,6 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 6, 2006
  */

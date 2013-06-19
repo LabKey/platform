@@ -17,11 +17,9 @@ package org.labkey.api.assay.nab;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 2/20/13
  * Time: 10:28 AM
- * To change this template use File | Settings | File Templates.
  */
 public class NabSpecimen
 {

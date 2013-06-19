@@ -23,7 +23,6 @@ import org.labkey.api.query.ValidationException;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-09-07
  * Time: 5:14 PM

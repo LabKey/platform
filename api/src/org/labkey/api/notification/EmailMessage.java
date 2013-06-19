@@ -25,11 +25,9 @@ import java.io.File;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 21, 2010
  * Time: 10:57:29 AM
- * To change this template use File | Settings | File Templates.
  */
 public interface EmailMessage
 {

@@ -49,7 +49,6 @@ import java.util.Set;
 /**
  * API response class for a query view
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 13, 2008
  * Time: 3:21:08 PM

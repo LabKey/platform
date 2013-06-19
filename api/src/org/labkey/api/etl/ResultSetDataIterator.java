@@ -33,7 +33,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jun 8, 2011
  * Time: 10:12:11 PM

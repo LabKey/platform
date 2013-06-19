@@ -16,7 +16,6 @@
 package org.labkey.api.study;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jul 11, 2012
  */

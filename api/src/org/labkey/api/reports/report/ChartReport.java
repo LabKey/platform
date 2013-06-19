@@ -21,7 +21,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 3, 2006
  */

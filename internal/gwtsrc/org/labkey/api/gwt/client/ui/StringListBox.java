@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Mar 5, 2007
  * Time: 4:54:30 PM

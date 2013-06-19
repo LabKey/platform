@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Dax Hawkins
  * Date: Dec 14, 2012
  */

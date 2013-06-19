@@ -19,7 +19,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthew
  * Date: 1/15/12
  * Time: 5:44 PM

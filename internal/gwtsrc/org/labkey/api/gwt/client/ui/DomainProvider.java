@@ -19,7 +19,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 11, 2011
  * Time: 1:19:52 PM

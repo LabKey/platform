@@ -45,7 +45,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 4, 2009
  */

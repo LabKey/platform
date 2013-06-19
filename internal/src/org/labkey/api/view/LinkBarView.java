@@ -22,7 +22,6 @@ import org.labkey.api.util.Pair;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Tamra Myers
  * Date: Jun 2, 2006
  * Time: 3:29:33 PM

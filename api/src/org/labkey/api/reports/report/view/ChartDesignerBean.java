@@ -26,10 +26,9 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
-* User: Karl Lum
-* Date: Dec 4, 2007
-*/
+ * User: Karl Lum
+ * Date: Dec 4, 2007
+ */
 public class ChartDesignerBean extends ReportDesignBean
 {
     protected String _columnXName;

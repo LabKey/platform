@@ -18,10 +18,9 @@ package org.labkey.api.assay.nab;
 import org.labkey.api.assay.dilution.DilutionCurve;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/15/13
-*/
+ * User: klum
+ * Date: 5/15/13
+ */
 public class RenderAssayForm
 {
     private boolean _newRun;

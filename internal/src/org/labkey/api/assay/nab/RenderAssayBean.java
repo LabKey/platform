@@ -64,10 +64,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 5/15/13
-*/
+ * User: klum
+ * Date: 5/15/13
+ */
 public class RenderAssayBean extends RenderAssayForm
 {
     private ViewContext _context;

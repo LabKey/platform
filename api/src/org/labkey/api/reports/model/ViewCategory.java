@@ -29,7 +29,6 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Oct 12, 2011
  * Time: 7:23:43 PM

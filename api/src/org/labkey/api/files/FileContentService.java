@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Dec 9, 2009
  */

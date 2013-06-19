@@ -24,7 +24,6 @@ import org.labkey.api.gwt.client.ui.WebPartPanel;
 import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 6, 2007
  */

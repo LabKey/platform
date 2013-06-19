@@ -36,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 20, 2010
  * Time: 3:22:42 PM

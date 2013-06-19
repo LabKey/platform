@@ -45,7 +45,6 @@ import java.util.Set;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: bbimber
  * Date: 6/13/12
  * Time: 5:25 PM

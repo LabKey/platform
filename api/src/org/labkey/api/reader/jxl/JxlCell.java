@@ -38,7 +38,6 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 2, 2011
  * Time: 6:54:03 PM

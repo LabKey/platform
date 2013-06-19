@@ -23,7 +23,6 @@ import javax.servlet.http.HttpSession;
 import java.util.concurrent.Callable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-01-24
  * Time: 3:03 PM

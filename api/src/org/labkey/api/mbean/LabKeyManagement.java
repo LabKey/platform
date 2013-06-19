@@ -26,7 +26,6 @@ import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-02-28
  * Time: 2:07 PM

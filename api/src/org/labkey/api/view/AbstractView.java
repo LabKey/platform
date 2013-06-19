@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 7, 2006
  * Time: 4:06:15 PM
