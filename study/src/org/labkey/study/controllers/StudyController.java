@@ -2937,9 +2937,6 @@ public class StudyController extends BaseStudyController
                 visit.setSequenceNumMin(min);
             }
             setBean(visit);
-            // for date-based studies, values can be negative, but it's not allowed in visit-based studies
-            if ((visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && study.getTimepointType() == TimepointType.VISIT)
-                errors.reject(null, "Sequence numbers must be greater than or equal to zero.");
         }
 
         public VisitImpl getBean()
