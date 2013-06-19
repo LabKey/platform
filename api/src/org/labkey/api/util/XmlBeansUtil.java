@@ -69,7 +69,7 @@ public class XmlBeansUtil
     public static void validateXmlDocument(XmlObject doc, @Nullable String details) throws XmlValidationException
     {
         XmlOptions options = getDefaultParseOptions();
-        Collection<XmlError> errorList = new LinkedList<XmlError>();
+        Collection<XmlError> errorList = new LinkedList<>();
         options.setErrorListener(errorList);
 
         if (!doc.validate(options))

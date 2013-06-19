@@ -33,17 +33,14 @@ import java.util.Date;
 */
 public class TableInfoWriter
 {
+    private final Container _c;
     private final TableInfo _ti;
     private final Collection<ColumnInfo> _columns;
     private final String _defaultDateFormat;
 
-    protected TableInfoWriter(TableInfo ti)
+    protected TableInfoWriter(Container c, TableInfo ti, Collection<ColumnInfo> columns, String defaultDateFormat)
     {
-        this(ti, ti.getColumns(), null);
-    }
-
-    protected TableInfoWriter(TableInfo ti, Collection<ColumnInfo> columns, String defaultDateFormat)
-    {
+        _c = c;
         _ti = ti;
         _columns = columns;
         _defaultDateFormat = (null != defaultDateFormat ? defaultDateFormat : DateUtil.getStandardDateFormatString());
@@ -158,7 +155,7 @@ public class TableInfoWriter
                     Container fkContainer = fk.getLookupContainer();
 
                     // Null means current container... which means don't set anything in the XML
-                    if (null != fkContainer)
+                    if (null != fkContainer || !fkContainer.equals(_c))
                     {
                         fkXml.setFkFolderPath(fkContainer.getPath());
                     }
