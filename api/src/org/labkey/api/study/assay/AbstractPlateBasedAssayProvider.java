@@ -320,4 +320,22 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
                     propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME));
         }
     }
+
+    public static class ParticipantVisitDateLookupResolverType extends StudyParticipantVisitResolverType
+    {
+        public String getName()
+        {
+            return "ParticipantVisitDate";
+        }
+
+        public String getDescription()
+        {
+            return "Participant id, visit id, and date.";
+        }
+
+        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+        {
+            return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME));
+        }
+    }
 }
