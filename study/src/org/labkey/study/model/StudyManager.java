@@ -3512,7 +3512,7 @@ public class StudyManager
     }
 
 
-    public static void indexParticipantView(final SearchService.IndexTask task, final Container c, @Nullable List<String> ptids)
+    public static void indexParticipantView(final SearchService.IndexTask task, @Nullable final Container c, @Nullable List<String> ptids)
     {
         if (null == c)
         {

@@ -2452,10 +2452,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 key[1] = rows.get(indexDate);
                 if (indexKey > 0)
                     key[2] = rows.get(indexKey);
+                Boolean replace = Boolean.FALSE;
                 if (indexReplace > 0)
                 {
                     Object replaceStr = rows.get(indexReplace);
-                    Boolean replace =
+                    replace =
                             null==replaceStr ? Boolean.FALSE :
                             replaceStr instanceof Boolean ? (Boolean)replaceStr :
                             (Boolean)ConvertUtils.convert(String.valueOf(replaceStr),Boolean.class);
@@ -2466,10 +2467,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (null != uriMap.put(uniq, key))
                     noDeleteMap.put(uniq,key);
 
-                if (uniq.contains(("'")))
-                    uniq = uniq.replaceAll("'","''");
-                sbIn.append(sep).append("'").append(uniq).append("'");
-                sep = ", ";
+                // partial fix for 16647, we should handle the replace case differently (do we ever replace?)
+                if (uriMap.size() < 10000 || Boolean.TRUE==replace)
+                {
+                    if (uniq.contains(("'")))
+                        uniq = uniq.replaceAll("'","''");
+                    sbIn.append(sep).append("'").append(uniq).append("'");
+                    sep = ", ";
+                }
                 count++;
             }
             if (0 == count)

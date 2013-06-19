@@ -642,7 +642,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public WikiRendererType getDescriptionWikiRendererType()
     {
-        return WikiRendererType.valueOf(_descriptionRendererType);
+        try
+        {
+            return WikiRendererType.valueOf(_descriptionRendererType);
+        }
+        catch (IllegalArgumentException x)
+        {
+            return WikiRendererType.TEXT_WITH_LINKS;
+        }
     }
 
     public String getProtocolDocumentEntityId()
