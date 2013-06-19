@@ -350,7 +350,7 @@ public class ListWriter
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
         {
-            super(ti, columns, null);
+            super(def.getContainer(), ti, columns, null);
             _def = def;
             _domain = _def.getDomain();
 

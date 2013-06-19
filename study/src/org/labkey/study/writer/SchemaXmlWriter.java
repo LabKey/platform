@@ -32,7 +32,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.StudyDocument;
 
@@ -51,7 +50,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
     private final String _defaultDateFormat;
-    private final Set<String> _candidatePropertyURIs = new HashSet<String>();   // Allows nulls
+    private final Set<String> _candidatePropertyURIs = new HashSet<>();   // Allows nulls
 
     public SchemaXmlWriter(String defaultDateFormat)
     {
@@ -124,7 +123,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
         private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat, boolean removeProtected)
         {
-            super(ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected), defaultDateFormat);
+            super(def.getContainer(), ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected), defaultDateFormat);
             _def = def;
         }
 

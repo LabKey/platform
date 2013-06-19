@@ -33,7 +33,6 @@ import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -83,7 +82,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
                 extraProps = getDatasetImportProperties(manifestDatasetsXml);
 
-                orderedIds = new ArrayList<Integer>(datasets.length);
+                orderedIds = new ArrayList<>(datasets.length);
 
                 for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
                     orderedIds.add(dataset.getId());
@@ -179,7 +178,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
     public static Map<String, DatasetImportProperties> getDatasetImportProperties(@NotNull DatasetsDocument.Datasets datasetsXml)
     {
         DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = datasetsXml.getDatasets().getDatasetArray();
-        Map<String, DatasetImportProperties> extraProps = new HashMap<String, DatasetImportProperties>(datasets.length);
+        Map<String, DatasetImportProperties> extraProps = new HashMap<>(datasets.length);
 
         for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
         {

@@ -16,8 +16,6 @@
 
 package org.labkey.query;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -30,10 +28,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
-
 import org.labkey.api.data.TableInfoWriter;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -62,11 +57,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 12/17/12
  * Time: 4:08 PM
- * To change this template use File | Settings | File Templates.
  */
 public class TableWriter
 {
@@ -80,7 +73,7 @@ public class TableWriter
     public boolean write(Container c, User user, VirtualFile dir, ExportTablesForm form) throws Exception
     {
         QueryService queryService = QueryService.get();
-        List<QueryDefinition> queries = null;
+        List<QueryDefinition> queries;
         if (null == form || null == form.getSchemas() || form.getSchemas().size() == 0)
         {
             // If no form, get all user queries in container
@@ -88,7 +81,7 @@ public class TableWriter
         }
         else
         {
-            queries = new ArrayList<QueryDefinition>();
+            queries = new ArrayList<>();
             HashMap<String, ArrayList<String>> schemaMap = form.getSchemas();
 
             for (String schemaName : schemaMap.keySet())
@@ -133,7 +126,7 @@ public class TableWriter
 
                 if (!columns.isEmpty())
                 {
-                    List<DisplayColumn> displayColumns = new LinkedList<DisplayColumn>();
+                    List<DisplayColumn> displayColumns = new LinkedList<>();
 
                     for (ColumnInfo col : columns)
                         displayColumns.add(new ExportDataColumn(col));
@@ -162,8 +155,8 @@ public class TableWriter
 
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removeProtected)
     {
-        Collection<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>();
-        Set<ColumnInfo> pks = new HashSet<ColumnInfo>(tinfo.getPkColumns());
+        Collection<ColumnInfo> columns = new LinkedHashSet<>();
+        Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
 
         for (ColumnInfo column : tinfo.getColumns())
         {
@@ -209,20 +202,12 @@ public class TableWriter
 
     private static class TableTableInfoWriter extends TableInfoWriter
     {
-        private final QueryDefinition _def;
         private final TableInfo _tableInfo;
-        private final Map<String, DomainProperty> _properties = new HashMap<String, DomainProperty>();
-        private Domain _domain;
 
         protected TableTableInfoWriter(TableInfo tableInfo, QueryDefinition def, Collection<ColumnInfo> columns)
         {
-            super(tableInfo, columns, null);
-            _def = def;
+            super(def.getContainer(), tableInfo, columns, null);
             _tableInfo = tableInfo;
-     //       _domain = _def.get
-
-//            for (DomainProperty prop : _domain.getProperties())
-//                _properties.put(prop.getName(), prop);
         }
 
         @Override
@@ -275,10 +260,10 @@ public class TableWriter
         {
             TestContext testContext = TestContext.get();
             ExportTablesForm form = new ExportTablesForm();
-            ArrayList<String> queries = new ArrayList<String>();
+            ArrayList<String> queries = new ArrayList<>();
             queries.add("Containers");
             queries.add("Users");
-            HashMap<String, ArrayList<String>> schemas = new HashMap<String, ArrayList<String>>();
+            HashMap<String, ArrayList<String>> schemas = new HashMap<>();
             schemas.put("core", queries);
             form.setSchemas(schemas);
 
