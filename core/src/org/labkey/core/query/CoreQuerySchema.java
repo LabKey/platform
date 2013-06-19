@@ -134,6 +134,7 @@ public class CoreQuerySchema extends UserSchema
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
         FilteredTable groups = new FilteredTable(principalsBase);
+        groups.setName("Groups");
 
         //expose UserId, Name, Container, and Type
         ColumnInfo col = groups.wrapColumn(principalsBase.getColumn("UserId"));

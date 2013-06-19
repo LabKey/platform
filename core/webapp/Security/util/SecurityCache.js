@@ -140,8 +140,8 @@ Ext4.define('Security.util.SecurityCache', {
 
         this.principalsStore = Ext4.create('Security.store.SecurityCache', {
             schemaName : 'core',
-            queryName  : 'Principals',
-            columns    : '*',
+            // issue 17704, add displayName for users
+            sql:"SELECT p.*, u.DisplayName FROM Principals p LEFT JOIN Users u ON p.type='u' AND p.UserId=u.UserId",
             listeners  : {
                 loadexception : this._onLoadException,
                 metachange    : function(store, meta) {

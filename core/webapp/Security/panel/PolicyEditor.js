@@ -287,6 +287,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                         bodyStyle : 'background-color: transparent;'
                     },{
                         xtype  : 'labkey-principalcombo',
+                        width  : 350,
                         cache  : this.cache,
                         itemId : ('$add$'+role.uniqueName),
                         roleId : role.uniqueName,

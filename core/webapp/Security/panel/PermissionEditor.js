@@ -26,6 +26,7 @@ Ext4.define('Security.panel.PermissionEditor', {
             layout :'border',
             bodyStyle : 'background-color: transparent;',
             border :false,
+            minWidth  : 930,
             items  : this.getItems()
         });
 
@@ -238,7 +239,7 @@ Ext4.define('Security.panel.PermissionEditor', {
                     xtype     : 'textfield',
                     name      : projectId === '' ? 'sitegroupsname' : 'projectgroupsname',
                     emptyText : 'New group name',
-                    width     : 310,
+                    width     : 396,
                     padding   : '10 10 10 0',
                     listeners : {
                         afterrender : function(field) {

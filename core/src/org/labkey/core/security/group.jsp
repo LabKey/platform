@@ -194,13 +194,17 @@ else
         else
         {
             User u = (User)member;
+            String displayName = u.getDisplayName(getViewContext().getUser());
             if (!u.isActive()) // issue 13849
             {
                 %><span class="lowlight" ext:qtitle="User Inactive" ext:qtip="This user account has been disabled."><%= h(memberName) %></span>&nbsp;<%
             }
             else
             {
-                %><%= h(memberName) %>&nbsp;<%
+                %>
+                <%= h(memberName) %>&nbsp;
+                <%= h(!memberName.equalsIgnoreCase(displayName) ? "(" + displayName + ")" : "") %>
+                <%
             }
         }
 

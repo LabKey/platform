@@ -43,7 +43,7 @@ Ext4.define('Security.window.UserInfoPopup', {
     {
         var toAdd = [],
             isGroup = this.user.Type == 'g' || this.user.Type == 'r',
-            hdrHtml = "<span style='font-size: 14px; font-weight: bold; padding-left: 5px;'>" + (isGroup?'Group ':'User ') + this.user.Name + "</span>",
+            hdrHtml = "<span style='font-size: 14px; font-weight: bold;'>" + (isGroup?'Group ':'User ') + this.user.Name + "</span>",
             container = (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId);
 
         // links
@@ -104,7 +104,8 @@ Ext4.define('Security.window.UserInfoPopup', {
             toAdd.push({
                 xtype  : 'labkey-principalcombo',
                 itemId : 'addPrincipalComboBox',
-                cache  :this.cache,
+                width  : 350,
+                cache  : this.cache,
                 forceSelection : false,
                 listeners: {
                     select     : this.Combo_onSelect,
@@ -179,7 +180,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 {
                     user = users[i];
                     var isMemberGroup = user.Type == 'g' || user.Type == 'r';
-                    html += '<tr><td width="100">';
+                    html += '<tr><td>';
                     if (isMemberGroup)
                     {
                         var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? this.cache.projectId : '/'),{id:user.UserId});
@@ -188,6 +189,11 @@ Ext4.define('Security.window.UserInfoPopup', {
                     else
                     {
                         html += Ext4.String.htmlEncode(user.Name);
+                        // issue 17704, add display name for users
+                        if (user.Name != user.DisplayName)
+                        {
+                            html += " (" + Ext4.String.htmlEncode(user.DisplayName) + ")"
+                        }
                     }
                     html += '</td>';
 

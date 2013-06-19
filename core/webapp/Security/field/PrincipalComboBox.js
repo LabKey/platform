@@ -33,9 +33,18 @@ Ext4.define('Security.field.PrincipalComboBox', {
             },
 
             prefixSite : function(values) {
+                var value = Ext4.String.htmlEncode(values.Name);
                 if (values.Type == 'g' && !values.Container)
-                    return "Site: " + values.Name;
-                return values.Name;
+                {
+                    value = "Site: " + value;
+                }
+                else if (values.Type == 'u' && values.Name != values.DisplayName)
+                {
+                    // issue 17704, add display name to users
+                    value += " (" + Ext4.String.htmlEncode(values.DisplayName) + ")";
+                }
+
+                return value;
             }
         }
     ),
