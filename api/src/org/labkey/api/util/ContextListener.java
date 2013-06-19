@@ -31,8 +31,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ContextListener implements ServletContextListener
 {
     private static final Logger _log = Logger.getLogger(ContextListener.class);
-    private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<ShutdownListener>();
-    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<StartupListener>();
+    private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
+    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
 
     public void contextInitialized(ServletContextEvent servletContextEvent)

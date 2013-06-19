@@ -29,12 +29,12 @@ public class MapReplacer implements Replacer
 
     public MapReplacer()
     {
-        _replacements = new HashMap<String, String>();
+        _replacements = new HashMap<>();
     }
 
     public MapReplacer(Map<String, String> replacements)
     {
-        _replacements = new HashMap<String, String>(replacements);
+        _replacements = new HashMap<>(replacements);
     }
 
     public String getReplacement(String original)

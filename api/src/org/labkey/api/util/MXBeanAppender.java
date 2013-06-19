@@ -72,7 +72,7 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
         }
     }
 
-    LinkedList<_Error> _events = new LinkedList<_Error>();
+    LinkedList<_Error> _events = new LinkedList<>();
 
     public MXBeanAppender()
     {

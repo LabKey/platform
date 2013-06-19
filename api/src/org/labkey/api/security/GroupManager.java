@@ -133,9 +133,9 @@ public class GroupManager
     public static String getGroupGraphSvg(Collection<Group> groups, User user, boolean hideUnconnected)
     {
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
-        HashSet<Group> groupSet = new HashSet<Group>();
-        HashSet<Integer> connected = new HashSet<Integer>();
-        LinkedList<Group> recurse = new LinkedList<Group>();
+        HashSet<Group> groupSet = new HashSet<>();
+        HashSet<Integer> connected = new HashSet<>();
+        LinkedList<Group> recurse = new LinkedList<>();
         recurse.addAll(groups);
         groupSet.addAll(groups);
 
@@ -454,7 +454,7 @@ public class GroupManager
         }
 
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, MemberType.BOTH);
-        Set<UserPrincipal> translatedMembers = new LinkedHashSet<UserPrincipal>();
+        Set<UserPrincipal> translatedMembers = new LinkedHashSet<>();
 
         for (UserPrincipal m : members)
         {
@@ -510,7 +510,7 @@ public class GroupManager
     {
         //copy all project groups to new project.  returns a map between old groups and new groups
         //note: site-groups are not copied, but the map will contain them anyway
-        HashMap<UserPrincipal, UserPrincipal> groupMap = new HashMap<UserPrincipal, UserPrincipal>();
+        HashMap<UserPrincipal, UserPrincipal> groupMap = new HashMap<>();
         for (Group g : SecurityManager.getGroups(source, false))
         {
             groupMap.put(g, GroupManager.copyGroupToContainer(g, target, groupMap));

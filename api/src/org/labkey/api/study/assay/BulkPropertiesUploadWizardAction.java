@@ -87,11 +87,11 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
             {
                 PipelineDataCollector collector = form.getSelectedDataCollector();
                 RunStepHandler handler = getRunStepHandler();
-                List<ExpRun> runs = new ArrayList<ExpRun>();
+                List<ExpRun> runs = new ArrayList<>();
 
                 // Hold on to a copy of the original file list so that we can reset the selection state if one of them fails
                 List<Map<String, File>> allFiles =
-                        new ArrayList<Map<String, File>>(collector.getFileQueue(form));
+                        new ArrayList<>(collector.getFileQueue(form));
                 boolean success = false;
                 ExperimentService.get().ensureTransaction();
                 try

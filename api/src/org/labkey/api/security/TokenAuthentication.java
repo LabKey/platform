@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TokenAuthentication
 {
-    private final static Map<String, User> _tokenMap = new ConcurrentHashMap<String, User>();
+    private final static Map<String, User> _tokenMap = new ConcurrentHashMap<>();
 
     // Generate a random token associated with this user/session.  We store the token in a map
     // associated with the user.  Later, we will validate the token by checking the map and

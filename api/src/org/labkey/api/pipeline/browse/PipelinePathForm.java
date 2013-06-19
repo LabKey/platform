@@ -106,7 +106,7 @@ public class PipelinePathForm extends ViewForm
             throw new NotFoundException("No files specified");
         }
 
-        List<File> result = new ArrayList<File>();
+        List<File> result = new ArrayList<>();
         for (String fileName : _file)
         {
             File f = pr.resolvePath(getPath() + "/" + fileName);

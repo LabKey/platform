@@ -106,7 +106,7 @@ public class JavaScriptReport extends ScriptReport
         JavaScriptReportBean model = new JavaScriptReportBean(context);
         model.setClientDependencies(getDescriptor().getClientDependencies());
 
-        JspView<JavaScriptReportBean> view = new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", model);
+        JspView<JavaScriptReportBean> view = new JspView<>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", model);
         view.setFrame(WebPartView.FrameType.NONE);
         view.setClientDependencies(getDescriptor().getClientDependencies());
         return view;

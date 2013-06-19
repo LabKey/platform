@@ -113,7 +113,7 @@ public abstract class DataView extends WebPartView<RenderContext>
             DataRegion dr = new DataRegion();
             dr.setTable(form.getTable());
             List<ColumnInfo> allCols = form.getTable().getUserEditableColumns();
-            List<ColumnInfo> includedCols = new ArrayList<ColumnInfo>();
+            List<ColumnInfo> includedCols = new ArrayList<>();
             for (ColumnInfo col : allCols)
             {
                 if (isColumnIncluded(col))
@@ -185,7 +185,7 @@ public abstract class DataView extends WebPartView<RenderContext>
         out.write(PageFlowUtil.filter(message));
         out.write("</p>");
 
-        Set<String> seen = new HashSet<String>();
+        Set<String> seen = new HashSet<>();
 
         if (verboseErrors())
         {

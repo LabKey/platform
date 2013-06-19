@@ -167,7 +167,7 @@ public class ImageUtil
 
     public static Thumbnail webThumbnail(ViewContext context, String html, URI baseURI) throws IOException
     {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         Document document = TidyUtil.convertHtmlToDocument(html, true, errors);
         if (!errors.isEmpty())
             throw new RuntimeException(errors.get(0));
@@ -196,7 +196,7 @@ public class ImageUtil
         }
 
         Pair<String, URI> content = HttpUtil.getHTML(uri);
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
         if (!errors.isEmpty())
             throw new RuntimeException(errors.get(0));
@@ -243,7 +243,7 @@ public class ImageUtil
                 throw new RuntimeException(e);
             }
 
-            ArrayList<String> errors = new ArrayList<String>();
+            ArrayList<String> errors = new ArrayList<>();
             String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
             if (!errors.isEmpty())
                 throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));

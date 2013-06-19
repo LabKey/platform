@@ -170,7 +170,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         else
         {
             Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domainIdForm.getContainer(), domain);
-            Map<String, Object> formDefaults = new HashMap<String, Object>();
+            Map<String, Object> formDefaults = new HashMap<>();
             for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
             {
                 if (entry.getValue() != null)
@@ -272,7 +272,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         Domain domain = getDomain(domainIdForm);
         // first, we validate the post:
         boolean failedValidation = false;
-        Map<DomainProperty, Object> values = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> values = new HashMap<>();
         for (DomainProperty property : domain.getProperties())
         {
             String propName = ColumnInfo.propNameFromName(property.getName());

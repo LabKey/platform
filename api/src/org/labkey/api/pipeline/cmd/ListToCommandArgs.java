@@ -59,13 +59,13 @@ public class ListToCommandArgs extends TaskToCommandArgs
     public void addConverter(TaskToCommandArgs converter)
     {
         if (_converters == null)
-            _converters = new ArrayList<TaskToCommandArgs>();
+            _converters = new ArrayList<>();
         _converters.add(converter);
     }
 
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
         for (TaskToCommandArgs converter : getConverters())
             args.addAll(Arrays.asList(converter.toArgs(task, visited)));
         return args.toArray(new String[args.size()]);

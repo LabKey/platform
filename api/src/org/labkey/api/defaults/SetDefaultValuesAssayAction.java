@@ -132,7 +132,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         public List<DisplayColumn> getDisplayColumns()
         {
             List<DisplayColumn> columns = super.getDisplayColumns();
-            List<DisplayColumn> newColumns = new ArrayList<DisplayColumn>();
+            List<DisplayColumn> newColumns = new ArrayList<>();
             for (DisplayColumn displayColumn : columns)
             {
                 ColumnInfo column = displayColumn.getColumnInfo();

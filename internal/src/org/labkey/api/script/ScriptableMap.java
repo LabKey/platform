@@ -63,9 +63,9 @@ public class ScriptableMap extends NativeJavaObject {
         if (obj instanceof Map) {
             this.map = (Map) obj;
         } else if (obj == null || obj == Undefined.instance) {
-            this.map = new HashMap<Object, Object>();
+            this.map = new HashMap<>();
         } else if (obj instanceof Scriptable) {
-            this.map = new HashMap<Object, Object>();
+            this.map = new HashMap<>();
             Scriptable s = (Scriptable) obj;
             Object[] ids = s.getIds();
             for (Object id: ids) {

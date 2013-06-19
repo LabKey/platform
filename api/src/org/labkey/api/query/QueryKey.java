@@ -189,7 +189,7 @@ import java.util.Objects;
      */
     public String encode()
     {
-        List<String> encodedParts = new ArrayList<String>();
+        List<String> encodedParts = new ArrayList<>();
         for (String part : getParts())
         {
             String encodedPart = PageFlowUtil.encode(part);
@@ -200,7 +200,7 @@ import java.util.Objects;
 
     public String toString()
     {
-        List<String> encodedParts = new ArrayList<String>();
+        List<String> encodedParts = new ArrayList<>();
         for (String part : getParts())
         {
             String encodedPart = encodePart(part);

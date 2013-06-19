@@ -157,7 +157,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             if (initialized.get())
                 return;
 
-            ArrayList<File> roots = new ArrayList<File>();
+            ArrayList<File> roots = new ArrayList<>();
 
             // Support an additional extraWebapp directory with site-specific content. This lets users drop
             // in things like robots.txt without them being deleted at upgrade or when the server restarts.
@@ -177,7 +177,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 roots.add(extraWebappDir);
 
             // modules
-            HashSet<String> seen = new HashSet<String>();
+            HashSet<String> seen = new HashSet<>();
             for (Module m : ModuleLoader.getInstance().getModules())
             {
                 for (File d :  m.getStaticFileDirectories())
@@ -311,7 +311,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 Map<String, WebdavResource> children = CHILDREN_CACHE.get(getPath());
                 if (null == children)
                 {
-                    Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
+                    Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
                     for (File dir : _files)
                     {
                         if (!dir.isDirectory())
@@ -329,7 +329,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                             map.get(name).add(f);
                         }
                     }
-                    children = new CaseInsensitiveTreeMap<WebdavResource>();
+                    children = new CaseInsensitiveTreeMap<>();
                     for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
                     {
                         Path path = getPath().append(e.getKey());
@@ -354,7 +354,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 if (null != originalChildren.get(name))
                     throw new IllegalArgumentException(name + " already exists");
                 // _children is not synchronized so don't add put, create a new map
-                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<WebdavResource>();
+                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<>();
                 children.putAll(originalChildren);
                 children.put(name, new SymbolicLink(getPath().append(name), target));
                 CHILDREN_CACHE.put(getPath(), children);
@@ -374,7 +374,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 if (!(link instanceof SymbolicLink))
                     throw new IllegalArgumentException(name + " is not a link");
                 // _children is not synchronized so don't add put, create a new map
-                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<WebdavResource>();
+                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<>();
                 children.putAll(originalChildren);
                 children.remove(name);
                 CHILDREN_CACHE.put(getPath(), children);
@@ -391,7 +391,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         public Collection<WebdavResource> list()
         {
             Map<String, WebdavResource> children = getChildren();
-            return new ArrayList<WebdavResource>(children.values());
+            return new ArrayList<>(children.values());
         }
 
         public boolean exists()
@@ -415,7 +415,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     // might not be case sensitive, but this is just devmode
                     File f = new File(dir,name);
                     if (f.exists())
-                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<File>(Collections.singletonList(f)));
+                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)));
                 }
             }
             return r;
@@ -428,7 +428,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public Collection<String> listNames()
         {
-            return new ArrayList<String>(getChildren().keySet());
+            return new ArrayList<>(getChildren().keySet());
         }
 
         public long getLastModified()

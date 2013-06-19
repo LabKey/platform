@@ -74,7 +74,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     @Override
     public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
+        List<PipelineJobWarning> warnings = new ArrayList<>();
         for (FolderImporter importer : _importers)
         {
             if (!_usingVirtualFile || importer.supportsVirtualFile())

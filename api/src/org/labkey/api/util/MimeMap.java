@@ -36,8 +36,8 @@ import java.util.Map;
  */
 public class MimeMap implements FileNameMap
 {
-    private static final Hashtable<String, MimeType> mimeTypeMap = new Hashtable<String, MimeType>(101);
-    private static final Map<String, MimeType> extensionMap = new HashMap<String, MimeType>();
+    private static final Hashtable<String, MimeType> mimeTypeMap = new Hashtable<>(101);
+    private static final Map<String, MimeType> extensionMap = new HashMap<>();
     
     private static class MimeType
     {
@@ -107,7 +107,7 @@ public class MimeMap implements FileNameMap
     }
 
 
-    private Hashtable<String, MimeType> map = new Hashtable<String, MimeType>();
+    private Hashtable<String, MimeType> map = new Hashtable<>();
 
     public void addContentType(String extn, String type)
     {

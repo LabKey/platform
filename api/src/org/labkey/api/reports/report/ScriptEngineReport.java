@@ -401,7 +401,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ResultSetMetaData md = r.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
         List<String> outputColumnNames = outputColumnNames(r);
-        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> dataColumns = new ArrayList<>();
 
         for (int i = 0; i < cols.length; i++)
         {
@@ -420,7 +420,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         assert null != r.getResultSet();
         CaseInsensitiveHashSet aliases = new CaseInsensitiveHashSet(); // output names
-        Map<String,String> remap = new CaseInsensitiveMap<String>();       // resultset name to output name
+        Map<String,String> remap = new CaseInsensitiveMap<>();       // resultset name to output name
                 
         // process the FieldKeys in order to be backward compatible
         for (Map.Entry<FieldKey,ColumnInfo> e : r.getFieldMap().entrySet())
@@ -445,7 +445,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
 
         ResultSetMetaData md = r.getResultSet().getMetaData();
-        ArrayList<String> ret = new ArrayList<String>(md.getColumnCount());
+        ArrayList<String> ret = new ArrayList<>(md.getColumnCount());
         // now go through the resultset
 
         for (int col=1, count=md.getColumnCount(); col<=count; col++)

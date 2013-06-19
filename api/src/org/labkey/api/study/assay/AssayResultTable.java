@@ -84,7 +84,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         setName(AssayProtocolSchema.DATA_TABLE_NAME);
         setPublicSchemaName(_userSchema.getSchemaName());
 
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> visibleColumns = new ArrayList<>();
 
         ColumnInfo specimenIdCol = null;
         boolean foundTargetStudyCol = false;

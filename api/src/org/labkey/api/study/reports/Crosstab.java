@@ -50,10 +50,10 @@ public class Crosstab
 
     //TODO: This should be an arbitrary number of groupings in any combination!!
     //TODO: Improve memory usage
-    Map<Object, Map<Object, List<Object>>> crossTab = new LinkedHashMap<Object, Map<Object, List<Object>>>();
-    Map<Object, List<Object>> rowDatasets = new HashMap<Object, List<Object>>();
-    Map<Object, List<Object>> colDatasets = new HashMap<Object, List<Object>>();
-    List<Object> grandTotalDataset = new ArrayList<Object>();
+    Map<Object, Map<Object, List<Object>>> crossTab = new LinkedHashMap<>();
+    Map<Object, List<Object>> rowDatasets = new HashMap<>();
+    Map<Object, List<Object>> colDatasets = new HashMap<>();
+    List<Object> grandTotalDataset = new ArrayList<>();
 
     public enum StatType {
         numeric,
@@ -108,12 +108,12 @@ public class Crosstab
                     Map<Object, List<Object>> rowMap = crossTab.get(rowVal);
                     if (null == rowMap)
                     {
-                        rowMap = new HashMap<Object, List<Object>>();
+                        rowMap = new HashMap<>();
                         crossTab.put(rowVal, rowMap);
                         if (0 == colFieldIndex)
-                            rowMap.put(statCol, new ArrayList<Object>());
+                            rowMap.put(statCol, new ArrayList<>());
 
-                        rowDatasets.put(rowVal, new ArrayList<Object>());
+                        rowDatasets.put(rowVal, new ArrayList<>());
                     }
 
                     cellValues = null;
@@ -124,12 +124,12 @@ public class Crosstab
                         cellValues = rowMap.get(colVal);
                         if (null == cellValues)
                         {
-                            cellValues = new ArrayList<Object>();
+                            cellValues = new ArrayList<>();
                             rowMap.put(colVal, cellValues);
                             if (!colHeaders.contains(colVal))
                             {
                                 colHeaders.add(colVal);
-                                colDataset = new ArrayList<Object>();
+                                colDataset = new ArrayList<>();
                                 colDatasets.put(colVal, colDataset);
                             }
                         }
@@ -325,7 +325,7 @@ public class Crosstab
             else
                 throw new IllegalArgumentException("Invalid Crosstab stat type");
 
-            List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+            List<DisplayColumn> columns = new ArrayList<>();
 
             columns.add(new CrosstabDisplayColumn(_crosstab.getFieldLabel(crosstab.getRowField())));
 
@@ -339,7 +339,7 @@ public class Crosstab
 
             setDisplayColumns(columns);
 
-            List<String> headers = new ArrayList<String>();
+            List<String> headers = new ArrayList<>();
 
             headers.add(_crosstab.getDescription());
             headers.add(_crosstab.getFieldLabel(_crosstab.getColField()));
@@ -360,7 +360,7 @@ public class Crosstab
         @Override
         public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
         {
-            Map<String, Object> rowMap = new CaseInsensitiveHashMap<Object>();
+            Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
             RenderContext ctx = new RenderContext(HttpView.currentContext());
 
             for (Object rowValue : _crosstab.getRowHeaders())

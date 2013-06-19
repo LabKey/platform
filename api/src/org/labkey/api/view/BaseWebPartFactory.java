@@ -128,7 +128,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public void addLegacyNames(String... names)
     {
-        List<String> newNames = new ArrayList<String>(_legacyNames);
+        List<String> newNames = new ArrayList<>(_legacyNames);
         newNames.addAll(Arrays.asList(names));
         _legacyNames = Collections.unmodifiableList(newNames);
     }

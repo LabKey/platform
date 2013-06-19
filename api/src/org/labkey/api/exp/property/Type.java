@@ -40,7 +40,7 @@ public enum Type
     private String label;
     private String xsd;
     private Class clazz;
-    private Set<Class> allClasses = new HashSet<Class>();
+    private Set<Class> allClasses = new HashSet<>();
     private String sqlTypeName;
 
     Type(String label, String xsd, String sqlTypeName, Class clazz, Class... additionalClasses)

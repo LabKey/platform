@@ -78,7 +78,7 @@ public abstract class ContainerFilter
      */
     protected Collection<Container> removeWorkbooks(Collection<Container> containers)
     {
-        Set<Container> result = new HashSet<Container>(containers.size());
+        Set<Container> result = new HashSet<>(containers.size());
         for (Container c : containers)
         {
             if (!c.isWorkbook())
@@ -371,7 +371,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
@@ -403,7 +403,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             for(Container c : ContainerManager.getChildren(currentContainer, _user, _perm))
             {
                 if(!c.isWorkbook() && c.hasPermission(_user, _perm))
@@ -445,7 +445,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            List<Container> containers = new ArrayList<Container>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, _perm)));
+            List<Container> containers = new ArrayList<>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, _perm)));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -470,7 +470,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
             if (project != null && project.hasPermission(_user, _perm))
@@ -500,7 +500,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             do
             {
                 if (currentContainer.hasPermission(_user, _perm))
@@ -568,7 +568,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<String> result = new HashSet<String>();
+            Set<String> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getId());
@@ -602,7 +602,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<String> result = new HashSet<String>();
+            Set<String> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, _perm))
                 result.add(currentContainer.getId());
 
@@ -637,7 +637,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<String> result = new HashSet<String>();
+            Set<String> result = new HashSet<>();
 
             if (currentContainer.isRoot() && currentContainer.hasPermission(_user, _perm))
                 result.add(currentContainer.getId());  //if not root, we will add the current container below
@@ -687,7 +687,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<String> result = new HashSet<String>();
+            Set<String> result = new HashSet<>();
             if (_skipPermissionChecks || currentContainer.hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getId());
@@ -726,7 +726,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>();
+            Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
             if (project != null && project.hasPermission(_user, _perm))
@@ -767,7 +767,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<Container>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, _perm)));
+            Set<Container> containers = new HashSet<>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, _perm)));
             containers.add(project);
             return toIds(containers);
         }
@@ -800,7 +800,7 @@ public abstract class ContainerFilter
             List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, _perm);
             // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
             // automatically because we always add them via the SQL that we generate
-            Set<String> ids = new HashSet<String>();
+            Set<String> ids = new HashSet<>();
             for (Container container : containers)
             {
                 if (!container.isWorkbook())
@@ -823,7 +823,7 @@ public abstract class ContainerFilter
 
     public static Set<String> toIds(Collection<Container> containers)
     {
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         for (Container container : containers)
         {
             ids.add(container.getId());

@@ -214,7 +214,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         long _accessedTime = _creationTime;
         boolean _valid = true;
         final String id = GUID.makeHash();
-        final Hashtable<String,Object> _attributes = new Hashtable<String,Object>();
+        final Hashtable<String,Object> _attributes = new Hashtable<>();
 
         SessionWrapper(HttpSession s)
         {
@@ -441,7 +441,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         {
             // do not hold onto request
             _ip = r.getRemoteAddr();
-            _info = new TreeMap<String,String>();
+            _info = new TreeMap<>();
             Enumeration<String> e = r.getHeaderNames();
             while (e.hasMoreElements())
             {

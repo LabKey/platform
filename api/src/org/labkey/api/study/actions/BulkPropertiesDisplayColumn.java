@@ -56,7 +56,7 @@ public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        JspView<BulkPropertiesUploadForm> view = new JspView<BulkPropertiesUploadForm>("/org/labkey/api/study/assay/bulkPropertiesInput.jsp", _form);
+        JspView<BulkPropertiesUploadForm> view = new JspView<>("/org/labkey/api/study/assay/bulkPropertiesInput.jsp", _form);
         try
         {
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());

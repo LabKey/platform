@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class TestContext
 {
-    private static ThreadLocal<TestContext> local = new ThreadLocal<TestContext>();
+    private static ThreadLocal<TestContext> local = new ThreadLocal<>();
 
     private HttpServletRequest _request;
     private User _user;

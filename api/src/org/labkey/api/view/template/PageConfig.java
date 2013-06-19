@@ -75,11 +75,11 @@ public class PageConfig
     private String _styleSheet;
     private String _styles;
     private String _script;
-    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<ClientDependency>();
+    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private MultiMap<String, String> _meta = new MultiHashMap<String, String>();
+    private MultiMap<String, String> _meta = new MultiHashMap<>();
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;

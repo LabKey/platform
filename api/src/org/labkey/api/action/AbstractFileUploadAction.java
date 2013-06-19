@@ -105,7 +105,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         HttpServletRequest basicRequest = getViewContext().getRequest();
 
         // Parameter name (String) -> File on disk/original file name Pair
-        Map<String, Pair<File, String>> savedFiles = new HashMap<String, Pair<File, String>>();
+        Map<String, Pair<File, String>> savedFiles = new HashMap<>();
 
         if (basicRequest instanceof MultipartHttpServletRequest)
         {
@@ -128,7 +128,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                         {
                             return;
                         }
-                        savedFiles.put(formElementName, new Pair<File, String>(f, filename));
+                        savedFiles.put(formElementName, new Pair<>(f, filename));
                     }
                     finally
                     {
@@ -147,7 +147,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 File f = handleFile(filename, new ByteArrayInputStream(content.getBytes()), writer);
                 if (f != null)
                 {
-                    savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<File, String>(f, filename));
+                    savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<>(f, filename));
                 }
             }
         }

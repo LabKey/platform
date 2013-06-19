@@ -61,7 +61,7 @@ public class TempTableWriter
         //
         SqlDialect dialect = schema.getSqlDialect();
         ColumnDescriptor[] allColumns = _loader.getColumns();
-        List<ColumnInfo> activeColumns = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> activeColumns = new ArrayList<>();
 
         for (ColumnDescriptor col : allColumns)
         {
@@ -143,7 +143,7 @@ public class TempTableWriter
         sqlInsert.append(sqlValues);
         sqlInsert.append(")");
 
-        List<Collection<?>> paramList = new ArrayList<Collection<?>>(maps.size());
+        List<Collection<?>> paramList = new ArrayList<>(maps.size());
 
         for (Map<String, Object> m : maps)
             paramList.add(m.values());

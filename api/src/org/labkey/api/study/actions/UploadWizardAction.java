@@ -66,7 +66,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 {
     protected ExpProtocol _protocol;
 
-    private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<String, StepHandler<FormType>>();
+    private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
 
     protected String _stepDescription;
 
@@ -172,7 +172,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         Domain domain = null;
         if (properties.length > 0)
         {
-            Set<Domain> domains = new HashSet<Domain>();
+            Set<Domain> domains = new HashSet<>();
             for (DomainProperty property : properties)
                 domains.add(property.getDomain());
             if (domains.size() > 1)
@@ -188,7 +188,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
             try
             {
-                Map<String, Object> inputNameToValue = new HashMap<String, Object>();
+                Map<String, Object> inputNameToValue = new HashMap<>();
                 for (Map.Entry<DomainProperty, Object> entry : form.getDefaultValues(domain).entrySet())
                     inputNameToValue.put(getInputName(entry.getKey()), entry.getValue());
                 view.setInitialValues(inputNameToValue);
@@ -239,7 +239,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             if (runForm.getReRun().getReplacedByRun() != null)
             {
-                return new JspView<ExpRun>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", runForm.getReRun());
+                return new JspView<>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", runForm.getReRun());
             }
         }
 
@@ -327,7 +327,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             if (newRunForm.getReRun().getReplacedByRun() != null)
             {
-                return new JspView<ExpRun>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", newRunForm.getReRun());
+                return new JspView<>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", newRunForm.getReRun());
             }
         }
 
@@ -549,7 +549,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         Set<String> result = (Set<String>)getViewContext().getRequest().getSession(true).getAttribute("COMPLETE_UPLOAD_ATTEMPT_IDS");
         if (result == null)
         {
-            result = new HashSet<String>();
+            result = new HashSet<>();
             getViewContext().getRequest().getSession(true).setAttribute("COMPLETE_UPLOAD_ATTEMPT_IDS", result);
         }
         return result;

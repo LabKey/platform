@@ -48,7 +48,7 @@ import java.util.Set;
  */
 public abstract class DilutionResultsQueryView extends ResultsQueryView
 {
-    protected Map<String, Object> _extraDetailsUrlParams = new HashMap<String, Object>();
+    protected Map<String, Object> _extraDetailsUrlParams = new HashMap<>();
 
     public DilutionResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
@@ -83,7 +83,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
 
     protected Set<String> getExcludedSampleProperties()
     {
-        Set<String> excluded = new HashSet<String>();
+        Set<String> excluded = new HashSet<>();
         excluded.add(DilutionAssayProvider.SAMPLE_METHOD_PROPERTY_NAME);
         excluded.add(DilutionAssayProvider.SAMPLE_INITIAL_DILUTION_PROPERTY_NAME);
         excluded.add(DilutionAssayProvider.SAMPLE_DILUTION_FACTOR_PROPERTY_NAME);
@@ -93,7 +93,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
 
     protected Set<String> getExcludedRunProperties()
     {
-        Set<String> excluded = new HashSet<String>();
+        Set<String> excluded = new HashSet<>();
         excluded.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
         excluded.add(DilutionAssayProvider.LOCK_AXES_PROPERTY_NAME);
         excluded.addAll(Arrays.asList(DilutionAssayProvider.CUTOFF_PROPERTIES));
@@ -144,7 +144,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
                     if (!_extraDetailsUrlParams.isEmpty())
                         url.addParameters(_extraDetailsUrlParams);
 
-                    Map<String, String> title = new HashMap<String, String>();
+                    Map<String, String> title = new HashMap<>();
                     title.put("title", "View run details");
                     out.write(PageFlowUtil.textLink("run details", url, "", "", title));
                 }

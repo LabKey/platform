@@ -77,7 +77,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             // offset are working. Set an explicit row count to force the same sorting that will result below.
             selector.setMaxRows(count);
             K[] sortedArray = selector.getArray(clazz);
-            List<K> sortedList = new ArrayList<K>(selector.getCollection(clazz));
+            List<K> sortedList = new ArrayList<>(selector.getCollection(clazz));
             verifyResultSets(selector, count, true);
 
             // Set a row count, verify the lengths and contents against the expected array & list subsets
@@ -86,7 +86,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             K[] rowCountArray = selector.getArray(clazz);
             assertEquals(rowCount, rowCountArray.length);
             assertEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
-            List<K> rowCountList = new ArrayList<K>(selector.getCollection(clazz));
+            List<K> rowCountList = new ArrayList<>(selector.getCollection(clazz));
             assertEquals(rowCount, rowCountList.size());
             assertEquals(sortedList.subList(0, rowCount), rowCountList);
             verifyResultSets(selector, rowCount, false);
@@ -97,7 +97,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             K[] offsetArray = selector.getArray(clazz);
             assertEquals(rowCount, offsetArray.length);
             assertEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
-            List<K> offsetList = new ArrayList<K>(selector.getCollection(clazz));
+            List<K> offsetList = new ArrayList<>(selector.getCollection(clazz));
             assertEquals(rowCount, offsetList.size());
             assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
             verifyResultSets(selector, rowCount, false);

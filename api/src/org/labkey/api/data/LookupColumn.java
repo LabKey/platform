@@ -68,7 +68,7 @@ public class LookupColumn extends ColumnInfo
     /** The display column to show */
     protected ColumnInfo _lookupColumn;
     /** Additional column pairs if this is a multi-column join. Maintain original order using LinkedHashMap to ensure that generated SQL is identical */
-    protected Map<ColumnInfo, Pair<ColumnInfo, Boolean>> _additionalJoins = new LinkedHashMap<ColumnInfo, Pair<ColumnInfo, Boolean>>();
+    protected Map<ColumnInfo, Pair<ColumnInfo, Boolean>> _additionalJoins = new LinkedHashMap<>();
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
     {

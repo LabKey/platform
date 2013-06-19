@@ -38,7 +38,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     private final Object _param;
     private boolean _prefixColumnCaption = false;
 
-    private final Map<FieldKey, Pair<String, Boolean>> _additionalJoins = new HashMap<FieldKey, Pair<String, Boolean>>();
+    private final Map<FieldKey, Pair<String, Boolean>> _additionalJoins = new HashMap<>();
 
     protected LookupForeignKey(ActionURL baseURL, Object param, String schemaName, String tableName, String pkColumnName, String titleColumn)
     {

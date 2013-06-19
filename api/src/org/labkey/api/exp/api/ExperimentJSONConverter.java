@@ -221,7 +221,7 @@ public class ExperimentJSONConverter
 
     public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, DomainProperty[] dps, Container container, boolean ignoreMissingProperties)
     {
-        Map<DomainProperty, Object> properties = new HashMap<DomainProperty, Object>();
+        Map<DomainProperty, Object> properties = new HashMap<>();
         for (DomainProperty dp : dps)
         {
             if (propertiesJsonObject.has(dp.getName()))

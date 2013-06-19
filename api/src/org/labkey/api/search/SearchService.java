@@ -351,7 +351,7 @@ public interface SearchService
     public static class LastIndexedClause extends SimpleFilter.FilterClause
     {
         SQLFragment _sqlf = new SQLFragment();
-        private Set<FieldKey> _fieldKeys = new HashSet<FieldKey>();
+        private Set<FieldKey> _fieldKeys = new HashSet<>();
 
         final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
@@ -416,7 +416,7 @@ public interface SearchService
 
         public List<String> getColumnNames()
         {
-            List<String> names = new ArrayList<String>(_fieldKeys.size());
+            List<String> names = new ArrayList<>(_fieldKeys.size());
             for (FieldKey fieldKey : _fieldKeys)
                 names.add(fieldKey.toString());
             return names;
@@ -424,7 +424,7 @@ public interface SearchService
 
         public List<FieldKey> getFieldKeys()
         {
-            return new ArrayList<FieldKey>(_fieldKeys);
+            return new ArrayList<>(_fieldKeys);
         }
     }
 }

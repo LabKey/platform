@@ -80,8 +80,8 @@ public class PivotingAssayParser extends DefaultAssayParser
                     resultCols = inspectHeader(line, context);
                 }
 
-                List<String> rowBase = new ArrayList<String>();
-                List<Pair<String, String>> otherFields = new ArrayList<Pair<String, String>>();
+                List<String> rowBase = new ArrayList<>();
+                List<Pair<String, String>> otherFields = new ArrayList<>();
                 int cellIdx = 0;
                 for (String cell : line)
                 {
@@ -101,7 +101,7 @@ public class PivotingAssayParser extends DefaultAssayParser
                 {
                     for (Pair<String, String> pair : otherFields)
                     {
-                        List<String> row = new ArrayList<String>();
+                        List<String> row = new ArrayList<>();
                         row.addAll(rowBase);
                         row.add(pair.first);
                         row.add(pair.second);
@@ -111,7 +111,7 @@ public class PivotingAssayParser extends DefaultAssayParser
                 }
                 else
                 {
-                    List<String> row = new ArrayList<String>();
+                    List<String> row = new ArrayList<>();
                     row.addAll(rowBase);
                     row.add(pivotCol.getLabel());
                     row.add(valueCol.getLabel());
@@ -142,7 +142,7 @@ public class PivotingAssayParser extends DefaultAssayParser
      */
     private Map<Integer, String> inspectHeader(String[] header, ImportContext context) throws BatchValidationException
     {
-        Map<Integer, String> resultMap = new HashMap<Integer, String>();
+        Map<Integer, String> resultMap = new HashMap<>();
         Map<String, String> allowable = new CaseInsensitiveHashMap();
         BatchValidationException errors = new BatchValidationException();
 
@@ -151,7 +151,7 @@ public class PivotingAssayParser extends DefaultAssayParser
             allowable.put(val, val);
         }
 
-        Set<String> knownColumns = new HashSet<String>();
+        Set<String> knownColumns = new HashSet<>();
         for (DomainProperty dp : _provider.getResultsDomain(_protocol).getProperties())
         {
             knownColumns.add(dp.getLabel());

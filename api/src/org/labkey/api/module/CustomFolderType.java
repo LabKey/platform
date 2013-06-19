@@ -105,7 +105,7 @@ public class CustomFolderType implements FolderType
     @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
-        List<NavTree> tabs = new ArrayList<NavTree>();
+        List<NavTree> tabs = new ArrayList<>();
 
         Container container = context.getContainer();
         String name = container.getName();
@@ -168,7 +168,7 @@ public class CustomFolderType implements FolderType
 
     private List<Module> getSortedModuleList()
     {
-        List<Module> sortedModuleList = new ArrayList<Module>();
+        List<Module> sortedModuleList = new ArrayList<>();
         // special-case the portal module: we want it to always be at the far left.
         Module portal = null;
         for (Module module : ModuleLoader.getInstance().getModules())

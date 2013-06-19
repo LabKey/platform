@@ -40,7 +40,7 @@ public class StringUtilsLabKey
         if (strings.isEmpty())
             return "";
 
-        List<String> list = new ArrayList<String>(strings);
+        List<String> list = new ArrayList<>(strings);
 
         if (strings.size() == 1)
             return list.get(0);

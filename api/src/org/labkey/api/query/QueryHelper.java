@@ -184,7 +184,7 @@ public class QueryHelper
         TableInfo ti = getTableInfo();
 
         Map<FieldKey, ColumnInfo> map = qs.getColumns(ti, columns);
-        Set<FieldKey> fieldKeys = new LinkedHashSet<FieldKey>();
+        Set<FieldKey> fieldKeys = new LinkedHashSet<>();
 
         for (ColumnInfo col : map.values())
         {

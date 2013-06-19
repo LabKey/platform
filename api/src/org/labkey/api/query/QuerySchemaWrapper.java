@@ -67,7 +67,7 @@ public class QuerySchemaWrapper implements QuerySchema
     @Override
     public Set<String> getTableNames()
     {
-        Set<String> names = new TreeSet<String>(_schema.getTableNames());
+        Set<String> names = new TreeSet<>(_schema.getTableNames());
         return Collections.unmodifiableSet(names);
     }
 
@@ -78,7 +78,7 @@ public class QuerySchemaWrapper implements QuerySchema
         if (tableNames.isEmpty())
             return Collections.emptyList();
 
-        List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+        List<TableInfo> tables = new ArrayList<>(tableNames.size());
         for (String tableName : tableNames)
         {
             TableInfo table = getTable(tableName);

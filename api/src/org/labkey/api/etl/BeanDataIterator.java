@@ -34,8 +34,8 @@ import java.util.List;
  */
 public class BeanDataIterator<K> extends AbstractDataIterator implements DataIterator
 {
-    ArrayList<ColumnInfo> _cols = new ArrayList<ColumnInfo>();
-    ArrayList<Method> _readMethods = new ArrayList<Method>();
+    ArrayList<ColumnInfo> _cols = new ArrayList<>();
+    ArrayList<Method> _readMethods = new ArrayList<>();
     final List<K> _rows;
     int _currentRow = -1;
 
@@ -130,7 +130,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            return new BeanDataIterator<K>(context, cls, rows);
+            return new BeanDataIterator<>(context, cls, rows);
         }
     }
 }

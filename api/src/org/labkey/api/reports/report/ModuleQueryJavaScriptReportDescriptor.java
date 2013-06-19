@@ -70,7 +70,7 @@ public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptRepor
                     }
 
                     JavaScriptReportDescriptorType js = d.getReportType().getJavaScript();
-                    _dependencies = new LinkedHashSet<ClientDependency>();
+                    _dependencies = new LinkedHashSet<>();
                     if (js.getDependencies() != null)
                     {
                         for (DependencyType depend : js.getDependencies().getDependencyArray())
@@ -96,6 +96,6 @@ public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptRepor
     {
         if (null != _dependencies)
             return _dependencies;
-        return new LinkedHashSet<ClientDependency>();
+        return new LinkedHashSet<>();
     }
 }

@@ -45,7 +45,7 @@ public class JspClassLoader
     {
         ServletContext context = ModuleLoader.getServletContext();
         Set<String> paths = context.getResourcePaths("/WEB-INF/jsp/");
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
         for (String path : paths)
         {
             File file = new File(context.getRealPath(path));

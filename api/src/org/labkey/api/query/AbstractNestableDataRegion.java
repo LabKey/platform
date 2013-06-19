@@ -136,7 +136,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
 
         if (!_renderedInnerGrid)
         {
-            JspView scriptView = new JspView<String>("/org/labkey/api/data/nestedGridScript.jsp", getName());
+            JspView scriptView = new JspView<>("/org/labkey/api/data/nestedGridScript.jsp", getName());
             try
             {
                 scriptView.render(ctx.getRequest(), ctx.getViewContext().getResponse());

@@ -63,7 +63,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
     protected Wrapper<V> createWrapper()
     {
-        return new Wrapper<V>();
+        return new Wrapper<>();
     }
 
 
@@ -193,7 +193,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         @Test
         public void testBlockingGet()
         {
-            final HashMap<Integer,Wrapper<Integer>> map = new HashMap<Integer,Wrapper<Integer>>();
+            final HashMap<Integer,Wrapper<Integer>> map = new HashMap<>();
             Cache<Integer,Wrapper<Integer>> cache = new Cache<Integer,Wrapper<Integer>>()
             {
                 @Override
@@ -229,7 +229,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                     return key*key;
                 }
             };
-            final BlockingCache<Integer,Integer> bc = new BlockingCache<Integer,Integer>(cache,loader);
+            final BlockingCache<Integer,Integer> bc = new BlockingCache<>(cache,loader);
             final Object start = new Object();
             Runnable r = new Runnable()
             {

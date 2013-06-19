@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 public abstract class EmailTemplate
 {
     private static Pattern scriptPattern = Pattern.compile("\\^(.*?)\\^");
-    private static List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+    private static List<ReplacementParam> _replacements = new ArrayList<>();
     private static final String FORMAT_DELIMITER = "|";
 
     public enum Scope

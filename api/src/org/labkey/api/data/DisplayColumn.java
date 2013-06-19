@@ -418,7 +418,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (sort != null)
         {
-            Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new HashSet<ColumnInfo>());
+            Set<ColumnInfo> ret = new NullPreventingSet<>(new HashSet<ColumnInfo>());
             addQueryColumns(ret);
             for (ColumnInfo info : ret)
             {
@@ -569,7 +569,7 @@ public abstract class DisplayColumn extends RenderColumn
                 ActionURL url = ctx.getSortFilterURLHelper();
                 SimpleFilter filter = new SimpleFilter(url, rgn.getName());
 
-                filteredColSet = new HashSet<FieldKey>();
+                filteredColSet = new HashSet<>();
                 for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
                 {
                     filteredColSet.add(fieldKey);

@@ -70,7 +70,7 @@ abstract public class AbstractSchema implements QuerySchema
         if (schemaNames.isEmpty())
             return Collections.emptyList();
 
-        List<QuerySchema> schemas = new ArrayList<QuerySchema>(schemaNames.size());
+        List<QuerySchema> schemas = new ArrayList<>(schemaNames.size());
         for (String schemaName : schemaNames)
         {
             QuerySchema schema = getSchema(schemaName);
@@ -86,7 +86,7 @@ abstract public class AbstractSchema implements QuerySchema
         if (schemaNames.isEmpty())
             return Collections.emptyList();
 
-        List<UserSchema> schemas = new ArrayList<UserSchema>(schemaNames.size());
+        List<UserSchema> schemas = new ArrayList<>(schemaNames.size());
         for (String schemaName : schemaNames)
         {
             UserSchema schema = getUserSchema(schemaName);
@@ -102,7 +102,7 @@ abstract public class AbstractSchema implements QuerySchema
         if (tableNames.isEmpty())
             return Collections.emptyList();
 
-        List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+        List<TableInfo> tables = new ArrayList<>(tableNames.size());
         for (String tableName : tableNames)
         {
             TableInfo table = getTable(tableName);

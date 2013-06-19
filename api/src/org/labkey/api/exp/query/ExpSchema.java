@@ -142,7 +142,7 @@ public class ExpSchema extends AbstractExpSchema
         ret.getColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
 
         ret.addExperimentMembershipColumn(run);
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>(ret.getDefaultVisibleColumns());
+        List<FieldKey> defaultCols = new ArrayList<>(ret.getDefaultVisibleColumns());
         defaultCols.add(0, FieldKey.fromParts("RunMembership"));
         defaultCols.remove(FieldKey.fromParts(ExpExperimentTable.Column.RunCount.name()));
         ret.setDefaultVisibleColumns(defaultCols);
@@ -150,7 +150,7 @@ public class ExpSchema extends AbstractExpSchema
         return ret;
     }
 
-    static private Set<String> tableNames = new LinkedHashSet<String>();
+    static private Set<String> tableNames = new LinkedHashSet<>();
 
     static
     {

@@ -34,9 +34,9 @@ public class AttachmentCache
     public static final String FAVICON_FILE_NAME = "labkey-favicon.ico";
     public static final String STYLESHEET_FILE_NAME = "labkey-stylesheet.css";
 
-    private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);        // Site + project, so size to one per project
-    private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);     // Site + project, so size to one per project
-    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<String, CacheableWriter>(5, 0.75f, 4);           // Site-wide
+    private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
+    private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<>(100, 0.75f, 4);     // Site + project, so size to one per project
+    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<>(5, 0.75f, 4);           // Site-wide
 
     public static void clearLogoCache()
     {

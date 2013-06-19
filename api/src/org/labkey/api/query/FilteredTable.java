@@ -228,7 +228,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @Override
     public Set<FieldKey> getDetailsURLKeys()
     {
-        HashSet<FieldKey> ret = new HashSet<FieldKey>();
+        HashSet<FieldKey> ret = new HashSet<>();
         Set<FieldKey> superKeys = super.getDetailsURLKeys();
         Set<FieldKey> realKeys = getRealTable().getDetailsURLKeys();
         ret.addAll(superKeys);

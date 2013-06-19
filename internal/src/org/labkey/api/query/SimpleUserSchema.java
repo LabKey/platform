@@ -506,7 +506,7 @@ public class SimpleUserSchema extends UserSchema
         {
             if (null != getRealTable().getColumn("container") && null != getColumn("folder"))
             {
-                CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+                CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
                     m.put("container", "folder");
                 return m;
             }

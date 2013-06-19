@@ -116,7 +116,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public void saveInstance(File file, Container c) throws IOException
     {
-        Map<String, String> addParams = new HashMap<String, String>();
+        Map<String, String> addParams = new HashMap<>();
         addParams.put("pipeline, email address", email);
         save(file, null, addParams);
     }

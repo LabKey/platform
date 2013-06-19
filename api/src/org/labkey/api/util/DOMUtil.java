@@ -104,7 +104,7 @@ public class DOMUtil
     public static List<Node> getChildNodes(Node node, Short nodeType)
     {
         NodeList children = node.getChildNodes();
-        List<Node> ret = new ArrayList<Node>(children.getLength());
+        List<Node> ret = new ArrayList<>(children.getLength());
         for(int idx = 0; idx < children.getLength(); ++idx)
         {
             Node child = children.item(idx);
@@ -129,7 +129,7 @@ public class DOMUtil
         if(null == children || children.getLength() == 0)
             return Collections.emptyList();
 
-        List<Node> ret = new ArrayList<Node>();
+        List<Node> ret = new ArrayList<>();
         for(int idx=0; idx < children.getLength(); ++idx)
         {
             Node child = children.item(idx);

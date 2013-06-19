@@ -580,7 +580,7 @@ class RhinoEngine extends RhinoScriptEngine
                     cx.exit();
                 }
                 
-                sharedTopLevel = new WeakReference<ScriptableObject>(topLevel);
+                sharedTopLevel = new WeakReference<>(topLevel);
             }
 
             return topLevel;
@@ -747,7 +747,7 @@ class SandboxContextFactory extends ContextFactory
 
     static
     {
-        HashSet<String> disallowedMethods = new HashSet<String>();
+        HashSet<String> disallowedMethods = new HashSet<>();
         disallowedMethods.add("class");
         disallowedMethods.add("clone");
         disallowedMethods.add("equals");
@@ -760,7 +760,7 @@ class SandboxContextFactory extends ContextFactory
         disallowedMethods.add("wait");
         DISALLOWED_METHODS = Collections.unmodifiableSet(disallowedMethods);
         
-        HashSet<String> allowedClasses = new HashSet<String>();
+        HashSet<String> allowedClasses = new HashSet<>();
         allowedClasses.add(ArrayList.class.getName());
         allowedClasses.add(Arrays.class.getName());
         allowedClasses.add(BigDecimal.class.getName());

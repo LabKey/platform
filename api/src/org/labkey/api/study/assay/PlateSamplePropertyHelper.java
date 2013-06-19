@@ -39,7 +39,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
     {
         super(domainProperties);
         _template = template;
-        _sampleNames = new ArrayList<String>();
+        _sampleNames = new ArrayList<>();
 
         if (template != null)
         {

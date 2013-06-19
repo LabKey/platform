@@ -32,7 +32,7 @@ import java.util.List;
 public class DropDownList extends DisplayElement implements Cloneable
 {
     private String _name;
-    private List<Pair<String, String>> _list = new ArrayList<Pair<String, String>>(10);
+    private List<Pair<String, String>> _list = new ArrayList<>(10);
 
     public DropDownList(String name)
     {
@@ -41,7 +41,7 @@ public class DropDownList extends DisplayElement implements Cloneable
 
     public void add(String value, String display)
     {
-        _list.add(new Pair<String, String>(value, display));
+        _list.add(new Pair<>(value, display));
     }
 
     public void add(String display)

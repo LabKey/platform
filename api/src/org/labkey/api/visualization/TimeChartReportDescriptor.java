@@ -52,7 +52,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     public Map<String, Object> getReportProps() throws Exception
     {
-        Map<String, Object> props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<>();
         List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
         if (propsList.size() > 0)
         {
@@ -149,7 +149,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             // filterUrl (as filter parameter fieldKeys)
 
             // most property updates only care about the query name old value string and new value string
-            Map<String, String> queryNameChangeMap = new HashMap<String, String>();
+            Map<String, String> queryNameChangeMap = new HashMap<>();
             for (QueryChangeListener.QueryPropertyChange qpc : changes)
             {
                 queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());

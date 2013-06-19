@@ -67,7 +67,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
         private final boolean _includeText;
         private final long _maxIndexableSize;
 
-        private Set<String> _stopElements = new HashSet<String>();
+        private Set<String> _stopElements = new HashSet<>();
 
         /** How many characters have been included in document to be indexed so far */
         private long _indexedSize = 0;

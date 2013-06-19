@@ -108,7 +108,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     @Override
     public List<ScriptEngineFactory> getEngineFactories()
     {
-        List<ScriptEngineFactory> factories = new ArrayList<ScriptEngineFactory>();
+        List<ScriptEngineFactory> factories = new ArrayList<>();
         if (rhino != null)
             factories.add(rhino);
         for (ExternalScriptEngineDefinition def : getEngineDefinitions())
@@ -156,7 +156,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
     public static List<ExternalScriptEngineDefinition> getEngineDefinitions()
     {
-        List<ExternalScriptEngineDefinition> engines = new ArrayList<ExternalScriptEngineDefinition>();
+        List<ExternalScriptEngineDefinition> engines = new ArrayList<>();
         Map<String, String> map = PropertyManager.getProperties(SCRIPT_ENGINE_MAP);
 
         for (String name : map.values())

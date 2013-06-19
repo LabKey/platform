@@ -72,7 +72,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
 
     protected Set<String> getTableNames(boolean visible)
     {
-        Set<String> names = new TreeSet<String>(new Comparator<String>()
+        Set<String> names = new TreeSet<>(new Comparator<String>()
         {
             public int compare(String o1, String o2)
             {
@@ -90,7 +90,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
     {
         if (SAMPLE_PREPARATION_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<SampleInfo.Method> result = new EnumTableInfo<SampleInfo.Method>(SampleInfo.Method.class, getDbSchema(),
+            EnumTableInfo<SampleInfo.Method> result = new EnumTableInfo<>(SampleInfo.Method.class, getDbSchema(),
                     "List of possible sample preparation methods for the " + getProvider().getResourceName() + " assay.", false);
             result.setPublicSchemaName(_schemaName);
             result.setPublicName(SAMPLE_PREPARATION_METHOD_TABLE_NAME);
@@ -98,7 +98,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         }
         if (CURVE_FIT_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<DilutionCurve.FitType> result = new EnumTableInfo<DilutionCurve.FitType>(DilutionCurve.FitType.class, getDbSchema(), new EnumTableInfo.EnumValueGetter<DilutionCurve.FitType>()
+            EnumTableInfo<DilutionCurve.FitType> result = new EnumTableInfo<>(DilutionCurve.FitType.class, getDbSchema(), new EnumTableInfo.EnumValueGetter<DilutionCurve.FitType>()
             {
                 public String getValue(DilutionCurve.FitType e)
                 {
@@ -120,8 +120,8 @@ public class DilutionProviderSchema extends AssayProviderSchema
     {
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         DilutionDataHandler dataHandler = provider.getDataHandler();
-        List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
-        Map<Integer, String> cutoffFormats = new HashMap<Integer, String>();
+        List<PropertyDescriptor> propertyDescriptors = new ArrayList<>();
+        Map<Integer, String> cutoffFormats = new HashMap<>();
         Container container = protocol.getContainer();
         for (String fixedProp : _fixedRunDataProps)
             propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, fixedProp, cutoffFormats));

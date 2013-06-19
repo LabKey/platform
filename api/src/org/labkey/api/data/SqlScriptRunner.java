@@ -44,7 +44,7 @@ public class SqlScriptRunner
 {
     private static Logger _log = Logger.getLogger(SqlScriptRunner.class);
 
-    private static final List<SqlScript> _remainingScripts = new ArrayList<SqlScript>();
+    private static final List<SqlScript> _remainingScripts = new ArrayList<>();
     private static String _currentModuleName = null;
     private static final Object SCRIPT_LOCK = new Object();
 
@@ -54,7 +54,7 @@ public class SqlScriptRunner
         synchronized (SCRIPT_LOCK)
         {
             if (null != moduleName && moduleName.equals(_currentModuleName))
-                return new ArrayList<SqlScript>(_remainingScripts);
+                return new ArrayList<>(_remainingScripts);
             else
                 return Collections.emptyList();
         }
@@ -118,7 +118,7 @@ public class SqlScriptRunner
             throw new RuntimeException(e);
         }
 
-        List<SqlScript> newScripts = new ArrayList<SqlScript>();
+        List<SqlScript> newScripts = new ArrayList<>();
         Set<SqlScript> runScripts = SqlScriptManager.getRunScripts(provider);
 
         for (SqlScript script : allScripts)
@@ -132,12 +132,12 @@ public class SqlScriptRunner
     public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, @Nullable String schemaName, double from, double to) throws SQLException
     {
         List<SqlScript> newScripts = getNewScripts(provider, schemaName);
-        MultiMap<String, SqlScript> mm = new MultiHashMap<String, SqlScript>();
+        MultiMap<String, SqlScript> mm = new MultiHashMap<>();
 
         for (SqlScript script : newScripts)
             mm.put(script.getSchemaName(), script);
 
-        List<SqlScript> scripts = new ArrayList<SqlScript>();
+        List<SqlScript> scripts = new ArrayList<>();
         String[] schemaNames = mm.keySet().toArray(new String[mm.keySet().size()]);
         Arrays.sort(schemaNames, String.CASE_INSENSITIVE_ORDER);
         for (String name : schemaNames)
@@ -151,7 +151,7 @@ public class SqlScriptRunner
     public static List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
     {
         // Create a map of SqlScript objects.  For each fromVersion, store only the script with the highest toVersion
-        Map<Double, SqlScript> m = new HashMap<Double, SqlScript>();
+        Map<Double, SqlScript> m = new HashMap<>();
 
         for (SqlScript script : schemaScripts)
         {
@@ -164,7 +164,7 @@ public class SqlScriptRunner
             }
         }
 
-        List<SqlScript> scripts = new ArrayList<SqlScript>();
+        List<SqlScript> scripts = new ArrayList<>();
 
         while (true)
         {

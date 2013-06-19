@@ -48,7 +48,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 {
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
-    private final Set<String> _roleNames = new HashSet<String>();
+    private final Set<String> _roleNames = new HashSet<>();
     private final URLHelper _returnURL;
 
     private String _cacheKey;
@@ -90,7 +90,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
         synchronized (_roleNames)
         {
-            return new ImpersonateRoleContext(project, getAdminUser(), new HashSet<String>(_roleNames), _returnURL);
+            return new ImpersonateRoleContext(project, getAdminUser(), new HashSet<>(_roleNames), _returnURL);
         }
     }
 
@@ -240,7 +240,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         {
             if (_roles == null)
             {
-                _roles = new HashSet<Role>();
+                _roles = new HashSet<>();
                 for (String name : _roleNames)
                     _roles.add(RoleManager.getRole(name));
             }
@@ -250,7 +250,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return new HashSet<Role>(getRoles());
+            return new HashSet<>(getRoles());
         }
 
         @Override

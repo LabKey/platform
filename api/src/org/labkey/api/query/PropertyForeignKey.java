@@ -41,7 +41,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     protected QuerySchema _schema;
     protected boolean _parentIsObjectId = false;
 
-    private List<PropertyColumnDecorator> _decorators = new ArrayList<PropertyColumnDecorator>();
+    private List<PropertyColumnDecorator> _decorators = new ArrayList<>();
 
     public PropertyForeignKey(Map<String, PropertyDescriptor> pds, QuerySchema schema)
     {
@@ -55,7 +55,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
      */
     public PropertyForeignKey(PropertyDescriptor[] pds, QuerySchema schema)
     {
-        _pdMap = new TreeMap<String, PropertyDescriptor>();
+        _pdMap = new TreeMap<>();
         for (PropertyDescriptor pd : pds)
         {
             _pdMap.put(pd.getName(), pd);
@@ -101,7 +101,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
         if (displayField == null)
             return null;
-        PropertyDescriptor pd = new CaseInsensitiveHashMap<PropertyDescriptor>(_pdMap).get(displayField);
+        PropertyDescriptor pd = new CaseInsensitiveHashMap<>(_pdMap).get(displayField);
         if (pd == null)
         {
             pd = resolvePropertyDescriptor(displayField);

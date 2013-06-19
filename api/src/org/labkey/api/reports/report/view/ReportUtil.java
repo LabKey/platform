@@ -286,7 +286,7 @@ public class ReportUtil
 
     public static List<Report> getReports(Container c, User user, String reportKey, boolean inherited)
     {
-        List<Report> reports = new ArrayList<Report>();
+        List<Report> reports = new ArrayList<>();
         reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
 
         if (inherited)
@@ -452,7 +452,7 @@ public class ReportUtil
         if (schemaName != null && queryName != null)
             reportKey = ReportUtil.getReportKey(schemaName, queryName);
 
-        List<ViewInfo> views = new ArrayList<ViewInfo>();
+        List<ViewInfo> views = new ArrayList<>();
 
         try
         {
@@ -724,7 +724,7 @@ public class ReportUtil
 
     public static JSONArray getCreateReportButtons(ViewContext context)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
         for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             designers.addAll(provider.getDesignerInfo(context));
 

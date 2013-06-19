@@ -46,7 +46,7 @@ public class AuditLogService
 {
     static private I _instance;
     static private final I _defaultProvider = new DefaultAuditProvider(); 
-    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<String, AuditViewFactory>();
+    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<>();
 
     public static void addAuditViewFactory(AuditViewFactory factory)
     {
@@ -64,7 +64,7 @@ public class AuditLogService
 
     public static List<AuditViewFactory> getAuditViewFactories()
     {
-        List<AuditViewFactory> factories = new ArrayList<AuditViewFactory>(_auditViewFactories.values());
+        List<AuditViewFactory> factories = new ArrayList<>(_auditViewFactories.values());
 
         Collections.sort(factories, new Comparator<AuditViewFactory>()
         {

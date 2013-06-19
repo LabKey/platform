@@ -41,7 +41,7 @@ public class AuditChangesView extends HttpView
         this.event = event;
         if (oldData != null)
         {
-            this.oldData = new CaseInsensitiveHashMap<String>(oldData);
+            this.oldData = new CaseInsensitiveHashMap<>(oldData);
         }
         else
         {
@@ -49,7 +49,7 @@ public class AuditChangesView extends HttpView
         }
         if (newData != null)
         {
-            this.newData = new CaseInsensitiveHashMap<String>(newData);
+            this.newData = new CaseInsensitiveHashMap<>(newData);
         }
         else
         {

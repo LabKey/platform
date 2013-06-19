@@ -71,7 +71,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             _protocol = form.getProtocol(!form.isCopy());
         }
         catch (NotFoundException ignored) { /* User is probably creating a new assay design */ }
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         if (_protocol != null)
         {
             properties.put("protocolId", "" + _protocol.getRowId());

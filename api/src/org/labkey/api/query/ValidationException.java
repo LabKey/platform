@@ -52,8 +52,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public static final String ERROR_QUERY_KEY = "_queryName";
     public static final String ERROR_ROW_KEY = "_row";
 
-    private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<String, List<PropertyValidationError>>();
-    private List<SimpleValidationError> _globalErrors = new ArrayList<SimpleValidationError>();
+    private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<>();
+    private List<SimpleValidationError> _globalErrors = new ArrayList<>();
 
     private String _schemaName;
     private String _queryName;
@@ -189,7 +189,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
             else if (value instanceof Object[])
             {
                 Object[] values = (Object[])value;
-                messages = new ArrayList<String>(values.length);
+                messages = new ArrayList<>(values.length);
                 for (Object v : values)
                     messages.add(String.valueOf(v));
             }
@@ -228,7 +228,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
         List<PropertyValidationError> list = _fieldErrors.get(field);
         if (list == null)
-            _fieldErrors.put(field, list = new ArrayList<PropertyValidationError>());
+            _fieldErrors.put(field, list = new ArrayList<>());
         list.add(error);
 
         return this;
@@ -287,7 +287,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
         // For convenience in the script environment, create an empty list.
         List<PropertyValidationError> list = _fieldErrors.get(name);
         if (list == null)
-            _fieldErrors.put(name, list = new ArrayList<PropertyValidationError>());
+            _fieldErrors.put(name, list = new ArrayList<>());
 
         final List<PropertyValidationError> wrapped = list;
         return new AbstractList<String>()

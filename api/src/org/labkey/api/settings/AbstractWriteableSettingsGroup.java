@@ -108,7 +108,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
             event.setComment("The " + getType() + " were changed (see details).");
             event.setEventType(AUDIT_EVENT_TYPE);
 
-            Map<String,Object> map = new HashMap<String,Object>();
+            Map<String,Object> map = new HashMap<>();
             map.put(AUDIT_PROP_DIFF, diff);
 
             AuditLogService.get().addEvent(event, map, domainUri);

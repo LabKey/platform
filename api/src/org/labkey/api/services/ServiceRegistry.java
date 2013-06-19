@@ -69,7 +69,7 @@ public class ServiceRegistry
     }
     
     private static final ServiceRegistry _instance = new ServiceRegistry();
-    private ConcurrentMap<Class, _ServiceDef> _servicesByClass = new ConcurrentHashMap<Class, _ServiceDef>();
+    private ConcurrentMap<Class, _ServiceDef> _servicesByClass = new ConcurrentHashMap<>();
 
     static {ServiceRegistry._instance.registerService(ServiceRegistry.class, _instance);}
 

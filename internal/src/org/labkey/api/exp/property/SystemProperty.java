@@ -32,7 +32,7 @@ import java.util.*;
 public class SystemProperty
 {
     static final private Logger _log = Logger.getLogger(SystemProperty.class);
-    static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap<String, SystemProperty>();
+    static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap<>();
     static private boolean _registered = false;
 
     private String _propertyURI;
@@ -108,7 +108,7 @@ public class SystemProperty
         if (!_registered)
             throw new IllegalStateException("System properties can only be enumerated after startup");
 
-        ArrayList<PropertyDescriptor> properties = new ArrayList<PropertyDescriptor>(_systemProperties.size());
+        ArrayList<PropertyDescriptor> properties = new ArrayList<>(_systemProperties.size());
         for (SystemProperty property : _systemProperties.values())
             properties.add(property._pd);
 

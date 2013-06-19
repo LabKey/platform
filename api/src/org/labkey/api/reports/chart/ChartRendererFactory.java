@@ -26,7 +26,7 @@ import java.util.Map;
 public class ChartRendererFactory
 {
     private static final ChartRendererFactory instance = new ChartRendererFactory();
-    private static Map<String, ChartRenderer> _chartRenderers = new HashMap<String, ChartRenderer>();
+    private static Map<String, ChartRenderer> _chartRenderers = new HashMap<>();
 
 
     public static ChartRendererFactory get()

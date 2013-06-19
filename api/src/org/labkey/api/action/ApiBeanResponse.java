@@ -39,7 +39,7 @@ public class ApiBeanResponse<BeanClass> implements ApiResponse
     public Map<String, ?> getProperties()
     {
         ObjectFactory<BeanClass> f = ObjectFactory.Registry.getFactory(_clss);
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         f.toMap(_bean, map);
         return map;
     }

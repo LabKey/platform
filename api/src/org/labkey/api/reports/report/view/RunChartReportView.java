@@ -50,7 +50,7 @@ public class RunChartReportView extends RunReportView
     {
         URLHelper url = getBaseUrl();
 
-        List<NavTree> tabs = new ArrayList<NavTree>();
+        List<NavTree> tabs = new ArrayList<>();
         tabs.add(new TabInfo(TAB_VIEW, TAB_VIEW, url));
         tabs.add(new TabInfo(TAB_DATA, TAB_DATA, url));
 

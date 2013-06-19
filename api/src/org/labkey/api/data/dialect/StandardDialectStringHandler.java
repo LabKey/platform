@@ -53,7 +53,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
     {
         CharSequence sql = frag.getSqlCharSequence();
         StringBuilder ret = new StringBuilder();
-        List<Object> params = new LinkedList<Object>(frag.getParams());
+        List<Object> params = new LinkedList<>(frag.getParams());
 
         int begin = 0;
         int current = 0;

@@ -53,7 +53,7 @@ public class FTPUtil
             ftp = getConnectedClient(user, password, url, directory);
 
             FTPFile[] files = ftp.listFiles();
-            List<String> filenames = new ArrayList<String>(files.length);
+            List<String> filenames = new ArrayList<>(files.length);
 
             Pattern p = (null != filterPattern ? Pattern.compile(filterPattern) : null);
 

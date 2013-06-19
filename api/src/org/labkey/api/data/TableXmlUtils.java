@@ -127,7 +127,7 @@ public class TableXmlUtils
             dbTables = dbTablesDoc.getTables().getTableArray();
             xmlTables = xmlTablesDoc.getTables().getTableArray();
 
-            mXmlTableOrdinals = new TreeMap<String, Integer>();
+            mXmlTableOrdinals = new TreeMap<>();
             for (int i = 0; i < xmlTables.length; i++)
             {
                 xmlTableName = xmlTables[i].getTableName();
@@ -137,7 +137,7 @@ public class TableXmlUtils
                     mXmlTableOrdinals.put(xmlTableName.toLowerCase(), new Integer(i));
             }
 
-            mDbTableOrdinals = new TreeMap<String, Integer>();
+            mDbTableOrdinals = new TreeMap<>();
             for (int i = 0; i < dbTables.length; i++)
             {
                 dbTableName = dbTables[i].getTableName();
@@ -229,8 +229,8 @@ public class TableXmlUtils
                 dbCols = tt.getColumns().getColumnArray();
                 xmlCols = xmlTable.getColumns().getColumnArray();
 
-                mXmlColOrdinals = new TreeMap<String, Integer>();
-                mDbColOrdinals = new TreeMap<String, Integer>();
+                mXmlColOrdinals = new TreeMap<>();
+                mDbColOrdinals = new TreeMap<>();
 
                 for (int m = 0; m < xmlCols.length; m++)
                 {

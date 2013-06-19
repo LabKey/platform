@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class FirstRequestHandler
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<FirstRequestListener> _listeners = new CopyOnWriteArrayList<FirstRequestListener>();
+    private static final List<FirstRequestListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static void addFirstRequestListener(FirstRequestListener listener)
     {

@@ -101,7 +101,7 @@ public abstract class AbstractDataIterator implements DataIterator
     }
 
 
-    Set<String> errorFields = new HashSet<String>();
+    Set<String> errorFields = new HashSet<>();
 
     protected void addFieldError(String field, String msg)
     {

@@ -46,8 +46,8 @@ public class CaseInsensitiveMapTest extends Assert
     {
         final String key = "ThisIsATestOfTheCaseInsensitiveMap";
         final Object value = new Object();
-        final Map<String, Object> map = new OldCaseInsensitiveHashMap<Object>();
-        final Set<String> keys = new LinkedHashSet<String>();
+        final Map<String, Object> map = new OldCaseInsensitiveHashMap<>();
+        final Set<String> keys = new LinkedHashSet<>();
 
         int count = 1000;
         int threads = 2;
@@ -84,7 +84,7 @@ public class CaseInsensitiveMapTest extends Assert
             }
         });
         final CyclicBarrier barrier = new CyclicBarrier(threads);
-        List<Callable<Integer>> tasks = new LinkedList<Callable<Integer>>();
+        List<Callable<Integer>> tasks = new LinkedList<>();
 
         for (int i = 0; i < threads; i++)
         {

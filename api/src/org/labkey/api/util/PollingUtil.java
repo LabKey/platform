@@ -79,7 +79,7 @@ public class PollingUtil
 
         private PollKey(Map<String,PollKey> m, String key, Object ref)
         {
-            this.ref = new WeakReference<Object>(ref);
+            this.ref = new WeakReference<>(ref);
             this.key = null==key ? GUID.makeHash() : key;
             this.map = m;
             accessed();

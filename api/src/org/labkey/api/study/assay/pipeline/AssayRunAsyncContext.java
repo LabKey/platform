@@ -65,7 +65,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** propertyId -> value */
     private Map<Integer, String> _batchPropertiesById;
     /** RowIds for all the domains associated with properties we need to remember */
-    private Set<Integer> _domainIds = new HashSet<Integer>();
+    private Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
 
     // Cached values that aren't serializable
@@ -104,13 +104,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** Convert to a map that can be serialized - DomainProperty can't be */
     protected Map<Integer, String> convertPropertiesToIds(Map<DomainProperty, String> properties)
     {
-        Map<Integer, String> result = new HashMap<Integer, String>();
+        Map<Integer, String> result = new HashMap<>();
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
             result.put(entry.getKey().getPropertyId(), entry.getValue());
             if (_domains == null)
             {
-                _domains = new HashSet<Domain>();
+                _domains = new HashSet<>();
             }
             // Remember the domains that contributed properties. We can't get a DomainProperty directly, so we have
             // to get the domain first and then ask it for the properties
@@ -123,7 +123,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** Convert from a serialized map by looking up the DomainProperties */
     protected Map<DomainProperty, String> convertPropertiesFromIds(Map<Integer, String> properties)
     {
-        Map<DomainProperty, String> result = new HashMap<DomainProperty, String>();
+        Map<DomainProperty, String> result = new HashMap<>();
 
         for (Map.Entry<Integer, String> entry : properties.entrySet())
         {
@@ -154,7 +154,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     {
         if (_domains == null)
         {
-            _domains = new HashSet<Domain>();
+            _domains = new HashSet<>();
             for (Integer domainId : _domainIds)
             {
                 Domain domain = PropertyService.get().getDomain(domainId);

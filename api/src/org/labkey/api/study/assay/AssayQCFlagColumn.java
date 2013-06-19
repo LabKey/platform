@@ -159,11 +159,11 @@ public class AssayQCFlagColumn extends ExprColumn
 
         StringBuilder sb = new StringBuilder();
         // Keep track of which ones we've already rendered so we can eliminate dupes
-        Set<Pair<String, Boolean>> alreadyRendered = new HashSet<Pair<String, Boolean>>();
+        Set<Pair<String, Boolean>> alreadyRendered = new HashSet<>();
         String separator = "";
         for (int i = 0; i < values.length; i++)
         {
-            if (alreadyRendered.add(new Pair<String, Boolean>(values[i], enabled[i])))
+            if (alreadyRendered.add(new Pair<>(values[i], enabled[i])))
             {
                 sb.append(separator);
                 // Disabled flags are rendered with strike-through

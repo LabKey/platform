@@ -54,7 +54,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(ViewCategoryManager.class);
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
-    private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<ViewCategoryListener>();
+    private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
 
     private static DatabaseCache<ViewCategory> _viewCategoryCache;
 
@@ -62,7 +62,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     {
         if (_viewCategoryCache == null)
         {
-            _viewCategoryCache = new DatabaseCache<ViewCategory>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category");
+            _viewCategoryCache = new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category");
         }
         return _viewCategoryCache;
     }
@@ -201,7 +201,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         if (!category.canDelete(c, user))
             throw new RuntimeException("You must be an administrator to delete a view category");
 
-        List<ViewCategory> categoriesToDelete = new ArrayList<ViewCategory>();
+        List<ViewCategory> categoriesToDelete = new ArrayList<>();
         try {
             category = getCategory(category.getRowId());
             if (category == null)
@@ -225,7 +225,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             throw new RuntimeSQLException(x);
         }
 
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
         for (ViewCategory vc : categoriesToDelete)
             errors.addAll(fireDeleteCategory(user, vc));
 
@@ -354,7 +354,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     private static List<Throwable> fireDeleteCategory(User user, ViewCategory category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ViewCategoryListener l : _listeners)
         {
@@ -371,7 +371,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     private static List<Throwable> fireUpdateCategory(User user, ViewCategory category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ViewCategoryListener l : _listeners)
         {
@@ -388,7 +388,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     private static List<Throwable> fireCreatedCategory(User user, ViewCategory category)
     {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
 
         for (ViewCategoryListener l : _listeners)
         {
@@ -467,7 +467,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
      */
     public String[] decode(String category)
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         String[] originalAmps;
 
         StringBuffer sb = new StringBuffer();
@@ -551,7 +551,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             Container c = ContainerManager.getSharedContainer();
             User user = TestContext.get().getUser();
 
-            final List<String> notifications = new ArrayList<String>();
+            final List<String> notifications = new ArrayList<>();
             for (String label : labels)
                 notifications.add(label);
 
@@ -633,7 +633,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             }
 
             // get categories
-            Map<String, ViewCategory> categoryMap = new HashMap<String, ViewCategory>();
+            Map<String, ViewCategory> categoryMap = new HashMap<>();
             for (ViewCategory cat : mgr.getCategories(c, user))
             {
                 categoryMap.put(cat.getLabel(), cat);

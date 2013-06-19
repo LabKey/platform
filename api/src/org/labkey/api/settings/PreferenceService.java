@@ -38,7 +38,7 @@ public class PreferenceService
     private static Logger _log = Logger.getLogger(PreferenceService.class);
 
     private static final String PREFERENCE_SERVICE_MAP_KEY = "PreferenceServiceMap";
-    private Map<String, Map<String, String>> _nullPreferenceMap = new HashMap<String, Map<String, String>>();
+    private Map<String, Map<String, String>> _nullPreferenceMap = new HashMap<>();
 
     private static final PreferenceService _instance = new PreferenceService();
 
@@ -162,7 +162,7 @@ public class PreferenceService
 
     private Map<String, String> getPreferences(Container container)
     {
-        Stack<Container> stack = new Stack<Container>();
+        Stack<Container> stack = new Stack<>();
         stack.push(container);
         while (!container.isRoot())
         {
@@ -170,7 +170,7 @@ public class PreferenceService
             container = container.getParent();
         }
 
-        Map<String, String> prefs = new HashMap<String, String>();
+        Map<String, String> prefs = new HashMap<>();
         while (!stack.isEmpty())
         {
             Container c = stack.pop();
@@ -190,7 +190,7 @@ public class PreferenceService
 
         if (null == prefs)
         {
-            prefs = new HashMap<String, String>();
+            prefs = new HashMap<>();
             session.setAttribute(PREFERENCE_SERVICE_MAP_KEY, prefs);
         }
 

@@ -47,7 +47,7 @@ public class DateUtil
     {
     }
 
-    private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<Integer, TimeZone>();
+    private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
     private static final int currentYear = new GregorianCalendar().get(Calendar.YEAR);
@@ -264,7 +264,7 @@ public class DateUtil
     static Enum[] parts = null;
     static
     {
-        ArrayList<Enum> list = new ArrayList<Enum>();
+        ArrayList<Enum> list = new ArrayList<>();
         list.addAll(Arrays.asList(AMPM.values()));
         list.addAll(Arrays.asList(Month.values()));
         list.addAll(Arrays.asList(Weekday.values()));

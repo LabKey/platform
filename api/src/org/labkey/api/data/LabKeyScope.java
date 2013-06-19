@@ -46,7 +46,7 @@ public class LabKeyScope extends DbScope
 
     static
     {
-        _moduleSchemaNames = new LinkedHashSet<String>();
+        _moduleSchemaNames = new LinkedHashSet<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
             for (String schemaName : module.getSchemaNames())

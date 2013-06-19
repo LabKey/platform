@@ -38,7 +38,7 @@ public class UnionContainerFilter extends ContainerFilter
     @Override @Nullable
     protected Collection<String> getIds(Container currentContainer)
     {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         for (ContainerFilter filter : _filters)
         {
             Collection<String> ids = filter.getIds(currentContainer);

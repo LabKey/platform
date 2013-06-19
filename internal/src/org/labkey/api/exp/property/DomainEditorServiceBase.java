@@ -66,7 +66,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
         try
         {
             List<Container> set = ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser());
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             for (Container c : set)
             {
                 if (c.isRoot())
@@ -91,13 +91,13 @@ public class DomainEditorServiceBase extends BaseRemoteService
             Container c = getContainer(containerId);
             Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths();
 
-            List<String> names = new ArrayList<String>();
+            List<String> names = new ArrayList<>();
             for (SchemaKey schemaPath : schemaPaths)
             {
                 names.add(schemaPath.toString());
             }
 
-            return new ArrayList<String>(names);
+            return new ArrayList<>(names);
         }
         catch (RuntimeException x)
         {
@@ -116,7 +116,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
             if (schema == null)
                 return null;
             
-            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<String, GWTPropertyDescriptor>();  //  GWT: TreeMap does not work
+            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
                 TableInfo table;

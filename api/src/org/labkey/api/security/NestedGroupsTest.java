@@ -294,7 +294,7 @@ public class NestedGroupsTest extends Assert
 
     private void validate(boolean expected, int[] actualIds, UserPrincipal... testMembers)
     {
-        Set<Integer> actual = new HashSet<Integer>(Arrays.asList(ArrayUtils.toObject(actualIds)));
+        Set<Integer> actual = new HashSet<>(Arrays.asList(ArrayUtils.toObject(actualIds)));
 
         validate(expected, actual, testMembers);
     }
@@ -312,7 +312,7 @@ public class NestedGroupsTest extends Assert
 
     private void validate(boolean expected, Group group, UserPrincipal... members)
     {
-        Set<Integer> set = new HashSet<Integer>();
+        Set<Integer> set = new HashSet<>();
 
         for (UserPrincipal userPrincipal : getMembers(group))
             set.add(userPrincipal.getUserId());

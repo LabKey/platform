@@ -34,7 +34,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
 {
     private Container _runContainer;
     private Container _targetStudyContainer;
-    private Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<ParticipantVisit, ParticipantVisit>();
+    private Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<>();
 
     /**
      * Create the resolver.

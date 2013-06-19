@@ -78,7 +78,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     private void init(Results rs, Collection<ColumnInfo> cols)
     {
-        List<DisplayColumn> dataColumns = new LinkedList<DisplayColumn>();
+        List<DisplayColumn> dataColumns = new LinkedList<>();
 
         for (ColumnInfo col : cols)
             dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));

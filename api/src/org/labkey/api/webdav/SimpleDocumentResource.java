@@ -50,7 +50,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _executeUrl = executeUrl;
         assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
         if (null != properties)
-            _properties = new HashMap<String,Object>(properties);
+            _properties = new HashMap<>(properties);
     }
 
     public SimpleDocumentResource(Path path, String documentId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)

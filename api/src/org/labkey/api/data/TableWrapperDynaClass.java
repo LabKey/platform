@@ -30,13 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TableWrapperDynaClass extends StringWrapperDynaClass
 {
     private TableInfo _tinfo;
-    private static final Map<TableInfo, TableWrapperDynaClass> _dynClasses = new ConcurrentHashMap<TableInfo, TableWrapperDynaClass>();
+    private static final Map<TableInfo, TableWrapperDynaClass> _dynClasses = new ConcurrentHashMap<>();
 
     private TableWrapperDynaClass(TableInfo tinfo)
     {
         _tinfo = tinfo;
         List<ColumnInfo> cols = tinfo.getColumns();
-        Map<String, Class> propMap = new CaseInsensitiveHashMap<Class>();
+        Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo col : cols)
             propMap.put(col.getPropertyName(), col.getJavaClass());
 

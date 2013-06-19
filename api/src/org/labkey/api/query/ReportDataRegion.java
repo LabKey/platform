@@ -74,7 +74,7 @@ public class ReportDataRegion extends AbstractDataRegion
             StringBuilder filter = new StringBuilder();
 
             Writer out = response.getWriter();
-            Map<String, String> messages = new LinkedHashMap<String, String>();
+            Map<String, String> messages = new LinkedHashMap<>();
 
             addViewMessage(viewmsg, ctx);
             addFilterMessage(filter, ctx, true);

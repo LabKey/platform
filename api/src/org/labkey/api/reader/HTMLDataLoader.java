@@ -89,7 +89,7 @@ public class HTMLDataLoader extends DataLoader
                 throw new RuntimeException(e);
             }
 
-            List<String> errors = new ArrayList<String>();
+            List<String> errors = new ArrayList<>();
             Document doc = TidyUtil.convertHtmlToDocument(s, true, errors);
             if (!errors.isEmpty() || doc == null)
                 return false;
@@ -163,7 +163,7 @@ public class HTMLDataLoader extends DataLoader
 
     protected Collection<String[]> parse(int limit)
     {
-        List<String> errors = new LinkedList<String>();
+        List<String> errors = new LinkedList<>();
         Document doc = TidyUtil.convertHtmlToDocument(_html, true, errors);
         if (errors.size() > 0)
             return null;
@@ -198,7 +198,7 @@ public class HTMLDataLoader extends DataLoader
 
     protected Collection<String[]> parseTable(Element table, int limit)
     {
-        List<String[]> rows = new ArrayList<String[]>();
+        List<String[]> rows = new ArrayList<>();
 
         boolean header = true;
         NodeList trNL = table.getElementsByTagName("tr");
@@ -234,7 +234,7 @@ public class HTMLDataLoader extends DataLoader
 
     protected String[] parseRow(Element tr, String tag)
     {
-        ArrayList<String> values = new ArrayList<String>();
+        ArrayList<String> values = new ArrayList<>();
 
         NodeList tdNL = tr.getElementsByTagName(tag);
         for (int tdIdx = 0, tdLen = tdNL.getLength(); tdIdx < tdLen; tdIdx++)

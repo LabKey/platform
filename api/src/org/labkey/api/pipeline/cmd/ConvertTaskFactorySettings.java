@@ -113,7 +113,7 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         if (_commands == null)
             return new TaskFactorySettings[0];
         
-        ArrayList<TaskFactorySettings> settingsList = new ArrayList<TaskFactorySettings>();
+        ArrayList<TaskFactorySettings> settingsList = new ArrayList<>();
         for (int i = 0; i < _commands.length; i++)
         {
             Object o = _commands[i];

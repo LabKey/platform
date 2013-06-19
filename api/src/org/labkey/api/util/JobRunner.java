@@ -44,7 +44,7 @@ public class JobRunner implements Executor
     static JobRunner _defaultJobRunner = new JobRunner(1);
 
     private ScheduledThreadPoolExecutor _executor = null;
-    private final HashMap<Future, Job> _jobs = new HashMap<Future, Job>();
+    private final HashMap<Future, Job> _jobs = new HashMap<>();
 
 
     public JobRunner()

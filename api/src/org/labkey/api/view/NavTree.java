@@ -62,7 +62,7 @@ public class NavTree implements Collapsible
     private Integer _imageWidth;
     private String _target = null;
 
-    private final @NotNull List<NavTree> _children = new LinkedList<NavTree>();
+    private final @NotNull List<NavTree> _children = new LinkedList<>();
 
     public static String escapeKey(String key)
     {

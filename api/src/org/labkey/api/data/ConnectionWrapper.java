@@ -65,13 +65,13 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private static final Map<ConnectionWrapper, Pair<Thread,Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<ConnectionWrapper, Pair<Thread, Throwable>>());
 
-    private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<ConnectionWrapper>();
+    private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
 
     /**
      * Mapping from SPID (database process id) to the name of the most recent Java thread to use the connection
      * Useful for checking out database deadlock problems when debugging.
      */
-    private static final Map<Integer, String> _mostRecentSPIDThreads = new HashMap<Integer, String>();
+    private static final Map<Integer, String> _mostRecentSPIDThreads = new HashMap<>();
 
     /**
      * String representation of the map, useful because it's a pain to look through the
@@ -105,7 +105,7 @@ public class ConnectionWrapper implements java.sql.Connection
         _allocatingThreadName = Thread.currentThread().getName();
 
         //noinspection ConstantConditions
-        assert null == _openConnections.put(this,  new Pair<Thread,Throwable>(Thread.currentThread(), new Throwable())) || true;
+        assert null == _openConnections.put(this,  new Pair<>(Thread.currentThread(), new Throwable())) || true;
 
         _log = log != null ? log : getConnectionLogger();
     }
@@ -181,7 +181,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public static Set<Integer> getSPIDsForThread(Thread t)
     {
-        Set<Integer> result = new HashSet<Integer>();
+        Set<Integer> result = new HashSet<>();
         synchronized(_openConnections)
         {
             for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())

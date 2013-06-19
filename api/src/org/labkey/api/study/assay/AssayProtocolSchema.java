@@ -160,7 +160,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     /** NOTE: Subclasses should override to add any additional provider specific tables. */
     public Set<String> getTableNames()
     {
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         names.add(BATCHES_TABLE_NAME);
         names.add(RUNS_TABLE_NAME);
         names.add(DATA_TABLE_NAME);
@@ -240,7 +240,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         fixupRenderers(table);
 
         // Check for metadata associated with the legacy query/schema names
-        ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        ArrayList<QueryException> errors = new ArrayList<>();
         String legacyName = getProtocol().getName() + " " + name;
         TableType legacyMetadata = QueryService.get().findMetadataOverride(AssayService.get().createSchema(getUser(), getContainer(), _targetStudy), legacyName, false, false, errors, null);
         if (errors.isEmpty())
@@ -248,7 +248,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             table.overlayMetadata(legacyMetadata, this, errors);
         }
 
-        errors = new ArrayList<QueryException>();
+        errors = new ArrayList<>();
         Path dir = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
         TableType metadata = QueryService.get().findMetadataOverride(this, name, false, true, errors, dir);
         if (errors.isEmpty())
@@ -272,14 +272,14 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
         String paramName = fakeURL.getParameters().get(0).getKey();
 
-        Map<String, String> urlParams = new HashMap<String, String>();
+        Map<String, String> urlParams = new HashMap<>();
         urlParams.put(paramName, "RowId");
         result.setDetailsURL(new DetailsURL(runsURL, urlParams));
 
         runsURL.addParameter(paramName, "${RowId}");
         result.getColumn(ExpExperimentTable.Column.Name).setURL(StringExpressionFactory.createURL(runsURL));
         result.setBatchProtocol(protocol);
-        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.CreatedBy));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
@@ -361,7 +361,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             runTable.setDomain(runDomain);
         }
 
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+        List<FieldKey> visibleColumns = new ArrayList<>(runTable.getDefaultVisibleColumns());
         visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
 
@@ -469,7 +469,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             ActionURL runDetailsURL = new ActionURL(AssayRunDetailsAction.class, context.getContainer());
             runDetailsURL.addParameter("rowId", getProtocol().getRowId());
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put("runId", "RowId");
 
             AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
@@ -489,7 +489,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, context.getContainer());
             resultDetailsURL.addParameter("rowId", _protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             // map ObjectId to url parameter ResultDetailsForm.dataRowId
             params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
 
@@ -504,7 +504,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Override
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
-        List<CustomView> result = new ArrayList<CustomView>();
+        List<CustomView> result = new ArrayList<>();
 
         // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
         // where TABLE_TYPE is Runs, Batches, Data, etc
@@ -549,7 +549,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         StringExpressionFactory.FieldKeyStringExpression fkse = (StringExpressionFactory.FieldKeyStringExpression)col.getURL();
         // quick check
         Set<FieldKey> keys = fkse.getFieldKeys();
-        Map<FieldKey,FieldKey> map = new HashMap<FieldKey, FieldKey>();
+        Map<FieldKey,FieldKey> map = new HashMap<>();
         for (FieldKey key : keys)
         {
             if (null == key.getParent() && null == table.getColumn(key.getName()))
@@ -568,9 +568,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
      */
     public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
     {
-        Set<String> visibleColumnNames = new HashSet<String>();
+        Set<String> visibleColumnNames = new HashSet<>();
         int datasetIndex = 0;
-        Set<String> usedColumnNames = new HashSet<String>();
+        Set<String> usedColumnNames = new HashSet<>();
         for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
         {
             if (!assayDataSet.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataSet.canRead(getUser()))
@@ -619,7 +619,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
         if (setVisibleColumns)
         {
-            List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+            List<FieldKey> visibleColumns = new ArrayList<>();
             for (FieldKey key : table.getDefaultVisibleColumns())
             {
                 visibleColumns.add(key);
@@ -692,7 +692,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public Collection<String> getReportKeys(String queryName)
     {
         // Include the standard report name
-        Set<String> result = new HashSet<String>(super.getReportKeys(queryName));
+        Set<String> result = new HashSet<>(super.getReportKeys(queryName));
         // Include the legacy schema/query name so we don't lose old reports
         result.add(ReportUtil.getReportKey(AssaySchema.NAME, getLegacyProtocolTableName(getProtocol(), queryName)));
         return result;

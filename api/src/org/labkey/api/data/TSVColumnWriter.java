@@ -65,7 +65,7 @@ public abstract class TSVColumnWriter extends TSVWriter
 
     protected Iterable<String> getColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns)
     {
-        List<String> headers = new ArrayList<String>();
+        List<String> headers = new ArrayList<>();
         for (DisplayColumn dc : columns)
         {
             if (dc.isVisible(ctx))
@@ -112,7 +112,7 @@ public abstract class TSVColumnWriter extends TSVWriter
     /** Get the unquoted column values. */
     protected Iterable<String> getValues(RenderContext ctx, Iterable<DisplayColumn> displayColumns)
     {
-        List<String> values = new ArrayList<String>();
+        List<String> values = new ArrayList<>();
         for (DisplayColumn dc : displayColumns)
         {
             if (dc.isVisible(ctx))

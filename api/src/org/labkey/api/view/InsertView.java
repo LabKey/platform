@@ -68,7 +68,7 @@ public class InsertView extends DataView
 
     public void setInitialValues(Map<String, Object> initialValues)
     {
-        _initialValues = new HashMap<String, Object>(initialValues);
+        _initialValues = new HashMap<>(initialValues);
     }
 
     public Map<String, Object> getInitialValues()
@@ -79,7 +79,7 @@ public class InsertView extends DataView
     public void setInitialValue(String inputName, Object value)
     {
         if (_initialValues == null)
-            _initialValues = new HashMap<String, Object>();
+            _initialValues = new HashMap<>();
         _initialValues.put(inputName, value);
     }
 
@@ -95,7 +95,7 @@ public class InsertView extends DataView
 
         if (null == _initialValues)
         {
-            Map<String, Object> initialValues = new HashMap<String, Object>();
+            Map<String, Object> initialValues = new HashMap<>();
             for (ColumnInfo col : getTable().getColumns())
             {
                 Object defaultValue = col.getDefaultValue();

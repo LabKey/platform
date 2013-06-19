@@ -28,13 +28,13 @@
     String delimGUID = GUID.makeGUID();
     String quoteGUID = GUID.makeGUID();
 
-    Map<String, String> delimiterMap = new LinkedHashMap<String, String>();
+    Map<String, String> delimiterMap = new LinkedHashMap<>();
     delimiterMap.put(TSVWriter.DELIM.TAB.name(), TSVWriter.DELIM.TAB.text);
     delimiterMap.put(TSVWriter.DELIM.COMMA.name(), TSVWriter.DELIM.COMMA.text);
     delimiterMap.put(TSVWriter.DELIM.COLON.name(), TSVWriter.DELIM.COLON.text);
     delimiterMap.put(TSVWriter.DELIM.SEMICOLON.name(), TSVWriter.DELIM.SEMICOLON.text);
 
-    Map<String, String> quoteMap = new LinkedHashMap<String, String>();
+    Map<String, String> quoteMap = new LinkedHashMap<>();
     quoteMap.put(TSVWriter.QUOTE.DOUBLE.name(), "Double (" + TSVWriter.QUOTE.DOUBLE.quoteChar + ")");
     quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
 

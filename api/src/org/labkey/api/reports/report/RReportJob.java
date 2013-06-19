@@ -141,7 +141,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
             if (inputFile.exists())
             {
-                List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
+                List<ParamReplacement> outputSubst = new ArrayList<>();
 
                 // todo: figure out a way to pass script input parameters for a script job if needed.
                 String output = report.runScript(context, outputSubst, inputFile, null);

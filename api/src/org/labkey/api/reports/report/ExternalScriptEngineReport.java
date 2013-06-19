@@ -73,7 +73,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 {
     public static final String TYPE = "ReportService.externalScriptEngineReport";
     public static final String CACHE_DIR = "cached";
-    private static final Map<ReportIdentifier, ActionURL> _cachedReportURLMap = new HashMap<ReportIdentifier, ActionURL>();
+    private static final Map<ReportIdentifier, ActionURL> _cachedReportURLMap = new HashMap<>();
     private static String DEFAULT_PERL_PATH;
 
     public String getType()
@@ -115,7 +115,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     public List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception
     {
-        final List<ScriptOutput> scriptOutputs = new ArrayList<ScriptOutput>();
+        final List<ScriptOutput> scriptOutputs = new ArrayList<>();
 
         renderReport(context, inputParameters, new Renderer<List<ScriptOutput>>()
         {
@@ -195,7 +195,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
 */
 
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
 
         if (!validateScript(script, errors))
         {
@@ -205,7 +205,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             return null;
         }
 
-        List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
+        List<ParamReplacement> outputSubst = new ArrayList<>();
 
         if (!getCachedReport(context, outputSubst))
         {

@@ -48,7 +48,7 @@ public class ViewCategory extends Entity implements Comparable
     {
         _label = label;
         if (parent != null)
-            _parent = new WeakReference<ViewCategory>(parent);
+            _parent = new WeakReference<>(parent);
     }
 
     public boolean isNew()
@@ -109,7 +109,7 @@ public class ViewCategory extends Entity implements Comparable
 
     public void setParent(ViewCategory parent)
     {
-        _parent = new WeakReference<ViewCategory>(parent);
+        _parent = new WeakReference<>(parent);
     }
 
     public List<ViewCategory> getSubcategories()

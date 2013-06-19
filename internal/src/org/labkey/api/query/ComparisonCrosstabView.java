@@ -42,7 +42,7 @@ public abstract class ComparisonCrosstabView extends CrosstabView
     public GWTComparisonResult createComparisonResult()
             throws SQLException, IOException, ServletException
     {
-        List<FieldKey> cols = new ArrayList<FieldKey>();
+        List<FieldKey> cols = new ArrayList<>();
         CrosstabTableInfo table = (CrosstabTableInfo) getTable();
         CrosstabDimension dimension = table.getSettings().getRowAxis().getDimensions().get(0);
         cols.add(FieldKey.fromString(dimension.getSourceColumn().getName().replace('/', '_')));

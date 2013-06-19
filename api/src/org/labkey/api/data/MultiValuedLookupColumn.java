@@ -91,7 +91,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         // column select, so we need a unique alias ("c") for the inner join.
         String joinAlias = groupConcat ? "child" : "c";
 
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<>();
         _lookupColumn.declareJoins(joinAlias, joins);
 
         // UNDONE: Why does MVFK not work for Experiments.ParentExperiments ?

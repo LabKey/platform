@@ -44,8 +44,8 @@ public class Overview
     {
         _user = user;
         _container = container;
-        _steps = new ArrayList<Step>();
-        _actions = new ArrayList<Action>();
+        _steps = new ArrayList<>();
+        _actions = new ArrayList<>();
     }
 
     static protected String h(Object text)
@@ -172,7 +172,7 @@ public class Overview
         {
             _title = title;
             _status = status;
-            _actions = new ArrayList<Action>();
+            _actions = new ArrayList<>();
         }
 
         public void setExplanatoryHTML(String html)

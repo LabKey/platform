@@ -34,7 +34,7 @@ public class LabKeyManagement
 {
     public static ObjectName createName(String type, String name) throws MalformedObjectNameException
     {
-        Hashtable<String,String> t = new Hashtable<String,String>();
+        Hashtable<String,String> t = new Hashtable<>();
         t.put("type", type);
         name = name.replace(": ", "-").replace(':','-');
         t.put("name", name);

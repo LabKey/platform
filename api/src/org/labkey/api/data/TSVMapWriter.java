@@ -109,15 +109,15 @@ public class TSVMapWriter extends TSVWriter
         public void test() throws Exception
         {
             Collection<String> columns = Arrays.asList("one", "two", "three");
-            List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> rows = new ArrayList<>();
 
-            Map<String, Object> row = new HashMap<String, Object>();
+            Map<String, Object> row = new HashMap<>();
             row.put("one", 1.1);
             row.put("two", "TWO");
             row.put("three", "test,quoting");
             rows.add(row);
 
-            row = new HashMap<String, Object>();
+            row = new HashMap<>();
             row.put("two", 2.2);
             row.put("three", "");
             rows.add(row);

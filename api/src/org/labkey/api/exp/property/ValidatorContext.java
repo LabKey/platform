@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class ValidatorContext
 {
-    private Map<Pair<Class<? extends ValidatorKind>, Object>, Object> _map = new HashMap<Pair<Class<? extends ValidatorKind>, Object>, Object>();
+    private Map<Pair<Class<? extends ValidatorKind>, Object>, Object> _map = new HashMap<>();
 
     private Container _container;
     private User _user;

@@ -64,7 +64,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     {
         if (!isPlateBased())
             throw new IllegalStateException("Only plate-based assays may store a plate template.");
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
                 protocol.getLSID() + "#PlateTemplate", template.getName());
         props.put(prop.getPropertyURI(), prop);
@@ -87,7 +87,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         String domainLsid = getPresubstitutionLsid(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
         Domain sampleWellGroupDomain = PropertyService.get().createDomain(c, domainLsid, "Sample Fields");
         sampleWellGroupDomain.setDescription("The user will be prompted to enter these properties for each of the sample well groups in their chosen plate template.");
-        return new Pair<Domain, Map<DomainProperty, Object>>(sampleWellGroupDomain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(sampleWellGroupDomain, Collections.<DomainProperty, Object>emptyMap());
     }
 
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
@@ -191,7 +191,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         DomainProperty[] selectedSampleProperties = allSampleProperties;
         if (filterInputsForType != null)
         {
-            List<DomainProperty> selected = new ArrayList<DomainProperty>();
+            List<DomainProperty> selected = new ArrayList<>();
             for (DomainProperty possible : allSampleProperties)
             {
                 if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))

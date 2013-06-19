@@ -109,7 +109,7 @@ public class AttachmentService
 
     public static class DuplicateFilenameException extends IOException
     {
-        private List<String> _errors = new ArrayList<String>();
+        private List<String> _errors = new ArrayList<>();
 
         public DuplicateFilenameException(Collection<String> filenames)
         {
@@ -141,7 +141,7 @@ public class AttachmentService
 
     public static class FileTooLargeException extends IOException
     {
-        private List<String> _errors = new ArrayList<String>();
+        private List<String> _errors = new ArrayList<>();
 
         public FileTooLargeException(Collection<String> filenames, int maxSize)
         {

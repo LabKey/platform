@@ -75,12 +75,12 @@ public class AuthenticationManager
 
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
-    private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<AuthenticationProvider>();
-    private static final List<AuthenticationProvider> _activeProviders = new CopyOnWriteArrayList<AuthenticationProvider>();
+    private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
+    private static final List<AuthenticationProvider> _activeProviders = new CopyOnWriteArrayList<>();
     // Map of user id to login provider.  This is needed to handle clean up on logout.
-    private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<Integer, AuthenticationProvider>();
+    private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
-    private static volatile Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
+    private static volatile Map<String, LinkFactory> _linkFactories = new HashMap<>();
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
@@ -250,7 +250,7 @@ public class AuthenticationManager
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET);
         String activeProviderProp = props.get(PROVIDERS_KEY);
         List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-        List<AuthenticationProvider> activeProviders = new ArrayList<AuthenticationProvider>(_allProviders.size());
+        List<AuthenticationProvider> activeProviders = new ArrayList<>(_allProviders.size());
 
         // For now, auth providers are always handled in order of registration: LDAP, OpenSSO, DB.  TODO: Provide admin with mechanism for ordering
 
@@ -260,7 +260,7 @@ public class AuthenticationManager
                 addProvider(activeProviders, provider);
 
         props = getAuthLogoURLs();
-        Map<String, LinkFactory> factories = new HashMap<String, LinkFactory>();
+        Map<String, LinkFactory> factories = new HashMap<>();
 
         for (String key : props.keySet())
             if (activeProviders.contains(getProvider(key)))
@@ -694,7 +694,7 @@ public class AuthenticationManager
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getPostURL(), getReturnURL(), reshow), errors);
+            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getPostURL(), getReturnURL(), reshow), errors);
         }
 
         public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
@@ -853,7 +853,7 @@ public class AuthenticationManager
         private String _name;
 
         // Need to check the attachments service to see if logo exists... use map to check this once and cache result
-        private Map<String, String> _imgMap = new HashMap<String, String>();
+        private Map<String, String> _imgMap = new HashMap<>();
 
         private LinkFactory(String redirectUrl, String name)
         {

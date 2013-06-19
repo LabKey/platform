@@ -133,6 +133,6 @@ public class Group extends UserPrincipal
     @Override
     public Set<Role> getContextualRoles(SecurityPolicy policy)
     {
-        return new HashSet<Role>();
+        return new HashSet<>();
     }
 }

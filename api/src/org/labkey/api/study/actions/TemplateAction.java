@@ -50,7 +50,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         _protocol = rowIdForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         Domain runDataDomain = provider.getResultsDomain(_protocol);
-        Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();
+        Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<>();
         DataRegion dr = createDataRegionForInsert(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("0 = 1", new Object[]{});

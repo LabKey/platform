@@ -618,8 +618,8 @@ public abstract class SqlDialect
     public void testDialectKeywords(SqlExecutor executor)
     {
         Set<String> candidates = KeywordCandidates.get().getCandidates();
-        Set<String> shouldAdd = new TreeSet<String>();
-        Set<String> shouldRemove = new TreeSet<String>();
+        Set<String> shouldAdd = new TreeSet<>();
+        Set<String> shouldRemove = new TreeSet<>();
 
         // First, test the test: execute the test SQL with an identifier that definitely isn't a keyword.  If this
         // fails, there's a syntax issue with the test SQL.
@@ -701,7 +701,7 @@ public abstract class SqlDialect
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
     {
-        Collection<String> errors = new ArrayList<String>();
+        Collection<String> errors = new ArrayList<>();
         String lower = sql.toLowerCase();
         String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
 

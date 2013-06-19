@@ -326,7 +326,7 @@ public class StringExpressionFactory
 
         static
         {
-            Set<String> s = new HashSet<String>(Substitution.values().length);
+            Set<String> s = new HashSet<>(Substitution.values().length);
             for (Substitution substitution : Substitution.values())
             {
                 s.add(substitution.toString());
@@ -402,7 +402,7 @@ public class StringExpressionFactory
 
         protected void parse()
         {
-            _parsedExpression = new ArrayList<StringPart>();
+            _parsedExpression = new ArrayList<>();
             int start = 0;
             int index;
             while (start < _source.length() && (index = _source.indexOf("${", start)) >= 0)
@@ -479,7 +479,7 @@ public class StringExpressionFactory
                 AbstractStringExpression clone = (AbstractStringExpression)super.clone();
                 if (null != clone._parsedExpression)
                 {
-                    clone._parsedExpression = new ArrayList<StringPart>(clone._parsedExpression);
+                    clone._parsedExpression = new ArrayList<>(clone._parsedExpression);
                     for (int i=0 ; i<clone._parsedExpression.size() ; i++)
                         clone._parsedExpression.set(i, (StringPart)clone._parsedExpression.get(i).clone());
                 }
@@ -683,7 +683,7 @@ public class StringExpressionFactory
 
         public Set<FieldKey> getFieldKeys()
         {
-            Set<FieldKey> set = new HashSet<FieldKey>();
+            Set<FieldKey> set = new HashSet<>();
             for (StringPart p : getParsedExpression())
             {
                 if (p instanceof FieldPart)
@@ -837,7 +837,7 @@ public class StringExpressionFactory
         @Test
         public void testSimple() throws ServletException
         {
-            Map<Object,Object> m = new HashMap<Object,Object>();
+            Map<Object,Object> m = new HashMap<>();
 
             StringExpression a = StringExpressionFactory.create("${one} ${and} ${two} = ${three}");
             m.put("and", "y");
@@ -858,13 +858,13 @@ public class StringExpressionFactory
         @Test
         public void testFieldKey()
         {
-            Map<Object,Object> m = new HashMap<Object,Object>();
+            Map<Object,Object> m = new HashMap<>();
 
             FieldKeyStringExpression fkse = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
             m.put(FieldKey.fromParts("A","rowid"), "BUG");
             m.put(new FieldKey(null, "lookup"), 5);
             m.put(FieldKey.fromParts("A","title"), "title one");
-            Map<FieldKey,FieldKey> remap = new HashMap<FieldKey, FieldKey>();
+            Map<FieldKey,FieldKey> remap = new HashMap<>();
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
             FieldKeyStringExpression lookup = fkse.remapFieldKeys(new FieldKey(null, "A"), remap);
             assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
@@ -873,7 +873,7 @@ public class StringExpressionFactory
         @Test
         public void testAddParameter() throws URISyntaxException
         {
-            Map<Object,Object> m = new HashMap<Object,Object>();
+            Map<Object,Object> m = new HashMap<>();
 
             StringExpression b = StringExpressionFactory.create("z/details.view?id=${rowId}", true);
 

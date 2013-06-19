@@ -72,10 +72,10 @@ public interface CustomViewInfo
 
     public static class FilterAndSort
     {
-        private List<FilterInfo> filter = new ArrayList<FilterInfo>();
-        private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
+        private List<FilterInfo> filter = new ArrayList<>();
+        private List<Sort.SortField> sort = new ArrayList<>();
         private List<String> containerFilterNames = Collections.emptyList();
-        private List<Aggregate> aggregates = new ArrayList<Aggregate>();
+        private List<Aggregate> aggregates = new ArrayList<>();
 
         public List<FilterInfo> getFilter()
         {

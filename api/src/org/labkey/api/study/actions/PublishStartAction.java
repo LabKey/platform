@@ -194,7 +194,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             try
             {
                 // Pull out the data row ids
-                ids = new ArrayList<Integer>();
+                ids = new ArrayList<>();
                 while (rs.next())
                 {
                     ids.add(dataRowIdColumn.getIntValue(rs));
@@ -210,7 +210,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             ids = getCheckboxIds();
         }
 
-        Set<Container> containers = new HashSet<Container>();
+        Set<Container> containers = new HashSet<>();
         boolean nullsFound = false;
         boolean insufficientPermissions = false;
         for (Integer id : ids)
@@ -226,7 +226,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             }
         }
 
-        return new JspView<PublishBean>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
+        return new JspView<>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
                 new PublishBean(provider,
                     _protocol,
                     ids,

@@ -68,7 +68,7 @@ public class AssayBatchesView extends AbstractAssayView
         {
             ActionURL detailsURL = new ActionURL(AssayBatchDetailsAction.class, context.getContainer());
             detailsURL.addParameter("rowId", protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put("batchId", "RowId");
 
             batchesView.setShowDetailsColumn(true);

@@ -38,7 +38,7 @@ public class MultiResultSetMetaData
 
     MultiResultSetMetaData(List<ResultSetMetaData> list) throws SQLException
     {
-        _map = new HashMap<Integer, Pair<ResultSetMetaData, Integer>>(20);
+        _map = new HashMap<>(20);
         int index = 1;
 
         for (ResultSetMetaData rsmd : list)
@@ -48,7 +48,7 @@ public class MultiResultSetMetaData
 
             for (int i = 0; i < count; i++)
             {
-                Pair<ResultSetMetaData, Integer> pair = new Pair<ResultSetMetaData, Integer>(rsmd, count);
+                Pair<ResultSetMetaData, Integer> pair = new Pair<>(rsmd, count);
                 _map.put(index++, pair);
             }
         }

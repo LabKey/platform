@@ -34,8 +34,8 @@ import java.util.Set;
  */
 public class MultiValuedRenderContext extends RenderContextDecorator
 {
-    private final Map<FieldKey, Iterator<String>> _iterators = new HashMap<FieldKey, Iterator<String>>();
-    private final Map<FieldKey, String> _currentValues = new HashMap<FieldKey, String>();
+    private final Map<FieldKey, Iterator<String>> _iterators = new HashMap<>();
+    private final Map<FieldKey, String> _currentValues = new HashMap<>();
 
     public static final String VALUE_DELIMETER = "{@~^";
     public static final String VALUE_DELIMETER_REGEX = "\\Q" + VALUE_DELIMETER + "\\E";
@@ -47,7 +47,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         // For each required column (e.g., display value, rowId), retrieve the concatenated values, split them, and
         // stash away an iterator of those values.
         int length = -1;
-        Set<FieldKey> nullFieldKeys = new HashSet<FieldKey>();
+        Set<FieldKey> nullFieldKeys = new HashSet<>();
         for (FieldKey fieldKey : requiredFieldKeys)
         {
             Object value = ctx.get(fieldKey);
@@ -127,10 +127,10 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         @Test
         public void testMatchingValues()
         {
-            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            Set<FieldKey> fieldKeys = new HashSet<>();
             fieldKeys.add(_fk1);
             fieldKeys.add(_fk2);
-            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            Map<FieldKey, String> values = new HashMap<>();
             values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
             values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c");
             MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
@@ -150,11 +150,11 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         public void testMissingColumn()
         {
             // Be sure that if there's a column that couldn't be found, we don't blow up
-            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            Set<FieldKey> fieldKeys = new HashSet<>();
             fieldKeys.add(_fk1);
             fieldKeys.add(_fk2);
             fieldKeys.add(_otherFK);
-            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            Map<FieldKey, String> values = new HashMap<>();
             values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
             values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c");
             MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
@@ -176,10 +176,10 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         @Test
         public void testMismatchedValues()
         {
-            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            Set<FieldKey> fieldKeys = new HashSet<>();
             fieldKeys.add(_fk1);
             fieldKeys.add(_fk2);
-            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            Map<FieldKey, String> values = new HashMap<>();
             values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
             values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c" + VALUE_DELIMETER + "d");
             try
@@ -208,7 +208,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             @Override
             public Map<FieldKey, ColumnInfo> getFieldMap()
             {
-                Map<FieldKey, ColumnInfo> result = new HashMap<FieldKey, ColumnInfo>();
+                Map<FieldKey, ColumnInfo> result = new HashMap<>();
                 ColumnInfo col1 = new ColumnInfo(_fk1);
                 col1.setJdbcType(JdbcType.INTEGER);
                 result.put(_fk1, col1);

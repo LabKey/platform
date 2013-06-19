@@ -68,7 +68,7 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        Map<String, String> props = new HashMap<String, String>();
+        Map<String, String> props = new HashMap<>();
 
         out.write("<input type=\"hidden\" name=\"" + SampleChooserUtils.SAMPLE_COUNT_ELEMENT_NAME + "\" id=\"" + SampleChooserUtils.SAMPLE_COUNT_ELEMENT_NAME + "\"/>\n");
 

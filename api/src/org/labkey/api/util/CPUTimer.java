@@ -29,7 +29,7 @@ public class CPUTimer
 	// cumulative timers
 	//
 
-	private static final WeakHashMap<CPUTimer, Object> timers = new WeakHashMap<CPUTimer, Object>();
+	private static final WeakHashMap<CPUTimer, Object> timers = new WeakHashMap<>();
 
 	private final String _name;
 	private long _cumulative = 0;

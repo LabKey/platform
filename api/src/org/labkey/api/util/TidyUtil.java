@@ -128,7 +128,7 @@ public class TidyUtil
         // TIDY does not properly parse the contents of script tags!
         // see bug 5007
         // CONSIDER: fix jtidy see ParserImpl$ParseScript
-        Map<String,String> scriptMap = new HashMap<String,String>();
+        Map<String,String> scriptMap = new HashMap<>();
         StringBuffer stripped = new StringBuffer(content.length());
         Matcher scriptMatcher = scriptPattern.matcher(content);
         int unique = content.hashCode();

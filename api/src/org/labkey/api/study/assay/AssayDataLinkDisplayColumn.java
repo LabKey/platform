@@ -41,7 +41,7 @@ import java.util.*;
 public class AssayDataLinkDisplayColumn extends DataColumn
 {
     private ColumnInfo _protocolColumnInfo;
-    private Map<Number, ExpProtocol> _protocols = new HashMap<Number, ExpProtocol>();
+    private Map<Number, ExpProtocol> _protocols = new HashMap<>();
     private ColumnInfo _runIdColumnInfo;
     private ContainerFilter _containerFilter;
     private ColumnInfo _containerColumnInfo;

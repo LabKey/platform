@@ -98,13 +98,13 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor
                 QueryReportDescriptorType queryReportDescriptorType = d.getReportType().getQuery();
                 String queryName = queryReportDescriptorType.getQueryName();
                 if (null != queryName)
-                    props.add(new Pair<String, String>(Prop.queryName.name(), queryName));
+                    props.add(new Pair<>(Prop.queryName.name(), queryName));
                 String schemaName = queryReportDescriptorType.getSchemaName();
                 if (null != schemaName)
-                    props.add(new Pair<String, String>(Prop.schemaName.name(), schemaName));
+                    props.add(new Pair<>(Prop.schemaName.name(), schemaName));
                 String viewName = queryReportDescriptorType.getViewName();
                 if (null != viewName)
-                    props.add(new Pair<String,String>(Prop.viewName.name(), viewName));
+                    props.add(new Pair<>(Prop.viewName.name(), viewName));
 
                 setProperties(props);
             }

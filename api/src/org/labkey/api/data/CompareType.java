@@ -301,7 +301,7 @@ public enum CompareType
                 }
                 else
                 {
-                    List<String> values = new ArrayList<String>();
+                    List<String> values = new ArrayList<>();
                     if (value != null)
                     {
                         if (value.toString().trim().equals(""))
@@ -334,7 +334,7 @@ public enum CompareType
                 }
                 else
                 {
-                    List<String> values = new ArrayList<String>();
+                    List<String> values = new ArrayList<>();
                     if (value != null)
                     {
                         if (value.toString().trim().equals(""))
@@ -367,7 +367,7 @@ public enum CompareType
                 }
                 else
                 {
-                    List<String> values = new ArrayList<String>();
+                    List<String> values = new ArrayList<>();
                     if (value != null && !value.toString().trim().equals(""))
                     {
                         values.addAll(parseParams(value));
@@ -463,7 +463,7 @@ public enum CompareType
 
     public static List<CompareType> getValidCompareSet(ColumnInfo info)
     {
-        List<CompareType> types = new ArrayList<CompareType>();
+        List<CompareType> types = new ArrayList<>();
 
         if (info.isDateTimeType())
         {
@@ -508,7 +508,7 @@ public enum CompareType
 
     private static Set<String> parseParams(Object value)
     {
-        Set<String> values = new HashSet<String>();
+        Set<String> values = new HashSet<>();
         if (value != null && !value.toString().trim().equals(""))
         {
             String[] st = value.toString().split(";", -1);
@@ -1312,7 +1312,7 @@ public enum CompareType
         @Override
         public List<String> getColumnNames()
         {
-            List<String> names = new ArrayList<String>();
+            List<String> names = new ArrayList<>();
             names.add(_fieldKey.toString());
             names.add(_fieldKey.toString() + MvColumn.MV_INDICATOR_SUFFIX);
             return names;
@@ -1321,7 +1321,7 @@ public enum CompareType
         @Override
         public List<FieldKey> getFieldKeys()
         {
-            List<FieldKey> names = new ArrayList<FieldKey>();
+            List<FieldKey> names = new ArrayList<>();
             names.add(_fieldKey);
             names.add(new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX));
             return names;

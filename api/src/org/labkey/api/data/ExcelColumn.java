@@ -56,7 +56,7 @@ public class ExcelColumn extends RenderColumn
     private int _autoSizeWidth = 0;
     private String _name = null;
     private String _caption = null;
-    private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<ConditionalFormat, CellStyle>();
+    private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<>();
     private final Workbook _workbook;
 
     public static class ExcelFormatDescriptor extends Pair<Class, String>

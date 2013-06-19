@@ -134,13 +134,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public ArrayListMap()
     {
-        this(new FindMap<K>(new HashMap<K, Integer>()), new ArrayList<V>());
+        this(new FindMap<>(new HashMap<K, Integer>()), new ArrayList<V>());
     }
 
 
     public ArrayListMap(int columnCount)
     {
-        this(new FindMap<K>(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
+        this(new FindMap<>(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
     }
 
 
@@ -225,14 +225,14 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public Set<Entry<K, V>> entrySet()
     {
-        Set<Entry<K, V>> r = new HashSet<Entry<K, V>>(_row.size() * 2);
+        Set<Entry<K, V>> r = new HashSet<>(_row.size() * 2);
         for (Entry<K, Integer> e : _findMap.entrySet())
         {
             int i = e.getValue();
             if (i < _row.size())
             {
                 if (_row.get(i) != DOES_NOT_CONTAINKEY)
-                    r.add(new Pair<K,V>(e.getKey(), (V)_row.get(i)));
+                    r.add(new Pair<>(e.getKey(), (V)_row.get(i)));
             }
         }
         return r;
@@ -271,7 +271,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public Collection<V> values()
     {
-        ArrayList<V> a = new ArrayList<V>(size());
+        ArrayList<V> a = new ArrayList<>(size());
         for (Object o : _row)
         {
             if (o != DOES_NOT_CONTAINKEY)
@@ -353,13 +353,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         @Test
         public void test()
         {
-            ArrayListMap<String,String> a = new ArrayListMap<String,String>(4);
+            ArrayListMap<String,String> a = new ArrayListMap<>(4);
             a.put("A", "one");
             a.put("B", "two");
             a.put("C", "three");
             a.put("D", "four");
 
-            ArrayListMap<String,String> b = new ArrayListMap<String,String>(a, new ArrayList<String>());
+            ArrayListMap<String,String> b = new ArrayListMap<>(a, new ArrayList<String>());
             b.put("A", "ONE");
             b.put("E", "FIVE");
             a.put("F", "six");

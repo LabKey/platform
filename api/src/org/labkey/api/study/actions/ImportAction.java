@@ -79,7 +79,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
     public ModelAndView getView(ImportForm form, BindException errors) throws Exception
     {
         _form = form;
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
 
         properties.put("providerName", form.getProviderName());
         String path = form.getPath();
@@ -120,7 +120,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
     public static List<File> getFiles(Container c, String dirPath, String[] files)
     {
         String path = StringUtils.trimToEmpty(dirPath);
-        List<File> retFiles = new ArrayList<File>();
+        List<File> retFiles = new ArrayList<>();
 
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
         if (root == null)

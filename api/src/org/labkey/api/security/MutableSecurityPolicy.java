@@ -169,7 +169,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
      */
     public void clearAssignedRoles(@NotNull UserPrincipal principal)
     {
-        List<RoleAssignment> toRemove = new ArrayList<RoleAssignment>();
+        List<RoleAssignment> toRemove = new ArrayList<>();
         for(RoleAssignment assignment : _assignments)
         {
             if(assignment.getUserId() == principal.getUserId())

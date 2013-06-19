@@ -35,7 +35,7 @@
         for (int i = 0; i < entries.length; i++)
         {
             Map.Entry<String, Object> entry = propertyIt.next();
-            entries[i] = new Pair<String, Object>(entry.getKey(), entry.getValue());
+            entries[i] = new Pair<>(entry.getKey(), entry.getValue());
         }
 
         int longestColumn = (int) Math.ceil(entries.length/2.0);

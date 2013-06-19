@@ -243,7 +243,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             FieldKey drawDateFK = new FieldKey(dateFK != null ? dateFK.getParent() : null, DRAW_DT_COLUMN_NAME);
             FieldKey objectIdFK = _tableMetadata.getResultRowIdFieldKey();
 
-            List<FieldKey> targetStudyFieldKeys = new ArrayList<FieldKey>(Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
+            List<FieldKey> targetStudyFieldKeys = new ArrayList<>(Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
             List<String> foreignPKs = getParentTable().getPkColumnNames();
             for (String foreignPK : foreignPKs)
                 targetStudyFieldKeys.add(FieldKey.fromParts(foreignPK));

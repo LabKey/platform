@@ -523,7 +523,7 @@ public class DbSchema
 
             assertFalse("In transaction when shouldn't be.", testSchema.getScope().isTransactionActive());
 
-            Map<String, Object> m = new HashMap<String, Object>();
+            Map<String, Object> m = new HashMap<>();
             m.put("DatetimeNotNull", new Date());
             m.put("BitNotNull", Boolean.TRUE);
             m.put("Text", "Added by Transaction Test Suite");
@@ -573,7 +573,7 @@ public class DbSchema
             assertNotNull(testTable);
             DbCache.clear(testTable);
 
-            Map<String, Object> m = new HashMap<String, Object>();
+            Map<String, Object> m = new HashMap<>();
             m.put("DatetimeNotNull", new Date());
             m.put("BitNotNull", Boolean.TRUE);
             m.put("Text", "Added by Caching Test Suite");
@@ -793,7 +793,7 @@ public class DbSchema
         Integer lastRowId = 0;
         DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
-        List<ColumnInfo> listColInfos = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> listColInfos = new ArrayList<>();
         ColumnInfo col = new ColumnInfo("RowId");
         col.setSqlTypeName("INT");
         col.setNullable(false);
@@ -837,7 +837,7 @@ public class DbSchema
                 String cName = "/_RecoveredObjects" +  String.valueOf(r).substring(1,5);
                 Container recovered = ContainerManager.ensureContainer(cName);
 
-                Set<Module> modulesOfOrphans = new HashSet<Module>();
+                Set<Module> modulesOfOrphans = new HashSet<>();
 
                 rs1 = Table.executeQuery(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
                         + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName", new Object[]{});

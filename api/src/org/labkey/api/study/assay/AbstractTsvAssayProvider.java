@@ -179,7 +179,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         fromTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
         // Build up a list of all the columns we need from the source table
-        List<FieldKey> selectFKs = new ArrayList<FieldKey>();
+        List<FieldKey> selectFKs = new ArrayList<>();
         for (ColumnInfo columnInfo : fromTable.getColumns())
         {
             // Include all the base columns
@@ -193,7 +193,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
         Map<FieldKey, ColumnInfo> fromColumns = QueryService.get().getColumns(fromTable, selectFKs);
 
-        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
+        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo c : fromColumns.values())
         {
             if (null != c.getPropertyURI())

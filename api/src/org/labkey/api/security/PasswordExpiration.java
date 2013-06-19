@@ -63,7 +63,7 @@ public enum PasswordExpiration
     // Return the options that admins can see.  Will omit the "Every five seconds" rule on production servers.
     public static Collection<PasswordExpiration> displayValues()
     {
-        List<PasswordExpiration> list = new LinkedList<PasswordExpiration>();
+        List<PasswordExpiration> list = new LinkedList<>();
 
         for (PasswordExpiration pe : values())
             if (pe.display())

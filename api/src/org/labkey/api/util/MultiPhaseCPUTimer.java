@@ -44,7 +44,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
 
     public InvocationTimer<K> getInvocationTimer()
     {
-        return new InvocationTimer<K>(_clazz, _values);
+        return new InvocationTimer<>(_clazz, _values);
     }
 
     public void releaseInvocationTimer(InvocationTimer<K> timer)
@@ -63,7 +63,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     // Return a copy of the current stats as a map of phase name -> average time in milliseconds
     public Map<String, Double> getTimes()
     {
-        Map<String, Double> map = new LinkedHashMap<String, Double>();
+        Map<String, Double> map = new LinkedHashMap<>();
 
         synchronized (_accumulationMap)
         {
@@ -86,7 +86,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     // Create an enum map and populate it with MutableLongs for each value
     private static <ENUM extends Enum<ENUM>> Map<ENUM, MutableLong> getEnumMap(Class<ENUM> clazz, ENUM[] values)
     {
-        Map<ENUM, MutableLong> map = new EnumMap<ENUM, MutableLong>(clazz);
+        Map<ENUM, MutableLong> map = new EnumMap<>(clazz);
 
         for (ENUM phase : values)
             map.put(phase, new MutableLong());

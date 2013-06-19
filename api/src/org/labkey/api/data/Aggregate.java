@@ -374,7 +374,7 @@ public class Aggregate
     @NotNull
     public static List<Aggregate> fromURL(PropertyValues pvs, String regionName)
     {
-        List<Aggregate> aggregates = new LinkedList<Aggregate>();
+        List<Aggregate> aggregates = new LinkedList<>();
         String prefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
 
         for (PropertyValue val : pvs.getPropertyValues())
@@ -383,7 +383,7 @@ public class Aggregate
             {
                 FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
 
-                List<String> values = new ArrayList<String>();
+                List<String> values = new ArrayList<>();
 
                 if (val.getValue() instanceof String)
                     values.add((String) val.getValue());
@@ -408,7 +408,7 @@ public class Aggregate
         {
             value = PageFlowUtil.decode(value);
 
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
             //allow aggregates either in the basic form, ie. query.agg.columnName=MAX, or more complex, ie:
             //query.agg.columnName=type%3BMAX
             if(!value.contains("="))

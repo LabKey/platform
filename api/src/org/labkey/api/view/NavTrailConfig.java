@@ -28,7 +28,7 @@ import java.util.ArrayList;
  */
 public class NavTrailConfig extends PageConfig
 {
-    private ArrayList<NavTree> _extraChildren = new ArrayList<NavTree>();
+    private ArrayList<NavTree> _extraChildren = new ArrayList<>();
 
     public NavTrailConfig(ViewContext context)
     {

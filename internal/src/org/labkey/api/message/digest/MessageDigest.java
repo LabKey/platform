@@ -41,7 +41,7 @@ public abstract class MessageDigest
     private static final String LAST_KEY = "LastSuccessfulSend";
     private Timer _timer = null;
     private MessageDigestTask _timerTask = null;
-    private final List<Provider> _providers = new CopyOnWriteArrayList<Provider>();
+    private final List<Provider> _providers = new CopyOnWriteArrayList<>();
 
     private static final Logger _log = Logger.getLogger(MessageDigest.class);
 

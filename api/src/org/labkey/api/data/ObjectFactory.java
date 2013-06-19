@@ -50,7 +50,7 @@ public interface ObjectFactory<K>
     public static class Registry
     {
         private static final Logger _log = Logger.getLogger(Registry.class);
-        private static final Map<Class, ObjectFactory> _registry = new ConcurrentHashMap<Class, ObjectFactory>(64);
+        private static final Map<Class, ObjectFactory> _registry = new ConcurrentHashMap<>(64);
 
         public static <K> void register(Class<K> clss, ObjectFactory<K> f)
         {
@@ -71,7 +71,7 @@ public interface ObjectFactory<K>
 
                     if (f == null)
                     {
-                        f = new BeanObjectFactory<K>(clss);
+                        f = new BeanObjectFactory<>(clss);
                         _registry.put(clss, f);
                     }
                 }

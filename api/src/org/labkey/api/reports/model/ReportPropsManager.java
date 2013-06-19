@@ -62,7 +62,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
 
     public List<DomainProperty> getProperties(Container container)
     {
-        List<DomainProperty> properties = new ArrayList<DomainProperty>();
+        List<DomainProperty> properties = new ArrayList<>();
         Domain domain = getDomain(container);
 
         if (domain != null)
@@ -80,7 +80,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     private Map<String, DomainProperty> getPropertyMap(Container container)
     {
         Domain domain = getDomain(container);
-        Map<String, DomainProperty> propsMap = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> propsMap = new HashMap<>();
 
         if (domain != null)
         {
@@ -241,14 +241,14 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
 
     public List<Pair<DomainProperty, Object>> getProperties(String entityId, Container container) throws Exception
     {
-        List<Pair<DomainProperty, Object>> properties = new ArrayList<Pair<DomainProperty, Object>>();
+        List<Pair<DomainProperty, Object>> properties = new ArrayList<>();
 
         for (DomainProperty dp : getProperties(container))
         {
             Object value = getPropertyValue(entityId, container, dp.getName());
 
             if (value != null)
-                properties.add(new Pair<DomainProperty, Object>(dp, value));
+                properties.add(new Pair<>(dp, value));
         }
         return properties;
     }

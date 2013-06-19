@@ -32,7 +32,7 @@ public class IteratorUtil
     // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
     public static <T> List<T> toList(CloseableIterator<T> it) throws IOException
     {
-        List<T> list = new LinkedList<T>();
+        List<T> list = new LinkedList<>();
 
         try
         {

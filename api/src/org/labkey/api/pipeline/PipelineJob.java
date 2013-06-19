@@ -278,7 +278,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public Map<String, String> getParameters()
     {
-        return new HashMap<String, String>();
+        return new HashMap<>();
     }
 
     public String getJobGUID()
@@ -1327,7 +1327,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public Enumeration getCurrentLoggers()
         {
-            Vector<OutputLogger> v = new Vector<OutputLogger>();
+            Vector<OutputLogger> v = new Vector<>();
             v.add(_outputLogger);
             return v.elements();
         }

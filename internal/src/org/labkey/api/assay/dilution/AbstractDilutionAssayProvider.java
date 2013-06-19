@@ -110,7 +110,7 @@ public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRun
         Set<String> sampleProperties = domainMap.get(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
         if (sampleProperties == null)
         {
-            sampleProperties = new HashSet<String>();
+            sampleProperties = new HashSet<>();
             domainMap.put(ASSAY_DOMAIN_SAMPLE_WELLGROUP, sampleProperties);
         }
         sampleProperties.add(SAMPLE_INITIAL_DILUTION_PROPERTY_NAME);
@@ -120,7 +120,7 @@ public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRun
         Set<String> runProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_RUN);
         if (runProperties == null)
         {
-            runProperties = new HashSet<String>();
+            runProperties = new HashSet<>();
             domainMap.put(ExpProtocol.ASSAY_DOMAIN_RUN, runProperties);
         }
         runProperties.add(CURVE_FIT_METHOD_PROPERTY_NAME);

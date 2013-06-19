@@ -65,7 +65,7 @@ public class QuerySettings
     private URLHelper _returnURL = null;
 
     private String _containerFilterName;
-    private List<Aggregate> _aggregates = new ArrayList<Aggregate>();
+    private List<Aggregate> _aggregates = new ArrayList<>();
 
     private SimpleFilter _baseFilter;
     private Sort _baseSort;
@@ -273,7 +273,7 @@ public class QuerySettings
         if (null != columns)
         {
             String[] colArray = columns.split(",");
-            _fieldKeys = new ArrayList<FieldKey>();
+            _fieldKeys = new ArrayList<>();
             for (String key : colArray)
             {
                 if (!(StringUtils.isEmpty(key)))
@@ -296,7 +296,7 @@ public class QuerySettings
     }
 
 
-    Map<String,Object> _queryParameters = new CaseInsensitiveHashMap<Object>();
+    Map<String,Object> _queryParameters = new CaseInsensitiveHashMap<>();
 
     public Map<String,Object> getQueryParameters()
     {

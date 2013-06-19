@@ -63,7 +63,7 @@ public abstract class ClientAPIWebPartFactory extends BaseWebPartFactory
         {
            propertyMap.put(CONTENT_KEY, defaultContent);
         }
-        return new JspView<Portal.WebPart>("/org/labkey/api/view/customizeClientAPIWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/api/view/customizeClientAPIWebPart.jsp", webPart);
     }
 
     protected abstract String getDefaultContent();

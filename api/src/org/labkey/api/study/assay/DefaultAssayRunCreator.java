@@ -195,16 +195,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      */
     public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
-        Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
-        Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
-        Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
-        Map<ExpData, String> outputDatas = new HashMap<ExpData, String>();
-        Map<ExpData, String> transformedDatas = new HashMap<ExpData, String>();
+        Map<ExpMaterial, String> inputMaterials = new HashMap<>();
+        Map<ExpData, String> inputDatas = new HashMap<>();
+        Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+        Map<ExpData, String> outputDatas = new HashMap<>();
+        Map<ExpData, String> transformedDatas = new HashMap<>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
 
-        Map<DomainProperty, String> allProperties = new HashMap<DomainProperty, String>();
+        Map<DomainProperty, String> allProperties = new HashMap<>();
         allProperties.putAll(runProperties);
         allProperties.putAll(batchProperties);
 
@@ -261,7 +261,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
-            List<ExpData> insertedDatas = new ArrayList<ExpData>();
+            List<ExpData> insertedDatas = new ArrayList<>();
 
             if (saveBatchProps)
             {
@@ -540,7 +540,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpData data = createData(container, relatedFile, relatedFile.getName(), dataType, true);
         if (data.getSourceApplication() == null)
         {
-            return new Pair<ExpData, String>(data, roleName);
+            return new Pair<>(data, roleName);
         }
 
         // The file is already linked to another run, so this one must have not created it
@@ -568,7 +568,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 else
                 {
                     // We still need to validate blanks
-                    List<ValidationError> errors = new ArrayList<ValidationError>();
+                    List<ValidationError> errors = new ArrayList<>();
                     OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), value, errors, new ValidatorContext(pd.getContainer(), user));
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
@@ -583,7 +583,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public static List<ValidationError> validateColumnProperties(Map<ColumnInfo, String> properties)
     {
-        List<ValidationError> errors = new ArrayList<ValidationError>();
+        List<ValidationError> errors = new ArrayList<>();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
         {      
             validateProperty(entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
@@ -593,7 +593,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public static List<ValidationError> validateProperties(Map<DomainProperty, String> properties)
     {
-        List<ValidationError> errors = new ArrayList<ValidationError>();
+        List<ValidationError> errors = new ArrayList<>();
 
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {

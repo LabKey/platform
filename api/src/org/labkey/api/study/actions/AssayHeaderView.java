@@ -73,7 +73,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
     public List<NavTree> getLinks()
     {
-        List<NavTree> links = new ArrayList<NavTree>();
+        List<NavTree> links = new ArrayList<>();
         NavTree manageMenu = new NavTree("manage assay design");
         if (!_minimizeLinks)
         {

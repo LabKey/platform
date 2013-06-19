@@ -53,7 +53,7 @@ public class DataIteratorUtil
 {
     public static Map<String,Integer> createColumnNameMap(DataIterator di)
     {
-        Map<String,Integer> map = new CaseInsensitiveHashMap<Integer>();
+        Map<String,Integer> map = new CaseInsensitiveHashMap<>();
         for (int i=1 ; i<=di.getColumnCount() ; ++i)
         {
             map.put(di.getColumnInfo(i).getName(),i);
@@ -64,7 +64,7 @@ public class DataIteratorUtil
 
     public static Map<String,Integer> createColumnAndPropertyMap(DataIterator di)
     {
-        Map<String,Integer> map = new CaseInsensitiveHashMap<Integer>();
+        Map<String,Integer> map = new CaseInsensitiveHashMap<>();
         for (int i=1 ; i<=di.getColumnCount() ; ++i)
         {
             ColumnInfo col = di.getColumnInfo(i);
@@ -83,7 +83,7 @@ public class DataIteratorUtil
     public static Map<String,ColumnInfo> createTableMap(TableInfo target, boolean useImportAliases)
     {
         List<ColumnInfo> cols = target.getColumns();
-        Map<String, ColumnInfo> targetAliasesMap = new CaseInsensitiveHashMap<ColumnInfo>(cols.size()*4);
+        Map<String, ColumnInfo> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
@@ -117,30 +117,30 @@ public class DataIteratorUtil
     protected static Map<String,Pair<ColumnInfo,MatchType>> _createTableMap(TableInfo target, boolean useImportAliases)
     {
         List<ColumnInfo> cols = target.getColumns();
-        Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<Pair<ColumnInfo,MatchType>>(cols.size()*4);
+        Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
             String name = col.getName();
-            targetAliasesMap.put(name, new Pair<ColumnInfo, MatchType>(col,MatchType.name));
+            targetAliasesMap.put(name, new Pair<>(col,MatchType.name));
             String uri = col.getPropertyURI();
             if (null != uri)
             {
                 if (!targetAliasesMap.containsKey(uri))
-                    targetAliasesMap.put(uri, new Pair<ColumnInfo, MatchType>(col, MatchType.propertyuri));
+                    targetAliasesMap.put(uri, new Pair<>(col, MatchType.propertyuri));
                 String propName = uri.substring(uri.lastIndexOf('#')+1);
                 if (!targetAliasesMap.containsKey(propName))
-                    targetAliasesMap.put(propName, new Pair<ColumnInfo, MatchType>(col, MatchType.alias));
+                    targetAliasesMap.put(propName, new Pair<>(col, MatchType.alias));
             }
             String label = col.getLabel();
             if (null != label && !targetAliasesMap.containsKey(label))
-                targetAliasesMap.put(label, new Pair<ColumnInfo, MatchType>(col, MatchType.alias));
+                targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
             if (useImportAliases)
             {
                 for (String alias : col.getImportAliasSet())
                     if (!targetAliasesMap.containsKey(alias))
-                        targetAliasesMap.put(alias, new Pair<ColumnInfo, MatchType>(col, MatchType.alias));
+                        targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
             }
         }
         return targetAliasesMap;
@@ -151,7 +151,7 @@ public class DataIteratorUtil
     protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases)
     {
         Map<String,Pair<ColumnInfo,MatchType>> targetMap = _createTableMap(target, useImportAliases);
-        ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<Pair<ColumnInfo,MatchType>>(input.getColumnCount()+1);
+        ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
 
         // match columns to target columninfos (duplicates StandardETL, extract shared method?)
@@ -178,7 +178,7 @@ public class DataIteratorUtil
     public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError)
     {
         ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases);
-        MultiHashMap<FieldKey,Integer> duplicatesMap = new MultiHashMap<FieldKey,Integer>(input.getColumnCount()+1);
+        MultiHashMap<FieldKey,Integer> duplicatesMap = new MultiHashMap<>(input.getColumnCount()+1);
 
         for (int i=1 ; i<= input.getColumnCount() ; i++)
         {
@@ -217,7 +217,7 @@ public class DataIteratorUtil
             }
         }
 
-        ArrayList<ColumnInfo> ret = new ArrayList<ColumnInfo>(matches.size());
+        ArrayList<ColumnInfo> ret = new ArrayList<>(matches.size());
         for (Pair<ColumnInfo,MatchType> m : matches)
             ret.add(null==m ? null : m.first);
         return ret;

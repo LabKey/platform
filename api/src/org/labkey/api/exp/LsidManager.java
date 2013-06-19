@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LsidManager
 {
-    private static Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<String, Map<String, LsidHandler>>();
+    private static Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<>();
     private static LsidManager _instance = new LsidManager();
 
     private LsidManager()
@@ -111,7 +111,7 @@ public class LsidManager
 
         if (null == handlerMap)
         {
-            handlerMap = new HashMap<String, LsidHandler>();
+            handlerMap = new HashMap<>();
             authorityMap.put(authority, handlerMap);
         }
 

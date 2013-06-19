@@ -481,7 +481,7 @@ public class ExceptionUtil
         boolean isGET = "GET".equals(request.getMethod());
 
         ErrorView errorView;
-        Map<String, String> headers = new TreeMap<String,String>();
+        Map<String, String> headers = new TreeMap<>();
 
         // check for redirect to login.jsp
         //      unauthorized guest
@@ -683,7 +683,7 @@ public class ExceptionUtil
     }
 
 
-    private final static WeakHashMap<Throwable, HashMap<Enum,String>> _exceptionDecorations = new WeakHashMap<Throwable, HashMap<Enum, String>>();
+    private final static WeakHashMap<Throwable, HashMap<Enum,String>> _exceptionDecorations = new WeakHashMap<>();
     
     public static boolean decorateException(Throwable t, Enum key, String value, boolean overwrite)
     {
@@ -692,7 +692,7 @@ public class ExceptionUtil
         {
             HashMap<Enum,String> m = _exceptionDecorations.get(t);
             if (null == m)
-                _exceptionDecorations.put(t, m = new HashMap<Enum,String>());
+                _exceptionDecorations.put(t, m = new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
                 _logStatic.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
@@ -707,8 +707,8 @@ public class ExceptionUtil
     @NotNull
     public static Map<Enum,String> getExceptionDecorations(Throwable start)
     {
-        HashMap<Enum,String> collect = new HashMap<Enum,String>();
-        LinkedList<Throwable> list = new LinkedList<Throwable>();
+        HashMap<Enum,String> collect = new HashMap<>();
+        LinkedList<Throwable> list = new LinkedList<>();
 
         Throwable next = unwrapException(start);
         while (null != next)

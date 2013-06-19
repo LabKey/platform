@@ -60,7 +60,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
     private static QcMetadata getDisplayPds(PropertyDescriptor[] pds)
     {
-        final Map<String, PropertyDescriptor> nameToPropertyMap = new HashMap<String, PropertyDescriptor>();
+        final Map<String, PropertyDescriptor> nameToPropertyMap = new HashMap<>();
         for (PropertyDescriptor pd : pds)
             nameToPropertyMap.put(pd.getName(), pd);
         QcMetadata metadata = new QcMetadata();
@@ -141,7 +141,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     private static ColumnInfo getNamedColumn(String baseName, ColumnInfo colInfo, String suffix)
     {
         FieldKey thisFieldKey = FieldKey.fromString(colInfo.getName());
-        List<FieldKey> keys = new ArrayList<FieldKey>();
+        List<FieldKey> keys = new ArrayList<>();
 
         FieldKey otherKey = new FieldKey(thisFieldKey.getParent(), baseName + suffix);
         keys.add(otherKey);
@@ -294,9 +294,9 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
     private static class QcMetadata
     {
-        private final List<OORColumnGroup> _oorGroups = new ArrayList<OORColumnGroup>();
-        private final List<QcColumnGroup> _qcGroups = new ArrayList<QcColumnGroup>();
-        private final List<PropertyDescriptor> _additionalDisplayPds = new ArrayList<PropertyDescriptor>();
+        private final List<OORColumnGroup> _oorGroups = new ArrayList<>();
+        private final List<QcColumnGroup> _qcGroups = new ArrayList<>();
+        private final List<PropertyDescriptor> _additionalDisplayPds = new ArrayList<>();
 
         public void addOORPropertyDescriptor(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd)
         {
@@ -336,7 +336,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
         public PropertyDescriptor[] getDisplayProperties()
         {
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+            List<PropertyDescriptor> pds = new ArrayList<>();
             pds.addAll(_additionalDisplayPds);
             for (OORColumnGroup group : _oorGroups)
             {
@@ -356,7 +356,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
         public PropertyDescriptor[] getDefaultHiddenProperties()
         {
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+            List<PropertyDescriptor> pds = new ArrayList<>();
             for (OORColumnGroup group : _oorGroups)
             {
                 pds.add(group.getIndicatorPd());

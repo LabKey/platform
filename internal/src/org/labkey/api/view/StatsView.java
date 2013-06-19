@@ -35,7 +35,7 @@ import java.util.HashMap;
  */
 public class StatsView extends GridView
 {
-    Map<String,DoubleArray> valueMap = new HashMap<String, DoubleArray>();
+    Map<String,DoubleArray> valueMap = new HashMap<>();
     String[] cols;
 
     public StatsView(DataRegion dataRegion, String statsString)
@@ -61,7 +61,7 @@ public class StatsView extends GridView
         }
 
 
-        Map<String, Stats.DoubleStats> statMap = new HashMap<String, Stats.DoubleStats>();
+        Map<String, Stats.DoubleStats> statMap = new HashMap<>();
         for (String col : cols)
             statMap.put(col, new Stats.DoubleStats(valueMap.get(col).toArray(null)));
 

@@ -187,7 +187,7 @@ public class AppBar extends NavTree
             // Last item is page title, strip it off the crumb trail
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getText());
 
-            List<NavTree> result = new ArrayList<NavTree>();
+            List<NavTree> result = new ArrayList<>();
             boolean stopLooking = false;
 
             for (int i = 0; i < crumbTrail.size() - 1; i++)
@@ -241,7 +241,7 @@ public class AppBar extends NavTree
         catch (IllegalStateException ignored)
         {
             // That's OK, we just won't remember their last tab
-            return new HashMap<String, String>();
+            return new HashMap<>();
         }
     }
 }

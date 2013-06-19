@@ -77,7 +77,7 @@ public class ExeToCommandArgs extends ListToCommandArgs
         if (_exePath == null || _exePath.length() == 0)
             return new String[0];
 
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
 
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setValue(PipelineJobService.get().getExecutablePath(_exePath,

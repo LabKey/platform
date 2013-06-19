@@ -61,7 +61,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
     {
         if (_runProperties == null)
         {
-            _runProperties = new HashMap<DomainProperty, String>(super.getRunProperties());
+            _runProperties = new HashMap<>(super.getRunProperties());
             if (isBulkUploadAttempted())
             {
                 try
@@ -102,11 +102,11 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             {
                 TabLoader loader = new TabLoader(tsv, true);
                 List<Map<String, Object>> maps = loader.load();
-                _bulkProperties = new ArrayList<Map<String, Object>>(maps.size());
+                _bulkProperties = new ArrayList<>(maps.size());
 
                 for (Map<String, Object> map : maps)
                 {
-                    _bulkProperties.add(new CaseInsensitiveHashMap<Object>(map));
+                    _bulkProperties.add(new CaseInsensitiveHashMap<>(map));
                 }
             }
             catch (IOException e)

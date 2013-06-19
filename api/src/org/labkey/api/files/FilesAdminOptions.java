@@ -45,9 +45,9 @@ public class FilesAdminOptions
     private Boolean _showFolderTree;
     private Boolean _expandFileUpload;
     private Container _container;
-    private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<String, PipelineActionConfig>();
+    private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<>();
     private fileConfig _fileConfig = fileConfig.useDefault;
-    private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<String, FilesTbarBtnOption>();
+    private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<>();
     private static Comparator TBAR_BTN_COMPARATOR = new TbarButtonComparator();
     private String _gridConfig;
 
@@ -111,7 +111,7 @@ public class FilesAdminOptions
                         ActionLink links = o.getLinks();
                         if (links != null)
                         {
-                            List<PipelineActionConfig> actionLinks = new ArrayList<PipelineActionConfig>();
+                            List<PipelineActionConfig> actionLinks = new ArrayList<>();
 
                             for (ActionLink.DisplayOption lo : links.getDisplayOptionArray())
                                 actionLinks.add(new PipelineActionConfig(lo.getId(), lo.getState(), lo.getLabel()));
@@ -176,7 +176,7 @@ public class FilesAdminOptions
 
     public List<PipelineActionConfig> getPipelineConfig()
     {
-        return new ArrayList<PipelineActionConfig>(_pipelineConfig.values());
+        return new ArrayList<>(_pipelineConfig.values());
     }
 
     public void setPipelineConfig(List<PipelineActionConfig> pipelineConfig)
@@ -413,7 +413,7 @@ public class FilesAdminOptions
 
     public Map<String, Object> toJSON()
     {
-        Map<String, Object> props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<>();
 
         if (!_pipelineConfig.isEmpty())
         {

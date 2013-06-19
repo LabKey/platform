@@ -53,8 +53,8 @@ public abstract class StringWrapperDynaClass implements DynaClass
     {
         _propTypes = propTypes;
         _name = className;
-        _dynaPropMap = new CaseInsensitiveHashMap<DynaProperty>();
-        ArrayList<DynaProperty> dynaPropList = new ArrayList<DynaProperty>(propTypes.size());
+        _dynaPropMap = new CaseInsensitiveHashMap<>();
+        ArrayList<DynaProperty> dynaPropList = new ArrayList<>(propTypes.size());
         Set<String> keySet = propTypes.keySet();
         for (String key : keySet)
         {

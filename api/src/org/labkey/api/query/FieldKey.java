@@ -98,7 +98,7 @@ public class FieldKey extends QueryKey<FieldKey>
 
     static public FieldKey fromParts(Enum... parts)
     {
-        List<String> strings = new ArrayList<String>(parts.length);
+        List<String> strings = new ArrayList<>(parts.length);
         for (Enum part : parts)
         {
             strings.add(part.toString());

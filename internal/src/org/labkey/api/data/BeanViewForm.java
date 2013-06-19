@@ -102,7 +102,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         Map<String, String> strings = super.getStrings();
         if (null == strings || strings.size() == 0 && (null != _values && _values.size() > 0))
         {
-            strings = new HashMap<String, String>();
+            strings = new HashMap<>();
             for (Map.Entry<String, Object> entry : _values.entrySet())
             {
                 strings.put(entry.getKey(), ConvertUtils.convert(entry.getValue()));

@@ -285,7 +285,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
 
-        Set<FieldKey> ignoredAggregateFilters = new HashSet<FieldKey>();
+        Set<FieldKey> ignoredAggregateFilters = new HashSet<>();
 
         ActionURL url;
         if (null != settings)
@@ -508,7 +508,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         Collection<Object> values = _extra.values();
         if (null != _row)
         {
-            values = new ArrayList<Object>(values);
+            values = new ArrayList<>(values);
             values.addAll(_row.values());
         }
 
@@ -525,7 +525,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (null != _row)
         {
-            entrySet = new HashSet<Map.Entry<String, Object>>(entrySet);
+            entrySet = new HashSet<>(entrySet);
             entrySet.addAll(_row.entrySet());
         }
 
@@ -542,7 +542,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (null != _row)
         {
-            keySet = new HashSet<String>(keySet);
+            keySet = new HashSet<>(keySet);
             keySet.addAll(_row.keySet());
         }
 
@@ -700,7 +700,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (_ignoredColumnFilters.isEmpty())
             return Collections.emptySet();
 
-        return new LinkedHashSet<FieldKey>(_ignoredColumnFilters);
+        return new LinkedHashSet<>(_ignoredColumnFilters);
     }
 
 

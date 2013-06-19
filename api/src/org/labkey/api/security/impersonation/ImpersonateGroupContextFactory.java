@@ -156,7 +156,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
                 throw new UnauthorizedImpersonationException("You are not allowed to impersonate this group", getFactory());
 
             // Seed the group list with guests, site users, and the passed in group (as appropriate)
-            LinkedList<Integer> seedGroups = new LinkedList<Integer>();
+            LinkedList<Integer> seedGroups = new LinkedList<>();
             // Everyone always gets Guests
             seedGroups.add(Group.groupGuests);
 

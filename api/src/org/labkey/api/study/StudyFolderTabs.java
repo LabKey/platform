@@ -86,7 +86,7 @@ public class StudyFolderTabs
         @Override
         public List<Portal.WebPart> createWebParts()
         {
-            List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+            List<Portal.WebPart> parts = new ArrayList<>();
             parts.add(Portal.getPortalPart(StudyService.SPECIMEN_SEARCH_WEBPART).createWebPart());
             parts.add(Portal.getPortalPart(StudyService.SPECIMEN_BROWSE_WEBPART).createWebPart());
             Portal.WebPart toolsWebPart = Portal.getPortalPart(StudyService.SPECIMEN_TOOLS_WEBPART_NAME).createWebPart();
@@ -120,7 +120,7 @@ public class StudyFolderTabs
         @Override
          public List<Portal.WebPart> createWebParts()
         {
-            List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+            List<Portal.WebPart> parts = new ArrayList<>();
             parts.add(Portal.getPortalPart("Data Views").createWebPart());
             Portal.WebPart toolsWebPart = Portal.getPortalPart(StudyService.DATA_TOOLS_WEBPART_NAME).createWebPart();
             toolsWebPart.setLocation(WebPartFactory.LOCATION_RIGHT);
@@ -158,7 +158,7 @@ public class StudyFolderTabs
         @Override
         public List<Portal.WebPart> createWebParts()
         {
-            List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+            List<Portal.WebPart> parts = new ArrayList<>();
             parts.add(Portal.getPortalPart("Search").createWebPart());
             parts.add(Portal.getPortalPart("Subject List").createWebPart());
             return parts;

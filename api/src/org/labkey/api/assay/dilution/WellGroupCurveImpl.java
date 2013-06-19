@@ -36,8 +36,8 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     private final PercentCalculator _percentCalculator;
     protected Double _fitError;
     protected WellSummary[] _wellSummaries = null;
-    protected Map<AUCType, Double> _aucMap = new HashMap<AUCType, Double>();
-    protected List<AUCRange> _ranges = new ArrayList<AUCRange>();
+    protected Map<AUCType, Double> _aucMap = new HashMap<>();
+    protected List<AUCRange> _ranges = new ArrayList<>();
 
     public WellGroupCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
@@ -102,7 +102,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     protected Map<WellData, WellGroup> getWellData()
     {
-        Map<WellData, WellGroup> dataMap = new LinkedHashMap<WellData, WellGroup>();
+        Map<WellData, WellGroup> dataMap = new LinkedHashMap<>();
         for (WellGroup wellgroup : _wellGroups)
         {
             for (WellData data : wellgroup.getWellData(true))
@@ -136,7 +136,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     public double getInterpolatedCutoffDilution(double cutoff)
     {
         boolean dataAbove = false;
-        List<Double> possibleMatches = new ArrayList<Double>();
+        List<Double> possibleMatches = new ArrayList<>();
         for (int i = 1; i < _wellSummaries.length; i++)
         {
             double high = _wellSummaries[i - 1].getNeutralization();

@@ -43,8 +43,8 @@ public interface ImportAliasable
     {
         public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators)
         {
-            Map<String, T> m = new CaseInsensitiveHashMap<T>(properties.size() * 3);
-            List<T> reversedProperties = new ArrayList<T>(properties.size());
+            Map<String, T> m = new CaseInsensitiveHashMap<>(properties.size() * 3);
+            List<T> reversedProperties = new ArrayList<>(properties.size());
 
             // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
             for (T prop : properties)

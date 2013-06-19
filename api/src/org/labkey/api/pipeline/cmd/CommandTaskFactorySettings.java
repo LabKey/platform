@@ -33,9 +33,9 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private String _cloneName;
     private String _statusName;
     private String _protocolActionName;
-    private Map<String, String> _environment = new HashMap<String, String>();
-    private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
-    private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
+    private Map<String, String> _environment = new HashMap<>();
+    private Map<String, TaskPath> _inputPaths = new HashMap<>();
+    private Map<String, TaskPath> _outputPaths = new HashMap<>();
     private ListToCommandArgs _converter = new ListToCommandArgs();
     private Boolean _copyInput;
     private Boolean _removeInput;

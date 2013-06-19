@@ -58,10 +58,10 @@ public class CrosstabView extends QueryView
     // Collect the DisplayColumns by column member while keeping the column order the same.
     public static List<Pair<CrosstabMember, List<DisplayColumn>>> columnsByMember(Collection<DisplayColumn> renderers)
     {
-        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<Pair<CrosstabMember, List<DisplayColumn>>>();
+        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<>();
 
         CrosstabMember currentMember = null;
-        List<DisplayColumn> currentMemberColumns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> currentMemberColumns = new ArrayList<>();
         groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
 
         for (DisplayColumn renderer : renderers)
@@ -70,7 +70,7 @@ public class CrosstabView extends QueryView
             if (col.getCrosstabColumnMember() != null && !col.getCrosstabColumnMember().equals(currentMember))
             {
                 currentMember = col.getCrosstabColumnMember();
-                currentMemberColumns = new ArrayList<DisplayColumn>();
+                currentMemberColumns = new ArrayList<>();
                 groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
             }
 
@@ -122,9 +122,9 @@ public class CrosstabView extends QueryView
         }
 
         //separate the row dimension columns from the measure columns
-        ArrayList<FieldKey> rowDimFieldKeys = new ArrayList<FieldKey>(selectedFieldKeys.size());
-        ArrayList<FieldKey> measureFieldKeys = new ArrayList<FieldKey>(selectedFieldKeys.size());
-        Map<CrosstabMember, List<FieldKey>> measureFieldKeysByMember = new LinkedHashMap<CrosstabMember, List<FieldKey>>();
+        ArrayList<FieldKey> rowDimFieldKeys = new ArrayList<>(selectedFieldKeys.size());
+        ArrayList<FieldKey> measureFieldKeys = new ArrayList<>(selectedFieldKeys.size());
+        Map<CrosstabMember, List<FieldKey>> measureFieldKeysByMember = new LinkedHashMap<>();
         for (FieldKey col : selectedFieldKeys)
         {
             ColumnInfo column = table.getColumn(col);
@@ -134,7 +134,7 @@ public class CrosstabView extends QueryView
             {
                 List<FieldKey> fieldKeys = measureFieldKeysByMember.get(column.getCrosstabColumnMember());
                 if (fieldKeys == null)
-                    measureFieldKeysByMember.put(column.getCrosstabColumnMember(), fieldKeys = new ArrayList<FieldKey>());
+                    measureFieldKeysByMember.put(column.getCrosstabColumnMember(), fieldKeys = new ArrayList<>());
                 fieldKeys.add(col);
             }
             else
@@ -151,13 +151,13 @@ public class CrosstabView extends QueryView
             {
                 for (FieldKey col : measureFieldKeys)
                 {
-                    List<String> parts = new ArrayList<String>(col.getParts());
+                    List<String> parts = new ArrayList<>(col.getParts());
                     parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
 
                     FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
                     List<FieldKey> fieldKeys = measureFieldKeysByMember.get(member);
                     if (fieldKeys == null)
-                        measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<FieldKey>());
+                        measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<>());
                     fieldKeys.add(measureMemberFieldKey);
                 }
             }
@@ -170,7 +170,7 @@ public class CrosstabView extends QueryView
 
         //put together the complete list of display columns by getting the
         //renderers from the ColumnInfos for the complete list of columns
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> displayColumns = new ArrayList<>();
         for (ColumnInfo cinfo : rowDimCols.values())
             displayColumns.add(cinfo.getRenderer());
 

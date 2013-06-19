@@ -46,7 +46,7 @@ public class EmailTemplateService
     private static final String EMAIL_TEMPLATE_DELIM = "/";
 
     private static final EmailTemplateService instance = new EmailTemplateService();
-    private final Set<Class<? extends EmailTemplate>> _templates = new LinkedHashSet<Class<? extends EmailTemplate>>();
+    private final Set<Class<? extends EmailTemplate>> _templates = new LinkedHashSet<>();
 
     public static EmailTemplateService get()
     {
@@ -82,7 +82,7 @@ public class EmailTemplateService
 
     public List<EmailTemplate> getEditableEmailTemplates(Container c)
     {
-        List<EmailTemplate> templates = new ArrayList<EmailTemplate>(_getEmailTemplates(c).values());
+        List<EmailTemplate> templates = new ArrayList<>(_getEmailTemplates(c).values());
 
         if (!c.isRoot())
         {
@@ -124,7 +124,7 @@ public class EmailTemplateService
 
     private Map<Class<? extends EmailTemplate>, EmailTemplate> _getEmailTemplates(Container c)
     {
-        Map<Class<? extends EmailTemplate>, EmailTemplate> templates = new HashMap<Class<? extends EmailTemplate>, EmailTemplate>();
+        Map<Class<? extends EmailTemplate>, EmailTemplate> templates = new HashMap<>();
         // Populate map in override sequence, so that the most specific override will be used
 
         // First, the default templates

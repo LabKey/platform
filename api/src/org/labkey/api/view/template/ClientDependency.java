@@ -86,7 +86,7 @@ public class ClientDependency
         private FileType _fileType;
     };
 
-    private LinkedHashSet<ClientDependency> _children = new LinkedHashSet<ClientDependency>();
+    private LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
     private Module _module;
     private String _prodModePath;
     private String _devModePath;
@@ -254,7 +254,7 @@ public class ClientDependency
         try
         {
             XmlOptions xmlOptions = new XmlOptions();
-            Map<String,String> namespaceMap = new HashMap<String,String>();
+            Map<String,String> namespaceMap = new HashMap<>();
             namespaceMap.put("", "http://labkey.org/clientLibrary/xml/");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
@@ -417,7 +417,7 @@ public class ClientDependency
 
     private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u)
     {
-        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<>();
 
         if (_children != null)
             cd.addAll(_children);
@@ -432,7 +432,7 @@ public class ClientDependency
 
     private LinkedHashSet<String> getProductionScripts(Container c, User u, TYPE type)
     {
-        LinkedHashSet<String> scripts = new LinkedHashSet<String>();
+        LinkedHashSet<String> scripts = new LinkedHashSet<>();
         if (_primaryType.equals(type) && _prodModePath != null)
             scripts.add(_prodModePath);
 
@@ -445,7 +445,7 @@ public class ClientDependency
 
     private LinkedHashSet<String> getDevModeScripts(Container c, User u, TYPE type)
     {
-        LinkedHashSet<String> scripts = new LinkedHashSet<String>();
+        LinkedHashSet<String> scripts = new LinkedHashSet<>();
         if (_primaryType.equals(type) && _devModePath != null)
             scripts.add(_devModePath);
 
@@ -474,7 +474,7 @@ public class ClientDependency
 
     public Set<Module> getRequiredModuleContexts(Container c, User u)
     {
-        HashSet<Module> modules = new HashSet<Module>();
+        HashSet<Module> modules = new HashSet<>();
         if(_module != null)
             modules.add(_module);
 

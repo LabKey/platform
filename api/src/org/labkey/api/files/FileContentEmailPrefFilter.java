@@ -55,7 +55,7 @@ public class FileContentEmailPrefFilter extends EmailPrefFilter
     @Override
     public User[] getUsers(Container c)
     {
-        List<User> users = new ArrayList<User>();
+        List<User> users = new ArrayList<>();
 
         for (User user : SecurityManager.getProjectUsers(c))
         {

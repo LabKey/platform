@@ -44,7 +44,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
         PropertyDescriptor propDescriptors[] = PropertyUtils.getPropertyDescriptors(beanClass);
         if (propDescriptors == null)
             propDescriptors = new PropertyDescriptor[0];
-        Map<String, Class> propTypes = new CaseInsensitiveHashMap<Class>();
+        Map<String, Class> propTypes = new CaseInsensitiveHashMap<>();
         for (PropertyDescriptor propDescriptor : propDescriptors)
             propTypes.put(propDescriptor.getName(), propDescriptor.getPropertyType());
         if (null != extras)

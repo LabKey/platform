@@ -172,7 +172,7 @@ public class DilutionManager
         sql.append(" WHERE ns.RowId = cv.NAbSpecimenID AND ns.ProtocolId = ?");
         sql.add(protocol.getRowId());
 
-        return Collections.synchronizedSet(new HashSet<Double>(new SqlSelector(getSchema(), sql).getCollection(Double.class)));
+        return Collections.synchronizedSet(new HashSet<>(new SqlSelector(getSchema(), sql).getCollection(Double.class)));
     }
 
     /**
@@ -387,7 +387,7 @@ public class DilutionManager
     {
         // dataRowLsid is the objectUri column
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("ObjectUri"), dataRowLsid);
-        Map<PropertyDescriptor, FieldKey> fieldKeys = new HashMap<PropertyDescriptor, FieldKey>();
+        Map<PropertyDescriptor, FieldKey> fieldKeys = new HashMap<>();
         for (PropertyDescriptor pd : propertyDescriptors)
         {
             PropDescCategory pdCat = getPropDescCategory(pd.getName());

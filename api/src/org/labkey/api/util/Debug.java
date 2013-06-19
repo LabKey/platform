@@ -25,7 +25,7 @@ public class Debug
     public static int VERBOSE = 2;
     private static Integer iDEBUG = new Integer(DEBUG);
 
-    private static Map<String, Integer> _map = new HashMap<String, Integer>();
+    private static Map<String, Integer> _map = new HashMap<>();
 
     static
     {

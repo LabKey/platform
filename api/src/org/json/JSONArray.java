@@ -94,7 +94,7 @@ public class JSONArray {
      * Construct an empty JSONArray.
      */
     public JSONArray() {
-        this.myArrayList = new ArrayList<Object>();
+        this.myArrayList = new ArrayList<>();
     }
 
     /**
@@ -154,8 +154,8 @@ public class JSONArray {
      */
     public JSONArray(Collection<Object> collection) {
         this.myArrayList = (collection == null) ?
-            new ArrayList<Object>() :
-            new ArrayList<Object>(collection);
+            new ArrayList<>() :
+            new ArrayList<>(collection);
     }
 
 
@@ -171,7 +171,7 @@ public class JSONArray {
                 this.put(Array.get(array, i));
             }
         } else if (array instanceof Collection) {
-            this.myArrayList = new ArrayList<Object>((Collection<Object>)array);
+            this.myArrayList = new ArrayList<>((Collection<Object>)array);
         } else {
             throw new JSONException("JSONArray initial value should be a string or collection or array.");
         }
@@ -904,7 +904,7 @@ public class JSONArray {
 
     public List<Map<String, Object>> toMapList()
     {
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> result = new ArrayList<>();
         for (Object o : myArrayList)
         {
             if (o != null && !(o instanceof Map))

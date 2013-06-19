@@ -35,7 +35,7 @@ public class Tuple3<T1, T2, T3> extends Pair<T1, T2> implements Serializable
     @Override
     public Tuple3<T1, T2, T3> copy()
     {
-        return new Tuple3<T1, T2, T3>(first, second, third);
+        return new Tuple3<>(first, second, third);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class Tuple3<T1, T2, T3> extends Pair<T1, T2> implements Serializable
 
     public static <T1, T2, T3> Tuple3 of(T1 t1, T2 t2, T3 t3)
     {
-        return new Tuple3<T1, T2, T3>(t1, t2, t3);
+        return new Tuple3<>(t1, t2, t3);
     }
 
 }

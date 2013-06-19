@@ -73,7 +73,7 @@ public class Sort
 
     private static String SORT_KEY = ".sort";
     private static Logger _log = Logger.getLogger(Sort.class);
-    private ArrayList<SortField> _sortList = new ArrayList<SortField>();
+    private ArrayList<SortField> _sortList = new ArrayList<>();
 
     public static class SortFieldBuilder
     {
@@ -441,7 +441,7 @@ public class Sort
         if (null == _sortList || _sortList.size() == 0)
             return Collections.emptySet();
 
-        Set<FieldKey> requiredColumnNames = new HashSet<FieldKey>();
+        Set<FieldKey> requiredColumnNames = new HashSet<>();
         for (SortField sf : _sortList)
         {
             requiredColumnNames.add(sf.getFieldKey());

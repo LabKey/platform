@@ -105,9 +105,9 @@ public class QueryNestingOption
 
     public NestableDataRegion createDataRegion(List<DisplayColumn> originalColumns, String dataRegionName, boolean expanded)
     {
-        List<DisplayColumn> innerColumns = new ArrayList<DisplayColumn>();
-        List<DisplayColumn> outerColumns = new ArrayList<DisplayColumn>();
-        List<DisplayColumn> allColumns = new ArrayList<DisplayColumn>(originalColumns);
+        List<DisplayColumn> innerColumns = new ArrayList<>();
+        List<DisplayColumn> outerColumns = new ArrayList<>();
+        List<DisplayColumn> allColumns = new ArrayList<>(originalColumns);
 
         for (DisplayColumn column : originalColumns)
         {

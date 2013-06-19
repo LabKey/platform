@@ -34,10 +34,10 @@ public class TableChange
     final ChangeType type;
     final String schemaName;
     final String tableName;
-    Collection<PropertyStorageSpec> columns = new HashSet<PropertyStorageSpec>();
-    Collection<Index> indices = new HashSet<Index>();
-    Map<String, String> columnRenames = new HashMap<String, String>();
-    Map<Index, Index> indexRenames = new HashMap<Index, Index>();
+    Collection<PropertyStorageSpec> columns = new HashSet<>();
+    Collection<Index> indices = new HashSet<>();
+    Map<String, String> columnRenames = new HashMap<>();
+    Map<Index, Index> indexRenames = new HashMap<>();
 
     public TableChange(String schemaName, String tableName, ChangeType changeType)
     {

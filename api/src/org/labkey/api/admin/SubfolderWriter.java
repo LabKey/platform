@@ -45,7 +45,7 @@ public class SubfolderWriter extends BaseFolderWriter
     {
         // start with just those child containers that the user has Admin permissions
         List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), AdminPermission.class, true);
-        List<Container> childrenToExport = new ArrayList<Container>();
+        List<Container> childrenToExport = new ArrayList<>();
         getChildrenToExport(ctx, allChildren, childrenToExport);
 
         if (childrenToExport.size() > 0)
@@ -108,13 +108,13 @@ public class SubfolderWriter extends BaseFolderWriter
 
             // test including all subfolders (except workbooks)
             fec.setIncludeSubfolders(true);
-            List<Container> allSubfolders = new ArrayList<Container>();
+            List<Container> allSubfolders = new ArrayList<>();
             getChildrenToExport(fec, childList, allSubfolders);
             assertEquals(childList.size() - 1, allSubfolders.size());
 
             // test not including subfolders (just container tabs by default)
             fec.setIncludeSubfolders(false);
-            List<Container> noSubfolders = new ArrayList<Container>();
+            List<Container> noSubfolders = new ArrayList<>();
             getChildrenToExport(fec, childList, noSubfolders);
             assertEquals("Expected one container tab subfolder", 1, noSubfolders.size());
             assertEquals("containertab", noSubfolders.get(0).getName());

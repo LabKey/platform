@@ -39,7 +39,7 @@ public class DilutionSummary implements Serializable
 {
     private List<WellGroup> _sampleGroups;
     private WellGroup _firstGroup;
-    private Map<DilutionCurve.FitType, DilutionCurve> _dilutionCurve = new HashMap<DilutionCurve.FitType, DilutionCurve>() ;
+    private Map<DilutionCurve.FitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
     private Luc5Assay _assay;
     private String _lsid;
     private DilutionCurve.FitType _curveFitType;
@@ -139,7 +139,7 @@ public class DilutionSummary implements Serializable
     {
         if (_dataToSample == null)
         {
-            _dataToSample = new HashMap<WellData, WellGroup>();
+            _dataToSample = new HashMap<>();
             for (WellGroup sampleGroup : _sampleGroups)
             {
                 for (WellData data : sampleGroup.getWellData(true))
@@ -176,7 +176,7 @@ public class DilutionSummary implements Serializable
 
     public List<WellData> getWellData()
     {
-        List<WellData> data = new ArrayList<WellData>();
+        List<WellData> data = new ArrayList<>();
         for (WellGroup sampleGroup : _sampleGroups)
             data.addAll(sampleGroup.getWellData(true));
         return data;

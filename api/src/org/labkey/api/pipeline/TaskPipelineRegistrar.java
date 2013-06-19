@@ -36,13 +36,13 @@ import java.util.List;
 public class TaskPipelineRegistrar implements InitializingBean, ApplicationContextAware
 {
     private List<TaskFactorySettings> _factories =
-            new ArrayList<TaskFactorySettings>();
+            new ArrayList<>();
     private List<TaskFactory> _factoryImpls =
-            new ArrayList<TaskFactory>();
+            new ArrayList<>();
     private List<TaskPipelineSettings> _pipelines =
-            new ArrayList<TaskPipelineSettings>();
+            new ArrayList<>();
     private List<TaskPipeline> _pipelineImpls =
-            new ArrayList<TaskPipeline>();
+            new ArrayList<>();
     private SpringModule _declaringModule;
 
     public List<TaskFactorySettings> getFactories()
@@ -87,7 +87,7 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
 
     public void addSubFactories(List factories)
     {
-        List<TaskFactorySettings> listSettings = new ArrayList<TaskFactorySettings>();
+        List<TaskFactorySettings> listSettings = new ArrayList<>();
         for (Object spec : factories)
         {
             if (spec instanceof TaskFactorySettings.Provider)

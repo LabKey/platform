@@ -57,7 +57,7 @@ public class StudyContainerFilter extends ContainerFilter
             else
             {
                 Set<Study> studies = AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ReadPermission.class);
-                Set<String> ids = new HashSet<String>();
+                Set<String> ids = new HashSet<>();
                 for (Study study : studies)
                     ids.add(study.getContainer().getId());
                 _ids = ids;

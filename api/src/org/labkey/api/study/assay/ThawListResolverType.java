@@ -119,7 +119,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 throw new ExperimentException("Could not find a thaw list for run");
             }
 
-            Map<String, ParticipantVisit> values = new HashMap<String, ParticipantVisit>();
+            Map<String, ParticipantVisit> values = new HashMap<>();
             TabLoader tabLoader = new TabLoader(file, true);
 
             for (Map<String, Object> data : tabLoader.load())
@@ -181,10 +181,10 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public void render(RenderContext ctx) throws Exception
     {
-        Map<String, String> gwtProps = new HashMap<String, String>();
+        Map<String, String> gwtProps = new HashMap<>();
         gwtProps.put("dialogTitle", "Select a Sample List");
         ModelAndView listChooser = AssayService.get().createListChooserView(gwtProps);
-        JspView<ThawListBean> view = new JspView<ThawListBean>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
+        JspView<ThawListBean> view = new JspView<>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
         view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers

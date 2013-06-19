@@ -184,7 +184,7 @@ public class PipelineActionConfig
             JSONArray links = o.getJSONArray("links");
             if (links != null)
             {
-                List<PipelineActionConfig> subLinks = new ArrayList<PipelineActionConfig>();
+                List<PipelineActionConfig> subLinks = new ArrayList<>();
                 for (int i=0; i < links.length(); i++)
                 {
                     JSONObject link = links.getJSONObject(i);

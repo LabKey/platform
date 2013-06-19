@@ -81,7 +81,7 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     public static List<SimpleFolderType> createFromDirectory(Resource directory)
     {
-        List<SimpleFolderType> folderTypes = new ArrayList<SimpleFolderType>();
+        List<SimpleFolderType> folderTypes = new ArrayList<>();
         if (directory.exists() && directory.isCollection())
         {
             for (Resource file : directory.list())
@@ -98,7 +98,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         Logger log = Logger.getLogger(SimpleFolderType.class);
         XmlOptions xmlOptions = new XmlOptions();
 
-        Map<String,String> namespaceMap = new HashMap<String,String>();
+        Map<String,String> namespaceMap = new HashMap<>();
         namespaceMap.put("", "http://labkey.org/data/xml/folderType");
         xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
@@ -157,7 +157,7 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     private List<FolderTab> createFolderTabs(FolderTabDocument.FolderTab[] references)
     {
-        ArrayList<FolderTab> tabs = new ArrayList<FolderTab>();
+        ArrayList<FolderTab> tabs = new ArrayList<>();
         Set<String> tabNames = new CaseInsensitiveHashSet();
 
         int idx = 1;        // Must start with 1, not 0
@@ -192,8 +192,8 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
     {
-        List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
-        HashMap<String, Permission> permissionsMap = new HashMap<String, Permission>();
+        List<Portal.WebPart> parts = new ArrayList<>();
+        HashMap<String, Permission> permissionsMap = new HashMap<>();
 
         // permissionsMap maps the permissions name (not necessarily unique) to the permission class. We use this so
         // users can specify the name of a permission instead of the fully qualified class name (the unique name).
@@ -305,7 +305,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         if(_iconPath != null)
             setFolderIconPath(_iconPath);
 
-        Set<Module> activeModules = new HashSet<Module>();
+        Set<Module> activeModules = new HashSet<>();
         for (String moduleName : type.getModules().getModuleNameArray())
         {
             Module module = getModule(moduleName);

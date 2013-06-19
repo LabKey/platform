@@ -52,7 +52,7 @@ public interface MapDataIterator extends DataIterator
             _input = in;
             _mutable = mutable;
             Map map = new CaseInsensitiveHashMap<Integer>(in.getColumnCount()*2);
-            _findMap = new ArrayListMap.FindMap<Object>((Map<Object,Integer>)map);
+            _findMap = new ArrayListMap.FindMap<>((Map<Object,Integer>)map);
             for (int i=0 ; i<=in.getColumnCount() ; i++)
             {
                 String name = in.getColumnInfo(i).getName();
@@ -82,7 +82,7 @@ public interface MapDataIterator extends DataIterator
         {
             if (null == _currentMap)
             {
-                ArrayList<Object> list = new ArrayList<Object>(_input.getColumnCount()+1);
+                ArrayList<Object> list = new ArrayList<>(_input.getColumnCount()+1);
                 for (int i=0 ; i<=_input.getColumnCount() ; i++)
                     list.add(_input.get(i));
                 _currentMap = new ArrayListMap(_findMap, list);

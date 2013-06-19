@@ -43,8 +43,8 @@ public abstract class AbstractRole implements Role
     private final String _name;
     private final String _description;
     private final Module _sourceModule;
-    private final Set<Class<? extends Permission>> _permissions = new HashSet<Class<? extends Permission>>();
-    private final Set<UserPrincipal> _excludedPrincipals = new HashSet<UserPrincipal>();
+    private final Set<Class<? extends Permission>> _permissions = new HashSet<>();
+    private final Set<UserPrincipal> _excludedPrincipals = new HashSet<>();
 
     protected AbstractRole(String name, String description, Class<? extends Permission>... perms)
     {

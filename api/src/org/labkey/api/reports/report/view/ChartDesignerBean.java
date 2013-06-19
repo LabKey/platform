@@ -240,29 +240,29 @@ public class ChartDesignerBean extends ReportDesignBean
         List<Pair<String, String>> list = super.getParameters();
 
         if (!StringUtils.isEmpty(_columnXName))
-            list.add(new Pair<String, String>(Prop.columnXName.toString(), _columnXName));
+            list.add(new Pair<>(Prop.columnXName.toString(), _columnXName));
 
         for (String name : _columnYName)
         {
             if (!StringUtils.isEmpty(name))
-                list.add(new Pair<String, String>(Prop.columnYName.toString(), name));
+                list.add(new Pair<>(Prop.columnYName.toString(), name));
         }
-        list.add(new Pair<String, String>(Prop.chartType.toString(), _chartType));
-        list.add(new Pair<String, String>(Prop.height.toString(), String.valueOf(_height)));
-        list.add(new Pair<String, String>(Prop.width.toString(), String.valueOf(_width)));
+        list.add(new Pair<>(Prop.chartType.toString(), _chartType));
+        list.add(new Pair<>(Prop.height.toString(), String.valueOf(_height)));
+        list.add(new Pair<>(Prop.width.toString(), String.valueOf(_width)));
 
         if (_isLogX)
-            list.add(new Pair<String, String>(Prop.isLogX.toString(), "true"));
+            list.add(new Pair<>(Prop.isLogX.toString(), "true"));
         if (_isLogY)
-            list.add(new Pair<String, String>(Prop.isLogY.toString(), "true"));
+            list.add(new Pair<>(Prop.isLogY.toString(), "true"));
         if (_showMultipleYAxis)
-            list.add(new Pair<String, String>(Prop.showMultipleYAxis.toString(), "true"));
+            list.add(new Pair<>(Prop.showMultipleYAxis.toString(), "true"));
         if (_showLines)
-            list.add(new Pair<String, String>(Prop.showLines.toString(), "true"));
+            list.add(new Pair<>(Prop.showLines.toString(), "true"));
         if (_showMultipleCharts)
-            list.add(new Pair<String, String>(Prop.showMultipleCharts.toString(), "true"));
+            list.add(new Pair<>(Prop.showMultipleCharts.toString(), "true"));
         if (_isVerticalOrientation)
-            list.add(new Pair<String, String>(Prop.isVerticalOrientation.toString(), "true"));
+            list.add(new Pair<>(Prop.isVerticalOrientation.toString(), "true"));
 
         return list;
     }

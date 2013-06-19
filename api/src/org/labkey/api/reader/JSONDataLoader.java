@@ -172,7 +172,7 @@ public class JSONDataLoader extends DataLoader
 
         // XXX: We only look at the first row for the headers which may not be enough
         String[] header = null;
-        List<Object[]> results = new ArrayList<Object[]>(rows.length()+1);
+        List<Object[]> results = new ArrayList<>(rows.length()+1);
         for (int i = 0; i < rows.length(); i++)
         {
             JSONObject row = rows.getJSONObject(i);

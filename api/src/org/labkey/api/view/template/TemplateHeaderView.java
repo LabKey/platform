@@ -45,7 +45,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 {
     public static String SHOW_WARNING_MESSAGES_SESSION_PROP = "hideWarningMessages";
 
-    private List<String> _warningMessages = new ArrayList<String>();
+    private List<String> _warningMessages = new ArrayList<>();
 
     public TemplateHeaderView(@Nullable List<String> containerLinks, @Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
     {

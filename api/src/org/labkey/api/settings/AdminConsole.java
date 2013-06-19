@@ -28,8 +28,8 @@ public class AdminConsole
 {
     public static enum SettingsLinkType {Configuration, Management, Diagnostics}
 
-    private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<SettingsLinkType, Collection<AdminLink>>();
-    private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<ExperimentalFeatureFlag>();
+    private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
+    private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<>();
 
     static
     {
@@ -54,7 +54,7 @@ public class AdminConsole
     {
         synchronized (_links)
         {
-            return new LinkedList<AdminLink>(_links.get(type));
+            return new LinkedList<>(_links.get(type));
         }
     }
 

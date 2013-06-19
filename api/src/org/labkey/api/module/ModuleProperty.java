@@ -55,7 +55,7 @@ public class ModuleProperty
         _name = name;
 
         //default to requiring admin permission
-        _editPermissions = new ArrayList<Class<? extends Permission>>();
+        _editPermissions = new ArrayList<>();
         _editPermissions.add(AdminPermission.class);
     }
 

@@ -157,7 +157,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             return this;
 
         // Create a subset of the FieldKey mapping for only the suggested columns
-        Map<FieldKey, FieldKey> remappedSuggested = new HashMap<FieldKey, FieldKey>(suggested.size());
+        Map<FieldKey, FieldKey> remappedSuggested = new HashMap<>(suggested.size());
         boolean identityMapping = true;
         for (FieldKey originalField : suggested)
         {
@@ -203,7 +203,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     public void addSuggested(FieldKey fieldKey)
     {
         if (_suggestedFields == null)
-            _suggestedFields = new HashSet<FieldKey>();
+            _suggestedFields = new HashSet<>();
         _suggestedFields.add(fieldKey);
     }
 

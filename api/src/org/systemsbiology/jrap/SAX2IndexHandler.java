@@ -63,7 +63,7 @@ public final class SAX2IndexHandler extends DefaultHandler
     protected boolean foundScanOffset = false;
 
     /** Data structure to hold index table */
-    Map<Integer, Long> offsets = new HashMap<Integer, Long>();
+    Map<Integer, Long> offsets = new HashMap<>();
     private int _currentId;
     private int _maxScan = -1;
 

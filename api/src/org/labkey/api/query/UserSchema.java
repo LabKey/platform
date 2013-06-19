@@ -148,7 +148,7 @@ abstract public class UserSchema extends AbstractSchema
     }
 
 
-    Map<Pair<String, Boolean>, Object> cache = new HashMap<Pair<String, Boolean>, Object>();
+    Map<Pair<String, Boolean>, Object> cache = new HashMap<>();
 
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
@@ -158,7 +158,7 @@ abstract public class UserSchema extends AbstractSchema
         if (!canReadSchema())
             throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
-        Pair<String,Boolean> key = new Pair<String, Boolean>(name.toLowerCase(), includeExtraMetadata);
+        Pair<String,Boolean> key = new Pair<>(name.toLowerCase(), includeExtraMetadata);
         boolean useCache = _cacheTableInfos && !forWrite;
         Object torq;
 
@@ -246,7 +246,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret = new HashSet<String>(super.getSchemaNames());
+        Set<String> ret = new HashSet<>(super.getSchemaNames());
         ret.add("Folder");
         return ret;
     }
@@ -335,13 +335,13 @@ abstract public class UserSchema extends AbstractSchema
      */
     public List<String> getTableAndQueryNames(boolean visibleOnly)
     {
-        return new ArrayList<String>(_getQueries(visibleOnly).keySet());        
+        return new ArrayList<>(_getQueries(visibleOnly).keySet());
     }
 
     public Map<String, String> getTableAndQueryNamesAndLabels(boolean visibleOnly)
     {
         Map<String, QueryDefinition> queries = _getQueries(visibleOnly);
-        TreeMap<String, String> namesAndLabels = new TreeMap<String, String>(new Comparator<String>()
+        TreeMap<String, String> namesAndLabels = new TreeMap<>(new Comparator<String>()
         {
             @Override
             public int compare(String o1, String o2)
@@ -381,12 +381,12 @@ abstract public class UserSchema extends AbstractSchema
      */
     public List<QueryDefinition> getTablesAndQueries(boolean visibleOnly)
     {
-        return new ArrayList<QueryDefinition>(_getQueries(visibleOnly).values());
+        return new ArrayList<>(_getQueries(visibleOnly).values());
     }
 
     protected Map<String, QueryDefinition> _getQueries(boolean visibleOnly)
     {
-        TreeMap<String, QueryDefinition> set = new TreeMap<String, QueryDefinition>(new Comparator<String>()
+        TreeMap<String, QueryDefinition> set = new TreeMap<>(new Comparator<String>()
         {
             @Override
             public int compare(String o1, String o2)
@@ -410,7 +410,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public Map<String, QueryDefinition> getQueryDefs()
     {
-        return new CaseInsensitiveHashMap<QueryDefinition>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
+        return new CaseInsensitiveHashMap<>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
     }
 
     /** override this method to return schema specific QuerySettings object */
@@ -502,7 +502,7 @@ abstract public class UserSchema extends AbstractSchema
             partsLabel = new ArrayList<>();
         }
 
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         parts.add(QueryService.MODULE_QUERIES_DIRECTORY);
         if (null != partsLabel)
             partsLabel.add(QueryService.MODULE_QUERIES_DIRECTORY);

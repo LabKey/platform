@@ -148,7 +148,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (getInputFiles().size() == 1)
             return new AbstractFileAnalysisJob[] { this };
 
-        ArrayList<AbstractFileAnalysisJob> jobs = new ArrayList<AbstractFileAnalysisJob>();
+        ArrayList<AbstractFileAnalysisJob> jobs = new ArrayList<>();
         for (File file : getInputFiles())
             jobs.add(createSingleFileJob(file));
         return jobs.toArray(new AbstractFileAnalysisJob[jobs.size()]);
@@ -180,7 +180,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public List<String> getSplitBaseNames()
     {
-        ArrayList<String> baseNames = new ArrayList<String>();
+        ArrayList<String> baseNames = new ArrayList<>();
         for (File fileInput : _filesInput)
         {
             for (FileType ft : _inputTypes)
@@ -219,7 +219,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         if (_parameters == null)
         {
-            _parameters = new HashMap<String, String>(_parametersDefaults);
+            _parameters = new HashMap<>(_parametersDefaults);
             _parameters.putAll(_parametersOverrides);
         }
 
@@ -255,7 +255,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private void logParameters(String description, File file, Map<String, String> parameters)
     {
         _log.debug(description + " " + parameters.size() + " parameters (" + file + "):");
-        for (Map.Entry<String, String> entry : new TreeMap<String, String>(parameters).entrySet())
+        for (Map.Entry<String, String> entry : new TreeMap<>(parameters).entrySet())
             _log.debug(entry.getKey() + " = " + entry.getValue());
         _log.debug("");
     }

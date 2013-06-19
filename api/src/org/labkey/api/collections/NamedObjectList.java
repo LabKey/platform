@@ -20,7 +20,7 @@ import java.util.Iterator;
 
 public class NamedObjectList implements Collection<NamedObject>
 {
-    private ArrayListMap<String, NamedObject> _map = new ArrayListMap<String, NamedObject>();
+    private ArrayListMap<String, NamedObject> _map = new ArrayListMap<>();
 
     public void put(NamedObject obj)
     {

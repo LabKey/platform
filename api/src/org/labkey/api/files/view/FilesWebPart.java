@@ -165,7 +165,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
         form.setContentId("fileContent" + System.identityHashCode(this));
 
-        List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
+        List<FilesForm.actions> actions = new ArrayList<>();
 
         // Navigation actions
         actions.add(FilesForm.actions.folderTreeToggle);

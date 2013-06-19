@@ -49,7 +49,7 @@ public abstract class RedirectReport extends AbstractReport
 
         // When rendering in a portal webpart, render the redirect link and thumbnail
         if (context.get(renderParam.reportWebPart.name()) != null)
-            return new JspView<RedirectReport>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
+            return new JspView<>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
 
         return HttpView.redirect(url);
     }

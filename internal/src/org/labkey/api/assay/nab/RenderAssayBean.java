@@ -85,7 +85,7 @@ public class RenderAssayBean extends RenderAssayForm
 
     public RenderAssayBean()
     {
-        _hiddenRunColumns = new HashSet<String>();
+        _hiddenRunColumns = new HashSet<>();
         _hiddenRunColumns.add(ExpRunTable.Column.RunGroups.name());
         _hiddenRunColumns.add(ExpRunTable.Column.Links.name());
         _hiddenRunColumns.add(ExpRunTable.Column.Flag.name());
@@ -99,7 +99,7 @@ public class RenderAssayBean extends RenderAssayForm
         if (_displayProperties == null)
         {
             Map<PropertyDescriptor, Object> allProperties = _assay.getRunDisplayProperties(_context);
-            _displayProperties = new LinkedHashMap<String, Object>();
+            _displayProperties = new LinkedHashMap<>();
             for (Map.Entry<PropertyDescriptor, Object> entry : allProperties.entrySet())
             {
                 PropertyDescriptor property = entry.getKey();
@@ -213,42 +213,42 @@ public class RenderAssayBean extends RenderAssayForm
 
     public HttpView getControlsView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/controlSummary.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/controlSummary.jsp", this);
     }
 
     public HttpView getCutoffsView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/cutoffDilutions.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/cutoffDilutions.jsp", this);
     }
 
     public HttpView getGraphView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runGraph.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/runGraph.jsp", this);
     }
 
     public HttpView getSamplePropertiesView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/sampleProperties.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/sampleProperties.jsp", this);
     }
 
     public HttpView getRunPropertiesView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runProperties.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/runProperties.jsp", this);
     }
 
     public HttpView getSampleDilutionsView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/sampleDilutions.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/sampleDilutions.jsp", this);
     }
 
     public HttpView getPlateDataView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/plateData.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/plateData.jsp", this);
     }
 
     public HttpView getRunNotesView()
     {
-        return new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runNotes.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/nab/view/runNotes.jsp", this);
     }
 
     public boolean needsCurveNote()
@@ -326,7 +326,7 @@ public class RenderAssayBean extends RenderAssayForm
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.AUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.AUC_PREFIX, getFitTypeEnum());
         PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
         if (null != aucPD)
-            return new Pair<PropertyDescriptor, Object>(aucPD, result.getDataProperty(aucPropertyName));
+            return new Pair<>(aucPD, result.getDataProperty(aucPropertyName));
         return null;
     }
 
@@ -335,7 +335,7 @@ public class RenderAssayBean extends RenderAssayForm
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.pAUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.pAUC_PREFIX, getFitTypeEnum());
         PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
         if (null != aucPD)
-            return new Pair<PropertyDescriptor, Object>(aucPD, result.getDataProperty(aucPropertyName));
+            return new Pair<>(aucPD, result.getDataProperty(aucPropertyName));
         return null;
     }
 

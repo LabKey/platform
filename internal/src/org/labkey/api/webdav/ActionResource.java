@@ -81,7 +81,7 @@ public class ActionResource extends AbstractDocumentResource
         _indexUrl.replaceParameter("_print","1");
         _indexUrl.setScheme("http");
         _indexUrl.setHost("localhost");
-        _properties = new HashMap<String,Object>();
+        _properties = new HashMap<>();
         if (null != properties)
             _properties.putAll(properties);
         if (null != category)

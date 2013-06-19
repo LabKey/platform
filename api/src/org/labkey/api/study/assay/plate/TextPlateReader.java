@@ -54,7 +54,7 @@ public class TextPlateReader implements PlateReader
             LineNumberReader reader = new LineNumberReader(new FileReader(dataFile));
             try
             {
-                List<String> data = new ArrayList<String>();
+                List<String> data = new ArrayList<>();
                 String line;
                 while((line = reader.readLine()) != null)
                 {

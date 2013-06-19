@@ -65,11 +65,11 @@ public class ScriptableList extends NativeJavaObject {
         if (obj instanceof List) {
             this.javaObject = this.list = (List) obj;
         } else if (obj instanceof Collection) {
-            this.javaObject = this.list = new ArrayList<Object>((Collection<?>) obj);
+            this.javaObject = this.list = new ArrayList<>((Collection<?>) obj);
         } else if (obj instanceof Map) {
-            this.javaObject = this.list = new ArrayList<Object>(((Map<?,?>)obj).values());
+            this.javaObject = this.list = new ArrayList<>(((Map<?,?>)obj).values());
         } else if (obj == null || obj == Undefined.instance) {
-            this.javaObject = this.list = new ArrayList<Object>();
+            this.javaObject = this.list = new ArrayList<>();
         } else {
             throw new EvaluatorException("Invalid argument to ScriptableList(): " + obj);
         }

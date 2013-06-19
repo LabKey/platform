@@ -215,7 +215,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public Map<String, Object> getMutableProperties()
     {
         if (null == _properties)
-            _properties = new HashMap<String,Object>();
+            _properties = new HashMap<>();
         return _properties;
     }
     
@@ -445,7 +445,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     protected void setProperty(String key, String value)
     {
         if (_properties == null)
-            _properties = new HashMap<String, Object>();
+            _properties = new HashMap<>();
         _properties.put(key,value);
     }
 

@@ -92,7 +92,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         if (!getContainer().hasPermission(getUser(), ReadPermission.class))
         {
             User currentUser = getUser();
-            Set<Role> contextualRoles = new HashSet<Role>(currentUser.getStandardContextualRoles());
+            Set<Role> contextualRoles = new HashSet<>(currentUser.getStandardContextualRoles());
             contextualRoles.add(RoleManager.getRole(ReaderRole.class));
             elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
         }

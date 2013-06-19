@@ -90,7 +90,7 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
     public Collection<? extends WebdavResource> list()
     {
         Collection<String> names = listNames();
-        List<WebdavResource> list = new ArrayList<WebdavResource>(names.size());
+        List<WebdavResource> list = new ArrayList<>(names.size());
         for (String name : names)
         {
             WebdavResource r = find(name);

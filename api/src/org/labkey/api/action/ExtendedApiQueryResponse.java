@@ -74,7 +74,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     {
         //in the extended response format, each column will have a map of its own
         //that will contain entries for value, mvValue, mvIndicator, etc.
-        Map<String,Object> colMap = new HashMap<String,Object>();
+        Map<String,Object> colMap = new HashMap<>();
 
         //column value
         Object value = getColumnValue(dc);

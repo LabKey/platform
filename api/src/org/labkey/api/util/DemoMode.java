@@ -32,7 +32,7 @@ import java.util.Set;
 */
 public class DemoMode
 {
-    private final static Set<Pair<Container, User>> SET = new HashSet<Pair<Container, User>>();
+    private final static Set<Pair<Container, User>> SET = new HashSet<>();
 
     // Return an obfuscated version of the id.  This is the choke point for all obfuscation... currently returns
     // a string of astericks the same length as the input.  Null results in an empty string.
@@ -61,12 +61,12 @@ public class DemoMode
 
     public static boolean isDemoMode(Container c, User user)
     {
-        return SET.contains(new Pair<Container, User>(c, user));
+        return SET.contains(new Pair<>(c, user));
     }
 
     public static void setDemoMode(Container c, User user, boolean setting)
     {
-        Pair<Container, User> pair = new Pair<Container, User>(c, user);
+        Pair<Container, User> pair = new Pair<>(c, user);
 
         if (setting)
             SET.add(pair);

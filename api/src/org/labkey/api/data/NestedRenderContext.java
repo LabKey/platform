@@ -188,7 +188,7 @@ public class NestedRenderContext extends RenderContext
         // the limit and offset
 
         // Use Query to build up the SQL that we need
-        Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        Collection<ColumnInfo> cols = new ArrayList<>();
         FieldKey groupFieldKey = FieldKey.fromString(groupingColumnName);
         Map<FieldKey, ColumnInfo> groupColumns = QueryService.get().getColumns(tinfo, Collections.singleton(groupFieldKey));
         assert groupColumns.size() == 1;

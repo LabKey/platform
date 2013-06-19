@@ -47,7 +47,7 @@ public enum WikiRendererType
             public HttpView getSyntaxHelpView()
             {
                 // Note: UseVisualEditor is always false -- remove or fix?
-                return new JspView<Boolean>("/org/labkey/wiki/view/wikiHtmlHelp.jsp", false);
+                return new JspView<>("/org/labkey/wiki/view/wikiHtmlHelp.jsp", false);
             }
 
             public String getContentType()

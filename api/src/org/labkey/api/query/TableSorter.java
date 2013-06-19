@@ -129,8 +129,8 @@ public final class TableSorter
             throw new IllegalArgumentException("No tables without incoming FKs found");
 
         // Depth-first topological sort of the tables starting with the startTables
-        Set<TableInfo> visited = new HashSet<TableInfo>(tables.size());
-        List<TableInfo> sorted = new ArrayList<TableInfo>(tables.size());
+        Set<TableInfo> visited = new HashSet<>(tables.size());
+        List<TableInfo> sorted = new ArrayList<>(tables.size());
         for (String tableName : startTables)
             depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<TableInfo>(), sorted);
 

@@ -52,7 +52,7 @@ public class PopupDeveloperView extends PopupMenuView
     public static List<NavTree> getNavTree(ViewContext context)
     {
         Container container = context.getContainer();
-        ArrayList<NavTree> items = new ArrayList<NavTree>();
+        ArrayList<NavTree> items = new ArrayList<>();
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
         String console = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);

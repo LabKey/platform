@@ -41,11 +41,11 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
         final String key;
         boolean on;
-        final List<LoggingEvent> list = new LinkedList<LoggingEvent>();
+        final List<LoggingEvent> list = new LinkedList<>();
         int eventId=0;
     }
 
-    private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<AppenderInfo>();
+    private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
 
 
     protected void append(LoggingEvent event)

@@ -33,7 +33,7 @@ import java.util.TreeMap;
 */
 class MockServletResponse implements HttpServletResponse
 {
-    Map<String,String> headers = new TreeMap<String,String>();
+    Map<String,String> headers = new TreeMap<>();
     int status = 0;
     String message = null;
     String redirect = null;

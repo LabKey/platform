@@ -26,8 +26,8 @@ public class PipelineJobData
 
     public PipelineJobData()
     {
-        _running = new ArrayList<PipelineJob>();
-        _pending = new ArrayList<PipelineJob>();
+        _running = new ArrayList<>();
+        _pending = new ArrayList<>();
     }
 
     public List<PipelineJob> getRunningJobs()

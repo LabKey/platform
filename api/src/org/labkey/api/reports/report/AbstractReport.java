@@ -345,7 +345,7 @@ public abstract class AbstractReport implements Report
             QueryDefinition def = view.getQueryDef();
             if (def != null)
             {
-                List<QueryException> errors = new ArrayList<QueryException>();
+                List<QueryException> errors = new ArrayList<>();
                 TableInfo table = def.getTable(errors, false);
 
                 if (!errors.isEmpty())

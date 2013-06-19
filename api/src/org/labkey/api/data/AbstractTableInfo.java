@@ -130,7 +130,7 @@ abstract public class AbstractTableInfo implements TableInfo
     @NotNull
     public List<ColumnInfo> getPkColumns()
     {
-        List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> ret = new ArrayList<>();
         for (ColumnInfo column : getColumns())
         {
             if (column.isKeyField())
@@ -173,9 +173,9 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         if (isCaseSensitive())
         {
-            return new LinkedHashMap<String, ColumnInfo>();
+            return new LinkedHashMap<>();
         }
-        return new CaseInsensitiveMapWrapper<ColumnInfo>(new LinkedHashMap<String, ColumnInfo>());
+        return new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ColumnInfo>());
     }
 
     protected boolean isCaseSensitive()
@@ -195,7 +195,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public List<String> getPkColumnNames()
     {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for (ColumnInfo col : getPkColumns())
         {
             ret.add(col.getName());
@@ -296,7 +296,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public List<ColumnInfo> getUserEditableColumns()
     {
-        List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> ret = new ArrayList<>();
         for (ColumnInfo col : getColumns())
         {
             if (col.isUserEditable())
@@ -315,7 +315,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public List<ColumnInfo> getColumns(String... colNameArray)
     {
-        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(colNameArray.length);
+        List<ColumnInfo> ret = new ArrayList<>(colNameArray.length);
         for (String name : colNameArray)
         {
             ret.add(getColumn(name.trim()));
@@ -396,7 +396,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public List<ColumnInfo> getColumns()
     {
-        return Collections.unmodifiableList(new ArrayList<ColumnInfo>(_columnMap.values()));
+        return Collections.unmodifiableList(new ArrayList<>(_columnMap.values()));
     }
 
     public Set<String> getColumnNameSet()
@@ -455,7 +455,7 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         if (_methodMap == null)
         {
-            _methodMap = new HashMap<String, MethodInfo>();
+            _methodMap = new HashMap<>();
         }
         _methodMap.put(name, method);
     }
@@ -561,7 +561,7 @@ abstract public class AbstractTableInfo implements TableInfo
         if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
         {
             ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
-            Set<FieldKey> s = new HashSet<FieldKey>(columns);
+            Set<FieldKey> s = new HashSet<>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;
         }
@@ -673,7 +673,7 @@ abstract public class AbstractTableInfo implements TableInfo
         }
         if (_defaultVisibleColumns != null)
         {
-            List<FieldKey> ret = new ArrayList<FieldKey>();
+            List<FieldKey> ret = new ArrayList<>();
             for (FieldKey key : _defaultVisibleColumns)
             {
                 ret.add(key);
@@ -687,7 +687,7 @@ abstract public class AbstractTableInfo implements TableInfo
     public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
     {
         List<ColumnInfo> columns = getColumns();
-        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey, ColumnInfo>(columns.size());
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>(columns.size());
         if (hidden)
         {
             for (ColumnInfo col : columns)
@@ -865,7 +865,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
         if (xmlTable.getColumns() != null)
         {
-            List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
+            List<ColumnType> wrappedColumns = new ArrayList<>();
 
             for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
             {
@@ -1240,9 +1240,9 @@ abstract public class AbstractTableInfo implements TableInfo
 
             if (!script.evaluated())
             {
-                Map<String, Object> bindings = new HashMap<String, Object>();
+                Map<String, Object> bindings = new HashMap<>();
                 if (extraContext == null)
-                    extraContext = new HashMap<String, Object>();
+                    extraContext = new HashMap<>();
                 bindings.put("extraContext", extraContext);
                 bindings.put("schemaName", getPublicSchemaName());
                 bindings.put("tableName", getPublicName());
@@ -1421,7 +1421,7 @@ abstract public class AbstractTableInfo implements TableInfo
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
-        List<Pair<String, String>> templates = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> templates = new ArrayList<>();
         //NOTE: should this create a RenderContext from viewContext instead?
         //RenderContext rc = new RenderContext(ctx);
         Map<String, Container> renderCtx = Collections.singletonMap("container", ctx.getContainer());
@@ -1457,7 +1457,7 @@ abstract public class AbstractTableInfo implements TableInfo
     public void setImportTemplates(ImportTemplateType[] templates)
     {
         checkLocked();
-        List<Pair<String, StringExpression>> list = new ArrayList<Pair<String, StringExpression>>();
+        List<Pair<String, StringExpression>> list = new ArrayList<>();
         for (ImportTemplateType t : templates)
         {
             StringExpression url = StringExpressionFactory.createURL(t.getUrl());

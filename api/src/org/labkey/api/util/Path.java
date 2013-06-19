@@ -67,7 +67,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         this._path = path;
         this._length = length;
-        this._parent = new AtomicReference<Path>();
+        this._parent = new AtomicReference<>();
         int hash = 0;
         for (int i=0 ; i<length ; i++)
             hash = hash*37 + _path[i].hashCode();
@@ -480,7 +480,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public Iterator<String> iterator()
     {
-        return new ArrayIterator<String>(_path);
+        return new ArrayIterator<>(_path);
     }
     
 
@@ -488,7 +488,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         throws IOException, ClassNotFoundException
     {
         in.defaultReadObject();
-        _parent = new AtomicReference<Path>();
+        _parent = new AtomicReference<>();
     }
 
 

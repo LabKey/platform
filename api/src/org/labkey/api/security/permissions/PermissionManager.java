@@ -30,7 +30,7 @@ public class PermissionManager
 {
     private static Logger _log = Logger.getLogger(PermissionManager.class);
     private static final Map<Class<? extends Permission>, Permission> _instances =
-            new ConcurrentHashMap<Class<? extends Permission>, Permission>();
+            new ConcurrentHashMap<>();
 
     /**
      * Returns a singleton instance of a given permission given its class

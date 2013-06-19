@@ -33,7 +33,7 @@ import java.util.Set;
 // Wraps any DisplayColumn and causes it to render each value separately
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 {
-    private final Set<FieldKey> _fieldKeys = new HashSet<FieldKey>();
+    private final Set<FieldKey> _fieldKeys = new HashSet<>();
 
 //    private ColumnInfo _junctionCol;
 //    private DisplayColumn _junctionDisplayCol;
@@ -143,7 +143,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 
     public Object getJsonValue(RenderContext ctx)
     {
-        List<Object> values = new LinkedList<Object>();
+        List<Object> values = new LinkedList<>();
 
         MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
         while (mvCtx.next())
@@ -172,7 +172,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     @Override
     public Object getInputValue(RenderContext ctx)
     {
-        List<Object> values = new LinkedList<Object>();
+        List<Object> values = new LinkedList<>();
 
 //        // UNDONE: Use junction column as input value instead of wrapped column
 //        DisplayColumn d = _column;

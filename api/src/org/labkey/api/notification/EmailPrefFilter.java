@@ -55,7 +55,7 @@ public abstract class EmailPrefFilter
 
     public User[] filterUsers(Container c)
     {
-        List<User> users = new ArrayList<User>();
+        List<User> users = new ArrayList<>();
         EmailPref pref = getEmailPref();
         EmailPref defaultPref = getDefaultEmailPref();
         String defaultValue = pref.getDefaultValue();

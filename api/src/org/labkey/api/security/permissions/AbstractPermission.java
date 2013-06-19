@@ -85,7 +85,7 @@ public abstract class AbstractPermission implements Permission
     @NotNull
     public Set<Class<? extends Permission>> getPermissions()
     {
-        HashSet<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        HashSet<Class<? extends Permission>> perms = new HashSet<>();
         perms.add(this.getClass());
         return perms;
     }

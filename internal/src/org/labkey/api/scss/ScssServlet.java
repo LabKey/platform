@@ -158,7 +158,7 @@ public class ScssServlet extends HttpServlet
     public ScssContent compileShell(WebdavResource scss) throws IOException
     {
         // Compute dependencies
-        Set<Path> dependencies = new TreeSet<Path>();
+        Set<Path> dependencies = new TreeSet<>();
         findDependencies(scss, dependencies);
 
         String dir = scss.getFile().getParent();
@@ -269,7 +269,7 @@ public class ScssServlet extends HttpServlet
     public ScssContent compileJRuby(WebdavResource css) throws IOException
     {
         // Compute dependencies
-        Set<Path> dependencies = new TreeSet<Path>();
+        Set<Path> dependencies = new TreeSet<>();
         findDependencies(css, dependencies);
 
         StringWriter errors = new StringWriter();

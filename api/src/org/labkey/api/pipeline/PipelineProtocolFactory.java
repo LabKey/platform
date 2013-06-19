@@ -66,7 +66,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     {
         try
         {
-            Map<String, String> mapNS = new HashMap<String, String>();
+            Map<String, String> mapNS = new HashMap<>();
             mapNS.put("", PipelineProtocol._xmlNamespace);
             XmlOptions opts = new XmlOptions().setLoadSubstituteNamespaces(mapNS);
 
@@ -137,7 +137,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     /** @return sorted list of protocol names */
     public String[] getProtocolNames(PipeRoot root, File dirData)
     {
-        HashSet<String> setNames = new HashSet<String>();
+        HashSet<String> setNames = new HashSet<>();
 
         // Add <protocol-name>.xml files
         File[] files = getProtocolDir(root).listFiles(new FileFilter()

@@ -120,7 +120,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         {
             return Collections.emptyList();
         }
-        List<ConditionalFormat> result = new ArrayList<ConditionalFormat>();
+        List<ConditionalFormat> result = new ArrayList<>();
         for (ConditionalFormatType xmlFormat : conditionalFormats.getConditionalFormatArray())
         {
             ConditionalFormat format = new ConditionalFormat();

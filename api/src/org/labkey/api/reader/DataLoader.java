@@ -322,7 +322,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             }
         }
 
-        Set<String> columnNames = new HashSet<String>();
+        Set<String> columnNames = new HashSet<>();
         for (ColumnDescriptor colDesc : colDescs)
         {
             if (!columnNames.add(colDesc.name) && isThrowOnErrors())
@@ -425,7 +425,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
             ColumnDescriptor[] allColumns = getColumns();
-            ArrayList<ColumnDescriptor> active = new ArrayList<ColumnDescriptor>(allColumns.length);
+            ArrayList<ColumnDescriptor> active = new ArrayList<>(allColumns.length);
 
             for (ColumnDescriptor column : allColumns)
                 if (column.load)
@@ -440,7 +440,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     colMap.put(_activeColumns[i].name, i);
             }
 
-            _factory = new RowMapFactory<Object>(colMap);
+            _factory = new RowMapFactory<>(colMap);
 
             // find a converter for each column type
             for (ColumnDescriptor column : _activeColumns)
@@ -656,7 +656,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 {
                     // This extra copy was added to AbstractTabLoader in r12810 to let DataSetDefinition.importDatasetData()
                     // modify the underlying maps. TODO: Refactor dataset import and return immutable maps. 
-                    ArrayList<Object> list = new ArrayList<Object>(_activeColumns.length);
+                    ArrayList<Object> list = new ArrayList<>(_activeColumns.length);
                     list.addAll(Arrays.asList(values));
                     return _factory.getRowMap(list);
                 }

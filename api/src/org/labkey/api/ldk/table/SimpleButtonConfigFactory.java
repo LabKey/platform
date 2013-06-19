@@ -37,7 +37,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     private String _text;
     private DetailsURL _url = null;
     private String _jsHandler = null;
-    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public SimpleButtonConfigFactory(Module owner, String text, DetailsURL url)
     {

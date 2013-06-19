@@ -54,7 +54,7 @@ public class PolynomialCurveImpl extends WellGroupCurveImpl
 
         public Map<String, Object> toMap()
         {
-            Map<String, Object> params = new HashMap<String, Object>();
+            Map<String, Object> params = new HashMap<>();
 
             int i = 0;
             for (double beta : _coefficients)

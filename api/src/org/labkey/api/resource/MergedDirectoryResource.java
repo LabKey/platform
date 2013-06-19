@@ -68,7 +68,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         super(path, resolver);
         _dirs = dirs;
         _additional = children;
-        _cacheKey = new Pair<Resolver, Path>(_resolver, getPath());
+        _cacheKey = new Pair<>(_resolver, getPath());
     }
 
     public Resource parent()
@@ -86,7 +86,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
             if (isStale() || null == children)
             {
                 //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: " + ((children == null) ? "null" : "stale") + " cache: " + this);
-                Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
+                Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
 
                 for (File dir : _dirs)
                 {
@@ -104,7 +104,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 //                        if (_resolver.filter(name))
 //                            continue;
                         if (!map.containsKey(name))
-                            map.put(name, new ArrayList<File>(Arrays.asList(f)));
+                            map.put(name, new ArrayList<>(Arrays.asList(f)));
                         else
                         {
                             // only merge directories together
@@ -115,7 +115,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                     }
                 }
 
-                children = new CaseInsensitiveTreeMap<Resource>();
+                children = new CaseInsensitiveTreeMap<>();
 
                 for (Map.Entry<String, ArrayList<File>> e : map.entrySet())
                 {
@@ -140,7 +140,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public Collection<Resource> list()
     {
         Map<String, Resource> children = getChildren();
-        return new ArrayList<Resource>(children.values());
+        return new ArrayList<>(children.values());
     }
 
     public boolean exists()
@@ -160,7 +160,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     public Collection<String> listNames()
     {
-        return new ArrayList<String>(getChildren().keySet());
+        return new ArrayList<>(getChildren().keySet());
     }
 
     protected boolean isStale()

@@ -79,7 +79,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
             throw new QueryUpdateServiceException(e);
         }
 
-        return new CaseInsensitiveHashMap<Object>(map);
+        return new CaseInsensitiveHashMap<>(map);
     }
 
     /**

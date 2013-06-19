@@ -626,7 +626,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private boolean _set(int i, @Nullable Object o)
     {
         if (null == _parameters)
-            _parameters = new OneBasedList<Object>(10);
+            _parameters = new OneBasedList<>(10);
         while (_parameters.size() < i)
             _parameters.add(null);
         _parameters.set(i, o);
@@ -1596,7 +1596,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         long elapsed = System.currentTimeMillis() - _msStart;
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
-        List<Object> zeroBasedList = null != _parameters ? new ArrayList<Object>(_parameters.getUnderlyingList()) : null;
+        List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
         QueryProfiler.track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
 
         if (!_log.isEnabledFor(Level.DEBUG))

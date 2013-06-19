@@ -120,7 +120,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
     @Override
     public void renderImage(ViewContext context) throws Exception
     {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         JFreeChart chart = _createChart(context, errors, null);
         if (chart != null && errors.isEmpty())
         {
@@ -169,7 +169,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
     {
         ChartRenderInfo renderInfo = new RenderInfo(imageMapCallback, callbackParams);
 
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         JFreeChart chart = _createChart(context, errors, renderInfo);
         if (chart != null && errors.isEmpty())
         {
@@ -235,7 +235,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         {
             if (_columnMap == null)
             {
-                _columnMap = new CaseInsensitiveHashMap<String>();
+                _columnMap = new CaseInsensitiveHashMap<>();
                 ReportQueryView view = createQueryView(context, descriptor);
                 if (view != null)
                 {

@@ -132,7 +132,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
 
     protected Set<String> getAssayReservedPropertyNames()
     {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         result.add("RowId");
         result.add("Row Id");
         result.add("Container");

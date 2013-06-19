@@ -156,7 +156,7 @@ public class ExcelLoader extends DataLoader
     
     public List<String> getSheetNames() throws IOException
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         Workbook workbook = getWorkbook();
         for (int i=0; i < workbook.getNumberOfSheets(); i++)
@@ -193,11 +193,11 @@ public class ExcelLoader extends DataLoader
             try
             {
                 List<ArrayList<Object>> grid = getParsedGridXLSX();
-                List<String[]> cells = new ArrayList<String[]>();
+                List<String[]> cells = new ArrayList<>();
                 for (int i=0 ; cells.size() < n && i<grid.size() ; i++)
                 {
                     ArrayList<Object> currentRow = grid.get(i);
-                    ArrayList<String> rowData = new ArrayList<String>(currentRow.size());
+                    ArrayList<String> rowData = new ArrayList<>(currentRow.size());
                     boolean foundData = false;
                     for (int column = 0; column < currentRow.size() ; column++)
                     {
@@ -225,10 +225,10 @@ public class ExcelLoader extends DataLoader
     {
         Sheet sheet = getSheet();
 
-        List<String[]> cells = new ArrayList<String[]>();
+        List<String[]> cells = new ArrayList<>();
         for (Row currentRow : sheet)
         {
-            List<String> rowData = new ArrayList<String>();
+            List<String> rowData = new ArrayList<>();
 
             // Excel can report back more rows than exist. If we find no data at all,
             // we should not add a row.
@@ -339,7 +339,7 @@ public class ExcelLoader extends DataLoader
         OPCPackage xlsxPackage = null;
         try
         {
-            LinkedList<ArrayList<Object>> collect = new LinkedList<ArrayList<Object>>();
+            LinkedList<ArrayList<Object>> collect = new LinkedList<>();
             xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
@@ -356,7 +356,7 @@ public class ExcelLoader extends DataLoader
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
-            ArrayList<ArrayList<Object>> ret = new ArrayList<ArrayList<Object>>(collect.size());
+            ArrayList<ArrayList<Object>> ret = new ArrayList<>(collect.size());
             ret.addAll(collect);
             return ret;
         }
@@ -440,7 +440,7 @@ public class ExcelLoader extends DataLoader
                 return null;
 
             ColumnDescriptor[] allColumns = getColumns();
-            Iterator<ColumnDescriptor> columnIter = new ArrayIterator<ColumnDescriptor>(allColumns);
+            Iterator<ColumnDescriptor> columnIter = new ArrayIterator<>(allColumns);
             Object[] fields = new Object[_activeColumns.length];
 
             Row row = sheet.getRow(lineNum());
@@ -664,7 +664,7 @@ public class ExcelLoader extends DataLoader
             debugPrint("<" + name + ">");
             if ("row".equals(name))
             {
-                currentRow = new ArrayList<Object>(Math.max(1,widestRow));
+                currentRow = new ArrayList<>(Math.max(1,widestRow));
                 output.add(currentRow);
             }
             if ("inlineStr".equals(name) || "v".equals(name) || "t".equals(name))

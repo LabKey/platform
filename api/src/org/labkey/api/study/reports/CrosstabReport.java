@@ -156,7 +156,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             FieldKey colFieldKey = FieldKey.decode(descriptor.getProperty("colField"));
             FieldKey statFieldKey = FieldKey.decode(descriptor.getProperty("statField"));
 
-            Set<Stats.StatDefinition> statSet = new LinkedHashSet<Stats.StatDefinition>();
+            Set<Stats.StatDefinition> statSet = new LinkedHashSet<>();
             for (String stat : descriptor.getStats())
             {
                 if ("Count".equals(stat))

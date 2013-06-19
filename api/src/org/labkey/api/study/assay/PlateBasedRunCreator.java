@@ -65,7 +65,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                                   Map<ExpMaterial, String> outputMaterials,
                                   Map<ExpData, String> outputDatas) throws ExperimentException
     {
-        Map<String, ExpMaterial> originalMaterials = new HashMap<String, ExpMaterial>();
+        Map<String, ExpMaterial> originalMaterials = new HashMap<>();
         PlateSamplePropertyHelper helper = getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);
         Map<String, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
         for (Map.Entry<String, Map<DomainProperty, String>> entry : materialProperties.entrySet())
@@ -153,7 +153,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
     private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext context, Map<String, ExpMaterial> originalMaterials,
                                         Map<String, Map<DomainProperty, String>> materialProperties) throws ExperimentException
     {
-        Map<ExpMaterial, String> derivedMaterials = new HashMap<ExpMaterial, String>();
+        Map<ExpMaterial, String> derivedMaterials = new HashMap<>();
         long ms = System.currentTimeMillis();
         try
         {
@@ -168,7 +168,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 sampleMetadataFile.save(context.getUser());
             }
 
-            Map<String, ExpMaterial> originalLsidToMaterial = new HashMap<String, ExpMaterial>();
+            Map<String, ExpMaterial> originalLsidToMaterial = new HashMap<>();
             for (Map.Entry<String, ExpMaterial> entry : originalMaterials.entrySet())
             {
                 String key = entry.getKey();

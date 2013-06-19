@@ -255,7 +255,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     protected Set<String> getHiddenColumnCaptions()
     {
-        HashSet<String> hidden = new HashSet<String>(Collections.singleton("Assay Match"));
+        HashSet<String> hidden = new HashSet<>(Collections.singleton("Assay Match"));
         if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
             hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
         return hidden;
@@ -319,7 +319,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _specimenVisitCol;
         private final ColumnInfo _specimenDateCol;
         private final ColumnInfo _targetStudyCol;
-        private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<Integer, ParticipantVisitResolver>();
+        private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
 
         private Map<Object, String> _reshowVisits;
         private Map<Object, String> _reshowDates;
@@ -505,7 +505,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 return false;
 
             if (_validPtidVisits == null)
-                _validPtidVisits = new HashMap<Container, Set<Pair<String, Double>>>();
+                _validPtidVisits = new HashMap<>();
 
             Set<Pair<String, Double>> visits = _validPtidVisits.get(container);
             if (visits == null)
@@ -514,7 +514,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 _validPtidVisits.put(container, visits);
             }
 
-            return visits.contains(new Pair<String, Double>(participantId, visit));
+            return visits.contains(new Pair<>(participantId, visit));
         }
 
         // Study container -> (ptid, date)
@@ -526,7 +526,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 return false;
 
             if (_validPtidDates == null)
-                _validPtidDates = new HashMap<Container, Set<Pair<String, Date>>>();
+                _validPtidDates = new HashMap<>();
 
             Set<Pair<String, Date>> dates = _validPtidDates.get(container);
             if (dates == null)
@@ -539,7 +539,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (drawDate instanceof Timestamp)
                 drawDate = new Date(drawDate.getTime());
 
-            return dates.contains(new Pair<String, Date>(participantId, drawDate));
+            return dates.contains(new Pair<>(participantId, drawDate));
         }
 
         /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
@@ -551,7 +551,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
             // Bail early if no match can be made.
             if (targetStudy == null)
-                return new Pair<Boolean, String>(false, "<p>No target study selected for this row.</p>");
+                return new Pair<>(false, "<p>No target study selected for this row.</p>");
 
             Study study = StudyService.get().getStudy(targetStudy);
             TimepointType timepointType = study.getTimepointType();
@@ -670,7 +670,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                     sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
                 }
 
-                return new Pair<Boolean, String>(overallStatus, sb.toString());
+                return new Pair<>(overallStatus, sb.toString());
             }
             catch (SQLException e)
             {
@@ -917,7 +917,7 @@ public class PublishResultsQueryView extends ResultsQueryView
     protected List<DisplayColumn> getExtraColumns(Collection<ColumnInfo> selectColumns)
     {
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> columns = new ArrayList<>();
 
         _targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
 
@@ -957,7 +957,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey specimenPTIDFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID");
         FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum");
         FieldKey specimenDateFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp");
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, assayDateFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey, specimenDateFieldKey));
+        Set<FieldKey> fieldKeys = new HashSet<>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, assayDateFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey, specimenDateFieldKey));
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.
         FieldKey targetStudyFieldKey = null;

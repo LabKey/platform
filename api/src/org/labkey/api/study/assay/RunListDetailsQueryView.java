@@ -42,7 +42,7 @@ public class RunListDetailsQueryView extends RunListQueryView
     private Class<? extends Controller> _detailsActionClass;
     private String _detailsIdColumn;
     private String _dataIdColumn;
-    private Map<String, Object> _extraDetailsUrlParams = new HashMap<String, Object>();
+    private Map<String, Object> _extraDetailsUrlParams = new HashMap<>();
 
     public RunListDetailsQueryView(AssayProtocolSchema schema, QuerySettings settings, Class<? extends Controller> detailsActionClass,
                                    String detailsIdColumn, String dataIdColumn)
@@ -68,7 +68,7 @@ public class RunListDetailsQueryView extends RunListQueryView
                     if (!_extraDetailsUrlParams.isEmpty())
                         url.addParameters(_extraDetailsUrlParams);
 
-                    Map<String, String> map = new HashMap<String, String>();
+                    Map<String, String> map = new HashMap<>();
                     map.put("title", "View run details");
                     out.write(PageFlowUtil.textLink("run details", url, null, null, map));
                 }

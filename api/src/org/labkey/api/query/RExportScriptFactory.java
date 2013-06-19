@@ -37,7 +37,7 @@ public class RExportScriptFactory implements ExportScriptFactory
 
     public WebPartView getView(QueryView queryView)
     {
-        return new JspView<RExportScriptModel>("/org/labkey/api/query/exportRScript.jsp", new RExportScriptModel(queryView));
+        return new JspView<>("/org/labkey/api/query/exportRScript.jsp", new RExportScriptModel(queryView));
     }
 }
 

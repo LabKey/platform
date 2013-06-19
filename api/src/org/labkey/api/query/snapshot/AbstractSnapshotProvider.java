@@ -49,7 +49,7 @@ import java.util.Map;
 
 public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 {
-    private static final Map<String, Class> propertyClassMap = new HashMap<String, Class>();
+    private static final Map<String, Class> propertyClassMap = new HashMap<>();
 
     static {
 

@@ -66,11 +66,11 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
 
     public Pair<Type1, Type2> copy()
     {
-        return new Pair<Type1, Type2>(first, second);
+        return new Pair<>(first, second);
     }
 
     static public <T1, T2> Pair<T1, T2> of(T1 first, T2 second)
     {
-        return new Pair<T1, T2>(first, second);
+        return new Pair<>(first, second);
     }
 }

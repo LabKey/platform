@@ -106,11 +106,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static final String CORE_MODULE_NAME = "Core";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
-    private Queue<Method> _deferredUpgradeTask = new LinkedList<Method>();
+    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
+    private Queue<Method> _deferredUpgradeTask = new LinkedList<>();
 
-    private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
-    private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<Class<? extends Controller>, String>();
+    private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
+    private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private static final String XML_FILENAME = "module.xml";
 
     private Collection<WebPartFactory> _webPartFactories;
@@ -130,8 +130,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-    private Map<String, ModuleProperty> _moduleProperties = new HashMap<String, ModuleProperty>();
-    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    private Map<String, ModuleProperty> _moduleProperties = new HashMap<>();
+    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
@@ -202,7 +202,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         preloadReports();
     }
 
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>(new Comparator<Resource>(){
         @Override
         public int compare(Resource o, Resource o1)
         {
@@ -380,7 +380,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (null == _webPartFactories || isWebPartFactorySetStale())
         {
-            Collection<WebPartFactory> wpf = new ArrayList<WebPartFactory>();
+            Collection<WebPartFactory> wpf = new ArrayList<>();
             wpf.addAll(createWebPartFactories());
 
             File[] files = getWebPartFiles();
@@ -521,7 +521,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
      */
     public Set<DbSchema> getSchemasToTest()
     {
-        Set<DbSchema> result = new HashSet<DbSchema>();
+        Set<DbSchema> result = new HashSet<>();
         for (String schemaName : getSchemaNames())
         {
             DbSchema schema = DbSchema.get(schemaName);
@@ -739,7 +739,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public Map<String, String> getProperties()
     {
-        Map<String, String> props = new LinkedHashMap<String, String>();
+        Map<String, String> props = new LinkedHashMap<>();
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
@@ -773,7 +773,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
     {
-        Set<String> fileNames = new HashSet<String>();
+        Set<String> fileNames = new HashSet<>();
 
         String sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);
@@ -813,7 +813,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             try
             {
                 XmlOptions xmlOptions = new XmlOptions();
-                Map<String,String> namespaceMap = new HashMap<String,String>();
+                Map<String,String> namespaceMap = new HashMap<>();
                 namespaceMap.put("", "http://labkey.org/moduleProperties/xml/");
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
@@ -849,7 +849,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                             mp.setDescription(pt.getDescription());
                         if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
                         {
-                            List<Class<? extends Permission>> editPermissions = new ArrayList<Class<? extends Permission>>();
+                            List<Class<? extends Permission>> editPermissions = new ArrayList<>();
                             for (PermissionType.Enum permEntry : pt.getEditPermissions().getPermissionArray())
                             {
                                 SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
@@ -1039,7 +1039,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     public List<File> getStaticFileDirectories()
     {
-        List<File> l = new ArrayList<File>(3);
+        List<File> l = new ArrayList<>(3);
         String build = getBuildPath();
         File exploded = getExplodedPath();
         String source = getSourcePath();
@@ -1083,7 +1083,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected List<File> getResourceDirectories()
     {
-        List<File> dirs = new ArrayList<File>(3);
+        List<File> dirs = new ArrayList<>(3);
         String build = getBuildPath();
         File exploded = getExplodedPath();
         String source = getSourcePath();
@@ -1202,7 +1202,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public Set<Module> getResolvedModuleDependencies()
     {
-        Set<Module> modules = new HashSet<Module>();
+        Set<Module> modules = new HashSet<>();
         Module module;
         for(String m : getModuleDependenciesAsSet())
         {
@@ -1239,7 +1239,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected Map<String, String> getDefaultPageContextJson(User u, Container c)
     {
-        Map<String, String> props = new HashMap<String, String>();
+        Map<String, String> props = new HashMap<>();
         for (ModuleProperty p : getModuleProperties().values())
         {
             if (!p.isExcludeFromClientContext())

@@ -39,7 +39,7 @@ import java.util.Map;
 
 public class QuerySnapshotService
 {
-    static private Map<String, I> _providers = new HashMap<String, I>();
+    static private Map<String, I> _providers = new HashMap<>();
     public static final String TYPE = "Query Snapshot";
 
     static public synchronized I get(String schema)

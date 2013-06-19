@@ -85,7 +85,7 @@ public class ResourceRef
     public void addDependency(ResourceRef dependency)
     {
         if (_dependencies == null)
-            _dependencies = new HashSet<ResourceRef>();
+            _dependencies = new HashSet<>();
         _dependencies.add(dependency);
     }
 }

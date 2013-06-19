@@ -33,7 +33,7 @@ public class NavTrailView extends HttpView
 {
     private String _title;
     private List<NavTree> _crumbTrail;
-    private List<NavTree> tabs = new ArrayList<NavTree>();
+    private List<NavTree> tabs = new ArrayList<>();
 
     public NavTrailView(ViewContext context, String title, PageConfig pageConfig, List<NavTree> moduleChildren)
     {

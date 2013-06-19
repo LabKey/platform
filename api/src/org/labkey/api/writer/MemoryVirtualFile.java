@@ -37,10 +37,10 @@ import java.util.Map;
 public class MemoryVirtualFile extends AbstractVirtualFile
 {
     private String _root;
-    private Map<String, XmlObject> _docMap = new HashMap<String, XmlObject>();
-    private Map<String, StringWriter> _textDocMap = new HashMap<String, StringWriter>();
-    private Map<String, ByteArrayOutputStream> _byteDocMap = new HashMap<String, ByteArrayOutputStream>();
-    private Map<String, MemoryVirtualFile> _folders = new HashMap<String, MemoryVirtualFile>();
+    private Map<String, XmlObject> _docMap = new HashMap<>();
+    private Map<String, StringWriter> _textDocMap = new HashMap<>();
+    private Map<String, ByteArrayOutputStream> _byteDocMap = new HashMap<>();
+    private Map<String, MemoryVirtualFile> _folders = new HashMap<>();
 
     public MemoryVirtualFile()
     {
@@ -147,7 +147,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public String[] list()
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         names.addAll(_docMap.keySet());
         names.addAll(_textDocMap.keySet());

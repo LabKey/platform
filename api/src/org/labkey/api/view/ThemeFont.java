@@ -115,7 +115,7 @@ public class ThemeFont
         return  StringUtils.replace(_friendlyName, " ", "-");
     }
     
-    private static final Map<String, ThemeFont> webThemeFontMap = new LinkedHashMap<String, ThemeFont>();
+    private static final Map<String, ThemeFont> webThemeFontMap = new LinkedHashMap<>();
 
     static
     {
@@ -141,6 +141,6 @@ public class ThemeFont
     // static initializer, but this may not always be the case...
     public static List<ThemeFont> getThemeFonts()
     {
-        return new LinkedList<ThemeFont>(webThemeFontMap.values());
+        return new LinkedList<>(webThemeFontMap.values());
     }
 }

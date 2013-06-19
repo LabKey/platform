@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class ListofMapsDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
-    List<ColumnInfo> _cols = new ArrayList<ColumnInfo>();
+    List<ColumnInfo> _cols = new ArrayList<>();
     protected List<Map<String,Object>> _rows;
     int _currentRow = -1;
     
@@ -66,7 +66,7 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
 
         if (debug)
         {
-            ArrayList<Map<String,Object>> copy = new ArrayList<Map<String,Object>>(rows.size());
+            ArrayList<Map<String,Object>> copy = new ArrayList<>(rows.size());
             for (Map<String,Object> row : rows)
             {
                 // assumes all ArrayListMaps are case insensitive

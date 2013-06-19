@@ -61,9 +61,9 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
 
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        Map<File, String> fileToName = new HashMap<File, String>();
+        Map<File, String> fileToName = new HashMap<>();
         Map<String, File> uploadedData = context.getUploadedData();
-        Map<String, File> result = new HashMap<String, File>(uploadedData);
+        Map<String, File> result = new HashMap<>(uploadedData);
         for (Map.Entry<String, File> entry : uploadedData.entrySet())
         {
             fileToName.put(entry.getValue(), entry.getKey());

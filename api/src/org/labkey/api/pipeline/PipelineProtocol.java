@@ -102,7 +102,7 @@ public abstract class PipelineProtocol
     protected Map<String, String> getSaveProperties()
     {
         PropertyDescriptor props[] = PropertyUtils.getPropertyDescriptors(this);
-        Map<String, String> propMap = new HashMap<String, String>();
+        Map<String, String> propMap = new HashMap<>();
 
         for (PropertyDescriptor prop : props)
         {
@@ -159,7 +159,7 @@ public abstract class PipelineProtocol
         if (null != template)
             ppp.setTemplate(template);
 
-            Map<String, String> mapNS = new HashMap<String, String>();
+            Map<String, String> mapNS = new HashMap<>();
             mapNS.put("", _xmlNamespace);
             XmlOptions opts = new XmlOptions()
                     .setSavePrettyPrint()

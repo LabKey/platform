@@ -40,12 +40,12 @@ public abstract class XarSource implements Serializable
     public static final String LOG_FILE_NAME_SUFFIX = ".log";
 
     private Integer _experimentRunId;
-    private final Map<String, ExpProtocol> _xarProtocols = new HashMap<String, ExpProtocol>();
-    private final Map<String, ExpProtocol> _databaseProtocols = new HashMap<String, ExpProtocol>();
-    private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<String, Map<String, ExpMaterial>>();
-    private final Map<String, Map<String, ExpData>> _data = new HashMap<String, Map<String, ExpData>>();
+    private final Map<String, ExpProtocol> _xarProtocols = new HashMap<>();
+    private final Map<String, ExpProtocol> _databaseProtocols = new HashMap<>();
+    private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<>();
+    private final Map<String, Map<String, ExpData>> _data = new HashMap<>();
 
-    protected final Map<String, String> _dataFileURLs = new HashMap<String, String>();
+    protected final Map<String, String> _dataFileURLs = new HashMap<>();
 
     private final XarContext _xarContext;
 
@@ -129,7 +129,7 @@ public abstract class XarSource implements Serializable
         Map<String, ExpData> existingMap = _data.get(experimentRunLSID);
         if (existingMap == null)
         {
-            existingMap = new HashMap<String, ExpData>();
+            existingMap = new HashMap<>();
             _data.put(experimentRunLSID, existingMap);
         }
         existingMap.put(data.getLSID(), data);
@@ -140,7 +140,7 @@ public abstract class XarSource implements Serializable
         Map<String, ExpMaterial> existingMap = _materials.get(experimentRunLSID);
         if (existingMap == null)
         {
-            existingMap = new HashMap<String, ExpMaterial>();
+            existingMap = new HashMap<>();
             _materials.put(experimentRunLSID, existingMap);
         }
         existingMap.put(material.getLSID(), material);
@@ -152,7 +152,7 @@ public abstract class XarSource implements Serializable
         Map<String, ExpData> map = _data.get(experimentRunLSID);
         if (map == null)
         {
-            map = new HashMap<String, ExpData>();
+            map = new HashMap<>();
             _data.put(experimentRunLSID, map);
         }
         ExpData result = map.get(dataLSID);
@@ -191,7 +191,7 @@ public abstract class XarSource implements Serializable
         Map<String, ExpMaterial> map = _materials.get(experimentRunLSID);
         if (map == null)
         {
-            map = new HashMap<String, ExpMaterial>();
+            map = new HashMap<>();
             _materials.put(experimentRunLSID, map);
         }
         ExpMaterial result = map.get(materialLSID);

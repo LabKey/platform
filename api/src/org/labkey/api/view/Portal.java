@@ -161,7 +161,7 @@ public class Portal
         String name;
         String location = HttpView.BODY;
         boolean permanent;
-        Map<String, String> propertyMap = new HashMap<String, String>();
+        Map<String, String> propertyMap = new HashMap<>();
         Map<String, Object> extendedProperties = null;
         String permission;
         Container permissionContainer;
@@ -404,7 +404,7 @@ public class Portal
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
         if (parts instanceof List)
             return Collections.unmodifiableList((List)parts);
-        return Collections.unmodifiableList(new ArrayList<WebPart>(parts));
+        return Collections.unmodifiableList(new ArrayList<>(parts));
     }
 
     public static List<WebPart> getParts(Container c, ViewContext context)
@@ -416,7 +416,7 @@ public class Portal
     public static List<WebPart> getParts(Container c, String pageId, ViewContext context)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
-        List<WebPart> visibleParts = new ArrayList<WebPart>();
+        List<WebPart> visibleParts = new ArrayList<>();
 
         for (WebPart part : parts)
         {
@@ -542,7 +542,7 @@ public class Portal
         }
         else
         {
-            List<Portal.WebPart> partsNew = new LinkedList<WebPart>();
+            List<Portal.WebPart> partsNew = new LinkedList<>();
 
             for (final WebPart currentPart : parts)
             {
@@ -782,10 +782,10 @@ public class Portal
             ensurePage(c, pageId);
 
             List<WebPart> oldParts = getParts(c, pageId);
-            Set<Integer> oldPartIds = new HashSet<Integer>();
+            Set<Integer> oldPartIds = new HashSet<>();
             for (WebPart oldPart : oldParts)
                 oldPartIds.add(oldPart.getRowId());
-            Set<Integer> newPartIds = new HashSet<Integer>();
+            Set<Integer> newPartIds = new HashSet<>();
             for (WebPart newPart : newParts)
             {
                 if (newPart.getRowId() >= 0)
@@ -857,7 +857,7 @@ public class Portal
                 addPart.pageId = id;
                 addPart.location = regionName;
                 addPart.webPartNames = partsToAdd;
-                WebPartView addPartView = new JspView<AddWebParts>("/org/labkey/api/view/addWebPart.jsp", addPart);
+                WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
                 addPartView.setFrame(WebPartView.FrameType.NONE);
 
                 // save these off in case we have to re-shuffle due to an empty right region:
@@ -1028,7 +1028,7 @@ public class Portal
 
     public static MultiMap<String, WebPart> getPartsByLocation(Collection<WebPart> parts)
     {
-        MultiMap<String, WebPart> multiMap = new MultiHashMap<String, WebPart>();
+        MultiMap<String, WebPart> multiMap = new MultiHashMap<>();
 
         for (WebPart part : parts)
         {
@@ -1044,7 +1044,7 @@ public class Portal
 
     public static MultiMap<String, WebPart> getPartsByLocation(WebPart[] parts)
     {
-        MultiMap<String, WebPart> multiMap = new MultiHashMap<String, WebPart>();
+        MultiMap<String, WebPart> multiMap = new MultiHashMap<>();
 
         for (WebPart part : parts)
         {
@@ -1065,7 +1065,7 @@ public class Portal
 
     public static WebPartFactory getPortalPartCaseInsensitive(String name)
     {
-        CaseInsensitiveHashMap<WebPartFactory> viewMap = new CaseInsensitiveHashMap<WebPartFactory>(getViewMap());
+        CaseInsensitiveHashMap<WebPartFactory> viewMap = new CaseInsensitiveHashMap<>(getViewMap());
         return viewMap.get(name);
     }
 
@@ -1099,8 +1099,8 @@ public class Portal
 
     private synchronized static void initMaps()
     {
-        _viewMap = new HashMap<String, WebPartFactory>(20);
-        _regionMap = new MultiHashMap<String, String>();
+        _viewMap = new HashMap<>(20);
+        _regionMap = new MultiHashMap<>();
 
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
@@ -1130,7 +1130,7 @@ public class Portal
     public static Map<String, String> getPartsToAdd(Container c, String location)
     {
         //TODO: Cache these
-        Map<String, String> webPartNames = new TreeMap<String, String>();
+        Map<String, String> webPartNames = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
@@ -1314,9 +1314,9 @@ public class Portal
         private String action;       // detailsurl (type==action)
         private GUID targetFolder;   // continerId (type==folder)
         private boolean permanent;   // may not rename,hide,delete
-        Map<String, String> propertyMap = new HashMap<String, String>();
+        Map<String, String> propertyMap = new HashMap<>();
         private String properties;
-        private LinkedHashMap<Integer,WebPart> webparts = new LinkedHashMap<Integer, WebPart>();
+        private LinkedHashMap<Integer,WebPart> webparts = new LinkedHashMap<>();
 
         public GUID getEntityId()
         {

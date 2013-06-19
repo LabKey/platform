@@ -147,7 +147,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     {
         if (properties == null) return null;
 
-        Map<String,String> stringMap = new HashMap<String,String>();
+        Map<String,String> stringMap = new HashMap<>();
         for (Map.Entry<String,Object> entry :  properties.entrySet())
         {
             Object value = entry.getValue();
@@ -178,7 +178,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             // start reducing the overall size of the map
             if (validateSize && data.length() > MAX_FIELD_SIZE)
             {
-                List<Map.Entry<String, String>> newProps = new ArrayList<Map.Entry<String, String>>();
+                List<Map.Entry<String, String>> newProps = new ArrayList<>();
                 newProps.addAll(properties.entrySet());
                 int newSize = Math.max(1, newProps.size());
 
@@ -232,7 +232,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         {
             boolean dirty = false;
 
-            Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
+            Map<String, DomainProperty> existingProps = new HashMap<>();
 
             for (DomainProperty dp : domain.getProperties())
             {

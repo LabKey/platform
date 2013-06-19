@@ -98,7 +98,7 @@ public class ScriptUtils {
             }
             else
             {
-                Map<String, Object> map = new LinkedHashMap<String, Object>();
+                Map<String, Object> map = new LinkedHashMap<>();
                 for (Object id : ids)
                 {
                     String key = id.toString();
@@ -135,7 +135,7 @@ public class ScriptUtils {
     public static Map<String, Object> scriptableToMap(Scriptable jsObj)
     {
         final Object[] ids = jsObj.getIds();
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
         for (Object id : ids)
         {
             String key = id.toString();

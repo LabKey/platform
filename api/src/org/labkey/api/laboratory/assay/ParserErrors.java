@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class ParserErrors
 {
-    private List<Pair<String, Level>> _errors = new ArrayList<Pair<String, Level>>();
+    private List<Pair<String, Level>> _errors = new ArrayList<>();
     private Level _threshold;
 
     public ParserErrors(Level threshold)

@@ -416,7 +416,7 @@ public class PageFlowUtil
         if (null == encoding)
             encoding = "UTF-8";
 
-        List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> parameters = new ArrayList<>();
         if (query.startsWith("?"))
             query = query.substring(1);
         String[] terms = query.split("&");
@@ -443,7 +443,7 @@ public class PageFlowUtil
                     val = URLDecoder.decode(term.substring(ind + 1).trim(), encoding);
                 }
 
-                parameters.add(new Pair<String,String>(key, val));
+                parameters.add(new Pair<>(key, val));
             }
         }
         catch (UnsupportedEncodingException x)
@@ -457,7 +457,7 @@ public class PageFlowUtil
 
     public static Map<String, String> mapFromQueryString(String queryString)
     {
-        Map<String, String> m = new LinkedHashMap<String, String>();
+        Map<String, String> m = new LinkedHashMap<>();
         for (Pair<String, String> p : fromQueryString(queryString))
             m.put(p.getKey(), p.getValue());
 
@@ -537,7 +537,7 @@ public class PageFlowUtil
 
     public static <T> Map<T, T> map(T... args)
     {
-        HashMap<T, T> m = new HashMap<T, T>();
+        HashMap<T, T> m = new HashMap<>();
         for (int i = 0; i < args.length; i += 2)
             m.put(args[i], args[i + 1]);
         return m;
@@ -546,7 +546,7 @@ public class PageFlowUtil
 
     public static Map<String, Object> mapInsensitive(Object... args)
     {
-        Map<String,Object> m = new CaseInsensitiveHashMap<Object>();
+        Map<String,Object> m = new CaseInsensitiveHashMap<>();
         for (int i = 0; i < args.length; i += 2)
             m.put(String.valueOf(args[i]), args[i + 1]);
         return m;
@@ -555,7 +555,7 @@ public class PageFlowUtil
 
     public static <T> Set<T> set(T... args)
     {
-        HashSet<T> s = new HashSet<T>();
+        HashSet<T> s = new HashSet<>();
 
         if (null != args)
             s.addAll(Arrays.asList(args));
@@ -566,9 +566,9 @@ public class PageFlowUtil
 
     public static ArrayList pairs(Object... args)
     {
-        ArrayList<Pair> list = new ArrayList<Pair>();
+        ArrayList<Pair> list = new ArrayList<>();
         for (int i = 0; i < args.length; i += 2)
-            list.add(new Pair<Object,Object>(args[i], args[i + 1]));
+            list.add(new Pair<>(args[i], args[i + 1]));
         return list;
     }
 
@@ -1127,7 +1127,7 @@ public class PageFlowUtil
     // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.
     public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
     {
-        List<String> contents = new ArrayList<String>();
+        List<String> contents = new ArrayList<>();
         BufferedReader input = new BufferedReader(new InputStreamReader(is));
 
         try
@@ -1714,7 +1714,7 @@ public class PageFlowUtil
 
     public static void writeCss(Container c, User u, StringBuilder sb, LinkedHashSet<ClientDependency> resources)
     {
-        Set<String> cssFiles = new HashSet<String>();
+        Set<String> cssFiles = new HashSet<>();
         if (resources != null)
         {
             for (ClientDependency r : resources)
@@ -1806,7 +1806,7 @@ public class PageFlowUtil
      */
     public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
 
         if (AppProps.getInstance().isExt3Required())
             resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
@@ -1882,10 +1882,10 @@ public class PageFlowUtil
           * scripts: the scripts that should be explicitly included
           * included: the scripts that are implicitly included, which will include the component scripts on a minified library.
           */
-        LinkedHashSet<String> includes = new LinkedHashSet<String>();
-        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
+        LinkedHashSet<String> includes = new LinkedHashSet<>();
+        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
 
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         if (includeDefaultResources)
             resources.addAll(getDefaultJavaScriptPaths());
 
@@ -2084,7 +2084,7 @@ public class PageFlowUtil
 
     private static class ValidateHandler extends org.xml.sax.helpers.DefaultHandler
     {
-        static HashSet<String> _illegalElements = new HashSet<String>();
+        static HashSet<String> _illegalElements = new HashSet<>();
 
         static
         {
@@ -2104,7 +2104,7 @@ public class PageFlowUtil
         }
 
         Collection<String> _errors;
-        HashSet<String> _reported = new HashSet<String>();
+        HashSet<String> _reported = new HashSet<>();
 
 
         ValidateHandler(Collection<String> errors)
@@ -2442,7 +2442,7 @@ public class PageFlowUtil
         JSONObject ret = new JSONObject();
         if (resources != null)
         {
-            Set<Module> modules = new HashSet<Module>();
+            Set<Module> modules = new HashSet<>();
             for (ClientDependency cd : resources)
             {
                 modules.addAll(cd.getRequiredModuleContexts(c, u));

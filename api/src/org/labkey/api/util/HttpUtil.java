@@ -126,7 +126,7 @@ public class HttpUtil
         IOUtils.copy(reader, writer);
         String content = writer.toString();
 
-        ArrayList<String> errors = new ArrayList<String>();
+        ArrayList<String> errors = new ArrayList<>();
         Document document = TidyUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
         {

@@ -281,7 +281,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     public ArrayList<Map<String, Object>> getFieldsMetaData(Collection<DisplayColumn> displayColumns, boolean includeLookupInfo)
     {
-        ArrayList<Map<String, Object>> fields = new ArrayList<Map<String,Object>>();
+        ArrayList<Map<String, Object>> fields = new ArrayList<>();
         for (DisplayColumn dc : displayColumns)
         {
             if (includeColumnInResponse(dc))
@@ -304,7 +304,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Map<String,Object> getFileUrlMeta(DisplayColumn fileColumn)
     {
-        Map<String,Object> urlmdata = new HashMap<String,Object>();
+        Map<String,Object> urlmdata = new HashMap<>();
         urlmdata.put("name", URL_COL_PREFIX + fileColumn.getColumnInfo().getName());
         urlmdata.put("type", "string");
         return urlmdata;
@@ -312,7 +312,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected List<Map<String,Object>> getColumnModel() throws Exception
     {
-        ArrayList<Map<String,Object>> cols = new ArrayList<Map<String,Object>>();
+        ArrayList<Map<String,Object>> cols = new ArrayList<>();
         for (DisplayColumn dc : _displayColumns)
         {
             if (includeColumnInResponse(dc))
@@ -333,7 +333,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Map<String,Object> getColModel(DisplayColumn dc) throws Exception
     {
-        Map<String,Object> extGridColumn = new HashMap<String,Object>();
+        Map<String,Object> extGridColumn = new HashMap<>();
         ColumnInfo colInfo = dc.getColumnInfo();
 
         // see  Ext.grid.ColumnModel Ext.grid.Column
@@ -404,7 +404,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Map<String,Object> getRow() throws Exception
     {
-        Map<String,Object> row = new HashMap<String,Object>();
+        Map<String,Object> row = new HashMap<>();
         for (DisplayColumn dc : _displayColumns)
         {
             if (includeColumnInResponse(dc))

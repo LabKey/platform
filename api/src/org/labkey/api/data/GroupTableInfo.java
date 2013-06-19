@@ -122,13 +122,13 @@ public class GroupTableInfo extends VirtualTable
 
     protected List<ColumnInfo> getDistinctColumns()
     {
-        Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
+        Set<ColumnInfo> cols = new HashSet<>();
         for(ColumnInfo col : getGroupByColumns())
             cols.add(col);
         for(CrosstabMeasure measure : getMeasures())
             cols.add(measure.getSourceColumn());
 
-        return new ArrayList<ColumnInfo>(cols);
+        return new ArrayList<>(cols);
     }
 
     public List<CrosstabMeasure> getMeasures()

@@ -55,7 +55,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     private final int _impersonatedUserId;
     private final URLHelper _returnURL;
     /** Don't remove/rename without updating PipelineJobMarshaller.getXStream() */
-    private final Map<String, Object> _adminSessionAttributes = new HashMap<String, Object>();
+    private final Map<String, Object> _adminSessionAttributes = new HashMap<>();
 
     public ImpersonateUserContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
     {

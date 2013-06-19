@@ -143,7 +143,7 @@ public class OntologyManager
 		assert getExpSchema().getScope().isTransactionActive();
 		List<String> resultingLsids = new ArrayList<>(rows.size());
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
-        List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
+        List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.length);
 
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -157,8 +157,8 @@ public class OntologyManager
 			objInsert.setContainer(c);
 			objInsert.setOwnerObjectId(ownerObjectId);
 
-            List<ValidationError> errors = new ArrayList<ValidationError>();
-            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<Integer, List<? extends IPropertyValidator>>();
+            List<ValidationError> errors = new ArrayList<>();
+            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
 
             // cache all the property validators for this upload
             for (PropertyDescriptor pd : descriptors)
@@ -231,7 +231,7 @@ public class OntologyManager
                     insertPropertiesBulk(c, propsToInsert);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
-                    propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
+                    propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.length);
 
                     if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
                     {
@@ -321,7 +321,7 @@ public class OntologyManager
         DbScope scope = table.getSchema().getScope();
         
 		assert scope.isTransactionActive();
-		List<String> resultingLsids = new ArrayList<String>(rows.size());
+		List<String> resultingLsids = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
         DomainProperty[] properties = null == d ? new DomainProperty[0] : d.getProperties();
@@ -344,10 +344,10 @@ public class OntologyManager
             {
                 parameterMap = ((UpdateableTableInfo)table).updateStatement(conn, user, null);
             }
-            List<ValidationError> errors = new ArrayList<ValidationError>();
+            List<ValidationError> errors = new ArrayList<>();
 
-            Map<String, List<? extends IPropertyValidator>> validatorMap = new HashMap<String, List<? extends IPropertyValidator>>();
-            Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
+            Map<String, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
+            Map<String, DomainProperty> propertiesMap = new HashMap<>();
 
             // cache all the property validators for this upload
             for (DomainProperty dp : properties)
@@ -373,7 +373,7 @@ public class OntologyManager
 
 			for (Map<String, Object> map : rows)
 			{
-                currentRow = new CaseInsensitiveHashMap<Object>(map);
+                currentRow = new CaseInsensitiveHashMap<>(map);
                 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
@@ -438,7 +438,7 @@ public class OntologyManager
                         }
                         else
                         {
-                            Pair<Object,String> p = new Pair<Object,String>(value,null);
+                            Pair<Object,String> p = new Pair<>(value,null);
                             convertValuePair(pd, propertyTypes[i], p);
                             parameterMap.put(key, p.first);
                             if (null != p.second)
@@ -567,7 +567,7 @@ public class OntologyManager
         }
 
         ObjectProperty[] pvals = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArray(ObjectProperty.class);
-		m = new HashMap<String, ObjectProperty>();
+		m = new HashMap<>();
 		for (ObjectProperty value : pvals)
 		{
 			m.put(value.getPropertyURI(), value);
@@ -1041,7 +1041,7 @@ public class OntologyManager
 
         try {
             rsObjsUsingMyProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId()});
-            Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<String, ObjectProperty>();
+            Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
             String sqlIn="";
             String sep="";
             String objURI;
@@ -1203,7 +1203,7 @@ public class OntologyManager
                     " AND PD.Project <> ? ";
             rsMyObjsThatRefProjProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId(), _sharedContainer.getId()});
 
-            Map<String, ObjectProperty> mMyObjsThatRefProjProps  = new HashMap<String, ObjectProperty>();
+            Map<String, ObjectProperty> mMyObjsThatRefProjProps  = new HashMap<>();
             String sqlIn="";
             String sep="";
 
@@ -1384,7 +1384,7 @@ public class OntologyManager
 
     private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd) throws SQLException
     {
-        List<String> colDiffs = new ArrayList<String>();
+        List<String> colDiffs = new ArrayList<>();
 
         // if the returned pd is in a different project, it better be the shared project
         if (!pd.getProject().equals(pdIn.getProject()) && !pd.getProject().equals(_sharedContainer))
@@ -1510,7 +1510,7 @@ public class OntologyManager
 
     private static List<String>  compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd) throws SQLException
     {
-        List<String> colDiffs = new ArrayList<String>();
+        List<String> colDiffs = new ArrayList<>();
         String val;
 
         if (ddIn.getDomainId() !=0 && !(dd.getDomainId() == ddIn.getDomainId()))
@@ -1565,9 +1565,9 @@ public class OntologyManager
     
 	private static void insertProperties(Container c, ObjectProperty[] props) throws SQLException, ValidationException
 	{
-		HashMap<String,PropertyDescriptor> descriptors = new HashMap<String, PropertyDescriptor>();
-		HashMap<String,Integer> objects = new HashMap<String, Integer>();
-        List<ValidationError> errors = new ArrayList<ValidationError>();
+		HashMap<String,PropertyDescriptor> descriptors = new HashMap<>();
+		HashMap<String,Integer> objects = new HashMap<>();
+        List<ValidationError> errors = new ArrayList<>();
         // assert !c.equals(ContainerManager.getRoot());
         // TODO - make user a parameter to this method 
         User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
@@ -1619,10 +1619,10 @@ public class OntologyManager
 
 	private static void insertPropertiesBulk(Container container, List<PropertyRow> props) throws SQLException
 	{
-        List<List<?>> floats = new ArrayList<List<?>>();
-		List<List<?>> dates = new ArrayList<List<?>>();
-		List<List<?>> strings = new ArrayList<List<?>>();
-		List<List<?>> mvIndicators = new ArrayList<List<?>>();
+        List<List<?>> floats = new ArrayList<>();
+		List<List<?>> dates = new ArrayList<>();
+		List<List<?>> strings = new ArrayList<>();
+		List<List<?>> mvIndicators = new ArrayList<>();
 
 		for (PropertyRow property : props)
 		{
@@ -1896,7 +1896,7 @@ public class OntologyManager
 
     public static Collection<DomainDescriptor> getDomainDescriptors(Container container)
     {
-        Map<String, DomainDescriptor> ret = new LinkedHashMap<String, DomainDescriptor>();
+        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Project = ?";
         Container project = container.getProject();
 
@@ -1972,7 +1972,7 @@ public class OntologyManager
         pdArray = new SqlSelector(getExpSchema(), sql, params).getArray(PropertyDescriptor.class);
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
-        List<Pair<String, Boolean>> propertyURIs = new ArrayList<Pair<String, Boolean>>(pdArray.length);
+        List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(pdArray.length);
         for (PropertyDescriptor pd : pdArray)
         {
             propDescCache.put(getCacheKey(pd), pd);
@@ -2415,8 +2415,8 @@ public class OntologyManager
 
     public static class ListImportPropertyDescriptors
     {
-        public ArrayList<ImportPropertyDescriptor> properties = new ArrayList<ImportPropertyDescriptor>();
-        public Map<String, List<ConditionalFormat>> formats = new HashMap<String, List<ConditionalFormat>>();
+        public ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
+        public Map<String, List<ConditionalFormat>> formats = new HashMap<>();
         void add(String domainName, String domainURI, PropertyDescriptor pd)
         {
             properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd));
@@ -2487,7 +2487,7 @@ public class OntologyManager
         {
             // There really shouldn't be mvindicator columns in the map, so this is just being defensive
             // they should be implied by isMvEnabled() in the parent column
-            CaseInsensitiveHashMap<PropertyDescriptor> nameMap = new CaseInsensitiveHashMap<PropertyDescriptor>();
+            CaseInsensitiveHashMap<PropertyDescriptor> nameMap = new CaseInsensitiveHashMap<>();
             for (ImportPropertyDescriptor ipd : ret.properties)
                 nameMap.put(ipd.pd.getName(), ipd.pd);
             for (String mv : mvColumns)
@@ -3151,7 +3151,7 @@ public class OntologyManager
 
             PropertyDescriptor[] pds = getPropertiesForType(domURIa, c);
             assertEquals(2, pds.length);
-            Map<String, PropertyDescriptor>  mPds = new HashMap<String,PropertyDescriptor>();
+            Map<String, PropertyDescriptor>  mPds = new HashMap<>();
             for(PropertyDescriptor pd1  : pds)
                 mPds.put( pd1.getPropertyURI(), pd1);
 
@@ -3229,7 +3229,7 @@ public class OntologyManager
 			this.propertyId = pd.getPropertyId();
 			this.typeTag = pt.getStorageType();
 
-            Pair<Object,String> p = new Pair<Object,String>(value,null);
+            Pair<Object,String> p = new Pair<>(value,null);
             convertValuePair(pd, pt, p);
             mvIndicator = p.second;
             
@@ -3675,7 +3675,7 @@ public class OntologyManager
 
         Map<String, Object> getRowMap(ResultSet rs) throws SQLException
         {
-            List<Object> list = new ArrayList<Object>();
+            List<Object> list = new ArrayList<>();
             list.add(rs.getString(rsName));
             list.add(rs.getString(rsSearchTerms));
             list.add(rs.getString(rsPropertyUri));

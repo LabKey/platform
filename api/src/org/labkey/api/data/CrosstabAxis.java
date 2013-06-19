@@ -30,7 +30,7 @@ import java.util.List;
 public class CrosstabAxis
 {
     private String _caption = null;
-    private ArrayList<CrosstabDimension> _dimensions = new ArrayList<CrosstabDimension>();
+    private ArrayList<CrosstabDimension> _dimensions = new ArrayList<>();
     private CrosstabSettings _settings = null;
 
     public CrosstabAxis(CrosstabSettings settings)
@@ -73,7 +73,7 @@ public class CrosstabAxis
     public List<ColumnInfo> getSourceColumns()
     {
         List<CrosstabDimension> dims = getDimensions();
-        List<ColumnInfo> cols = new ArrayList<ColumnInfo>(dims.size());
+        List<ColumnInfo> cols = new ArrayList<>(dims.size());
         for(CrosstabDimension dim : dims)
         {
             cols.add(dim.getSourceColumn());

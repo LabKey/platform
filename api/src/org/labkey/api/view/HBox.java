@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class HBox extends VBox
 {
-    private Map<ModelAndView, String> _widths = new HashMap<ModelAndView, String>();
+    private Map<ModelAndView, String> _widths = new HashMap<>();
     private String _tableWidth="100%";
 
     public HBox(ModelAndView... views)

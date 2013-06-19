@@ -106,7 +106,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static final String ERROR_REQUIRED = "requiredError";
     public static final String ERROR_UNIQUE = "uniqueConstraint";
 
-    private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<Class<? extends Controller>, ActionDescriptor>();
+    private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
     private static final Logger _log = Logger.getLogger(SpringActionController.class);
 
@@ -619,7 +619,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         public HTMLFileActionResolver(String controllerName)
         {
-            _nameToDescriptor = new HashMap<String, ActionDescriptor>();
+            _nameToDescriptor = new HashMap<>();
             _controllerName = controllerName;
         }
 
@@ -723,7 +723,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _controllerName = ViewServlet.getControllerName(_outerClass);
             _htmlResolver = null; // This gets loaded if file-based actions are used.
 
-            Map<String, ActionDescriptor> nameToDescriptor = new CaseInsensitiveHashMap<ActionDescriptor>();
+            Map<String, ActionDescriptor> nameToDescriptor = new CaseInsensitiveHashMap<>();
 
             // Add all concrete inner classes of this controller
             addInnerClassActions(nameToDescriptor, _outerClass);
@@ -839,7 +839,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             private List<String> initializeNames(String... names)
             {
-                List<String> list = new ArrayList<String>(names.length);
+                List<String> list = new ArrayList<>(names.length);
                 for (String name : names)
                     list.add(name.trim());
                 return list;
@@ -938,7 +938,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             synchronized (_nameToDescriptor)
             {
-                return new ArrayList<ActionDescriptor>(_nameToDescriptor.values());
+                return new ArrayList<>(_nameToDescriptor.values());
             }
         }
     }

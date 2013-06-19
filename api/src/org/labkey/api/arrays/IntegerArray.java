@@ -29,7 +29,7 @@ import java.util.ArrayList;
 public class IntegerArray
 {
     private static final int ARRAY_LEN = 1024;
-    ArrayList<int[]> list = new ArrayList<int[]>();
+    ArrayList<int[]> list = new ArrayList<>();
     int[] arrayLast;
     int lenLast = 0;
     int size = 0;
@@ -37,7 +37,7 @@ public class IntegerArray
 
     public IntegerArray()
     {
-        list = new ArrayList<int[]>();
+        list = new ArrayList<>();
         arrayLast = new int[ARRAY_LEN];
         list.add(arrayLast);
     }

@@ -41,7 +41,7 @@ public class SamplesSchema extends AbstractExpSchema
 
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
-        Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<ExpSampleSet>();
+        Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
         for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, user != null))
         {

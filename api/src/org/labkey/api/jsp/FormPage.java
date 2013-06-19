@@ -43,12 +43,12 @@ abstract public class FormPage<FORM extends HasViewContext> extends ContextPage
 
     public JspView<FORM> createView(BindException errors)
     {
-        return new JspView<FORM>(this, null, errors);
+        return new JspView<>(this, null, errors);
     }
 
     public JspView<FORM> createView()
     {
-        return new JspView<FORM>(this);
+        return new JspView<>(this);
     }
 
     public void setForm(FORM form)

@@ -61,7 +61,7 @@ public class StatusAppender extends AppenderSkeleton
             if (null != offset && offset.intValue() > 0)
                 firstIndex = Math.min(_status.size(), offset.intValue());
 
-            return new LinkedList<String>(_status.subList(firstIndex, _status.size()));
+            return new LinkedList<>(_status.subList(firstIndex, _status.size()));
         }
     }
 }

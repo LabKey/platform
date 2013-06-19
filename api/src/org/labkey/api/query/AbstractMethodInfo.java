@@ -58,7 +58,7 @@ abstract public class AbstractMethodInfo implements MethodInfo
 
     protected SQLFragment[] getSQLFragments(ColumnInfo[] arguments)
     {
-        List<SQLFragment> ret = new ArrayList<SQLFragment>();
+        List<SQLFragment> ret = new ArrayList<>();
         for (ColumnInfo col : arguments)
         {
             ret.add(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));

@@ -105,7 +105,7 @@ public class SimpleModule extends SpringModule
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> factories = new ArrayList<WebPartFactory>();
+        List<WebPartFactory> factories = new ArrayList<>();
         for(File webPartFile : getWebPartFiles())
         {
             factories.add(new SimpleWebPartFactory(this, webPartFile));
@@ -150,7 +150,7 @@ public class SimpleModule extends SpringModule
             Resource schemasDir = getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
             if (schemasDir != null && schemasDir.isCollection())
             {
-                final Set<String> schemaNames = new LinkedHashSet<String>();
+                final Set<String> schemaNames = new LinkedHashSet<>();
                 CollectionUtils.forAllDo(schemasDir.list(), new Closure<Resource>() {
                     @Override
                     public void execute(Resource resource)

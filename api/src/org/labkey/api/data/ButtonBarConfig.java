@@ -46,11 +46,11 @@ import java.util.Set;
 public class ButtonBarConfig
 {
     private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
-    private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
+    private List<ButtonConfig> _items = new ArrayList<>();
     private boolean _includeStandardButtons = false;
     private String[] _scriptIncludes;
     private String _onRenderScript;
-    private Set<String> _hiddenStandardButtons = new HashSet<String>();
+    private Set<String> _hiddenStandardButtons = new HashSet<>();
 
     private static final Logger LOG = Logger.getLogger(ButtonBarConfig.class);
 
@@ -133,7 +133,7 @@ public class ButtonBarConfig
         ButtonBarItem[] items = buttonBarOptions.getItemArray();
         if (items != null && items.length > 0)
         {
-            _items = new ArrayList<ButtonConfig>();
+            _items = new ArrayList<>();
             for (ButtonBarItem item : items)
                 _items.add(loadButtonConfig(item));
         }
@@ -241,7 +241,7 @@ public class ButtonBarConfig
             ButtonMenuItem[] subItems = item.getItemArray();
             if (subItems != null && subItems.length > 0)
             {
-                List<NavTree> menuItems = new ArrayList<NavTree>();
+                List<NavTree> menuItems = new ArrayList<>();
                 for (ButtonMenuItem subItem : subItems)
                     menuItems.add(loadNavTree(subItem));
                 buttonConfig.setMenuItems(menuItems);

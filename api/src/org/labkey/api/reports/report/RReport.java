@@ -472,7 +472,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
     {
-        List<Report> scripts = new ArrayList<Report>();
+        List<Report> scripts = new ArrayList<>();
 
         String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
         String reportName = bean.getReportName();

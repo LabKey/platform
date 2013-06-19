@@ -83,7 +83,7 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
             if (selected == null)
                 throw new NotFoundException(getProvider().getResourceName() + " run input " + scope + " could not be found for run " + getReRunId() + ".");
             Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
-            Map<DomainProperty, Object> ret = new HashMap<DomainProperty, Object>();
+            Map<DomainProperty, Object> ret = new HashMap<>();
             for (DomainProperty property : domain.getProperties())
                 ret.put(property, values.get(property.getPropertyURI()));
             return ret;

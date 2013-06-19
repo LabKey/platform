@@ -109,7 +109,7 @@ public class ContainerDisplayColumn extends DataColumn
     //NOTE: custom SQL statements may not container a column named entityId, so we fall back to container if entityId is absent
     private List<FieldKey> getEntityIdFieldKeys()
     {
-        List<FieldKey> keys = new ArrayList<FieldKey>();
+        List<FieldKey> keys = new ArrayList<>();
 
         if(_boundColHasEntityId)
         {
@@ -229,7 +229,7 @@ public class ContainerDisplayColumn extends DataColumn
             mpv.addPropertyValue("query.queryName", "ContainerAuditEvent");
             mpv.addPropertyValue("query.containerFilterName", "AllFolders");
 
-            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+            List<FieldKey> fieldKeys = new ArrayList<>();
             fieldKeys.add(FieldKey.fromString("ProjectId"));
             fieldKeys.add(FieldKey.fromString("ProjectId/Name"));
             fieldKeys.add(FieldKey.fromString("ProjectId/Parent/Name"));

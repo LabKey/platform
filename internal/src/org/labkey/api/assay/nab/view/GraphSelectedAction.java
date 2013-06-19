@@ -72,7 +72,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
                 objectIds[idx++] = Integer.parseInt(objectIdString);
         }
 
-        Set<Integer> cutoffSet = new HashSet<Integer>();
+        Set<Integer> cutoffSet = new HashSet<>();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(_protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), objectIds);
         for (DilutionSummary summary : summaries.keySet())
@@ -88,7 +88,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
 
         GraphSelectedBean bean = createSelectionBean(getViewContext(), _protocol, cutoffs, objectIds, form.getCaptionColumn(), form.getChartTitle());
 
-        JspView<GraphSelectedBean> multiGraphView = new JspView<GraphSelectedBean>("/org/labkey/api/assay/nab/view/multiRunGraph.jsp", bean);
+        JspView<GraphSelectedBean> multiGraphView = new JspView<>("/org/labkey/api/assay/nab/view/multiRunGraph.jsp", bean);
 
         return new VBox(new AssayHeaderView(_protocol, provider, false, true, null), multiGraphView);
     }

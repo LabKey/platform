@@ -87,7 +87,7 @@ public abstract class ApiResponseWriter
         }
     }
 
-    protected Stack<StreamState> _streamStack = new Stack<StreamState>();
+    protected Stack<StreamState> _streamStack = new Stack<>();
 
     public enum Format
     {

@@ -86,7 +86,7 @@ public class RowMapFactory<V>
      */
     public RowMap<V> getRowMap(Map<String,V> source)
     {
-        RowMap<V> to = new RowMap<V>(_findMap);
+        RowMap<V> to = new RowMap<>(_findMap);
         for (String key : _findMap.keySet())
         {
             to.put(key, source.get(key));

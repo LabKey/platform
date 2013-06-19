@@ -47,7 +47,7 @@ public class WebThemeManager
     private static final String THEME_COLORS_KEY = "themeColors-";
 
     @ScalabilityProblem   // Should use a proper cache
-    private static final Map<String, WebTheme> _webThemeMap = new TreeMap<String, WebTheme>();
+    private static final Map<String, WebTheme> _webThemeMap = new TreeMap<>();
 
     public final static WebTheme DEFAULT_THEME = WebTheme.DEFAULT;
 
@@ -147,7 +147,7 @@ public class WebThemeManager
         synchronized(_webThemeMap)
         {
             // Only used by admin pages, so just give every caller a new copy of the values
-            return new ArrayList<WebTheme>(_webThemeMap.values());
+            return new ArrayList<>(_webThemeMap.values());
         }
     }
 

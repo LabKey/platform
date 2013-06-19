@@ -45,7 +45,7 @@ public abstract class FolderTab
     private final String _name;
     private String _caption;
     private boolean _isDefaultTab = false;
-    protected Set<String> _legacyNames = new HashSet<String>();
+    protected Set<String> _legacyNames = new HashSet<>();
     protected int _defaultIndex = -1;
 
     public enum TAB_TYPE
@@ -66,7 +66,7 @@ public abstract class FolderTab
     }
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
-    private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
+    private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<>();
 
     protected List<Class<? extends Permission>> _permissions;
 

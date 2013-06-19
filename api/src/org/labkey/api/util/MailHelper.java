@@ -151,7 +151,7 @@ public class MailHelper
      */
     public static Address[] createAddressArray(String s) throws AddressException
     {
-        List<InternetAddress> addrs = new ArrayList<InternetAddress>();
+        List<InternetAddress> addrs = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(s, ";");
         while (st.hasMoreTokens())
             addrs.add(new InternetAddress(st.nextToken()));
@@ -403,7 +403,7 @@ public class MailHelper
     // Sends one or more email messages in a background thread.  Add message(s) to the emailer, then call start().
     public static class BulkEmailer extends Thread
     {
-        private Map<Collection<String>, ViewMessage> _map = new HashMap<Collection<String>, ViewMessage>(10);
+        private Map<Collection<String>, ViewMessage> _map = new HashMap<>(10);
         private User _user;
 
         public BulkEmailer()

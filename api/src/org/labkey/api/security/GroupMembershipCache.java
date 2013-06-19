@@ -157,7 +157,7 @@ public class GroupMembershipCache
     {
         int userId = principal.getUserId();
 
-        LinkedList<Integer> principals = new LinkedList<Integer>();
+        LinkedList<Integer> principals = new LinkedList<>();
 
         // All principals are themselves
         principals.add(userId);
@@ -177,7 +177,7 @@ public class GroupMembershipCache
     // Return all the principals plus all the groups they belong to (plus all the groups those groups belong to, etc.)
     public static int[] computeAllGroups(Deque<Integer> principals)
     {
-        HashSet<Integer> groupSet = new HashSet<Integer>();
+        HashSet<Integer> groupSet = new HashSet<>();
 
         while (!principals.isEmpty())
         {

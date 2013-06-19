@@ -68,9 +68,9 @@ public class XarContext
     public XarContext(XarContext parent)
     {
         _jobDescription = parent._jobDescription;
-        _originalURLs = new HashMap<String, ExpData>(parent._originalURLs);
-        _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<ExpData>(parent._originalURLs);
-        _substitutions = new HashMap<String, String>(parent._substitutions);
+        _originalURLs = new HashMap<>(parent._originalURLs);
+        _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<>(parent._originalURLs);
+        _substitutions = new HashMap<>(parent._substitutions);
         _container = parent.getContainer();
         _user = parent.getUser();
     }
@@ -83,9 +83,9 @@ public class XarContext
     public XarContext(String jobDescription, Container c, User user, String defaultLsidAuthority)
     {
         _jobDescription = jobDescription;
-        _originalURLs = new HashMap<String, ExpData>();
-        _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<ExpData>();
-        _substitutions = new HashMap<String, String>();
+        _originalURLs = new HashMap<>();
+        _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<>();
+        _substitutions = new HashMap<>();
 
         String path = c.getPath();
         if (path.startsWith("/"))

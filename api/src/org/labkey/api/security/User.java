@@ -184,7 +184,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     // Return the usual contextual roles
     public Set<Role> getStandardContextualRoles()
     {
-        Set<Role> roles = new HashSet<Role>();
+        Set<Role> roles = new HashSet<>();
 
         if (isAdministrator())
             roles.add(RoleManager.siteAdminRole);

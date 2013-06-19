@@ -117,7 +117,7 @@ public class QueryWebPart extends VBox
 
             TableInfo td = null;
             try {
-                ArrayList<QueryException> errors = new ArrayList<QueryException>();
+                ArrayList<QueryException> errors = new ArrayList<>();
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
                 {
@@ -208,7 +208,7 @@ public class QueryWebPart extends VBox
             }
 
             // additionally, check for any render time errors not caught at parse time
-            List<QueryException> queryErrors = new ArrayList<QueryException>();
+            List<QueryException> queryErrors = new ArrayList<>();
             queryDef.getTable(_schema, queryErrors, true);
             if (!queryErrors.isEmpty())
             {

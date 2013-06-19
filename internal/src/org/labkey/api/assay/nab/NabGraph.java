@@ -201,7 +201,7 @@ public class NabGraph
     public static void renderChartPNG(HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, DilutionCurve.FitFailedException
     {
         boolean longCaptions = false;
-        Set<String> shortCaptions = new HashSet<String>();
+        Set<String> shortCaptions = new HashSet<>();
         for (DilutionSummary summary : summaries.keySet())
         {
             String shortCaption = getDefaultCaption(summary, false);
@@ -209,7 +209,7 @@ public class NabGraph
                 longCaptions = true;
             shortCaptions.add(shortCaption);
         }
-        java.util.List<Pair<String, DilutionSummary>> summaryMap = new ArrayList<Pair<String, DilutionSummary>>();
+        java.util.List<Pair<String, DilutionSummary>> summaryMap = new ArrayList<>();
         for (Map.Entry<DilutionSummary, DilutionAssayRun> sampleEntry : summaries.entrySet())
         {
             String caption = null;
@@ -231,14 +231,14 @@ public class NabGraph
             }
             if (caption == null || caption.length() == 0)
                 caption = getDefaultCaption(summary, longCaptions);
-            summaryMap.add(new Pair<String, DilutionSummary>(caption, summary));
+            summaryMap.add(new Pair<>(caption, summary));
         }
         renderChartPNG(response, summaryMap, config);
     }
 
     public static void renderChartPNG(HttpServletResponse response, DilutionAssayRun assay, Config config) throws IOException, DilutionCurve.FitFailedException
     {
-        Map<DilutionSummary, DilutionAssayRun> samples = new LinkedHashMap<DilutionSummary, DilutionAssayRun>();
+        Map<DilutionSummary, DilutionAssayRun> samples = new LinkedHashMap<>();
         for (DilutionSummary summary : assay.getSummaries())
         {
             if (!summary.isBlank())

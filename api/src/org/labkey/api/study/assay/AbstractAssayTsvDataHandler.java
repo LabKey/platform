@@ -172,7 +172,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     column.errorValues = ERROR_VALUE;
             }
-            Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
+            Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
 
             // loader did not parse any rows
@@ -203,7 +203,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     private void adjustFirstRowOrder(List<Map<String, Object>> dataRows, DataLoader loader) throws IOException
     {
         Map<String, Object> firstRow = dataRows.remove(0);
-        Map<String, Object> newRow = new LinkedHashMap<String, Object>();
+        Map<String, Object> newRow = new LinkedHashMap<>();
 
         for (ColumnDescriptor column : loader.getColumns())
         {
@@ -364,7 +364,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // Now figure out what's missing but required
         Map<String, DomainProperty> importMap = dataDomain.createImportMap(true);
         // Consider all of them initially
-        LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<DomainProperty>(Arrays.asList(expected));
+        LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<>(Arrays.asList(expected));
 
         // Iterate through the ones we got
         for (String col : actual)
@@ -387,7 +387,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     private void filterColumns(Domain domain, Set<String> actual, List<Map<String, Object>> rawData)
     {
-        Map<String,String> expectedKey2ActualKey = new HashMap<String,String>();
+        Map<String,String> expectedKey2ActualKey = new HashMap<>();
         for (Map.Entry<String,DomainProperty> aliased : domain.createImportMap(true).entrySet())
         {
             for (String actualKey : actual)
@@ -401,7 +401,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         ListIterator<Map<String, Object>> iter = rawData.listIterator();
         while (iter.hasNext())
         {
-            Map<String, Object> filteredMap = new HashMap<String, Object>();
+            Map<String, Object> filteredMap = new HashMap<>();
             Map<String, Object> rawDataRow = iter.next();
             for (Map.Entry<String,String> expectedAndActualKeys : expectedKey2ActualKey.entrySet())
             {
@@ -416,8 +416,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      */
     private Set<ExpMaterial> checkData(Container container, Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException
     {
-        List<String> missing = new ArrayList<String>();
-        List<String> unexpected = new ArrayList<String>();
+        List<String> missing = new ArrayList<>();
+        List<String> unexpected = new ArrayList<>();
 
         Set<String> columnNames = rawData.get(0).keySet();
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to
@@ -490,23 +490,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         boolean resolveMaterials = specimenPD != null || visitPD != null || datePD != null || targetStudyPD != null;
 
-        Set<String> missingValues = new HashSet<String>();
-        Set<String> wrongTypes = new HashSet<String>();
+        Set<String> missingValues = new HashSet<>();
+        Set<String> wrongTypes = new HashSet<>();
 
         StringBuilder errorSB = new StringBuilder();
 
-        Set<ExpMaterial> materialInputs = new LinkedHashSet<ExpMaterial>();
+        Set<ExpMaterial> materialInputs = new LinkedHashSet<>();
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
 
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
-        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<Object>();
+        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
 
         for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext();)
         {
             Map<String, Object> originalMap = iter.next();
-            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(caseMapping);
+            Map<String, Object> map = new CaseInsensitiveHashMap<>(caseMapping);
             // Rekey the map, resolving aliases to the actual property names
             for (Map.Entry<String, Object> entry : originalMap.entrySet())
             {
@@ -658,13 +658,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         final Map<String, DomainProperty> importMap = domain.createImportMap(true);
 
         // For a given property, find all the potential names it by which it could be referenced
-        final Map<DomainProperty, Set<String>> propToNames = new HashMap<DomainProperty, Set<String>>();
+        final Map<DomainProperty, Set<String>> propToNames = new HashMap<>();
         for (Map.Entry<String, DomainProperty> entry : importMap.entrySet())
         {
             Set<String> allNames = propToNames.get(entry.getValue());
             if (allNames == null)
             {
-                allNames = new HashSet<String>();
+                allNames = new HashSet<>();
                 propToNames.put(entry.getValue(), allNames);
             }
             allNames.add(entry.getKey());
@@ -672,7 +672,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
-        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<Object>();
+        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
         for (ListIterator<Map<String, Object>> i = dataMaps.listIterator(); i.hasNext(); )
         {
             Map<String, Object> dataMap = i.next();

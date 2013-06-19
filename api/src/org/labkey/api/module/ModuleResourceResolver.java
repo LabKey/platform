@@ -53,7 +53,7 @@ public class ModuleResourceResolver implements Resolver
 
     ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
     {
-        List<ClassResourceCollection> additional = new ArrayList<ClassResourceCollection>(classes.length);
+        List<ClassResourceCollection> additional = new ArrayList<>(classes.length);
 
         for (Class clazz : classes)
             additional.add(new ClassResourceCollection(clazz, this));

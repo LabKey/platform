@@ -417,7 +417,7 @@ final class ExternalScriptable implements Scriptable
     }
 
     private String[] getAllKeys() {
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         synchronized (context) {
             for (int scope : context.getScopes()) {
                 Bindings bindings = context.getBindings(scope);

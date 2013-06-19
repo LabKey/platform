@@ -90,8 +90,8 @@ public class SpringAttachmentFile implements AttachmentFile
 
     public static List<AttachmentFile> createList(Map<String, MultipartFile> fileMap)
     {
-        List<AttachmentFile> files = new ArrayList<AttachmentFile>(fileMap.size());
-        ArrayList<String> keys = new ArrayList<String>(fileMap.keySet());
+        List<AttachmentFile> files = new ArrayList<>(fileMap.size());
+        ArrayList<String> keys = new ArrayList<>(fileMap.keySet());
         Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
 
         for (String fileKey : keys)

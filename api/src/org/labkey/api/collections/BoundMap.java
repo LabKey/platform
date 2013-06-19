@@ -31,10 +31,10 @@ import java.io.IOException;
 
 public class BoundMap extends AbstractMap<String, Object> implements Serializable
 {
-    private static final HashMap<Class, HashMap<String, BoundProperty>> _savedPropertyMaps = new HashMap<Class, HashMap<String, BoundProperty>>();
+    private static final HashMap<Class, HashMap<String, BoundProperty>> _savedPropertyMaps = new HashMap<>();
 
     protected Object _bean;
-    transient protected HashMap<String, Object> _map = new HashMap<String, Object>();
+    transient protected HashMap<String, Object> _map = new HashMap<>();
     transient protected HashMap<String, BoundProperty> _properties;
     transient private Object _keyDebug = null;
 
@@ -166,7 +166,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     public Set<Map.Entry<String,Object>> entrySet()
     {
         Set<String> keys = keySet();
-        Set<Map.Entry<String,Object>> entries = new HashSet<Map.Entry<String,Object>>();
+        Set<Map.Entry<String,Object>> entries = new HashSet<>();
 
         for (String key : keys)
         {
@@ -225,7 +225,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     @Override
     public Set<String> keySet()
     {
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         Set<String> mapKeys = _map.keySet();
         keys.addAll(mapKeys);
 
@@ -278,7 +278,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
             {
                 try
                 {
-                    props = new HashMap<String,BoundProperty>();
+                    props = new HashMap<>();
                     BeanInfo beanInfo = Introspector.getBeanInfo(beanClass);
                     PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
                     if (propertyDescriptors != null)

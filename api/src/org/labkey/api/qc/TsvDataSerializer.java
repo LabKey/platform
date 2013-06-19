@@ -45,7 +45,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
             PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runDataFile)));
             try {
                 // write the column header
-                List<String> columns = new ArrayList<String>(data.get(0).keySet());
+                List<String> columns = new ArrayList<>(data.get(0).keySet());
                 String sep = "";
                 for (String name : columns)
                 {

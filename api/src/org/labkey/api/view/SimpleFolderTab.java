@@ -41,9 +41,9 @@ import java.util.List;
 public class SimpleFolderTab extends FolderTab.PortalPage
 {
     private static final Logger LOGGER = Logger.getLogger(SimpleFolderTab.class);
-    private List<Portal.WebPart> _requiredWebParts = new ArrayList<Portal.WebPart>();
-    private List<Portal.WebPart> _preferredWebParts = new ArrayList<Portal.WebPart>();
-    private List<TabSelector> _selectors = new ArrayList<TabSelector>();
+    private List<Portal.WebPart> _requiredWebParts = new ArrayList<>();
+    private List<Portal.WebPart> _preferredWebParts = new ArrayList<>();
+    private List<TabSelector> _selectors = new ArrayList<>();
 
     private TAB_TYPE _tabType = TAB_TYPE.Portal;        // default to Portal type
     private String _folderTypeName;
@@ -111,7 +111,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
 
         if (tab.isSetPermissions())
         {
-            List<Class<? extends Permission>> permissions = new ArrayList<Class<? extends Permission>>();
+            List<Class<? extends Permission>> permissions = new ArrayList<>();
             for (PermissionType.Enum permEntry : tab.getPermissions().getPermissionArray())
             {
                 org.labkey.api.security.SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
@@ -145,7 +145,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     @Override
     public List<Portal.WebPart> createWebParts()
     {
-        List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+        List<Portal.WebPart> parts = new ArrayList<>();
 
         for (Portal.WebPart wp : _requiredWebParts)
         {

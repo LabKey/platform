@@ -110,7 +110,7 @@ public class MvUtil
             else
             {
                 getCache().put(cacheKey, result);
-                return new Pair<Container, Map<String, String>>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
+                return new Pair<>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
             }
         }
         if (result == NO_VALUES)
@@ -120,7 +120,7 @@ public class MvUtil
             return getIndicatorsAndLabelsWithContainer(c.getParent());
         }
 
-        return new Pair<Container, Map<String, String>>(c, result);
+        return new Pair<>(c, result);
     }
 
     /**
@@ -152,7 +152,7 @@ public class MvUtil
         deleteMvIndicators(c);
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         // Need a map to use for each row
-        Map<String, String> toInsert = new HashMap<String, String>();
+        Map<String, String> toInsert = new HashMap<>();
         toInsert.put("container", c.getId());
         for (int i = 0; i < indicators.length; i++)
         {
@@ -165,10 +165,10 @@ public class MvUtil
 
     private static Map<String, String> getFromDb(@NotNull Container c)
     {
-        Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
+        Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<>();
 
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-        Set<String> selectColumns = new HashSet<String>();
+        Set<String> selectColumns = new HashSet<>();
         selectColumns.add("mvindicator");
         selectColumns.add("label");
         Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
@@ -211,7 +211,7 @@ public class MvUtil
      */
     public static Map<String, String> getDefaultMvIndicators()
     {
-        Map<String, String> mvMap = new HashMap<String, String>();
+        Map<String, String> mvMap = new HashMap<>();
         mvMap.put("Q", "Data currently under quality control review.");
         mvMap.put("N", "Required field marked by site as 'data not available'.");
 

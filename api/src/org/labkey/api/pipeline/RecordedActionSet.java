@@ -41,12 +41,12 @@ public class RecordedActionSet
 
     public RecordedActionSet(Iterable<RecordedAction> actions)
     {
-        _actions = new LinkedHashSet<RecordedAction>();
+        _actions = new LinkedHashSet<>();
         for (RecordedAction action : actions)
         {
             _actions.add(action);
         }
-        _otherInputs = new LinkedHashMap<URI, String>();
+        _otherInputs = new LinkedHashMap<>();
     }
 
     public RecordedActionSet(RecordedActionSet actionSet)

@@ -86,7 +86,7 @@ public class FastaDataLoader extends DataLoader
         GenericFastaLoader.GenericIterator it = _loader.iterator();
         try
         {
-            List<String[]> lineFields = new ArrayList<String[]>(n);
+            List<String[]> lineFields = new ArrayList<>(n);
             int count = 0;
 
             while (it.hasNext() && count < n)
@@ -134,7 +134,7 @@ public class FastaDataLoader extends DataLoader
             {
                 public Map<String, Object> createNext(String header, byte[] body)
                 {
-                    Map<String, Object> row = new LinkedHashMap<String, Object>();
+                    Map<String, Object> row = new LinkedHashMap<>();
 
                     parseHeader(header, row);
                     row.put("sequence", new String(body));

@@ -124,9 +124,9 @@ public class TsvOutput extends AbstractParamReplacement
                 ColumnDescriptor[] cols = tabLoader.getColumns();
                 List<Map<String, Object>> data = tabLoader.load();
 
-                List<ColumnDescriptor> display = new ArrayList<ColumnDescriptor>();
-                HashMap<String, ColumnDescriptor> hrefs = new HashMap<String, ColumnDescriptor>(tabLoader.getColumns().length * 2);
-                HashMap<String, ColumnDescriptor> styles = new HashMap<String, ColumnDescriptor>(tabLoader.getColumns().length * 2);
+                List<ColumnDescriptor> display = new ArrayList<>();
+                HashMap<String, ColumnDescriptor> hrefs = new HashMap<>(tabLoader.getColumns().length * 2);
+                HashMap<String, ColumnDescriptor> styles = new HashMap<>(tabLoader.getColumns().length * 2);
 
                 for (ColumnDescriptor col : cols)
                     hrefs.put(col.name, null);

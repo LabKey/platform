@@ -42,7 +42,7 @@ public class TabBoxView extends VBox
     {
         PrintWriter out = response.getWriter();
 
-        JspView tv = new JspView<TabBoxView>(TabBoxView.class, "tabbox.jsp", this);
+        JspView tv = new JspView<>(TabBoxView.class, "tabbox.jsp", this);
         include(tv, out);
 
         out.println("<div style='display:none;'>");

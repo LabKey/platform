@@ -50,7 +50,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     public Set<String> getSchemaNames() throws SqlScriptException
     {
         List<SqlScript> allScripts = getScripts(null);
-        Set<String> schemaNames = new HashSet<String>();
+        Set<String> schemaNames = new HashSet<>();
 
         for (SqlScript script : allScripts)
             if (!schemaNames.contains(script.getSchemaName()))
@@ -66,7 +66,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     {
         Set<String> filenames = getScriptFilenames(schemaName);
 
-        List<SqlScript> scripts = new ArrayList<SqlScript>(filenames.size());
+        List<SqlScript> scripts = new ArrayList<>(filenames.size());
 
         for (String filename : filenames)
         {
@@ -119,7 +119,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     private List<SqlScript> getOneOffScripts(String suffix) throws SqlScriptException
     {
-        List<SqlScript> scripts = new ArrayList<SqlScript>();
+        List<SqlScript> scripts = new ArrayList<>();
 
         for (String schemaName : getSchemaNames())
         {

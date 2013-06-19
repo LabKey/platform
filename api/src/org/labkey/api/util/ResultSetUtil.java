@@ -438,18 +438,18 @@ public class ResultSetUtil
         @Test
         public void testExport() throws IOException, SQLException
         {
-            ArrayList<Map<String, Object>> maps = new ArrayList<Map<String, Object>>();
+            ArrayList<Map<String, Object>> maps = new ArrayList<>();
             Map<String,Object> m;
 
-            m = new HashMap<String,Object>();
+            m = new HashMap<>();
             m.put("int", 1);
             m.put("s", "one");
             maps.add(m);
-            m = new HashMap<String,Object>();
+            m = new HashMap<>();
             m.put("int", 2);
             m.put("s", "1<2");
             maps.add(m);
-            m = new HashMap<String,Object>();
+            m = new HashMap<>();
             m.put("int", null);
             m.put("s", null);
             maps.add(m);

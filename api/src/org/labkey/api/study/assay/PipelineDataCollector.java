@@ -132,14 +132,14 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
         {
-            collections = new HashMap<Pair<Container, Integer>, List<Map<String, File>>>();
+            collections = new HashMap<>();
             session.setAttribute(PipelineDataCollector.class.getName(), collections);
         }
-        Pair<Container, Integer> key = new Pair<Container, Integer>(c, protocol.getRowId());
+        Pair<Container, Integer> key = new Pair<>(c, protocol.getRowId());
         List<Map<String, File>> result = collections.get(key);
         if (result == null)
         {
-            result = new ArrayList<Map<String, File>>();
+            result = new ArrayList<>();
             collections.put(key, result);
         }
         return result;

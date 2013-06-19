@@ -45,7 +45,7 @@ public class TidyFilterView extends HttpView
         ModelAndView mv = getBody();
         PageFlowUtil.Content c = PageFlowUtil.getViewContent(mv, request, response);
 
-        ArrayList<String> errors = new ArrayList<String>();
+        ArrayList<String> errors = new ArrayList<>();
         
         String content;
         if (_xml)

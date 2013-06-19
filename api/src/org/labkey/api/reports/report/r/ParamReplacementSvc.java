@@ -39,7 +39,7 @@ public class ParamReplacementSvc
 {
     private static final Logger _log = Logger.getLogger(ParamReplacementSvc.class);
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
-    private static final Map<String, String> _outputSubstitutions = new HashMap<String, String>();
+    private static final Map<String, String> _outputSubstitutions = new HashMap<>();
 
     // the default param replacement pattern : ${}
     public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
@@ -106,7 +106,7 @@ public class ParamReplacementSvc
      */
     public List<ParamReplacement> getParamReplacements(String script, Pattern pattern)
     {
-        List<ParamReplacement> params = new ArrayList<ParamReplacement>();
+        List<ParamReplacement> params = new ArrayList<>();
         if (script != null)
         {
             Matcher m = pattern.matcher(script);

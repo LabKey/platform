@@ -82,7 +82,7 @@ public class JarToCommandArgs extends ListToCommandArgs
         if (_jarPath == null || _jarPath.length() == 0)
             return new String[0];
 
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
 
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setParent(this);

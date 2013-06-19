@@ -141,7 +141,7 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         setPolicy(folder.getPolicy());
 
-        _files = new ArrayList<FileInfo>(folder._files.size());
+        _files = new ArrayList<>(folder._files.size());
         for (FileInfo file : folder._files)
         {
             _files.add(new FileInfo(new File(file.getFile(), relativePath)));
@@ -368,7 +368,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (!isCollection())
             return Collections.emptyList();
         mergeFilesIfNeeded();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         if (_files != null)
         {
             for (FileInfo file : _files)
@@ -392,7 +392,7 @@ public class FileSystemResource extends AbstractWebdavResource
     public Collection<WebdavResource> list()
     {
         Collection<String> names = listNames();
-        ArrayList<WebdavResource> infos = new ArrayList<WebdavResource>(names.size());
+        ArrayList<WebdavResource> infos = new ArrayList<>(names.size());
         for (String name : names)
         {
             WebdavResource r = find(name);
@@ -616,7 +616,7 @@ public class FileSystemResource extends AbstractWebdavResource
         List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
         if (null == logs)
             return Collections.emptyList();
-        List<WebdavResolver.History> history = new ArrayList<WebdavResolver.History>(logs.size());
+        List<WebdavResolver.History> history = new ArrayList<>(logs.size());
         for (AuditLogEvent e : logs)
             history.add(new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null));
         return history;
@@ -651,8 +651,8 @@ public class FileSystemResource extends AbstractWebdavResource
 
         List<ExpData> datas = getExpData();
 
-        List<NavTree> result = new ArrayList<NavTree>();
-        Set<Integer> runids = new HashSet<Integer>();
+        List<NavTree> result = new ArrayList<>();
+        Set<Integer> runids = new HashSet<>();
 
         for (ExpData data : datas)
         {
@@ -695,7 +695,7 @@ public class FileSystemResource extends AbstractWebdavResource
             try
             {
                 String fileURL = getFile().toURI().toURL().toString();
-                List<ExpData> list = new LinkedList<ExpData>();
+                List<ExpData> list = new LinkedList<>();
 
                 FlowService fs = ServiceRegistry.get(FlowService.class);
                 if (null != fs)
@@ -754,7 +754,7 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (_customProperties == null)
         {
-            _customProperties = new HashMap<String, String>();
+            _customProperties = new HashMap<>();
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             ExpData data = svc.getDataObject(this, getContainer());
 
@@ -884,7 +884,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (users != null && users.length > 0)
             {
                 FileEmailForm form = new FileEmailForm(this, message);
-                List<EmailMessage> messages = new ArrayList<EmailMessage>();
+                List<EmailMessage> messages = new ArrayList<>();
 
                 form.setUrlEmailPrefs(PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(getContainer()));
                 form.setUrlFileBrowser(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(getContainer()));
@@ -896,9 +896,9 @@ public class FileSystemResource extends AbstractWebdavResource
                             new String[]{user.getEmail()}, subject);
 
                     msg.addContent(EmailMessage.contentType.HTML, context,
-                            new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
+                            new JspView<>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
                     msg.addContent(EmailMessage.contentType.PLAIN, context,
-                            new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
+                            new JspView<>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
 
                     messages.add(msg);
                 }

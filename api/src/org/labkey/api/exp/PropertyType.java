@@ -363,7 +363,7 @@ public enum PropertyType
 
     static
     {
-        Map<String, PropertyType> m = new HashMap<String, PropertyType>();
+        Map<String, PropertyType> m = new HashMap<>();
 
         for (PropertyType t : values())
         {
@@ -401,7 +401,7 @@ public enum PropertyType
     {
         if (null == xarToProperty)
         {
-            Map<String, PropertyType> m = new HashMap<String, PropertyType>();
+            Map<String, PropertyType> m = new HashMap<>();
             for (PropertyType t : values())
             {
                 m.put(t.getXmlName(), t);

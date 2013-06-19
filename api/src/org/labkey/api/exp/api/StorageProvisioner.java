@@ -697,7 +697,7 @@ public class StorageProvisioner
         }
         
         // TODO: Switch to normal schema/table cache (now that we actually use a cache for them)
-        Map<String,DbSchema> schemas = new HashMap<String, DbSchema>();
+        Map<String,DbSchema> schemas = new HashMap<>();
 
         for (ProvisioningReport.DomainReport domainReport : report.getProvisionedDomains())
         {
@@ -845,9 +845,9 @@ public class StorageProvisioner
 
     public static class ProvisioningReport
     {
-        private Set<DomainReport> unprovisionedDomains = new HashSet<DomainReport>();
-        private Set<DomainReport> provisionedDomains = new HashSet<DomainReport>();
-        private List<String> globalErrors = new ArrayList<String>();
+        private Set<DomainReport> unprovisionedDomains = new HashSet<>();
+        private Set<DomainReport> provisionedDomains = new HashSet<>();
+        private List<String> globalErrors = new ArrayList<>();
 
         public void addUnprovisioned(DomainReport domain)
         {
@@ -917,8 +917,8 @@ public class StorageProvisioner
             String name;
             String schemaName;
             String tableName;
-            List<String> errors = new ArrayList<String>();
-            List<ColumnStatus> columns = new ArrayList<ColumnStatus>();
+            List<String> errors = new ArrayList<>();
+            List<ColumnStatus> columns = new ArrayList<>();
 
             public Integer getId()
             {

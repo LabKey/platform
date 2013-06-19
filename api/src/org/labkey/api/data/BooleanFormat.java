@@ -55,7 +55,7 @@ public class BooleanFormat extends Format
     /**
      * Static map of common parse associations
      */
-    private static HashMap<String, Boolean> _parseAssocs = new HashMap<String, Boolean>();
+    private static HashMap<String, Boolean> _parseAssocs = new HashMap<>();
 
     static
     {

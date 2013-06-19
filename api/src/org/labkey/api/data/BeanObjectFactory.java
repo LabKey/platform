@@ -55,8 +55,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     public BeanObjectFactory(Class<K> clss)
     {
         _class = clss;
-        _writeableProperties = new HashSet<String>();
-        _readableProperties = new HashSet<String>();
+        _writeableProperties = new HashSet<>();
+        _readableProperties = new HashSet<>();
 
         K bean;
         try
@@ -73,8 +73,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
 
         PropertyDescriptor origDescriptors[] = PropertyUtils.getPropertyDescriptors(bean);
-        _writeableProperties = new HashSet<String>(origDescriptors.length * 2);
-        _readableProperties = new HashSet<String>(origDescriptors.length * 2);
+        _writeableProperties = new HashSet<>(origDescriptors.length * 2);
+        _readableProperties = new HashSet<>(origDescriptors.length * 2);
 
         for (PropertyDescriptor origDescriptor : origDescriptors)
         {
@@ -173,7 +173,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         try
         {
             if (null == m)
-                m = new CaseInsensitiveHashMap<Object>();
+                m = new CaseInsensitiveHashMap<>();
 
             for (String name : _readableProperties)
             {
@@ -215,7 +215,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     {
         ResultSetMetaData md = rs.getMetaData();
         int count = md.getColumnCount();
-        CaseInsensitiveHashMap<String> propMap = new CaseInsensitiveHashMap<String>(count * 2);
+        CaseInsensitiveHashMap<String> propMap = new CaseInsensitiveHashMap<>(count * 2);
         for (String prop : _writeableProperties)
             propMap.put(prop, prop);
 
@@ -229,7 +229,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 properties[i] = prop;
         }
 
-        ArrayList<K> list = new ArrayList<K>();
+        ArrayList<K> list = new ArrayList<>();
 
         try
         {

@@ -80,7 +80,7 @@ public abstract class GraphSelectedBean
             try
             {
                 rs = dataView.getResultSet();
-                Set<Integer> graphableIds = new HashSet<Integer>();
+                Set<Integer> graphableIds = new HashSet<>();
                 while (rs.next())
                     graphableIds.add(rs.getInt("RowId"));
                 _graphableIds = new int[graphableIds.size()];

@@ -55,7 +55,7 @@ import java.util.TreeSet;
  */
 public class SecurityPolicy implements HasPermission
 {
-    protected final SortedSet<RoleAssignment> _assignments = new TreeSet<RoleAssignment>();
+    protected final SortedSet<RoleAssignment> _assignments = new TreeSet<>();
     protected String _resourceId;
     protected String _containerId;
     protected String _resourceClass;
@@ -156,7 +156,7 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     public List<Role> getAssignedRoles(@NotNull UserPrincipal principal)
     {
-        List<Role> roles = new ArrayList<Role>();
+        List<Role> roles = new ArrayList<>();
         for (RoleAssignment assignment : _assignments)
         {
             if (assignment.getUserId() == principal.getUserId())
@@ -190,7 +190,7 @@ public class SecurityPolicy implements HasPermission
     public List<String> getPermissionNames(@NotNull UserPrincipal principal)
     {
         Set<Class<? extends Permission>> perms = getPermissions(principal);
-        List<String> names = new ArrayList<String>(perms.size());
+        List<String> names = new ArrayList<>(perms.size());
         for (Class<? extends Permission> perm : perms)
         {
             Permission permInst = RoleManager.getPermission(perm);
@@ -268,7 +268,7 @@ public class SecurityPolicy implements HasPermission
 
     public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
-        Set<Class<? extends Permission>> permsSet = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> permsSet = new HashSet<>();
         permsSet.addAll(Arrays.asList(permissions));
         return hasPermissions(principal, permsSet);
     }
@@ -313,7 +313,7 @@ public class SecurityPolicy implements HasPermission
 
     protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
     {
-        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        Set<Class<? extends Permission>> perms = new HashSet<>();
 
         //role assignments are sorted by user id,
         //as are the principal ids,
@@ -353,7 +353,7 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     protected Set<Role> getRoles(@NotNull int[] principals)
     {
-        Set<Role> roles = new HashSet<Role>();
+        Set<Role> roles = new HashSet<>();
 
         //role assignments are sorted by user id,
         //as are the principal ids,
@@ -423,7 +423,7 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     public Map<String, Object> toMap()
     {
-        Map<String, Object> props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<>();
 
         //modified
         props.put("modified", getModified());
@@ -432,10 +432,10 @@ public class SecurityPolicy implements HasPermission
         props.put("resourceId", getResourceId());
 
         //role assignments
-        List<Map<String, Object>> assignments = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> assignments = new ArrayList<>();
         for (RoleAssignment assignment : getAssignments())
         {
-            Map<String, Object> assignmentProps = new HashMap<String, Object>();
+            Map<String, Object> assignmentProps = new HashMap<>();
             try
             {
             assignmentProps.put("userId", assignment.getUserId());

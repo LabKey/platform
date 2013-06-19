@@ -216,7 +216,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
             JSONArray rows = new JSONArray();
             for (JSONObject row : results.toJSONObjectArray())
             {
-                Map<String, Object> map = new HashMap<String, Object>();
+                Map<String, Object> map = new HashMap<>();
 
                 rows.put(new JSONArray());
             }
@@ -251,7 +251,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         TableInfo ti = DbSchema.get("laboratory").getTable("well_layout");
         TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("plate"), 1), null);
 
-        final Map<Object, Object> wellMap = new HashMap<Object, Object>();
+        final Map<Object, Object> wellMap = new HashMap<>();
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
@@ -290,7 +290,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
 
     public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol)
     {
-        List<String> columns = new ArrayList<String>();
+        List<String> columns = new ArrayList<>();
         Domain resultDomain = getAssayProvider().getResultsDomain(protocol);
         JSONObject json = getMetadata(ctx, protocol).getJSONObject("Results");
         for (DomainProperty dp : resultDomain.getProperties())

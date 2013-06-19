@@ -55,7 +55,7 @@ public class AssayProviderSchema extends AssaySchema
     private Map<String, ExpProtocol> _protocolsByName;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
-    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<ExpProtocol, AssayProtocolSchema>();
+    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
 
     public AssayProviderSchema(User user, Container container, @NotNull AssayProvider provider, @Nullable Container targetStudy)
     {
@@ -74,7 +74,7 @@ public class AssayProviderSchema extends AssaySchema
         _protocols = protocols;
         if (protocols != null)
         {
-            _protocolsByName = new HashMap<String, ExpProtocol>();
+            _protocolsByName = new HashMap<>();
             for (ExpProtocol protocol : protocols)
                 _protocolsByName.put(protocol.getName(), protocol);
         }
@@ -101,7 +101,7 @@ public class AssayProviderSchema extends AssaySchema
         if (_protocols == null)
         {
             _protocols = AssayService.get().getAssayProtocols(getContainer(), getProvider());
-            _protocolsByName = new CaseInsensitiveHashMap<ExpProtocol>();
+            _protocolsByName = new CaseInsensitiveHashMap<>();
             for (ExpProtocol protocol : _protocols)
                 _protocolsByName.put(protocol.getName(), protocol);
         }
@@ -134,7 +134,7 @@ public class AssayProviderSchema extends AssaySchema
         if (_restricted)
             return Collections.emptySet();
 
-        Set<String> names = new TreeSet<String>(new Comparator<String>()
+        Set<String> names = new TreeSet<>(new Comparator<String>()
         {
             public int compare(String o1, String o2)
             {

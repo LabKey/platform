@@ -92,7 +92,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
         {
             return Collections.emptyMap();
         }
-        Map<DomainProperty, String> result = new HashMap<DomainProperty, String>();
+        Map<DomainProperty, String> result = new HashMap<>();
         for (DomainProperty dp : domain.getProperties())
         {
             ObjectProperty op = props.get(dp.getPropertyURI());
@@ -148,7 +148,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     @Override
     public Map<String, File> getUploadedData() throws ExperimentException
     {
-        Map<String, File> result = new HashMap<String, File>();
+        Map<String, File> result = new HashMap<>();
         for (ExpData data : _run.getOutputDatas(_provider.getDataType()))
         {
             File f = data.getFile();

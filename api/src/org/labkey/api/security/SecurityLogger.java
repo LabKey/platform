@@ -127,7 +127,7 @@ public class SecurityLogger extends Logger
         @Override
         protected ArrayList<ThreadSecurityContext> initialValue()
         {
-            ArrayList<ThreadSecurityContext> ret = new ArrayList<ThreadSecurityContext>();
+            ArrayList<ThreadSecurityContext> ret = new ArrayList<>();
             ret.add(new ThreadSecurityContext(null,"<root>",null));
             return ret;
         }

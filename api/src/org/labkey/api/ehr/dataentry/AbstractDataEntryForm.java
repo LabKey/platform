@@ -143,7 +143,7 @@ public class AbstractDataEntryForm implements DataEntryForm
 
     private Map<String, Map<String, Map<String, String>>> getPermissionMap(Container c, User u)
     {
-        Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<String, Map<String, Map<String, String>>>();
+        Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<>();
         for (TableInfo ti : getTables(c, u))
         {
             String schemaName= ti.getPublicSchemaName();
@@ -151,11 +151,11 @@ public class AbstractDataEntryForm implements DataEntryForm
 
             Map<String, Map<String, String>> schemaPerms = permissionMap.get(schemaName);
             if (schemaPerms == null)
-                schemaPerms = new HashMap<String, Map<String, String>>();
+                schemaPerms = new HashMap<>();
 
             Map<String, String> queryPerms = schemaPerms.get(queryName);
             if (queryPerms == null)
-                queryPerms = new HashMap<String, String>();
+                queryPerms = new HashMap<>();
 
             ti.hasPermission(u, ReadPermission.class);
 
@@ -168,7 +168,7 @@ public class AbstractDataEntryForm implements DataEntryForm
 
     public Set<TableInfo> getTables(Container c, User u)
     {
-        Set<TableInfo> tables = new HashSet<TableInfo>();
+        Set<TableInfo> tables = new HashSet<>();
         for (FormSection section : getFormSections())
         {
             tables.addAll(section.getTables(c, u));
@@ -178,7 +178,7 @@ public class AbstractDataEntryForm implements DataEntryForm
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<ClientDependency>();
+        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
         for (FormSection section : getFormSections())
         {
             cds.addAll(section.getClientDependencies());

@@ -160,7 +160,7 @@ public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
     // In particular, you may need to override convertToPropertyName to convert attribute names.
     public <K> K beanFromAttributes(Class<K> clazz)
     {
-        Map<String, Object> m = new HashMap<String, Object>();
+        Map<String, Object> m = new HashMap<>();
         int attributeCount = getAttributeCount();
         BeanObjectFactory<K> bof = (BeanObjectFactory<K>) BeanObjectFactory.Registry.getFactory(clazz);
 

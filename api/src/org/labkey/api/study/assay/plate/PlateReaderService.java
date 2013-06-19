@@ -42,7 +42,7 @@ public class PlateReaderService
     public static final String PLATE_READER_PROPERTY = "PlateReader";
     public static final String READER_TYPE_PROPERTY = "FileType";
 
-    private static Map<String, Map<String, PlateReader>> _readers = new HashMap<String, Map<String, PlateReader>>();
+    private static Map<String, Map<String, PlateReader>> _readers = new HashMap<>();
 
     public static Map<String, PlateReader> getPlateReaders(PlateBasedAssayProvider provider)
     {

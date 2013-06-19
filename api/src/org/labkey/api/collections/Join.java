@@ -34,8 +34,8 @@ public class Join
      */
     public static List<Map> join(List<Map> left, List<Map> right, String key)
     {
-        HashMap<Object, Map> lookup = new HashMap<Object, Map>(right.size() * 2);
-        ArrayList<Map> join = new ArrayList<Map>(left.size());
+        HashMap<Object, Map> lookup = new HashMap<>(right.size() * 2);
+        ArrayList<Map> join = new ArrayList<>(left.size());
 
         for (Map r : right)
         {
@@ -73,7 +73,7 @@ public class Join
         {
             Set<Map.Entry> e1 = first.entrySet();
             Set<Map.Entry> e2 = second.entrySet();
-            HashSet<Entry> all = new HashSet<Map.Entry>((e1.size() + e2.size()) * 2);
+            HashSet<Entry> all = new HashSet<>((e1.size() + e2.size()) * 2);
             all.addAll(first.entrySet());
             for (Object o : second.entrySet())
             {

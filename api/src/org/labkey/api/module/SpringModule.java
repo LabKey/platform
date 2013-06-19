@@ -174,7 +174,7 @@ public abstract class SpringModule extends DefaultModule
 
         String prefix = getName().toLowerCase();
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         // Add the location of the context XML inside the module
         result.add(contextXMLFilePath);
 
@@ -268,8 +268,8 @@ public abstract class SpringModule extends DefaultModule
 
     public static class ModuleServletContextWrapper implements ServletContext
     {
-        HashMap<String,Object> _attributes = new HashMap<String,Object>();
-        HashMap<String,String> _initParameters = new HashMap<String,String>();
+        HashMap<String,Object> _attributes = new HashMap<>();
+        HashMap<String,String> _initParameters = new HashMap<>();
 
         final ServletContext _wrapped;
 

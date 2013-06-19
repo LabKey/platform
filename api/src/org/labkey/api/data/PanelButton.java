@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class PanelButton extends ActionButton
 {
-    private Map<String, HttpView> _subpanels = new LinkedHashMap<String, HttpView>();
+    private Map<String, HttpView> _subpanels = new LinkedHashMap<>();
     private final String _dataRegionName;
 
     public PanelButton(String caption, String dataRegionName)
@@ -48,7 +48,7 @@ public class PanelButton extends ActionButton
     {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
         String id = getId();
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, String> attributes = new HashMap<>();
         attributes.put("panelId", id);
         if (requiresSelectionDataRegion != null)
             attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));

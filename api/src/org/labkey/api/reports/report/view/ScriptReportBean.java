@@ -162,20 +162,20 @@ public class ScriptReportBean extends ReportDesignBean
         List<Pair<String, String>> list = super.getParameters();
 
         if (!StringUtils.isEmpty(_script))
-            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.script.toString(), _script));
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.script.toString(), _script));
         if (_runInBackground)
-            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
         if (_isDirty)
-            list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
+            list.add(new Pair<>("isDirty", String.valueOf(_isDirty)));
         if (_sourceTabVisible)
-            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.sourceTabVisible.toString(), String.valueOf(_sourceTabVisible)));
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.sourceTabVisible.toString(), String.valueOf(_sourceTabVisible)));
         if (!(getKnitrFormat().equalsIgnoreCase(RReportDescriptor.KnitrFormat.None.name())))
-            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.knitrFormat.toString(), getKnitrFormat()));
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.knitrFormat.toString(), getKnitrFormat()));
 
-        list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
+        list.add(new Pair<>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
         for (String report : getIncludedReports())
-            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
 
         return list;
     }
@@ -212,7 +212,7 @@ public class ScriptReportBean extends ReportDesignBean
     Map<String, Object> getCacheableMap()
     {
         // saves report editing state in session
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
 
         for (Pair<String, String> param : getParameters())
             map.put(param.getKey(), param.getValue());

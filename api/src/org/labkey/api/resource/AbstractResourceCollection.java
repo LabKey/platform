@@ -69,7 +69,7 @@ public abstract class AbstractResourceCollection extends AbstractResource
     public Collection<? extends Resource> list()
     {
         Collection<String> names = listNames();
-        Collection<Resource> list = new ArrayList<Resource>(names.size());
+        Collection<Resource> list = new ArrayList<>(names.size());
         for (String name : names)
         {
             Resource r = find(name);

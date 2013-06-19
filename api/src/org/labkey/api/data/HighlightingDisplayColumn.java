@@ -33,7 +33,7 @@ import java.util.List;
 */
 public class HighlightingDisplayColumn extends DisplayColumnDecorator
 {
-    private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<List<Object>, String>();
+    private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<>();
     private final FieldKey[] _fields;
 
     protected int _uid;
@@ -81,7 +81,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
     protected String getStyleClass(RenderContext ctx)
     {
-        List<Object> values = new ArrayList<Object>(_fields.length);
+        List<Object> values = new ArrayList<>(_fields.length);
 
         for (FieldKey _field : _fields)
             values.add(ctx.get(_field));

@@ -58,7 +58,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     private static ConvertHelper _myInstance = new ConvertHelper();
 
     // just a list of converters we know about
-    HashSet<Class> _converters = new HashSet<Class>();
+    HashSet<Class> _converters = new HashSet<>();
 
 
     public static PropertyEditorRegistrar getPropertyEditorRegistrar()

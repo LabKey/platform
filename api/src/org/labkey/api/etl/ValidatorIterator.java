@@ -51,7 +51,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 {
     final DataIterator _data;
     final ValidatorContext validatorContext;
-    final ArrayList<ArrayList<Validator>> _validators = new ArrayList<ArrayList<Validator>>();
+    final ArrayList<ArrayList<Validator>> _validators = new ArrayList<>();
 
     public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
     {
@@ -144,7 +144,7 @@ checkRequired:
         final ValidatorKind kind;
         final IPropertyValidator propertyValidator;
         final PropertyDescriptor pd;
-        final List<ValidationError> errors = new ArrayList<ValidationError>(1);
+        final List<ValidationError> errors = new ArrayList<>(1);
 
         ValidatorKindWrapper(int index, PropertyDescriptor pd, IPropertyValidator propertyValidator)
         {

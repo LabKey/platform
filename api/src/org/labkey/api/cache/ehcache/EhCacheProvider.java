@@ -99,7 +99,7 @@ public class EhCacheProvider implements CacheProvider
         if (temporary)
             assert MemTracker.put(ehCache);
 
-        return new EhSimpleCache<K, V>(ehCache);
+        return new EhSimpleCache<>(ehCache);
     }
 
     void closeCache(Cache cache)

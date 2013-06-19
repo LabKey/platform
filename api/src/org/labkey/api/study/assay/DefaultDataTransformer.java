@@ -110,7 +110,7 @@ public class DefaultDataTransformer implements DataTransformer
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
                         bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
 
-                        Map<String, String> paramMap = new HashMap<String, String>();
+                        Map<String, String> paramMap = new HashMap<>();
 
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
                         File srcDir = scriptFile.getParentFile();

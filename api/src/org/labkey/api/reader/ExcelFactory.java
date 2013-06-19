@@ -125,7 +125,7 @@ public class ExcelFactory
     {
         Workbook workbook = docType.createWorkbook();
 
-        Map<String, CellStyle> customStyles = new HashMap<String, CellStyle>();
+        Map<String, CellStyle> customStyles = new HashMap<>();
 
         for (int sheetIndex = 0; sheetIndex < sheetsArray.length(); sheetIndex++)
         {

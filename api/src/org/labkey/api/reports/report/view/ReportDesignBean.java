@@ -240,36 +240,36 @@ public class ReportDesignBean extends ReportForm
 
     public List<Pair<String, String>> getParameters()
     {
-        List<Pair<String, String>> list = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> list = new ArrayList<>();
 
         if (!StringUtils.isEmpty(_queryName))
-            list.add(new Pair<String, String>(QueryParam.queryName.toString(), _queryName));
+            list.add(new Pair<>(QueryParam.queryName.toString(), _queryName));
         if (!StringUtils.isEmpty(_schemaName))
-            list.add(new Pair<String, String>(QueryParam.schemaName.toString(), _schemaName));
+            list.add(new Pair<>(QueryParam.schemaName.toString(), _schemaName));
         if (!StringUtils.isEmpty(_viewName))
-            list.add(new Pair<String, String>(QueryParam.viewName.toString(), _viewName));
+            list.add(new Pair<>(QueryParam.viewName.toString(), _viewName));
         if (!StringUtils.isEmpty(_dataRegionName))
-            list.add(new Pair<String, String>(QueryParam.dataRegionName.toString(), _dataRegionName));
+            list.add(new Pair<>(QueryParam.dataRegionName.toString(), _dataRegionName));
         if (!StringUtils.isEmpty(_filterParam))
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.filterParam.toString(), _filterParam));
+            list.add(new Pair<>(ReportDescriptor.Prop.filterParam.toString(), _filterParam));
         if (!StringUtils.isEmpty(_reportType))
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportType.toString(), _reportType));
+            list.add(new Pair<>(ReportDescriptor.Prop.reportType.toString(), _reportType));
         if (!StringUtils.isEmpty(_reportName))
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportName.toString(), _reportName));
+            list.add(new Pair<>(ReportDescriptor.Prop.reportName.toString(), _reportName));
         if (null != _reportId)
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportId.toString(), _reportId.toString()));
+            list.add(new Pair<>(ReportDescriptor.Prop.reportId.toString(), _reportId.toString()));
         if (!StringUtils.isEmpty(_redirectUrl))
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.redirectUrl.name(), _redirectUrl));
+            list.add(new Pair<>(ReportDescriptor.Prop.redirectUrl.name(), _redirectUrl));
         if (!StringUtils.isEmpty(_reportDescription))
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
+            list.add(new Pair<>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
         if (_owner != -1)
-            list.add(new Pair<String, String>("owner", Integer.toString(_owner)));
+            list.add(new Pair<>("owner", Integer.toString(_owner)));
         if (_shareReport)
-            list.add(new Pair<String, String>("shareReport", String.valueOf(_shareReport)));
+            list.add(new Pair<>("shareReport", String.valueOf(_shareReport)));
         if (_inheritable)
-            list.add(new Pair<String, String>("inheritable", String.valueOf(_inheritable)));
+            list.add(new Pair<>("inheritable", String.valueOf(_inheritable)));
         if (_cached)
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.cached.name(), String.valueOf(_cached)));
+            list.add(new Pair<>(ReportDescriptor.Prop.cached.name(), String.valueOf(_cached)));
 
         return list;
     }

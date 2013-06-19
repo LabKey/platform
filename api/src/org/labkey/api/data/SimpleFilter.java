@@ -248,7 +248,7 @@ public class SimpleFilter implements Filter
     public static class SQLClause extends FilterClause
     {
         String _fragment;
-        private List<FieldKey> _fieldKeys = new ArrayList<FieldKey>();
+        private List<FieldKey> _fieldKeys = new ArrayList<>();
 
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
@@ -270,7 +270,7 @@ public class SimpleFilter implements Filter
         @Deprecated // Use .getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            List<String> colNames = new ArrayList<String>(_fieldKeys.size());
+            List<String> colNames = new ArrayList<>(_fieldKeys.size());
             for (FieldKey fieldKey : _fieldKeys)
                 colNames.add(fieldKey.toString());
             return colNames;
@@ -306,13 +306,13 @@ public class SimpleFilter implements Filter
         protected OperationClause(String operation, FilterClause... clauses)
         {
             _operation = operation;
-            _clauses = new ArrayList<FilterClause>(Arrays.asList(clauses));
+            _clauses = new ArrayList<>(Arrays.asList(clauses));
         }
 
         @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (FilterClause clause : _clauses)
             {
                 result.addAll(clause.getColumnNames());
@@ -322,7 +322,7 @@ public class SimpleFilter implements Filter
 
         public List<FieldKey> getFieldKeys()
         {
-            List<FieldKey> result = new ArrayList<FieldKey>();
+            List<FieldKey> result = new ArrayList<>();
             for (FilterClause clause : _clauses)
             {
                 result.addAll(clause.getFieldKeys());
@@ -337,7 +337,7 @@ public class SimpleFilter implements Filter
 
         public Object[] getParamVals()
         {
-            List<Object> result = new ArrayList<Object>();
+            List<Object> result = new ArrayList<>();
             for (FilterClause clause : _clauses)
             {
                 if(clause.getParamVals() != null)
@@ -743,7 +743,7 @@ public class SimpleFilter implements Filter
 
         public void addInValues(Collection<?> newValues)
         {
-            Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
+            Set<Object> values = new HashSet<>(Arrays.asList(getParamVals()));
             values.addAll(newValues);
             _paramVals = values.toArray();
         }
@@ -902,7 +902,7 @@ public class SimpleFilter implements Filter
 
         public void addInValues(Collection<?> newValues)
         {
-            Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
+            Set<Object> values = new HashSet<>(Arrays.asList(getParamVals()));
             values.addAll(newValues);
             _paramVals = values.toArray();
         }
@@ -923,7 +923,7 @@ public class SimpleFilter implements Filter
         }
     }
 
-    private ArrayList<FilterClause> _clauses = new ArrayList<FilterClause>();
+    private ArrayList<FilterClause> _clauses = new ArrayList<>();
 
 
     public SimpleFilter()
@@ -932,7 +932,7 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter(FilterClause... clauses)
     {
-        _clauses = new ArrayList<FilterClause>(Arrays.asList(clauses));
+        _clauses = new ArrayList<>(Arrays.asList(clauses));
     }
 
     public SimpleFilter(Filter filter)
@@ -1018,7 +1018,7 @@ public class SimpleFilter implements Filter
 
     public List<FieldKey> getAllFieldKeys()
     {
-        List<FieldKey> result = new ArrayList<FieldKey>();
+        List<FieldKey> result = new ArrayList<>();
         for (FilterClause clause : _clauses)
         {
             result.addAll(clause.getFieldKeys());
@@ -1029,7 +1029,7 @@ public class SimpleFilter implements Filter
     @Deprecated // Use getAllFieldKeys() instead.
     public List<String> getAllColumnNames()
     {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (FilterClause clause : _clauses)
         {
             result.addAll(clause.getColumnNames());
@@ -1278,7 +1278,7 @@ public class SimpleFilter implements Filter
 
     public Set<FieldKey> getWhereParamFieldKeys()
     {
-        Set<FieldKey> paramNames = new HashSet<FieldKey>(_clauses.size());
+        Set<FieldKey> paramNames = new HashSet<>(_clauses.size());
 
         for (FilterClause fc : _clauses)
             paramNames.addAll(fc.getFieldKeys());
@@ -1553,7 +1553,7 @@ public class SimpleFilter implements Filter
             assertEquals("negated didn't match for IN clause", negated, clause._negated);
             assertEquals("includeNull didn't match for IN clause", includeNull, clause._includeNull);
             // Convert to sets because we don't care about order for IN clauses
-            assertEquals("Parameter values didn't match for IN clause", new HashSet<Object>(Arrays.asList(expectedValues)), new HashSet<Object>(Arrays.asList(clause._paramVals)));
+            assertEquals("Parameter values didn't match for IN clause", new HashSet<>(Arrays.asList(expectedValues)), new HashSet<>(Arrays.asList(clause._paramVals)));
         }
 
         private void test(String expectedSQL, String description, InClause inClause, SqlDialect dialect)

@@ -430,7 +430,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     protected Map<String,Object> _fixupPropertyMap(Map<String,Object> in)
     {
-        Map<String,Object> out = new HashMap<String,Object>(in);
+        Map<String,Object> out = new HashMap<>(in);
 
         /** see TableViewForm.setTypedValues() */
         for (Map.Entry<String,Object> entry : in.entrySet())

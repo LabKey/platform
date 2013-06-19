@@ -104,7 +104,7 @@ public class NavTreeManager
     // Give external callers a copy of the synchronzied set... I don't trust them to synchronize properly
     public static Set<String> getExpandedPathsCopy(ViewContext viewContext, String navTreeId)
     {
-        return new HashSet<String>(getExpandedPaths(viewContext, navTreeId));
+        return new HashSet<>(getExpandedPaths(viewContext, navTreeId));
     }
 
 

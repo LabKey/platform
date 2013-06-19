@@ -29,7 +29,7 @@
     <%
         if (showFolders)
         {
-            List<HttpView> notNullViews = new ArrayList<HttpView>();
+            List<HttpView> notNullViews = new ArrayList<>();
             for (ModelAndView possibleView : _views)
             {
                 if (possibleView instanceof HttpView && ((HttpView)possibleView).isVisible())

@@ -54,7 +54,7 @@ public class IlluminaFastqParser
     private File[] _files;
     private Map<Pair<Object, Integer>, Pair<File, FastqWriter>> _fileMap;
     private Map<Pair<Object, Integer>, Integer> _sequenceTotals;
-    private Set<Integer> _skippedSampleIdx = new HashSet<Integer>();
+    private Set<Integer> _skippedSampleIdx = new HashSet<>();
     private FastqWriterFactory _writerFactory = new FastqWriterFactory();
     private Logger _logger;
     private static FileType FASTQ_FILETYPE = new FileType(Arrays.asList("fastq", "fq"), "fastq", FileType.gzSupportLevel.SUPPORT_GZ);
@@ -85,7 +85,7 @@ public class IlluminaFastqParser
     public static List<File> inferIlluminaInputsFromPath(String path, String fastqPrefix)
     {
         File folder = new File(path);
-        List<File> _fastqFiles = new ArrayList<File>();
+        List<File> _fastqFiles = new ArrayList<>();
 
         for (File f : folder.listFiles())
         {
@@ -105,8 +105,8 @@ public class IlluminaFastqParser
     // the key of the map is a pair where the first item is the sampleId and the second item indicated whether this file is the forward (1) or reverse (2) reads
     public Map<Pair<Object, Integer>, File> parseFastqFiles () throws PipelineJobException
     {
-        _fileMap = new HashMap<Pair<Object, Integer>, Pair<File, FastqWriter>>();
-        _sequenceTotals = new HashMap<Pair<Object, Integer>, Integer>();
+        _fileMap = new HashMap<>();
+        _sequenceTotals = new HashMap<>();
 
         FastqReader reader = null;
         int _parsedReads;
@@ -177,7 +177,7 @@ public class IlluminaFastqParser
             }
         }
 
-        Map<Pair<Object, Integer>, File> outputs = new HashMap<Pair<Object, Integer>, File>();
+        Map<Pair<Object, Integer>, File> outputs = new HashMap<>();
         for (Pair<Object, Integer> key :_fileMap.keySet())
         {
             _fileMap.get(key).getValue().close();

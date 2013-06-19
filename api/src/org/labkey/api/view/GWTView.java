@@ -58,7 +58,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         public GWTViewBean(String moduleName, Map<String, String> properties)
         {
             _moduleName = moduleName;
-            _properties = new HashMap<String, String>(properties);
+            _properties = new HashMap<>(properties);
         }
 
         public void init(ViewContext context)
@@ -147,7 +147,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         Set<String> gwtModules = (Set<String>) HttpView.getRootContext().get("gwtModules");
         if (null == gwtModules)
         {
-            gwtModules = new HashSet<String>();
+            gwtModules = new HashSet<>();
             HttpView.getRootContext().put("gwtModules", gwtModules);
         }
 

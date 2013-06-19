@@ -68,7 +68,7 @@ public class ZipUtil
     // Unzip all entries to the specified directory; log each file if Logger is non-null
     public static List<File> unzipToDirectory(Enumeration<? extends ZipEntry> entries, File unzipDir, InputStream zis, @Nullable Logger log) throws IOException
     {
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
 
         while (entries.hasMoreElements())
         {
@@ -116,7 +116,7 @@ public class ZipUtil
         try
         {
             ZipInputStream zis = new ZipInputStream(is);
-            files = new ArrayList<File>();
+            files = new ArrayList<>();
             ZipEntry entry;
 
             while (null != (entry = zis.getNextEntry()))

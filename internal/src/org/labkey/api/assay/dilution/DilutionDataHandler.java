@@ -100,7 +100,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             {
                 ExpRun run = _data.getRun();
                 DilutionAssayRun assayResults = getAssayResults(run, _info.getUser(), _dataFile, null);
-                List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> results = new ArrayList<>();
 
                 for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
                 {
@@ -108,7 +108,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     WellGroup group = dilution.getFirstWellGroup();
                     ExpMaterial sampleInput = assayResults.getMaterial(group);
 
-                    Map<String, Object> props = new HashMap<String, Object>();
+                    Map<String, Object> props = new HashMap<>();
                     results.add(props);
 
                     // generate curve ICs and AUCs for each curve fit type
@@ -272,14 +272,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
         PlateTemplate nabTemplate = provider.getPlateTemplate(container, protocol);
 
-        Map<String, DomainProperty> runProperties = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> runProperties = new HashMap<>();
         for (DomainProperty column : provider.getRunDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
         for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
 
         Map<Integer, String> cutoffs = getCutoffFormats(protocol, run);
-        List<Integer> sortedCutoffs = new ArrayList<Integer>(cutoffs.keySet());
+        List<Integer> sortedCutoffs = new ArrayList<>(cutoffs.keySet());
         Collections.sort(sortedCutoffs);
 
         List<Plate> plates = createPlates(dataFile, nabTemplate);
@@ -290,7 +290,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, sampleInputs);
 
         DomainProperty[] sampleProperties = provider.getSampleWellGroupDomain(protocol).getProperties();
-        Map<String, DomainProperty> samplePropertyMap = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> samplePropertyMap = new HashMap<>();
         for (DomainProperty sampleProperty : sampleProperties)
             samplePropertyMap.put(sampleProperty.getName(), sampleProperty);
         for (Map.Entry<ExpMaterial, List<WellGroup>> entry : inputs.entrySet())
@@ -372,11 +372,11 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         Plate plate = plates.get(0);
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
-        Map<String, ExpMaterial> nameToMaterial = new HashMap<String, ExpMaterial>();
+        Map<String, ExpMaterial> nameToMaterial = new HashMap<>();
         for (ExpMaterial material : sampleInputs)
             nameToMaterial.put(material.getName(), material);
 
-        Map<ExpMaterial, List<WellGroup>> mapping = new HashMap<ExpMaterial, List<WellGroup>>();
+        Map<ExpMaterial, List<WellGroup>> mapping = new HashMap<>();
         for (WellGroup wellgroup : wellgroups)
         {
             ExpMaterial material = nameToMaterial.get(wellgroup.getName());
@@ -484,7 +484,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 type = PropertyType.DOUBLE;
             }
         }
-        return new Pair<PropertyType, String>(type, format);
+        return new Pair<>(type, format);
     }
 
     public Lsid getDataRowLSID(ExpData data, String wellGroupName, Map<PropertyDescriptor, Object> sampleProperties)
@@ -508,13 +508,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
 
-        Map<String, DomainProperty> runProperties = new HashMap<String, DomainProperty>();
+        Map<String, DomainProperty> runProperties = new HashMap<>();
         for (DomainProperty column : provider.getRunDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
         for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
 
-        Map<Integer, String> cutoffs = new HashMap<Integer, String>();
+        Map<Integer, String> cutoffs = new HashMap<>();
         for (String cutoffPropName : DilutionAssayProvider.CUTOFF_PROPERTIES)
         {
             DomainProperty cutoffProp = runProperties.get(cutoffPropName);

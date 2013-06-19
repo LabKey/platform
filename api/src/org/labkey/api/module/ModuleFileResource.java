@@ -64,9 +64,9 @@ public class ModuleFileResource
     public void addAssociatedFile(File file)
     {
         if(null == _assocFiles)
-            _assocFiles = new ArrayList<Pair<File,Long>>();
+            _assocFiles = new ArrayList<>();
 
-        _assocFiles.add(new Pair<File,Long>(file, file.lastModified()));
+        _assocFiles.add(new Pair<>(file, file.lastModified()));
     }
 
     public List<Pair<File,Long>> getAssociatedFiles()

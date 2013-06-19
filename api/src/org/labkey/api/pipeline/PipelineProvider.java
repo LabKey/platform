@@ -250,7 +250,7 @@ abstract public class PipelineProvider
      */
     public List<StatusAction> addStatusActions()
     {
-        List<PipelineProvider.StatusAction> actions = new ArrayList<PipelineProvider.StatusAction>();
+        List<PipelineProvider.StatusAction> actions = new ArrayList<>();
         actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON)
         {
             @Override

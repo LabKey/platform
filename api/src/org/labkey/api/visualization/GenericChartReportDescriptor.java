@@ -52,7 +52,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
     public Map<String, Object> getReportProps() throws Exception
         {
-            Map<String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<>();
             List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
             if (propsList.size() > 0)
             {

@@ -42,11 +42,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DataViewService
 {
-    private final Map<DataViewProvider.Type, DataViewProvider> _providers = new ConcurrentHashMap<DataViewProvider.Type, DataViewProvider>();
+    private final Map<DataViewProvider.Type, DataViewProvider> _providers = new ConcurrentHashMap<>();
 
     private static final Logger _log = Logger.getLogger(DataViewService.class);
     private static final DataViewService _instance = new DataViewService();
-    private static final Map<String, Boolean> _providerInitialized = new HashMap<String, Boolean>();
+    private static final Map<String, Boolean> _providerInitialized = new HashMap<>();
 
     public static DataViewService get()
     {
@@ -65,7 +65,7 @@ public class DataViewService
 
     public List<DataViewProvider.Type> getDataTypes(Container container, User user)
     {
-        List<DataViewProvider.Type> types = new ArrayList<DataViewProvider.Type>();
+        List<DataViewProvider.Type> types = new ArrayList<>();
 
         for (Map.Entry<DataViewProvider.Type, DataViewProvider> entry : _providers.entrySet())
         {
@@ -91,7 +91,7 @@ public class DataViewService
      */
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
-        return getViews(context, new ArrayList<DataViewProvider.Type>(_providers.keySet()));
+        return getViews(context, new ArrayList<>(_providers.keySet()));
     }
 
     /**
@@ -99,7 +99,7 @@ public class DataViewService
      */
     public List<DataViewInfo> getViews(ViewContext context, List<DataViewProvider.Type> types) throws Exception
     {
-        List<DataViewInfo> views = new ArrayList<DataViewInfo>();
+        List<DataViewInfo> views = new ArrayList<>();
 
         for (DataViewProvider.Type type : types)
         {

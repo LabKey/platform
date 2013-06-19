@@ -58,7 +58,7 @@ class UserCache
         protected StringKeyCache<UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
         {
             StringKeyCache<Wrapper<UserCollections>> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
-            return new BlockingStringKeyCache<UserCollections>(shared, new UserCollectionsLoader());
+            return new BlockingStringKeyCache<>(shared, new UserCollectionsLoader());
         }
 
         @Override
@@ -66,7 +66,7 @@ class UserCache
         {
             Tracking tracking = sharedCache.getTrackingCache();
             StringKeyCache<Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getStats());
-            return new BlockingStringKeyCache<UserCollections>(temp, new UserCollectionsLoader());
+            return new BlockingStringKeyCache<>(temp, new UserCollectionsLoader());
         }
     };
 
@@ -100,7 +100,7 @@ class UserCache
     static @NotNull Collection<User> getActiveUsers()
     {
         List<User> activeUsers = getUserCollections().getActiveUsers();
-        List<User> copy = new LinkedList<User>();
+        List<User> copy = new LinkedList<>();
 
         for (User user : activeUsers)
             copy.add(user.cloneUser());
@@ -112,7 +112,7 @@ class UserCache
     // Emails are returned sorted
     static @NotNull List<String> getActiveUserEmails()
     {
-        return new LinkedList<String>(getUserCollections().getActiveEmails());
+        return new LinkedList<>(getUserCollections().getActiveEmails());
     }
 
 
@@ -182,10 +182,10 @@ class UserCache
         {
             Collection<User> allUsers = new TableSelector(CORE.getTableInfoUsers(), null, new Sort("Email")).getCollection(User.class);
 
-            Map<Integer, User> userIdMap = new HashMap<Integer, User>((int)(1.3 * allUsers.size()));
-            Map<ValidEmail, User> emailMap = new HashMap<ValidEmail, User>((int)(1.3 * allUsers.size()));
-            List<User> activeUsers = new LinkedList<User>();
-            List<String> activeEmails = new LinkedList<String>();
+            Map<Integer, User> userIdMap = new HashMap<>((int)(1.3 * allUsers.size()));
+            Map<ValidEmail, User> emailMap = new HashMap<>((int)(1.3 * allUsers.size()));
+            List<User> activeUsers = new LinkedList<>();
+            List<String> activeEmails = new LinkedList<>();
 
             // We're using the same User object in multiple lists... UserCache must clone all users it return to prevent
             // concurrency issues (e.g., a caller might indirectly modify a cached User's group list, leading to stale credentials)

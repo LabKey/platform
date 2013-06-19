@@ -69,12 +69,12 @@ public class ProjectAndSiteGroupsCache
         if (includeSiteGroups)
         {
             Collection<Integer> siteGroupIds = getSiteGroupIds();
-            groups = new ArrayList<Group>(projectGroups.size() + siteGroupIds.size());
+            groups = new ArrayList<>(projectGroups.size() + siteGroupIds.size());
             addAll(groups, siteGroupIds);
         }
         else
         {
-            groups = new ArrayList<Group>(projectGroups.size());
+            groups = new ArrayList<>(projectGroups.size());
         }
 
         addAll(groups, projectGroups);
@@ -86,7 +86,7 @@ public class ProjectAndSiteGroupsCache
     static @NotNull Group[] getSiteGroups()
     {
         Collection<Integer> siteGroupIds = getSiteGroupIds();
-        ArrayList<Group> groups = new ArrayList<Group>(siteGroupIds.size());
+        ArrayList<Group> groups = new ArrayList<>(siteGroupIds.size());
         addAll(groups, siteGroupIds);
 
         return groups.toArray(new Group[0]);

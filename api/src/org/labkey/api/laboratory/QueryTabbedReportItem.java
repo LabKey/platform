@@ -76,7 +76,7 @@ public class QueryTabbedReportItem extends TabbedReportItem
         if (qd == null)
             return null;
 
-        List<QueryException> errors = new ArrayList<QueryException>();
+        List<QueryException> errors = new ArrayList<>();
         TableInfo ti = qd.getTable(errors, true);
         if (errors.size() > 0)
         {

@@ -61,7 +61,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     private Exception _loadException = null;
 
     //map from internal (ugly) location names to public names used in the XML web part definition file
-    private static final Map<String,String> _locationsTranslationMap = new HashMap<String,String>();
+    private static final Map<String,String> _locationsTranslationMap = new HashMap<>();
     static
     {
         _locationsTranslationMap.put(LOCATION_BODY, "body");
@@ -113,7 +113,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             _loadException = null;
             XmlOptions xmlOptions = new XmlOptions();
 
-            Map<String,String> namespaceMap = new HashMap<String,String>();
+            Map<String,String> namespaceMap = new HashMap<>();
             namespaceMap.put("", "http://labkey.org/data/xml/webpart");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
             

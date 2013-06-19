@@ -78,12 +78,12 @@ public class HomeTemplate extends PrintTemplate
 
     private List<String> buildContainerNavLinks(ViewContext context)
     {
-        List<String> links = new ArrayList<String>();
+        List<String> links = new ArrayList<>();
         Container container = context.getContainer();
 
         if (container != null)
         {
-            ArrayStack<NavTree> stack = new ArrayStack<NavTree>();
+            ArrayStack<NavTree> stack = new ArrayStack<>();
             while (!container.isRoot())
             {
                 // don't add the home project folder, since 'Home' is always displayed:
@@ -121,7 +121,7 @@ public class HomeTemplate extends PrintTemplate
         if (context.getContainer().isWorkbook())
         {
             // Add the main page for the workbook to the nav trail
-            navTrail = new ArrayList<NavTree>(navTrail);
+            navTrail = new ArrayList<>(navTrail);
             navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
         page.setNavTrail(appBar.setNavTrail(navTrail, context));

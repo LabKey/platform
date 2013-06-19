@@ -71,7 +71,7 @@ public class KeywordCandidates
 
     public boolean containsAll(Set<String> reservedWordSet, String productName)
     {
-        Set<String> notFound = new HashSet<String>();
+        Set<String> notFound = new HashSet<>();
 
         for (String word : reservedWordSet)
             if (!CANDIDATES.contains(word))

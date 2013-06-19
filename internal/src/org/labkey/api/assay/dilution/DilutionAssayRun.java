@@ -112,7 +112,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     private Map<FieldKey, PropertyDescriptor> getFieldKeys()
     {
-        Map<FieldKey, PropertyDescriptor> fieldKeys = new HashMap<FieldKey, PropertyDescriptor>();
+        Map<FieldKey, PropertyDescriptor> fieldKeys = new HashMap<>();
         for (DomainProperty property : _provider.getBatchDomain(_protocol).getProperties())
             fieldKeys.put(FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, property.getName()), property.getPropertyDescriptor());
         for (DomainProperty property : _provider.getRunDomain(_protocol).getProperties())
@@ -154,11 +154,11 @@ public abstract class DilutionAssayRun extends Luc5Assay
     {
         SimpleFilter filter = new SimpleFilter("RowId", _run.getRowId());
 
-        Map<PropertyDescriptor, Object> properties = new LinkedHashMap<PropertyDescriptor, Object>();
+        Map<PropertyDescriptor, Object> properties = new LinkedHashMap<>();
         ResultSet rs = null;
         try
         {
-            rs = Table.selectForDisplay(runTable, new ArrayList<ColumnInfo>(selectCols.values()), null, filter, null, 1, Table.NO_OFFSET);
+            rs = Table.selectForDisplay(runTable, new ArrayList<>(selectCols.values()), null, filter, null, 1, Table.NO_OFFSET);
             if (!rs.next())
             {
                 throw new NotFoundException("Run " + _run.getRowId() + " was not found.");
@@ -198,17 +198,17 @@ public abstract class DilutionAssayRun extends Luc5Assay
             if (runView != null)
             {
                 // If we have a saved view to use for the column list, use it
-                fieldKeysToShow = new ArrayList<FieldKey>(runView.getColumns());
+                fieldKeysToShow = new ArrayList<>(runView.getColumns());
             }
             else
             {
                 // Otherwise, use the default list of columns
-                fieldKeysToShow = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+                fieldKeysToShow = new ArrayList<>(runTable.getDefaultVisibleColumns());
             }
             // The list of available columns is reduced from the default set because the user may not have
             // permission to join to all of the lookups. Remove any columns that aren't part of the acceptable set,
             // which is built up by getFieldKeys()
-            List<FieldKey> newFieldKeysToShow = new ArrayList<FieldKey>();
+            List<FieldKey> newFieldKeysToShow = new ArrayList<>();
             for (FieldKey fieldKey : fieldKeysToShow)
             {
                 FieldKey parent = fieldKey.getParent();
@@ -231,7 +231,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     protected Map<String, DilutionResultProperties> getSampleProperties(ExpData outputData)
     {
-        Map<String, DilutionResultProperties> samplePropertyMap = new HashMap<String, DilutionResultProperties>();
+        Map<String, DilutionResultProperties> samplePropertyMap = new HashMap<>();
 
         Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
         Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
@@ -244,7 +244,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
         for (ExpMaterial material : inputs)
         {
-            Map<PropertyDescriptor, Object> sampleProperties = new TreeMap<PropertyDescriptor, Object>(new PropertyDescriptorComparator());
+            Map<PropertyDescriptor, Object> sampleProperties = new TreeMap<>(new PropertyDescriptorComparator());
             for (DomainProperty dp : sampleDomainProperties)
             {
                 PropertyDescriptor property = dp.getPropertyDescriptor();
@@ -253,10 +253,10 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
             // in addition to the properties saved on the sample object, we'll add the properties associated with each sample's
             // "output" data object.
-            Map<PropertyDescriptor, Object> dataProperties = new TreeMap<PropertyDescriptor, Object>(new PropertyDescriptorComparator());
+            Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
             String wellGroupName = getWellGroupName(material);
             String dataRowLsid = getDataHandler().getDataRowLSID(outputData, wellGroupName, sampleProperties).toString();
-            Set<Double> cutoffValues = new HashSet<Double>();
+            Set<Double> cutoffValues = new HashSet<>();
             for (Integer value : DilutionDataHandler.getCutoffFormats(_protocol, _run).keySet())
                 cutoffValues.add(value.doubleValue());
             List<PropertyDescriptor> propertyDescriptors = DilutionProviderSchema.getExistingDataProperties(_protocol, cutoffValues);
@@ -278,7 +278,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             Map<FieldKey, PropertyDescriptor> fieldKeys = getFieldKeys();
             TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer());
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(runTable, fieldKeys.keySet());
-            _runProperties = new TreeMap<PropertyDescriptor, Object>(new PropertyDescriptorComparator());
+            _runProperties = new TreeMap<>(new PropertyDescriptorComparator());
             _runProperties.putAll(getRunProperties(runTable, fieldKeys, cols));
         }
         return Collections.unmodifiableMap(_runProperties);
@@ -374,7 +374,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
         private Map<PropertyDescriptor, Object> sortProperties(Map<PropertyDescriptor, Object> properties)
         {
-            Map<PropertyDescriptor, Object> sortedProperties = new LinkedHashMap<PropertyDescriptor, Object>();
+            Map<PropertyDescriptor, Object> sortedProperties = new LinkedHashMap<>();
             Map.Entry<PropertyDescriptor, Object> sampleIdEntry =
                     findPropertyDescriptor(properties, AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
             Map.Entry<PropertyDescriptor, Object> ptidEntry =
@@ -447,7 +447,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     public void setMaterialWellGroupMapping(Map<ExpMaterial, List<WellGroup>> materialWellGroupMapping)
     {
         _materialWellGroupMapping = materialWellGroupMapping;
-        _wellGroupMaterialMapping = new HashMap<WellGroup, ExpMaterial>();
+        _wellGroupMaterialMapping = new HashMap<>();
         for (Map.Entry<ExpMaterial, List<WellGroup>> entry : materialWellGroupMapping.entrySet())
         {
             for (WellGroup wellGroup : entry.getValue())

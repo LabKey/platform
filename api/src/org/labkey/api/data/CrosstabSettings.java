@@ -32,7 +32,7 @@ public class CrosstabSettings
     private TableInfo _sourceTable = null;
     private CrosstabAxis _rowAxis = new CrosstabAxis(this);
     private CrosstabAxis _colAxis = new CrosstabAxis(this);
-    private List<CrosstabMeasure> _measures = new ArrayList<CrosstabMeasure>();
+    private List<CrosstabMeasure> _measures = new ArrayList<>();
     private String _instanceCountCaption = "Instance Count";
     private SimpleFilter _sourceTableFilter;
 
@@ -178,7 +178,7 @@ public class CrosstabSettings
      */
     public List<ColumnInfo> getDistinctColumns()
     {
-        Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
+        Set<ColumnInfo> cols = new HashSet<>();
         for(CrosstabDimension dim : getColumnAxis().getDimensions())
             cols.add(dim.getSourceColumn());
         for(CrosstabDimension dim : getRowAxis().getDimensions())
@@ -186,7 +186,7 @@ public class CrosstabSettings
         for(CrosstabMeasure measure : getMeasures())
             cols.add(measure.getSourceColumn());
 
-        return new ArrayList<ColumnInfo>(cols);
+        return new ArrayList<>(cols);
     }
 
     /**

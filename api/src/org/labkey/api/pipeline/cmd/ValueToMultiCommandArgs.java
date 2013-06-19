@@ -53,7 +53,7 @@ public class ValueToMultiCommandArgs extends ValueToCommandArgs
         {
             String[] valueParts = value.split(_delimiter);
 
-            ArrayList<String> params = new ArrayList<String>();
+            ArrayList<String> params = new ArrayList<>();
             for (String part : valueParts)
                 params.addAll(Arrays.asList(_converter.toArgs(part)));
             return params.toArray(new String[params.size()]);

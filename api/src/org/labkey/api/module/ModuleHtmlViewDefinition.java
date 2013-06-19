@@ -67,7 +67,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
-    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private ViewType _viewDef = null;
 
     public ModuleHtmlViewDefinition(Resource r)
@@ -116,7 +116,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
             try
             {
                 XmlOptions xmlOptions = new XmlOptions();
-                Map<String,String> namespaceMap = new HashMap<String,String>();
+                Map<String,String> namespaceMap = new HashMap<>();
                 namespaceMap.put("", "http://labkey.org/data/xml/view");
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
@@ -138,7 +138,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
                     calculatePermissions();
                     // We will reload to pick up changes, so don't just keep adding to the same set of dependencies.
                     // Start over each time and flip the collection all at once.
-                    Set<ClientDependency> newClientDependencies = new LinkedHashSet<ClientDependency>();
+                    Set<ClientDependency> newClientDependencies = new LinkedHashSet<>();
                     newClientDependencies.addAll(addResources());
                     newClientDependencies.addAll(addModuleContext());
                     _clientDependencies = newClientDependencies;
@@ -192,7 +192,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         if(null == resources)
             return Collections.emptySet();
 
-        Set<ClientDependency> result = new LinkedHashSet<ClientDependency>();
+        Set<ClientDependency> result = new LinkedHashSet<>();
         for (DependencyType r : resources)
         {
             if (null != r.getPath())
@@ -216,7 +216,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         if(null == modules)
             return Collections.emptySet();
 
-        Set<ClientDependency> result = new HashSet<ClientDependency>();
+        Set<ClientDependency> result = new HashSet<>();
         for (RequiredModuleType mn : modules)
         {
             ClientDependency cr = ClientDependency.fromModuleName(mn.getName());

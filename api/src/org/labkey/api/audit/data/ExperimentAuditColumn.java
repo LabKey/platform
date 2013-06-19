@@ -65,6 +65,6 @@ public abstract class ExperimentAuditColumn extends DataColumn
         String[] parts = value.toString().split(KEY_SEPARATOR);
         if (parts == null || parts.length != 2)
             return null;
-        return new Pair<String, String>(parts[0], parts[1].length() > 0 ? parts[1] : null);
+        return new Pair<>(parts[0], parts[1].length() > 0 ? parts[1] : null);
     }
 }

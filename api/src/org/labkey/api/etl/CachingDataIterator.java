@@ -37,7 +37,7 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     DataIterator _in;
     int _columnCount;
     int _currentRow = -1;
-    ArrayList<Object[]> _data = new ArrayList<Object[]>(100);
+    ArrayList<Object[]> _data = new ArrayList<>(100);
     boolean atEndOfInput = false;
 
 

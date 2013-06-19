@@ -46,7 +46,7 @@ public class ProjectAdminMenu extends NavTreeMenu
         Container c = context.getContainer();
         Container project = c.isProject() ? c : c.getProject();
 
-        List<NavTree> admin = new ArrayList<NavTree>();
+        List<NavTree> admin = new ArrayList<>();
         admin.add(new NavTree("Project Users", PageFlowUtil.urlProvider(UserUrls.class).getProjectUsersURL(c)));
         if (project != null && project.hasPermission(context.getUser(), AdminPermission.class))
         {

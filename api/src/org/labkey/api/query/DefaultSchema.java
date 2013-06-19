@@ -51,8 +51,8 @@ final public class DefaultSchema extends AbstractSchema
         abstract public @NotNull Collection<String> getSchemaNames(User user, Container container);
     }
 
-    private static final Map<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<SchemaProvider>();
-    private static final List<DynamicSchemaProvider> _dynamicProviders = new CopyOnWriteArrayList<DynamicSchemaProvider>();
+    private static final Map<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<>();
+    private static final List<DynamicSchemaProvider> _dynamicProviders = new CopyOnWriteArrayList<>();
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
@@ -184,7 +184,7 @@ final public class DefaultSchema extends AbstractSchema
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret = new TreeSet<String>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
+        Set<String> ret = new TreeSet<>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
         for (DynamicSchemaProvider dynamicProvider : _dynamicProviders)
             ret.addAll(dynamicProvider.getSchemaNames(getUser(), getContainer()));
         return Collections.unmodifiableSet(ret);
@@ -231,7 +231,7 @@ final public class DefaultSchema extends AbstractSchema
                 if (r2 == null)
                     return r1;
 
-                Set<SchemaKey> names = new TreeSet<SchemaKey>(SchemaKey.CASE_INESNSITIVE_STRING_ORDER);
+                Set<SchemaKey> names = new TreeSet<>(SchemaKey.CASE_INESNSITIVE_STRING_ORDER);
                 names.addAll(r1);
                 names.addAll(r2);
                 return names;

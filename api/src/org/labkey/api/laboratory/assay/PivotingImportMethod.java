@@ -97,7 +97,7 @@ abstract public class PivotingImportMethod extends DefaultAssayImportMethod
     @Override
     public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol)
     {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
 
         List<String> columns = super.getImportColumns(ctx, protocol);
         DomainProperty pivotCol = getPivotColumn(protocol);

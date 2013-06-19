@@ -307,7 +307,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     public Map<String, String> getMeasureNameToColumnNameMap()
     {
-        Map<String, String> measureNameToColumnName = new HashMap<String, String>();
+        Map<String, String> measureNameToColumnName = new HashMap<>();
         for (Map.Entry<String, ColumnInfo> entry : _columnMap.entrySet())
         {
             String colName = entry.getKey();
@@ -393,7 +393,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         GroupTableInfo groupTable = getGroupTable();
         Filter aggFilter = getAggregateFilter();
 
-        Collection<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumns());    // Make a copy
+        Collection<ColumnInfo> reqCols = new ArrayList<>(groupTable.getColumns());    // Make a copy
         reqCols = QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
 
         sql.append("SELECT * FROM (\n");
@@ -533,7 +533,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected Map<FieldKey, ColumnInfo> getAggregateFilterColMap(Collection<ColumnInfo> cols)
     {
-        Map<FieldKey,ColumnInfo> map = new HashMap<FieldKey,ColumnInfo>(cols.size());
+        Map<FieldKey,ColumnInfo> map = new HashMap<>(cols.size());
         for(ColumnInfo col : cols)
         {
             map.put(col.getFieldKey(), col);
@@ -646,7 +646,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         //get in customize view. That way the client can adjust the
         //default set in an abstract kind of way, while still providing
         //the column members for display.
-        ArrayList<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        ArrayList<FieldKey> defaultCols = new ArrayList<>();
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
             defaultCols.add(dim.getFieldKey());
 

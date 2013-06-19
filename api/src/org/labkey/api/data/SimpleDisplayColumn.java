@@ -75,7 +75,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
-        Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
+        Set<ColumnInfo> cols = new HashSet<>();
         addQueryColumns(cols);
         for (ColumnInfo c : cols)
             keys.add(c.getFieldKey());

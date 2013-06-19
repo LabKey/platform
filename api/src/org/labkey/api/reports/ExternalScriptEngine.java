@@ -165,7 +165,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      */
     protected String[] formatCommand(File scriptFile, ScriptContext context) throws ScriptException
     {
-        List<String> params = new ArrayList<String>();
+        List<String> params = new ArrayList<>();
         String exe = _def.getExePath();
         String cmd = _def.getExeCommand();
 

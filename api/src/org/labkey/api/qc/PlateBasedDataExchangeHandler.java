@@ -50,7 +50,7 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
     public void addSampleProperties(String propertyName, String groupColumnName, Map<String, Map<DomainProperty, String>> propertySet,
                                     PlateTemplate plate, WellGroup.Type wellType)
     {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> rows = new ArrayList<>();
 
         if (plate != null)
         {
@@ -64,7 +64,7 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
                 {
                     for (Position pos : group.getPositions())
                     {
-                        Map<String, Object> row = new HashMap<String, Object>();
+                        Map<String, Object> row = new HashMap<>();
                         row.put(groupColumnName, group.getName());
                         row.put(ROW_PROP_NAME, pos.getRow());
                         row.put(COL_PROP_NAME, pos.getColumn());
@@ -86,13 +86,13 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
      */
     protected Map<String, Map<DomainProperty, String>> createTestSampleProperties(DomainProperty[] properties, PlateTemplate template, WellGroup.Type type)
     {
-        Map<String, Map<DomainProperty, String>> specimens = new HashMap<String, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, String>> specimens = new HashMap<>();
         for (WellGroupTemplate wellGroup : template.getWellGroups())
         {
             if (wellGroup.getType() != type)
                 continue;
 
-            Map<DomainProperty, String> row = new HashMap<DomainProperty, String>();
+            Map<DomainProperty, String> row = new HashMap<>();
 
             for (DomainProperty dp : properties)
             {

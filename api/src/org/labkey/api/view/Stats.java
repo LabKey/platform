@@ -161,8 +161,8 @@ public abstract class Stats
     public static final StatDefinition MEDIAN = new MedianDefinition();
     public static final StatDefinition MEDIAN_ABS_DEV = new StatDefinition("MAD");
 
-    public static final Set<StatDefinition> ALL_STATS = new LinkedHashSet<StatDefinition>();
-    public static final Set<StatDefinition> STRING_STATS = new LinkedHashSet<StatDefinition>();
+    public static final Set<StatDefinition> ALL_STATS = new LinkedHashSet<>();
+    public static final Set<StatDefinition> STRING_STATS = new LinkedHashSet<>();
     static
     {
         ALL_STATS.add(COUNT);
@@ -201,7 +201,7 @@ public abstract class Stats
     
     public static Set<StatDefinition> statSet(StatDefinition... stats)
     {
-        Set<StatDefinition> set = new HashSet<StatDefinition>();
+        Set<StatDefinition> set = new HashSet<>();
         for (StatDefinition stat : stats)
             set.add(stat);
 

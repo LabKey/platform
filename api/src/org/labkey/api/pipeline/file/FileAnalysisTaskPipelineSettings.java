@@ -135,7 +135,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     public void setInitialInputExt(FileType fileType)
     {
-        _initialInputExts = new ArrayList<FileType>();
+        _initialInputExts = new ArrayList<>();
         _initialInputExts.add(fileType);
     }
 

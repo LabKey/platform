@@ -52,7 +52,7 @@ public class MapLoader extends DataLoader
     // causing the map.get(column.name) on each row to fail.
     private void convertToArrays(List<Map<String, Object>> rows)
     {
-        List<Object[]> lineFields = new ArrayList<Object[]>(rows.size());
+        List<Object[]> lineFields = new ArrayList<>(rows.size());
 
         if (rows.size() > 0)
         {
@@ -63,9 +63,9 @@ public class MapLoader extends DataLoader
             for (Map<String, Object> row : rows)
             {
                 if (!(row instanceof CaseInsensitiveMapWrapper))
-                    row = new CaseInsensitiveMapWrapper<Object>(row);
+                    row = new CaseInsensitiveMapWrapper<>(row);
 
-                ArrayList<Object> values = new ArrayList<Object>(headers.length);
+                ArrayList<Object> values = new ArrayList<>(headers.length);
                 for (String header : headers)
                 {
                     Object value = row.get(header);
@@ -127,7 +127,7 @@ public class MapLoader extends DataLoader
             {
                 // 11374: Return values only for active columns
                 ColumnDescriptor[] columns = getColumns();
-                List<Object> values = new ArrayList<Object>(_activeColumns.length);
+                List<Object> values = new ArrayList<>(_activeColumns.length);
                 Object[] parsedValues = data[lineNum()];
 
                 for (int i = 0; i < columns.length; i++)
@@ -157,19 +157,19 @@ public class MapLoader extends DataLoader
         @Test
         public void testLoad() throws Exception
         {
-            Map<String, Object> row1 = new LinkedHashMap<String, Object>();
+            Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("name", "bob");
             row1.put("date", "1/2/2006");
             row1.put("number", "1.1");
             row1.put("noload", "dont load");
 
-            Map<String, Object> row2 = new HashMap<String, Object>();
+            Map<String, Object> row2 = new HashMap<>();
             row2.put("name", "jim");
             row2.put("date", "");
             row2.put("number", "");
             row2.put("noload", "");
 
-            Map<String, Object> row3 = new CaseInsensitiveHashMap<Object>();
+            Map<String, Object> row3 = new CaseInsensitiveHashMap<>();
             row3.put("Name", "sally");
             row3.put("Date", "2-Jan-06");
             row3.put("Number", 1.2); // NOTE: not a String!

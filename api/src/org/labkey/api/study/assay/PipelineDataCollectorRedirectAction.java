@@ -54,7 +54,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         // Can't trust the form's getPath() because it translates the empty string into null, and we
         // need to know if the parameter was present
         String path = getViewContext().getRequest().getParameter("path");
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         if (path != null)
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(container);
@@ -114,7 +114,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         }
 
         Collections.sort(files);
-        List<Map<String, File>> maps = new ArrayList<Map<String, File>>();
+        List<Map<String, File>> maps = new ArrayList<>();
         for (File file : files)
         {
             maps.add(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, file));

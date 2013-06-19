@@ -235,7 +235,7 @@ public class DomainUtil
             gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
-            gpv.setProperties(new HashMap<String,String>(pv.getProperties()));
+            gpv.setProperties(new HashMap<>(pv.getProperties()));
 
             validators.add(gpv);
         }
@@ -521,7 +521,7 @@ public class DomainUtil
             to.setLookup(null);
         }
 
-        List<ConditionalFormat> formats = new ArrayList<ConditionalFormat>();
+        List<ConditionalFormat> formats = new ArrayList<>();
         for (GWTConditionalFormat format : from.getConditionalFormats())
         {
             formats.add(new ConditionalFormat(format));
@@ -560,7 +560,7 @@ public class DomainUtil
     @SuppressWarnings("unchecked")
     private static void updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
-        Map<Integer, GWTPropertyValidator> newProps = new HashMap<Integer, GWTPropertyValidator>();
+        Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
@@ -577,7 +577,7 @@ public class DomainUtil
 
         if (oldPd != null)
         {
-            List<GWTPropertyValidator> deleted = new ArrayList<GWTPropertyValidator>();
+            List<GWTPropertyValidator> deleted = new ArrayList<>();
             for (GWTPropertyValidator v : oldPd.getPropertyValidators())
             {
                 GWTPropertyValidator prop = newProps.get(v.getRowId());

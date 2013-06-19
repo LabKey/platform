@@ -118,9 +118,9 @@ public class PopupAdminView extends PopupMenuView
                 }
             };
 
-            SortedSet<Module> activeModules = new TreeSet<Module>(moduleComparator);
+            SortedSet<Module> activeModules = new TreeSet<>(moduleComparator);
             activeModules.addAll(c.getActiveModules());
-            SortedSet<Module> disabledModules = new TreeSet<Module>(moduleComparator);
+            SortedSet<Module> disabledModules = new TreeSet<>(moduleComparator);
             disabledModules.addAll(ModuleLoader.getInstance().getModules());
             disabledModules.removeAll(activeModules);
 

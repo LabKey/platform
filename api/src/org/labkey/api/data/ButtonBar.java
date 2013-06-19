@@ -32,7 +32,7 @@ public class ButtonBar extends DisplayElement
         separateButtons
     }
 
-    private List<DisplayElement> _elementList = new ArrayList<DisplayElement>();
+    private List<DisplayElement> _elementList = new ArrayList<>();
     private Style _style = Style.toolbar;
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a
@@ -84,7 +84,7 @@ public class ButtonBar extends DisplayElement
     // cloning constructor
     public ButtonBar(ButtonBar original)
     {
-        _elementList = new ArrayList<DisplayElement>(original.getList());
+        _elementList = new ArrayList<>(original.getList());
         _style = original.getStyle();
     }
 
@@ -217,9 +217,9 @@ public class ButtonBar extends DisplayElement
             return;
 
         List<DisplayElement> originalButtons = _elementList;
-        _elementList = new ArrayList<DisplayElement>();
+        _elementList = new ArrayList<>();
 
-        List<Pair<ButtonConfig, DisplayElement>> mergedItems = new ArrayList<Pair<ButtonConfig, DisplayElement>>();
+        List<Pair<ButtonConfig, DisplayElement>> mergedItems = new ArrayList<>();
         for (ButtonConfig item : config.getItems())
         {
             DisplayElement elem = item.createButton(ctx, originalButtons);
@@ -237,7 +237,7 @@ public class ButtonBar extends DisplayElement
             //include all buttons in the originalButtons List that
             //are not already in the new element list or the merged list
             //match based on button caption
-            Set<String> newCaptions = new HashSet<String>();
+            Set<String> newCaptions = new HashSet<>();
             for (DisplayElement elem : _elementList)
             {
                 newCaptions.add(elem.getCaption());

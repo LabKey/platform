@@ -58,11 +58,11 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
-        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<ObjectType, Map<DomainProperty, String>>();
+        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
         List<String> names = getSampleNames();
         for (int i = 0; i < names.size(); i++)
         {
-            Map<DomainProperty, String> sampleProperties = new HashMap<DomainProperty, String>();
+            Map<DomainProperty, String> sampleProperties = new HashMap<>();
             for (DomainProperty property : _domainProperties)
             {
                 String inputName = UploadWizardAction.getInputName(property, names.get(i));
@@ -92,11 +92,11 @@ public abstract class SamplePropertyHelper<ObjectType>
         List<String> sampleNames = getSampleNames();
         if (sampleNames.isEmpty())
             return;
-        _groups = new HashMap<DomainProperty, DisplayColumnGroup>();
-        Map<String, Map<DomainProperty, Object>> domains = new HashMap<String, Map<DomainProperty, Object>>();
+        _groups = new HashMap<>();
+        Map<String, Map<DomainProperty, Object>> domains = new HashMap<>();
         for (DomainProperty sampleProperty : _domainProperties)
         {
-            List<DisplayColumn> cols = new ArrayList<DisplayColumn>();
+            List<DisplayColumn> cols = new ArrayList<>();
             for (String name : getSampleNames())
             {
                 String inputName = UploadWizardAction.getInputName(sampleProperty, name);
@@ -152,10 +152,10 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
-        Map<String, Map<DomainProperty, String>> result = new HashMap<String, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, String>> result = new HashMap<>();
         for (String sampleName : getSampleNames())
         {
-            Map<DomainProperty, String> values = new HashMap<DomainProperty, String>();
+            Map<DomainProperty, String> values = new HashMap<>();
             for (DomainProperty sampleProperty : _domainProperties)
             {
                 String name = UploadWizardAction.getInputName(sampleProperty, sampleName);

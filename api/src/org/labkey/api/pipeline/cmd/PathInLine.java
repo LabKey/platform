@@ -24,7 +24,7 @@ public class PathInLine extends PathToCommandArgs
 {
     public String[] toArgs(String[] paths)
     {
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
         for (String path : paths)
         {
             if (path != null && path.length() > 0)

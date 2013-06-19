@@ -512,7 +512,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addColumn(ColumnInfo col, Callable call)
     {
-        _outputColumns.add(new Pair<ColumnInfo, Callable>(col, call));
+        _outputColumns.add(new Pair<>(col, call));
         return _outputColumns.size()-1;
     }
 
@@ -705,7 +705,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         Callable guidCallable = new Callable(){public Object call() {return GUID.makeGUID();}};
 
         Map<String, Integer> inputCols = getColumnNameMap();
-        Map<String, Integer> outputCols = new CaseInsensitiveHashMap<Integer>();
+        Map<String, Integer> outputCols = new CaseInsensitiveHashMap<>();
         for (int i=1 ; i<_outputColumns.size() ; i++)
             outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 

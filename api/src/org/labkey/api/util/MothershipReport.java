@@ -48,7 +48,7 @@ import java.util.Map;
 public class MothershipReport implements Runnable
 {
     private final URL _url;
-    private final Map<String, String> _params = new HashMap<String, String>();
+    private final Map<String, String> _params = new HashMap<>();
     private int _responseCode = -1;
     private String _content;
     public static final String MOTHERSHIP_STATUS_HEADER_NAME = "MothershipStatus";

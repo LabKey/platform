@@ -40,7 +40,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebdavService
 {
     WebdavResolver _resolver = null;
-    CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<Provider>();
+    CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
 
     final static WebdavService _instance = new WebdavService();
 

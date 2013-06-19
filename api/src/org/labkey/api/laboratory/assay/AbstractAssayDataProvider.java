@@ -75,7 +75,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     protected static final Logger _log = Logger.getLogger(AbstractDataProvider.class);
 
     protected String _providerName = null;
-    protected Collection<AssayImportMethod> _importMethods = new LinkedHashSet<AssayImportMethod>();
+    protected Collection<AssayImportMethod> _importMethods = new LinkedHashSet<>();
     protected Module _module = null;
 
     public String getName()
@@ -90,7 +90,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
     public List<NavItem> getDataNavItems(Container c, User u)
     {
-        List<NavItem> items = new ArrayList<NavItem>();
+        List<NavItem> items = new ArrayList<>();
         List<ExpProtocol> protocols = getProtocols(c);
         for (ExpProtocol p : protocols)
         {
@@ -101,7 +101,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
     public List<ExpProtocol> getProtocols(Container c)
     {
-        List<ExpProtocol> list = new ArrayList<ExpProtocol>();
+        List<ExpProtocol> list = new ArrayList<>();
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
         for (ExpProtocol p : protocols)
         {
@@ -221,7 +221,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     @Override
     public List<NavItem> getReportItems(Container c, User u)
     {
-        List<NavItem> items = new ArrayList<NavItem>();
+        List<NavItem> items = new ArrayList<>();
         for (ExpProtocol p : getProtocols(c))
         {
             AssayNavItem nav = new AssayNavItem(this, p);
@@ -235,7 +235,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
             for (QueryDefinition qd : queries)
             {
-                List<QueryException> errors = new ArrayList<QueryException>();
+                List<QueryException> errors = new ArrayList<>();
                 TableInfo query = qd.getTable(errors, true);
                 if (query == null || errors.size() > 0)
                 {
@@ -260,7 +260,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     @Override
     public List<TabbedReportItem> getTabbedReportItems(Container c, User u)
     {
-        List<TabbedReportItem> items = new ArrayList<TabbedReportItem>();
+        List<TabbedReportItem> items = new ArrayList<>();
         for (ExpProtocol p : getProtocols(c))
         {
             AssayNavItem nav = new AssayNavItem(this, p);
@@ -274,7 +274,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
             for (QueryDefinition qd : queries)
             {
-                List<QueryException> errors = new ArrayList<QueryException>();
+                List<QueryException> errors = new ArrayList<>();
                 TableInfo query = qd.getTable(errors, true);
                 if (query == null || errors.size() > 0)
                 {
@@ -314,7 +314,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
     public List<NavItem> getSummary(Container c, User u)
     {
-        List<NavItem> items = new ArrayList<NavItem>();
+        List<NavItem> items = new ArrayList<>();
 
         for (ExpProtocol p : getProtocols(c))
         {
@@ -341,7 +341,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
     public List<NavItem> getSubjectIdSummary(Container c, User u, String subjectId)
     {
-        List<NavItem> items = new ArrayList<NavItem>();
+        List<NavItem> items = new ArrayList<>();
 
         for (ExpProtocol p : getProtocols(c))
         {

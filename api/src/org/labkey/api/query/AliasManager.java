@@ -34,7 +34,7 @@ import java.util.Map;
 public class AliasManager
 {
     SqlDialect _dialect;
-    Map<String, String> _aliases = new CaseInsensitiveHashMap<String>();
+    Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
     private AliasManager(SqlDialect d)
     {

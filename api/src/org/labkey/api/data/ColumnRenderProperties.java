@@ -62,7 +62,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected boolean shownInDetailsView = true;
     protected StringExpression url;
     protected String urlTargetWindow;
-    protected Set<String> importAliases = new LinkedHashSet<String>();
+    protected Set<String> importAliases = new LinkedHashSet<>();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected Boolean isProtected = false;
@@ -92,7 +92,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.measure = measure;
         to.dimension = dimension;
         to.url = url;
-        to.importAliases = new LinkedHashSet<String>(importAliases);
+        to.importAliases = new LinkedHashSet<>(importAliases);
         to.facetingBehaviorType = facetingBehaviorType;
         to.crosstabColumnMember = crosstabColumnMember;
         to.isProtected = isProtected;
@@ -416,7 +416,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public static Set<String> convertToSet(String s)
     {
-        Set<String> result = new LinkedHashSet<String>();
+        Set<String> result = new LinkedHashSet<>();
         if (s != null)
         {
             Matcher m = STRING_PATTERN.matcher(s);

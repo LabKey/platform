@@ -36,12 +36,12 @@
     DilutionAssayRun assay = bean.getAssay();
     ViewContext context = me.getViewContext();
     // the data for the sample properties table
-    List<Map<PropertyDescriptor, Object>> sampleData = new ArrayList<Map<PropertyDescriptor, Object>>();
-    Set<String> pdsWithData = new HashSet<String>();
+    List<Map<PropertyDescriptor, Object>> sampleData = new ArrayList<>();
+    Set<String> pdsWithData = new HashSet<>();
 
     for (DilutionAssayRun.SampleResult result : bean.getSampleResults())
     {
-        Map<PropertyDescriptor, Object> sampleProps = new LinkedHashMap<PropertyDescriptor, Object>(result.getSampleProperties());
+        Map<PropertyDescriptor, Object> sampleProps = new LinkedHashMap<>(result.getSampleProperties());
 
         Pair<PropertyDescriptor, Object> fitErrorPair = bean.getFitError(result, context.getContainer());
         if (fitErrorPair != null)

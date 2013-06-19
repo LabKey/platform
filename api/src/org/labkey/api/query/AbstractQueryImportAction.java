@@ -170,7 +170,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             else
                 bean.importMessage = _importMessage;                //Otherwise, get the passed in message
 
-            bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
+            bean.urlExcelTemplates = new ArrayList<>();
 
             List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
             if (it != null)
@@ -190,7 +190,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             errors.reject(SpringActionController.ERROR_MSG, "No table has been set to receive imported data");
         }
 
-        return new JspView<ImportViewBean>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
+        return new JspView<>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
     }
 
 

@@ -110,7 +110,7 @@ public class Attachment implements Serializable
 
 
     static MimeMap mime = new MimeMap();
-    private static final ConcurrentHashMap<String, String> icons = new ConcurrentHashMap<String, String>();
+    private static final ConcurrentHashMap<String, String> icons = new ConcurrentHashMap<>();
 
     static String lookupIcon(String lookup)
     {

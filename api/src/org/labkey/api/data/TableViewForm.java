@@ -66,7 +66,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 {
     private static final Logger _log = Logger.getLogger(TableViewForm.class);
 
-    protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<String>();
+    protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<>();
     protected Map<String, Object> _values = null;
     protected StringWrapperDynaClass _dynaClass;
     protected Object _oldValues;
@@ -382,7 +382,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          * ISSUE: Maybe keep empty strings around? But what about dates?
          *
          */
-        Map<String, Object> values = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
 
         for (String propName : keys)
@@ -507,7 +507,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public Map<String,Object> getTypedColumns(boolean includeUntyped)
     {
-        Map<String, Object> values = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> values = new CaseInsensitiveHashMap<>();
         for (ColumnInfo column : getTable().getColumns())
         {
             if (hasTypedValue(column))
@@ -560,7 +560,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         //We assume this means data is loaded.
         _isDataLoaded = true;
         if (!merge)
-            _values = new CaseInsensitiveHashMap<Object>();
+            _values = new CaseInsensitiveHashMap<>();
         _stringValues.clear();
 
         for (Map.Entry<String,Object> e : values.entrySet())

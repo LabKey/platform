@@ -271,7 +271,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     protected void _parseQuery(String query, String encoding)
     {
-        _parameters = new ArrayList<Pair<String, String>>(PageFlowUtil.fromQueryString(query, encoding));
+        _parameters = new ArrayList<>(PageFlowUtil.fromQueryString(query, encoding));
     }
 
 
@@ -450,8 +450,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public URLHelper addParameter(String key, String value)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        if (null == _parameters) _parameters = new ArrayList<Pair<String, String>>();
-        _parameters.add(new Pair<String, String>(key, value));
+        if (null == _parameters) _parameters = new ArrayList<>();
+        _parameters.add(new Pair<>(key, value));
         return this;
     }
 
@@ -460,8 +460,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         if (null == _parameters)
-            _parameters = new ArrayList<Pair<String, String>>();
-        _parameters.add(new Pair<String, String>(key, null==value ? null : value.getSource()));
+            _parameters = new ArrayList<>();
+        _parameters.add(new Pair<>(key, null==value ? null : value.getSource()));
         _tainted |= (null != value && value.isTainted());
         return this;
     }
@@ -490,14 +490,14 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public URLHelper addParameters(String prefix, Map m)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        if (null == _parameters) _parameters = new ArrayList<Pair<String, String>>();
+        if (null == _parameters) _parameters = new ArrayList<>();
         for (Object o : m.entrySet())
         {
             Map.Entry e = (Map.Entry) o;
             if (null == e.getKey() || null == e.getValue()) continue;
             String key = (null == prefix) ? String.valueOf(e.getKey()) :
                     prefix + String.valueOf(e.getKey());
-            _parameters.add(new Pair<String, String>(key, String.valueOf(e.getValue())));
+            _parameters.add(new Pair<>(key, String.valueOf(e.getValue())));
         }
         return this;
     }
@@ -509,7 +509,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (null == _parameters)
             return _emptyStringArray;
-        LinkedHashSet<String> keys = new LinkedHashSet<String>();
+        LinkedHashSet<String> keys = new LinkedHashSet<>();
         for (Pair<String, String> parameter : _parameters)
         {
             String k = parameter.first;
@@ -524,7 +524,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (null == _parameters)
             return Collections.emptyList();
-        return Collections.unmodifiableList(new ArrayList<Pair<String, String>>(_parameters));
+        return Collections.unmodifiableList(new ArrayList<>(_parameters));
     }
 
 
@@ -532,7 +532,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (null == _parameters)
             return Collections.emptyList();
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (Pair<String, String> p : _parameters)
         {
             String k = p.first;
@@ -614,7 +614,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
      */
     public Map<String,String> getScopeParameters(String scope)
     {
-        TreeMap<String,String> m = new TreeMap<String,String>();
+        TreeMap<String,String> m = new TreeMap<>();
         for (Pair<String,String> p : _parameters)
         {
             String key = p.getKey();
@@ -640,7 +640,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         if (null == _parameters || _parameters.size() == 0)
             return new MutablePropertyValues();
         // convert multiple values to String[] if necessary
-        MultiHashMap<String,String> map = new MultiHashMap<String,String>();
+        MultiHashMap<String,String> map = new MultiHashMap<>();
         for (Pair<String,String> p : _parameters)
             map.put(p.getKey(), p.getValue());
         MutablePropertyValues mpvs = new MutablePropertyValues();
@@ -774,7 +774,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public Map<String, String[]> getParameterMap()
     {
         PropertyValues pvs = getPropertyValues();
-        HashMap<String,String[]> map = new HashMap<String,String[]>();
+        HashMap<String,String[]> map = new HashMap<>();
         for (PropertyValue pv : pvs.getPropertyValues())
         {
             String name = pv.getName();
@@ -791,7 +791,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     // like HttpRequest.getParameterMap
     public Enumeration getParameterNames()
     {
-        Hashtable<String,String> h = new Hashtable<String,String>();
+        Hashtable<String,String> h = new Hashtable<>();
         for (Pair<String,String> p : _parameters)
             h.put(p.getKey(), p.getKey());
         return h.keys();
@@ -807,7 +807,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         // null check
         if (a._parameters == b._parameters) return true;
         if (a._parameters == null || b._parameters == null) return false;
-        HashMap<String,String> bmap = new HashMap<String,String>(b._parameters.size());
+        HashMap<String,String> bmap = new HashMap<>(b._parameters.size());
         for (Pair<String,String> p : b._parameters)
             bmap.put(p.first, p.second);
         for (Pair<String,String> p : a._parameters)
@@ -854,7 +854,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public static Pair<String, String> getURLFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
     {
-        return new Pair<String, String>(getURLFilterKey(dataRegionName, field, ct), getURLFilterValue(value));
+        return new Pair<>(getURLFilterKey(dataRegionName, field, ct), getURLFilterValue(value));
     }
 
     public static String getURLFilterKey(String dataRegionName, FieldKey field, CompareType ct)

@@ -46,9 +46,9 @@ abstract public class AbstractFormSection implements FormSection
     private String _label;
     private String _xtype;
     private String _clientModelClass = "EHR.model.DefaultClientModel";
-    private List<String> _configSources = new ArrayList<String>();
+    private List<String> _configSources = new ArrayList<>();
 
-    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     protected static final Logger _log = Logger.getLogger(FormSection.class);
 
@@ -86,7 +86,7 @@ abstract public class AbstractFormSection implements FormSection
 
     public void setConfigSources(List<String> configSources)
     {
-        _configSources = new ArrayList<String>(configSources);
+        _configSources = new ArrayList<>(configSources);
     }
 
     public void addConfigSource(String source)
@@ -107,13 +107,13 @@ abstract public class AbstractFormSection implements FormSection
 
     public Set<Pair<String, String>> getTableNames()
     {
-        return new HashSet<Pair<String, String>>();
+        return new HashSet<>();
     }
 
     public Set<TableInfo> getTables(Container c, User u)
     {
-        Set<TableInfo> tables = new HashSet<TableInfo>();
-        Map<String, UserSchema> schemas = new HashMap<String, UserSchema>();
+        Set<TableInfo> tables = new HashSet<>();
+        Map<String, UserSchema> schemas = new HashMap<>();
 
         Set<Pair<String, String>> pairs = getTableNames();
 
@@ -143,7 +143,7 @@ abstract public class AbstractFormSection implements FormSection
 
     public List<JSONObject> getStoreConfigs(Container c, User u)
     {
-        List<JSONObject> stores = new ArrayList<JSONObject>();
+        List<JSONObject> stores = new ArrayList<>();
         for (TableInfo ti : getTables(c, u))
         {
             JSONObject json = new JSONObject();
@@ -175,7 +175,7 @@ abstract public class AbstractFormSection implements FormSection
 
     private List<JSONObject> getFieldConfigs(Container c, User u)
     {
-        List<JSONObject> ret = new ArrayList<JSONObject>();
+        List<JSONObject> ret = new ArrayList<>();
         for (FormElement fe : getFormElements(c, u))
         {
             ret.add(fe.toJSON(c, u));

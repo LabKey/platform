@@ -52,12 +52,12 @@ public class CacheManager
 
     // Swap providers here (if we ever implement another cache provider)
     private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
-    private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<TrackingCache>();
+    private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
     public static final int UNLIMITED = 0;
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
-        CacheWrapper<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null);
+        CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         LabKeyManagement.register(cache.createDynamicMBean(), "Cache", debugName);
         return cache;
@@ -70,26 +70,26 @@ public class CacheManager
 
     public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        return new StringKeyCacheWrapper<V>(CacheManager.<String, V>createCache(limit, defaultTimeToLive, debugName));
+        return new StringKeyCacheWrapper<>(CacheManager.<String, V>createCache(limit, defaultTimeToLive, debugName));
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
         TrackingCache<K, Wrapper<V>> cache = getCache(limit, defaultTimeToLive, debugName);
-        return new BlockingCache<K, V>(cache, loader);
+        return new BlockingCache<>(cache, loader);
     }
 
     public static <V> BlockingStringKeyCache<V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
     {
         StringKeyCache<Wrapper<V>> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
-        return new BlockingStringKeyCache<V>(cache, loader);
+        return new BlockingStringKeyCache<>(cache, loader);
     }
 
     // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        TrackingCache<String, V> cache = new CacheWrapper<String, V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
-        return new StringKeyCacheWrapper<V>(cache);
+        TrackingCache<String, V> cache = new CacheWrapper<>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
+        return new StringKeyCacheWrapper<>(cache);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
@@ -122,7 +122,7 @@ public class CacheManager
     // Return a copy of KNOWN_CACHES for reporting statistics
     public static List<TrackingCache> getKnownCaches()
     {
-        List<TrackingCache> copy = new ArrayList<TrackingCache>();
+        List<TrackingCache> copy = new ArrayList<>();
 
         synchronized (KNOWN_CACHES)
         {

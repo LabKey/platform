@@ -37,6 +37,6 @@ public class JavaScriptExportScriptFactory implements ExportScriptFactory
 
     public WebPartView getView(QueryView queryView)
     {
-        return new JspView<CreateJavaScriptModel>("/org/labkey/api/query/createJavaScript.jsp", new CreateJavaScriptModel(queryView));
+        return new JspView<>("/org/labkey/api/query/createJavaScript.jsp", new CreateJavaScriptModel(queryView));
     }
 }

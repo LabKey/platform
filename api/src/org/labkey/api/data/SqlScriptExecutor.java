@@ -79,7 +79,7 @@ public class SqlScriptExecutor
             sqlBlocks = Collections.singletonList(stripped.toString());
         }
 
-        Collection<Block> blocks = new ArrayList<Block>(sqlBlocks.size());
+        Collection<Block> blocks = new ArrayList<>(sqlBlocks.size());
 
         for (String sqlBlock : sqlBlocks)
         {

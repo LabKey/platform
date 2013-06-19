@@ -112,7 +112,7 @@ class StatementDataIterator extends AbstractDataIterator
         {
             Parameter.ParameterMap stmt = _stmts[0];
             // map from source to target
-            ArrayList<Triple> bindings = new ArrayList<Triple>(stmt.size());
+            ArrayList<Triple> bindings = new ArrayList<>(stmt.size());
             // by name
             for (int i=1 ; i<=_data.getColumnCount() ; i++)
             {

@@ -40,9 +40,9 @@ public class JsonWriter
 {
     public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
-        List<ColumnInfo> columns = new ArrayList<ColumnInfo>(tinfo.getColumns());
+        List<ColumnInfo> columns = new ArrayList<>(tinfo.getColumns());
         LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
+        List<DisplayColumn> displayColumns = new ArrayList<>();
         for (ColumnInfo cinfo : allColumns.values())
         {
             displayColumns.add(cinfo.getDisplayColumnFactory().createRenderer(cinfo));
@@ -53,7 +53,7 @@ public class JsonWriter
 
     public static Map<FieldKey, Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
-        Map<FieldKey, Map<String,Object>> colProps = new LinkedHashMap<FieldKey, Map<String,Object>>();
+        Map<FieldKey, Map<String,Object>> colProps = new LinkedHashMap<>();
         for (DisplayColumn column : columns)
         {
             Map<String, Object> metadata = JsonWriter.getMetaData(column, fieldKeyPrefix, true, true, includeDomainFormat);
@@ -72,7 +72,7 @@ public class JsonWriter
     public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {
         @Nullable ColumnInfo cinfo = dc.getColumnInfo();
-        Map<String, Object> props = new LinkedHashMap<String, Object>();
+        Map<String, Object> props = new LinkedHashMap<>();
         JSONObject ext = new JSONObject();
         props.put("ext",ext);
 
@@ -169,7 +169,7 @@ public class JsonWriter
 
             if (!cinfo.getImportAliasSet().isEmpty())
             {
-                props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasSet()));
+                props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));
             }
 
             if (cinfo.getTsvFormatString() != null)
@@ -238,7 +238,7 @@ public class JsonWriter
             if (cinfo.getCrosstabColumnMember() != null)
             {
                 CrosstabMember member = cinfo.getCrosstabColumnMember();
-                Map<String, Object> jsonMember = new HashMap<String, Object>();
+                Map<String, Object> jsonMember = new HashMap<>();
                 jsonMember.put("value", String.valueOf(member.getValue()));
                 jsonMember.put("caption", member.getCaption());
                 jsonMember.put("dimensionFieldKey", new JSONArray(member.getDimensionFieldKey().getParts()));

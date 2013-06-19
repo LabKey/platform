@@ -69,7 +69,7 @@ public abstract class DisplayElement implements View, Cloneable
     {
         checkLocked();
         if (null == _contextualRoles)
-            _contextualRoles = new HashSet<Role>();
+            _contextualRoles = new HashSet<>();
         _contextualRoles.add(RoleManager.getRole(role));
     }
 

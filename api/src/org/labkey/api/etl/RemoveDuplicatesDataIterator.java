@@ -39,8 +39,8 @@ public class RemoveDuplicatesDataIterator extends WrapperDataIterator
     RemoveDuplicatesDataIterator(DataIterator di)
     {
         super(di);
-        _previous = new ArrayList<Object>(getColumnCount()+1);
-        _current = new ArrayList<Object>(getColumnCount()+1);
+        _previous = new ArrayList<>(getColumnCount()+1);
+        _current = new ArrayList<>(getColumnCount()+1);
     }
 
     @Override

@@ -44,7 +44,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getViewContext().getUser(), form.getFitTypeEnum(), ids);
-        Set<Integer> cutoffSet = new HashSet<Integer>();
+        Set<Integer> cutoffSet = new HashSet<>();
         for (DilutionSummary summary : summaries.keySet())
         {
             for (int cutoff : summary.getAssay().getCutoffs())

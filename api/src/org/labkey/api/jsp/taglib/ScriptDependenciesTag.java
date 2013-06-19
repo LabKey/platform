@@ -56,11 +56,11 @@ public class ScriptDependenciesTag extends SimpleTagBase
 
                     ViewContext context = jspView.getViewContext();
 
-                    LinkedHashSet<String> includes = new LinkedHashSet<String>();
-                    LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
+                    LinkedHashSet<String> includes = new LinkedHashSet<>();
+                    LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
                     PageFlowUtil.getJavaScriptFiles(context.getContainer(), context.getUser(), dependencies, includes, implicitIncludes);
 
-                    LinkedHashSet<String> cssScripts = new LinkedHashSet<String>();
+                    LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
                     for (ClientDependency d : dependencies)
                     {
                         cssScripts.addAll(d.getCssPaths(context.getContainer(), context.getUser(), AppProps.getInstance().isDevMode()));

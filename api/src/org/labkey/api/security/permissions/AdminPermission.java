@@ -44,7 +44,7 @@ public class AdminPermission extends AbstractPermission
     @Override
     public Set<UserPrincipal> getExcludedPrincipals()
     {
-        Set<UserPrincipal> principals = new HashSet<UserPrincipal>();
+        Set<UserPrincipal> principals = new HashSet<>();
         principals.add(SecurityManager.getGroup(Group.groupGuests));
         principals.add(SecurityManager.getGroup(Group.groupUsers));
         return principals;

@@ -261,8 +261,8 @@ public class MemTracker
     // reference tracking impl
     //
 
-    private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<Object, AllocationInfo>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
-    private final List<MemTrackerListener> _listeners = new CopyOnWriteArrayList<MemTrackerListener>();
+    private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+    private final List<MemTrackerListener> _listeners = new CopyOnWriteArrayList<>();
 
     private synchronized boolean _put(Object object)
     {
@@ -280,7 +280,7 @@ public class MemTracker
 
     private synchronized List<HeldReference> _getReferences()
     {
-        List<HeldReference> refs = new ArrayList<HeldReference>(_references.size());
+        List<HeldReference> refs = new ArrayList<>(_references.size());
         for (Map.Entry<Object, AllocationInfo> entry : _references.entrySet())
         {
             // get a hard reference so we know that we're placing an actual object into our list:

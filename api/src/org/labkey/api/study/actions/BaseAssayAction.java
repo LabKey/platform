@@ -91,7 +91,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         DataRegionSelection.clearAll(getViewContext(), null);
         DataRegionSelection.setSelected(getViewContext(), null, idStrings, true);
 
-        List<Integer> ids = new ArrayList<Integer>();
+        List<Integer> ids = new ArrayList<>();
         if (idStrings == null)
             return ids;
         for (String rowIdStr : idStrings)

@@ -99,7 +99,7 @@ public abstract class ExportScriptModel
         //load the sort/filter url into a new SimpleFilter
         //and iterate the clauses
         QueryView view = getQueryView();
-        ArrayList<String> makeFilterExprs = new ArrayList<String>();
+        ArrayList<String> makeFilterExprs = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter(view.getSettings().getSortFilterURL(), view.getDataRegionName());
         String name;
         CompareType operator;

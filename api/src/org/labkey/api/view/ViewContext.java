@@ -67,9 +67,9 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private ActionURL _url;                     // path and parameters on the URL (does not include posted values)
     private String _scopePrefix = "";
     private Container _c = null;
-    private Set<Role> _contextualRoles = new HashSet<Role>();
+    private Set<Role> _contextualRoles = new HashSet<>();
 
-    transient protected HashMap<String, Object> _map = new HashMap<String, Object>();
+    transient protected HashMap<String, Object> _map = new HashMap<>();
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
 
     public ViewContext()
@@ -124,7 +124,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
                 _map.put(key, value[0]);
             else
             {
-                List list = new ArrayList<String>(Arrays.asList(value));
+                List list = new ArrayList<>(Arrays.asList(value));
                 _map.put(key, list);
             }
         }
@@ -375,7 +375,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         });
         _defaultMessageSource.setBundleClassLoader(ViewContext.class.getClassLoader());
     }
-    List<String> _messageBundles = new ArrayList<String>();
+    List<String> _messageBundles = new ArrayList<>();
     ResourceBundleMessageSource _messageSource = null;
 
     public void pushMessageBundle(String path)

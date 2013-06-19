@@ -241,7 +241,7 @@ public class MockModule implements Module
 
     public Set<String> getModuleDependenciesAsSet()
     {
-        return new HashSet<String>(Arrays.asList(_dependencies));
+        return new HashSet<>(Arrays.asList(_dependencies));
     }
 
     public List<String> getAttributions()
@@ -326,7 +326,7 @@ public class MockModule implements Module
     @Override
     public Set<Module> getResolvedModuleDependencies()
     {
-        Set<Module> modules = new HashSet<Module>();
+        Set<Module> modules = new HashSet<>();
         Module module;
         for(String m : _dependencies)
         {
@@ -348,7 +348,7 @@ public class MockModule implements Module
 
     public Map<String, ModuleProperty> getModuleProperties()
     {
-        return new HashMap<String, ModuleProperty>();
+        return new HashMap<>();
     }
 
     public JSONObject getPageContextJson(User u, Container c)
@@ -358,7 +358,7 @@ public class MockModule implements Module
 
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
-        return new LinkedHashSet<ClientDependency>();
+        return new LinkedHashSet<>();
     }
 
     @Override

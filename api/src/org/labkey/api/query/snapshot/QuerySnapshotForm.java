@@ -98,7 +98,7 @@ public class QuerySnapshotForm extends QueryForm
 
     public List<FieldKey> getFieldKeyColumns()
     {
-        List<FieldKey> columns = new ArrayList<FieldKey>();
+        List<FieldKey> columns = new ArrayList<>();
         for (String name : getSnapshotColumns())
             columns.add(FieldKey.fromString(name));
 

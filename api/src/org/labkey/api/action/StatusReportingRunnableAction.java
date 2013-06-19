@@ -55,7 +55,7 @@ import java.util.concurrent.Executors;
 // this via standard log4j mechanisms.  See the StatusAppender comments for more details.
 public abstract class StatusReportingRunnableAction<K extends StatusReportingRunnable> extends FormApiAction<StatusReportingRunnableAction.StatusReportingRunnableForm>
 {
-    private static final Map<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable> EXISTING_RUNNABLES = new HashMap<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable>();
+    private static final Map<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable> EXISTING_RUNNABLES = new HashMap<>();
 
     protected abstract K newStatusReportingRunnable();
 
@@ -106,7 +106,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
             complete = !runnable.isRunning();
         }
 
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         map.put("status", status);
         map.put("complete", complete);
 

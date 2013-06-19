@@ -66,8 +66,8 @@ public class ResultsImpl implements Results
         {
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
-            _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>(count * 2);
-            _fieldIndexMap = new HashMap<FieldKey, Integer>(count * 2);
+            _fieldMap = new LinkedHashMap<>(count * 2);
+            _fieldIndexMap = new HashMap<>(count * 2);
 
             for (int i = 1; i <= count; i++)
             {
@@ -88,8 +88,8 @@ public class ResultsImpl implements Results
     public ResultsImpl(ResultSet rs, @NotNull Collection<ColumnInfo> cols)
     {
         _rs = rs;
-        _fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>(cols.size() * 2);
-        _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size() * 2);
+        _fieldMap = new LinkedHashMap<>(cols.size() * 2);
+        _fieldIndexMap = new HashMap<>(cols.size() * 2);
 
         for (ColumnInfo col : cols)
         {
@@ -111,7 +111,7 @@ public class ResultsImpl implements Results
     {
         _rs = rs;
         _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
-        _fieldIndexMap = new HashMap<FieldKey, Integer>(_fieldMap.size()*2);
+        _fieldIndexMap = new HashMap<>(_fieldMap.size()*2);
         try
         {
             if (null != rs)
@@ -243,7 +243,7 @@ public class ResultsImpl implements Results
         @Override
         public Collection<Object> values()
         {
-            List<Object> list = new LinkedList<Object>();
+            List<Object> list = new LinkedList<>();
 
             for (FieldKey key : _fieldIndexMap.keySet())
                 list.add(get(key));
@@ -254,7 +254,7 @@ public class ResultsImpl implements Results
         @Override
         public Set<Map.Entry<FieldKey, Object>> entrySet()
         {
-            HashSet<Map.Entry<FieldKey, Object>> map = new HashSet<Map.Entry<FieldKey, Object>>(_fieldIndexMap.size());
+            HashSet<Map.Entry<FieldKey, Object>> map = new HashSet<>(_fieldIndexMap.size());
 
             for (FieldKey key : _fieldIndexMap.keySet())
                 map.add(new Entry(key));

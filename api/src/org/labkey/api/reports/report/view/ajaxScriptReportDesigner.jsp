@@ -46,7 +46,7 @@
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("codemirror"));
       return resources;
   }

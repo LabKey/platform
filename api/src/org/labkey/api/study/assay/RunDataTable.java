@@ -48,7 +48,7 @@ import java.util.Set;
     {
         super(new ProtocolFilteredObjectTable(schema, schema.getProtocol().getLSID()), schema);
         setDescription("Contains all of the results (and may contain raw data as well) for the " + schema.getProtocol().getName() + " assay definition");
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        List<FieldKey> visibleColumns = new ArrayList<>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
         ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
@@ -60,7 +60,7 @@ import java.util.Set;
         fk.setParentIsObjectId(true);
         fk.addDecorator(new SpecimenPropertyColumnDecorator(schema.getProvider(),schema.getProtocol(), schema));
 
-        Set<String> hiddenCols = new HashSet<String>();
+        Set<String> hiddenCols = new HashSet<>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
             hiddenCols.add(pd.getName());
 

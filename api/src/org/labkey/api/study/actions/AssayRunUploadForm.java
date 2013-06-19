@@ -129,7 +129,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     protected Map<DomainProperty, String> getPropertyMapFromRequest(List<DomainProperty> columns)
     {
-        Map<DomainProperty, String> properties = new LinkedHashMap<DomainProperty, String>();
+        Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
         for (DomainProperty pd : columns)
         {
@@ -236,7 +236,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (_additionalFiles == null)
         {
-            Map<String, DomainProperty> fileParameters = new HashMap<String, DomainProperty>();
+            Map<String, DomainProperty> fileParameters = new HashMap<>();
             for (DomainProperty pd : pds)
             {
                 if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
@@ -249,7 +249,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 try
                 {
                     Map<String, File> postedFiles = writer.savePostedFiles(this, fileParameters.keySet());
-                    _additionalFiles = new HashMap<DomainProperty, File>();
+                    _additionalFiles = new HashMap<>();
                     for (Map.Entry<String, File> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
                 }
@@ -351,7 +351,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     {
                         Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
                         SimpleFilter filter = new SimpleFilter(pk.getName(), filterValue);
-                        Set<String> cols = new HashSet<String>();
+                        Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());
                         cols.add(pks.get(0).getName());
                         Map<String, Object>[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getMapArray();
@@ -456,7 +456,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         ExpRun reRun = getReRun();
         if (reRun != null)
         {
-            Map<DomainProperty, Object> ret = new HashMap<DomainProperty, Object>();
+            Map<DomainProperty, Object> ret = new HashMap<>();
             String batchDomainURI = AbstractAssayProvider.getDomainURIForPrefix(getProtocol(), ExpProtocol.ASSAY_DOMAIN_BATCH);
             String runDomainURI = AbstractAssayProvider.getDomainURIForPrefix(getProtocol(), ExpProtocol.ASSAY_DOMAIN_RUN);
             if (batchDomainURI.equals(domain.getTypeURI()))

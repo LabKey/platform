@@ -96,7 +96,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 
         public Map<String, Object> toMap()
         {
-            Map<String, Object> params = new HashMap<String, Object>();
+            Map<String, Object> params = new HashMap<>();
             params.put("asymmetry", getAsymmetry());
             params.put("inflection", getInflection());
             params.put("slope", getSlope());
@@ -126,7 +126,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
         if (_fitParameters == null)
         {
             ensureWellSummaries();
-            List<Double> percentages = new ArrayList<Double>(wellDatas.size());
+            List<Double> percentages = new ArrayList<>(wellDatas.size());
             for (WellSummary well : _wellSummaries)
             {
                 double percentage = 100 * well.getNeutralization();
