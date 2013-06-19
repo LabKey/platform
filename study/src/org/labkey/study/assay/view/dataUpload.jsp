@@ -24,15 +24,16 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
-    AssayRunUploadForm bean = me.getModelBean();
+    JspView<AssayRunUploadForm<? extends AssayProvider>> me = (JspView<AssayRunUploadForm<? extends AssayProvider>>) HttpView.currentView();
+    AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 %>
 <table>
     <%
         boolean first = true;
-        List<AssayDataCollector> visibleCollectors = new ArrayList<AssayDataCollector>();
+        List<AssayDataCollector> visibleCollectors = new ArrayList<>();
         Map<String, File> uploadedData = null;
         try
         {
@@ -61,9 +62,9 @@
             { %>
                 <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="hidden" name="dataCollectorName" /></td>
             <% } %>
-            <td><label for="<%=h(collector.getShortName()).replace(" ", "")%>"><%= collector.getDescription(bean) %></label></td>
+            <td><label for="<%=h(collector.getShortName()).replace(" ", "")%>"><%= text(collector.getDescription(bean)) %></label></td>
         </tr>
-        <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
+        <tr style="visibility: <%= text(first ? "visible" : "collapse") %>;" id="collector-<%= h(collector.getShortName()) %>">
             <td></td>
             <td>
                 <% include(collector.getView(bean), out); %>

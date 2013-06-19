@@ -73,7 +73,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         ExpProtocol protocol;
         AssayProvider provider;
         AssayRunUploadContext<ProviderType> uploadContext;
-        Integer batchId = null;
+        Integer batchId;
 
         JSONObject json = form.getJson();
         if (json != null)
@@ -90,7 +90,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             String targetStudy = json.optString("targetStudy");
             Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
 
-            uploadContext = new ImportRunApiUploadContext<ProviderType>(
+            uploadContext = new ImportRunApiUploadContext<>(
                     protocol,
                     (ProviderType)provider,
                     getViewContext(),
@@ -109,7 +109,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
             batchId = form.getBatchId();
 
-            uploadContext = new ImportRunApiUploadContext<ProviderType>(
+            uploadContext = new ImportRunApiUploadContext<>(
                     protocol,
                     (ProviderType)provider,
                     getViewContext(),
@@ -183,8 +183,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private String _comment;
         private String _targetStudy;
         private Integer _reRunId;
-        private Map<String, String> _properties = new HashMap<String, String>();
-        private Map<String, String> _batchProperties = new HashMap<String, String>();
+        private Map<String, String> _properties = new HashMap<>();
+        private Map<String, String> _batchProperties = new HashMap<>();
 
         public Integer getAssayId()
         {
@@ -272,7 +272,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private ExpProtocol _protocol;
         private ProviderType _provider;
         private ViewContext _context;
-        private Map _uploadedData;
+        private Map<String, File> _uploadedData;
         private String _comments;
         private String _name;
         private String _targetStudy;
@@ -317,12 +317,12 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         {
             if (_runProperties == null)
             {
-                Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
+                Map<DomainProperty, String> properties = new HashMap<>();
                 if (_rawRunProperties != null)
                 {
                     for (DomainProperty prop : _provider.getRunDomain(_protocol).getProperties())
                     {
-                        String value = null;
+                        String value;
                         if (_rawRunProperties.containsKey(prop.getName()))
                             value = _rawRunProperties.get(prop.getName());
                         else
@@ -340,12 +340,12 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         {
             if (_batchProperties == null)
             {
-                Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
+                Map<DomainProperty, String> properties = new HashMap<>();
                 if (_rawBatchProperties != null)
                 {
                     for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
                     {
-                        String value = null;
+                        String value;
                         if (_rawBatchProperties.containsKey(prop.getName()))
                             value = _rawBatchProperties.get(prop.getName());
                         else
@@ -396,7 +396,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             {
                 try
                 {
-                    AssayDataCollector<ImportRunApiUploadContext> collector = new FileUploadDataCollector(1, FILE_INPUT_NAME);
+                    AssayDataCollector<ImportRunApiUploadContext> collector = new FileUploadDataCollector(1, Collections.emptyMap(), FILE_INPUT_NAME);
                     Map<String, File> files = collector.createData(this);
                     // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
                     _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));
