@@ -2514,7 +2514,6 @@ search/resources/schemas/dbscripts/sqlserver/umls-0.00-10.20.sql -text
 search/resources/schemas/search.xml -text
 search/src/META-INF/search/jars.txt -text
 search/src/org/apache/lucene/index/IndexGate.java -text
-search/src/org/labkey/search/Group.java.txt -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text
 search/src/org/labkey/search/SearchModule.java -text
