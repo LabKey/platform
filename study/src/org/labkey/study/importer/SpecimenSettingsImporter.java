@@ -19,9 +19,11 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SampleManager;
+import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.xml.LegacySpecimenSettingsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
 import org.labkey.study.xml.SpecimenSettingsType;
@@ -78,7 +80,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     // Import specimen settings for versions >= 13.2.
-    private static void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private static void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
         RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
@@ -104,7 +106,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         SpecimenRepositoryType.Enum repositoryType = xmlSettings.getRepositoryType();
         boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
         reposSettings.setSimple(simple);
-        reposSettings.setEnableRequests(!simple);
+        reposSettings.setEnableRequests(!simple && xmlSettings.isSetEnableRequests() && xmlSettings.getEnableRequests());
         SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
 
         // location types
@@ -118,7 +120,50 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
             study.setAllowReqLocClinic(xmlLocationTypes.getEndpointLab().getAllowRequests());
 
+        // request statuses
+        importRequestStatuses(study, ctx, xmlSettings);
+
         // UNDONE: import other settings...
+    }
+
+    private static void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    {
+        SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
+        SpecimenSettingsType.RequestStatuses.Status[] xmlStatusArray = xmlRequestStatuses.getStatusArray();
+        if (xmlStatusArray.length > 0)
+        {
+            // remove any existing, non-system statuses for this container before importing the new ones, full replacement
+            for (SampleRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
+            {
+                if (!existingStatus.isSystemStatus())
+                    SampleManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
+            }
+
+            for (int i = 0; i < xmlStatusArray.length; i++)
+            {
+                if (xmlStatusArray[i].isSetLabel() && xmlStatusArray[i].getLabel() != null && !xmlStatusArray[i].getLabel().isEmpty()) // skip any that don't have a label
+                {
+                    SampleRequestStatus status = new SampleRequestStatus();
+                    status.setContainer(ctx.getContainer());
+                    status.setLabel(xmlStatusArray[i].getLabel());
+                    status.setSortOrder(xmlStatusArray[i].isSetSortOrder() ? xmlStatusArray[i].getSortOrder() : i+1);
+                    if (xmlStatusArray[i].isSetFinalState())
+                        status.setFinalState(xmlStatusArray[i].getFinalState());
+                    if (xmlStatusArray[i].isSetLockSpecimens())
+                        status.setSpecimensLocked(xmlStatusArray[i].getLockSpecimens());
+                    SampleManager.getInstance().createRequestStatus(ctx.getUser(), status);
+                }
+            }
+        }
+        if (xmlRequestStatuses.isSetMultipleSearch())
+        {
+            StatusSettings settings = SampleManager.getInstance().getStatusSettings(ctx.getContainer());
+            if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
+            {
+                settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
+                SampleManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
+            }
+        }
     }
 
     // Import specimen settings from study.xml doc for versions <13.2.

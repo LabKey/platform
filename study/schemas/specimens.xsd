@@ -46,9 +46,10 @@
                     <xs:sequence>
                         <xs:element name="status" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
-                                <xs:attribute name="name" type="xs:string"/>
+                                <xs:attribute name="label" type="xs:string"/>
                                 <xs:attribute name="finalState" type="xs:boolean"/>
                                 <xs:attribute name="lockSpecimens" type="xs:boolean"/>
+                                <xs:attribute name="sortOrder" type="xs:int"/>
                             </xs:complexType>
                         </xs:element>
                     </xs:sequence>
@@ -96,6 +97,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="enableRequests" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="locationTypeType">

@@ -17,15 +17,18 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.SampleRequestActor;
+import org.labkey.study.SampleManager;
+import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.xml.SpecimenRepositoryType;
 import org.labkey.study.xml.SpecimenSettingsType;
 import org.labkey.study.xml.SpecimensDocument;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: kevink
@@ -59,6 +62,8 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
         RepositorySettings repositorySettings = study.getRepositorySettings();
         xmlSettings.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
+        if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
+            xmlSettings.setEnableRequests(repositorySettings.isEnableRequests());
 
         // specimen location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.addNewLocationTypes();
@@ -79,7 +84,29 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
             }
         }
 
-        // UNDONE: request statuses
+        // request statuses, only apply if repository type is Advanced and specimen requests are enabled
+        if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
+        {
+            SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
+            List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
+            if (statuses.size() > 0)
+            {
+                for (SampleRequestStatus status : statuses)
+                {
+                    if (!status.isSystemStatus()) // don't export system statuses
+                    {
+                        SpecimenSettingsType.RequestStatuses.Status xmlStatus = xmlRequestStatuses.addNewStatus();
+                        xmlStatus.setLabel(status.getLabel());
+                        xmlStatus.setFinalState(status.isFinalState());
+                        xmlStatus.setLockSpecimens(status.isSpecimensLocked());
+                        xmlStatus.setSortOrder(status.getSortOrder());
+                    }
+                }
+            }
+            StatusSettings statusSettings = SampleManager.getInstance().getStatusSettings(study.getContainer());
+            if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
+                xmlRequestStatuses.setMultipleSearch(statusSettings.isUseShoppingCart());
+        }
 
         // UNDONE: request actors
 
