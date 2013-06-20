@@ -519,6 +519,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 }
             });
 
+            DOM.setElementAttribute(metadataSelection.getElement(), "id", "metadataInputFormat");
+
             HorizontalPanel metadata = new HorizontalPanel();
             metadata.add(metadataSelection);
             metadata.setVerticalAlignment(ALIGN_BOTTOM);
