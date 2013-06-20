@@ -1353,6 +1353,7 @@ api/src/org/labkey/api/util/StringExpression.java -text
 api/src/org/labkey/api/util/StringExpressionFactory.java -text
 api/src/org/labkey/api/util/StringSubstitution.java -text
 api/src/org/labkey/api/util/StringUtilsLabKey.java -text
+api/src/org/labkey/api/util/SubstitutionFormat.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/ThumbnailUtil.java -text

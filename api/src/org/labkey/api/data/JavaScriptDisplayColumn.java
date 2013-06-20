@@ -36,7 +36,7 @@ public class JavaScriptDisplayColumn extends DataColumn
     {
         super(col);
         _dependencies = dependencies;
-        _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
+        _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class JavaScriptDisplayColumn extends DataColumn
         {
             out.write("<a href=\"#\" tabindex=\"-1\" ");
             out.write(_eventExpression.eval(ctx));
-            out.write("\">");
+            out.write(">");
             out.write(getFormattedValue(ctx));
             out.write("</a>");
         }

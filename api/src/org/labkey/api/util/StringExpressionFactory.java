@@ -70,7 +70,7 @@ public class StringExpressionFactory
         if (StringUtils.isEmpty(str))
             return EMPTY_STRING;
 
-        if (str.indexOf("${") < 0)
+        if (!str.contains("${"))
             return new ConstantStringExpression(str);
 
         String key = "simple:" + str + "(" + urlEncodeSubstitutions + ")";
@@ -202,6 +202,7 @@ public class StringExpressionFactory
     {
         /** @return null if the value cannot be resolved given the map */
         @Nullable abstract String getValue(Map map);
+
         final String valueOf(Object o)
         {
             return o == null ? "" : String.valueOf(o);
@@ -378,7 +379,8 @@ public class StringExpressionFactory
         public enum NullValueBehavior
         {
             NullResult,                 // Any null field results in a null eval (good for URLs)
-            ReplaceNullWithBlank;       // Null or missing fields get replaced with blank
+            ReplaceNullWithBlank,       // Null or missing fields get replaced with blank
+            OutputNull                  // Insert "null" into the string
         }
 
         protected NullValueBehavior _nullValueBehavior = NullValueBehavior.NullResult;
@@ -443,6 +445,11 @@ public class StringExpressionFactory
                         // More lenient... just substitute blank for missing/null
                         case ReplaceNullWithBlank:
                             value = "";
+                            break;
+
+                        // Output "null"
+                        case OutputNull:
+                            value = "null";
                             break;
 
                         default:
@@ -567,7 +574,8 @@ public class StringExpressionFactory
     private static class FieldPart extends StringPart
     {
         private FieldKey _key;
-        private final boolean _urlEncodeSubstitutions;
+        private final boolean _urlEncodeSubstitutions;  // Should probably use _format for this
+        private final SubstitutionFormat _format;
 
         FieldPart(String s)
         {
@@ -576,8 +584,21 @@ public class StringExpressionFactory
 
         FieldPart(String s, boolean urlEncodeSubstitutions)
         {
+            // Does the string end with a known format function? If so, save it for later and trim it off the string.
+            int colon = s.lastIndexOf(':');
+            SubstitutionFormat format = null;
+
+            if (colon > -1)
+            {
+                format = SubstitutionFormat.getFormat(s.substring(colon + 1));
+
+                if (null != format)
+                    s = s.substring(0, colon);
+            }
+
             _key = FieldKey.decode(s);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
+            _format = (null != format ? format : SubstitutionFormat.passThrough);
         }
 
         String getValue(Map map)
@@ -597,7 +618,7 @@ public class StringExpressionFactory
                 return null;
             }
 
-            String value = valueOf(map.get(lookupKey));
+            String value = _format.format(valueOf(map.get(lookupKey)));
 
             return _urlEncodeSubstitutions ? PageFlowUtil.encodePath(value) : value;
         }
