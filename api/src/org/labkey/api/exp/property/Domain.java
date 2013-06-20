@@ -70,4 +70,5 @@ public interface Domain extends IPropertyType
 
     /** only used by storage provisioner */
     String getStorageTableName();
+    void setEnforceStorageProperties(boolean enforceStorageProperties);
 }

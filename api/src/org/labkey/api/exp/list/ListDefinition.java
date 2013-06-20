@@ -296,6 +296,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setPreferredListIds(Collection<Integer> preferredListIds); // Attempts to use this list IDs when inserting
     Container getContainer();
     Domain getDomain();
+    void clearDomain();
     String getName();
     String getKeyName();
     void setKeyName(String name);
