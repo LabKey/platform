@@ -361,7 +361,7 @@ import java.util.Set;
     public static void deleteOntologyList(final ListDefinition list, User user) throws SQLException, DomainNotFoundException
     {
         // could ensure old list by validating against domain type being ListDomainType
-        if (!list.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
+        if (null == list || null == list.getDomain() || !list.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
             return;
 
         try

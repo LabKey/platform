@@ -43,10 +43,13 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -55,7 +58,9 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
@@ -839,7 +844,7 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    public void upgradeListDefinitions(User user, double targetVersion)
+    public void upgradeListDefinitions(User user)
     {
         Container root = ContainerManager.getRoot();
 
@@ -849,6 +854,110 @@ public class ListManager implements SearchService.DocumentProvider
             migrateToHardTable(user, child);
         }
     }
+
+    public void ensureListDomains(User user)
+    {
+        Container root = ContainerManager.getRoot();
+
+        // Recurse through the children
+        for (Container child : ContainerManager.getAllChildren(root))
+        {
+            ensureListDomain(user, child);
+        }
+
+        OntologyManager.clearCaches();
+    }
+
+    private void ensureListDomain(User user, Container container)
+    {
+        Map<String, ListDefinition> definitionMap = ListService.get().getLists(container);
+
+        if (definitionMap.size() > 0)
+            ModuleUpgrader.getLogger().info("Ensuring domain properties for lists in [" + container.getPath() + "]");
+
+        for (ListDefinition listDef : definitionMap.values())
+        {
+            ModuleUpgrader.getLogger().info("Ensuring properties for list [" + listDef.getName() + "]");
+
+            Domain listDomain = listDef.getDomain();
+
+            // Don't want the domain to attempt to add columns based on property descriptor updates
+            listDomain.setEnforceStorageProperties(false);
+
+            // Ensure the primary key
+            DomainProperty pk = listDomain.getPropertyByName(listDef.getKeyName());
+            String pkProperyURI = ListDomainKind.createPropertyURI(listDef.getName(), listDef.getKeyName(), container, listDef.getKeyType()).toString();
+
+            if (null == pk)
+            {
+                DomainProperty p = listDomain.addProperty();
+
+                p.setName(listDef.getKeyName());
+                p.setType(PropertyService.get().getType(listDomain.getContainer(), listDef.getKeyType() == ListDefinition.KeyType.Varchar ? PropertyType.STRING.getXmlName() : PropertyType.INTEGER.getXmlName()));
+                p.setPropertyURI(pkProperyURI);
+                p.setRequired(true);
+
+                listDomain.setPropertyIndex(p, 0);
+
+                try
+                {
+                    PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
+                    listDef.clearDomain();
+                    listDomain = listDef.getDomain();
+
+                    DomainDescriptor dd = OntologyManager.getDomainDescriptor(listDomain.getTypeId());
+                    OntologyManager.ensurePropertyDomain(pd, dd, 0);
+                }
+                catch (SQLException e)
+                {
+                    ModuleUpgrader.getLogger().info("Failed to add Primary Key Property Descriptor");
+                    throw new RuntimeSQLException(e);
+                }
+            }
+            else if (!pk.getPropertyURI().equals(pkProperyURI))
+            {
+                // ensure the PropertyURI is correctly formatted
+                pk.setPropertyURI(pkProperyURI);
+
+                try
+                {
+                    Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pk.getPropertyDescriptor(), pk.getPropertyId());
+                    listDef.clearDomain();
+                    listDomain = listDef.getDomain();
+                }
+                catch (SQLException e)
+                {
+                    ModuleUpgrader.getLogger().info("Failed to update Primary Key Property Descriptor");
+                    throw new RuntimeSQLException(e);
+                }
+            }
+
+            for (DomainProperty dp : listDomain.getProperties())
+            {
+                if (dp.getPropertyURI().contains(":List.Folder-"))
+                {
+                    String mergeURI = dp.getPropertyURI();
+                    mergeURI = mergeURI.replace(":List.Folder-", ":" + listDomain.getDomainKind().getKindName() + ".Folder-");
+                    dp.setPropertyURI(mergeURI);
+
+                    try
+                    {
+                        Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), dp.getPropertyDescriptor(), dp.getPropertyId());
+                        listDef.clearDomain();
+                        listDomain = listDef.getDomain();
+                    }
+                    catch (SQLException e)
+                    {
+                        ModuleUpgrader.getLogger().info("Failed to update Primary Key Property Descriptor");
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+            }
+
+            listDef.clearDomain();
+        }
+    }
+
 
     public boolean importListSchema(ListDefinition unsavedList, String typeColumn, List<Map<String, Object>> importMaps, User user, List<String> errors) throws Exception
     {
@@ -939,8 +1048,19 @@ public class ListManager implements SearchService.DocumentProvider
 
                 p.setName(listDef.getKeyName());
                 p.setType(PropertyService.get().getType(d.getContainer(), listDef.getKeyType() == ListDefinition.KeyType.Varchar ? PropertyType.STRING.getXmlName() : PropertyType.INTEGER.getXmlName()));
-                p.setPropertyURI(fromTable.getColumn(listDef.getKeyName()).getPropertyURI());
+                p.setPropertyURI(ListDomainKind.createPropertyURI(listDef.getName(), listDef.getKeyName(), container, listDef.getKeyType()).toString());
                 p.setRequired(true);
+
+                newDomain.setPropertyIndex(p, 0);
+
+                try
+                {
+                    newDomain.save(user);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new RuntimeException("Failed to add Primary Key Property Descriptor", e);
+                }
             }
 
             // create the hard table

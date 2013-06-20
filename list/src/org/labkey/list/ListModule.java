@@ -63,7 +63,7 @@ public class ListModule extends DefaultModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 13.12;
+        return 13.13;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -162,7 +162,16 @@ public class ListModule extends DefaultModule
             if (moduleContext.isNewInstall())
                 return;
 
-            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser(), 13.12);
+            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser());
+        }
+
+        /** called at 13.12->13.13 */
+        public void ensureListDomains(final ModuleContext moduleContext)
+        {
+            if (moduleContext.isNewInstall())
+                return;
+
+            ListManager.get().ensureListDomains(moduleContext.getUpgradeUser());
         }
     }
 }

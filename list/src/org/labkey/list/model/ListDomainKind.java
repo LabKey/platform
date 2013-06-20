@@ -171,6 +171,29 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)
     {
+        String type = getType(keyType);
+        StringBuilder typeURI = getBaseURI(name, type, c);
+
+        // 13131: uniqueify the lsid for situations where a preexisting list was renamed
+        int i = 1;
+        String sTypeURI = typeURI.toString();
+        String uniqueURI = sTypeURI;
+        while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
+        {
+            uniqueURI = sTypeURI + '-' + (i++);
+        }
+        return new Lsid(uniqueURI);
+    }
+
+    public static Lsid createPropertyURI(String listName, String columnName, Container c, ListDefinition.KeyType keyType)
+    {
+        StringBuilder typeURI = getBaseURI(listName, getType(keyType), c);
+        typeURI.append(".").append(PageFlowUtil.encode(columnName));
+        return new Lsid(typeURI.toString());
+    }
+
+    private static String getType(ListDefinition.KeyType keyType)
+    {
         String type;
         switch (keyType)
         {
@@ -184,20 +207,14 @@ public abstract class ListDomainKind extends AbstractDomainKind
             default:
                 throw new IllegalStateException();
         }
+        return type;
+    }
 
-        StringBuilder typeURI = new StringBuilder("urn:lsid:")
-               .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
-               .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
-               .append(PageFlowUtil.encode(name));
-
-        // 13131: uniqueify the lsid for situations where a preexisting list was renamed
-        int i = 1;
-        String sTypeURI = typeURI.toString();
-        String uniqueURI = sTypeURI;
-        while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
-        {
-            uniqueURI = sTypeURI + '-' + (i++);
-        }
-        return new Lsid(uniqueURI);
+    private static StringBuilder getBaseURI(String listName, String type, Container c)
+    {
+        return new StringBuilder("urn:lsid:")
+                .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
+                .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
+                .append(PageFlowUtil.encode(listName));
     }
 }

@@ -133,6 +133,11 @@ public class ListDefinitionImpl implements ListDefinition
         return _domain;
     }
 
+    public void clearDomain()
+    {
+        _domain = null;
+    }
+
     public String getName()
     {
         return _def.getName();
@@ -393,7 +398,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ExperimentService.get().closeTransaction();
         }
-        ListManager.get().indexList(_def);
+//        ListManager.get().indexList(_def);
     }
 
     private void ensureKey()

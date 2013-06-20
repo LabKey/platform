@@ -1498,8 +1498,10 @@ list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text
 list/resources/schemas/dbscripts/postgresql/list-13.10-13.11.sql -text
 list/resources/schemas/dbscripts/postgresql/list-13.11-13.12.sql -text
+list/resources/schemas/dbscripts/postgresql/list-13.12-13.13.sql -text
 list/resources/schemas/dbscripts/sqlserver/list-13.10-13.11.sql -text
 list/resources/schemas/dbscripts/sqlserver/list-13.11-13.12.sql -text
+list/resources/schemas/dbscripts/sqlserver/list-13.12-13.13.sql -text
 list/schemas/lists.xsd -text
 list/src/org/labkey/list/ListModule.java -text
 list/src/org/labkey/list/controllers/ListController.java -text

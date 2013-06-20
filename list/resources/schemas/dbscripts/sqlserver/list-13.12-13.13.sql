@@ -1,0 +1,1 @@
+EXEC core.executeJavaUpgradeCode 'ensureListDomains';

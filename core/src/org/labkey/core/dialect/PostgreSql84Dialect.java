@@ -279,9 +279,9 @@ class PostgreSql84Dialect extends SqlDialect
         try
         {
             if (null == variable)
-                sql.append("\nRETURNING ").append(columnName);
+                sql.append("\nRETURNING ").append(makePropertyIdentifier(columnName));
             else
-                sql.append("\nRETURNING ").append(columnName).append(" INTO ").append(variable);
+                sql.append("\nRETURNING ").append(makePropertyIdentifier(columnName)).append(" INTO ").append(variable);
         }
         catch (IOException e)
         {
@@ -1023,7 +1023,7 @@ class PostgreSql84Dialect extends SqlDialect
             statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
                     makeTableIdentifier(change),
                     change.getTableName() + "_pk",
-                    makeLegalIdentifier(pkColumn)));
+                    makePropertyIdentifier(pkColumn)));
         }
 
         return statements;
@@ -1049,7 +1049,7 @@ class PostgreSql84Dialect extends SqlDialect
             statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
                     makeTableIdentifier(change),
                     change.getTableName() + "_pk",
-                    makeLegalIdentifier(pkColumn)));
+                    makePropertyIdentifier(pkColumn)));
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {

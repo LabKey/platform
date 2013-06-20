@@ -62,6 +62,7 @@ public class DomainImpl implements Domain
 {
     static final private Logger _log = Logger.getLogger(DomainImpl.class);
     boolean _new;
+    boolean _enforceStorageProperties;
     DomainDescriptor _ddOld;
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
@@ -70,6 +71,7 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
+        _enforceStorageProperties = true;
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
         _properties = new ArrayList<>(pds.length);
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
@@ -90,6 +92,7 @@ public class DomainImpl implements Domain
     public DomainImpl(Container container, String uri, String name)
     {
         _new = true;
+        _enforceStorageProperties = true;
         _dd = new DomainDescriptor();
         _dd.setContainer(container);
         _dd.setProject(container.getProject());
@@ -146,6 +149,11 @@ public class DomainImpl implements Domain
         return _dd.getStorageTableName();
     }
 
+    @Override
+    public void setEnforceStorageProperties(boolean enforceStorageProperties)
+    {
+        _enforceStorageProperties = enforceStorageProperties;
+    }
 
     public Container[] getInstanceContainers()
     {
@@ -301,14 +309,14 @@ public class DomainImpl implements Domain
             DomainKind kind = getDomainKind();
             boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
-            if (propChanged)
+            if (propChanged && hasProvisioner && _enforceStorageProperties)
             {
-                if (!propsDropped.isEmpty() && hasProvisioner)
+                if (!propsDropped.isEmpty())
                 {
                     StorageProvisioner.dropProperties(this, propsDropped);
                 }
 
-                if (!propsAdded.isEmpty() && hasProvisioner)
+                if (!propsAdded.isEmpty())
                 {
                     StorageProvisioner.addProperties(this, propsAdded);
                 }
