@@ -580,7 +580,7 @@ public class StatementUtils
                     rowIdVar = dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");
                 }
-                dialect.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName(), rowIdVar);
+                dialect.appendSelectAutoIncrement(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
             }
             sqlfInsertInto.append(";\n");
 

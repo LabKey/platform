@@ -166,7 +166,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable)
+    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

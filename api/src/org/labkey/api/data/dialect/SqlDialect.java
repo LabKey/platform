@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -380,11 +381,19 @@ public abstract class SqlDialect
     public abstract void appendStatement(Appendable sql, String statement);
 
     // Note: SQLFragment and StringBuilder both implement Appendable
-    public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable);
+    // TODO: Convert to take ColumnInfo instead
+    public abstract void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable);
 
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
+    // Use ColumnInfo version instead
+    @Deprecated
+    public void appendSelectAutoIncrement(Appendable sql, String columnName)
     {
-        appendSelectAutoIncrement(sql, table, columnName, null);
+        appendSelectAutoIncrement(sql, columnName, null);
+    }
+
+    public void appendSelectAutoIncrement(Appendable sql, ColumnInfo column)
+    {
+        appendSelectAutoIncrement(sql, column.getSelectName(), null);
     }
 
     // TODO: Switch appendSelectAutoIncrement usages to this

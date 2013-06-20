@@ -865,7 +865,7 @@ public class Table
         insertSQL.append(')');
 
         if (null != autoIncColumn)
-            table.getSqlDialect().appendSelectAutoIncrement(insertSQL, table, autoIncColumn.getSelectName());
+            table.getSqlDialect().appendSelectAutoIncrement(insertSQL, autoIncColumn);
 
         // If Map was handed in, then we hand back a Map
         // UNDONE: use Table.select() to reselect and return new Object
