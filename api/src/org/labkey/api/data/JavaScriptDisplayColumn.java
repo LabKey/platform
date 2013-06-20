@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
@@ -27,13 +30,13 @@ import java.util.Collection;
 public class JavaScriptDisplayColumn extends DataColumn
 {
     private final Collection<String> _dependencies;  // TODO: DisplayColumn implements getClientDependencies()?
-    private final String _javaScriptEvents;
+    private final StringExpression _eventExpression;
 
     public JavaScriptDisplayColumn(ColumnInfo col, Collection<String> dependencies, String javaScriptEvents)
     {
         super(col);
         _dependencies = dependencies;
-        _javaScriptEvents = javaScriptEvents;
+        _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
     }
 
     @Override
@@ -44,7 +47,7 @@ public class JavaScriptDisplayColumn extends DataColumn
         if (null != o)
         {
             out.write("<a href=\"#\" tabindex=\"-1\" ");
-            out.write(_javaScriptEvents);
+            out.write(_eventExpression.eval(ctx));
             out.write("\">");
             out.write(getFormattedValue(ctx));
             out.write("</a>");
