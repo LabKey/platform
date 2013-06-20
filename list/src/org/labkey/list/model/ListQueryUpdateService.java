@@ -107,10 +107,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != listRow)
         {
-            Object key = listRow.get(_list.getKeyName().toLowerCase());
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(_list.getKeyName()), key);
-            TableSelector selector = new TableSelector(getQueryTable(), filter, null);
-            ret = selector.getMap();
+            SimpleFilter filter = getKeyFilter(listRow);
+            if (null != filter)
+            {
+                TableSelector selector = new TableSelector(getQueryTable(), filter, null);
+                ret = selector.getMap();
+            }
         }
 
         return ret;
@@ -272,9 +274,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
         }
 
-//        if (value instanceof ObjectProperty)
-//            value = ((ObjectProperty)value).value();
-
         if (null != value)
         {
             for (IPropertyValidator validator : prop.getValidators())
@@ -318,6 +317,32 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+
+    @Nullable
+    public SimpleFilter getKeyFilter(Map<String, Object> map) throws InvalidKeyException
+    {
+        String keyName = _list.getKeyName();
+        Object key = map.get(keyName);
+        ListDefinition.KeyType type = _list.getKeyType();
+
+        if (null == key)
+        {
+            // Auto-increment lists might not provide a key so allow them to pass through
+            if (type.equals(ListDefinition.KeyType.AutoIncrementInteger))
+                return null;
+            throw new InvalidKeyException("No " + keyName + " provided for list \"" + _list.getName() + "\"");
+        }
+
+        // Check the type of the list to ensure proper casting of the key type
+        if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
+        {
+            if (key instanceof Integer)
+                return new SimpleFilter(keyName, key);
+            return new SimpleFilter(keyName, Integer.valueOf(key.toString()));
+        }
+
+        return new SimpleFilter(keyName, key.toString());
+    }
 
     private static class _AttachmentUploadHelper
     {

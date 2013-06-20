@@ -274,14 +274,13 @@ class PostgreSql84Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable)
+    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
     {
         try
         {
-            if (null == variable)
-                sql.append("\nRETURNING ").append(makePropertyIdentifier(columnName));
-            else
-                sql.append("\nRETURNING ").append(makePropertyIdentifier(columnName)).append(" INTO ").append(variable);
+            sql.append("\nRETURNING ").append(columnName);
+            if (null != variable)
+                sql.append(" INTO ").append(variable);
         }
         catch (IOException e)
         {
@@ -292,10 +291,7 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
-        if (null == variable)
-            sql.append("\nRETURNING ").append(columnName);
-        else
-            sql.append("\nRETURNING ").append(columnName).append(" INTO ").append(variable);
+        appendSelectAutoIncrement(sql, columnName, variable);
     }
 
     @Override

@@ -114,12 +114,35 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
                     )
             {
-                ColumnInfo c = addWrapColumn(baseColumn);
+                ColumnInfo c = wrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
+                {
                     UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                    if (name.equalsIgnoreCase("CreatedBy"))
+                    {
+                        c.setName("CreatedBy");
+                        c.setLabel("Created By");
+                    }
+                    else
+                    {
+                        c.setName("ModifiedBy");
+                        c.setLabel("Modified By");
+                    }
+                }
+                else if (name.equalsIgnoreCase("modified"))
+                {
+                    c.setName("Modified");
+                    c.setLabel("Modified");
+                }
+                else
+                {
+                    c.setName("Created");
+                    c.setLabel("Created");
+                }
                 c.setUserEditable(false);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
+                addColumn(c);
             }
             else if (name.equalsIgnoreCase("LastIndexed"))
             {

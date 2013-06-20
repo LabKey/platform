@@ -229,7 +229,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo tableName, String columnName, @Nullable String variable)
+    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
     {
         if (null == variable)
             appendStatement(sql, "SELECT @@IDENTITY");
@@ -273,12 +273,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     public @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
-//        stmt.execute();
-//
-//        if (stmt.getMoreResults())
-//            return stmt.getResultSet();
-//        else
-//            return null;
     }
 
 

@@ -323,21 +323,25 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
         // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself.
         // Unless of course it is a demographic table.
-        if (!isDemographic && _dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None) {
+        if (!isDemographic && _dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None)
+        {
             throw new InvalidKeyException("No lsid, and no KeyManagement");
         }
 
         String keyPropertyName = isDemographic ? _dataset.getStudy().getSubjectColumnName() : _dataset.getKeyPropertyName();
         Object id = map.get(keyPropertyName);
 
-        if (null == id) {
+        if (null == id)
+        {
            id = map.get("Key");
         }
 
         // if there was no other type of key, this query is invalid
-        if (null == id) {
+        if (null == id)
+        {
             throw new InvalidKeyException(String.format("key needs one of 'lsid', '%s' or 'Key', none of which were found in %s", keyPropertyName, map));
         }
+
         // now look up lsid
         // if one is found, return that
         // if 0, it's legal to return null
