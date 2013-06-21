@@ -127,6 +127,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private @Nullable String _singularConfirmText;
     private @Nullable String _pluralConfirmText;
     private String _encodedSubmitForm;
+    private boolean _noFollow = false;
 
     private String _id;
 
@@ -212,6 +213,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         _requiresSelection = ab._requiresSelection;
         _pluralConfirmText = ab._pluralConfirmText;
         _singularConfirmText = ab._singularConfirmText;
+        _noFollow = ab._noFollow;
     }
 
     public String getActionType()
@@ -318,9 +320,14 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _target;
     }
 
+    public void setNoFollow(boolean noFollow)
+    {
+        _noFollow = noFollow;
+    }
+
     public void setRequiresSelection(boolean requiresSelection)
     {
-        setRequiresSelection(requiresSelection, (Integer)null, (Integer)null);
+        setRequiresSelection(requiresSelection, null, (Integer)null);
     }
 
     public void setRequiresSelection(boolean requiresSelection, Integer minCount, Integer maxCount)
@@ -414,6 +421,11 @@ public class ActionButton extends DisplayElement implements Cloneable
             }
         }
         
+        if (_noFollow)
+        {
+            attributes.append(" rel=\"nofollow\"");
+        }
+
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
             StringBuilder onClickScript = new StringBuilder();
