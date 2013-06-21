@@ -81,6 +81,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return StudyService.get().getDatasetRow(user, container, _dataset.getDataSetId(), lsid);
     }
 
+
+    @Override
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws SQLException
+    {
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+    }
+
+
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
@@ -130,7 +139,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
-        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null, true, context, defaultQCState, false);
+        // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
+        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
+                context.getInsertOption() != InsertOption.MERGE, context,
+                defaultQCState, false);
 //        TableInfo table = _dataset.getTableInfo(user, false);
 //        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(dsIterator, errors);
         return insert;

@@ -15,6 +15,8 @@
  */
 package org.labkey.di;
 
+import com.drew.lang.annotations.Nullable;
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -23,6 +25,8 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.query.BatchValidationException;
+
 import static org.labkey.di.DataIntegrationDbSchema.Columns.*;
 
 /**
@@ -35,11 +39,13 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
 {
     final int _transformRunId;
     final DataIteratorBuilder _input;
+    Logger _statusLogger = null;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger)
     {
         _transformRunId = transformRunId;
         _input = input;
+        _statusLogger = statusLogger;
     }
 
 
@@ -55,7 +61,23 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         DataIterator in = _input.getDataIterator(context);
-        SimpleTranslator out = new SimpleTranslator(in, context);
+        final int[] count = new int[] {0};
+        SimpleTranslator out = new SimpleTranslator(in, context)
+        {
+            @Override
+            public boolean next() throws BatchValidationException
+            {
+                boolean r = super.next();
+                if (r)
+                {
+                    count[0]++;
+                    if (null != _statusLogger && 0 == count[0] % 10000)
+                        _statusLogger.info("" + count[0] + " rows transferred");
+                }
+                return r;
+            }
+        };
+
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);

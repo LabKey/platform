@@ -1582,8 +1582,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             error.append("Duplicates were found in the database or imported data.");
             errors.addRowError(new ValidationException(error.toString()));
 
+            int errorCount = 0;
             for (Map.Entry<String, Object[]> e : failedReplaceMap.entrySet())
             {
+                errorCount++;
+                if (errorCount > 100)
+                    break;
                 Object[] keys = e.getValue();
                 String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + keys[0];
                 if (!isDemographicData())

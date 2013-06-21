@@ -97,7 +97,7 @@ public class SimpleQueryTransformStep extends TransformTask
     {
         try
         {
-            getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
+            getJob().getLogger().debug("SimpleQueryTransformStep.doWork called");
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
                 getJob().setStatus("ERROR");
             recordWork(action);
@@ -161,14 +161,14 @@ public class SimpleQueryTransformStep extends TransformTask
                 sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ);
 
             long start = System.currentTimeMillis();
-            log.info(DateUtil.toISO(start) + " Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
+            log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
                     meta.getTargetSchema() + "." + meta.getTargetQuery());
 
             DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
             if (null == source)
                 return false;
             int transformRunId = getTransformJob().getTransformRunId();
-            DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source);
+            DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log);
 
             _recordsInserted = appendToTarget(meta, c, u, context, transformSource);
 
@@ -177,7 +177,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 sourceScope.commitTransaction();
 
             long finish = System.currentTimeMillis();
-            log.info(DateUtil.toISO(finish) + " Copied " + _recordsInserted + " row" + (_recordsInserted != 1 ? "s" : "") + " in " + DateUtil.formatDuration(finish - start) + ".");
+            log.info("Copied " + _recordsInserted + " row" + (_recordsInserted != 1 ? "s" : "") + " in " + DateUtil.formatDuration(finish - start) + ".");
         }
         catch (Exception x)
         {
@@ -248,7 +248,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 return -1;
             }
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
-                return qus.mergeRows(u, c, source.getDataIterator(context), context.getErrors(), null);
+                return qus.mergeRows(u, c, source, context.getErrors(), null);
             else
                 return qus.importRows(u, c, source, context.getErrors(), null);
         }

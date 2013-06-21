@@ -68,6 +68,7 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
+import org.labkey.di.filters.SelectAllFilterStrategy;
 import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
@@ -230,6 +231,8 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             return new ModifiedSinceFilterStrategy.Factory(this, filterTypeXML);
         else if (className.equals(RunFilterStrategy.class.getName()))
             return new RunFilterStrategy.Factory(this, filterTypeXML);
+        else if (className.equals(SelectAllFilterStrategy.class.getName()))
+            return new SelectAllFilterStrategy.Factory();
         throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
     }
 
