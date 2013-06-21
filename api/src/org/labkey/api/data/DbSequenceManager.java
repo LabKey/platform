@@ -25,7 +25,6 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 
