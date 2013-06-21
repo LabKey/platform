@@ -2193,8 +2193,16 @@ public class QueryController extends SpringActionController
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
 
+            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy API's.
+            if (getRequestedApiVersion() >= 13.2)
+            {
+                ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, true, view.getQueryDef().getName(), form.getQuerySettings().getOffset(), null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                response.includeStyle(form.isIncludeStyle());
+                return response;
+            }
             //if requested version is >= 9.1, use the extended api query response
-            if (getRequestedApiVersion() >= 9.1)
+            else if (getRequestedApiVersion() >= 9.1)
             {
                 ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
@@ -2389,6 +2397,14 @@ public class QueryController extends SpringActionController
             TableInfo t = view.getTable();
             boolean isEditable = null != t && isQueryEditable(view.getTable());
 
+            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy API's.
+            if (getRequestedApiVersion() >= 13.2)
+            {
+                ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, false, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                response.includeStyle(form.isIncludeStyle());
+                return response;
+            }
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
