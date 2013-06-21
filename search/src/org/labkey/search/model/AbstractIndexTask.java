@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -131,7 +130,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
             _isReady = true;
             if (_subtasks.isEmpty())
                 if (checkDone())
-                    onDone();
+                    fireDone();
         }
     }
 
@@ -157,7 +156,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
         synchronized (_completeEvent)
         {
             if (checkDone())
-                onDone();
+                fireDone();
         }
     }
 
@@ -213,34 +212,15 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    ArrayList<Runnable> onSuccess = null;
-
-    public void onSuccess(Runnable r)
-    {
-        synchronized (_completeEvent)
-        {
-            if (isDone() && !isCancelled())
-                r.run();
-            else
-            {
-                if (null == onSuccess)
-                    onSuccess = new ArrayList<>(1);
-                onSuccess.add(r);
-            }
-        }
-    }
-
-
-    protected void onDone()
+    protected void fireDone()
     {
         assert Thread.holdsLock(_completeEvent);
         
         _complete = System.currentTimeMillis();
         _completeEvent.notifyAll();
-        if (null != onSuccess && !isCancelled())
+        if (null != _listener && !isCancelled())
         {
-            for (Runnable r : onSuccess)
-                r.run();
+            _listener.success();
         }
     }
 
