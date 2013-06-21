@@ -52,6 +52,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -120,7 +121,7 @@ public class ViewServlet extends HttpServlet
         if (_debug)
         {
             User user = (User) request.getUserPrincipal();
-            String description = request.getMethod() + " " + request.getRequestURI() + "?" + _toString(request.getQueryString()) + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + session.getId() + ")";
+            String description = request.getMethod() + " " + request.getRequestURI() + "?" + Objects.toString(request.getQueryString(), "") + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + session.getId() + ")";
             _log.debug(">> " + description);
         }
 
@@ -639,11 +640,6 @@ public class ViewServlet extends HttpServlet
     public static void _log(String s, Throwable t)
     {
         _logError(s, t);
-    }
-
-    private String _toString(Object o)
-    {
-        return o == null ? "" : String.valueOf(o);
     }
 
 

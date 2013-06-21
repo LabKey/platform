@@ -69,10 +69,18 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,6 +91,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
 * User: matthewb
@@ -101,10 +110,6 @@ public class FileSystemResource extends AbstractWebdavResource
     WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
 
-    private long _length = UNKNOWN;
-    private long _lastModified = UNKNOWN;
-
-    private static final long UNKNOWN = -1;
     private boolean _dataQueried = false;
     private List<ExpData> _data;
     private boolean _mergeFromParent;
@@ -176,6 +181,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
 
+
     public boolean exists()
     {
         if (_files == null)
@@ -186,6 +192,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
         return getType() != FileType.notpresent;
     }
+
 
     private FileType getType()
     {
@@ -204,6 +211,7 @@ public class FileSystemResource extends AbstractWebdavResource
         return FileType.notpresent;
     }
 
+
     public boolean isCollection()
     {
         FileType type = getType();
@@ -212,14 +220,16 @@ public class FileSystemResource extends AbstractWebdavResource
         return exists() && getPath().isDirectory();
     }
 
+
     public boolean isFile()
     {
         return _files != null && getType() == FileType.file;
     }
 
-    public File getFile()
+
+    protected FileInfo getFileInfo()
     {
-        if (_files == null)
+        if (_files == null || _files.isEmpty())
         {
             return null;
         }
@@ -227,11 +237,21 @@ public class FileSystemResource extends AbstractWebdavResource
         {
             if (file.getType() != FileType.notpresent)
             {
-                return file.getFile();
+                return file;
             }
         }
-        return _files.get(0).getFile();
+        return _files.get(0);
     }
+
+
+    public File getFile()
+    {
+        FileInfo f = getFileInfo();
+        if (null == f)
+            return null;
+        return f.getFile();
+    }
+
 
     public FileStream getFileStream(User user) throws IOException
     {
@@ -299,11 +319,9 @@ public class FileSystemResource extends AbstractWebdavResource
         {
             for (FileInfo file : _files)
             {
-                file._type = null;
+                file._attributes = null;
             }
         }
-        _length = UNKNOWN;
-        _lastModified = UNKNOWN;
     }
 
     /**
@@ -362,6 +380,7 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
+
     @NotNull
     public Collection<String> listNames()
     {
@@ -418,14 +437,10 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public long getLastModified()
     {
-        File file = getFile();
-        if (null != file)
+        FileInfo fi = getFileInfo();
+        if (null != fi)
         {
-            if (_lastModified == UNKNOWN)
-            {
-                _lastModified = file.lastModified();
-            }
-            return _lastModified;
+            return fi.getLastModified();
         }
         return Long.MIN_VALUE;
     }
@@ -433,14 +448,12 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public long getContentLength()
     {
-        if (!isFile() || getFile() == null)
+        FileInfo fi = getFileInfo();
+        if (null == fi || FileType.file != fi.getType())
             return 0;
-        if (_length == UNKNOWN)
-        {
-            _length = getFile().length();
-        }
-        return _length;
+        return fi.getLength();
     }
+
 
     public boolean canRead(User user, boolean forRead)
     {
@@ -968,12 +981,33 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
+
+
+    static final FileTime nullTime = FileTime.from(Long.MIN_VALUE,TimeUnit.MILLISECONDS);
+
+    static final BasicFileAttributes doesNotExist = (BasicFileAttributes)Proxy.newProxyInstance(
+            FileSystemResource.class.getClassLoader(),
+            new Class[] {BasicFileAttributes.class},
+            new InvocationHandler(){
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+                {
+                    if (method.getReturnType() == Boolean.class)
+                        return false;
+                    if (method.getReturnType() == FileTime.class)
+                        return nullTime;
+                    if (method.getReturnType() == Long.class)
+                        return 0;
+                    return null;
+                }
+            });
+
+
+
     protected static class FileInfo
     {
         private File _file;
-        private FileType _type;
-        private long _length = UNKNOWN;
-        private long _lastModified = UNKNOWN;
+        BasicFileAttributes _attributes;
 
         public FileInfo(File file)
         {
@@ -993,43 +1027,54 @@ public class FileSystemResource extends AbstractWebdavResource
          */
         private FileType getType()
         {
-            if (_file == null)
-            {
+            _init();
+            if (null == _attributes)
                 return null;
-            }
-            if (_type == null)
-            {
-                if (!_file.getName().contains("."))
-                {
-                    // With no extension, first guess that it's a directory
-                    if (_file.isDirectory())
-                    {
-                        _type = FileType.directory;
-                    }
-                    else if (_file.isFile())
-                    {
-                        _type = FileType.file;
-                    }
-                }
-                else
-                {
-                    // If it has an extension, guess that it's a file
-                    if (_file.isFile())
-                    {
-                        _type = FileType.file;
-                    }
-                    else if (_file.isDirectory())
-                    {
-                        _type = FileType.directory;
-                    }
-                }
+            if (doesNotExist == _attributes)
+                return FileType.notpresent;
+            if (_attributes.isRegularFile())
+                return FileType.file;
+            else
+                return FileType.directory;
+        }
 
-                if (_type == null)
+
+
+        private long getLastModified()
+        {
+            _init();
+            return null==_attributes ? Long.MIN_VALUE : _attributes.lastModifiedTime().toMillis();
+        }
+
+
+        private long getLength()
+        {
+            _init();
+            return null==_attributes ? 0 : _attributes.size();
+        }
+
+
+        private void _init()
+        {
+            if (_file != null && _attributes == null)
+            {
+                try
                 {
-                    _type = FileType.notpresent;
+                    _attributes = Files.readAttributes(_file.toPath(), BasicFileAttributes.class);
+                }
+                catch (FileNotFoundException x)
+                {
+                    _attributes = doesNotExist;
+                }
+                catch (NoSuchFileException x)
+                {
+                    _attributes = doesNotExist;
+                }
+                catch (IOException x)
+                {
+                    throw new UnexpectedException(x);
                 }
             }
-            return _type;
         }
     }
 }
