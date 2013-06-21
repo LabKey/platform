@@ -1326,11 +1326,25 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return super.getPermissions(user);
         }
 
+
 		@Override
         public File getFile()
         {
+            if (_parent instanceof AttachmentDirectory)
+            {
+                try
+                {
+                    File dir = ((AttachmentDirectory)_parent).getFileSystemDirectory();
+                    return new File(dir,getName());
+                }
+                catch (MissingRootDirectoryException x)
+                {
+                    return null;
+                }
+            }
             return null;
         }
+
 
         @NotNull
         public List<WebdavResolver.History> getHistory()

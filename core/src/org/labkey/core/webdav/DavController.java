@@ -2616,7 +2616,9 @@ public class DavController extends SpringActionController
         updateIndexAndDataObject(resource);
 
         Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
-        ServiceRegistry.get(FileContentService.class).fireFileCreateEvent(resource.getFile(), getUser(), srcContainer);
+        File file = resource.getFile();
+        if (null != file)
+            ServiceRegistry.get(FileContentService.class).fireFileCreateEvent(file, getUser(), srcContainer);
     }
 
     private void updateIndexAndDataObject(WebdavResource resource)
