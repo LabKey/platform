@@ -30,11 +30,15 @@
     }
 
     InlineEditor.prototype.addEditClass = function () {
-        // labkey-wiki-inlineedit-active
+        tinymce.DOM.addClass(this.dom, "labkey-inline-editor-active");
     };
 
     InlineEditor.prototype.removeEditClass = function () {
-        // labkey-wiki-inlineedit-inactive
+        tinymce.DOM.removeClass(this.dom, "labkey-inline-editor-active");
+    };
+
+    InlineEditor.prototype.isEditing = function () {
+        return this.ed || tinymce.DOM.hasClass(this.dom, "labkey-inline-editor-active");
     };
 
     InlineEditor.prototype.setStatus = function (msg) {
@@ -52,14 +56,14 @@
         this.originalValue = this.dom.innerHTML;
 
         // replace content with a textarea and buttons
-        var html = "<form class='labkey-inline-editor' style='display:inline; margin:0; padding:0'>" +
-                "<a class='labkey-button' name='save'><span>Save</span></a>" +
-                "<a class='labkey-button' name='cancel'><span>Cancel</span></a>" +
-                "<p>" +
-                "<textarea id='" + this.editFieldId + "'>" +
+        var html = "<div class='labkey-inline-editor'>" +
+                "<textarea id='" + this.editFieldId + "' style='width:100%'>" +
                 this.originalValue +
                 "</textarea>" +
-                "</form>";
+                "<p>" +
+                "<a class='labkey-button' name='save'><span>Save</span></a>" +
+                "<a class='labkey-button' name='cancel'><span>Cancel</span></a>" +
+                "</div>";
         this.dom.innerHTML = html;
 
         // find the buttons and attach click events
@@ -77,7 +81,7 @@
             mode: "none",
             theme: "advanced",
             plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
-                    "contextmenu, fullscreen, noneditable, inlinepopups, style, ", //pdw ",
+                    "contextmenu, fullscreen, noneditable, inlinepopups, style, ",
 
             // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
             convert_urls: false,
@@ -106,10 +110,6 @@
 
             content_css : LABKEY.contextPath + "/core/themeStylesheet.view",
 
-            // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
-            //pdw_toggle_on : 1,
-            //pdw_toggle_toolbars : "2",
-
             // labkey specific
             //handle_event_callback : tinyMceHandleEvent,
 
@@ -127,6 +127,7 @@
 
         this.ed.remove();
         this.ed.destroy();
+        this.ed = null;
 
         // restore original html
         this.dom.innerHTML = this.originalValue;
@@ -141,30 +142,22 @@
 
         var content = this.ed.getContent();
 
-        // TODO: Use Ext Observable or something
+        // TODO: Use Ext Observable or something instead
         // invoke save callback
         this.config.save.apply(this.config.scope, [ this, content ]);
     };
 
+    // Handle InlineEditor specific functionality in this callback.
     // clients are responsible for calling this upon successful save.
-    InlineEditor.prototype.onSaveSuccess = function (ret) {
-        if (ret.success)
-        {
-            this.removeEditClass();
+    InlineEditor.prototype.onSaveSuccess = function (ret, content) {
+        this.removeEditClass();
 
-            // BUGBUG: Use submitted content rather than using 'getContent' again.
-            var content = this.ed.getContent();
+        this.ed.remove();
+        this.ed.destroy();
+        this.ed = null;
 
-            this.ed.remove();
-            this.ed.destroy();
-
-            // update modified html
-            this.dom.innerHTML = content;
-        }
-        else
-        {
-            this.onSaveFailure(ret);
-        }
+        // update modified html
+        this.dom.innerHTML = content;
     };
 
     // clients are responsible for calling this upon save failure.
@@ -190,13 +183,24 @@
         this.cancel();
     };
 
+    // private
+    function isEditing (dom) {
+        return tinymce.DOM.hasClass(dom, "labkey-inline-editor-active");
+    }
+
 
     // private
-    // Initialize TinyMCE for inline editing on the given element id.
-    function inlineEdit(config)
+    // Initialize TinyMCE for inline editing on the given wiki element or id.
+    function inlineWikiEdit(config)
     {
         if (!config.dom && !config.id)
             throw new Error("dom node or id required");
+
+        if (isEditing(config.dom))
+        {
+            console.log("Editor already active");
+            return;
+        }
 
         tinymceinit();
         var editor = new InlineEditor({
@@ -206,11 +210,24 @@
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL("wiki", "saveWiki"),
                     method: 'POST',
-                    success: LABKEY.Utils.getCallbackWrapper(editor.onSaveSuccess, editor),
+                    success: LABKEY.Utils.getCallbackWrapper(function (resp) {
+                        // Handle wiki specific functionality in this callback.
+                        if (resp.success && resp.wikiProps)
+                        {
+                            // Stash the update page version id on the dom node to allow wiki to be edited again after saving.
+                            config.dom.pageVersionId = resp.wikiProps.pageVersionId;
+                            editor.onSaveSuccess(resp, resp.wikiProps.body);
+                        }
+                        else
+                        {
+                            editor.onSaveFailure(resp);
+                        }
+                    }),
                     failure: LABKEY.Utils.getCallbackWrapper(editor.onSaveFailure, editor, true),
                     jsonData: {
                         entityId: config.entityId,
-                        pageVersionId: config.pageVersionId,
+                        // Use dom node's pageVersionId if we've saved previously.
+                        pageVersionId: config.dom.pageVersionId || config.pageVersionId,
                         name: config.name,
                         title: config.title,
                         rendererType: config.rendererType,
@@ -237,18 +254,18 @@
 
     LABKEY.Internal.Wiki = {
         createWebPartInlineEditor : function (config) {
-            if (!config.entityId && !config.pageVersionId)
-                throw new Error("wiki entityId and pageVersionId required");
-
             if (!config.webPartId)
                 throw new Error("webPartId required");
+
+            if (!config.entityId && !config.pageVersionId)
+                throw new Error("wiki entityId and pageVersionId required");
 
             var webpartEl = document.getElementById("webpart_" + config.webPartId);
             var wikiEl = webpartEl.getElementsByClassName("labkey-wiki")[0];
             config.dom = wikiEl;
 
             var dependencies = [ "tiny_mce/tiny_mce_src.js" ];
-            LABKEY.requiresScript(dependencies, true, function () { inlineEdit(config); }, this, true);
+            LABKEY.requiresScript(dependencies, true, function () { inlineWikiEdit(config); }, this, true);
         }
 
     };

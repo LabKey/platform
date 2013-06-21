@@ -204,8 +204,7 @@ public abstract class BaseWikiView extends JspView<Object>
         if (perms.allowUpdate(wiki) && folderHasWikis && hasContent)
         {
             WikiVersion version = wiki.getLatestVersion();
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(WikiModule.EXPERIMENTAL_WIKI_INLINE_EDITOR) &&
-                version != null && version.getRendererTypeEnum() == WikiRendererType.HTML)
+            if (version != null && version.getRendererTypeEnum() == WikiRendererType.HTML)
             {
                 // Indlude wiki.js as a client dependency only for inline editing
                 addClientDepedency(ClientDependency.fromFilePath("wiki/js/wiki.js"));
