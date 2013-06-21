@@ -73,8 +73,6 @@
     {
 %>
     <input type="hidden" name="<%= h(parameter.getKey()) %>" value="<%= h(parameter.getValue()) %>">
-    <input type="hidden" name="<%= ActionURL.Param.returnUrl %>" value="<%= h(bean.getReturnURL()) %>">
-    <input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>">
 <%
     }
     for (Integer id : bean.getIds())
@@ -84,6 +82,8 @@
 <%
     }
 %>
+<input type="hidden" name="<%= ActionURL.Param.returnUrl %>" value="<%= h(bean.getReturnURL()) %>">
+<input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>">
 <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
 <table>
     <%

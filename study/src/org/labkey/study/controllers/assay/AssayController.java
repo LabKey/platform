@@ -874,9 +874,6 @@ public class AssayController extends SpringActionController
         public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(protocol);
-            if (pair != null && pair.first == ExpProtocol.AssayDomainTypes.Result)
-                return getCopyToStudyConfirmURL(container, protocol);
             return getProtocolURL(container, protocol, PublishStartAction.class);
         }
 
