@@ -1454,57 +1454,66 @@ public class OntologyManager
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
         if (null == dd)
         {
-            dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
-            domainDescCache.put(getCacheKey(dd),dd);
+            try
+            {
+                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                domainDescCache.put(getCacheKey(dd),dd);
+                return dd;
+            }
+            catch (SQLException x)
+            {
+                // might be an optimistic concurrency problem see 16126
+                dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+                if (null == dd)
+                    throw x;
+            }
+        }
+
+        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
+
+        if (colDiffs.size()==0)
+        {
+            // if the descriptor differs by container only and the requested descriptor is in the project fldr
+            if (!ddIn.getContainer().getId().equals(dd.getContainer().getId()) &&
+                    ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
+            {
+                ddIn.setDomainId(dd.getDomainId());
+                dd = updateDomainDescriptor(ddIn);
+            }
+            return dd;
+        }
+
+        // you are allowed to update if you are coming from the project root, or if  you are in the container
+        // in which the descriptor was created
+        boolean fUpdateIfExists = false;
+        if (ddIn.getContainer().getId().equals(dd.getContainer().getId())
+                || ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
+            fUpdateIfExists = true;
+
+        boolean fMajorDifference = false;
+        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
+            fMajorDifference = true;
+
+        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
+                                "\n\t Descriptor In: " + ddIn +
+                                "\n\t Descriptor Found: " + dd;
+
+        if (fUpdateIfExists)
+        {
+            //todo:  pass list of cols to update
+            ddIn.setDomainId(dd.getDomainId());
+            dd = updateDomainDescriptor(ddIn);
+            if (fMajorDifference)
+                _log.debug(errmsg);
         }
         else
         {
-            List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
-
-            if (colDiffs.size()==0)
-            {
-                // if the descriptor differs by container only and the requested descriptor is in the project fldr
-                if (!ddIn.getContainer().getId().equals(dd.getContainer().getId()) &&
-                        ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
-                {
-                    ddIn.setDomainId(dd.getDomainId());
-                    dd = updateDomainDescriptor(ddIn);
-                }
-                return dd;
-            }
-
-            // you are allowed to update if you are coming from the project root, or if  you are in the container
-            // in which the descriptor was created
-            boolean fUpdateIfExists = false;
-            if (ddIn.getContainer().getId().equals(dd.getContainer().getId())
-                    || ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
-                fUpdateIfExists = true;
-
-            boolean fMajorDifference = false;
-            if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-                fMajorDifference = true;
-
-            String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
-                                    "\n\t Descriptor In: " + ddIn +
-                                    "\n\t Descriptor Found: " + dd;
-
-
-            if (fUpdateIfExists)
-            {
-                //todo:  pass list of cols to update
-                ddIn.setDomainId(dd.getDomainId());
-                dd = updateDomainDescriptor(ddIn);
-                if (fMajorDifference)
-                    _log.debug(errmsg);
-            }
+            if (fMajorDifference)
+                _log.error(errmsg);
             else
-            {
-                if (fMajorDifference)
-                    _log.error(errmsg);
-                else
-                    _log.debug(errmsg);
-            }
+                _log.debug(errmsg);
         }
+
         return dd;
     }
 
