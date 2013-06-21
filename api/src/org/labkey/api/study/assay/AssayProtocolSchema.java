@@ -661,7 +661,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
                     FilteredTable table = new FilteredTable(DbSchema.get("study").getTable("study"));
                     table.setContainerFilter(new StudyContainerFilter(AssayProtocolSchema.this));
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
-                    col.setFk(new ContainerForeignKey(AssayProtocolSchema.this));
+                    col.setKeyField(true);
+                    ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
                     table.setPublic(false);

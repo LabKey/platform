@@ -17,6 +17,7 @@ package org.labkey.api.jsp;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -64,7 +65,10 @@ public class JspClassLoader
     public Class loadClass(ServletContext context, String packageName, String jspFile) throws ClassNotFoundException
     {
         String className = getJspClassName(packageName, jspFile);
-        return _loader.loadClass(className);
+        Class c = _loader.loadClass(className);
+        if (c == null)
+            throw new ConfigurationException("Failed to load jsp class '" + className + "'; server classpath is misconfigured.");
+        return c;
     }
 
     protected String getJspClassName(String packageName, String jspFile)

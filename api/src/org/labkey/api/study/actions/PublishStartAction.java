@@ -18,10 +18,15 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.PageFlowUtil;
@@ -29,6 +34,7 @@ import org.labkey.api.util.HString;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -210,32 +216,56 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             ids = getCheckboxIds();
         }
 
-        Set<Container> containers = new HashSet<>();
-        boolean nullsFound = false;
-        boolean insufficientPermissions = false;
-        for (Integer id : ids)
+        // If the TargetStudy column is on the result domain, redirect past the choose target study page directly to the confirm page.
+        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(_protocol);
+        if (pair != null && pair.first == ExpProtocol.AssayDomainTypes.Result)
         {
-            Container studyContainer = provider.getAssociatedStudyContainer(_protocol, id);
-            if (studyContainer == null)
-                nullsFound = true;
-            else
-            {
-                if (!studyContainer.hasPermission(getViewContext().getUser(), InsertPermission.class))
-                    insufficientPermissions = true;
-                containers.add(studyContainer);
-            }
-        }
+            Collection<Pair<String, String>> inputs = new ArrayList<>();
+            inputs.add(Pair.of(QueryParam.containerFilterName.name(), publishForm.getContainerFilterName()));
+            if (publishForm.getReturnUrl() != null)
+                inputs.add(Pair.of(ActionURL.Param.returnUrl.name(), publishForm.getReturnUrl().toString()));
+            inputs.add(Pair.of("dataRegionSelectionKey", publishForm.getDataRegionSelectionKey()));
+            for (Integer id : ids)
+                inputs.add(Pair.of(DataRegion.SELECT_CHECKBOX_NAME, id.toString()));
 
-        return new JspView<>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
-                new PublishBean(provider,
-                    _protocol,
-                    ids,
-                    publishForm.getDataRegionSelectionKey(),
-                    containers,
-                    nullsFound,
-                    insufficientPermissions,
-                    publishForm.getReturnUrl(),
-                    publishForm.getContainerFilterName()));
+            // Copy url parameters to hidden inputs
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol);
+            for (Pair<String, String> parameter : url.getParameters())
+                inputs.add(parameter);
+
+            url.deleteParameters();
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            return new HttpPostRedirectView(url.toString(), inputs);
+        }
+        else
+        {
+            Set<Container> containers = new HashSet<>();
+            boolean nullsFound = false;
+            boolean insufficientPermissions = false;
+            for (Integer id : ids)
+            {
+                Container studyContainer = provider.getAssociatedStudyContainer(_protocol, id);
+                if (studyContainer == null)
+                    nullsFound = true;
+                else
+                {
+                    if (!studyContainer.hasPermission(getViewContext().getUser(), InsertPermission.class))
+                        insufficientPermissions = true;
+                    containers.add(studyContainer);
+                }
+            }
+
+            return new JspView<>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
+                    new PublishBean(provider,
+                        _protocol,
+                        ids,
+                        publishForm.getDataRegionSelectionKey(),
+                        containers,
+                        nullsFound,
+                        insufficientPermissions,
+                        publishForm.getReturnUrl(),
+                        publishForm.getContainerFilterName()));
+        }
     }
 
     public NavTree appendNavTrail(NavTree root)

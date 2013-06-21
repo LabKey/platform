@@ -86,14 +86,16 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 if (!Objects.equals(oldValue, newValue) && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
-                    if (newValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(newValue.getClass()))
+                    ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
+                    if (newValue != null && !fkTablePkCol.getJavaClass().isAssignableFrom(newValue.getClass()))
                     {
-                        newValue = ConvertUtils.convert(newValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                        newValue = ConvertUtils.convert(newValue.toString(), fkTablePkCol.getJavaClass());
                     }
-                    if (oldValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(oldValue.getClass()))
+                    if (oldValue != null && !fkTablePkCol.getJavaClass().isAssignableFrom(oldValue.getClass()))
                     {
-                        oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                        oldValue = ConvertUtils.convert(oldValue.toString(), fkTablePkCol.getJavaClass());
                     }
+
                     Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getObject(oldValue, Map.class);
                     if (oldLookupTarget != null)
                     {
