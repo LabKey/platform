@@ -3488,40 +3488,8 @@ public class StudyManager
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
-    // Index all participants in all studies
-    public static void indexParticipantView(final SearchService.IndexTask task)
+    public static void indexParticipants(final SearchService.IndexTask task, @NotNull final Container c, @Nullable List<String> ptids)
     {
-        Selector selector = new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT DISTINCT Container FROM " + StudySchema.getInstance().getTableInfoParticipant());
-        selector.forEach(new Selector.ForEachBlock<String>() {
-            @Override
-            public void exec(String id) throws SQLException
-            {
-                final Container c = ContainerManager.getForId(id);
-                if (null != c)
-                {
-                    task.addRunnable(new Runnable()
-                    {
-                        public void run()
-                        {
-                            indexParticipantView(task, c, null);
-                        }
-                    }, SearchService.PRIORITY.group);
-                }
-            }
-        }, String.class);
-    }
-
-
-    public static void indexParticipantView(final SearchService.IndexTask task, @Nullable final Container c, @Nullable List<String> ptids)
-    {
-        if (null == c)
-        {
-            if (null != ptids)
-                throw new IllegalArgumentException();
-            indexParticipantView(task);
-            return;
-        }
-
         if (null != ptids && ptids.size() == 0)
             return;
 
@@ -3536,13 +3504,13 @@ public class StudyManager
                 {
                     final ArrayList<String> l = list;
                     Runnable r = new Runnable(){ @Override public void run() {
-                        indexParticipantView(task, c, l);
+                        indexParticipants(task, c, l);
                     }};
                     task.addRunnable(r, SearchService.PRIORITY.bulk);
                     list = new ArrayList<>(BATCH_SIZE);
                 }
             }
-            indexParticipantView(task, c, list);
+            indexParticipants(task, c, list);
             return;
         }
 
@@ -3673,7 +3641,7 @@ public class StudyManager
                     }
                 }
                 StudyManager.indexDatasets(task, c, null);
-                StudyManager.indexParticipantView(task, c, null);
+                StudyManager.indexParticipants(task, c, null);
                 AssayService.get().indexAssays(task, c);
             }
         };

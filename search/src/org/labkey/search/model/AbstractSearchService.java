@@ -1279,6 +1279,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
 
+        _log.info("Index container " + c.getPath());
+
         Runnable r = new Runnable()
         {
             public void run()
