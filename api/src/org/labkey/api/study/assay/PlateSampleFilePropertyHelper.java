@@ -319,11 +319,14 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             @Override
             public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
             {
-                out.write("<td class='labkey-form-label'>Sample Metadata");
-                out.write(PageFlowUtil.helpPopup("Sample Metadata", "Sample metadata should be provided in an Excel file with " +
-                        "one row per sample.  This information is used to determine data processing and to map " +
-                        "samples to plate locations."));
-                out.write(" *</td>");
+                if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
+                {
+                    out.write("<td class='labkey-form-label'>Sample Metadata");
+                    out.write(PageFlowUtil.helpPopup("Sample Metadata", "Sample metadata should be provided in an Excel file with " +
+                            "one row per sample.  This information is used to determine data processing and to map " +
+                            "samples to plate locations."));
+                    out.write(" *</td>");
+                }
             }
 
             @Override
