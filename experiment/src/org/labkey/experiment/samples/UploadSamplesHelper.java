@@ -302,7 +302,7 @@ public class UploadSamplesHelper
                         PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                         if (root == null || !root.isUnderRoot((File)entry.getValue()))
                         {
-                            throw new ExperimentException("Cannot reference file " + entry.getValue() + " from container " + getContainer().getPath());
+                            throw new ExperimentException("Cannot reference file '" + entry.getValue() + "' from " + getContainer().getPath());
                         }
                     }
                 }
