@@ -44,7 +44,7 @@ public interface WebdavResource extends Resource
     boolean isCollectionType();
 
     // TODO move more functionality into interface and remove this method
-    File getFile();
+    @Nullable File getFile();
 
     Collection<? extends WebdavResource> list();
 

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -35,22 +34,22 @@
 
 <table>
     <tr class="labkey-alternate-row">
-        <td>User</td><td><%=user.getDisplayName(user)%></td></tr>
+        <td>User</td><td><%=h(user.getDisplayName(user))%></td></tr>
 <%
     if (bean.getResource().getFile().exists()) {
 %>
     <tr class="labkey-row">
-        <td>File</td><td><a href="<%=bean.getResource().getHref(context)%>"><%=bean.getResource().getName()%></a></td></tr>
+        <td>File</td><td><a href="<%=h(bean.getResource().getHref(context))%>"><%=h(bean.getResource().getName())%></a></td></tr>
 <%
     } else {
 %>
     <tr class="labkey-row">
-        <td>File</td><td><%=bean.getResource().getName()%></td></tr>
+        <td>File</td><td><%=h(bean.getResource().getName())%></td></tr>
 <%
     }
 %>
     <tr class="labkey-alternate-row">
-        <td>Action</td><td><%=bean.getAction()%></td></tr>
+        <td>Action</td><td><%=h(bean.getAction())%></td></tr>
 </table>
 
 <br>
@@ -63,8 +62,8 @@
         {
             case FileContentEmailPref.FOLDER_DEFAULT:
             case FileContentEmailPref.INDIVIDUAL: %>
-            you are signed up to receive notifications about updates to files at <a href="<%=bean.getUrlFileBrowser().getURIString()%>"><%= PageFlowUtil.filter(bean.getContainerPath()) %></a>.
-            If you no longer wish to receive these notifications you can <a href="<%=bean.getUrlEmailPrefs().getURIString()%>">change your email preferences</a>. <%
+            you are signed up to receive notifications about updates to files at <a href="<%=h(bean.getUrlFileBrowser().getURIString())%>"><%= PageFlowUtil.filter(bean.getContainerPath()) %></a>.
+            If you no longer wish to receive these notifications you can <a href="<%=h(bean.getUrlEmailPrefs().getURIString())%>">change your email preferences</a>. <%
             break;
         } %>
     </td></tr>

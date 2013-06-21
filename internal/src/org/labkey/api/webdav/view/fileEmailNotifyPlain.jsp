@@ -29,21 +29,20 @@
     FileSystemResource.FileEmailForm bean = ((JspView<FileSystemResource.FileEmailForm>)HttpView.currentView()).getModelBean();
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
-    Container c = context.getContainer();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 %>
 
-User: <%=user.getDisplayName(user)%>
-File: <%=bean.getResource().getName()%>
-Action: <%=bean.getAction()%>
+User: <%=text(user.getDisplayName(user))%>
+File: <%=text(bean.getResource().getName())%>
+Action: <%=text(bean.getAction())%>
 
 You have received this email because <%
         switch(pref)
         {
             case FileContentEmailPref.FOLDER_DEFAULT:
             case FileContentEmailPref.INDIVIDUAL: %>
-            you are signed up to receive notifications about updates to files at <%=bean.getContainerPath()%>.
+            you are signed up to receive notifications about updates to files at <%=text(bean.getContainerPath())%>.
             If you no longer wish to receive these notifications you can change your email preferences by pasting this web address into
-            your browser: <%=bean.getUrlEmailPrefs().getURIString()%>. <%
+            your browser: <%=text(bean.getUrlEmailPrefs().getURIString())%>. <%
             break;
         } %>
