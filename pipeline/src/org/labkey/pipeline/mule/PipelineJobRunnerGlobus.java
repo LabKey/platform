@@ -245,11 +245,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 {
                     updateStatus(job, PipelineJob.TaskStatus.error);
                 }
-                catch (IOException e)
-                {
-                    _log.error("Failed to update status after failing to submit job", e);
-                }
-                catch (UMOException e)
+                catch (IOException | UMOException e)
                 {
                     _log.error("Failed to update status after failing to submit job", e);
                 }
@@ -261,7 +257,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
     public static List<String> checkGlobusConfiguration(GlobusKeyPair keyPair)
     {
         List<String> result = new ArrayList<>();
-        if (AppProps.getInstance().getBaseServerUrl().indexOf("//localhost") != -1)
+        if (AppProps.getInstance().getBaseServerUrl().contains("//localhost"))
         {
             result.add("You have not set your base server URL. Unless the Globus server is running on the same machine" +
                     " as LabKey Server, it will not be able to call back to give status updates. To fix this, go to " +

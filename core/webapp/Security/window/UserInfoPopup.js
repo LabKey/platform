@@ -200,7 +200,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                     if (canRemove)
                     {
                         var removeWrapper = '$remove$' + id + user.UserId;
-                        html += '<td><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>';
+                        html += '<td style="padding: 2px"><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>';
                         removeWrappers.push([removeWrapper, user.UserId]);
                     }
                     html += '<td>';

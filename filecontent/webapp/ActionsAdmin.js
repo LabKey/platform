@@ -63,6 +63,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         this.columnModel = {};      // the current file browser grid column model
         this.gridConfig = {};       // the saved grid column header configuration
+        this.inheritedTbarConfig = false;
 
         Ext.apply(this, config);
         Ext.util.Observable.prototype.constructor.call(this, config);
@@ -107,6 +108,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         this.fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
         this.expandFileUpload = config.expandFileUpload != undefined ? config.expandFileUpload : true;
         this.showFolderTree = config.showFolderTree;
+        this.inheritedTbarConfig = config.inheritedTbarConfig;
 
         if ('object' == typeof config.actions)
         {
@@ -242,6 +244,11 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
                 this.resetToolbarBtn.setVisible(true);
                 this.resetToolbarBtn.setHandler(tbarResetHandler);
+
+                // Do this here so that the panel gets laid out properly, and then we hide the elements
+                Ext.ComponentMgr.get('dragHelpHTML').setVisible(!this.inheritedTbarConfig);
+                Ext.ComponentMgr.get('allButtonsPanel').setVisible(!this.inheritedTbarConfig);
+                Ext.ComponentMgr.get('exampleFileGrid').setVisible(!this.inheritedTbarConfig);
             }
             else if (panel.getId() == 'actionTab') {
 
@@ -572,7 +579,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             //bodyStyle:'padding:30px',
             //tbar: this.toolbar,
             layoutConfig: {columns:5},
-            items: [actions]
+            items: [actions],
+            id: 'allButtonsPanel'
         });
 
         panel.on('render', function(v) {
@@ -643,8 +651,42 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             store: sampleStore,
             border:true,
             height: 150,
-            columns: this.columnModel
+            columns: this.columnModel,
+            id: 'exampleFileGrid'
         });
+
+        this.inheritPanel = new Ext.form.RadioGroup(
+        {
+            items: [{
+                    boxLabel: 'Inherit configuration from parent folder/project',
+                    // Workbooks always inherit from parent config, but pull the config directly so
+                    // be sure the UI reflects that
+                    checked: this.inheritedTbarConfig || LABKEY.Security.currentContainer.type == 'workbook',
+                    name: 'inheritedTbarConfig',
+                    value: 'true',
+                    disabled: LABKEY.Security.currentContainer.type == 'project'
+                },
+                {
+                    boxLabel: 'Define configuration for this folder/project',
+                    // Workbooks always inherit from parent config, but pull the config directly so
+                    // be sure the UI reflects that
+                    checked: !this.inheritedTbarConfig && !LABKEY.Security.currentContainer.type == 'workbook',
+                    name: 'inheritedTbarConfig',
+                    value: 'false',
+                    disabled: LABKEY.Security.currentContainer.type == 'workbook'
+                }
+            ],
+            listeners: {
+                change: { fn: function(field, checked) {
+                    this.inheritedTbarConfig = checked.value == 'true';
+                    // Show/hide the actual config based on whether it's being set in this container or being inherited
+                    Ext.ComponentMgr.get('dragHelpHTML').setVisible(!this.inheritedTbarConfig);
+                    Ext.ComponentMgr.get('allButtonsPanel').setVisible(!this.inheritedTbarConfig);
+                    Ext.ComponentMgr.get('exampleFileGrid').setVisible(!this.inheritedTbarConfig);
+                }, scope: this }
+            }
+        });
+
         if (this.gridConfig)
             this.grid.applyState(this.gridConfig);
 
@@ -658,11 +700,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             },
             items: [
-                {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span><br>Drag the buttons on the toolbar to customize the button order. ' +
+                {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span>', border: false, height: 20, autoScroll:true},
+                this.inheritPanel,
+                {html: 'Drag the buttons on the toolbar to customize the button order. ' +
                        'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
                        'by clicking on the toolbar button and selecting "remove" from the dropdown menu.<br><br>' +
                        'Grid columns can be customized by dragging to reorder, adjusting the width, and controlling the sort or show state using the drop down ' +
-                       'menus on each column.', border: false, height: 120, autoScroll:true},
+                       'menus on each column.', border: false, height: 110, autoScroll:true, id: "dragHelpHTML"},
                 panel,
                 this.grid
             ]
@@ -837,6 +881,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         // grid column model changes
         adminOptions.gridConfig = this.grid.getState();
+        adminOptions.inheritedTbarConfig = this.inheritedTbarConfig;
 
         // general settings
         adminOptions.expandFileUpload = this.expandFileUpload;
