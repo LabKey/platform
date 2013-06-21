@@ -964,9 +964,6 @@ public class ListManager implements SearchService.DocumentProvider
         if (!errors.isEmpty())
             return false;
 
-        if (importMaps.isEmpty())
-            return true;
-
         final Container container = unsavedList.getContainer();
         final String typeURI = unsavedList.getDomain().getTypeURI();
 

@@ -413,6 +413,8 @@ public class ListDefinitionImpl implements ListDefinition
         prop.setPropertyURI(_domain.getTypeURI() + "#" + getKeyName());
         prop.setName(getKeyName());
         prop.setType(PropertyService.get().getType(_domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
+
+        _domain.setPropertyIndex(prop, 0);
     }
 
     private void processSqlException(SQLException e) throws Exception

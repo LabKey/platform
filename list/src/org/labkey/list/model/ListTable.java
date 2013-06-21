@@ -86,7 +86,15 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             if (listDef.getKeyName().equalsIgnoreCase(name))
             {
                 colKey = wrapColumn(baseColumn);
-                colKey.setName(_list.getKeyName());
+
+                if (null != colKey.getPropertyURI())
+                {
+                    PropertyDescriptor key = OntologyManager.getPropertyDescriptor(colKey.getPropertyURI(), _list.getContainer());
+
+                    colKey.setName(key.getName());
+                    colKey.setLabel(key.getLabel());
+                }
+
                 colKey.setKeyField(true);
                 colKey.setNullable(false); // Must assure this as it can be set incorrectly via StorageProvisioner
                 colKey.setInputType("text");
@@ -228,11 +236,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
-        ColumnInfo entityId = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("EntityId")));
+        ColumnInfo entityId = wrapColumn(getRealTable().getColumn(FieldKey.fromParts("EntityId")));
+        entityId.setName("EntityId");
+        entityId.setLabel("Entity Id");
         entityId.setHidden(true);
         entityId.setUserEditable(false);
         entityId.setShownInInsertView(false);
         entityId.setShownInUpdateView(false);
+        addColumn(entityId);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);

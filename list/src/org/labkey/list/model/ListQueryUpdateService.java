@@ -23,10 +23,10 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -46,7 +46,6 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateService;
@@ -108,11 +107,33 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != listRow)
         {
-            SimpleFilter filter = getKeyFilter(listRow);
-            if (null != filter)
+            Map<String, Object> raw = new TableSelector(getQueryTable(), getKeyFilter(listRow), null).getMap();
+
+            if (raw.size() > 0)
             {
-                TableSelector selector = new TableSelector(getQueryTable(), filter, null);
-                ret = selector.getMap();
+                ret = new CaseInsensitiveHashMap<>();
+                String keyName = _list.getKeyName();
+
+                // Key
+                ret.put(keyName, raw.get(keyName));
+
+                // EntityId
+                ret.put("EntityId", raw.get("entityid"));
+
+                for (DomainProperty prop : _list.getDomain().getProperties())
+                {
+                    if (keyName.equalsIgnoreCase(prop.getName()))
+                        continue;
+                    Object value = raw.get(prop.getName());
+
+                    if (null == value)
+                    {
+                        value = raw.get("_" + prop.getName());
+                    }
+
+                    if (null != value)
+                        ret.put(prop.getName(), value);
+                }
             }
         }
 
@@ -233,7 +254,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             for (Map.Entry<String, DomainProperty> entry : dps.entrySet())
             {
                 Object value = row.get(entry.getValue().getName());
-                validateProperty(entry.getValue(), value, errors, validatorCache);
+                validateProperty(entry.getValue(), value, row, errors, validatorCache);
             }
 
             if (!errors.isEmpty())
@@ -261,7 +282,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+    private boolean validateProperty(DomainProperty prop, Object value, Map<String, Object> newRow, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         //check for isRequired
         if (prop.isRequired())
@@ -270,8 +291,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             boolean hasMvIndicator = prop.isMvEnabled() && (value instanceof ObjectProperty && ((ObjectProperty)value).getMvIndicator() != null);
             if (!hasMvIndicator && (null == value || (value instanceof ObjectProperty && ((ObjectProperty)value).value() == null)))
             {
-                errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
-                return false;
+                if (newRow.containsKey(prop.getName()) && newRow.get(prop.getName()) == null)
+                {
+                    errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
+                    return false;
+                }
             }
         }
 
