@@ -120,23 +120,27 @@ public class RunFilterStrategy implements FilterStrategy
     {
         init();
 
+        return null != findNextRunId();
+    }
+
+
+    private Integer findNextRunId()
+    {
         SimpleFilter f = new SimpleFilter();
         Integer lastRunId = getLastSuccessfulRunId();
         if (null != lastRunId)
             f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
 
-        Aggregate min = new Aggregate(_runPkCol, Aggregate.Type.MIN);
-
         TableSelector ts = new TableSelector(_runsTable, Collections.singleton(_runPkCol), f, null);
+        Aggregate min = new Aggregate(_runPkCol, Aggregate.Type.MIN);
         Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(min));
         List<Aggregate.Result> list = results.get(_runPkCol.getName());
         Aggregate.Result minResult = list.get(0);
         Integer nextRunId = null;
         if (null != minResult.getValue())
             nextRunId = ((Number)minResult.getValue()).intValue();
-        return (null != nextRunId);
+        return nextRunId;
     }
-
 
 
     @Override
@@ -144,7 +148,7 @@ public class RunFilterStrategy implements FilterStrategy
     {
         init();
 
-        Integer nextRunId = null;
+        Integer nextRunId;
         Object v = variables.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
 
         if (v instanceof Integer)
@@ -153,19 +157,7 @@ public class RunFilterStrategy implements FilterStrategy
         }
         else
         {
-            SimpleFilter f = new SimpleFilter();
-            Integer lastRunId = getLastSuccessfulRunId();
-            if (null != lastRunId)
-                f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
-
-            Aggregate min = new Aggregate(_runPkCol, Aggregate.Type.MIN);
-
-            TableSelector ts = new TableSelector(_sourceTable, Collections.singleton(_sourceFkCol), f, null);
-            Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(min));
-            List<Aggregate.Result> list = results.get(_sourceFkCol.getName());
-            Aggregate.Result minResult = list.get(0);
-            if (null != minResult.getValue())
-                nextRunId = ((Number)minResult.getValue()).intValue();
+            nextRunId = findNextRunId();
             variables.put(TransformProperty.IncrementalRunId.getPropertyDescriptor(), nextRunId, VariableMap.Scope.global);
         }
 
