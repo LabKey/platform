@@ -456,7 +456,7 @@ public class DbSchema
         // Do a simple select from every table in every module schema. This ends up invoking validation code
         // in Table that checks PKs and columns, further validating the schema XML file.
         @Test
-        public void testTableSelect() throws Exception
+        public void testTableSelect()
         {
             Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
@@ -464,14 +464,21 @@ public class DbSchema
             {
                 for (String tableName : schema.getTableNames())
                 {
-                    TableInfo table = schema.getTable(tableName);
+                    try
+                    {
+                        TableInfo table = schema.getTable(tableName);
 
-                    if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
-                        continue;
+                        if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
+                            continue;
 
-                    TableSelector selector = new TableSelector(table);
-                    selector.setMaxRows(10);
-                    selector.getMapCollection();
+                        TableSelector selector = new TableSelector(table);
+                        selector.setMaxRows(10);
+                        selector.getMapCollection();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException("Exception testing table " + schema.getName() + "." + tableName, e);
+                    }
                 }
             }
         }
