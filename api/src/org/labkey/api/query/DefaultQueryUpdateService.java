@@ -173,6 +173,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         Map<String, Object> row = new TableSelector(table).getObject(typedParameters, Map.class);
 
+
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
         if (objectUriCol != null && domain != null && domain.getProperties().length > 0)

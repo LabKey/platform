@@ -228,7 +228,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     @Override
-    public int mergeRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }

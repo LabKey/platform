@@ -59,11 +59,10 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int mergeRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(rows);
-        return _importRowsUsingETL(user, container, dib, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
     }
 
 

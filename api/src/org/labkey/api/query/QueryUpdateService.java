@@ -133,7 +133,7 @@ public interface QueryUpdateService
      * <code>getRows()</code> to refetch if that behavior is necessary.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public int mergeRows(User user, Container container, DataIterator rows,
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows,
                           BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
             throws SQLException;
 
