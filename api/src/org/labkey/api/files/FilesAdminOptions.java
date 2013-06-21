@@ -44,11 +44,13 @@ public class FilesAdminOptions
     private boolean _importDataEnabled = true;
     private Boolean _showFolderTree;
     private Boolean _expandFileUpload;
+    /** True if we should get our toolbar configuration (the actions available for files) from our parent container */
+    private boolean _inheritedTbarConfig = false;
     private Container _container;
     private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<>();
     private fileConfig _fileConfig = fileConfig.useDefault;
     private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<>();
-    private static Comparator TBAR_BTN_COMPARATOR = new TbarButtonComparator();
+    private static Comparator<FilesTbarBtnOption> TBAR_BTN_COMPARATOR = new TbarButtonComparator();
     private String _gridConfig;
 
     public enum fileConfig {
@@ -63,6 +65,7 @@ public class FilesAdminOptions
         importDataEnabled,
         tbarActions,
         inheritedFileConfig,
+        inheritedTbarConfig,
         gridConfig,
         expandFileUpload,
         showFolderTree,
@@ -86,7 +89,7 @@ public class FilesAdminOptions
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
 
             PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.parse(xml, options);
-            XmlBeansUtil.validateXmlDocument(doc);
+            XmlBeansUtil.validateXmlDocument(doc, "FilesAdminOptions for " + _container);
 
             PipelineOptionsDocument.PipelineOptions pipeOptions = doc.getPipelineOptions();
             if (pipeOptions != null)
@@ -100,6 +103,9 @@ public class FilesAdminOptions
 
                 if (pipeOptions.getFilePropertiesConfig() != null)
                     _fileConfig = fileConfig.valueOf(pipeOptions.getFilePropertiesConfig());
+
+                // Make sure workbooks always defer to their parent
+                _inheritedTbarConfig = pipeOptions.getInheritedTbarConfig() || getContainer().isWorkbook();
 
                 ActionOptions actionOptions = pipeOptions.getActionConfig();
                 if (actionOptions != null)
@@ -134,11 +140,7 @@ public class FilesAdminOptions
                 _gridConfig = pipeOptions.getGridConfig();
             }
         }
-        catch (XmlValidationException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (XmlException e)
+        catch (XmlValidationException | XmlException e)
         {
             throw new RuntimeException(e);
         }
@@ -172,6 +174,17 @@ public class FilesAdminOptions
     public void setExpandFileUpload(Boolean expandFileUpload)
     {
         _expandFileUpload = expandFileUpload;
+    }
+
+
+    public boolean isInheritedTbarConfig()
+    {
+        return _inheritedTbarConfig;
+    }
+
+    public void setInheritedTbarConfig(boolean inheritedTbarConfig)
+    {
+        _inheritedTbarConfig = inheritedTbarConfig;
     }
 
     public List<PipelineActionConfig> getPipelineConfig()
@@ -212,12 +225,23 @@ public class FilesAdminOptions
         _fileConfig = fileConfig;
     }
 
-    public List<FilesTbarBtnOption> getTbarConfig()
+    public List<FilesTbarBtnOption> getEffectiveTbarConfig()
     {
-        List<FilesTbarBtnOption> configs = new ArrayList(_tbarConfig.values());
-        Collections.sort(configs, TBAR_BTN_COMPARATOR);
+        Collection<FilesTbarBtnOption> configs;
+        // Workbooks always defer to their parent
+        if (!getContainer().isWorkbook() && (!_inheritedTbarConfig || getContainer().isProject() || getContainer().isRoot()))
+        {
+            configs = _tbarConfig.values();
+        }
+        else
+        {
+            // Recurse up to our parent, which may have its own settings or defer further up the chain
+            configs = ServiceRegistry.get().getService(FileContentService.class).getAdminOptions(_container.getParent()).getEffectiveTbarConfig();
+        }
 
-        return configs;
+        List<FilesTbarBtnOption> result = new ArrayList<>(configs);
+        Collections.sort(result, TBAR_BTN_COMPARATOR);
+        return result;
     }
 
     public void setTbarConfig(List<FilesTbarBtnOption> tbarConfig)
@@ -314,6 +338,8 @@ public class FilesAdminOptions
                 }
             }
 
+            pipelineOptions.setInheritedTbarConfig(_inheritedTbarConfig);
+
             if (!_tbarConfig.isEmpty())
             {
                 TbarBtnOptions tbarOptions = pipelineOptions.addNewTbarConfig();
@@ -332,7 +358,7 @@ public class FilesAdminOptions
             if (_gridConfig != null)
                 pipelineOptions.setGridConfig(_gridConfig);
 
-            XmlBeansUtil.validateXmlDocument(doc);
+            XmlBeansUtil.validateXmlDocument(doc, "FilesAdminOptions for " + _container);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
 
             return output.toString();
@@ -374,7 +400,10 @@ public class FilesAdminOptions
             setImportDataEnabled((Boolean)props.get(configProps.importDataEnabled.name()));
 
         if (props.containsKey(configProps.fileConfig.name()))
-            setFileConfig(fileConfig.valueOf((String)props.get(configProps.fileConfig.name())));
+            setFileConfig(fileConfig.valueOf((String) props.get(configProps.fileConfig.name())));
+
+        if (props.containsKey(configProps.inheritedTbarConfig.name()))
+            setInheritedTbarConfig((Boolean) props.get(configProps.inheritedTbarConfig.name()));
 
         if (props.containsKey(configProps.expandFileUpload.name()))
             setExpandFileUpload((Boolean)props.get(configProps.expandFileUpload.name()));
@@ -433,11 +462,14 @@ public class FilesAdminOptions
         if (_showFolderTree != null)
             props.put(configProps.showFolderTree.name(), _showFolderTree);
 
-        if (!_tbarConfig.isEmpty())
+        props.put(configProps.inheritedTbarConfig.name(), _inheritedTbarConfig);
+
+        List<FilesTbarBtnOption> effectiveTbarConfig = getEffectiveTbarConfig();
+        if (!effectiveTbarConfig.isEmpty())
         {
             JSONArray tbarOptions = new JSONArray();
 
-            for (FilesTbarBtnOption o : getTbarConfig())
+            for (FilesTbarBtnOption o : effectiveTbarConfig)
             {
                 tbarOptions.put(o.toJSON());
             }
