@@ -28,6 +28,9 @@
     SpecimenController.ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
     int archiveCount = bean.getArchives().size();
+    String replaceOrMerge = bean.isDefaultMerge() ? "merge" : "replace";
+    String mergeText = bean.isEditableSpecimens() ? "Insert new specimens. An error will result if any existing specimens are in the archive." : "Insert new specimens and update existing specimens.";
+    String replaceText = bean.isEditableSpecimens() ? "Replace all of the existing specimens. All edits will be lost." : "Replace all of the existing specimens.";
 %>
 <%= archiveCount %> specimen archive<%= text(archiveCount > 1 ? "s" : "") %> selected.<br><br>
 <%
@@ -93,11 +96,11 @@
             if (!bean.isNoSpecimens())
             {
         %>
-        <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="replace" />
-        <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
+        <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="<%=text(replaceOrMerge)%>" />
+        <label for="merge"><b>Replace</b>: <%=text(replaceText)%></label>
         <br>
-        <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="replace"/>
-        <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
+        <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="<%=text(replaceOrMerge)%>"/>
+        <label for="merge"><b>Merge</b>: <%=text(mergeText)%></label>
         <%
             }
             else

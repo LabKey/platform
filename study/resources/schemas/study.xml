@@ -832,15 +832,19 @@
     <ns:description>Contains one row per vial in the specimen tracking system.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
-        <ns:description>A unique ID of each vial.</ns:description>
-        <ns:datatype>int</ns:datatype>
+          <ns:description>A unique ID of each vial.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="SpecimenId">
           <ns:description>The ID of the specimen/collection/draw for each vial.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="Container">
           <ns:datatype>Varchar</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="GlobalUniqueId">
           <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
@@ -867,6 +871,8 @@
       <ns:column columnName="SpecimenHash">
           <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="ClassId">
           <ns:description>The class, network, or study associated with each specimen.</ns:description>
@@ -949,30 +955,37 @@
       <ns:column columnName="AtRepositoryCount">
           <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="AvailableCount">
           <ns:description>The number of vials from each specimen that are currently available for request.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="AvailableVolume">
           <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="ExpectedAvailableCount">
           <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="LockedInRequestCount">
           <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="TotalVolume">
           <ns:description>The total volume of all vials from each specimen.</ns:description>
           <ns:datatype>double</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="VialCount">
           <ns:description>The total number of vials from each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="Volume">
           <ns:description>The volume of each vial.</ns:description>
@@ -1012,6 +1025,7 @@
               <ns:fkTable>Site</ns:fkTable>
               <ns:fkDbSchema>study</ns:fkDbSchema>
           </ns:fk>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
@@ -1019,6 +1033,7 @@
       </ns:column>
       <ns:column columnName="AvailabilityReason">
           <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
+          <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
@@ -1451,6 +1466,9 @@
         <ns:description>Processing yield value.</ns:description>
       </ns:column>
       <ns:column columnName="InputHash"/>
+      <ns:column columnName="Obsolete">
+        <ns:description>Indicates the event precedes the last edit of the vial.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">

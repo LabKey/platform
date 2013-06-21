@@ -33,6 +33,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.reports.StudyCrosstabReport;
+import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -318,7 +319,15 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
         _requireSequenceNum = requireSequenceNum;
-        _enableRequests = SampleManager.getInstance().getRepositorySettings(schema.getContainer()).isEnableRequests();
+
+        RepositorySettings repositorySettings = SampleManager.getInstance().getRepositorySettings(schema.getContainer());
+        _enableRequests = repositorySettings.isEnableRequests();
+        boolean isEditable = repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
+        setShowUpdateColumn(isEditable);
+
+        setShowInsertNewButton(isEditable);
+        setShowDeleteButton(isEditable);
+        setShowImportDataButton(false);
 
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)
@@ -744,8 +753,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         if (_viewType.isForExport())
         {
-            DisplayColumn column0 = cols.get(0);
-            if (column0.getColumnInfo().getColumnName().equalsIgnoreCase("rowid"))
+            // Remove rowId column and update column, if present
+            DisplayColumn column = cols.get(0);
+            if (column.getName().equalsIgnoreCase("rowid") || column.getName().equalsIgnoreCase("update"))
+                cols.remove(0);
+            column = cols.get(0);
+            if (column.getName().equalsIgnoreCase("rowid") || column.getName().equalsIgnoreCase("update"))
                 cols.remove(0);
         }
 

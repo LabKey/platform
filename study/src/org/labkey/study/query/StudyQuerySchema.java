@@ -520,6 +520,11 @@ public class StudyQuerySchema extends UserSchema
     {
         if (getStudy() != null)
         {
+            if ("SpecimenDetail".equalsIgnoreCase(settings.getQueryName()))
+            {
+                return SpecimenQueryView.createView(context, SpecimenQueryView.ViewType.VIALS);
+            }
+
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             if (dsd != null)
             {

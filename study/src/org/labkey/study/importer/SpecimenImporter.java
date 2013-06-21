@@ -515,7 +515,7 @@ public class SpecimenImporter
     private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
     private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDataType();
     private static final String BINARY_TYPE = StudySchema.getInstance().getSqlDialect().isSqlServer() ? "IMAGE" : "BYTEA";  // TODO: Move into dialect!
-    private static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
+    protected static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
     private static final String LAB_ID_TSV_COL = "lab_id";
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
     private static final String EVENT_ID_COL = "record_id";
@@ -733,15 +733,19 @@ public class SpecimenImporter
         {
             DbScope scope = schema.getScope();
             if (!DEBUG)
-                scope.beginTransaction();
+                scope.ensureTransaction();
 
-            mergeTable(schema, container, sifMap.get(SpecimenTableType.Labs), true);
+            if (null != sifMap.get(SpecimenTableType.Labs))
+                mergeTable(schema, container, sifMap.get(SpecimenTableType.Labs), true);
 
             if (merge)
             {
-                mergeTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
-                mergeTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
-                mergeTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
+                if (null != sifMap.get(SpecimenTableType.Additives))
+                    mergeTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
+                if (null != sifMap.get(SpecimenTableType.Derivatives))
+                    mergeTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
+                if (null != sifMap.get(SpecimenTableType.PrimaryTypes))
+                    mergeTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
             }
             else
             {
@@ -974,12 +978,15 @@ public class SpecimenImporter
         }
 
         // find the global unique ID for those vials with conflicts:
+        TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent();
         SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ");
         conflictedGUIDs.append(StudySchema.getInstance().getTableInfoVial(), "vial");
         conflictedGUIDs.append(" WHERE RowId IN (\n");
         conflictedGUIDs.append("SELECT VialId FROM\n");
-        conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(StudySchema.getInstance().getTableInfoSpecimenEvent());
-        conflictedGUIDs.append("\nWHERE Container = ?\nGROUP BY\n").append(columnList).append(") ");
+        conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(specimenEventTable);
+        conflictedGUIDs.append("\nWHERE Container = ?");
+        conflictedGUIDs.append(" AND Obsolete = " + specimenEventTable.getSqlDialect().getBooleanFALSE());
+        conflictedGUIDs.append("\nGROUP BY\n").append(columnList).append(") ");
         conflictedGUIDs.append("AS DupCheckView\nGROUP BY VialId HAVING Count(VialId) > 1");
         conflictedGUIDs.add(container.getId());
         conflictedGUIDs.append("\n)");
@@ -1128,7 +1135,7 @@ public class SpecimenImporter
             List<List<?>> vialPropertiesParams = new ArrayList<>();
             List<List<?>> commentParams = new ArrayList<>();
 
-            Map<Specimen, List<SpecimenEvent>> specimenToOrderedEvents = SampleManager.getInstance().getDateOrderedEventLists(specimens);
+            Map<Specimen, List<SpecimenEvent>> specimenToOrderedEvents = SampleManager.getInstance().getDateOrderedEventLists(specimens, false);
             Map<Specimen, SpecimenComment> specimenComments = SampleManager.getInstance().getSpecimenComments(specimens);
 
             for (Map.Entry<Specimen, List<SpecimenEvent>> entry : specimenToOrderedEvents.entrySet())
@@ -2273,7 +2280,7 @@ public class SpecimenImporter
         return pair;
     }
 
-    private void remapTempTableLookupIndexes(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void remapTempTableLookupIndexes(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
         String sep = "";
@@ -2324,99 +2331,120 @@ public class SpecimenImporter
         }
     }
 
-    private void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
-        info("Checking for conflicting specimens before merging...");
-
-        // Columns used in the specimen hash
-        StringBuilder hashCols = new StringBuilder();
-        for (SpecimenColumn col : loadedColumns)
+        if (!StudyManager.getInstance().getStudy(container).getRepositorySettings().isSpecimenDataEditable())
         {
-            if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
+            info("Checking for conflicting specimens before merging...");
+
+            // Columns used in the specimen hash
+            StringBuilder hashCols = new StringBuilder();
+            for (SpecimenColumn col : loadedColumns)
             {
-                hashCols.append(",\n\t");
-                hashCols.append(col.getDbColumnName());
-            }
-        }
-        hashCols.append("\n");
-
-        SQLFragment existingEvents = new SQLFragment("SELECT Vial.Container, GlobalUniqueId");
-        existingEvents.append(hashCols);
-        existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial(), "Vial").append("\n");
-        existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen(), "Specimen").append("\n");
-        existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
-        existingEvents.append("WHERE Vial.Container=?\n").add(container.getId());
-        existingEvents.append("AND Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
-
-        SQLFragment tempTableEvents = new SQLFragment("SELECT Container, GlobalUniqueId");
-        tempTableEvents.append(hashCols);
-        tempTableEvents.append("FROM ").append(tempTable);
-
-        // "UNION ALL" the temp and the existing tables and group by columns used in the specimen hash
-        SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n");
-        allEventsByHashCols.append("(\n").append(existingEvents).append("\n)\n");
-        allEventsByHashCols.append("UNION ALL\n");
-        allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
-        allEventsByHashCols.append(") U\n");
-        allEventsByHashCols.append("GROUP BY Container, GlobalUniqueId");
-        allEventsByHashCols.append(hashCols);
-
-        Map<String, List<Map<String, Object>>> rowsByGUID = new HashMap<>();
-        Set<String> duplicateGUIDs = new TreeSet<>();
-
-        Map<String, Object>[] allEventsByHashColsResults = new SqlSelector(schema, allEventsByHashCols).getMapArray();
-
-        for (Map<String, Object> row : allEventsByHashColsResults)
-        {
-            String guid = (String)row.get("GlobalUniqueId");
-            if (guid != null)
-            {
-                if (rowsByGUID.containsKey(guid))
+                if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
                 {
-                    // Found a duplicate
-                    List<Map<String, Object>> dups = rowsByGUID.get(guid);
-                    dups.add(row);
-                    duplicateGUIDs.add(guid);
-                }
-                else
-                {
-                    rowsByGUID.put(guid, new ArrayList<>(Arrays.asList(row)));
+                    hashCols.append(",\n\t");
+                    hashCols.append(col.getDbColumnName());
                 }
             }
-        }
+            hashCols.append("\n");
 
-        if (duplicateGUIDs.size() == 0)
-        {
-            info("No conflicting specimens found");
-        }
-        else
-        {
-            StringBuilder sb = new StringBuilder();
-            for (String guid : duplicateGUIDs)
+            SQLFragment existingEvents = new SQLFragment("SELECT Vial.Container, GlobalUniqueId");
+            existingEvents.append(hashCols);
+            existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial(), "Vial").append("\n");
+            existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen(), "Specimen").append("\n");
+            existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
+            existingEvents.append("WHERE Vial.Container=?\n").add(container.getId());
+            existingEvents.append("AND Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
+
+            SQLFragment tempTableEvents = new SQLFragment("SELECT Container, GlobalUniqueId");
+            tempTableEvents.append(hashCols);
+            tempTableEvents.append("FROM ").append(tempTable);
+
+            // "UNION ALL" the temp and the existing tables and group by columns used in the specimen hash
+            SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n");
+            allEventsByHashCols.append("(\n").append(existingEvents).append("\n)\n");
+            allEventsByHashCols.append("UNION ALL\n");
+            allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
+            allEventsByHashCols.append(") U\n");
+            allEventsByHashCols.append("GROUP BY Container, GlobalUniqueId");
+            allEventsByHashCols.append(hashCols);
+
+            Map<String, List<Map<String, Object>>> rowsByGUID = new HashMap<>();
+            Set<String> duplicateGUIDs = new TreeSet<>();
+
+            Map<String, Object>[] allEventsByHashColsResults = new SqlSelector(schema, allEventsByHashCols).getMapArray();
+
+            for (Map<String, Object> row : allEventsByHashColsResults)
             {
-                List<Map<String, Object>> dups = rowsByGUID.get(guid);
-                if (dups != null && dups.size() > 0)
+                String guid = (String)row.get("GlobalUniqueId");
+                if (guid != null)
                 {
-                    if (sb.length() > 0)
-                        sb.append("\n");
-                    sb.append("Conflicting specimens found for GlobalUniqueId '").append(guid).append("':\n");
-
-                    for (Map<String, Object> row : dups)
+                    if (rowsByGUID.containsKey(guid))
                     {
-                        // CONSIDER: if we want to be really fancy, we could diff the columns to find the conflicting value.
-                        for (SpecimenColumn col : loadedColumns)
-                            if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
-                                sb.append("  ").append(col.getDbColumnName()).append("=").append(row.get(col.getDbColumnName())).append("\n");
-                        sb.append("\n");
+                        // Found a duplicate
+                        List<Map<String, Object>> dups = rowsByGUID.get(guid);
+                        dups.add(row);
+                        duplicateGUIDs.add(guid);
+                    }
+                    else
+                    {
+                        rowsByGUID.put(guid, new ArrayList<>(Arrays.asList(row)));
                     }
                 }
             }
 
-            _logger.error(sb);
+            if (duplicateGUIDs.size() == 0)
+            {
+                info("No conflicting specimens found");
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                for (String guid : duplicateGUIDs)
+                {
+                    List<Map<String, Object>> dups = rowsByGUID.get(guid);
+                    if (dups != null && dups.size() > 0)
+                    {
+                        if (sb.length() > 0)
+                            sb.append("\n");
+                        sb.append("Conflicting specimens found for GlobalUniqueId '").append(guid).append("':\n");
 
-            // If conflicts are found, stop the import.
-            throw new IllegalStateException(sb.toString());
+                        for (Map<String, Object> row : dups)
+                        {
+                            // CONSIDER: if we want to be really fancy, we could diff the columns to find the conflicting value.
+                            for (SpecimenColumn col : loadedColumns)
+                                if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
+                                    sb.append("  ").append(col.getDbColumnName()).append("=").append(row.get(col.getDbColumnName())).append("\n");
+                            sb.append("\n");
+                        }
+                    }
+                }
+
+                _logger.error(sb);
+
+                // If conflicts are found, stop the import.
+                throw new IllegalStateException(sb.toString());
+            }
+        }
+        else
+        {
+            // Check if any incoming vial is already present in the vial table; this is not allowed
+            info("Checking for conflicting specimens in editable repsoitory...");
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoVial() +
+                    " WHERE Container = ?");
+            sql.add(container);
+            sql.append(" AND GlobalUniqueId IN " + "(SELECT GlobalUniqueId FROM ");
+            sql.append(tempTable);
+            sql.append(" WHERE Container = ?)").add(container);
+            ArrayList<Integer> counts = new SqlSelector(schema, sql).getArrayList(Integer.class);
+            if (1 != counts.size())
+                throw new IllegalStateException("Expected one and only one count of rows.");
+            else if (0 != counts.get(0))
+                throw new IllegalStateException("With an editable specimen repository, importing may not reference any existing specimen. " +
+                        counts.get(0) + " imported specimen events refer to existing specimens.") ;
+            info("No conflicting specimens found");
         }
     }
 

@@ -1274,11 +1274,12 @@ public class StudyController extends BaseStudyController
         return study;
     }
 
-    public static void updateRepositorySettings(Container c, boolean simple)
+    private static void updateRepositorySettings(Container c, boolean simple)
     {
         RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
+        reposSettings.setSpecimenDataEditable(false);
         SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 

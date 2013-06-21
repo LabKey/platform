@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections15.comparators.ComparableComparator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -244,7 +245,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 
-    public List<SpecimenEvent> getSpecimenEvents(List<Specimen> samples)
+    public List<SpecimenEvent> getSpecimenEvents(List<Specimen> samples, boolean includeObsolete)
     {
         if (samples == null || samples.size() == 0)
             return Collections.emptyList();
@@ -259,7 +260,9 @@ public class SampleManager implements ContainerManager.ContainerListener
                 throw new IllegalArgumentException("All specimens must be from the same container");
         }
         SimpleFilter filter = new SimpleFilter();
-        filter.addInClause("VialId", vialIds);
+        filter.addInClause(FieldKey.fromString("VialId"), vialIds);
+        if (!includeObsolete)
+            filter.addCondition(FieldKey.fromString("Obsolete"), false);
         return _specimenEventHelper.get(container, filter);
     }
 
@@ -340,9 +343,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         return eventList;
     }
 
-    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> specimens)
+    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> specimens, boolean includeObsolete)
     {
-        List<SpecimenEvent> allEvents = getSpecimenEvents(specimens);
+        List<SpecimenEvent> allEvents = getSpecimenEvents(specimens, includeObsolete);
         Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
         for (SpecimenEvent event : allEvents)
         {
@@ -1813,6 +1816,20 @@ public class SampleManager implements ContainerManager.ContainerListener
         clearCaches(visit.getContainer());
     }
 
+    public void deleteSpecimen(@NotNull Specimen specimen) throws SQLException
+    {
+        SQLFragment sqlFragmentEvent = new SQLFragment("DELETE FROM " +
+            StudySchema.getInstance().getTableInfoSpecimenEvent() + " WHERE VialId = ?");
+        sqlFragmentEvent.add(specimen.getRowId());
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sqlFragmentEvent);
+
+        SQLFragment sqlFragment = new SQLFragment("DELETE FROM " +
+            StudySchema.getInstance().getTableInfoVial() + " WHERE RowId = ?");
+        sqlFragment.add(specimen.getRowId());
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sqlFragment);
+
+        clearCaches(specimen.getContainer());
+    }
 
     public void deleteAllSampleData(Container c, Set<TableInfo> set) throws SQLException
     {

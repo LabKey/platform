@@ -18,6 +18,7 @@ package org.labkey.study.security.roles;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.study.security.permissions.*;
 
 /*
@@ -43,7 +44,8 @@ public class SpecimenCoordinatorRole extends AbstractSpecimenRole
                 ManageStudyPermission.class,
                 RequestSpecimensPermission.class,
                 SetSpecimenCommentsPermission.class,
-                EditSharedViewPermission.class //spec-coord needs to be able to set global default view for specimens queries 
+                EditSharedViewPermission.class, //spec-coord needs to be able to set global default view for specimens queries
+                EditSpecimenDataPermission.class
                 );
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));

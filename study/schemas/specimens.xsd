@@ -97,7 +97,16 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="enableRequests" type="xs:boolean"/>
+        <xs:attribute name="enableRequests" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>True if specimens can be requested in this repository.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="editableRepository" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>True if specimens can be edited directly.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="locationTypeType">

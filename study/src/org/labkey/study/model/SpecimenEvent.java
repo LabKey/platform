@@ -88,6 +88,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private String _fr_position;
     private String _fr_level1;
     private String _fr_level2;
+    private boolean _obsolete;
 
     public String getComments()
     {
@@ -739,5 +740,15 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     public void setFr_level2(String fr_level2)
     {
         _fr_level2 = fr_level2;
+    }
+
+    public boolean isObsolete()
+    {
+        return _obsolete;
+    }
+
+    public void setObsolete(boolean obsolete)
+    {
+        _obsolete = obsolete;
     }
 }

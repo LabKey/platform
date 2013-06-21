@@ -226,7 +226,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 13.12;
+        return 13.13;
     }
 
     protected void init()
@@ -608,10 +608,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
-            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+            StudyImpl study = StudyManager.getInstance().getStudy(portalCtx.getContainer());
+            if (null == study)
                 return new HtmlView("Specimens", "This folder does not contain a study.");
-            return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY));
+            return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY), study);
         }
     }
 

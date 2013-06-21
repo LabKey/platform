@@ -106,7 +106,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         SpecimenRepositoryType.Enum repositoryType = xmlSettings.getRepositoryType();
         boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
         reposSettings.setSimple(simple);
-        reposSettings.setEnableRequests(!simple && xmlSettings.isSetEnableRequests() && xmlSettings.getEnableRequests());
+        if (xmlSettings.isSetEnableRequests())
+            reposSettings.setEnableRequests(xmlSettings.getEnableRequests());
+        if (xmlSettings.isSetEditableRepository())
+            reposSettings.setSpecimenDataEditable(xmlSettings.getEditableRepository());
         SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
 
         // location types

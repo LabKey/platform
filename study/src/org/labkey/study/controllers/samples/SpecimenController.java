@@ -61,6 +61,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -69,6 +70,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Location;
@@ -244,7 +246,7 @@ public class SpecimenController extends BaseStudyController
             if (null == StudyService.get().getStudy(getContainer()))
                 return new HtmlView("This folder does not contain a study.");
             SampleSearchWebPart sampleSearch = new SampleSearchWebPart(true);
-            SamplesWebPart sampleSummary = new SamplesWebPart(true);
+            SamplesWebPart sampleSummary = new SamplesWebPart(true, (StudyImpl)StudyService.get().getStudy(getContainer()));
             return new VBox(sampleSummary, sampleSearch);
         }
 
@@ -3864,6 +3866,11 @@ public class SpecimenController extends BaseStudyController
             {
                 bean.setNoSpecimens(true);
             }
+            else if (getStudyThrowIfNull().getRepositorySettings().isSpecimenDataEditable())
+            {
+                bean.setDefaultMerge(true);         // Repository is editable; make Merge the default
+                bean.setEditableSpecimens(true);
+            }
 
             return new JspView<>("/org/labkey/study/view/samples/importSpecimens.jsp", bean);
         }
@@ -3966,6 +3973,8 @@ public class SpecimenController extends BaseStudyController
         private Container _container;
         private String[] _files;
         private boolean noSpecimens = false;
+        private boolean _defaultMerge = false;
+        private boolean _isEditableSpecimens = false;
 
         public ImportSpecimensBean(Container container, List<SpecimenArchive> archives,
                                    String path, String[] files, List<String> errors)
@@ -4010,6 +4019,26 @@ public class SpecimenController extends BaseStudyController
         public void setNoSpecimens(boolean noSpecimens)
         {
             this.noSpecimens = noSpecimens;
+        }
+
+        public boolean isDefaultMerge()
+        {
+            return _defaultMerge;
+        }
+
+        public void setDefaultMerge(boolean defaultMerge)
+        {
+            _defaultMerge = defaultMerge;
+        }
+
+        public boolean isEditableSpecimens()
+        {
+            return _isEditableSpecimens;
+        }
+
+        public void setEditableSpecimens(boolean editableSpecimens)
+        {
+            _isEditableSpecimens = editableSpecimens;
         }
     }
 
@@ -4059,6 +4088,7 @@ public class SpecimenController extends BaseStudyController
             RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
             settings.setSimple(form.isSimple());
             settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
+            settings.setSpecimenDataEditable(!form.isSimple() && form.isSpecimenDataEditable());
             SampleManager.getInstance().saveRepositorySettings(getContainer(), settings);
 
             return HttpView.redirect(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
@@ -4074,6 +4104,7 @@ public class SpecimenController extends BaseStudyController
     {
         private boolean _simple;
         private boolean _enableRequests;
+        private boolean _specimenDataEditable;
 
         public boolean isSimple()
         {
@@ -4093,6 +4124,16 @@ public class SpecimenController extends BaseStudyController
         public void setEnableRequests(boolean enableRequests)
         {
             _enableRequests = enableRequests;
+        }
+
+        public boolean isSpecimenDataEditable()
+        {
+            return _specimenDataEditable;
+        }
+
+        public void setSpecimenDataEditable(boolean specimenDataEditable)
+        {
+            _specimenDataEditable = specimenDataEditable;
         }
     }
 

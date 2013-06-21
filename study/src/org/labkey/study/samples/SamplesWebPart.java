@@ -18,6 +18,7 @@ package org.labkey.study.samples;
 
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.model.StudyImpl;
 
 /**
  * User: Mark Igra
@@ -28,12 +29,13 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 {
     public SamplesWebPart()
     {
-        this(false);
+        this(false, null);
     }
 
-    public SamplesWebPart(boolean wide)
+    public SamplesWebPart(boolean wide, StudyImpl study)
     {
-        super("/org/labkey/study/view/samples/webPart.jsp", new SamplesWebPartBean(wide));
+        super("/org/labkey/study/view/samples/webPart.jsp", new SamplesWebPartBean(wide,
+                (null != study) ? study.getRepositorySettings().isSpecimenDataEditable() : false));
         getModelBean().setViewContext(getViewContext());
         setTitle("Specimens");
     }
@@ -42,10 +44,12 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
     {
         private boolean _wide;
         private ViewContext _viewContext;
+        private boolean _isEditableSpecimens;
 
-        public SamplesWebPartBean(boolean wide)
+        public SamplesWebPartBean(boolean wide, boolean isEditableSpecimens)
         {
             _wide = wide;
+            _isEditableSpecimens = isEditableSpecimens;
         }
 
         public void setViewContext(ViewContext viewContext)
@@ -56,6 +60,16 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
         public boolean isWide()
         {
             return _wide;
+        }
+
+        public boolean isEditableSpecimens()
+        {
+            return _isEditableSpecimens;
+        }
+
+        public void setEditableSpecimens(boolean editableSpecimens)
+        {
+            _isEditableSpecimens = editableSpecimens;
         }
     }
 }

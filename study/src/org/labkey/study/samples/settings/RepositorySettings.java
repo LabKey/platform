@@ -34,6 +34,7 @@ public class RepositorySettings
 {
     private static final String KEY_SIMPLE = "Simple";
     private static final String KEY_ENABLE_REQUESTS = "EnableRequests";
+    private static final String KEY_SPECIMENDATA_EDITABLE = "SpecimenDataEditable";
 
     // Columns to group by n the specimen web part: Group1: Group By 1, Then By 2, Then By 3. Same for Group2
     private static final String makeKeySpecWebPartGroup(Integer grouping, Integer groupBy)
@@ -43,6 +44,7 @@ public class RepositorySettings
 
     private boolean _simple;
     private boolean _enableRequests;
+    private boolean _specimenDataEditable;
     private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
     private Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
 
@@ -61,6 +63,8 @@ public class RepositorySettings
         _simple = null != simple && Boolean.parseBoolean(simple);
         String enableRequests = map.get(KEY_ENABLE_REQUESTS);
         _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
+        String specimenDataEditable = map.get(KEY_SPECIMENDATA_EDITABLE);
+        _specimenDataEditable = null == specimenDataEditable ? false : Boolean.parseBoolean(specimenDataEditable);
 
         String firstGrouping = map.get(makeKeySpecWebPartGroup(0,0));
         if (null != firstGrouping)
@@ -84,6 +88,7 @@ public class RepositorySettings
     {
         map.put(KEY_SIMPLE, Boolean.toString(_simple));
         map.put(KEY_ENABLE_REQUESTS, Boolean.toString(_enableRequests));
+        map.put(KEY_SPECIMENDATA_EDITABLE, Boolean.toString(_specimenDataEditable));
 
         for (int i = 0; i < 2; i += 1)      // Only 2 grouping supported
         {
@@ -188,12 +193,24 @@ public class RepositorySettings
         {
             settings.setSimple(false);
             settings.setEnableRequests(true);
+            settings.setSpecimenDataEditable(false);
         }
         else
         {
             settings.setSimple(true);
             settings.setEnableRequests(false);
+            settings.setSpecimenDataEditable(false);
         }
         return settings;
+    }
+
+    public boolean isSpecimenDataEditable()
+    {
+        return _specimenDataEditable;
+    }
+
+    public void setSpecimenDataEditable(boolean specimenDataEditable)
+    {
+        _specimenDataEditable = specimenDataEditable;
     }
 }

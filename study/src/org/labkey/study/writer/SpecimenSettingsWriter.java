@@ -62,8 +62,8 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
         RepositorySettings repositorySettings = study.getRepositorySettings();
         xmlSettings.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
-        if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
-            xmlSettings.setEnableRequests(repositorySettings.isEnableRequests());
+        xmlSettings.setEnableRequests(repositorySettings.isEnableRequests());
+        xmlSettings.setEditableRepository(repositorySettings.isSpecimenDataEditable());
 
         // specimen location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.addNewLocationTypes();

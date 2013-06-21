@@ -18,11 +18,14 @@
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
+import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -49,6 +52,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             }
         });
         pvColumn.setIsUnselectable(true);
+        pvColumn.setUserEditable(false);
         addColumn(pvColumn);
 
         addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType());
@@ -99,6 +103,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return new LocationTable(_userSchema);
             }
         });
+        siteLdmsCodeColumn.setUserEditable(false);
         addColumn(siteLdmsCodeColumn);
         addWrapColumn(_rootTable.getColumn("AtRepository"));
 
@@ -312,5 +317,20 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             else
                 super.renderGridCellContents(ctx, out);
         }
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return getContainer().hasPermission(user, perm) &&
+               getContainer().hasPermission(user, EditSpecimenDataPermission.class);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        if (_userSchema.getStudy().getRepositorySettings().isSpecimenDataEditable())
+            return new SpecimenUpdateService(this);
+        return null;
     }
 }
