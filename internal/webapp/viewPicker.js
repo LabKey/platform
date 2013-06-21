@@ -423,7 +423,8 @@ function getContainersAndPopulateFolders(rootFolderCombo, schemaCombo, queryComb
         customizePanel.getEl().mask('Loading Folders...', 'loading-indicator indicator-helper');
     var containersConfig =
     {
-        includeSubfolders:true,
+        includeSubfolders: true,
+        includeEffectivePermissions: false,
         success:function (details)
         {
             if (customizePanel)
