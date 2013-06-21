@@ -83,6 +83,7 @@ public class IssuesQueryView extends QueryView
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);
             listDetailsButton.setDisplayPermission(ReadPermission.class);
+            listDetailsButton.setNoFollow(true);
             bar.add(listDetailsButton);
 
             ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);

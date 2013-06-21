@@ -445,6 +445,9 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setDataRegionSelectionKey(listForm.getQuerySettings().getSelectionKey());
 
+            getPageConfig().setNoIndex(); // We want crawlers to index the single issue detail page, no the multiple page
+            getPageConfig().setNoFollow();
+
             return v;
         }
 
