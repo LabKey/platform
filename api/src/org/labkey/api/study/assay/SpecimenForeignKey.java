@@ -15,15 +15,34 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -180,9 +199,9 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public StringExpression getURL(ColumnInfo parent)
     {
-        // SpecimenForeignKeys never have details URLs, and it's very expensive to instantiate a TableInfo to check,
-        // so we override the behavior here:
-        return null;
+        FieldKey rowIdFieldKey = new FieldKey(parent.getFieldKey(), "RowId");
+        FieldKey containerFieldKey = new FieldKey(parent.getFieldKey(), "Container");
+        return DetailsURL.fromString("study-samples/sampleEvents.view?id=${" + rowIdFieldKey + "}", new ContainerContext.FieldKeyContext(containerFieldKey));
     }
 
     @Override
