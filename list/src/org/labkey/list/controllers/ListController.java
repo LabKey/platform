@@ -523,7 +523,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
-            int count = _list.insertListItems(getUser(), dl, errors, null, null);
+            int count = _list.insertListItems(getUser(), dl, errors, null, null, false);
             return count;
         }
 

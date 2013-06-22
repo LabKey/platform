@@ -187,13 +187,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /**
      * TODO: Make attachmentDirs work for other QueryUpdateServices. This is private to list for now.
      */
-    public int insertETL(DataLoader loader, User user, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress)
+    public int insertETL(DataLoader loader, User user, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey)
     {
-        // TODO: Figure out what to do with 'progress'
-
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
+        context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         setAttachmentDirectory(attachmentDir);
 
         DataIteratorBuilder dib = createImportETL(user, _list.getContainer(), loader, context);

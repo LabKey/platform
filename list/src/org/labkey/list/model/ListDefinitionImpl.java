@@ -548,15 +548,15 @@ public class ListDefinitionImpl implements ListDefinition
         MapLoader loader = new MapLoader(rows);
 
         // TODO: Find out the attachment directory?
-        return insertListItems(user, loader, ve, null, null);
+        return insertListItems(user, loader, ve, null, null, false);
     }
 
 
     @Override
-    public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException
     {
         ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
-        return lqus.insertETL(loader, user, errors, attachmentDir, progress);
+        return lqus.insertETL(loader, user, errors, attachmentDir, progress, supportAutoIncrementKey);
     }
 
 

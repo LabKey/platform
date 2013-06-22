@@ -24,16 +24,20 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
-import org.labkey.api.exp.DomainURIFactory;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
@@ -173,10 +177,76 @@ public class ListImporter
                     {
                         BatchValidationException batchErrors = new BatchValidationException();
                         DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null, TabLoader.TSV_FILE_TYPE);
-                        int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
+
+                        boolean supportAI = false;
+
+                        // Support for importing auto-incremented keys
+                        if (def.getKeyType().equals(KeyType.AutoIncrementInteger))
+                        {
+                            // Check that the key column is being provided, otherwise we'll genereate the ID's for them
+                            ColumnDescriptor[] columns = loader.getColumns();
+                            for (ColumnDescriptor cd : columns)
+                            {
+                                if (cd.getColumnName().equalsIgnoreCase(def.getKeyName()))
+                                {
+                                    supportAI = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // pre-process
+                        if (supportAI)
+                        {
+                            TableInfo ti = def.getTable(user);
+                            SqlDialect dialect = ti.getSqlDialect();
+
+                            if (dialect.isSqlServer())
+                            {
+                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" ON\n");
+                                new SqlExecutor(ti.getSchema()).execute(check);
+                            }
+                        }
+
+                        def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
                         for (ValidationException v : batchErrors.getRowErrors())
                             errors.add(v.getMessage());
-                        // TODO: Error the entire job on import error?
+
+                        if (supportAI)
+                        {
+                            TableInfo ti = def.getTable(user);
+                            SqlDialect dialect = ti.getSqlDialect();
+
+                            // If auto-increment based need to reset the sequence counter on the DB
+                            if (dialect.isPostgreSQL())
+                            {
+                                String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                                if (null != src)
+                                {
+                                    String sequence = "";
+
+                                    int start = src.indexOf('\'');
+                                    int end = src.lastIndexOf('\'');
+
+                                    if (end > start)
+                                    {
+                                        sequence = src.substring(start + 1, end);
+                                        if (!sequence.toLowerCase().startsWith("list."))
+                                            sequence = "list." + sequence;
+                                    }
+
+                                    SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                                    keyupdate.append(", coalesce((SELECT MAX(").append(def.getKeyName().toLowerCase()).append(")+1 FROM ").append(ti.getSelectName());
+                                    keyupdate.append("), 1), false);");
+                                    new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                }
+                            }
+                            else if (dialect.isSqlServer())
+                            {
+                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF");
+                                new SqlExecutor(ti.getSchema()).execute(check);
+                            }
+                        }
                     }
                 }
             }

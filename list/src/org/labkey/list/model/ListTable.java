@@ -190,9 +190,31 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         if (null != pd.getLookupQuery())
                             col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
 
-//                        if (pd.isMvEnabled() && null != entityId)
+//                        if (pd.isMvEnabled())
 //                        {
-//                            MVDisplayColumnFactory.addMvColumns(this, col, getDomain().getPropertyByURI(propertyURI), entityId, _list.getContainer(), _userSchema.getUser());
+//                            ColumnInfo mvColumn = new ColumnInfo(col.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
+//                            // MV indicators are strings
+//                            mvColumn.setSqlTypeName("VARCHAR");
+//                            mvColumn.setPropertyURI(col.getPropertyURI());
+//                            mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+//                            mvColumn.setNullable(true);
+//                            mvColumn.setUserEditable(false);
+//                            mvColumn.setHidden(true);
+//                            mvColumn.setMvIndicatorColumn(true);
+//
+//                            ColumnInfo rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
+//                            rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+//                            rawValueCol.setLabel(getName());
+//                            rawValueCol.setUserEditable(false);
+//                            rawValueCol.setHidden(true);
+//                            rawValueCol.setMvColumnName(null); // This version of the column does not show missing values
+//                            rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
+//                            rawValueCol.setRawValueColumn(true);
+//
+//                            addColumn(mvColumn);
+//                            addColumn(rawValueCol);
+//
+//                            col.setMvColumnName(mvColumn.getFieldKey());
 //                        }
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
@@ -417,7 +439,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
                 {
                     keyColumnInput = c;
-                    if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
+                    if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger && !context.supportsAutoIncrementKey())
                         continue;
                 }
 
