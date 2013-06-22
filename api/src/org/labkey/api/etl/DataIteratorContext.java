@@ -38,6 +38,9 @@ public class DataIteratorContext
     final BatchValidationException _errors;
     boolean _failFast = true;
     boolean _verbose = false;   // allow more than one error per field (across all rows)
+    boolean _supportAutoIncrementKey = false;  // when true, iterators will treat an auto-incremented key as a normal provided key
+                                               // making it the responsibility of the Context creator to manage auto-incrementing.
+
     int _maxRowErrors = 1;
 
     public DataIteratorContext()
@@ -105,6 +108,16 @@ public class DataIteratorContext
     public BatchValidationException getErrors()
     {
         return _errors;
+    }
+
+    public boolean supportsAutoIncrementKey()
+    {
+        return _supportAutoIncrementKey;
+    }
+
+    public void setSupportAutoIncrementKey(boolean supportAutoIncrementKey)
+    {
+        _supportAutoIncrementKey = supportAutoIncrementKey;
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */

@@ -78,10 +78,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             Integer index = map.get(col.getName());
 
-            if (null == index && null != col.getJdbcDefaultValue())
+            if (null == index && null != col.getJdbcDefaultValue() && !context.supportsAutoIncrementKey())
                 _skipColumnNames.add(col.getName());
 
-            if (col.isAutoIncrement())
+            if (col.isAutoIncrement() && !context.supportsAutoIncrementKey())
             {
                 indexAutoIncrement = index;
                 colAutoIncrement = col;
@@ -139,7 +139,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
                 stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
             else
-                stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false);
+                stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
 
             if (_useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex)
                 _stmts = new Parameter.ParameterMap[] {stmt, stmt.copy()};

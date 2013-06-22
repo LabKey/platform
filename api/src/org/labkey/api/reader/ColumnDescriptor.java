@@ -120,4 +120,9 @@ public class ColumnDescriptor
         mvIndicator = true;
         this.mvContainer = mvContainer;
     }
+
+    public String getColumnName()
+    {
+        return name;
+    }
 }

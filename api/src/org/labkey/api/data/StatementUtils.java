@@ -76,16 +76,16 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.insert);
+        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, false);
     }
 
 
     public static Parameter.ParameterMap insertStatement(
             Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames,
             @Nullable Container c, @Nullable User user, Map<String,Object> constants,
-            boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+            boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
     {
-        return new StatementUtils(table, constants).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.insert);
+        return new StatementUtils(table, constants).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.insert, supportsAutoIncrementKey);
     }
 
 
@@ -102,13 +102,13 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.update);
+        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.update, false);
     }
 
 
     public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.merge);
+        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
     }
 
 
@@ -274,7 +274,7 @@ public class StatementUtils
     }
 
 
-    private Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Set<String> skipColumnNames, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op) throws SQLException
+    private Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Set<String> skipColumnNames, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op, boolean supportsAutoIncrementKey) throws SQLException
     {
         if (!(t instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdatedableTableInfo");
@@ -484,7 +484,7 @@ public class StatementUtils
         {
             if (column instanceof WrappedColumn)
                 continue;
-            if (column.isAutoIncrement())
+            if (column.isAutoIncrement() && !supportsAutoIncrementKey)
             {
                 autoIncrementColumn = column;
                 continue;
@@ -907,11 +907,11 @@ public class StatementUtils
             Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.insertStatement(conn, issues, null, container, user, null, true, true);
+                m = StatementUtils.insertStatement(conn, issues, null, container, user, null, true, true, false);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.insertStatement(conn, test, null, container, user, null, true, true);
+                m = StatementUtils.insertStatement(conn, test, null, container, user, null, true, true, false);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
