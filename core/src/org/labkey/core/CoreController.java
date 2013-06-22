@@ -43,6 +43,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -1789,9 +1790,8 @@ public class CoreController extends SpringActionController
             ViewContext ctx = getViewContext();
             JSONObject formData = form.getJsonObject();
             JSONArray a = formData.getJSONArray("properties");
-            try
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                ExperimentService.get().ensureTransaction();
                 for (int i = 0 ; i < a.length(); i++)
                 {
                     JSONObject row = a.getJSONObject(i);
@@ -1820,17 +1820,12 @@ public class CoreController extends SpringActionController
 
                     mp.saveValue(ctx.getUser(), ct, row.getString("value"));
                 }
-                ExperimentService.get().commitTransaction();
+                transaction.commit();
             }
             catch (IllegalArgumentException e)
             {
                 errors.reject(e.getMessage());
             }
-            finally
-            {
-                ExperimentService.get().closeTransaction();
-            }
-
 
             JSONObject ret = new JSONObject();
             ret.put("success", errors.getErrorCount() == 0);

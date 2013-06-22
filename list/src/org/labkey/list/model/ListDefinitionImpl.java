@@ -357,10 +357,8 @@ public class ListDefinitionImpl implements ListDefinition
             assert getKeyType() != null : "Invalid Key Type for List: " + getName();
         }
 
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentService.get().ensureTransaction();
-
             if (ensureKey)
                 ensureKey();
 
@@ -382,7 +380,7 @@ public class ListDefinitionImpl implements ListDefinition
                 ListManager.get().addAuditEvent(this, user, String.format("The definition of the list %s was modified", _def.getName()));
             }
 
-            ExperimentService.get().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e) //issue 12162
         {
@@ -393,10 +391,6 @@ public class ListDefinitionImpl implements ListDefinition
         {
             processSqlException(e.getSQLException());
             throw e;
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
         }
 //        ListManager.get().indexList(_def);
     }

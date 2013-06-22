@@ -20,6 +20,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MVDisplayColumnFactory;
@@ -364,10 +365,8 @@ import java.util.Set;
         if (null == list || null == list.getDomain() || !list.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
             return;
 
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentService.get().ensureTransaction();
-
             SimpleFilter listItemFilter = new SimpleFilter(FieldKey.fromParts("ListId"), getRowId(list));
 
             // SKIP DOING ANYTHING WITH ANNOUNCEMENTS AND DISCUSSIONS AS THEY SHOULD ALREADY BE MIGRATED
@@ -398,11 +397,7 @@ import java.util.Set;
 //            Table.delete(ListManager.get().getListMetadataTable(), new Object[] {list.getContainer(), list.getListId()});
 //            list.getDomain().delete(user);
 
-            ExperimentService.get().commitTransaction();
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
+            transaction.commit();
         }
     }
 

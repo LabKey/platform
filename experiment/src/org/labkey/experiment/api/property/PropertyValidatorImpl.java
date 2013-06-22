@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -137,7 +138,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return PropertyService.get().getValidatorKind(getTypeURI());
     }
 
-    public IPropertyValidator save(User user, Container container) throws ValidationException, SQLException
+    public IPropertyValidator save(User user, Container container) throws ValidationException
     {
         ValidatorKind kind = getType();
         List<ValidationError> errors = new ArrayList<>();
@@ -147,14 +148,21 @@ public class PropertyValidatorImpl implements IPropertyValidator
             throw new ValidationException(errors);
         }
 
-        if (isNew())
+        try
         {
-            setContainer(container.getId());
-            return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
+            if (isNew())
+            {
+                setContainer(container.getId());
+                return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
+            }
+            else
+                return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
+                        getRowId()));
         }
-        else
-            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
-                    new Integer(getRowId())));
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void delete()
@@ -167,9 +175,16 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return _deleted;
     }
     
-    public void delete(User user) throws SQLException
+    public void delete(User user)
     {
-        Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()));
+        try
+        {
+            Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)

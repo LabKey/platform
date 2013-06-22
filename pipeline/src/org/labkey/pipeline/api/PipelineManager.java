@@ -25,6 +25,7 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -184,9 +185,7 @@ public class PipelineManager
             sql.append(" AND Container = ?");
             params.add(container.getId());
 
-            ExperimentService.get().ensureTransaction();
-
-            try
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
                 DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
                 Table.execute(PipelineSchema.getInstance().getSchema(), sql.toString(), params.toArray());
@@ -203,11 +202,7 @@ public class PipelineManager
 
                 ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 
-                ExperimentService.get().commitTransaction();
-            }
-            finally
-            {
-                ExperimentService.get().closeTransaction();
+                transaction.commit();
             }
         }
         catch (SQLException e)

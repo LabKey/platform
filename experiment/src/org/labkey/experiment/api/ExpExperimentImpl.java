@@ -31,7 +31,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.URLHelper;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -119,19 +118,12 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList() +
                 " WHERE ExperimentId = ? AND ExperimentRunId = ?", getRowId(), run.getRowId());
 
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentServiceImpl.get().ensureTransaction();
-
             new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
 
             ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
-
-            ExperimentServiceImpl.get().commitTransaction();
-        }
-        finally
-        {
-            ExperimentServiceImpl.get().closeTransaction();
+            transaction.commit();
         }
     }
 

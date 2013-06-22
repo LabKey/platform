@@ -16,9 +16,9 @@
 
 package org.labkey.experiment.api.property;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
@@ -42,7 +42,6 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -517,7 +516,7 @@ public class DomainPropertyImpl implements DomainProperty
         OntologyManager.deletePropertyDescriptor(_pd);
     }
 
-    public void save(User user, DomainDescriptor dd, int sortOrder) throws SQLException, ChangePropertyDescriptorException
+    public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
         if (isNew())
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
@@ -533,17 +532,19 @@ public class DomainPropertyImpl implements DomainProperty
                 boolean mvDropped = _pdOld.isMvEnabled() && !_pd.isMvEnabled();
                 boolean propRenamed = !_pdOld.getName().equals(_pd.getName());
 
+                if (propRenamed)
+                {
+                    Map<DomainProperty, PropertyDescriptor> renames = new HashMap<>();
+                    renames.put(this, _pdOld);
+                    StorageProvisioner.renameProperties(this.getDomain(), renames);
+                }
+
+                // Drop the MV column after it's been renamed to be in sync with any potential column name
+                // changes
                 if (mvDropped)
                     StorageProvisioner.dropMvIndicator(this);
                 else if (mvAdded)
                     StorageProvisioner.addMvIndicator(this);
-
-                if (propRenamed)
-                {
-                    Map<DomainProperty, String> renames = new HashMap<>();
-                    renames.put(this, _pdOld.getName());
-                    StorageProvisioner.renameProperties(this.getDomain(), renames);
-                }
             }
         }
         else

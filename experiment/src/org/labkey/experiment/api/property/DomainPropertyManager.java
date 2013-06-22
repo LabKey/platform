@@ -204,7 +204,7 @@ public class DomainPropertyManager
         }
     }
 
-    public void savePropertyValidator(User user, DomainProperty property, IPropertyValidator validator) throws SQLException, ChangePropertyDescriptorException
+    public void savePropertyValidator(User user, DomainProperty property, IPropertyValidator validator) throws ChangePropertyDescriptorException
     {
         if (property.getPropertyId() != 0)
         {

@@ -23,6 +23,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PkFilter;
@@ -185,10 +186,8 @@ public class CBCAssayController extends SpringActionController
 
             assert sampleIdPd != null;
 
-            try
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                ExperimentService.get().ensureTransaction();
-
                 int[] objectIds = form.getObjectId();
                 String[] sampleIds = form.getSampleId();
                 assert objectIds.length == sampleIds.length;
@@ -205,16 +204,12 @@ public class CBCAssayController extends SpringActionController
                     new SqlExecutor(DbSchema.get(resultDomain.getDomainKind().getStorageSchemaName())).execute(sql);
                 }
 
-                ExperimentService.get().commitTransaction();
+                transaction.commit();
             }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, "An exception occurred: " + e);
                 return false;
-            }
-            finally
-            {
-                ExperimentService.get().closeTransaction();
             }
 
             return true;
@@ -366,10 +361,8 @@ public class CBCAssayController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            try
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                ExperimentService.get().ensureTransaction();
-
                 List<FieldKey> visibleColumns = new ArrayList<>(quf.getTable().getDefaultVisibleColumns());
                 visibleColumns.add(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
                 Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(quf.getTable(), visibleColumns);
@@ -432,16 +425,12 @@ public class CBCAssayController extends SpringActionController
                 QueryUpdateService updateService = quf.getTable().getUpdateService();
                 updateService.updateRows(getUser(), getContainer(), Collections.singletonList(newValues), Collections.singletonList(oldValues), null);
 
-                ExperimentService.get().commitTransaction();
+                transaction.commit();
             }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, "An exception occurred: " + e);
                 return false;
-            }
-            finally
-            {
-                ExperimentService.get().closeTransaction();
             }
 
             return true;

@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -92,16 +93,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         ExpExperiment batch;
 
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentService.get().ensureTransaction();
             batch = handleBatch(batchJsonObject, protocol, provider);
 
-            ExperimentService.get().commitTransaction();
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
+            transaction.commit();
         }
 
         return serializeResult(provider, protocol, batch, getViewContext().getUser());

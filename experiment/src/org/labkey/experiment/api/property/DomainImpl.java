@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.RuntimeSQLException;
@@ -50,11 +51,14 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +66,7 @@ public class DomainImpl implements Domain
 {
     static final private Logger _log = Logger.getLogger(DomainImpl.class);
     boolean _new;
-    boolean _enforceStorageProperties;
+    boolean _enforceStorageProperties = true;
     DomainDescriptor _ddOld;
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
@@ -71,7 +75,6 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
-        _enforceStorageProperties = true;
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
         _properties = new ArrayList<>(pds.length);
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
@@ -92,7 +95,6 @@ public class DomainImpl implements Domain
     public DomainImpl(Container container, String uri, String name)
     {
         _new = true;
-        _enforceStorageProperties = true;
         _dd = new DomainDescriptor();
         _dd.setContainer(container);
         _dd.setProject(container.getProject());
@@ -239,28 +241,36 @@ public class DomainImpl implements Domain
     // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
     public void save(User user) throws ChangePropertyDescriptorException
     {
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentService.get().ensureTransaction();
-
             List<DomainProperty> newlyRequiredProps = new ArrayList<>();
-            if (isNew())
+            try
             {
-                _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-// CONSIDER put back if we want automatic provisioning for serveral DomainKinds
-//                StorageProvisioner.create(this);
-                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
+                if (isNew())
+                {
+                    _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+                    // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
+                    // StorageProvisioner.create(this);
+                    addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
+                }
+                else if (_ddOld != null)
+                {
+                    _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
+                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
+                }
             }
-            else if (_ddOld != null)
+            catch (SQLException e)
             {
-                _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
-                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
+                throw new RuntimeSQLException(e);
             }
             boolean propChanged = false;
             int sortOrder = 0;
 
             List<DomainProperty> propsDropped = new ArrayList<>();
             List<DomainProperty> propsAdded = new ArrayList<>();
+
+            DomainKind kind = getDomainKind();
+            boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
@@ -272,6 +282,17 @@ public class DomainImpl implements Domain
                     propChanged = true;
                 }
             }
+
+            if (hasProvisioner && _enforceStorageProperties)
+            {
+                if (!propsDropped.isEmpty())
+                {
+                    StorageProvisioner.dropProperties(this, propsDropped);
+                }
+            }
+
+            // Keep track of the intended final name for each updated property, and its sort order
+            Map<DomainPropertyImpl, Pair<String, Integer>> finalNames = new HashMap<>();
 
             // Now add and update #8978
             for (DomainPropertyImpl impl : _properties)
@@ -299,23 +320,30 @@ public class DomainImpl implements Domain
 
                         if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                             newlyRequiredProps.add(impl);
+                        finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
+                        // Same any changes with a temp, guaranteed unique name. This is important in case a single save
+                        // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
+                        impl.setName(new GUID().toStringNoDashes());
                         impl.save(user, _dd, sortOrder++);
                     }
                 }
             }
 
+            // Then rename them all to their final name
+            for (Map.Entry<DomainPropertyImpl, Pair<String, Integer>> entry : finalNames.entrySet())
+            {
+                DomainPropertyImpl domainProperty = entry.getKey();
+                String name = entry.getValue().getKey();
+                int order = entry.getValue().getValue().intValue();
+                domainProperty.setName(name);
+                domainProperty.save(user, _dd, order);
+            }
+
             _new = false;
 
-            DomainKind kind = getDomainKind();
-            boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
-
+            // Do the call to add the new properties last, after deletes and renames of existing properties
             if (propChanged && hasProvisioner && _enforceStorageProperties)
             {
-                if (!propsDropped.isEmpty())
-                {
-                    StorageProvisioner.dropProperties(this, propsDropped);
-                }
-
                 if (!propsAdded.isEmpty())
                 {
                     StorageProvisioner.addProperties(this, propsAdded);
@@ -336,15 +364,7 @@ public class DomainImpl implements Domain
                 }
             }
 
-            ExperimentService.get().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
+            transaction.commit();
         }
     }
 

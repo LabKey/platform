@@ -35,6 +35,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -839,9 +840,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void ensureTransaction()
+    public DbScope.Transaction ensureTransaction()
     {
-        getExpSchema().getScope().ensureTransaction();
+        return getExpSchema().getScope().ensureTransaction();
     }
 
     public void commitTransaction()
@@ -1415,11 +1416,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 commitTransaction();
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+         }
+           catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         finally
         {
             closeTransaction();
@@ -1511,10 +1512,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
 
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ensureTransaction();
-
             for (Protocol protocol : protocols)
             {
                 ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
@@ -1585,11 +1584,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             });
 
-            commitTransaction();
-        }
-        finally
-        {
-            closeTransaction();
+            transaction.commit();
         }
     }
 
@@ -2380,9 +2375,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Protocol saveProtocol(User user, Protocol protocol)
     {
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ensureTransaction();
             Protocol result;
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
@@ -2419,16 +2413,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             });
 
-            commitTransaction();
+            transaction.commit();
             return result;
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            closeTransaction();
         }
     }
 
@@ -2982,19 +2972,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             source.setParentCol(parentUri);
 
         ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ensureTransaction();
-
             domain.save(u);
             ss.save(u);
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
-            commitTransaction();
-        }
-        finally
-        {
-            closeTransaction();
+            transaction.commit();
         }
 
         return ss;

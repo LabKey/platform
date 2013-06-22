@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
@@ -180,7 +181,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             public TableInfo getLookupTableInfo()
             {
                 LocationTable result = new LocationTable(_userSchema);
-                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }
         });
@@ -211,7 +212,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     result = new AdditiveTypeTable(_userSchema);
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
-                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }
         };
@@ -250,7 +251,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             public TableInfo getLookupTableInfo()
             {
                 VisitTable visitTable = new VisitTable(_userSchema);
-                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return visitTable;
             }
         };
@@ -357,7 +358,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             public TableInfo getLookupTableInfo()
             {
                 SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, joinBackToSpecimens);
-                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }
         };
