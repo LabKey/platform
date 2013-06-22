@@ -43,6 +43,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -84,7 +85,7 @@ public class StorageProvisioner
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
 
-    private static String _create(DbScope scope, DomainKind kind, Domain domain) throws SQLException
+    private static String _create(DbScope scope, DomainKind kind, Domain domain)
     {
         assert create.start();
 
@@ -148,6 +149,10 @@ public class StorageProvisioner
 
             return tableName;
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             assert create.stop();
@@ -192,15 +197,16 @@ public class StorageProvisioner
             kind.invalidate(domain);
             transaction.commit();
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             log.warn(String.format("Failed to drop table in schema %s for domain %s - %s",
                     schemaName, domain.getName(), e.getMessage()), e);
+            throw e;
         }
     }
 
 
-    public static void addProperties(Domain domain, Collection<DomainProperty> properties) throws SQLException
+    public static void addProperties(Domain domain, Collection<DomainProperty> properties)
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -252,13 +258,17 @@ public class StorageProvisioner
             execute(scope, con, change);
             kind.invalidate(domain);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             scope.releaseConnection(con);
         }
     }
 
-    public static void dropMvIndicator(DomainProperty... props) throws SQLException
+    public static void dropMvIndicator(DomainProperty... props)
     {
         assert (props.length > 0);
         Domain domain = props[0].getDomain();
@@ -284,13 +294,17 @@ public class StorageProvisioner
             execute(scope, con, change);
             kind.invalidate(domain);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             scope.releaseConnection(con);
         }
     }
 
-    public static void addMvIndicator(DomainProperty... props) throws SQLException
+    public static void addMvIndicator(DomainProperty... props)
     {
         assert (props.length > 0);
         Domain domain = props[0].getDomain();
@@ -318,6 +332,10 @@ public class StorageProvisioner
             execute(scope, con, change);
             kind.invalidate(domain);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             scope.releaseConnection(con);
@@ -325,7 +343,7 @@ public class StorageProvisioner
     }
 
 
-    public static void dropProperties(Domain domain, Collection<DomainProperty> properties) throws SQLException
+    public static void dropProperties(Domain domain, Collection<DomainProperty> properties)
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -359,6 +377,10 @@ public class StorageProvisioner
             execute(scope, con, change);
             kind.invalidate(domain);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             scope.releaseConnection(con);
@@ -366,9 +388,9 @@ public class StorageProvisioner
     }
 
     /**
-     * @param propsRenamed map where keys are the current properties including the new names, values are the old column names.
+     * @param propsRenamed map where keys are the current properties including the new names, values are the old PropertyDescriptors
      */
-    public static void renameProperties(Domain domain, Map<DomainProperty, String> propsRenamed) throws SQLException
+    public static void renameProperties(Domain domain, Map<DomainProperty, PropertyDescriptor> propsRenamed)
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -387,10 +409,10 @@ public class StorageProvisioner
             for (PropertyStorageSpec s : kind.getBaseProperties())
                 base.add(s.getName());
 
-            for (Map.Entry<DomainProperty, String> rename : propsRenamed.entrySet())
+            for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
             {
                 PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
-                String oldPropName = rename.getValue();
+                String oldPropName = rename.getValue().getName();
                 renamePropChange.addColumnRename(oldPropName, prop.getName());
 
                 if (base.contains(oldPropName))
@@ -402,15 +424,20 @@ public class StorageProvisioner
                     throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
                 }
 
-                if (prop.isMvEnabled())
+                // Rename the MV column if it already exists. We'll handle removing it later if the new version
+                // of the column doesn't have MV enabled
+                if (rename.getValue().isMvEnabled())
                 {
                     renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName());
                 }
-
             }
 
             execute(scope, con, renamePropChange);
             kind.invalidate(domain);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -448,23 +475,16 @@ public class StorageProvisioner
         if (null == scope || null == schemaName)
             throw new IllegalArgumentException();
 
-        try
-        {
-            String tableName = domain.getStorageTableName();
+        String tableName = domain.getStorageTableName();
 
-            if (null == tableName)
-                tableName = _create(scope, kind, domain);
+        if (null == tableName)
+            tableName = _create(scope, kind, domain);
 
-            SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
-            ti.setMetaDataSchemaName(schemaName);
-            fixupProvisionedDomain(ti, domain, tableName);
+        SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
+        ti.setMetaDataSchemaName(schemaName);
+        fixupProvisionedDomain(ti, domain, tableName);
 
-            return ti;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return ti;
     }
 
     public static void fixupProvisionedDomain(SchemaTableInfo ti, Domain domain, String tableName)
@@ -602,7 +622,7 @@ public class StorageProvisioner
         }
     }
 
-    private static void execute(DbScope scope, Connection conn, TableChange change) throws SQLException
+    private static void execute(DbScope scope, Connection conn, TableChange change)
     {
         try
         {
@@ -620,7 +640,7 @@ public class StorageProvisioner
             if (null != sql)
                 log.error(sql);
 
-            throw e;
+            throw new RuntimeSQLException(e);
         }
     }
 

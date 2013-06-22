@@ -23,6 +23,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -262,9 +263,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException, ValidationException
     {
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            ExperimentService.get().ensureTransaction();
             Container container = data.getContainer();
             ParticipantVisitResolver resolver = createResolver(user, run, protocol, provider, container);
 
@@ -294,7 +294,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 AbstractAssayProvider.addInputMaterials(run, user, inputMaterials);
             }
 
-            ExperimentService.get().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
@@ -303,10 +303,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         catch (IOException e)
         {
             throw new ExperimentException(e);
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
         }
     }
 

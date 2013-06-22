@@ -218,7 +218,6 @@ public class GUID implements Serializable
         return guid;
     }
 
-
     public static final String guidRegEx = "\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}";
     public static final Pattern guidPattern = Pattern.compile(guidRegEx);
 
@@ -295,6 +294,11 @@ public class GUID implements Serializable
     public int hashCode()
     {
         return _str.hashCode();
+    }
+
+    public String toStringNoDashes()
+    {
+        return _str.replace("-", "");
     }
 }
 

@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.actions.BulkPropertiesUploadForm;
 import org.labkey.api.exp.property.Domain;
@@ -93,8 +94,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                 List<Map<String, File>> allFiles =
                         new ArrayList<>(collector.getFileQueue(form));
                 boolean success = false;
-                ExperimentService.get().ensureTransaction();
-                try
+                try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
                 {
                     AssayDataCollector.AdditionalUploadType additionalStatus;
                     do
@@ -105,6 +105,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                         validatePostedProperties(form.getRunProperties(), errors);
                         if (errors.getErrorCount() > 0)
                         {
+                            transaction.commit();
                             return Collections.emptyList();
                         }
                         runs.add(handler.saveExperimentRun(form));
@@ -112,7 +113,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                     }
                     while (additionalStatus == AssayDataCollector.AdditionalUploadType.AlreadyUploaded);
                     success = true;
-                    ExperimentService.get().commitTransaction();
+                    transaction.commit();
                     return runs;
                 }
                 finally
@@ -122,7 +123,6 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                         // Something went wrong, restore the full list of files
                         PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), getContainer(), form.getProtocol(), allFiles);
                     }
-                    ExperimentService.get().closeTransaction();
                 }
             }
             catch (ExperimentException e)

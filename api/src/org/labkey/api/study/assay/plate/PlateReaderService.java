@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay.plate;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -78,10 +79,8 @@ public class PlateReaderService
         ListDefinition readerList = getPlateReaderList(provider, c);
         if (readerList == null)
         {
-            try
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                ExperimentService.get().ensureTransaction();
-
                 Container lookupContainer = c.getProject();
                 readerList = ListService.get().createList(lookupContainer, provider.getPlateReaderListName(), ListDefinition.KeyType.Varchar);
 
@@ -95,15 +94,11 @@ public class PlateReaderService
 
                 readerList.save(user);
 
-                ExperimentService.get().commitTransaction();
+                transaction.commit();
             }
             catch (Exception e)
             {
                 throw new RuntimeException(e);
-            }
-            finally
-            {
-                ExperimentService.get().closeTransaction();
             }
         }
         return readerList;

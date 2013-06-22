@@ -165,7 +165,7 @@ public class ExperimentService
 
         DataType getDataType(String namespacePrefix);
 
-        void ensureTransaction();
+        DbScope.Transaction ensureTransaction();
         void commitTransaction();
         void closeTransaction();
 

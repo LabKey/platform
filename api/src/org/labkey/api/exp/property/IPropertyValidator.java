@@ -50,7 +50,7 @@ public interface IPropertyValidator
     void setErrorMessage(String message);
     void setProperty(String key, String value);
 
-    IPropertyValidator save(User user, Container container) throws ValidationException, SQLException;
+    IPropertyValidator save(User user, Container container) throws ValidationException;
     void delete(User user) throws SQLException;
 
     boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);

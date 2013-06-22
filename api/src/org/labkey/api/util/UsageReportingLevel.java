@@ -19,15 +19,16 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * User: jeckels
@@ -149,11 +150,7 @@ public enum UsageReportingLevel
                     _upgradeMessage = message;
                 }
             }
-            catch (MalformedURLException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (URISyntaxException e)
+            catch (MalformedURLException | URISyntaxException e)
             {
                 throw new RuntimeException(e);
             }

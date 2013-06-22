@@ -1311,7 +1311,7 @@ public class OntologyManager
     }
 
 
-    private static PropertyDescriptor ensurePropertyDescriptor(PropertyDescriptor pdIn) throws SQLException
+    private static PropertyDescriptor ensurePropertyDescriptor(PropertyDescriptor pdIn)
     {
          if (null == pdIn.getContainer())
          {
@@ -1322,9 +1322,16 @@ public class OntologyManager
         PropertyDescriptor pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
         if (null == pd)
         {
-            assert pdIn.getPropertyId() == 0;
-            pd = Table.insert(null, getTinfoPropertyDescriptor(), pdIn);
-            propDescCache.put(getCacheKey(pd), pd);
+            try
+            {
+                assert pdIn.getPropertyId() == 0;
+                pd = Table.insert(null, getTinfoPropertyDescriptor(), pdIn);
+                propDescCache.put(getCacheKey(pd), pd);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
         else if (pd.equals(pdIn))
         {
@@ -1382,7 +1389,7 @@ public class OntologyManager
 	}
 
 
-    private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd) throws SQLException
+    private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd)
     {
         List<String> colDiffs = new ArrayList<>();
 
@@ -1449,7 +1456,7 @@ public class OntologyManager
     }
 
     @NotNull
-    private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn) throws SQLException
+    private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
      {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
         if (null == dd)
@@ -1465,7 +1472,7 @@ public class OntologyManager
                 // might be an optimistic concurrency problem see 16126
                 dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
                 if (null == dd)
-                    throw x;
+                    throw new RuntimeSQLException(x);
             }
         }
 
@@ -1517,7 +1524,7 @@ public class OntologyManager
         return dd;
     }
 
-    private static List<String>  compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd) throws SQLException
+    private static List<String>  compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd)
     {
         List<String> colDiffs = new ArrayList<>();
         String val;
@@ -1537,7 +1544,7 @@ public class OntologyManager
         ensurePropertyDomain(pd, dd, 0);
     }
 
-    public static PropertyDescriptor ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder) throws SQLException
+    public static PropertyDescriptor ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
     {
         if (null == pd)
             throw new IllegalArgumentException("Must supply a PropertyDescriptor");
@@ -1545,7 +1552,7 @@ public class OntologyManager
             throw new IllegalArgumentException("Must supply a DomainDescriptor");
         if (!pd.getContainer().equals(dd.getContainer())
                     &&  !pd.getProject().equals(_sharedContainer))
-            throw new SQLException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
+            throw new IllegalStateException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
 
         SQLFragment sqlInsert = new SQLFragment("INSERT INTO " + getTinfoPropertyDomain() + " ( PropertyId, DomainId, Required, SortOrder ) " +
                     " SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() +
@@ -2050,12 +2057,11 @@ public class OntologyManager
 	}
 
 	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
-            throws SQLException, ChangePropertyDescriptorException
+            throws ChangePropertyDescriptorException
     {
         validatePropertyDescriptor(pd);
         DbScope scope = getExpSchema().getScope();
-        scope.ensureTransaction();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             DomainDescriptor dexist = ensureDomainDescriptor(dd);
 
@@ -2064,7 +2070,7 @@ public class OntologyManager
             {
                 // domain is defined in a different container.
                 //ToDO  define property in the domains container?  what security?
-                throw new SQLException("Attempt to define property for a domain definition that exists in a different folder\n" +
+                throw new ChangePropertyDescriptorException("Attempt to define property for a domain definition that exists in a different folder\n" +
                                         "domain folder = " + dexist.getContainer().getPath() + "\n" +
                                         "property folder = " + pd.getContainer().getPath());
             }
@@ -2074,16 +2080,8 @@ public class OntologyManager
 
             ensurePropertyDomain(pexist, dexist, sortOrder);
 
-            scope.commitTransaction();
+            transaction.commit();
             return pexist;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -2189,24 +2187,38 @@ public class OntologyManager
 
 
     //todo:  we automatically update a pd to the last  one in?
-	public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd) throws SQLException
+	public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)
 	{
-		assert pd.getPropertyId() != 0;
-		pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
-		propDescCache.put(getCacheKey(pd), pd);
-        // It's possible that the propertyURI has changed, thus breaking our reference
-        domainPropertiesCache.clear();
-		return pd;
+        try
+        {
+            assert pd.getPropertyId() != 0;
+            pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+            propDescCache.put(getCacheKey(pd), pd);
+            // It's possible that the propertyURI has changed, thus breaking our reference
+            domainPropertiesCache.clear();
+            return pd;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 	}
 
 
-    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd) throws SQLException
+    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
     {
-        assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescCache.remove(getCacheKey(dd));
-        domainPropertiesCache.remove(getCacheKey(dd));
-        return dd;
+        try
+        {
+            assert dd.getDomainId() != 0;
+            dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
+            domainDescCache.remove(getCacheKey(dd));
+            domainPropertiesCache.remove(getCacheKey(dd));
+            return dd;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 	public static void clearCaches()
