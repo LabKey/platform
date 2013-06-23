@@ -105,7 +105,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                         validatePostedProperties(form.getRunProperties(), errors);
                         if (errors.getErrorCount() > 0)
                         {
-                            transaction.commit();
+                            // Intentionally don't commit - we hit some errors
                             return Collections.emptyList();
                         }
                         runs.add(handler.saveExperimentRun(form));
