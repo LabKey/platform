@@ -46,6 +46,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateService;
@@ -260,7 +261,20 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 throw new ValidationException(errors);
         }
 
-        Map<String, Object> result = super.updateRow(user, container, row, oldRow);
+        // MVIndicators
+        Map<String, Object> rowCopy = new CaseInsensitiveHashMap<>();
+
+        TableInfo qt = getQueryTable();
+        for (Map.Entry<String, Object> r : row.entrySet())
+        {
+            ColumnInfo mvColumn = qt.getColumn(FieldKey.fromParts(r.getKey()));
+            if (null != mvColumn && mvColumn.isMvIndicatorColumn())
+                rowCopy.put(mvColumn.getMetaDataName(), r.getValue());
+            else
+                rowCopy.put(r.getKey(), r.getValue());
+        }
+
+        Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow);
 
         if (null != result)
         {

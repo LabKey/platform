@@ -35,9 +35,11 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
@@ -190,32 +192,32 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         if (null != pd.getLookupQuery())
                             col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
 
-//                        if (pd.isMvEnabled())
-//                        {
-//                            ColumnInfo mvColumn = new ColumnInfo(col.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
-//                            // MV indicators are strings
-//                            mvColumn.setSqlTypeName("VARCHAR");
-//                            mvColumn.setPropertyURI(col.getPropertyURI());
-//                            mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
-//                            mvColumn.setNullable(true);
-//                            mvColumn.setUserEditable(false);
-//                            mvColumn.setHidden(true);
-//                            mvColumn.setMvIndicatorColumn(true);
-//
-//                            ColumnInfo rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
-//                            rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
-//                            rawValueCol.setLabel(getName());
-//                            rawValueCol.setUserEditable(false);
-//                            rawValueCol.setHidden(true);
-//                            rawValueCol.setMvColumnName(null); // This version of the column does not show missing values
-//                            rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
-//                            rawValueCol.setRawValueColumn(true);
-//
-//                            addColumn(mvColumn);
-//                            addColumn(rawValueCol);
-//
-//                            col.setMvColumnName(mvColumn.getFieldKey());
-//                        }
+                        if (pd.isMvEnabled())
+                        {
+                            ColumnInfo mvColumn = new ColumnInfo(col.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
+                            // MV indicators are strings
+                            mvColumn.setSqlTypeName("VARCHAR");
+                            mvColumn.setPropertyURI(col.getPropertyURI());
+                            mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                            mvColumn.setNullable(true);
+                            mvColumn.setUserEditable(false);
+                            mvColumn.setHidden(true);
+                            mvColumn.setMvIndicatorColumn(true);
+
+                            ColumnInfo rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
+                            rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+                            rawValueCol.setLabel(getName());
+                            rawValueCol.setUserEditable(false);
+                            rawValueCol.setHidden(true);
+                            rawValueCol.setMvColumnName(null);   // This version of the column does not show missing values
+                            rawValueCol.setNullable(true);       // Otherwise we get complaints on import for required fields
+                            rawValueCol.setRawValueColumn(true);
+
+                            addColumn(mvColumn);
+                            addColumn(rawValueCol);
+
+                            col.setMvColumnName(mvColumn.getFieldKey());
+                        }
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
@@ -248,8 +250,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             }
         }
 
-//        assert null != colKey : "The Primary Key for List: " + _list.getName() + " was not set correctly.";
-
         if (null != colKey)
         {
             boolean auto = (null == listDef.getTitleColumn());
@@ -273,7 +273,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
 
-        // TODO: I don't see the point in using DetailsURL for constant URLs (insert, import, grid)
         if (!listDef.getAllowUpload())
             setImportURL(LINK_DISABLER);
         else
@@ -388,17 +387,22 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
-        return null;
+        CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+
+        for (ColumnInfo col : getColumns())
+        {
+            if (null != col.getMvColumnName())
+                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName().getName());
+        }
+
+        return m;
     }
 
     @Override
     public CaseInsensitiveHashSet skipProperties()
     {
-        if (!_list.getKeyName().isEmpty())
-            return new CaseInsensitiveHashSet(_list.getKeyName());
         return null;
     }
-
 
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
