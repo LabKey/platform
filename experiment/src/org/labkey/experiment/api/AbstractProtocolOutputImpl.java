@@ -15,17 +15,24 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.data.*;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.security.UserManager;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 
 /*
 * User: jeckels
@@ -202,20 +209,12 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     protected ExpProtocolApplication[] getTargetApplications(SimpleFilter filter, TableInfo inputTable)
     {
-        try (ResultSet rs = Table.select(inputTable, new CsvSet("TargetApplicationId,DataId"), filter, null))
+        List<ExpProtocolApplication> ret = new ArrayList<>();
+        for (Integer id : new TableSelector(inputTable, Collections.singleton("TargetApplicationId"), filter, null).getArrayList(Integer.class))
         {
-            List<ExpProtocolApplication> ret = new ArrayList<>();
-			int targetCol = rs.findColumn("TargetApplicationId");
-            while (rs.next())
-            {
-                ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(targetCol)));
-            }
-            return ret.toArray(new ExpProtocolApplication[ret.size()]);
+            ret.add(ExperimentService.get().getExpProtocolApplication(id.intValue()));
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return ret.toArray(new ExpProtocolApplication[ret.size()]);
     }
 
     protected ExpRun[] getTargetRuns(TableInfo inputTable, String rowIdColumnName)
@@ -226,7 +225,9 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
         sql.append("\nINNER JOIN ");
         sql.append(inputTable, "i");
-        sql.append(" ON pa.RowId = i.TargetApplicationId AND i." + rowIdColumnName + " = ?)");
+        sql.append(" ON pa.RowId = i.TargetApplicationId AND i.");
+        sql.append(rowIdColumnName);
+        sql.append(" = ?)");
         sql.add(getRowId());
         ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
         return ExpRunImpl.fromRuns(runs);
