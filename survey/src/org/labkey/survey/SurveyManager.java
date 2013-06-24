@@ -427,22 +427,25 @@ public class SurveyManager
     private static void deleteSurveyResponse(Container c, User user, SurveyDesign design, Survey survey)
     {
         TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(c, user, design);
-        QueryUpdateService qus = table.getUpdateService();
-        FieldKey pk = table.getAuditRowPk();
-        if (qus != null && pk != null)
+        if (table != null)
         {
-            try {
-                List<Map<String, Object>> keys = new ArrayList<>();
-
-                if (survey.getResponsesPk() != null)
-                {
-                    keys.add(Collections.<String, Object>singletonMap(pk.getName(), survey.getResponsesPk()));
-                    qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null);
-                }
-            }
-            catch (Exception e)
+            QueryUpdateService qus = table.getUpdateService();
+            FieldKey pk = table.getAuditRowPk();
+            if (qus != null && pk != null)
             {
-                throw new RuntimeException(e);
+                try {
+                    List<Map<String, Object>> keys = new ArrayList<>();
+
+                    if (survey.getResponsesPk() != null)
+                    {
+                        keys.add(Collections.<String, Object>singletonMap(pk.getName(), survey.getResponsesPk()));
+                        qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
