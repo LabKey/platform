@@ -131,19 +131,24 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
 
         // location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
-        if (xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests())
-            study.setAllowReqLocClinic(xmlLocationTypes.getRepository().getAllowRequests());
-        if (xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests())
-            study.setAllowReqLocClinic(xmlLocationTypes.getClinic().getAllowRequests());
-        if (xmlLocationTypes.isSetSiteAffiliatedLab() && xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests())
-            study.setAllowReqLocClinic(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
-        if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
-            study.setAllowReqLocClinic(xmlLocationTypes.getEndpointLab().getAllowRequests());
+        if (null != xmlLocationTypes)
+        {
+            if (xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests())
+                study.setAllowReqLocClinic(xmlLocationTypes.getRepository().getAllowRequests());
+            if (xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests())
+                study.setAllowReqLocClinic(xmlLocationTypes.getClinic().getAllowRequests());
+            if (xmlLocationTypes.isSetSiteAffiliatedLab() && xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests())
+                study.setAllowReqLocClinic(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
+            if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
+                study.setAllowReqLocClinic(xmlLocationTypes.getEndpointLab().getAllowRequests());
+        }
 
         importRequestStatuses(study, ctx, xmlSettings);
         importRequestActors(study, ctx, xmlSettings);
         importDefaultRequirements(study, ctx, xmlSettings);
     }
+
+
 
     private static void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
