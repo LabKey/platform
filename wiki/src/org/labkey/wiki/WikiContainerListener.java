@@ -17,11 +17,9 @@ package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -37,14 +35,7 @@ public class WikiContainerListener implements ContainerManager.ContainerListener
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            WikiManager.get().purgeContainer(c);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        WikiManager.get().purgeContainer(c);
     }
 
     @Override

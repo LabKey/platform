@@ -24,14 +24,13 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
@@ -172,51 +171,27 @@ public class PipelineManager
 
     static public void purge(Container container)
     {
-        try
+        SQLFragment sql = new SQLFragment();
+        sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
+                append(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
+                append(pipeline.getTableInfoStatusFiles(), "p").
+                append(" WHERE container = ? ) AND Container = ?");
+        sql.add(container.getId());
+        sql.add(container.getId());
+
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            StringBuilder sql = new StringBuilder();
-            List<Object> params = new ArrayList<>();
-            sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
-                .append(" SET JobId = NULL ")
-                .append("WHERE JobId IN (SELECT RowId FROM " + pipeline.getTableInfoStatusFiles() + " p ")
-                .append(" WHERE container = ? ) ");
-                params.add(container.getId());
+            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
+            new SqlExecutor(PipelineSchema.getInstance().getSchema()).execute(sql);
 
-            sql.append(" AND Container = ?");
-            params.add(container.getId());
+            ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 
-            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-            {
-                DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
-                Table.execute(PipelineSchema.getInstance().getSchema(), sql.toString(), params.toArray());
-
-                // TODO: purge methods aren't called in reverse module depedency order
-                DbSchema di = null;
-                try {di = DbSchema.get("dataintegration");} catch (Exception x) {}
-                if (null != di)
-                {
-                    TableInfo t =  di.getTable("TransformRun");
-                    if (null != t)
-                        ContainerUtil.purgeTable(t , container, null);
-                }
-
-                ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
-
-                transaction.commit();
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            transaction.commit();
         }
 
         try
         {
             ContainerUtil.purgeTable(pipeline.getTableInfoPipelineRoots(), container, "Container");
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         finally
         {

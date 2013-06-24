@@ -749,25 +749,16 @@ public class IssueManager
 
     public static void purgeContainer(Container c)
     {
-        try
+        try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
-            Table.execute(_issuesSchema.getSchema(), deleteComments, c.getId());
+            new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments, c.getId());
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoCustomColumns(), c, null);
 
-            _issuesSchema.getSchema().getScope().commitTransaction();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            _issuesSchema.getSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 

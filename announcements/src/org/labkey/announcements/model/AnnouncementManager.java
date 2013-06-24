@@ -664,16 +664,9 @@ public class AnnouncementManager
 
     public static void purgeContainer(Container c)
     {
-        try
-        {
-            // Attachments are handled by AttachmentServiceImpl
-            ContainerUtil.purgeTable(_comm.getTableInfoEmailPrefs(), c, null);
-            ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), c, null);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        // Attachments are handled by AttachmentServiceImpl
+        ContainerUtil.purgeTable(_comm.getTableInfoEmailPrefs(), c, null);
+        ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), c, null);
     }
 
     public static void indexMessages(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)

@@ -469,14 +469,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            ContainerUtil.purgeTable(getTable(), c, "ContainerId");
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        ContainerUtil.purgeTable(getTable(), c, "ContainerId");
     }
 
     @Override

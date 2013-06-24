@@ -374,19 +374,16 @@ public class WikiManager implements WikiService
     }
 
 
-    public void purgeContainer(Container c) throws SQLException
+    public void purgeContainer(Container c)
     {
         WikiCache.uncache(c);
 
         DbScope scope = comm.getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
-            Object[] params = { c.getId() };
-            Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", params);
-            Table.execute(comm.getSchema(), "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", params);
+            new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", c.getId());
+            new SqlExecutor(comm.getSchema()).execute("DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", c.getId());
 
             // Clear all wiki webpart properties that refer to this container. This includes wiki and wiki TOC
             // webparts in this and potentially other containers. #13937
@@ -394,11 +391,7 @@ public class WikiManager implements WikiService
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 

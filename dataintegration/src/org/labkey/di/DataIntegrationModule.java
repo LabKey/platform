@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -29,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.JspView;
@@ -40,14 +39,13 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.BaseQueryTransformDescriptor;
-import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.view.DataIntegrationController;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -197,25 +195,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public void containerDeleted(Container c, User user)
     {
-        DbSchema di = null;
-        try
+        DbSchema di = DbSchema.get("dataintegration");
+        try (DbScope.Transaction transaction = di.getScope().ensureTransaction())
         {
             TransformManager.get().unscheduleAll(c);
-
-            di = DbSchema.get("dataintegration");
-            di.getScope().ensureTransaction();
             ContainerUtil.purgeTable(di.getTable("TransformRun"), c, null);
             ContainerUtil.purgeTable(di.getTable("TransformConfiguration"), c, null);
-            di.getScope().commitTransaction();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            if (null != di)
-                di.getScope().closeConnection();
+            transaction.commit();
         }
     }
 

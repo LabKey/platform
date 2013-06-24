@@ -700,15 +700,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
-            AttachmentCache.removeAttachments(c);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
+        AttachmentCache.removeAttachments(c);
     }
 
     @Override

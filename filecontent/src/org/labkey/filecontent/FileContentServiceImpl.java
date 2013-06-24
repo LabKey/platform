@@ -494,14 +494,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             moveToDeleted(dir);
         }
 
-        try
-        {
-            ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
     }
 
     @Override
