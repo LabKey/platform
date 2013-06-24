@@ -82,6 +82,7 @@ public class RenderAssayBean extends RenderAssayForm
     private String _sampleNoun = "Sample";
     private String _neutralizationAbrev = "Neut.";
     private ActionURL _graphURL;
+    private String _plateDataFormat;
 
     public RenderAssayBean()
     {
@@ -420,5 +421,15 @@ public class RenderAssayBean extends RenderAssayForm
     public void setGraphURL(ActionURL graphURL)
     {
         _graphURL = graphURL;
+    }
+
+    public String getPlateDataFormat()
+    {
+        return _plateDataFormat;
+    }
+
+    public void setPlateDataFormat(String plateDataFormat)
+    {
+        _plateDataFormat = plateDataFormat;
     }
 }

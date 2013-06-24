@@ -29,6 +29,7 @@
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
     ViewContext context = me.getViewContext();
+    String wellFormat = bean.getPlateDataFormat();
 %>
 <table cellspacing="5px">
 <%
@@ -76,7 +77,7 @@
                     {
                 %>
                 <td align=right>
-                    <%=Luc5Assay.intString(plate.getWell(row, col).getValue())%></td>
+                    <%=h(wellFormat != null ? String.format(wellFormat, plate.getWell(row, col).getValue()) : Luc5Assay.intString(plate.getWell(row, col).getValue()))%></td>
                 <%
                     }
                 %>
