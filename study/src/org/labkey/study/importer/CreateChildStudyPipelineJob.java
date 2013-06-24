@@ -249,8 +249,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 // import dataset data or create snapshot datasets
                 importDatasetData(context, _form, destStudy, snapshot, vf, _errors);
 
-                // import the specimen data
+                // import the specimen data and settings
                 importSpecimenData(destStudy, vf);
+                importSpecimenSettings(_errors, destStudy, vf);
 
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
@@ -359,6 +360,17 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         return dataTypes;
     }
 
+    private void importSpecimenSettings(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
+    {
+        VirtualFile studyDir = vf.getDir("study");
+        StudyDocument studyDoc = getStudyDocument(studyDir);
+        if (studyDoc != null)
+        {
+            StudyImportContext importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
+            new SpecimenSettingsImporter().process(importContext, studyDir, errors);
+        }
+    }
+
     private void importToDestinationStudy(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
     {
         User user = getUser();
@@ -373,7 +385,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             // missing values and qc states
             new MissingValueImporterFactory().create().process(null, importContext, studyDir);
             new QcStatesImporter().process(importContext, studyDir, errors);
-            new SpecimenSettingsImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
             DatasetDefinitionImporter datasetDefinitionImporter = new DatasetDefinitionImporter();

@@ -50,7 +50,7 @@
                 {
             %>
             <tr>
-                <td><input type="checkbox" name="delete" value="<%= member %>"></td>
+                <td align="center"><input type="checkbox" name="delete" value="<%= member %>"></td>
                 <td><%= text(member.isActive() ? "" : "<del>") + h(member.getEmail()) + text(member.isActive() ? "" : "</del> (inactive)") %></td>
             </tr>
             <%

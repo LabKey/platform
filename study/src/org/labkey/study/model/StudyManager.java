@@ -1129,6 +1129,11 @@ public class StudyManager
         return _locationHelper.get(container, id);
     }
 
+    public List<LocationImpl> getLocationsByLabel(Container container, String label)
+    {
+        return _locationHelper.get(container, new SimpleFilter(FieldKey.fromParts("Label"), label));
+    }
+
     public void createSite(User user, LocationImpl location) throws SQLException
     {
         _locationHelper.create(user, location);

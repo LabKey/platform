@@ -69,11 +69,13 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             // cohorts until the end of upload.
             internalImporters.add(new CohortImporter());
 
-            // Can't assign visits to cohorts until the cohorts are created
+            // Can't assign visits or datasets to cohorts until the cohorts are created
             internalImporters.add(new VisitCohortAssigner());
-
-            // Can't assign datasets to cohorts until the cohorts are created
             internalImporters.add(new DatasetCohortAssigner());
+
+            // Can't setup specimen request actors until the locations have been created
+            internalImporters.add(new SpecimenSettingsImporter());
+
             internalImporters.add(new ParticipantCommentImporter());
             internalImporters.add(new ParticipantGroupImporter());
             internalImporters.add(new ProtocolDocumentImporter());

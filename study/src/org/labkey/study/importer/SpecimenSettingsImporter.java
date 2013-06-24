@@ -16,14 +16,28 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.security.xml.GroupType;
+import org.labkey.security.xml.UserRefType;
 import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.SampleRequestActor;
+import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.requirements.RequirementType;
+import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.StatusSettings;
+import org.labkey.study.xml.DefaultRequirementType;
+import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.LegacySpecimenSettingsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
 import org.labkey.study.xml.SpecimenSettingsType;
@@ -34,6 +48,9 @@ import org.springframework.validation.BindException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -44,7 +61,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     @Override
     public String getDescription()
     {
-        return "Specimen Settings Importer";
+        return "specimen settings";
     }
 
     @Override
@@ -123,48 +140,211 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
             study.setAllowReqLocClinic(xmlLocationTypes.getEndpointLab().getAllowRequests());
 
-        // request statuses
         importRequestStatuses(study, ctx, xmlSettings);
-
-        // UNDONE: import other settings...
+        importRequestActors(study, ctx, xmlSettings);
+        importDefaultRequirements(study, ctx, xmlSettings);
     }
 
     private static void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
-        SpecimenSettingsType.RequestStatuses.Status[] xmlStatusArray = xmlRequestStatuses.getStatusArray();
-        if (xmlStatusArray.length > 0)
+        if (xmlRequestStatuses != null)
         {
-            // remove any existing, non-system statuses for this container before importing the new ones, full replacement
-            for (SampleRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
+            SpecimenSettingsType.RequestStatuses.Status[] xmlStatusArray = xmlRequestStatuses.getStatusArray();
+            if (xmlStatusArray.length > 0)
             {
-                if (!existingStatus.isSystemStatus())
-                    SampleManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
-            }
-
-            for (int i = 0; i < xmlStatusArray.length; i++)
-            {
-                if (xmlStatusArray[i].isSetLabel() && xmlStatusArray[i].getLabel() != null && !xmlStatusArray[i].getLabel().isEmpty()) // skip any that don't have a label
+                // remove any existing not in-use, non-system statuses for this container before importing the new ones
+                Set<Integer> inUseStatusIds = study.getSampleRequestStatusesInUse();
+                List<String> inUseStatusLabels = new ArrayList<>();
+                for (SampleRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
                 {
-                    SampleRequestStatus status = new SampleRequestStatus();
-                    status.setContainer(ctx.getContainer());
-                    status.setLabel(xmlStatusArray[i].getLabel());
-                    status.setSortOrder(xmlStatusArray[i].isSetSortOrder() ? xmlStatusArray[i].getSortOrder() : i+1);
-                    if (xmlStatusArray[i].isSetFinalState())
-                        status.setFinalState(xmlStatusArray[i].getFinalState());
-                    if (xmlStatusArray[i].isSetLockSpecimens())
-                        status.setSpecimensLocked(xmlStatusArray[i].getLockSpecimens());
-                    SampleManager.getInstance().createRequestStatus(ctx.getUser(), status);
+                    if (!existingStatus.isSystemStatus() && !inUseStatusIds.contains(existingStatus.getRowId()))
+                        SampleManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
+                    else
+                        inUseStatusLabels.add(existingStatus.getLabel());
+                }
+
+                // create new request statuses from the xml settings file
+                for (int i = 0; i < xmlStatusArray.length; i++)
+                {
+                    String newStatusLabel = xmlStatusArray[i].isSetLabel() && xmlStatusArray[i].getLabel() != null && !xmlStatusArray[i].getLabel().isEmpty() ? xmlStatusArray[i].getLabel() : null;
+                    if (inUseStatusLabels.contains(newStatusLabel))
+                    {
+                        ctx.getLogger().warn("Skipping request status that matches an existing status label: " + newStatusLabel);
+                    }
+                    else if (newStatusLabel != null)
+                    {
+                        SampleRequestStatus newStatus = new SampleRequestStatus();
+                        newStatus.setContainer(ctx.getContainer());
+                        newStatus.setLabel(newStatusLabel);
+                        newStatus.setSortOrder(i+1);
+                        if (xmlStatusArray[i].isSetFinalState())
+                            newStatus.setFinalState(xmlStatusArray[i].getFinalState());
+                        if (xmlStatusArray[i].isSetLockSpecimens())
+                            newStatus.setSpecimensLocked(xmlStatusArray[i].getLockSpecimens());
+                        SampleManager.getInstance().createRequestStatus(ctx.getUser(), newStatus);
+                    }
+                    else
+                    {
+                        ctx.getLogger().warn("Skipping request status that does not have a label.");
+                    }
+                }
+            }
+            if (xmlRequestStatuses.isSetMultipleSearch())
+            {
+                StatusSettings settings = SampleManager.getInstance().getStatusSettings(ctx.getContainer());
+                if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
+                {
+                    settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
+                    SampleManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
                 }
             }
         }
-        if (xmlRequestStatuses.isSetMultipleSearch())
+    }
+
+    private static void importRequestActors(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    {
+        SpecimenSettingsType.RequestActors xmlRequestActors = xmlSettings.getRequestActors();
+        if (xmlRequestActors != null)
         {
-            StatusSettings settings = SampleManager.getInstance().getStatusSettings(ctx.getContainer());
-            if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
+            SpecimenSettingsType.RequestActors.Actor[] xmlActorArray = xmlRequestActors.getActorArray();
+            if (xmlActorArray.length > 0)
             {
-                settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
-                SampleManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
+                // remove any existing not in-use actors
+                // note: this will also remove all groups and members for that actor
+                Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
+                List<String> inUseActorLabels = new ArrayList<>();
+                for (SampleRequestActor existingActor : study.getSampleRequestActors())
+                {
+                    if (!inUseActorIds.contains(existingActor.getRowId()))
+                        existingActor.delete();
+                    else
+                        inUseActorLabels.add(existingActor.getLabel());
+                }
+
+                // create new request actors from the xml settings file
+                for (int i = 0; i < xmlActorArray.length; i++)
+                {
+                    String newActorLabel = xmlActorArray[i].isSetLabel() && xmlActorArray[i].getLabel() != null && !xmlActorArray[i].getLabel().isEmpty() ? xmlActorArray[i].getLabel() : null;
+                    if (inUseActorLabels.contains(newActorLabel))
+                    {
+                        ctx.getLogger().warn("Skipping request actor that matches an existing actor label: " + newActorLabel);
+                    }
+                    else if (newActorLabel != null)
+                    {
+                        SampleRequestActor newActor = new SampleRequestActor();
+                        newActor.setContainer(ctx.getContainer());
+                        newActor.setLabel(newActorLabel);
+                        newActor.setSortOrder(i);
+                        newActor.setPerSite(SpecimenSettingsType.RequestActors.Actor.Type.LOCATION.equals(xmlActorArray[i].getType())); // default is per study
+                        newActor.create(ctx.getUser());
+
+                        GroupType[] newActorGroups = xmlActorArray[i].getGroups().getGroupArray();
+                        if (newActorGroups.length > 0)
+                        {
+                            for (GroupType newActorGroup : newActorGroups)
+                            {
+                                // TODO: move to a centralized writeGroupMembers location?
+                                List<User> newMembers = new ArrayList<>();
+                                UserRefType[] xmlMembers = newActorGroup.getUsers().getUserArray();
+                                for (UserRefType xmlMember : xmlMembers)
+                                {
+                                    try
+                                    {   // currently, request actor groups only have users as membesr (no groups in groups)
+                                        User user = UserManager.getUser(new ValidEmail(xmlMember.getName()));
+                                        if (user != null)
+                                            newMembers.add(user);
+                                        else
+                                            ctx.getLogger().warn("User does not exist for request actor group member: " + xmlMember.getName());
+                                    }
+                                    catch(ValidEmail.InvalidEmailException e)
+                                    {
+                                        ctx.getLogger().warn("Invalid email address for request actor group member: " + xmlMember.getName());
+                                    }
+
+                                }
+
+                                LocationImpl location = null;
+                                // verify that the location exists in this study, for the per site actor type
+                                if (newActor.isPerSite())
+                                {
+                                    List<LocationImpl> matchingLocs = StudyManager.getInstance().getLocationsByLabel(ctx.getContainer(), newActorGroup.getName());
+                                    if (matchingLocs.size() > 0)
+                                        location = matchingLocs.get(0);
+
+                                    if (location != null)
+                                        newActor.addMembers(location, newMembers.toArray(new User[newMembers.size()]));
+                                    else
+                                        ctx.getLogger().warn("Request actor group not created for \"" + newActor.getLabel()
+                                                + ", " + newActorGroup.getName() + "\". Could not find matching study location.");
+                                }
+                                else
+                                    newActor.addMembers(null, newMembers.toArray(new User[newMembers.size()]));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ctx.getLogger().warn("Skipping request actor that does not have a label.");
+                    }
+                }
+            }
+        }
+    }
+
+    private static void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    {
+        SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.getDefaultRequirements();
+        if (xmlDefRequirements != null)
+        {
+            // remove existing default requirements for this container, full replacement
+            SpecimenController.ManageReqsBean existingDefaultReqBeans = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
+            List<SampleRequestRequirement> existingDefaultReqs = new ArrayList<>();
+            existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getOriginatorRequirements()));
+            existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getProviderRequirements()));
+            existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getReceiverRequirements()));
+            existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getGeneralRequirements()));
+            for (SampleRequestRequirement existingReq : existingDefaultReqs)
+            {
+                try
+                {
+                    SampleManager.getInstance().deleteRequestRequirement(ctx.getUser(), existingReq, false);
+                }
+                catch(AttachmentService.DuplicateFilenameException e)
+                {} // no op, this would only occur with deleteRequestRequirement when createEvent is true
+            }
+
+            for (DefaultRequirementsType xmlReq : xmlDefRequirements.getOriginatingLabArray())
+                createDefaultRequirement(xmlReq, ctx, SpecimenRequestRequirementType.ORIGINATING_SITE);
+            for (DefaultRequirementsType xmlReq : xmlDefRequirements.getProvidingLabArray())
+                createDefaultRequirement(xmlReq, ctx, SpecimenRequestRequirementType.PROVIDING_SITE);
+            for (DefaultRequirementsType xmlReq : xmlDefRequirements.getReceivingLabArray())
+                createDefaultRequirement(xmlReq, ctx, SpecimenRequestRequirementType.RECEIVING_SITE );
+            for (DefaultRequirementsType xmlReq : xmlDefRequirements.getGeneralArray())
+                createDefaultRequirement(xmlReq, ctx, SpecimenRequestRequirementType.NON_SITE_BASED);
+        }
+    }
+
+    private static void createDefaultRequirement(DefaultRequirementsType xmlReqs, StudyImportContext ctx, RequirementType type)
+    {
+        if (xmlReqs != null && xmlReqs.getRequirementArray().length > 0)
+        {
+            for (DefaultRequirementType xmlReq : xmlReqs.getRequirementArray())
+            {
+                List<SampleRequestActor> matchingActors = SampleManager.getInstance().getRequirementsProvider().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
+                if (matchingActors.size() > 0)
+                {
+                    SampleRequestRequirement requirement = new SampleRequestRequirement();
+                    requirement.setContainer(ctx.getContainer());
+                    requirement.setActorId(matchingActors.get(0).getRowId());
+                    requirement.setDescription(xmlReq.getDescription());
+                    requirement.setRequestId(-1);
+                    SampleManager.getInstance().getRequirementsProvider().createDefaultRequirement(ctx.getUser(), requirement, type);
+                }
+                else
+                {
+                    ctx.getLogger().warn("Could not find matching actor with label: " + xmlReq.getActor());
+                }
             }
         }
     }

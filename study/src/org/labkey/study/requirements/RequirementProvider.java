@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: brittp
@@ -34,6 +35,8 @@ public interface RequirementProvider<R extends Requirement<R>,
     A[] getActors(Container c);
 
     A getActor(Container c, Object primaryKey);
+
+    List<A> getActorsByLabel(Container c, String label);
 
     Collection<A> getActorsInUse(Container c);
     

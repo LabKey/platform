@@ -17,6 +17,7 @@
 package org.labkey.study.requirements;
 
 import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.*;
 import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
@@ -135,6 +136,14 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     public A getActor(Container c, Object primaryKey)
     {
         return new TableSelector(getActorTableInfo()).getObject(primaryKey, _actorClass);
+    }
+
+    @Override
+    public List<A> getActorsByLabel(Container c, String label)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("Label"), label);
+        return new TableSelector(getActorTableInfo(), filter, new Sort(getActorSortColumnName())).getArrayList(_actorClass);
     }
 
     public Collection<A> getActorsInUse(Container c)

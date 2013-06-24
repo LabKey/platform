@@ -184,7 +184,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             new MissingValueImporterFactory().create().process(job, ctx, vf);
             new QcStatesImporter().process(ctx, vf, errors);
-            new SpecimenSettingsImporter().process(ctx, vf, errors);
 
             new VisitImporter().process(ctx, vf, errors);
             if (errors.hasErrors())

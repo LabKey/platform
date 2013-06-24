@@ -49,7 +49,6 @@
                                 <xs:attribute name="label" type="xs:string"/>
                                 <xs:attribute name="finalState" type="xs:boolean"/>
                                 <xs:attribute name="lockSpecimens" type="xs:boolean"/>
-                                <xs:attribute name="sortOrder" type="xs:int"/>
                             </xs:complexType>
                         </xs:element>
                     </xs:sequence>
@@ -62,9 +61,15 @@
                         <xs:element name="actor" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="group" type="sec:groupType" />
+                                    <xs:element name="groups" minOccurs="0">
+                                        <xs:complexType>
+                                            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                                                <xs:element name="group" type="sec:groupType"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                 </xs:sequence>
-                                <xs:attribute name="name" type="xs:string"/>
+                                <xs:attribute name="label" type="xs:string"/>
                                 <xs:attribute name="type">
                                     <xs:simpleType>
                                         <xs:restriction base="xs:string">
@@ -81,10 +86,10 @@
             <xs:element name="defaultRequirements" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="originatingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
-                        <xs:element name="providingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
-                        <xs:element name="receivingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
-                        <xs:element name="general" type="defaultRequirementsType" minOccurs="0" maxOccurs="1" />
+                        <xs:element name="originatingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="unbounded" />
+                        <xs:element name="providingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="unbounded" />
+                        <xs:element name="receivingLab" type="defaultRequirementsType" minOccurs="0" maxOccurs="unbounded" />
+                        <xs:element name="general" type="defaultRequirementsType" minOccurs="0" maxOccurs="unbounded" />
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
