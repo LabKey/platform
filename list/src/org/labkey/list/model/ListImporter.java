@@ -24,6 +24,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
@@ -35,7 +36,6 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -152,7 +152,8 @@ public class ListImporter
 
             try
             {
-                createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
+                boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
+                assert success;
             }
             catch (ImportException e)
             {
@@ -195,57 +196,83 @@ public class ListImporter
                             }
                         }
 
-                        // pre-process
-                        if (supportAI)
+                        TableInfo ti = def.getTable(user);
+
+                        if (null != ti)
                         {
-                            TableInfo ti = def.getTable(user);
-                            SqlDialect dialect = ti.getSqlDialect();
-
-                            if (dialect.isSqlServer())
+                            try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
                             {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" ON\n");
-                                new SqlExecutor(ti.getSchema()).execute(check);
-                            }
-                        }
-
-                        def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
-                        for (ValidationException v : batchErrors.getRowErrors())
-                            errors.add(v.getMessage());
-
-                        if (supportAI)
-                        {
-                            TableInfo ti = def.getTable(user);
-                            SqlDialect dialect = ti.getSqlDialect();
-
-                            // If auto-increment based need to reset the sequence counter on the DB
-                            if (dialect.isPostgreSQL())
-                            {
-                                String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
-                                if (null != src)
+                                // pre-process
+                                if (supportAI)
                                 {
-                                    String sequence = "";
+                                    SqlDialect dialect = ti.getSqlDialect();
 
-                                    int start = src.indexOf('\'');
-                                    int end = src.lastIndexOf('\'');
-
-                                    if (end > start)
+                                    if (dialect.isSqlServer())
                                     {
-                                        sequence = src.substring(start + 1, end);
-                                        if (!sequence.toLowerCase().startsWith("list."))
-                                            sequence = "list." + sequence;
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" ON\n");
+                                        new SqlExecutor(ti.getSchema()).execute(check);
                                     }
+                                }
 
-                                    SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                                    keyupdate.append(", coalesce((SELECT MAX(").append(def.getKeyName().toLowerCase()).append(")+1 FROM ").append(ti.getSelectName());
-                                    keyupdate.append("), 1), false);");
-                                    new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
+                                for (ValidationException v : batchErrors.getRowErrors())
+                                    errors.add(v.getMessage());
+
+                                if (supportAI)
+                                {
+                                    SqlDialect dialect = ti.getSqlDialect();
+
+                                    // If auto-increment based need to reset the sequence counter on the DB
+                                    if (dialect.isPostgreSQL())
+                                    {
+                                        String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                                        if (null != src)
+                                        {
+                                            String sequence = "";
+
+                                            int start = src.indexOf('\'');
+                                            int end = src.lastIndexOf('\'');
+
+                                            if (end > start)
+                                            {
+                                                sequence = src.substring(start + 1, end);
+                                                if (!sequence.toLowerCase().startsWith("list."))
+                                                    sequence = "list." + sequence;
+                                            }
+
+                                            SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                                            keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(ti.getSelectName());
+                                            keyupdate.append("), 1), false);");
+                                            new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                        }
+                                    }
+                                    else if (dialect.isSqlServer())
+                                    {
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
+                                        new SqlExecutor(ti.getSchema()).execute(check);
+                                    }
+                                }
+
+                                if (errors.isEmpty())
+                                    transaction.commit();
+                            }
+                            finally
+                            {
+                                if (supportAI)
+                                {
+                                    SqlDialect dialect = ti.getSqlDialect();
+
+                                    if (dialect.isSqlServer())
+                                    {
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
+                                        new SqlExecutor(ti.getSchema()).execute(check);
+                                    }
                                 }
                             }
-                            else if (dialect.isSqlServer())
-                            {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF");
-                                new SqlExecutor(ti.getSchema()).execute(check);
-                            }
+                        }
+                        else
+                        {
+                            throw new IllegalStateException("Table information not available for list: " + name);
                         }
                     }
                 }
@@ -255,7 +282,7 @@ public class ListImporter
         log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
     }
 
-    private void createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
+    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
     {
         String keyName = listXml.getPkColumnName();
 
@@ -391,7 +418,7 @@ public class ListImporter
             importMaps.add(map);
         }
 
-        ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importMaps, user, errors);
+        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importMaps, user, errors);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException

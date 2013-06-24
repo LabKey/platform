@@ -128,6 +128,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         if (null == value)
                             value = raw.get("_" + prop.getName());
 
+                        if (null == value)
+                            value = raw.get(prop.getName().replaceAll("\\s", "_"));
+
                         if (null != value)
                             ret.put(prop.getName(), value);
                     }
@@ -407,17 +410,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                 for (int c = 1; c <= it.getColumnCount(); c++)
                 {
-                    ColumnInfo col = it.getColumnInfo(c);
-                    if (StringUtils.equalsIgnoreCase(ID, col.getName()))
-                        entityIdIndex = c;
+                    try
+                    {
+                        ColumnInfo col = it.getColumnInfo(c);
 
-                    // Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
-                    // UNDONE: PropertyURI is not propagated, need to use name
-                    DomainProperty domainProperty = _list.getDomain().getPropertyByName(col.getName());
-                    if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
+                        if (StringUtils.equalsIgnoreCase(ID, col.getName()))
+                            entityIdIndex = c;
+
+                        // Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
+                        // UNDONE: PropertyURI is not propagated, need to use name
+                        DomainProperty domainProperty = _list.getDomain().getPropertyByName(col.getName());
+                        if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
+                            continue;
+
+                        attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+                    }
+                    catch (IndexOutOfBoundsException e) // Until issue is resolved between StatementDataIterator.getColumnCount() and SimpleTranslator.getColumnCount()
+                    {
                         continue;
-
-                    attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+                    }
                 }
 
                 if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)

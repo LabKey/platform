@@ -862,13 +862,13 @@ public class ListManager implements SearchService.DocumentProvider
         // Recurse through the children
         for (Container child : ContainerManager.getAllChildren(root))
         {
-            ensureListDomain(user, child);
+            ensureListDomain(child);
         }
 
         OntologyManager.clearCaches();
     }
 
-    private void ensureListDomain(User user, Container container)
+    private void ensureListDomain(Container container)
     {
         Map<String, ListDefinition> definitionMap = ListService.get().getLists(container);
 
@@ -1049,15 +1049,6 @@ public class ListManager implements SearchService.DocumentProvider
                 p.setRequired(true);
 
                 newDomain.setPropertyIndex(p, 0);
-
-                try
-                {
-                    newDomain.save(user);
-                }
-                catch (ChangePropertyDescriptorException e)
-                {
-                    throw new RuntimeException("Failed to add Primary Key Property Descriptor", e);
-                }
             }
 
             // create the hard table
@@ -1163,7 +1154,7 @@ public class ListManager implements SearchService.DocumentProvider
                 }
 
                 SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                keyupdate.append(", coalesce((SELECT MAX(").append(listDef.getKeyName().toLowerCase()).append(")+1 FROM ").append(table.getSelectName());
+                keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(listDef.getKeyName().toLowerCase())).append(")+1 FROM ").append(table.getSelectName());
                 keyupdate.append("), 1), false);");
                 ModuleUpgrader.getLogger().info("Post Key Update");
                 ModuleUpgrader.getLogger().info(keyupdate.toString());

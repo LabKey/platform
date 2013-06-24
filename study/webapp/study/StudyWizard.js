@@ -738,7 +738,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         {
                             grid.setHeight(360);
                             hiddenGrid.hide();
-                            items.doLayout();
                         }
                     }
                 }
