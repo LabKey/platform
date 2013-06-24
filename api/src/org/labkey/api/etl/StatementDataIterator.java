@@ -161,7 +161,7 @@ class StatementDataIterator extends AbstractDataIterator
     @Override
     public int getColumnCount()
     {
-        return _data.getColumnCount();
+        return _keyColumnInfo.size()-1;
     }
 
 
