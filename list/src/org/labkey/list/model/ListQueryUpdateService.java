@@ -117,24 +117,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 if (raw.size() > 0)
                 {
                     ret = new CaseInsensitiveHashMap<>();
-                    String keyName = _list.getKeyName();
-
-                    // Key
-                    ret.put(keyName, raw.get(keyName));
 
                     // EntityId
                     ret.put("EntityId", raw.get("entityid"));
 
                     for (DomainProperty prop : _list.getDomain().getProperties())
                     {
-                        if (keyName.equalsIgnoreCase(prop.getName()))
-                            continue;
                         Object value = raw.get(prop.getName());
 
                         if (null == value)
-                        {
                             value = raw.get("_" + prop.getName());
-                        }
 
                         if (null != value)
                             ret.put(prop.getName(), value);
