@@ -32,6 +32,7 @@ public class ServerInstallation
     private String _systemShortName;
     private String _serverIP;
     private String _serverHostName;
+    private boolean _usedInstaller; // The Windows installer was used to install LabKey, Tomcat, Postgres.
 
     public String getSystemDescription()
     {
@@ -131,5 +132,15 @@ public class ServerInstallation
     public void setServerHostName(String serverHostName)
     {
         _serverHostName = serverHostName;
+    }
+
+    public boolean isUsedInstaller()
+    {
+        return _usedInstaller;
+    }
+
+    public void setUsedInstaller(boolean usedInstaller)
+    {
+        _usedInstaller = usedInstaller;
     }
 }

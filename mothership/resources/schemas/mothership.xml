@@ -104,6 +104,7 @@
                 <ns:scale>255</ns:scale>
                 <ns:isReadOnly>true</ns:isReadOnly>
             </ns:column>
+            <ns:column columnName="UsedInstaller"/>
         </ns:columns>
         <ns:pkColumnName>ServerInstallationId</ns:pkColumnName>
         <ns:titleColumn>OrganizationName</ns:titleColumn>

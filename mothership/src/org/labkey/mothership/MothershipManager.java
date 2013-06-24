@@ -19,6 +19,7 @@ package org.labkey.mothership;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.*;
 
 import java.net.InetAddress;
@@ -135,20 +136,20 @@ public class MothershipManager
                 SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                 if (svnRevision == null)
                 {
-                    filter.addCondition("SVNRevision", null, CompareType.ISBLANK);
+                    filter.addCondition(FieldKey.fromString("SVNRevision"), null, CompareType.ISBLANK);
                 }
                 else
                 {
-                    filter.addCondition("SVNRevision", svnRevision);
+                    filter.addCondition(FieldKey.fromString("SVNRevision"), svnRevision);
                 }
 
                 if (svnURL == null)
                 {
-                    filter.addCondition("SVNURL", null, CompareType.ISBLANK);
+                    filter.addCondition(FieldKey.fromString("SVNURL"), null, CompareType.ISBLANK);
                 }
                 else
                 {
-                    filter.addCondition("SVNURL", svnURL);
+                    filter.addCondition(FieldKey.fromString("SVNURL"), svnURL);
                 }
                 SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
                 if (result == null)
@@ -202,14 +203,14 @@ public class MothershipManager
     public ServerInstallation getServerInstallation(String serverGUID, Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("ServerInstallationGUID", serverGUID);
+        filter.addCondition(FieldKey.fromString("ServerInstallationGUID"), serverGUID);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
     public ServerSession getServerSession(String serverSessionGUID, Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("ServerSessionGUID", serverSessionGUID);
+        filter.addCondition(FieldKey.fromString("ServerSessionGUID"), serverSessionGUID);
         return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
@@ -217,14 +218,14 @@ public class MothershipManager
             throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Container", containerId);
-        filter.addCondition("StackTraceHash", stackTraceHash);
+        filter.addCondition(FieldKey.fromString("StackTraceHash"), stackTraceHash);
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
     public ExceptionStackTrace getExceptionStackTrace(int exceptionStackTraceId, Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("ExceptionStackTraceId", exceptionStackTraceId);
+        filter.addCondition(FieldKey.fromString("ExceptionStackTraceId"), exceptionStackTraceId);
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
@@ -269,6 +270,11 @@ public class MothershipManager
                 existingInstallation.setServerIP(installation.getServerIP());
                 existingInstallation.setServerHostName(hostName);
                 existingInstallation.setSystemDescription(getBestString(existingInstallation.getSystemDescription(), installation.getSystemDescription()));
+                if (installation.isUsedInstaller())
+                {
+                    // The existing installation may have been an upgrade from an earlier version before we started recording usage of the installer
+                    existingInstallation.setUsedInstaller(true);
+                }
                 installation = Table.update(null, getTableInfoServerInstallation(), existingInstallation,  existingInstallation.getServerInstallationId());
             }
 
@@ -487,7 +493,7 @@ public class MothershipManager
     public ServerInstallation getServerInstallation(int id, Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("ServerInstallationId", id);
+        filter.addCondition(FieldKey.fromString("ServerInstallationId"), id);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 

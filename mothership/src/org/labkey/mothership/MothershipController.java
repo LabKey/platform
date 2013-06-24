@@ -672,6 +672,7 @@ public class MothershipController extends SpringActionController
                     installation.setServerInstallationGUID(form.getServerGUID());
                 }
 
+                installation.setUsedInstaller(form.isUsedInstaller());
                 session = MothershipManager.get().updateServerSession(session, installation, getContainer());
                 if (form.getSvnRevision() != null && form.getSvnURL() != null)
                 {
@@ -745,6 +746,7 @@ public class MothershipController extends SpringActionController
                 installation.setSystemDescription(form.getSystemDescription());
                 installation.setSystemShortName(form.getSystemShortName());
                 installation.setContainer(getContainer().getId());
+                installation.setUsedInstaller(form.isUsedInstaller());
                 MothershipManager.get().updateServerSession(session, installation, getContainer());
                 setSuccessHeader();
                 getViewContext().getResponse().getWriter().print(getUpgradeMessage(form.parseSvnRevision()));
@@ -878,6 +880,7 @@ public class MothershipController extends SpringActionController
         private String _administratorEmail;
         private boolean _enterprisePipelineEnabled;
         private String _servletContainer;
+        private boolean _usedInstaller;
 
         public String getSvnURL()
         {
@@ -1096,6 +1099,16 @@ public class MothershipController extends SpringActionController
         public void setServletContainer(String servletContainer)
         {
             _servletContainer = servletContainer;
+        }
+
+        public boolean isUsedInstaller()
+        {
+            return _usedInstaller;
+        }
+
+        public void setUsedInstaller(boolean usedInstaller)
+        {
+            _usedInstaller = usedInstaller;
         }
     }
 
@@ -1457,6 +1470,7 @@ public class MothershipController extends SpringActionController
             requestedColumns.add(FieldKey.fromParts("DaysActive"));
             requestedColumns.add(FieldKey.fromParts("LastPing"));
             requestedColumns.add(FieldKey.fromParts("FirstPing"));
+            requestedColumns.add(FieldKey.fromParts("UsedInstaller"));
 
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(serverInstallationTable, requestedColumns);
 
