@@ -17,6 +17,7 @@ package org.labkey.study.reports;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -57,10 +58,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 /**
  * User: migra
@@ -80,6 +79,7 @@ public class ExternalReport extends AbstractReport
     public static final String REPORT_FILE_SUBST = "${REPORT_FILE}";
     private static final String DATA_FILE_SUFFIX = "Data.tsv";
     private static final MimeMap mimeMap = new MimeMap();
+    private static final CommandLineSplitter COMMAND_LINE_SPLITTER = SystemUtils.IS_OS_WINDOWS ? new WindowsCommandLineSplitter() : new DefaultCommandLineSplitter();
 
     public void setDescriptor(ReportDescriptor descriptor)
     {
@@ -203,7 +203,8 @@ public class ExternalReport extends AbstractReport
             tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
             tsv.write(dataFile);
 
-            String[] params = getCommandStrings();
+            String[] params = COMMAND_LINE_SPLITTER.getCommandStrings(getCommandLine());
+
             for (int i = 0; i < params.length; i++)
             {
                 String param = params[i];
@@ -360,17 +361,6 @@ public class ExternalReport extends AbstractReport
 
     }
 
-
-    private String[] getCommandStrings()
-    {
-        StringTokenizer tokenizer = new StringTokenizer(getCommandLine(), " ");
-        List<String> tokens = new ArrayList<>();
-
-        while (tokenizer.hasMoreTokens())
-            tokens.add(tokenizer.nextToken());
-
-        return tokens.toArray(new String[tokens.size()]);
-    }
 
     private File getReportDir(ViewContext viewContext)
     {
