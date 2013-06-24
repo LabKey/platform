@@ -109,4 +109,13 @@ abstract public class EHRService
     abstract public Container getEHRStudyContainer(Container c);
 
     abstract public void registerFormType(DataEntryForm form);
+
+    abstract public void registerSimpleFormType(FORM_TYPE type, Module m, String schema, String query, String category);
+
+    public static enum FORM_TYPE
+    {
+        Task(),
+        Encounter(),
+        Request();
+    }
 }

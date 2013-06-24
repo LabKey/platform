@@ -45,6 +45,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private String _label;
     private String _category;
     private String _javascriptClass = "EHR.panel.DataEntryPanel";
+    private String _storeCollectionClass = "EHR.data.StoreCollection";
     private List<FormSection> _sections;
     private Module _owner;
 
@@ -67,7 +68,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _label;
     }
 
-    public void setLabel(String label)
+    protected void setLabel(String label)
     {
         _label = label;
     }
@@ -98,9 +99,19 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _javascriptClass;
     }
 
-    public void setJavascriptClass(String javascriptClass)
+    protected void setJavascriptClass(String javascriptClass)
     {
         _javascriptClass = javascriptClass;
+    }
+
+    public String getStoreCollectionClass()
+    {
+        return _storeCollectionClass;
+    }
+
+    protected void setStoreCollectionClass(String storeCollectionClass)
+    {
+        _storeCollectionClass = storeCollectionClass;
     }
 
     public boolean isAvailable(Container c, User u)
@@ -125,6 +136,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("label", getLabel());
         json.put("category", getCategory());
         json.put("javascriptClass", getJavascriptClass());
+        json.put("storeCollectionClass", getStoreCollectionClass());
         json.put("isAvailable", isAvailable(c, u));
 
         JSONArray sections = new JSONArray();

@@ -141,21 +141,6 @@ abstract public class AbstractFormSection implements FormSection
         return tables;
     }
 
-    public List<JSONObject> getStoreConfigs(Container c, User u)
-    {
-        List<JSONObject> stores = new ArrayList<>();
-        for (TableInfo ti : getTables(c, u))
-        {
-            JSONObject json = new JSONObject();
-            json.put("schemaName", ti.getPublicSchemaName());
-            json.put("queryName", ti.getPublicName());
-
-            stores.add(json);
-        }
-
-        return stores;
-    }
-
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject json = new JSONObject();
@@ -164,7 +149,6 @@ abstract public class AbstractFormSection implements FormSection
         json.put("label", getLabel());
         json.put("xtype", getXtype());
         json.put("clientModelClass", getClientModelClass());
-        json.put("storeConfigs", getStoreConfigs(c, u));
         json.put("fieldConfigs", getFieldConfigs(c, u));
         json.put("configSources", getConfigSources());
 

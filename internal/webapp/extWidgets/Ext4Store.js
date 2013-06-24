@@ -584,7 +584,7 @@ Ext4.define('LABKEY.ext4.Store', {
 
             response.errors = json;
 
-            this.validateRecords(json);
+            this.processErrors(json);
         }
 
         this.loadError = loadError;
@@ -622,8 +622,8 @@ Ext4.define('LABKEY.ext4.Store', {
         }
     },
 
-    validateRecords: function(errors){
-        Ext4.each(errors.errors, function(error){
+    processErrors: function(json){
+        Ext4.each(json.errors, function(error){
             //the error object for 1 row.  1-based row numbering
             if(Ext4.isDefined(error.rowNumber)){
                 var record = this.getAt(error.rowNumber - 1);
@@ -1132,7 +1132,15 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             for (var i=0;i<operation.records.length;i++){
                 var record = operation.records[i];
                 var oldKeys = {};
-                oldKeys[this.reader.getIdProperty()] = record.getId();
+
+                //NOTE: if the PK of this table is editable (like a string), then we need to submit
+                //this record using the unmodified value as the PK
+                var id = record.getId();
+                if (record.modified && !Ext4.isEmpty(record.modified[this.reader.getIdProperty()])){
+                    id = record.modified[this.reader.getIdProperty()];
+                }
+
+                oldKeys[this.reader.getIdProperty()] = id;
                 oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
 
                 if(command.command == 'delete'){
