@@ -284,6 +284,8 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
+        String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
+        addParam("usedInstaller", Boolean.parseBoolean(usedInstaller));
     }
 
     public String getContent()
