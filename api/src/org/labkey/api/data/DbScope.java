@@ -320,6 +320,12 @@ public class DbScope
         {
             throw new IllegalStateException("Transaction has already been rolled back");
         }
+        if (t._closesToIgnore > 0)
+        {
+            t._closesToIgnore = 0;
+            closeConnection();
+            throw new IllegalStateException("Missing expected call to close after prior commit");
+        }
 
         t._closesToIgnore++;
         if (t.decrement())
@@ -974,6 +980,7 @@ public class DbScope
                 {
                     try
                     {
+                        _log.warn("Forcing close of transaction started at ", t._creation);
                         t.closeConnection();
                     }
                     catch (Exception x)
@@ -1141,6 +1148,7 @@ public class DbScope
         private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
+        private Throwable _creation = new Throwable();
 
         TransactionImpl(Connection conn, Lock... extraLocks)
         {
@@ -1315,13 +1323,13 @@ public class DbScope
     }
 
 
-    // Test that a transaction in one scope doesn't affect other scopes. Start a transaction in the labkeyScope
-    // and then SELECT 10 rows from a random table in a random schema in every other datasource.
-    public static class MultiScopeTransactionTestCase extends Assert
+    public static class TransactionTestCase extends Assert
     {
         @Test
-        public void test() throws SQLException
+        public void testMultiScopeTransaction() throws SQLException
         {
+            // Test that a transaction in one scope doesn't affect other scopes. Start a transaction in the labkeyScope
+            // and then SELECT 10 rows from a random table in a random schema in every other datasource.
             List<TableInfo> tablesToTest = new LinkedList<>();
 
             for (DbScope scope : DbScope.getDbScopes())
@@ -1392,6 +1400,100 @@ public class DbScope
             while (i-- > 0);
 
             return element;
+        }
+
+        @Test
+        public void testExtraCloseIgnored()
+        {
+            try (Transaction t = getLabkeyScope().ensureTransaction())
+            {
+                assertTrue(getLabkeyScope().isTransactionActive());
+                t.commit();
+                assertFalse(getLabkeyScope().isTransactionActive());
+                t.close();
+                t.close();
+            }
+            assertFalse(getLabkeyScope().isTransactionActive());
+        }
+
+        @Test
+        public void testNested()
+        {
+            // Create three nested transactions and make sure we don't really commit until the outermost one is complete
+            try (Transaction t = getLabkeyScope().ensureTransaction())
+            {
+                Connection connection = t.getConnection();
+                assertTrue(getLabkeyScope().isTransactionActive());
+                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                {
+                    assertTrue(getLabkeyScope().isTransactionActive());
+                    assertSame(connection, t2.getConnection());
+                    try (Transaction t3 = getLabkeyScope().ensureTransaction())
+                    {
+                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertSame(connection, t3.getConnection());
+                        t3.commit();
+                        assertTrue(getLabkeyScope().isTransactionActive());
+                    }
+                    assertSame(connection, t2.getConnection());
+                    t2.commit();
+                    assertTrue(getLabkeyScope().isTransactionActive());
+                }
+                t.commit();
+                assertFalse(getLabkeyScope().isTransactionActive());
+            }
+            assertFalse(getLabkeyScope().isTransactionActive());
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testExtraCommit()
+        {
+            try (Transaction t = getLabkeyScope().ensureTransaction())
+            {
+                assertTrue(getLabkeyScope().isTransactionActive());
+                t.commit();
+                assertFalse(getLabkeyScope().isTransactionActive());
+                // This call should cause an IllegalStateException, since we already committed the transaction
+                t.commit();
+            }
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testNestedFailureCondition()
+        {
+            try (Transaction t = getLabkeyScope().ensureTransaction())
+            {
+                assertTrue(getLabkeyScope().isTransactionActive());
+                //noinspection EmptyTryBlock
+                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                {
+                    // Intentionally miss a call to commit!
+                }
+                // Should already be rolled back because the inner transaction never called commit() before it was closed
+                assertFalse(getLabkeyScope().isTransactionActive());
+                // This call should cause an IllegalStateException
+                t.commit();
+            }
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testNestedMissingClose()
+        {
+            try
+            {
+                try (Transaction t = getLabkeyScope().ensureTransaction())
+                {
+                    assertTrue(getLabkeyScope().isTransactionActive());
+                    Transaction t2 = getLabkeyScope().ensureTransaction();
+                    t2.commit();
+                    // Intentionally don't call t2.close(), make sure we blow up with an IllegalStateException
+                    t.commit();
+                }
+            }
+            finally
+            {
+                assertFalse(getLabkeyScope().isTransactionActive());
+            }
         }
     }
 }

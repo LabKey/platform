@@ -701,13 +701,6 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     @Override
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            ContainerUtil.purgeTable(getTableInfoCategories(), c, "Container");
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        ContainerUtil.purgeTable(getTableInfoCategories(), c, "Container");
     }
 }

@@ -17,15 +17,11 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-
-import java.sql.SQLException;
-
 
 /**
  * User: arauch
@@ -35,7 +31,7 @@ import java.sql.SQLException;
 
 public class ContainerUtil
 {
-    public static int purgeTable(TableInfo tinfo, String key) throws SQLException
+    public static int purgeTable(TableInfo tinfo, String key)
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
 
@@ -49,7 +45,7 @@ public class ContainerUtil
     }
 
 
-    public static int purgeTable(TableInfo tinfo, Container c, @Nullable String key) throws SQLException
+    public static int purgeTable(TableInfo tinfo, Container c, @Nullable String key)
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
 
@@ -57,6 +53,6 @@ public class ContainerUtil
             key = "Container";
 
         String delete = "DELETE FROM " + tinfo + " WHERE " + key + " = ?";
-        return Table.execute(tinfo.getSchema(), delete, c.getId());
+        return new SqlExecutor(tinfo.getSchema()).execute(delete, c.getId());
     }
 }

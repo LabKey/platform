@@ -173,11 +173,6 @@ public class SecurityPolicyManager
 
             //commit transaction
             scope.commitTransaction();
-
-            //remove the resource-oriented policy from cache
-            remove(resource);
-
-            notifyPolicyChange(resource.getResourceId());
         }
         catch(SQLException e)
         {
@@ -187,6 +182,11 @@ public class SecurityPolicyManager
         {
             scope.closeConnection();
         }
+
+        //remove the resource-oriented policy from cache
+        remove(resource);
+
+        notifyPolicyChange(resource.getResourceId());
     }
 
     /**
