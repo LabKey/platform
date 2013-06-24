@@ -18,8 +18,6 @@ package org.labkey.api.data.dialect;
 
 import org.labkey.api.data.SQLFragment;
 
-import java.util.regex.Pattern;
-
 /*
 * User: adam
 * Date: Aug 13, 2011

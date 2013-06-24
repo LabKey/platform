@@ -29,7 +29,6 @@ public class DbSequence
     {
         _c = c;
         _rowId = rowId;
-
     }
 
     public int getRowId()
