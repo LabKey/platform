@@ -108,32 +108,37 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != listRow)
         {
-            Map<String, Object> raw = new TableSelector(getQueryTable(), getKeyFilter(listRow), null).getMap();
+            SimpleFilter keyFilter = getKeyFilter(listRow);
 
-            if (raw.size() > 0)
+            if (null != keyFilter)
             {
-                ret = new CaseInsensitiveHashMap<>();
-                String keyName = _list.getKeyName();
+                Map<String, Object> raw = new TableSelector(getQueryTable(), keyFilter, null).getMap();
 
-                // Key
-                ret.put(keyName, raw.get(keyName));
-
-                // EntityId
-                ret.put("EntityId", raw.get("entityid"));
-
-                for (DomainProperty prop : _list.getDomain().getProperties())
+                if (raw.size() > 0)
                 {
-                    if (keyName.equalsIgnoreCase(prop.getName()))
-                        continue;
-                    Object value = raw.get(prop.getName());
+                    ret = new CaseInsensitiveHashMap<>();
+                    String keyName = _list.getKeyName();
 
-                    if (null == value)
+                    // Key
+                    ret.put(keyName, raw.get(keyName));
+
+                    // EntityId
+                    ret.put("EntityId", raw.get("entityid"));
+
+                    for (DomainProperty prop : _list.getDomain().getProperties())
                     {
-                        value = raw.get("_" + prop.getName());
-                    }
+                        if (keyName.equalsIgnoreCase(prop.getName()))
+                            continue;
+                        Object value = raw.get(prop.getName());
 
-                    if (null != value)
-                        ret.put(prop.getName(), value);
+                        if (null == value)
+                        {
+                            value = raw.get("_" + prop.getName());
+                        }
+
+                        if (null != value)
+                            ret.put(prop.getName(), value);
+                    }
                 }
             }
         }
