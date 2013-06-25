@@ -41,9 +41,14 @@
         return this.ed || tinymce.DOM.hasClass(this.dom, "labkey-inline-editor-active");
     };
 
-    InlineEditor.prototype.setStatus = function (msg) {
-        // UNDONE: display the message somewhere
-        console.log(msg);
+    InlineEditor.prototype.addMessage = function (html) {
+        tinymce.DOM.show(this.msgbox);
+        this.msgbox.innerHTML = "<div class='labkey-message'>" + html + "</div>";
+    };
+
+    InlineEditor.prototype.addErrorMessage = function (html) {
+        tinymce.DOM.show(this.msgbox);
+        this.msgbox.innerHTML = "<div class='labkey-error'>" + html + "</div>";
     };
 
     InlineEditor.prototype.edit = function () {
@@ -55,16 +60,24 @@
         // save original html
         this.originalValue = this.dom.innerHTML;
 
+        // get the height of the curent content to initialize the size of the inline editor
+        var rect = tinymce.DOM.getRect(this.dom);
+        var height = Math.max(250, Math.min(500, rect && rect.h));
+
         // replace content with a textarea and buttons
+        var msgboxId = this.editFieldId + "_msgbox";
         var html = "<div class='labkey-inline-editor'>" +
-                "<textarea id='" + this.editFieldId + "' style='width:100%'>" +
+                "<textarea id='" + this.editFieldId + "' style='width:100%; height:" + height + "px;'>" +
                 this.originalValue +
                 "</textarea>" +
+                "<div id='" + msgboxId + "' class='labkey-dataregion-msgbox' style='display:none;'></div>" +
                 "<p>" +
                 "<a class='labkey-button' name='save'><span>Save</span></a>" +
                 "<a class='labkey-button' name='cancel'><span>Cancel</span></a>" +
                 "</div>";
         this.dom.innerHTML = html;
+
+        this.msgbox = document.getElementById(msgboxId);
 
         // find the buttons and attach click events
         var buttons = this.dom.getElementsByClassName("labkey-button");
@@ -76,6 +89,8 @@
 
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
+
+            height: height,
 
             // General options
             mode: "none",
@@ -119,15 +134,25 @@
         this.ed.render();
     };
 
+    InlineEditor.prototype.cleanup = function () {
+        this.removeEditClass();
+
+        if (this.ed) {
+            this.ed.remove();
+            this.ed.destroy();
+            delete this.ed;
+        }
+
+        if (this.msgbox) {
+            delete this.msgbox;
+        }
+    };
+
     InlineEditor.prototype.cancel = function () {
         if (this.saving)
             return;
 
-        this.removeEditClass();
-
-        this.ed.remove();
-        this.ed.destroy();
-        this.ed = null;
+        this.cleanup();
 
         // restore original html
         this.dom.innerHTML = this.originalValue;
@@ -138,7 +163,6 @@
             return;
 
         this.saving = true;
-        this.setStatus("Saving...");
 
         var content = this.ed.getContent();
 
@@ -150,11 +174,8 @@
     // Handle InlineEditor specific functionality in this callback.
     // clients are responsible for calling this upon successful save.
     InlineEditor.prototype.onSaveSuccess = function (ret, content) {
-        this.removeEditClass();
-
-        this.ed.remove();
-        this.ed.destroy();
-        this.ed = null;
+        this.saving = false;
+        this.cleanup();
 
         // update modified html
         this.dom.innerHTML = content;
@@ -162,15 +183,19 @@
 
     // clients are responsible for calling this upon save failure.
     InlineEditor.prototype.onSaveFailure = function (errorInfo) {
-        // UNDONE: display save error message to user
-        console.warn("Failed to save wiki", errorInfo);
+        this.saving = false;
+        this.addErrorMessage(errorInfo.exception || "Error saving wiki");
     };
 
     InlineEditor.prototype.onSaveClick = function () {
         if (this.saving)
             return;
 
-        this.save();
+        if (this.ed.isDirty()) {
+            this.save();
+        } else {
+            this.cancel();
+        }
     };
 
     InlineEditor.prototype.onCancelClick = function () {
@@ -265,7 +290,7 @@
             config.dom = wikiEl;
 
             var dependencies = [ "tiny_mce/tiny_mce_src.js" ];
-            LABKEY.requiresScript(dependencies, true, function () { inlineWikiEdit(config); }, this, true);
+            LABKEY.requiresScript(dependencies, true, function () { inlineWikiEdit(config); }, this, false);
         }
 
     };
