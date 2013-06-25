@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.data.ColumnInfo;
@@ -64,6 +65,7 @@ public class DilutionManager
     public static final String CUTOFF_VALUE_TABLE_NAME = "CutoffValue";
     public static final String NAB_SPECIMEN_TABLE_NAME = "NAbSpecimen";
     public static final String NAB_DBSCHEMA_NAME = "nab";
+    public static final String OOR_INDICATOR_SUFFIX = "OORIndicator";
 
     public static DbSchema getSchema()
     {
@@ -269,7 +271,7 @@ public class DilutionManager
         public String getColumnName()
         {
             String colName = _type;
-            if (_oor) colName += "OORIndicator";
+            if (_oor) colName += OOR_INDICATOR_SUFFIX;
             return colName;
         }
 
@@ -352,7 +354,7 @@ public class DilutionManager
         else if (name.equalsIgnoreCase("fit error"))
             pdCat.setType("FitRrror");
 
-        pdCat.setOor(name.contains("OORIndicator"));
+        pdCat.setOor(name.contains(OOR_INDICATOR_SUFFIX));
         pdCat.setCutoffValue(cutoffValueFromName(name));
         return pdCat;
     }
@@ -377,8 +379,22 @@ public class DilutionManager
     private static Integer cutoffValueFromName(String name)
     {
         int icIndex = name.indexOf("IC");
-        if (icIndex >= 0 && icIndex + 4 <= name.length())
-            return Integer.valueOf(name.substring(icIndex + 2, icIndex + 4));
+        if (icIndex != -1)
+        {
+            int usIndex = name.indexOf('_', icIndex);
+            int oorIndex = name.indexOf(OOR_INDICATOR_SUFFIX, icIndex);
+            String cutoffValue;
+
+            if (usIndex != -1 && (usIndex-icIndex) <= 5)
+                cutoffValue = name.substring(icIndex + 2, usIndex);
+            else if (oorIndex != -1 && (oorIndex-icIndex) <= 5)
+                cutoffValue = name.substring(icIndex + 2, oorIndex);
+            else
+                cutoffValue = name.substring(icIndex + 2, name.length());
+
+            if (NumberUtils.isDigits(cutoffValue))
+                return NumberUtils.toInt(cutoffValue);
+        }
         return null;
     }
 
