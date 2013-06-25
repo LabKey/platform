@@ -2363,6 +2363,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getDefaultTitle: function(){
+        if(this.defaultTitleFn){
+            return this.defaultTitleFn(this.queryName, this.queryLabel, this.yAxisMeasure ? this.yAxisMeasure.label : null, this.xAxisMeasure ? this.xAxisMeasure.label : null);
+        }
         return (this.queryLabel || this.queryName) + (this.yAxisMeasure ? ' - ' + this.yAxisMeasure.label : '');
     },
 
