@@ -758,7 +758,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         _clientDependencies = new LinkedHashSet<>(scripts);
     }
 
-    public void addClientDepedency(ClientDependency resource)
+    public void addClientDependency(ClientDependency resource)
     {
         _clientDependencies.add(resource);
     }
