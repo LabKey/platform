@@ -420,17 +420,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             proxy   : this.getViewProxy(),
             listeners : {
                 beforeload : function() {
-                    if (this.gridPanel) {
+                    if (this.centerPanel) {
                         if (this.catWinID) {
                             var w = Ext4.getCmp(this.catWinID);
                             if (w && !w.isVisible())
-                                this.gridPanel.setLoading(true);
+                                this.centerPanel.getEl().mask('Loading...');
                         }
                         else
-                            this.gridPanel.setLoading(true);
+                            this.centerPanel.getEl().mask('Loading...');
                     }
                 },
-                load : {fn : this.onViewLoad, scope: this},
+                load : this.onViewLoad,
                 scope: this
             },
             sortRoot : 'displayOrder',
@@ -926,8 +926,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     onViewLoad : function() {
-        if (this.gridPanel)
-            this.gridPanel.setLoading(false);
+        if (this.centerPanel)
+            this.centerPanel.getEl().unmask();
 
         this.hiddenFilter();
     },

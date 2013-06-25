@@ -148,6 +148,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 displayField   : 'label',
                 valueField     : 'rowid',
                 emptyText      : 'Uncategorized',
+                forceSelection : true,
                 listeners      : {
                     render : function(combo){
 

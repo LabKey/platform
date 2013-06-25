@@ -89,7 +89,7 @@ LABKEY.ViewsPanel.prototype = {
      * connection proxy
      */
     getStore : function() {
-        var store = new Ext.data.GroupingStore({
+        return new Ext.data.GroupingStore({
             reader: new Ext.data.JsonReader({root:'views',id:'reportId'},
                     [
                         {name:'query'},
@@ -118,15 +118,13 @@ LABKEY.ViewsPanel.prototype = {
             autoLoad: true,
             sortInfo: {field:'name', direction:"ASC"},
             groupField:'queryLabel'});
-
-        return store;
     },
 
     /**
      * Create the config object for the grid panel
      */
     getGridConfig : function() {
-        var gridConfig = {
+        return {
             el: this.renderTo,
             autoScroll:false,
             border : false,
@@ -158,19 +156,12 @@ LABKEY.ViewsPanel.prototype = {
             buttonAlign:'center',
             columns: this.getColumns()
         };
-        return gridConfig;
     },
 
     /**
      * Create the button at the bottom of the panel
      */
     getButtons : function() {
-        this.editBtn = new Ext.Button({
-            text:'Edit',
-            id: 'btn_editView',
-            tooltip: {text:'Edit an existing view (you can also double click on the view to edit)', title:'Edit View'},
-            listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}
-        });
 
         var buttons = [
             {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},
@@ -201,13 +192,6 @@ LABKEY.ViewsPanel.prototype = {
                     items: this.createMenu }
             });
 
-/*
-            item.menu.addMenuItem({
-                id: 'config_views',
-                listeners:{click:function(button, event) {this.configViewTypes();}, scope:this},
-                text:'Configure available View types...'});
-
-*/
             buttons.splice(0,0,item);
         }
 
@@ -220,7 +204,7 @@ LABKEY.ViewsPanel.prototype = {
                 id: 'config_views',
                 disabled : !this.isAdmin,
                 tooltip: {text:'Configure View Options', title:'Options'},
-                listeners:{click:function(button, event) {this.configViewTypes();}, scope:this}
+                listeners:{click:this.configViewTypes, scope:this}
             });
         }
 

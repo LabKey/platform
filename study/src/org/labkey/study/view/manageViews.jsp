@@ -23,27 +23,30 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.visualization.VisualizationUrls" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
-<%@ page import="org.labkey.study.reports.EnrollmentReport" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%!
 
-<script type="text/javascript">
-    LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("reports/rowExpander.js");
-    LABKEY.requiresScript("reports/manageViews.js");
-</script>
-
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        resources.add(ClientDependency.fromFilePath("/reports/rowExpander.js"));
+        resources.add(ClientDependency.fromFilePath("/reports/manageViews.js"));
+        return resources;
+    }
+%>
 <%
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
     StudyManageReportsBean form = me.getModelBean();
@@ -60,11 +63,6 @@
     reportBean.setReportType(RReport.TYPE);
     reportBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-    ActionURL newRView = ReportUtil.getRReportDesignerURL(context, reportBean);
-    ActionURL newTimeChart = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(c);
-
-    boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(c), false) != null;
-
     Study study = StudyManager.getInstance().getStudy(c);
     ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, study.getContainer());
     boolean showCustomizeParticipant = context.hasPermission(AdminPermission.class) && context.getUser().isDeveloper();
@@ -77,26 +75,19 @@
 
     org.json.JSONArray reportButtons = ReportUtil.getCreateReportButtons(context);
 %>
-
-<script type="text/javascript">
-    var panel;
-
-/*
-    function securityRenderer(value, p, record)
+<style type="text/css">
+    .x-grid3-cell-inner, .x-grid3-hd-inner
     {
-        var href = '<%=permissionURL.getLocalURIString()%>';
-
-        href = href.concat('reportId=');
-        href = href.concat(record.data.reportId);
-
-        return "<a href='" + href + "'>" + value + "</a>";
+        padding: 3px 3px 3px 5px !important;
     }
+</style>
+<i><p id="filterMsg"></p></i>
+<div id="viewsGrid" class="extContainer"></div>
+<script type="text/javascript">
 
-*/
-    function renderViews()
-    {
+    var renderViews = function() {
         // subclass the views panel
-        StudyViewsPanel = Ext.extend(LABKEY.ViewsPanel, {
+        var StudyViewsPanel = Ext.extend(LABKEY.ViewsPanel, {
             /**
              * Override and append a custom button
              */
@@ -105,7 +96,7 @@
                 var btnCfg = {
                     text:'Customize <%= h(StudyService.get().getSubjectNounSingular(study.getContainer())) %> View',
                     disabled: <%= !showCustomizeParticipant %>,
-                    listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
+                    listeners:{click:function() {window.location = '<%=customizeParticipantURL%>';}}
                 };
                 if (this.searchField)
                     buttons.splice(buttons.length-2, 0, btnCfg);
@@ -184,7 +175,7 @@
             }
         });
 
-        panel = new StudyViewsPanel({
+        var panel = new StudyViewsPanel({
             renderTo: 'viewsGrid',
             <% if (schemaName != null && queryName != null) { %>
                 baseQuery: {
@@ -245,14 +236,11 @@
         });
 
         var grid = panel.show();
-        var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(grid, w, -1); // don't fit to height
-        }
+        var _resize = function(w, h) {
+            LABKEY.Utils.resizeToViewport(grid, w, -1);
+        };
         Ext.EventManager.onWindowResize(_resize);
-    }
+    };
 
-    Ext.onReady(function(){renderViews();});
+    Ext.onReady(renderViews);
 </script>
-
-<i><p id="filterMsg"></p></i>
-<div id="viewsGrid" class="extContainer"></div>

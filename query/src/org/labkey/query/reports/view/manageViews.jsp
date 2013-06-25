@@ -25,15 +25,21 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
 
-<script type="text/javascript">
-    LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("reports/rowExpander.js");
-    LABKEY.requiresScript("reports/manageViews.js");
-</script>
-
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        resources.add(ClientDependency.fromFilePath("/reports/rowExpander.js"));
+        resources.add(ClientDependency.fromFilePath("/reports/manageViews.js"));
+        return resources;
+    }
+%>
 <%
     JspView<ReportsController.ViewsSummaryForm> me = (JspView<ReportsController.ViewsSummaryForm>) HttpView.currentView();
     ReportsController.ViewsSummaryForm form = me.getModelBean();
@@ -46,7 +52,9 @@
 
     JSONArray reportButtons = ReportUtil.getCreateReportButtons(context);
 %>
-
+<labkey:errors/>
+<i><p id="filterMsg"></p></i>
+<div id="viewsGrid" class="extContainer"></div>
 <script type="text/javascript">
 
     Ext.onReady(function()
@@ -76,8 +84,3 @@
     });
     
 </script>
-
-<labkey:errors/>
-
-<i><p id="filterMsg"></p></i>
-<div id="viewsGrid" class="extContainer"></div>
