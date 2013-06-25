@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -43,7 +44,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
@@ -58,9 +58,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
@@ -1049,6 +1047,65 @@ public class ListManager implements SearchService.DocumentProvider
                 p.setRequired(true);
 
                 newDomain.setPropertyIndex(p, 0);
+
+                // Add the Primary Key Property Descriptor to the old domain
+                try
+                {
+                    PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
+                    listDef.clearDomain();
+                    newDomain = listDef.getDomain();
+
+                    DomainDescriptor dd = OntologyManager.getDomainDescriptor(newDomain.getTypeId());
+                    OntologyManager.ensurePropertyDomain(pd, dd, 0);
+
+                    OntologyManager.clearCaches();
+                    listDef.clearDomain();
+                    newDomain = listDef.getDomain();
+                }
+                catch (SQLException e)
+                {
+                    ModuleUpgrader.getLogger().info("Failed to add Primary Key Property Descriptor");
+                    throw new RuntimeSQLException(e);
+                }
+            }
+
+            // check for duplicates properties in the domain
+            Set<String> names = new CaseInsensitiveHashSet();
+            boolean clearDomain = false;
+
+            for (DomainProperty dp : newDomain.getProperties())
+            {
+                if (null != dp)
+                {
+                    // Have a duplicate
+                    if (names.contains(dp.getName()))
+                    {
+                        PropertyDescriptor pd = dp.getPropertyDescriptor();
+                        pd.setName(pd.getName() + pd.getPropertyId());
+
+                        try
+                        {
+                            Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+                            clearDomain = true;
+                        }
+                        catch (SQLException e)
+                        {
+                            ModuleUpgrader.getLogger().info("Failed to update duplicate Property Descriptor");
+                            throw new RuntimeSQLException(e);
+                        }
+                    }
+                    else
+                        names.add(dp.getName());
+                }
+            }
+
+            // only need to clear the domain if domain properties have been changed
+            if (clearDomain)
+            {
+                OntologyManager.clearCaches();
+
+                listDef.clearDomain();
+                newDomain = listDef.getDomain();
             }
 
             // create the hard table
