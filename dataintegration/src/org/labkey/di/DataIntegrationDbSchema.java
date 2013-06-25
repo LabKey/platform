@@ -40,7 +40,8 @@ public class DataIntegrationDbSchema extends UserSchema
     public enum Columns
     {
         TransformRunId("diTransformRunId"),
-        TransformModified("diModified");
+        TransformModified("diModified"),
+        TransformRowVersion("diRowVersion");
 
         final String _name;
 
