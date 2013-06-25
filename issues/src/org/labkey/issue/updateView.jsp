@@ -125,7 +125,7 @@
             }
 %>
                 <td colspan="3">
-                <%=bean.writeInput("title", issue.getTitle(), "id=title tabindex=0 style=\"width:100%;\"")%>
+                <%=bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\"")%>
                 </td></tr>
             <tr>
                 <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
@@ -134,7 +134,7 @@
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=text(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 10)%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 2)%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
@@ -142,14 +142,14 @@
                                 {
                                     //Enabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"10\"")%>
+                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\"")%>
                         <%
                                 }
                                 else
                                 {
                                     //Disabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"10\" disabled")%>
+                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\" disabled")%>
                         <%
                                 }
                         %>
@@ -192,9 +192,9 @@
                         %>
                         </td></tr>
         <% } %>
-                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 10))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 10))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 2))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 2))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2))%>
                     </table>
                 </td>
                 <td valign="top" rowspan="6"><table>
@@ -209,17 +209,17 @@
                         if (issue.getIssueId() == 0)
                         {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
+                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null)%>
     <%
                         } else {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
+                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null)%>
     <%
                         }
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="100" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
                         </td>
                     </tr>
     <%
@@ -229,35 +229,26 @@
     <%
                 }
     %>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 3))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 3))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 3))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3))%>
                 </table></td>
             </tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=bean.writeSelect(ColumnType.TYPE, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=bean.writeSelect(ColumnType.AREA, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=bean.writeSelect(ColumnType.MILESTONE, 0)%></td></tr>
-            <tr><td class="labkey-form-label">Comment</td>
-                <td colspan="3">
-<%
-    if (bean.getBody() != null)
-    {
-%>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"><%=h(bean.getBody())%></textarea>
-<%
-    } else {
-%>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"></textarea>
-<% } %>
-    </td></tr>
-    <tr>
-        <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", cancelURL)%></td>
-    </tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=bean.writeSelect(ColumnType.TYPE, 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=bean.writeSelect(ColumnType.AREA, 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=bean.writeSelect(ColumnType.MILESTONE, 1)%></td></tr>
+        <tr><td class="labkey-form-label">Comment</td>
+            <td colspan="3">
+                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=bean.getBody() != null ? h(bean.getBody()) : ""%></textarea>
+            </td></tr>
+        <tr>
+            <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "tabindex=\"5\" name=\"" + bean.getAction() + "\"", true, true)%><%= PageFlowUtil.generateButton("Cancel", cancelURL, null, "tabIndex=\"5\"")%></td>
+        </tr>
     </table>
-    
+
     <table>
         <tr><td><table id="filePickerTable"></table></td></tr>
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=h(context.getRequest().getContextPath())%>/_images/paperclip.gif">Attach a file</a></td></tr>
