@@ -183,12 +183,11 @@ public class ParticipantGroupController extends BaseStudyController
                 throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
             }
 
-            SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
-            if (defs.length == 1)
+            ParticipantCategoryImpl category  = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
+            if (category != null)
             {
-                form.copySpecialFields(defs[0]);
-                ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
+                form.copySpecialFields(category);
+                category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
                 resp.put("success", true);
                 resp.put("category", category.toJSON());
@@ -213,14 +212,11 @@ public class ParticipantGroupController extends BaseStudyController
                 throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
             }
 
-            SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
-            if (defs.length == 1)
+            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
+            if (category != null)
             {
-                ParticipantCategoryImpl def = defs[0];
+                ParticipantCategoryImpl def = category;
                 form.copySpecialFields(def);
-
-                ParticipantCategoryImpl category;
 
                 if (modification == Modification.ADD)
                     category = ParticipantGroupManager.getInstance().addCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
@@ -286,9 +282,7 @@ public class ParticipantGroupController extends BaseStudyController
             ParticipantCategoryImpl[] categories;
             if (form.getCategoryType() != null && form.getCategoryType().equals("manual"))
             {
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition("type", form.getCategoryType());
-                categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+                categories = ParticipantGroupManager.getInstance().getParticipantCategoriesByType(getContainer(), getUser(), form.getCategoryType());
             }
             else
             {
@@ -336,24 +330,20 @@ public class ParticipantGroupController extends BaseStudyController
             if (form.isNew())
             {
                 // try to match a single category by label/container
-                SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
-                filter.addCondition("Label", form.getLabel());
-
-                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategoriesByLabel(getContainer(), getUser(), form.getLabel());
                 if (defs.length == 1)
                     category = defs[0];
             }
             else
             {
-                SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
-                if (defs.length == 1)
-                    category = defs[0];
+                category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
             }
 
-            ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);
-            resp.put("success", true);
-
+            if (category != null)
+            {
+                ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);
+                resp.put("success", true);
+            }
             return resp;
         }
     }
