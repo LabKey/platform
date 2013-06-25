@@ -102,6 +102,12 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
             SecurityManager.deleteMember(group, member);
     }
 
+    public Group getGroup(@Nullable Location location)
+    {
+        Integer groupId = getGroupId(location, false);
+        return SecurityManager.getGroup(groupId);
+    }
+
     public Integer getGroupId(boolean createIfMissing)
     {
         return getGroupId(null, createIfMissing);

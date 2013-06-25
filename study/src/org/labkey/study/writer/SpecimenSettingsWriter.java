@@ -16,7 +16,8 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.User;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.study.SampleManager;
@@ -36,6 +37,8 @@ import org.labkey.study.xml.SpecimensDocument;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -189,19 +192,13 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         xmlReq.setDescription(req.getDescription());
     }
 
-    private void writeActorGroup(SampleRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroup)
+    private void writeActorGroup(SampleRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroupType)
     {
+        // Note: these actor groups only currently have Users (no groups within groups)
+        GroupManager.exportGroupMembers(actor.getGroup(location), Collections.<Group>emptyList(), Arrays.asList(actor.getMembers(location)), xmlGroupType);
+
         // for a actor type of per location, use the location label as the group name
         // otherwise use the actor label in the per study case
-        xmlGroup.setName(location != null ? location.getLabel() : actor.getLabel());
-
-        // these actor groups only currently have Users (no groups within groups)
-        User[] members = actor.getMembers(location);
-        GroupType.Users xmlUsers = xmlGroup.addNewUsers();
-        for (User member : members)
-        {
-            xmlUsers.addNewUser().setName(member.getEmail());
-        }
-        // TODO: move to a centralized writeGroupMembers location?
+        xmlGroupType.setName(location != null ? location.getLabel() : actor.getLabel());
     }
 }

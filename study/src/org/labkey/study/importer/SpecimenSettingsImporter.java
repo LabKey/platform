@@ -18,12 +18,10 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
-import org.labkey.security.xml.UserRefType;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.LocationImpl;
@@ -49,7 +47,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -218,73 +218,60 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 // remove any existing not in-use actors
                 // note: this will also remove all groups and members for that actor
                 Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
-                List<String> inUseActorLabels = new ArrayList<>();
+                Map<String, SampleRequestActor> inUseActors = new HashMap<>();
                 for (SampleRequestActor existingActor : study.getSampleRequestActors())
                 {
                     if (!inUseActorIds.contains(existingActor.getRowId()))
                         existingActor.delete();
                     else
-                        inUseActorLabels.add(existingActor.getLabel());
+                        inUseActors.put(existingActor.getLabel(), existingActor);
                 }
 
                 // create new request actors from the xml settings file
                 for (int i = 0; i < xmlActorArray.length; i++)
                 {
                     String newActorLabel = xmlActorArray[i].isSetLabel() && xmlActorArray[i].getLabel() != null && !xmlActorArray[i].getLabel().isEmpty() ? xmlActorArray[i].getLabel() : null;
-                    if (inUseActorLabels.contains(newActorLabel))
+                    if (newActorLabel != null)
                     {
-                        ctx.getLogger().warn("Skipping request actor that matches an existing actor label: " + newActorLabel);
-                    }
-                    else if (newActorLabel != null)
-                    {
-                        SampleRequestActor newActor = new SampleRequestActor();
-                        newActor.setContainer(ctx.getContainer());
-                        newActor.setLabel(newActorLabel);
-                        newActor.setSortOrder(i);
-                        newActor.setPerSite(SpecimenSettingsType.RequestActors.Actor.Type.LOCATION.equals(xmlActorArray[i].getType())); // default is per study
-                        newActor.create(ctx.getUser());
-
-                        GroupType[] newActorGroups = xmlActorArray[i].getGroups().getGroupArray();
-                        if (newActorGroups.length > 0)
+                        // create new request actor if label does not match existing in-use actor label
+                        SampleRequestActor actor;
+                        if (!inUseActors.keySet().contains(newActorLabel))
                         {
-                            for (GroupType newActorGroup : newActorGroups)
+                            actor = new SampleRequestActor();
+                            actor.setContainer(ctx.getContainer());
+                            actor.setLabel(newActorLabel);
+                            actor.setSortOrder(i);
+                            actor.setPerSite(SpecimenSettingsType.RequestActors.Actor.Type.LOCATION.equals(xmlActorArray[i].getType())); // default is per study
+                            actor.create(ctx.getUser());
+                        }
+                        else
+                        {
+                            actor = inUseActors.get(newActorLabel);
+                        }
+
+                        if (xmlActorArray[i].getGroups() != null)
+                        {
+                            for (GroupType newActorGroup : xmlActorArray[i].getGroups().getGroupArray())
                             {
-                                // TODO: move to a centralized writeGroupMembers location?
-                                List<User> newMembers = new ArrayList<>();
-                                UserRefType[] xmlMembers = newActorGroup.getUsers().getUserArray();
-                                for (UserRefType xmlMember : xmlMembers)
-                                {
-                                    try
-                                    {   // currently, request actor groups only have users as membesr (no groups in groups)
-                                        User user = UserManager.getUser(new ValidEmail(xmlMember.getName()));
-                                        if (user != null)
-                                            newMembers.add(user);
-                                        else
-                                            ctx.getLogger().warn("User does not exist for request actor group member: " + xmlMember.getName());
-                                    }
-                                    catch(ValidEmail.InvalidEmailException e)
-                                    {
-                                        ctx.getLogger().warn("Invalid email address for request actor group member: " + xmlMember.getName());
-                                    }
-
-                                }
-
-                                LocationImpl location = null;
                                 // verify that the location exists in this study, for the per site actor type
-                                if (newActor.isPerSite())
+                                LocationImpl location = null;
+                                if (actor.isPerSite())
                                 {
                                     List<LocationImpl> matchingLocs = StudyManager.getInstance().getLocationsByLabel(ctx.getContainer(), newActorGroup.getName());
                                     if (matchingLocs.size() > 0)
                                         location = matchingLocs.get(0);
 
-                                    if (location != null)
-                                        newActor.addMembers(location, newMembers.toArray(new User[newMembers.size()]));
-                                    else
-                                        ctx.getLogger().warn("Request actor group not created for \"" + newActor.getLabel()
+                                    if (location == null)
+                                    {
+                                        ctx.getLogger().warn("Request actor group not created for \"" + actor.getLabel()
                                                 + ", " + newActorGroup.getName() + "\". Could not find matching study location.");
+                                        continue;
+                                    }
                                 }
-                                else
-                                    newActor.addMembers(null, newMembers.toArray(new User[newMembers.size()]));
+
+                                // note: currently, request actor groups only have users as membesr (no groups in groups)
+                                Integer newGroupId = actor.getGroupId(location, true);
+                                GroupManager.importGroupMembers(SecurityManager.getGroup(newGroupId), newActorGroup, ctx.getLogger());
                             }
                         }
                     }
