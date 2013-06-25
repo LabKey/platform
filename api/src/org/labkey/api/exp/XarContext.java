@@ -232,7 +232,7 @@ public class XarContext
     public File findFile(String path)
     {
         String lookupPath = path;
-        if (lookupPath.indexOf(":/") < 0)
+        if (!lookupPath.contains(":/"))
         {
             lookupPath = "file:/" + lookupPath;
         }

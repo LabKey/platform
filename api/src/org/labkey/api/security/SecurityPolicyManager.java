@@ -100,10 +100,8 @@ public class SecurityPolicyManager
     {
         DbScope scope = core.getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
             SecurityPolicyBean currentPolicyBean = new TableSelector(core.getTableInfoPolicies())
@@ -137,20 +135,15 @@ public class SecurityPolicyManager
             }
 
             //commit transaction
-            scope.commitTransaction();
-
-            //remove the resource-oriented policy from cache
-            remove(policy);
-            notifyPolicyChange(policy.getResourceId());
+            transaction.commit();
         }
         catch(SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        finally
-        {
-            scope.closeConnection();
-        }
+        //remove the resource-oriented policy from cache
+        remove(policy);
+        notifyPolicyChange(policy.getResourceId());
     }
 
     public static void notifyPolicyChange(String objectID)

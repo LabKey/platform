@@ -26,6 +26,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.reportProps.PropDefDocument;
@@ -120,16 +121,15 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return null;
     }
 
-    public void setPropertyValue(String entityId, Container container, String propertyName, Object value) throws Exception
+    public void setPropertyValue(String entityId, Container container, String propertyName, Object value) throws ValidationException
     {
         if (entityId == null || container == null)
             return;
 
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             Map<String, DomainProperty> propMap = getPropertyMap(container);
 
             if (propMap.containsKey(propertyName))
@@ -146,11 +146,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
                     OntologyManager.insertProperties(container, rowLsid, oProp);
                 }
             }
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
