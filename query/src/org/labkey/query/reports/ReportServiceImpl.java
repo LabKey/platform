@@ -29,7 +29,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -37,9 +36,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
@@ -586,23 +583,25 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
     {
         DbScope scope = getTable().getSchema().getScope();
+        ReportDescriptor descriptor;
+        ReportDB r;
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
             report.getDescriptor().setContainer(context.getContainer().getId());
             report.beforeSave(context);
 
-            final ReportDescriptor descriptor = report.getDescriptor();
+            descriptor = report.getDescriptor();
 
             // last chance to validate permissions, this should be done in the controller actions, so
             // just throw an exception if validation fails
             if (!skipValidation)
                 validateReportPermissions(context, report);
 
-            final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
+            r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
             tx.commit();
-            _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
-            return r;
         }
+        _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
+        return r;
     }
 
     private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor) throws SQLException

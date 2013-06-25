@@ -454,12 +454,12 @@ public class StudyManager
             dataSetDefinition.getStorageTableInfo();
 
             scope.commitTransaction();
-            indexDataset(null, dataSetDefinition);
         }
         finally
         {
             scope.closeConnection();
         }
+        indexDataset(null, dataSetDefinition);
     }
 
     /**
