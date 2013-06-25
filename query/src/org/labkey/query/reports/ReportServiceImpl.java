@@ -39,6 +39,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -639,7 +640,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             if (null != descriptor.getRefreshDateAsObject())
                 ReportPropsManager.get().setPropertyValue(entityId, c, ReportDescriptor.Prop.refreshDate.name(), descriptor.getRefreshDateAsObject());
         }
-        catch (Exception e) {
+        catch (ValidationException e) {
             throw new RuntimeException(e);
         }
     }

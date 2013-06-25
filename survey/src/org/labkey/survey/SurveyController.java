@@ -43,7 +43,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
@@ -66,14 +65,14 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyUrls;
+import org.labkey.api.survey.model.Survey;
+import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyStatus;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -569,13 +568,11 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                 FieldKey pk = table.getAuditRowPk();
 
-                if (table != null && pk != null)
+                if (pk != null)
                 {
                     DbSchema dbschema = table.getSchema();
-                    try
+                    try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
                     {
-                        dbschema.getScope().ensureTransaction();
-
                         TableViewForm tvf = new TableViewForm(table);
                         Survey survey = getSurvey(form);
 
@@ -639,14 +636,10 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 response.put("surveyResults", row);
                                 response.put("survey", new JSONObject(survey));
 
-                                dbschema.getScope().commitTransaction();
+                                transaction.commit();
                                 response.put("success", true);
                             }
                         }
-                    }
-                    finally
-                    {
-                        dbschema.getScope().closeConnection();
                     }
                 }
             }

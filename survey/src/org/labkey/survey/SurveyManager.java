@@ -47,8 +47,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
@@ -208,9 +206,8 @@ public class SurveyManager
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
         List<Throwable> errors;
 
-        try {
-            scope.ensureTransaction();
-
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             TableInfo table = SurveySchema.getInstance().getSurveysTable();
             table.setAuditBehavior(AuditBehaviorType.DETAILED);
 
@@ -239,16 +236,12 @@ public class SurveyManager
                     throw new RuntimeException(first);
             }
 
-            scope.commitTransaction();
+            transaction.commit();
             return ret;
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
