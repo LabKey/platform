@@ -207,7 +207,7 @@ public abstract class BaseWikiView extends JspView<Object>
             if (version != null && version.getRendererTypeEnum() == WikiRendererType.HTML)
             {
                 // Indlude wiki.js as a client dependency only for inline editing
-                addClientDepedency(ClientDependency.fromFilePath("wiki/js/wiki.js"));
+                addClientDependency(ClientDependency.fromFilePath("wiki/js/wiki.js"));
 
                 NavTree edit = new NavTree("Edit", null, getViewContext().getContextPath() + "/_images/partedit.png");
                 edit.setScript("LABKEY.Internal.Wiki.createWebPartInlineEditor({" +
