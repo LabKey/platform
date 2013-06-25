@@ -201,7 +201,9 @@ public class SpecimenForeignKey extends LookupForeignKey
     {
         FieldKey rowIdFieldKey = new FieldKey(parent.getFieldKey(), "RowId");
         FieldKey containerFieldKey = new FieldKey(parent.getFieldKey(), "Container");
-        return DetailsURL.fromString("study-samples/sampleEvents.view?id=${" + rowIdFieldKey + "}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        DetailsURL detailsURL = DetailsURL.fromString("study-samples/sampleEvents.view?id=${" + rowIdFieldKey + "}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        detailsURL.setStrictContainerContextEval(true);
+        return detailsURL;
     }
 
     @Override
@@ -230,6 +232,8 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public class SpecimenLookupColumn extends LookupColumn
     {
+        private boolean _returnNull;
+
         public SpecimenLookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
         {
             super(foreignKey, lookupKey, lookupColumn);
@@ -238,6 +242,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public SQLFragment getValueSql(String tableAlias)
         {
+            if (_returnNull)
+            {
+                return new SQLFragment("CAST(NULL AS " + getParentTable().getSchema().getSqlDialect().getBooleanDataType() + ")");
+            }
             // We want the left hand table, not the lookup that we're joining to
             if (getFieldKey().getName().equals(AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME))
             {
@@ -344,7 +352,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             }
             else
             {
-                super.declareJoins(parentAlias, map);
+                // Remember that we failed to resolve columns and should always just return null
+                _returnNull = true;
             }
         }
     }

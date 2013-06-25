@@ -51,6 +51,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     // parsed fields
     ActionURL _parsedUrl;
+    private boolean _strictContainerContextEval;
     // _source from AbstractStringExpression            
 
 
@@ -275,6 +276,10 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             return null;
         }
         Container c = getContainer(context);
+        if (c == null && _strictContainerContextEval)
+        {
+            return null;
+        }
         if (null != c)
             _parsedUrl.setContainer(c);
         return _parsedUrl.getPath() + "?" + query;
@@ -337,6 +342,11 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         if (c instanceof Container)
             return (Container)c;
         return null;
+    }
+
+    public void setStrictContainerContextEval(boolean strictContainerContextEval)
+    {
+        _strictContainerContextEval = strictContainerContextEval;
     }
 
 
