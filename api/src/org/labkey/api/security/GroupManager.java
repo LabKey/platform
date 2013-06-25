@@ -34,14 +34,20 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.security.xml.GroupEnumType;
+import org.labkey.security.xml.GroupRefType;
+import org.labkey.security.xml.GroupType;
+import org.labkey.security.xml.UserRefType;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -200,6 +206,81 @@ public class GroupManager
         sb.append(name).append("=\"").append(value).append("\"");
     }
 
+    public static void exportGroupMembers(Group group, List<Group> memberGroups, List<User> memberUsers, GroupType xmlGroupType)
+    {
+        if (group == null)
+            return;
+
+        xmlGroupType.setName(group.getName());
+        xmlGroupType.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
+
+        if (memberGroups != null && memberGroups.size() > 0)
+        {
+            GroupType.Groups xmlGroups = xmlGroupType.addNewGroups();
+            for (Group member : memberGroups)
+            {
+                GroupRefType xmlGroupRefType = xmlGroups.addNewGroup();
+                xmlGroupRefType.setName(member.getName());
+                xmlGroupRefType.setType(member.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
+            }
+        }
+
+        if (memberUsers != null && memberUsers.size() > 0)
+        {
+            GroupType.Users xmlUsers = xmlGroupType.addNewUsers();
+            for (User member : memberUsers)
+            {
+                xmlUsers.addNewUser().setName(member.getEmail());
+            }
+        }
+    }
+
+    public static void importGroupMembers(Group group, GroupType xmlGroupType, Logger log)
+    {
+        if (group != null && xmlGroupType != null)
+        {
+            if (xmlGroupType.getGroups() != null)
+            {
+                // TODO: not yet implemented
+            }
+
+            if (xmlGroupType.getUsers() != null)
+            {
+                // remove existing group members, full replacement
+                List<UserPrincipal> membersToDelete = new ArrayList<>();
+                membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.BOTH));
+                SecurityManager.deleteMembers(group, membersToDelete);
+
+                for (UserRefType xmlMember : xmlGroupType.getUsers().getUserArray())
+                {
+                    try
+                    {
+                        User user = UserManager.getUser(new ValidEmail(xmlMember.getName()));
+                        if (user != null)
+                        {
+                            try
+                            {
+                                SecurityManager.addMember(group, user);
+                            }
+                            catch (InvalidGroupMembershipException e)
+                            {
+                                // Best effort, but log any exceptions
+                                ExceptionUtil.logExceptionToMothership(null, e);
+                            }
+                        }
+                        else
+                        {
+                            log.warn("User does not exist for group member: " + xmlMember.getName());
+                        }
+                    }
+                    catch(ValidEmail.InvalidEmailException e)
+                    {
+                        log.warn("Invalid email address for group member: " + xmlMember.getName());
+                    }
+                }
+            }
+        }
+    }
 
     public static class GroupListener implements SecurityManager.GroupListener
     {
