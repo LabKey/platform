@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.study.reports;
 
 import org.jetbrains.annotations.Nullable;
@@ -174,8 +189,10 @@ public class WindowsCommandLineSplitter implements CommandLineSplitter
                 new String[]{"\"C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java\"", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
             test("\"C:\\Program Files\\Java with \\\"embedded quote\\\"\\jdk1.7.0_25\\bin\\java\" -cp c:/labkey/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}",
                 new String[]{"\"C:\\Program Files\\Java with \\\"embedded quote\\\"\\jdk1.7.0_25\\bin\\java\"", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
-            test("C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java -cp c:/labkey/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}",
-                new String[]{"C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
+
+//      This test is highly machine-dependent... enable and adjust the path to test backward compatibility for unquoted commands that include spaces
+//            test("C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java -cp c:/labkey/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}",
+//                new String[]{"C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
         }
 
         private void test(String commandLine, String[] expected) throws IOException
