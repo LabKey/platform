@@ -168,8 +168,78 @@
         }
     };
 
+    /**
+     * @namespace GetData static class to access javascript APIs related to our GetData API.
+     */
     LABKEY.Query.GetData = {
-        RawData: function(config) {
+        /**
+         * @function
+         * @param {Object} config Required. An object which contains the following configuration properties:
+         * @param {Object} config.source Required. An object which contains parameters related to the source of the request.
+         * @param {String} config.source.type Required. A string with value set to either "query" or "sql". Indicates if the value is
+         *      "sql" then source.sql is required. If the value is "query" then source.queryName is required.
+         * @param {*} config.source.schemaName Required. The schemaName to use in the request. Can be a string, array of strings, or LABKEY.FieldKey.
+         * @param {String} config.source.queryName The queryName to use in the request. Required if source.type = "query"
+         * @param {String} config.source.sql The LabKey SQL to use in the request. Required if source.type = "sql"
+         * @param {String} config.source.containerFilter Optional. The container filter to use in the request. See {@link LABKEY.Query.containerFilter}
+         *      for valid container filter types.
+         * @param {Object[]} config.transforms An array of objects with the following properties:
+         *              <ul>
+         *                  <li><strong>type</strong>: {String} Required.</li>
+         *                  <li><strong>label</strong>: {String} Optional. The label used when the transform is rendered.</li>
+         *                  <li>
+         *                      <strong>pivot</strong>: {Object} Optional. Array of groupBy objects with the following properties:
+         *                      <ul>
+         *                          <li>
+         *                              <strong>columns</strong>:
+         *                              {Array} The columns to pivot. Is an array containing strings, arrays of strings, and/or
+         *                              {@link LABKEY.FieldKey} objects.
+         *                          </li>
+         *                          <li>
+         *                              <strong>by</strong>:
+         *                              The column to pivot by. Can be an array of strings, a string, or a {@link LABKEY.FieldKey}
+         *                          </li>
+         *                      </ul>
+         *                  </li>
+         *                  <li>
+         *                      <strong>aggregates</strong>: {Object[]} Optional. An array of objects with the following properties:
+         *                      <ul>
+         *                          <li>
+         *                              <strong>fieldKey</strong>:
+         *                              Required. The target column. Can be an array of strings, a string, or a {@link LABKEY.FieldKey}
+         *                          </li>
+         *                          <li><strong>type</strong>: {String} Required. The type of aggregate.</li>
+         *                          <li><strong>alias</strong>: {String} Required. The name to alias the aggregate as.</li>
+         *                          <li>
+         *                              <strong>metadata</strong>: {Object} An object containing the ColumnInfo metadata properties.
+         *                          </li>
+         *                      </ul>
+         *                  </li>
+         *                  <li>
+         *                      <strong>filters</strong>: {Object[]} Optional. An array containing  objects created with
+         *                  {@link LABKEY.Filter.create}, {@link LABKEY.Query.Filter} objects, or javascript objects with the following
+         *                  properties:
+         *                      <ul>
+         *                          <li>
+         *                              <strong>fieldKey</strong>: Required. Can be a string, array of strings, or a
+         *                          {@link LABKEY.FieldKey}
+         *                          </li>
+         *                          <li>
+         *                              <strong>type</strong>: Required. Can be a string or a type from {@link LABKEY.Filter#Types}
+         *                          </li>
+         *                          <li><strong>value</strong>: Optional depending on filter type. The value to filter on.</li>
+         *                      </ul>
+         *                  </li>
+         *              </ul>
+         * @param {Array} config.columns Optional. An array containing {@link LABKEY.FieldKey} objects, strings, or arrays of strings.
+         *      Used to specify which columns the user wants. The columns must match those returned from the last transform.
+         * @param {Function} config.success Required. A function to be executed when the GetData request completes successfully. The function will
+         *      be passed a {@link LABKEY.Query.Response} object.
+         * @param {Function} config.failure Optional. If no failure function is provided the reponse is sent to the console via console.error.
+         *      If a function is provided the JSON response is passed to it as the only parameter.
+         * @returns {LABKEY.Ajax.request}
+         */
+        rawData: function(config) {
             if (!config || config === null || config === undefined) {
                 throw new Error('A config object is required for GetData');
             }
@@ -260,128 +330,4 @@
             return new LABKEY.Ajax.request(requestConfig);
         }
     };
-
-    /**
-     * @private
-     */
-    var generateColumnModel = function(fields) {
-        var i, columns = [];
-
-        for (i = 0; i < fields.length; i++) {
-            columns.push({
-                scale: fields[i].scale,
-                hidden: fields[i].hidden,
-                sortable: fields[i].sortable,
-                align: fields[i].align,
-                width: fields[i].width,
-                dataIndex: fields[i].fieldKey.toString(),
-                required: fields[i].nullable, // Not sure if this is correct.
-                editable: fields[i].userEditable,
-                header: fields[i].shortCaption
-            })
-        }
-
-        return columns;
-    };
-
-    /**
-     * @private
-     */
-    var generateGetDisplayField = function(fieldKeyToFind, fields) {
-        return function() {
-            var fieldString = fieldKeyToFind.toString();
-            for (var i = 0; i < fields.length; i++) {
-                if (fieldString == fields[i].fieldKey.toString()) {
-                    return fields[i];
-                }
-            }
-            return null;
-        };
-    };
-
-    LABKEY.Query.GetData.Response = function(response) {
-        // response = response;
-        var i, attr;
-
-        // Shallow copy the response.
-        for (attr in response) {
-            if (response.hasOwnProperty(attr)) {
-                this[attr] = response[attr];
-            }
-        }
-
-        // Wrap the Schema, Lookup, and Field Keys.
-        this.schemaKey = LABKEY.SchemaKey.fromParts(response.schemaName);
-
-        for (i = 0; i < response.metaData.fields.length; i++) {
-            // response.metaData.fields[i] = new LABKEY.Query.Field(response.metaData.fields[i]);
-            var field = response.metaData.fields[i],
-                    lookup = field.lookup;
-
-            field.fieldKey = LABKEY.FieldKey.fromParts(field.fieldKey);
-
-            if (lookup && lookup.schemaName) {
-                lookup.schemaName = LABKEY.SchemaKey.fromParts(lookup.schemaName);
-            }
-
-            if (field.displayField) {
-                field.displayField = LABKEY.FieldKey.fromParts(field.displayField);
-                field.getDisplayField = generateGetDisplayField(field.displayField, response.metaData.fields);
-            }
-
-            if (field.extFormatFn) {
-                field.extFormatFn = eval(field.extFormatFn);
-            }
-        }
-
-        // Generate Column Model
-        this.columnModel = generateColumnModel(this.metaData.fields);
-
-        return this;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getMetaData = function() {
-        return this.metaData;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getSchemaName = function(asString) {
-        return asString ? this.schemaKey.toString() : this.schemaName;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getQueryName = function() {
-        return this.queryName;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getColumnModel = function() {
-        return this.columnModel;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getRows = function() {
-        return this.rows;
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getRow = function(idx) {
-        return this.rows[idx];
-    };
-
-    LABKEY.Query.GetData.Response.prototype.getRowCount = function() {
-        return this.rowCount;
-    };
-
-    /**
-     * getExt4Store is currently commented out. I believe we are going to need to create a new Ext4 class for use with
-     * the GetData API. The current LabKey Ext4 Store relies on Select Rows and Execute SQL and it also allows you to
-     * add and edit rows as well. Currently we have no way to save data in a way that is compatible with GetData.
-     */
-//    LABKEY.Query.GetData.Response.prototype.getExt4Store = function(userConfig) {
-//        var storeCfg = {
-//            schemaName: this.getSchemaName(true),
-//            queryName: this.getQueryName(),
-//            requiredVersion: 9.1,
-//            autoLoad: false,
-//            data: this.getRows()
-//        };
-//
-//        return storeCfg;
-//    };
 })();

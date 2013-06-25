@@ -71,8 +71,15 @@ LABKEY.Query = new function()
         return response && response.getResponseHeader ? response.getResponseHeader('Content-Type') : null;
     }
 
-    function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
+    function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope, requiredVersion)
     {
+        if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2")) {
+            return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
+                if (data && callbackFn)
+                    callbackFn.call(scope || this, new LABKEY.Query.Response(data));
+            }, this);
+        }
+
         return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
             if (data && data.rows && stripHiddenCols)
                 stripHiddenColData(data);
@@ -259,7 +266,7 @@ LABKEY.Query = new function()
             var requestConfig = {
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',
-                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope, config.requiredVersion),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : dataObject,
                 headers : {
@@ -504,7 +511,7 @@ LABKEY.Query = new function()
             var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : method,
-                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope, config.requiredVersion),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
             };
@@ -1354,10 +1361,22 @@ LABKEY.Query = new function()
     };
 };
 
+/**
+ * @class LABKEY.Query.Filter
+ * @param {String} columnName Required. The name of the column the filter will be applied  Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @param {LABKEY.Filter#Types} filterType Type of filter to apply to the 'column' using the 'value'
+ * @constructor
+ */
 LABKEY.Query.Filter = function (columnName, value, filterType)
 {
     if (columnName instanceof LABKEY.FieldKey){
         columnName = columnName.toString();
+    }
+
+    if (columnName instanceof Array) {
+        columnName = columnName.join('/');
     }
 
     if (!filterType)
@@ -1381,26 +1400,47 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
     this.filterType = filterType;
 };
 
+/**
+ *
+ * @returns {String} Returns the column name used for the filter.
+ */
 LABKEY.Query.Filter.prototype.getColumnName = function ()
 {
     return this.columnName
 };
 
+/**
+ *
+ * @returns {LABKEY.Filter#Types} Returns the filterType.
+ */
 LABKEY.Query.Filter.prototype.getFilterType = function ()
 {
     return this.filterType
 };
 
+/**
+ *
+ * @returns {*} Returns the value of the filter.
+ */
 LABKEY.Query.Filter.prototype.getValue = function ()
 {
     return this.value
 };
 
+/**
+ *
+ * @returns {*} Returns the value that will be put on URL.
+ */
 LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 {
     return this.filterType.isDataValueRequired() ? this.value : ''
 };
 
+/**
+ *
+ * @param dataRegionName The dataRegionName the filter is associated with.
+ * @returns {string} Returns the URL parameter name used for the filter.
+ */
 LABKEY.Query.Filter.prototype.getURLParameterName = function (dataRegionName)
 {
     return (dataRegionName || "query") + "." + this.columnName + "~" + this.filterType.getURLSuffix();
@@ -1412,203 +1452,738 @@ LABKEY.Query.Filter.HasAnyValue = function (columnName)
 };
 LABKEY.Query.Filter.HasAnyValue.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Equal subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value matches the given filter value. Case-sensitivity depends upon how your
+ *      underlying relational database was configured.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Equal = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUAL);
 };
 LABKEY.Query.Filter.Equal.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DateEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the date portion of a datetime column matches the filter value (ignoring the time portion).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DateEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_EQUAL);
 };
 LABKEY.Query.Filter.DateEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DateNotEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the date portion of a datetime column does not match the filter value (ignoring the time portion).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DateNotEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_NOT_EQUAL);
 };
 LABKEY.Query.Filter.DateNotEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NotEqualOrNull subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not equal the filter value, or is missing (null).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.NotEqualOrNull = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NEQ_OR_NULL);
 };
 LABKEY.Query.Filter.NotEqualOrNull.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NotEqualOrMissing subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not equal the filter value, or is missing (null).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.NotEqualOrMissing = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING);
 };
 LABKEY.Query.Filter.NotEqualOrMissing.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NotEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not equal the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.NotEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_EQUAL);
 };
 LABKEY.Query.Filter.NotEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Neq subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not equal the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Neq = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NEQ);
 };
 LABKEY.Query.Filter.Neq.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Neq subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is blank.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.IsBlank = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.ISBLANK);
 };
 LABKEY.Query.Filter.IsBlank.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Missing subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is missing (null). Note that no filter value is required with this operator.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.Missing = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.MISSING);
 };
 LABKEY.Query.Filter.Missing.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NonBlank subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is not blank.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.NonBlank = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.NONBLANK);
 };
 LABKEY.Query.Filter.NonBlank.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NotMissing subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is not missing.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.NotMissing = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.NOT_MISSING);
 };
 LABKEY.Query.Filter.NotMissing.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Gt subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is greater than the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Gt = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GT);
 };
 LABKEY.Query.Filter.Gt.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.GreaterThan subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is greater than the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.GreaterThan = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GREATER_THAN);
 };
 LABKEY.Query.Filter.GreaterThan.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Lt subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is less than the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Lt = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LT);
 };
 LABKEY.Query.Filter.Lt.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.LessThan subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is less than the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.LessThan = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LESS_THAN);
 };
 LABKEY.Query.Filter.LessThan.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DateLessThan subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the date portion of a datetime column is less than the filter value (ignoring the time portion).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DateLessThan = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_LESS_THAN);
 };
 LABKEY.Query.Filter.DateLessThan.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Gte subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is greater than or equal to the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Gte = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GTE);
 };
 LABKEY.Query.Filter.Gte.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.GreaterThanOrEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is greater than or equal to the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.GreaterThanOrEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.GREATER_THAN_OR_EQUAL);
 };
 LABKEY.Query.Filter.GreaterThanOrEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.GreaterThanOrEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the date portion of a datetime column is greater than or equal to the filter value
+ *      (ignoring the time portion).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DateGreaterThanOrEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_GREATER_THAN_OR_EQUAL);
 };
 LABKEY.Query.Filter.DateGreaterThanOrEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Lte subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is less than or equal to the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Lte = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LTE);
 };
 LABKEY.Query.Filter.Lte.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.LessThanOrEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is less than or equal to the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.LessThanOrEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL);
 };
 LABKEY.Query.Filter.LessThanOrEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DateLessThanOrEqual subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the date portion of a datetime column is less than or equal to the filter value
+ *      (ignoring the time portion).
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DateLessThanOrEqual = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DATE_LESS_THAN_OR_EQUAL);
 };
 LABKEY.Query.Filter.DateLessThanOrEqual.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.Contains subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value contains the filter value. Note that this may result in a slow query as this
+ *      cannot use indexes.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.Contains = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS);
 };
 LABKEY.Query.Filter.Contains.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DoesNotContain subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not contain the filter value. Note that this may result in a slow query
+ *      as this cannot use indexes.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.DoesNotContain = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.DOES_NOT_CONTAIN);
 };
 LABKEY.Query.Filter.DoesNotContain.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.StartsWith subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value starts with the filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.StartsWith = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.STARTS_WITH);
 };
 LABKEY.Query.Filter.StartsWith.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.In subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a
+ *      semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.In = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.IN);
 };
 LABKEY.Query.Filter.In.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.EqualsOneOf subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a
+ *      semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.EqualsOneOf = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUALS_ONE_OF);
 };
 LABKEY.Query.Filter.EqualsOneOf.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.EqualsNoneOf subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not equal one of the supplied filter values. The values should be supplied as a
+ *      semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.EqualsNoneOf = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.EQUALS_NONE_OF);
 };
 LABKEY.Query.Filter.EqualsNoneOf.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.NotIn subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as
+ *      a semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.NotIn = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.NOT_IN);
 };
 LABKEY.Query.Filter.NotIn.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.ContainsOneOf subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a
+ *      semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.ContainsOneOf = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS_ONE_OF);
 };
 LABKEY.Query.Filter.ContainsOneOf.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.ContainsNoneOf subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied
+ *      as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion or an Array of values.
+ * @constructor
+ */
 LABKEY.Query.Filter.ContainsNoneOf = function (columnName, value)
 {
     LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.CONTAINS_NONE_OF);
 };
 LABKEY.Query.Filter.ContainsNoneOf.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.HasMissingValue subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows that have a missing value indicator.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.HasMissingValue = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.HAS_MISSING_VALUE);
 };
 LABKEY.Query.Filter.HasMissingValue.prototype = new LABKEY.Query.Filter;
 
+/**
+ * @class LABKEY.Query.Filter.DoesNotHaveMissingValue subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows that do not have a missing value indicator.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @constructor
+ */
 LABKEY.Query.Filter.DoesNotHaveMissingValue = function (columnName)
 {
     LABKEY.Query.Filter.call(this, columnName, null, LABKEY.Filter.Types.DOES_NOT_HAVE_MISSING_VALUE);
 };
 LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
+
+(function(){
+    /**
+     * @name LABKEY.Query.Row
+     * @class Row
+     * @param row The raw row from a GetData or SelectRows (version 13.2 and above) request.
+     * @constructor
+     */
+    LABKEY.Query.Row = function(row){
+        this.links = null;
+
+        if(row.links){
+            this.links = row.links;
+        }
+
+        for (var attr in row.data) {
+            if (row.data.hasOwnProperty(attr)) {
+                this[attr] = row.data[attr];
+            }
+        }
+    };
+
+    /**
+     *
+     * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
+     * @returns {Object} Returns an object that lets you fetch the extended values (display value, URL, etc) for a given column.
+     */
+    LABKEY.Query.Row.prototype.get = function(columnName){
+        columnName = columnName.toLowerCase();
+
+        for (var attr in this) {
+            if (attr.toLowerCase() === columnName && this.hasOwnProperty(attr) && !(this[attr] instanceof Function)) {
+                return this[attr];
+            }
+        }
+
+        return null;
+    };
+
+    /**
+     *
+     * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
+     * @returns {*} Returns the simple value for the given column.
+     */
+    LABKEY.Query.Row.prototype.getValue = function(columnName){
+        columnName = columnName.toLowerCase();
+
+        for (var attr in this) {
+            if (attr.toLowerCase() === columnName && this.hasOwnProperty(attr) && !(this[attr] instanceof Function)) {
+                if (this[attr].value) {
+                    return this[attr].value;
+                }
+            }
+        }
+
+        return null;
+    };
+
+    /**
+     *
+     * @returns {Object} Returns an object with all of the links types (details, update, etc.) for a row.
+     */
+    LABKEY.Query.Row.prototype.getLinks = function(){
+        return this.links;
+    };
+
+    /**
+     *
+     * @param linkType Requried. The name of the link type to be returned.
+     * @returns {Object} Returns an object with the display text and link value.
+     */
+    LABKEY.Query.Row.prototype.getLink = function(linkType){
+        if (this.links[linkType]) {
+            return this.links[linkType];
+        }
+
+        return null;
+    };
+
+    /**
+     * @private
+     */
+    var generateColumnModel = function(fields) {
+        var i, columns = [];
+
+        for (i = 0; i < fields.length; i++) {
+            columns.push({
+                scale: fields[i].scale,
+                hidden: fields[i].hidden,
+                sortable: fields[i].sortable,
+                align: fields[i].align,
+                width: fields[i].width,
+                dataIndex: fields[i].fieldKey.toString(),
+                required: fields[i].nullable, // Not sure if this is correct.
+                editable: fields[i].userEditable,
+                header: fields[i].shortCaption
+            })
+        }
+
+        return columns;
+    };
+
+    /**
+     * @private
+     */
+    var generateGetDisplayField = function(fieldKeyToFind, fields) {
+        return function() {
+            var fieldString = fieldKeyToFind.toString();
+            for (var i = 0; i < fields.length; i++) {
+                if (fieldString == fields[i].fieldKey.toString()) {
+                    return fields[i];
+                }
+            }
+            return null;
+        };
+    };
+
+    /**
+     * @class LABKEY.Query.Response the class used to wrap the response object from LABKEY.Query.GetData.RawData,
+     *      selectRows, and executeSql
+     * @param response The raw JSON response object returned from GetData, selectRows, or executeSql when requiredVersion
+     *      is 13.2
+     * @constructor
+     */
+    LABKEY.Query.Response = function(response) {
+        // response = response;
+        var i, attr;
+
+        // Shallow copy the response.
+        for (attr in response) {
+            if (response.hasOwnProperty(attr)) {
+                this[attr] = response[attr];
+            }
+        }
+
+        // Wrap the Schema, Lookup, and Field Keys.
+        this.schemaKey = LABKEY.SchemaKey.fromParts(response.schemaName);
+
+        for (i = 0; i < response.metaData.fields.length; i++) {
+            // response.metaData.fields[i] = new LABKEY.Query.Field(response.metaData.fields[i]);
+            var field = response.metaData.fields[i],
+                    lookup = field.lookup;
+
+            field.fieldKey = LABKEY.FieldKey.fromParts(field.fieldKey);
+
+            if (lookup && lookup.schemaName) {
+                lookup.schemaName = LABKEY.SchemaKey.fromParts(lookup.schemaName);
+            }
+
+            if (field.displayField) {
+                field.displayField = LABKEY.FieldKey.fromParts(field.displayField);
+                field.getDisplayField = generateGetDisplayField(field.displayField, response.metaData.fields);
+            }
+
+            if (field.extFormatFn) {
+                field.extFormatFn = eval(field.extFormatFn);
+            }
+        }
+
+        // Generate Column Model
+        this.columnModel = generateColumnModel(this.metaData.fields);
+
+        // Wrap the rows
+        for (i = 0; i < this.rows.length; i++) {
+            this.rows[i] = new LABKEY.Query.Row(this.rows[i]);
+        }
+
+        return this;
+    };
+
+    /**
+     *
+     * @returns {Object} Returns the metaData object from the response.
+     */
+    LABKEY.Query.Response.prototype.getMetaData = function() {
+        return this.metaData;
+    };
+
+    /**
+     *
+     * @param {Boolean} asString
+     * @returns {*} If asString is true it returns a string, otherwise it returns a LABKEY.FieldKey object.
+     */
+    LABKEY.Query.Response.prototype.getSchemaName = function(asString) {
+        return asString ? this.schemaKey.toString() : this.schemaName;
+    };
+
+    /**
+     *
+     * @returns {String} Returns the query name.
+     */
+    LABKEY.Query.Response.prototype.getQueryName = function() {
+        return this.queryName;
+    };
+
+    /**
+     *
+     * @returns {Array} Returns an array of Objects that can be used to assist in creating Ext Grids to
+     *      render the data.
+     */
+    LABKEY.Query.Response.prototype.getColumnModel = function() {
+        return this.columnModel;
+    };
+
+    /**
+     *
+     * @returns {Array} Returns an array of {@link LABKEY.Query.Row} objects.
+     */
+    LABKEY.Query.Response.prototype.getRows = function() {
+        return this.rows;
+    };
+
+    /**
+     *
+     * @param {Integer} idx The index of the row you need.
+     * @returns {LABKEY.Query.Row}
+     */
+    LABKEY.Query.Response.prototype.getRow = function(idx) {
+        if (this.rows[idx] !== undefined) {
+            return this.rows[idx];
+        }
+
+        return null;
+    };
+
+    /**
+     *
+     * @returns {Integer} Returns the row count from the response.
+     */
+    LABKEY.Query.Response.prototype.getRowCount = function() {
+        return this.rowCount;
+    };
+})();
 
 /**
 * @name LABKEY.Query.ModifyRowsOptions
@@ -2268,7 +2843,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             to match the requirements of the Ext grid component. See
             <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.grid.ColumnModel">
             Ext.grid.ColumnModel</a> for further information.
-* @type  String
+* @type  Object[]
 */
 
 /**
