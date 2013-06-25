@@ -678,9 +678,9 @@ public class SpecimenUtils
         return locationIntersection;
     }
 
-    public void ensureSpecimenRequestsConfigured() throws ServletException
+    public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses) throws ServletException
     {
-        if (!SampleManager.getInstance().isSampleRequestEnabled(getContainer()))
+        if (!SampleManager.getInstance().isSampleRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 

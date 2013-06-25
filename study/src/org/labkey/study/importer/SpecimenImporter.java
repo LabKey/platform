@@ -749,9 +749,12 @@ public class SpecimenImporter
             }
             else
             {
-                replaceTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
-                replaceTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
-                replaceTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
+                if (null != sifMap.get(SpecimenTableType.Additives))
+                    replaceTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
+                if (null != sifMap.get(SpecimenTableType.Derivatives))
+                    replaceTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
+                if (null != sifMap.get(SpecimenTableType.PrimaryTypes))
+                    replaceTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
             }
 
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash

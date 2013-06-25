@@ -1722,7 +1722,7 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(CreateSampleRequestForm form, BindException errors) throws Exception
         {
-            getUtils().ensureSpecimenRequestsConfigured();
+            getUtils().ensureSpecimenRequestsConfigured(true);
 
             String[] inputs = form.getInputs();
             int[] sampleIds = form.getSampleRowIds();
@@ -1897,7 +1897,7 @@ public class SpecimenController extends BaseStudyController
 
     private ModelAndView getCreateSampleRequestView(CreateSampleRequestForm form, BindException errors) throws SQLException, ServletException
     {
-        getUtils().ensureSpecimenRequestsConfigured();
+        getUtils().ensureSpecimenRequestsConfigured(true);
         
         SpecimenUtils.RequestedSpecimens requested;
 
@@ -2553,14 +2553,14 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(DefaultRequirementsForm defaultRequirementsForm, boolean reshow, BindException errors) throws Exception
         {
-            getUtils().ensureSpecimenRequestsConfigured();
+            getUtils().ensureSpecimenRequestsConfigured(true);
             return new JspView<>("/org/labkey/study/view/samples/manageDefaultReqs.jsp",
                 new ManageReqsBean(getUser(), getContainer()));
         }
 
         public boolean handlePost(DefaultRequirementsForm form, BindException errors) throws Exception
         {
-            getUtils().ensureSpecimenRequestsConfigured();
+            getUtils().ensureSpecimenRequestsConfigured(true);
             createDefaultRequirement(form.getOriginatorActor(), form.getOriginatorDescription(), SpecimenRequestRequirementType.ORIGINATING_SITE);
             createDefaultRequirement(form.getProviderActor(), form.getProviderDescription(), SpecimenRequestRequirementType.PROVIDING_SITE);
             createDefaultRequirement(form.getReceiverActor(), form.getReceiverDescription(), SpecimenRequestRequirementType.RECEIVING_SITE);
@@ -4147,6 +4147,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
+
             String order = form.getOrder();
             if (order != null && order.length() > 0)
             {
@@ -4194,6 +4196,7 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
             return new JspView<>("/org/labkey/study/view/samples/" + _jsp + ".jsp", getStudyRedirectIfNull());
         }
 
@@ -4227,6 +4230,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
+
             int[] rowIds = form.getIds();
             String[] labels = form.getLabels();
             if (labels != null)
@@ -4306,6 +4311,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
+
             String order = form.getOrder();
             if (order != null && order.length() > 0)
             {
@@ -4352,6 +4359,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(StatusEditForm form, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
+
             int[] rowIds = form.getIds();
             String[] labels = form.getLabels();
             if (rowIds != null && rowIds.length > 0)
@@ -4647,6 +4656,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
             return new JspView<>("/org/labkey/study/view/samples/manageRequestInputs.jsp",
                     new ManageRequestInputsBean(getViewContext()));
         }
@@ -4760,6 +4770,9 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
         {
+            if (!SampleManager.getInstance().isSampleRequestEnabled(getContainer(), false))
+                throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
             if (settings == null || settings.getReplyTo() == null)
@@ -4770,6 +4783,8 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(RequestNotificationSettings settings, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
+
             if (!settings.isNewRequestNotifyCheckbox())
                 settings.setNewRequestNotify(null);
             else
@@ -5319,6 +5334,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            getUtils().ensureSpecimenRequestsConfigured(false);
             return new JspView("/org/labkey/study/view/samples/configRequestabilityRules.jsp");
         }
 

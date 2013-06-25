@@ -87,7 +87,7 @@
    else
    {
 %>
-<p><em>NOTE: specimen repository and request settings are not available for ancillary or published studies.</em></p>
+<p>Specimen repository and request settings are not available for ancillary or published studies.</p>
 <%= generateButton("Back", buildURL(SpecimenController.ManageRepositorySettingsAction.class), "window.history.back();return false;")%>
 <%
    }

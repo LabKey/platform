@@ -1621,10 +1621,22 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public boolean isSampleRequestEnabled(Container container)
     {
-        if (!getRepositorySettings(container).isEnableRequests())
-            return false;
-        List<SampleRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
-        return (statuses != null && statuses.size() > 1);
+        return isSampleRequestEnabled(container, true);
+    }
+
+    public boolean isSampleRequestEnabled(Container container, boolean checkExistingStatuses)
+    {
+        if (!checkExistingStatuses)
+        {
+            return getRepositorySettings(container).isEnableRequests();
+        }
+        else
+        {
+            if (!getRepositorySettings(container).isEnableRequests())
+                return false;
+            List<SampleRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
+            return (statuses != null && statuses.size() > 1);
+        }
     }
 
     public List<String> getMissingSpecimens(SampleRequest sampleRequest) throws SQLException
