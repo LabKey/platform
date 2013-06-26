@@ -269,8 +269,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         // Attempt to include key from oldRow if not found in row (As stated in the QUS Interface)
-        if (!rowCopy.containsKey(_list.getKeyName()) && oldRow.containsKey(_list.getKeyName()))
-            rowCopy.put(_list.getKeyName(), oldRow.get(_list.getKeyName()));
+        Object newRowKey = getField(rowCopy, _list.getKeyName());
+        Object oldRowKey = getField(oldRow, _list.getKeyName());
+
+        if (null == newRowKey && null != oldRowKey)
+            rowCopy.put(_list.getKeyName(), oldRowKey);
 
         Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow);
 

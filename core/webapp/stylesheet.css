@@ -3589,6 +3589,10 @@ input[type="checkbox"], input[type="radio"] {
     cursor: pointer;
 }
 
+.x4-item-disabled td.x4-trigger-cell {
+    opacity: 0.3;
+}
+
 /* Webkit Scrollbar */
 .iScroll ::-webkit-scrollbar
 {
