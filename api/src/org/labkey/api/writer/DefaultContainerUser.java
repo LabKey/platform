@@ -19,10 +19,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 /**
-* Created by IntelliJ IDEA.
-* User: klum
-* Date: 10/21/12
-*/
+ * User: klum
+ * Date: 10/21/12
+ */
 public class DefaultContainerUser implements ContainerUser
 {
     private User _user;

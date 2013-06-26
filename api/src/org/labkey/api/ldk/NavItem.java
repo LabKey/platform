@@ -21,7 +21,6 @@ import org.labkey.api.laboratory.DataProvider;
 import org.labkey.api.security.User;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 10/1/12
  * Time: 8:44 AM

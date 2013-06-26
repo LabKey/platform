@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-02-01
  * Time: 12:00 PM

@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 9/28/12
  * Time: 4:11 PM

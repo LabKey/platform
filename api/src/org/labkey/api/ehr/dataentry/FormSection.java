@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 4/27/13
  * Time: 8:36 AM

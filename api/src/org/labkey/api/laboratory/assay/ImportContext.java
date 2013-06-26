@@ -24,7 +24,6 @@ import org.labkey.api.view.ViewContext;
 import java.io.File;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 1/9/13
  * Time: 5:12 PM

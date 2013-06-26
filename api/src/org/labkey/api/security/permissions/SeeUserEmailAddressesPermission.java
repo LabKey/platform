@@ -16,7 +16,6 @@
 package org.labkey.api.security.permissions;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-09-14
  * Time: 1:35 PM

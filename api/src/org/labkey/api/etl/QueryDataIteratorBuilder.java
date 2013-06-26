@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 5/11/13
  * Time: 7:31 AM

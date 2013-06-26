@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 5/4/13
  * Time: 9:21 AM

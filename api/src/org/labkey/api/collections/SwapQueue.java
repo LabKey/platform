@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 5/8/13
  * Time: 12:31 PM

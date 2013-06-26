@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 LabKey Corporation
+ * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@ package org.labkey.api.security.permissions;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 6/10/13
  * Time: 2:53 PM
- * To change this template use File | Settings | File Templates.
  */
 public class EditSpecimenDataPermission extends AbstractPermission
 {

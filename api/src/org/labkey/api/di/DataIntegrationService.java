@@ -20,7 +20,6 @@ import org.labkey.api.module.Module;
 import java.util.Collection;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-04-03
  * Time: 11:34 AM

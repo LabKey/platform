@@ -26,7 +26,6 @@ import org.labkey.api.view.ActionURL;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 10/1/12
  * Time: 9:33 AM

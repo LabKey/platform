@@ -20,7 +20,6 @@ import org.labkey.api.data.Entity;
 import java.util.Date;
 
 /**
- * Created with IntelliJ IDEA.
  * User: cnathe
  * Date: 12/12/12
  */

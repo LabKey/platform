@@ -44,7 +44,6 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 12/9/12
  * Time: 7:51 AM

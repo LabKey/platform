@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 4/14/13
  * Time: 9:33 AM

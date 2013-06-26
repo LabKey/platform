@@ -26,11 +26,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: 2011-09-01
-* Time: 11:25 AM
-*/
+ * User: matthewb
+ * Date: 2011-09-01
+ * Time: 11:25 AM
+ */
 class MockServletResponse implements HttpServletResponse
 {
     Map<String,String> headers = new TreeMap<>();

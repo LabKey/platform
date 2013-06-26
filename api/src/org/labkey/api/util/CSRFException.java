@@ -18,11 +18,10 @@ package org.labkey.api.util;
 import org.labkey.api.view.UnauthorizedException;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: May 11, 2010
-* Time: 12:54:24 PM
-*/
+ * User: matthewb
+ * Date: May 11, 2010
+ * Time: 12:54:24 PM
+ */
 public class CSRFException extends UnauthorizedException
 {
     CSRFException()

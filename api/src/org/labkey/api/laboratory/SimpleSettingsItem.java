@@ -26,7 +26,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 10/1/12
  * Time: 1:40 PM

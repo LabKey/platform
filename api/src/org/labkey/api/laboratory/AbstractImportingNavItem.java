@@ -21,7 +21,6 @@ import org.labkey.api.ldk.AbstractNavItem;
 import org.labkey.api.security.User;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 11/21/12
  * Time: 5:08 PM

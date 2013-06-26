@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 9/15/12
  * Time: 2:18 PM

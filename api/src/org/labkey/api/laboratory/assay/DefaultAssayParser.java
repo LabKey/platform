@@ -64,7 +64,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 9/15/12
  * Time: 10:37 AM

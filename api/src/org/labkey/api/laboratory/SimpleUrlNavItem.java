@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 4/4/13
  * Time: 9:39 AM

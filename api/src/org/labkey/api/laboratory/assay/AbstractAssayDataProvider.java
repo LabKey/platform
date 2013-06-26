@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.AbstractDataProvider;
@@ -31,9 +30,6 @@ import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.QueryCountNavItem;
 import org.labkey.api.laboratory.QueryTabbedReportItem;
 import org.labkey.api.laboratory.ReportItem;
-import org.labkey.api.laboratory.TabbedReportItem;
-import org.labkey.api.ldk.AbstractNavItem;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.laboratory.SingleNavItem;
 import org.labkey.api.laboratory.TabbedReportItem;
@@ -64,7 +60,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 10/1/12
  * Time: 1:52 PM

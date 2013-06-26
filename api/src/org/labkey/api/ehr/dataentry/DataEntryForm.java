@@ -24,7 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 4/27/13
  * Time: 8:34 AM

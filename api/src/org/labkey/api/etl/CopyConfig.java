@@ -19,7 +19,6 @@ package org.labkey.api.etl;
 import org.labkey.api.query.SchemaKey;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-04-16
  * Time: 9:19 AM

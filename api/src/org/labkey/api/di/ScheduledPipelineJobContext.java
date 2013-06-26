@@ -24,7 +24,6 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-03-18
  * Time: 3:52 PM
