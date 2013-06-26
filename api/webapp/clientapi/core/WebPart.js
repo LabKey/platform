@@ -136,6 +136,10 @@ LABKEY.WebPart = function(config)
     var handleLoadError = function(response, partConfig)
     {
         var msg = "Error getting the web part: ";
+        if (response.status == 0)
+        {
+            return;
+        }
         if(response.status >= 500 && response.status < 600)
         {
             var json = LABKEY.ExtAdapter.decode(response.responseText);

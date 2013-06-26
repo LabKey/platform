@@ -170,7 +170,7 @@ public class LookupColumn extends ColumnInfo
             addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
             strJoin.append(" ON ");
             strJoin.append(getJoinCondition(baseAlias));
-            assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
+            assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL()) : "Join SQL does not match:\n" + strJoin.getSQL() + "\n\nvs\n\n" + map.get(colTableAlias).getSQL();
             map.put(colTableAlias, strJoin);
         }
 
