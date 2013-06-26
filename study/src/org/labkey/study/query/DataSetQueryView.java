@@ -115,7 +115,7 @@ public class DataSetQueryView extends StudyQueryView
         if (_dataset == null)
             throw new IllegalArgumentException("Unable to find the dataset specified");
 
-        if (!_dataset.getName().equals(settings.getQueryName()))
+        if (!_dataset.getName().equalsIgnoreCase(settings.getQueryName()))
         {
             // settings has label instead of name; warn that label is being used to lookup
             _systemLog.warn("Dataset in schema'" + schema.getName() + "' was referenced by label (" + settings.getQueryName() + "), not name (" + _dataset.getName() + ").");
