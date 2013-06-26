@@ -24,10 +24,12 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     emptyText: null,
     updateConfig: null,
     enterCompletesEdit: true,
+    minLengthText: "The minimum length for this field is {0}",
+    maxLengthText: "The maximum length for this field is {0}",
 
     constructor: function(config){
 
-        this.addEvents("beforecomplete", "complete", "canceledit", "updatefail");
+        this.addEvents("beforecomplete", "complete", "canceledit", "updatefail", "validitychange");
         Ext.apply(this, config);
         if (this.updateConfig)
         {
@@ -101,7 +103,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     startEdit: function(){
         if (this.editor || this.el.hasClass("labkey-edit-in-place-updating"))
             return;
-        
+
         //create the editor as a peer to the bound element
         var config = {
             tag: (this.multiLine ? 'textarea' : 'input'),
@@ -111,6 +113,9 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
         if (!this.multiLine)
             config.type = 'text';
+
+        if (this.maxLength)
+            config.maxlength = this.maxLength;
 
         this.editor = this.el.parent().createChild(config, this.el.next());
 
@@ -193,14 +198,21 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.editor.setHeight(height);
     },
 
+    getValue : function () {
+        if (this.editor) {
+            this.currentValue = Ext.util.Format.htmlEncode(this.editor.getValue());
+        }
+        return this.currentValue;
+    },
+
     completeEdit: function(){
-        var value = Ext.util.Format.htmlEncode(this.editor.getValue());
+        var value = this.getValue();
         this.endEdit();
 
-        if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
+        if (value != this.oldText && this.validate() && false !== this.fireEvent("beforecomplete", value, this.oldText))
             this.processChange(value, this.oldText);
         else
-            this.onUpdateComplete(this.oldText);
+            this.onUpdateCancel(this.oldText);
     },
 
     cancelEdit: function(){
@@ -248,6 +260,77 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         }
         else
             this.onUpdateComplete(value);
+    },
+
+    /**
+     * Returns whether or not the field value is currently valid by {@link #getErrors validating} the field's current
+     * value.
+     *
+     * Implementations are encouraged to ensure that this method does not have side-effects such as triggering error
+     * message display.
+     *
+     * @returns {Boolean} True if the value is valid, else false.
+     */
+    isValid : function () {
+        var me = this;
+        return me.disabled || Ext.isEmpty(me.getErrors());
+    },
+
+    /**
+     * Runs this field's validators and returns an array of error messages for any validation failures.
+     * This is called internally during validation and would not usually need to be used manually.
+     *
+     * @return {String[]} All error messages for this field; an empty Array if none.
+     */
+    getErrors : function () {
+        var value = this.getValue();
+
+        var errors = [];
+        var msg;
+
+        if (Ext.isFunction(this.validator)) {
+            msg = this.validator.call(this, value);
+            if (msg !== true) {
+                errors.push(msg);
+            }
+        }
+
+        if (value.length < this.minLength) {
+            errors.push(String.format(this.minLengthText, this.minLength));
+        }
+
+        if (value.length > this.maxLength) {
+            errors.push(String.format(this.maxLengthText, this.maxLength));
+        }
+
+        return errors;
+    },
+
+    /**
+     * Returns whether or not the field value is currently valid by {@link #getErrors validating} the field's current
+     * value, and fires the {@link #validitychange} event if the field's validity has changed since the last validation.
+     *
+     * Custom implementations of this method are allowed to have side-effects such as triggering error message display.
+     * To validate without side-effects, use {@link #isValid}.
+     *
+     * @return {Boolean} True if the value is valid, else false
+     */
+    validate : function () {
+        var me = this,
+            isValid = me.isValid();
+        if (isValid !== me.wasValid) {
+            me.wasValid = isValid;
+            me.fireEvent('validitychange', me, isValid);
+        }
+        return isValid;
+    },
+
+    onUpdateCancel: function (value) {
+        this.el.removeClass("labkey-edit-in-place-updating");
+        this.el.update(value);
+        this.checkForEmpty();
+        this.editIcon.alignTo(this.el, 'tr-tr');
+        this.fireEvent("canceledit", this.oldText);
     },
 
     onUpdateComplete: function(value){
