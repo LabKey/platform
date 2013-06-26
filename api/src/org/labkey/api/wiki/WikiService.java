@@ -65,4 +65,7 @@ public interface WikiService
     public WikiRendererType getDefaultWikiRendererType();
     public WikiRendererType getDefaultMessageRendererType();
     public java.util.List<String> getNames(Container c);
+
+    public void addWikiListener(WikiChangeListener listener);
+    public void removeWikiListener(WikiChangeListener listener);
 }
