@@ -215,6 +215,6 @@ public class WikiVersion
     public boolean hasNonVisualElements()
     {
         // look for form, script tag
-        return getBody().toLowerCase().matches("<(script|form)[\\s>]");
+        return _body != null && _body.toLowerCase().matches("<(script|form)[\\s>]");
     }
 }
