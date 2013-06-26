@@ -1071,6 +1071,7 @@ public class ParticipantGroupManager
                     // delete the participant category
                     SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
                     executor.execute(sqlCat.getSQL(), cat.getRowId());
+                    CATEGORY_CACHE.remove(c);
                 }
             }
 
