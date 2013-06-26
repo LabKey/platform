@@ -42,7 +42,6 @@ import java.util.Map;
 import static org.labkey.di.DataIntegrationDbSchema.Columns;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 4/22/13
  * Time: 12:26 PM

@@ -30,7 +30,6 @@ import org.labkey.api.query.BatchValidationException;
 import static org.labkey.di.DataIntegrationDbSchema.Columns.*;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 4/24/13
  * Time: 1:23 PM

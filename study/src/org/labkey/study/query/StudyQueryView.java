@@ -24,7 +24,6 @@ import org.labkey.study.CohortFilter;
 import org.springframework.validation.BindException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-12-10
  * Time: 2:03 PM

@@ -21,7 +21,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.FieldKey;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-10-17
  * Time: 1:31 PM

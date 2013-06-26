@@ -18,7 +18,6 @@ package org.labkey.survey.query;
 import org.labkey.api.query.QuerySettings;
 
 /**
- * Created with IntelliJ IDEA.
  * User: cnathe
  * Date: 12/13/12
  */

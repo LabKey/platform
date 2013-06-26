@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-03-13
  * Time: 4:52 PM

@@ -16,16 +16,14 @@
 package org.labkey.di;
 
 import org.labkey.api.data.ParameterDescription;
-import org.labkey.api.exp.property.SystemProperty;
 
 import java.util.Set;
 
 /**
-* Created with IntelliJ IDEA.
-* User: matthew
-* Date: 4/22/13
-* Time: 11:43 AM
-*/
+ * User: matthew
+ * Date: 4/22/13
+ * Time: 11:43 AM
+ */
 public interface VariableMap
 {
     enum Scope { global, local, parent }

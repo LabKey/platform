@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.ReturnURLString;
 
 /**
- * Created with IntelliJ IDEA.
  * User: cnathe
  * Date: 12/11/12
   */

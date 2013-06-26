@@ -31,7 +31,6 @@ import static org.labkey.di.VariableMap.Scope.*;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 4/22/13
  * Time: 11:44 AM

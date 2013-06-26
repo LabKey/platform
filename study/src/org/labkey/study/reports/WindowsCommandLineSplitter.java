@@ -190,7 +190,7 @@ public class WindowsCommandLineSplitter implements CommandLineSplitter
             test("\"C:\\Program Files\\Java with \\\"embedded quote\\\"\\jdk1.7.0_25\\bin\\java\" -cp c:/labkey/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}",
                 new String[]{"\"C:\\Program Files\\Java with \\\"embedded quote\\\"\\jdk1.7.0_25\\bin\\java\"", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
 
-//      This test is highly machine-dependent... enable and adjust the path to test backward compatibility for unquoted commands that include spaces
+//      This test is highly machine-dependent... enable and adjust the path to test backward compatibility for unquoted commands that include spaces on Windows
 //            test("C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java -cp c:/labkey/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}",
 //                new String[]{"C:\\Program Files\\Java\\jdk1.7.0_25\\bin\\java", "-cp", "c:/labkey/server/test/build/classes", "org.labkey.test.util.Echo", "${DATA_FILE}", "${REPORT_FILE}"});
         }

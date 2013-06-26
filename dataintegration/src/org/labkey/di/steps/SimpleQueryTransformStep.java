@@ -53,7 +53,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-04-16
  * Time: 12:27 PM

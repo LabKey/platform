@@ -21,7 +21,6 @@ import org.labkey.api.util.DateUtil;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 6/7/13
  * Time: 12:37 PM

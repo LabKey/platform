@@ -29,7 +29,6 @@ import org.quartz.JobExecutionException;
 import java.util.concurrent.Callable;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2013-03-18
  * Time: 4:05 PM

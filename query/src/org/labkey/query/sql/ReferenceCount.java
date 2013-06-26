@@ -22,7 +22,6 @@ import java.util.IdentityHashMap;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-11-07
  * Time: 3:07 PM

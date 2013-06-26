@@ -25,7 +25,6 @@ import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-12-11
  * Time: 9:55 AM

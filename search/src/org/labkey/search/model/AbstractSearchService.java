@@ -48,7 +48,6 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.DefaultSearchResultTemplate;
@@ -199,12 +198,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             Item i = new Item(this, OPERATION.add, identifier, null, pri);
             this.addItem(i);
             queueItem(i);
-        }
-
-
-        public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
-        {
-            addResource(new ActionResource(category, "action:" + url.getLocalURIString(false), url), pri);
         }
 
 
@@ -1278,8 +1271,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
-
-        _log.info("Index container " + c.getPath());
 
         Runnable r = new Runnable()
         {

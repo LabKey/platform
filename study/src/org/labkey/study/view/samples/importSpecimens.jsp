@@ -1,7 +1,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
- * Copyright (c) 2006-2012 LabKey Corporation
+ * Copyright (c) 2006-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

@@ -35,7 +35,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-10-11
  * Time: 10:49 AM

@@ -21,13 +21,12 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 4/22/13
  * Time: 11:55 AM
  *
  *
- * The Filter strategy combines two pieces of funcitonality.
+ * The Filter strategy combines two pieces of functionality.
  *
  * 1) checker: determines whether there is incremental work to perform
  * 2) filter: select a subset of rows to process

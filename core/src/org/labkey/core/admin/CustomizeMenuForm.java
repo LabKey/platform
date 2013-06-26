@@ -17,7 +17,6 @@ package org.labkey.core.admin;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: davebradlee
  * Date: 9/10/12
  * Time: 1:02 PM
