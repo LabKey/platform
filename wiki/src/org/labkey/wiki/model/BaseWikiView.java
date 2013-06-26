@@ -17,6 +17,7 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
@@ -36,6 +37,7 @@ import org.labkey.wiki.WikiModule;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * User: Mark Igra
@@ -203,8 +205,19 @@ public abstract class BaseWikiView extends JspView<Object>
         // Initialize Custom Menus
         if (perms.allowUpdate(wiki) && folderHasWikis && hasContent)
         {
+            boolean useInlineEditor = false;
             WikiVersion version = wiki.getLatestVersion();
-            if (version != null && version.getRendererTypeEnum() == WikiRendererType.HTML)
+            if (version != null && version.getRendererTypeEnum() == WikiRendererType.HTML && !version.hasNonVisualElements())
+            {
+                // get the user's editor preference
+                Map<String, String> properties = PropertyManager.getProperties(user,
+                        c, WikiController.SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
+                boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(WikiController.SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
+                if (useVisualEditor)
+                    useInlineEditor = true;
+            }
+
+            if (useInlineEditor)
             {
                 // Indlude wiki.js as a client dependency only for inline editing
                 addClientDependency(ClientDependency.fromFilePath("wiki/js/wiki.js"));

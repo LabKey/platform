@@ -211,4 +211,10 @@ public class WikiVersion
     {
         _cache = cache;
     }
+
+    public boolean hasNonVisualElements()
+    {
+        // look for form, script tag
+        return getBody().toLowerCase().matches("<(script|form)[\\s>]");
+    }
 }
