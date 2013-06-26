@@ -123,13 +123,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                     for (DomainProperty prop : _list.getDomain().getProperties())
                     {
-                        Object value = raw.get(prop.getName());
-
-                        if (null == value)
-                            value = raw.get("_" + prop.getName());
-
-                        if (null == value)
-                            value = raw.get(prop.getName().replaceAll("\\s", "_"));
+                        Object value = getField(raw, prop.getName());
 
                         if (null != value)
                             ret.put(prop.getName(), value);
@@ -274,6 +268,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 rowCopy.put(r.getKey(), r.getValue());
         }
 
+        // Attempt to include key from oldRow if not found in row (As stated in the QUS Interface)
+        if (!rowCopy.containsKey(_list.getKeyName()) && oldRow.containsKey(_list.getKeyName()))
+            rowCopy.put(_list.getKeyName(), oldRow.get(_list.getKeyName()));
+
         Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow);
 
         if (null != result)
@@ -360,8 +358,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public SimpleFilter getKeyFilter(Map<String, Object> map) throws InvalidKeyException
     {
         String keyName = _list.getKeyName();
-        Object key = map.get(keyName);
         ListDefinition.KeyType type = _list.getKeyType();
+
+        Object key = getField(map, _list.getKeyName());
 
         if (null == key)
         {
@@ -380,6 +379,20 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         return new SimpleFilter(keyName, key.toString());
+    }
+
+    @Nullable
+    private Object getField(Map<String, Object> map, String key)
+    {
+        Object value = map.get(key);
+
+        if (null == value)
+            value = map.get("_" + key);
+
+        if (null == value)
+            value = map.get(key.replaceAll("\\s", "_"));
+
+        return value;
     }
 
     private static class _AttachmentUploadHelper

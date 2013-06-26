@@ -672,16 +672,23 @@ public class ListManager implements SearchService.DocumentProvider
     // Checks for existence of list items that have been modified since the entire list was last indexed
     private boolean hasModifiedItems(ListDefinition list)
     {
-        // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
-        SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM ");
-        sql.append(list.getTable(User.getSearchUser()).getSelectName());
-        sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
-        sql.append(" WHERE ListId = ? AND Container = ?");
-        sql.add(list.getListId());
-        sql.add(list.getContainer().getEntityId());
-        sql.append(")) THEN 1 ELSE 0 END");
+        TableInfo table = list.getTable(User.getSearchUser());
 
-        return new SqlSelector(getListMetadataSchema(), sql).getObject(Boolean.class);
+        if (null != table && null != table.getSelectName())
+        {
+            // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
+            SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM ");
+            sql.append(table.getSelectName());
+            sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
+            sql.append(" WHERE ListId = ? AND Container = ?");
+            sql.add(list.getListId());
+            sql.add(list.getContainer().getEntityId());
+            sql.append(")) THEN 1 ELSE 0 END");
+
+            return new SqlSelector(getListMetadataSchema(), sql).getObject(Boolean.class);
+        }
+
+        return false;
     }
 
     public void setLastIndexed(ListDefinition list, long ms)

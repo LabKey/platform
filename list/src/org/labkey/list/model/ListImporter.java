@@ -207,7 +207,7 @@ public class ListImporter
                                 {
                                     SqlDialect dialect = ti.getSqlDialect();
 
-                                    if (dialect.isSqlServer())
+                                    if (dialect.isSqlServer() && null != ti.getSelectName())
                                     {
                                         SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" ON\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
@@ -246,7 +246,7 @@ public class ListImporter
                                             new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                         }
                                     }
-                                    else if (dialect.isSqlServer())
+                                    else if (dialect.isSqlServer() && null != ti.getSelectName())
                                     {
                                         SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
@@ -262,7 +262,7 @@ public class ListImporter
                                 {
                                     SqlDialect dialect = ti.getSqlDialect();
 
-                                    if (dialect.isSqlServer())
+                                    if (dialect.isSqlServer() && null != ti.getSelectName())
                                     {
                                         SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);

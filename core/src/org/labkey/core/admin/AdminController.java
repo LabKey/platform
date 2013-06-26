@@ -4237,7 +4237,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name (or Cancel).");
+            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
             return false;
         }
 
