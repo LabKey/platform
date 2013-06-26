@@ -323,7 +323,7 @@
 
             requestConfig.success = function(response) {
                 var json = LABKEY.ExtAdapter.decode(response.responseText);
-                var wrappedResponse = new LABKEY.Query.GetData.Response(json);
+                var wrappedResponse = new LABKEY.Query.Response(json);
                 config.success.call(config.scope, wrappedResponse);
             };
 
