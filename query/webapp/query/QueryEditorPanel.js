@@ -192,7 +192,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                             if (_f)
                                 _f.setHeight(h, false);
 
-                            if (this.codeMirror)
+                            if (this.codeMirror && h > 0)
                                 this.codeMirror.setSize(null, h + 'px');
                         }
                         this.doLayout(false, true);
@@ -381,6 +381,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         this.editorBoxId = Ext.id();
         
         this.editor = new Ext.Panel({
+            padding : '10px 0 0 0',
             border: true, frame : false,
             autoHeight: true,
             items : [
