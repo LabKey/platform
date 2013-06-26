@@ -62,6 +62,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.MacroProvider;
+import org.labkey.api.wiki.WikiChangeListener;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -86,6 +87,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
@@ -108,6 +110,8 @@ public class WikiManager implements WikiService
     /* service/schema dependencies */
     private CommSchema comm = CommSchema.getInstance();
     private CoreSchema core = CoreSchema.getInstance();
+
+    private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
 
     private WikiManager()
     {
@@ -197,6 +201,9 @@ public class WikiManager implements WikiService
             LOG.debug("indexWiki() for " + wikiInsert.getName());
             indexWiki(wikiInsert);
         }
+
+        if (wikiInsert.getName() != null)
+            fireWikiCreated(user, c, wikiInsert.getName().toString());
     }
 
 
@@ -267,6 +274,9 @@ public class WikiManager implements WikiService
                 WikiCache.uncache(c, wikiOld, uncacheAllContent);
         }
 
+        if (wikiNew.getName() != null)
+            fireWikiChanged(user, c, wikiNew.getName().toString());
+
         return true;
     }
 
@@ -306,6 +316,8 @@ public class WikiManager implements WikiService
             unindexWiki(wiki.getEntityId());
         }
 
+        if (wiki.getName() != null)
+            fireWikiDeleted(user, c, wiki.getName().toString());
         WikiCache.uncache(c, wiki, true);
     }
 
@@ -958,6 +970,36 @@ public class WikiManager implements WikiService
         for (HString h : l)
             ret.add(h.getSource());
         return ret;
+    }
+
+    @Override
+    public void addWikiListener(WikiChangeListener listener)
+    {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void removeWikiListener(WikiChangeListener listener)
+    {
+        listeners.remove(listener);
+    }
+
+    private void fireWikiCreated(User user, Container c, String name)
+    {
+        for (WikiChangeListener l : listeners)
+            l.wikiCreated(user, c, name);
+    }
+
+    private void fireWikiChanged(User user, Container c, String name)
+    {
+        for (WikiChangeListener l : listeners)
+            l.wikiChanged(user, c, name);
+    }
+
+    private void fireWikiDeleted(User user, Container c, String name)
+    {
+        for (WikiChangeListener l : listeners)
+            l.wikiDeleted(user, c, name);
     }
 
     public static class TestCase extends Assert
