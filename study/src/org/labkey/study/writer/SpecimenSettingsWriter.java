@@ -99,7 +99,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
         {
             // request statuses
-            SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
+            SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
             List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
             if (statuses.size() > 0)
             {
@@ -107,6 +107,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
                 {
                     if (!status.isSystemStatus()) // don't export system statuses
                     {
+                        if (xmlRequestStatuses == null) xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
                         SpecimenSettingsType.RequestStatuses.Status xmlStatus = xmlRequestStatuses.addNewStatus();
                         xmlStatus.setLabel(status.getLabel());
                         xmlStatus.setFinalState(status.isFinalState());
@@ -116,7 +117,10 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
             }
             StatusSettings statusSettings = SampleManager.getInstance().getStatusSettings(study.getContainer());
             if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
+            {
+                if (xmlRequestStatuses == null) xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
                 xmlRequestStatuses.setMultipleSearch(statusSettings.isUseShoppingCart());
+            }
 
             // request actors
             SampleRequestActor[] actors = study.getSampleRequestActors();
@@ -154,27 +158,31 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
             // default requirements
             SpecimenController.ManageReqsBean defRequirments = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
-            SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
+            SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;
             if (defRequirments.getOriginatorRequirements().length > 0)
             {
+                xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
                 DefaultRequirementsType xmlOrigLabReq = xmlDefRequirements.addNewOriginatingLab();
                 for (SampleRequestRequirement req : defRequirments.getOriginatorRequirements())
                     writeDefaultRequirement(xmlOrigLabReq, req);
             }
             if (defRequirments.getProviderRequirements().length > 0)
             {
+                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
                 DefaultRequirementsType xmlProviderReq = xmlDefRequirements.addNewProvidingLab();
                 for (SampleRequestRequirement req : defRequirments.getProviderRequirements())
                     writeDefaultRequirement(xmlProviderReq, req);
             }
             if (defRequirments.getReceiverRequirements().length > 0)
             {
+                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
                 DefaultRequirementsType xmlReceiverReq = xmlDefRequirements.addNewReceivingLab();
                 for (SampleRequestRequirement req : defRequirments.getReceiverRequirements())
                     writeDefaultRequirement(xmlReceiverReq, req);
             }
             if (defRequirments.getGeneralRequirements().length > 0)
             {
+                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
                 DefaultRequirementsType xmlGeneralReq = xmlDefRequirements.addNewGeneral();
                 for (SampleRequestRequirement req : defRequirments.getGeneralRequirements())
                     writeDefaultRequirement(xmlGeneralReq, req);

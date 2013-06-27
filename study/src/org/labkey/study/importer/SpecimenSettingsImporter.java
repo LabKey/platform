@@ -134,13 +134,13 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (null != xmlLocationTypes)
         {
             if (xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests())
-                study.setAllowReqLocClinic(xmlLocationTypes.getRepository().getAllowRequests());
+                study.setAllowReqLocRepository(xmlLocationTypes.getRepository().getAllowRequests());
             if (xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests())
                 study.setAllowReqLocClinic(xmlLocationTypes.getClinic().getAllowRequests());
             if (xmlLocationTypes.isSetSiteAffiliatedLab() && xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests())
-                study.setAllowReqLocClinic(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
+                study.setAllowReqLocSal(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
             if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
-                study.setAllowReqLocClinic(xmlLocationTypes.getEndpointLab().getAllowRequests());
+                study.setAllowReqLocEndpoint(xmlLocationTypes.getEndpointLab().getAllowRequests());
         }
 
         importRequestStatuses(study, ctx, xmlSettings);
