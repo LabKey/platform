@@ -40,6 +40,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -908,6 +909,29 @@ public class UserController extends SpringActionController
             form.bindParameters(context.getBindPropertyValues());
 
             return form;
+        }
+
+        @Override
+        public void validateCommand(QueryUpdateForm form, Errors errors)
+        {
+            TableInfo table = form.getTable();
+
+            if (table instanceof UsersTable)
+            {
+                for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
+                {
+                    if (entry.getValue() != null)
+                    {
+                        ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
+                        if (col != null && col.getJdbcType() == JdbcType.VARCHAR && col.getScale() > 0)
+                        {
+                            String value = entry.getValue().toString();
+                            if (value != null && value.length() > col.getScale())
+                                errors.reject(ERROR_MSG, "Value is too long for field " + col.getLabel() + ", a maximum length of " + col.getScale() + " is allowed.");
+                        }
+                    }
+                }
+            }
         }
 
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
