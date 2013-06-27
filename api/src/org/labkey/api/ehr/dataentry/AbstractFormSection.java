@@ -150,8 +150,18 @@ abstract public class AbstractFormSection implements FormSection
         json.put("clientModelClass", getClientModelClass());
         json.put("fieldConfigs", getFieldConfigs(c, u));
         json.put("configSources", getConfigSources());
+        json.put("tbarButtons", getTbarButtons());
 
         return json;
+    }
+
+    public List<String> getTbarButtons()
+    {
+        List<String> defaultButtons = new ArrayList<String>();
+        defaultButtons.add("ADDRECORD");
+        defaultButtons.add("DELETERECORD");
+        defaultButtons.add("ADDANIMALS");
+        return defaultButtons;
     }
 
     abstract protected List<FormElement> getFormElements(Container c, User u);

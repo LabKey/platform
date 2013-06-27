@@ -20,11 +20,16 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -145,11 +150,22 @@ public class AbstractDataEntryForm implements DataEntryForm
         }
         json.put("sections", sections);
         json.put("permissions", getPermissionMap(c, u));
-
-        //TODO:
-        //json.put("buttons", null);
+        json.put("buttons", getButtonConfigs());
 
         return json;
+    }
+
+    private List<String> getButtonConfigs()
+    {
+        List<String> defaultButtons = new ArrayList<String>();
+        defaultButtons.add("VALIDATEALL");
+        defaultButtons.add("SAVEDRAFT");
+        defaultButtons.add("REVIEW");
+        defaultButtons.add("SUBMIT");
+        defaultButtons.add("DISCARD");
+        defaultButtons.add("CLOSE");
+
+        return defaultButtons;
     }
 
     private Map<String, Map<String, Map<String, String>>> getPermissionMap(Container c, User u)
@@ -168,7 +184,24 @@ public class AbstractDataEntryForm implements DataEntryForm
             if (queryPerms == null)
                 queryPerms = new HashMap<>();
 
-            ti.hasPermission(u, ReadPermission.class);
+            SecurityPolicy policy = null;
+            if (ti instanceof DataSetTable)
+            {
+                DataSetTable ds = (DataSetTable)ti;
+                policy = SecurityPolicyManager.getPolicy(ds.getDataSet());
+            }
+            else
+            {
+                policy = SecurityPolicyManager.getPolicy(c);
+            }
+
+            if (policy != null)
+            {
+                for (Class<? extends Permission> p : policy.getPermissions(u))
+                {
+                    queryPerms.put(p.getName(), p.getCanonicalName());
+                }
+            }
 
             schemaPerms.put(queryName, queryPerms);
             permissionMap.put(schemaName, schemaPerms);

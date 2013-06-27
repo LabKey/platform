@@ -15,7 +15,11 @@
  */
 package org.labkey.api.ldk;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.security.User;
+
+import java.util.Map;
 
 /**
  * User: bimber
@@ -41,4 +45,6 @@ abstract public class LDKService
     abstract public TableCustomizer getBuiltInColumnsCustomizer();
 
     abstract public TableCustomizer getColumnsOrderCustomizer();
+
+    abstract public Map<String, Object> getContainerSizeJson(Container c, User u, boolean includeAllRootTypes, boolean includeFileCount);
 }

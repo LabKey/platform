@@ -88,6 +88,7 @@ abstract public class EHRService
         protocolDetails(),
         assignment(),
         moreReports(),
+        datasets(),
         animalSearch();
 
         REPORT_LINK_TYPE()

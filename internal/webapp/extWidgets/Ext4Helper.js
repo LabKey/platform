@@ -521,8 +521,11 @@ LABKEY.ext.Ext4Helper = new function(){
                     cellStyles.push('white-space:normal !important');
                 }
 
-                if(record && record.errors && record.errors.length){
-                    tdCls.push('labkey-grid-cell-invalid');
+
+                if(!record.isValid()){
+                    var errs = record.validate().getByField(meta.name);
+                    if (errs.length)
+                        tdCls.push('labkey-grid-cell-invalid');
                 }
 
                 if ((meta.allowBlank === false || meta.nullable === false) && Ext4.isEmpty(value)){
@@ -669,23 +672,14 @@ LABKEY.ext.Ext4Helper = new function(){
                 qtip.push(mvValue);
             }
 
-            if(config.record.errors && config.record.getErrors().length){
-
-                Ext4.each(config.record.getErrors(), function(e){
-                    if(e.field==meta.name){
-                        qtip.push((e.severity || 'ERROR') +': '+e.message);
-                    }
-                }, this);
+            if(!config.record.isValid()){
+                var errors = config.record.validate().getByField(config.meta.name);
+                if (errors.length){
+                    Ext4.Array.forEach(errors, function(e){
+                        qtip.push(e.message);
+                    }, this);
+                }
             }
-
-            //NOTE: the Ext3 API did this; however, i think a better solution is to support text wrapping in cells
-    //        if(config.col.multiline || (undefined === config.col.multiline && config.col.scale > 255 && config.meta.jsonType === "string"))
-    //        {
-    //            //Ext3
-    //            config.cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(config.value || '') + "\"";
-    //            //Ext4
-    //            config.cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(config.value || '') + "\"";
-    //        }
 
             if(config.meta.buildQtip){
                 config.meta.buildQtip({
@@ -698,9 +692,8 @@ LABKEY.ext.Ext4Helper = new function(){
             }
 
             if(qtip.length){
-                //ext3
-                config.cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
-                //ext4
+                qtip = Ext4.Array.unique(qtip);
+                config.cellMetaData.tdAttr = config.cellMetaData.tdAttr || '';
                 config.cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
             }
         },
