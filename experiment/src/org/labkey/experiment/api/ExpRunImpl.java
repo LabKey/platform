@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
@@ -78,6 +79,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private List<ExpMaterial> _materialOutputs = new ArrayList<>();
     private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
+    private static final Logger LOG = Logger.getLogger(ExpRunImpl.class);
 
     static public ExpRunImpl[] fromRuns(ExperimentRun[] runs)
     {
@@ -738,7 +740,19 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 if (file != null && NetworkDrive.exists(file) && file.isFile() &&
                     file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
                 {
-                    File archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                    File archivedDir = null;
+                    try
+                    {
+                        archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                    }
+                    catch (ExperimentException e)
+                    {
+                        // In this case, the archived directory was not created correctly perhaps due to file permission or
+                        // some other problem. This exception has been observed on production servers. The error is being
+                        // ignored and the file is not archived. Archiving is a best attempt action.
+                        LOG.warn("Unable to create an archive directory - discontinue archive and delete.");
+                        return;
+                    }
                     File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
                     targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
                     FileUtils.moveFile(file, targetFile);
