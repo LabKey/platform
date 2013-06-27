@@ -340,13 +340,8 @@ public class ListImporter
         {
             String columnName = columnXml.getColumnName();
 
-            if (columnXml.getIsKeyField())
-            {
-                if (!columnName.equalsIgnoreCase(keyName))
-                    throw new ImportException("More than one key specified: '" + keyName + "' and '" + columnName + "'");
-
-                continue;  // Skip the key columns
-            }
+            if (columnXml.getIsKeyField() && !columnName.equalsIgnoreCase(keyName))
+                throw new ImportException("More than one key specified: '" + keyName + "' and '" + columnName + "'");
 
             String dataType = columnXml.getDatatype();
             Type t = Type.getTypeBySqlTypeName(dataType);
