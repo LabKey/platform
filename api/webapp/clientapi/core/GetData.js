@@ -188,7 +188,7 @@
          *                  <li><strong>type</strong>: {String} Required.</li>
          *                  <li><strong>label</strong>: {String} Optional. The label used when the transform is rendered.</li>
          *                  <li>
-         *                      <strong>pivot</strong>: {Object} Optional. Array of groupBy objects with the following properties:
+         *                      <strong>pivot</strong>: {Object} Optional. An object with the following properties:
          *                      <ul>
          *                          <li>
          *                              <strong>columns</strong>:
@@ -200,6 +200,10 @@
          *                              The column to pivot by. Can be an array of strings, a string, or a {@link LABKEY.FieldKey}
          *                          </li>
          *                      </ul>
+         *                  </li>
+         *                  <li>
+         *                      <strong>groupBy</strong>: {Object[]} An array of Objects. Each object can be a string, array of strings,
+         *                      or a {@link LABKEY.FieldKey}.
          *                  </li>
          *                  <li>
          *                      <strong>aggregates</strong>: {Object[]} Optional. An array of objects with the following properties:
@@ -323,10 +327,10 @@
                 config.scope = this;
             }
 
-            requestConfig.success = function(response) {
+            requestConfig.success = function(response, options) {
                 var json = LABKEY.ExtAdapter.decode(response.responseText);
                 var wrappedResponse = new LABKEY.Query.Response(json);
-                config.success.call(config.scope, wrappedResponse);
+                config.success.call(config.scope, wrappedResponse, response, options);
             };
 
             return new LABKEY.Ajax.request(requestConfig);

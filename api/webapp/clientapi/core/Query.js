@@ -76,7 +76,7 @@ LABKEY.Query = new function()
         if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2")) {
             return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
                 if (data && callbackFn)
-                    callbackFn.call(scope || this, new LABKEY.Query.Response(data));
+                    callbackFn.call(scope || this, new LABKEY.Query.Response(data), response, options);
             }, this);
         }
 
@@ -177,9 +177,18 @@ LABKEY.Query = new function()
          *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
          *       config.containerPath.
          * @param {Function} config.success
-				Function called when the "selectRows" function executes successfully. Will be called with three arguments:
-				the parsed response data ({@link LABKEY.Query.SelectRowsResults}), the XMLHttpRequest object and
-                (optionally) the "options" object ({@link LABKEY.Query.SelectRowsOptions}).
+                 Function called when the "selectRows" function executes successfully.
+                 This function will be called with the following arguments:
+                 <ul>
+                     <li>
+                         <b>data:</b> If config.requiredVersion is not set, or set to "8.3", the success handler will be
+                         passed a {@link LABKEY.Query.SelectRowsResults} object. If set to "9.1" the success handler will
+                         be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If set to "13.2" the succes
+                         handler will be passed a {@link LABKEY.Query.Response} object.
+                     </li>
+                     <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
+                     <li><b>options:</b> The options used for the AJAX request</li>
+                 </ul>
          * @param {Function} [config.failure] Function called when execution of the "executeSql" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
@@ -200,11 +209,13 @@ LABKEY.Query = new function()
          *       or the column will be omitted in the response.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized.
-         * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
-                   instead of the SelectRowsResults format. The main difference is that in the
-                   ExtendedSelectRowsResults format each column in each row
-                   will be another object (not just a scalar value) with a "value" property as well as other
-                   related properties (url, mvValue, mvIndicator, etc.)
+         * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
+                 object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
+                 object. If set to "13.2" the succes handler will be passed a {@link LABKEY.Query.Response} object.
+                 The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
+                 will be another object (not just a scalar value) with a "value" property as well as other related properties
+                 (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
+                 {@link LABKEY.Query.Row}.
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -227,6 +238,11 @@ LABKEY.Query = new function()
                          FROM "Reagent Requests" Group BY "Reagent Requests".UserID',
                      success: writeTotals
              });  </pre>
+
+         * @see LABKEY.Query.SelectRowsOptions
+         * @see LABKEY.Query.SelectRowsResults
+         * @see LABKEY.Query.ExtendedSelectRowsResults
+         * @see LABKEY.Query.Response
          */
         executeSql : function(config)
         {
@@ -328,9 +344,12 @@ LABKEY.Query = new function()
 				Function called when the "selectRows" function executes successfully.
 				This function will be called with the following arguments:
 				<ul>
-				    <li><b>data:</b> Typically, an instance of {@link LABKEY.Query.SelectRowsResults}.  Alternatively, an instance of
-                        {@link LABKEY.Query.ExtendedSelectRowsResults} if config.requiredVersion
-                        is set to "9.1".</li>
+				    <li>
+                        <b>data:</b> If config.requiredVersion is not set, or set to "8.3", the success handler will be
+                        passed a {@link LABKEY.Query.SelectRowsResults} object. If set to "9.1" the success handler will
+                        be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If set to "13.2" the succes
+                        handler will be passed a {@link LABKEY.Query.Response} object.
+                    </li>
                     <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
 				    <li><b>options:</b> The options used for the AJAX request</li>
 				</ul>
@@ -388,11 +407,13 @@ LABKEY.Query = new function()
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-        * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
-                  instead of the SelectRowsResults format. The main difference is that in the
-                  ExtendedSelectRowsResults format each column in each row
-                  will be another object (not just a scalar value) with a "value" property as well as other
-                  related properties (url, mvValue, mvIndicator, etc.)
+        * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
+                object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
+                object. If set to "13.2" the succes handler will be passed a {@link LABKEY.Query.Response} object.
+                The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
+                will be another object (not just a scalar value) with a "value" property as well as other related properties
+                (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
+                {@link LABKEY.Query.Row}.
         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
@@ -424,6 +445,7 @@ LABKEY.Query = new function()
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
         * @see LABKEY.Query.ExtendedSelectRowsResults
+        * @see LABKEY.Query.Response
 		*/
         selectRows : function(config)
         {
@@ -1362,7 +1384,11 @@ LABKEY.Query = new function()
 };
 
 /**
- * @class LABKEY.Query.Filter
+ * @class This class is used to construct filters when using APIs such as {@link LABKEY.Query.GetData.rawData},
+ *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql}. This is the base filter class, which requires
+ *      the user specify a filter type from {@link LABKEY.Filter#Types}. Users can avoid the need for specifying a filter
+ *      type by using a subclass of Filter such as {@link LABKEY.Query.Filter.Equals} or {@link LABKEY.Query.Filter.GreaterThan}, which
+ *      will automatically set the type for the user.
  * @param {String} columnName Required. The name of the column the filter will be applied  Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
  * @param value Value used as the filter criterion or an Array of values.
@@ -1401,8 +1427,8 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
 };
 
 /**
- *
- * @returns {String} Returns the column name used for the filter.
+ * Gets the column name used in the filter.
+ * @returns {String}
  */
 LABKEY.Query.Filter.prototype.getColumnName = function ()
 {
@@ -1410,8 +1436,8 @@ LABKEY.Query.Filter.prototype.getColumnName = function ()
 };
 
 /**
- *
- * @returns {LABKEY.Filter#Types} Returns the filterType.
+ * Gets the filter type used to construct the filter.
+ * @returns {LABKEY.Filter#Types}
  */
 LABKEY.Query.Filter.prototype.getFilterType = function ()
 {
@@ -1419,8 +1445,8 @@ LABKEY.Query.Filter.prototype.getFilterType = function ()
 };
 
 /**
- *
- * @returns {*} Returns the value of the filter.
+ * Returns the value of the filter.
+ * @returns {*}
  */
 LABKEY.Query.Filter.prototype.getValue = function ()
 {
@@ -1428,8 +1454,8 @@ LABKEY.Query.Filter.prototype.getValue = function ()
 };
 
 /**
- *
- * @returns {*} Returns the value that will be put on URL.
+ * Returns the value that will be put on URL.
+ * @returns {String}
  */
 LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 {
@@ -1437,9 +1463,9 @@ LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 };
 
 /**
- *
+ * Returns the URL parameter name used for the filter.
  * @param dataRegionName The dataRegionName the filter is associated with.
- * @returns {string} Returns the URL parameter name used for the filter.
+ * @returns {String}
  */
 LABKEY.Query.Filter.prototype.getURLParameterName = function (dataRegionName)
 {
@@ -1954,9 +1980,11 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
 (function(){
     /**
-     * @name LABKEY.Query.Row
-     * @class Row
-     * @param row The raw row from a GetData or SelectRows (version 13.2 and above) request.
+     * @class LABKEY.Query.Row The class used to wrap each row object returned from the server during a GetData, executeSql,
+     * or selectRows request. Most users will not instantiate these themselves. Instead they will interact with them during
+     * the success handler of the API they are using.
+     * @see LABKEY.Query.Response
+     * @param row The raw row from a GetData or executeSQL, selectRows (version 13.2 and above) request.
      * @constructor
      */
     LABKEY.Query.Row = function(row){
@@ -1974,7 +2002,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Gets the requested column from the row. Includes extended values such as display value, URL, etc.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
      * @returns {Object} Returns an object that lets you fetch the extended values (display value, URL, etc) for a given column.
      */
@@ -1991,7 +2019,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Gets the simple value for the requested column. Equivalent of doing Row.get(columnName).value.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
      * @returns {*} Returns the simple value for the given column.
      */
@@ -2010,7 +2038,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Gets all of the links for a row (details, update, etc.).
      * @returns {Object} Returns an object with all of the links types (details, update, etc.) for a row.
      */
     LABKEY.Query.Row.prototype.getLinks = function(){
@@ -2018,7 +2046,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Gets a specific link type for a row (details, update, etc.).
      * @param linkType Requried. The name of the link type to be returned.
      * @returns {Object} Returns an object with the display text and link value.
      */
@@ -2069,10 +2097,13 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     * @class LABKEY.Query.Response the class used to wrap the response object from LABKEY.Query.GetData.RawData,
-     *      selectRows, and executeSql
-     * @param response The raw JSON response object returned from GetData, selectRows, or executeSql when requiredVersion
-     *      is 13.2
+     * @class The class used to wrap the response object from {@link LABKEY.Query.GetData.rawData},
+     *      {@link LABKEY.Query.selectRows}, and {@link LABKEY.Query.executeSql}.
+     * @param response The raw JSON response object returned from the server when executing {@link LABKEY.Query.GetData.rawData},
+     *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql} when requiredVersion is 13.2.
+     * @see LABKEY.Query.GetData.rawData
+     * @see LABKEY.Query.selectRows
+     * @see LABKEY.Query.executeSql
      * @constructor
      */
     LABKEY.Query.Response = function(response) {
@@ -2122,32 +2153,77 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
+     * Gets the metaData object from the response.
+     * @returns {Object} Returns an object with the following properties:
+     * <ul>
+     *     <li><strong>fields</strong>: {Object[]}
+     *     Each field has the following properties:
+     *          <ul>
+     *              <li><strong>name</strong>: {String} The name of the field</li>
+     *              <li><strong>type</strong>: {String} JavaScript type name of the field</li>
+     *              <li><strong>shownInInsertView</strong>: {Boolean} whether this field is intended to be shown in insert views</li>
+     *              <li><strong>shownInUpdateView</strong>: {Boolean} whether this field is intended to be shown in update views</li>
+     *              <li><strong>shownInDetailsView</strong>: {Boolean} whether this field is intended to be shown in details views</li>
+     *              <li>
+     *                  <strong>measure</strong>: {Boolean} whether this field is a measure.  Measures are fields that contain data
+     *                  subject to charting and other analysis.
+     *              </li>
+     *              <li>
+     *                  <strong>dimension</strong>: {Boolean} whether this field is a dimension.  Data dimensions define logical groupings
+     *                  of measures.
+     *              </li>
+     *              <li><strong>hidden</strong>: {Boolean} whether this field is hidden and not normally shown in grid views</li>
+     *              <li><strong>lookup</strong>: {Object} If the field is a lookup, there will
+     *                  be four sub-properties listed under this property:
+     *                  schema, table, displayColumn, and keyColumn, which describe the schema, table, and
+     *                  display column, and key column of the lookup table (query).
+     *              </li>
+     *              <li>
+     *                  <strong>displayField</strong>: {{@link LABKEY.FieldKey}} If the field has a display field this is
+     *                  the field key for that field.
+     *              </li>
+     *              <li>
+     *                  <strong>getDisplayField</strong>: {Function} If the field has a display field this function will
+     *                  return the metadata field object for that field.
+     *              </li>
+     *          </ul>
+     *     </li>
      *
-     * @returns {Object} Returns the metaData object from the response.
+     *     <li><strong>id</strong>: Name of the primary key column.</li>
+     *     <li>
+     *         <strong>root</strong>: Name of the property containing rows ("rows"). This is mainly for the Ext
+     *         grid component.
+     *     </li>
+     *     <li><strong>title</strong>:</li>
+     *     <li>
+     *         <strong>totalProperty</strong>: Name of the top-level property containing the row count ("rowCount") in our case.
+     *         This is mainly for the Ext grid component.
+     *     </li>
+     * </ul>
      */
     LABKEY.Query.Response.prototype.getMetaData = function() {
         return this.metaData;
     };
 
     /**
-     *
+     * Returns the schema name from the Response.
      * @param {Boolean} asString
-     * @returns {*} If asString is true it returns a string, otherwise it returns a LABKEY.FieldKey object.
+     * @returns {*} If asString is true it returns a string, otherwise it returns a {@link LABKEY.FieldKey} object.
      */
     LABKEY.Query.Response.prototype.getSchemaName = function(asString) {
         return asString ? this.schemaKey.toString() : this.schemaName;
     };
 
     /**
-     *
-     * @returns {String} Returns the query name.
+     * Returns the query name from the Response.
+     * @returns {String}
      */
     LABKEY.Query.Response.prototype.getQueryName = function() {
         return this.queryName;
     };
 
     /**
-     *
+     * Returns an array of objects that can be used to assist in creating grids using ExtJs.
      * @returns {Array} Returns an array of Objects that can be used to assist in creating Ext Grids to
      *      render the data.
      */
@@ -2156,7 +2232,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Returns the array of row objects.
      * @returns {Array} Returns an array of {@link LABKEY.Query.Row} objects.
      */
     LABKEY.Query.Response.prototype.getRows = function() {
@@ -2164,7 +2240,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
+     * Get a specific row from the row array.
      * @param {Integer} idx The index of the row you need.
      * @returns {LABKEY.Query.Row}
      */
@@ -2177,8 +2253,8 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     *
-     * @returns {Integer} Returns the row count from the response.
+     * Gets the row count from the reponse.
+     * @returns {Integer}
      */
     LABKEY.Query.Response.prototype.getRowCount = function() {
         return this.rowCount;
