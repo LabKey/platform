@@ -19,8 +19,11 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
@@ -28,12 +31,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.reports.StudyCrosstabReport;
-import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -322,12 +325,26 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         RepositorySettings repositorySettings = SampleManager.getInstance().getRepositorySettings(schema.getContainer());
         _enableRequests = repositorySettings.isEnableRequests();
-        boolean isEditable = repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
+        boolean isEditable = ViewType.VIALS == viewType && repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
         setShowUpdateColumn(isEditable);
 
         setShowInsertNewButton(isEditable);
         setShowDeleteButton(isEditable);
         setShowImportDataButton(false);
+        if (isEditable)
+        {
+            AbstractTableInfo tableInfo = (AbstractTableInfo)getTable();
+            ActionURL updateActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, getContainer());
+            updateActionURL.addParameter("schemaName", "study");
+            updateActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
+            Map<String, String> columns = new HashMap<>(1);
+            columns.put("RowId", "RowId");
+            tableInfo.setUpdateURL(new DetailsURL(updateActionURL, columns));
+            ActionURL insertActionURL = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, getContainer());
+            insertActionURL.addParameter("schemaName", "study");
+            insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
+            tableInfo.setInsertURL(new DetailsURL(insertActionURL));
+        }
 
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)

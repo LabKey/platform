@@ -658,21 +658,28 @@ public class RequestabilityManager
             super(container);
         }
 
+        @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment();
             if (specimens != null && specimens.size() > 0)
                 sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
 
-            sql.append(StudySchema.getInstance().getSqlDialect().getBooleanFALSE()+ " IN (")
-               .append("SELECT FinalState FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() + " WHERE RowId IN (")
-               .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
-               .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
+            sql.append(" RowId IN (SELECT SV.RowId FROM " + StudySchema.getInstance().getTableInfoVial() + " SV");
+            sql.append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() +
+                    ") SRS ON (GlobalUniqueId = SpecimenGlobalUniqueId)");
+            sql.append(" LEFT OUTER JOIN (SELECT RowId, StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() +
+                    ") SR ON (SR.RowId = SRS.SampleRequestId)");
+            sql.append(" LEFT OUTER JOIN (SELECT RowId, FinalState FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
+                    ") SRST ON (SRST.RowId = SR.StatusId)");
+            sql.append(" WHERE SV.Container = ? AND SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
+            sql.add(container.getId());
+            sql.add(false);
             if (specimens != null && specimens.size() > 0)
                 sql.append(" AND SpecimenGlobalUniqueId IN (").append(getSpecimenGlobalUniqueIdSet(specimens)).append(")");
 
-            sql.append(")))");
+            sql.append(")");
             return sql;
         }
 

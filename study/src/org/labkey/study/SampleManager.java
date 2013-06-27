@@ -364,6 +364,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             List<SpecimenEvent> events = vialIdToEvents.get(specimen.getRowId());
             if (events != null && events.size() > 0)
                 Collections.sort(events, new SpecimenEventDateComparator());
+            else
+                events = Collections.EMPTY_LIST;
             results.put(specimen, events);
         }
         return results;
@@ -423,6 +425,8 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public SpecimenEvent getLastEvent(List<SpecimenEvent> dateOrderedEvents)
     {
+        if (dateOrderedEvents.isEmpty())
+            return null;
         return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
     }
 

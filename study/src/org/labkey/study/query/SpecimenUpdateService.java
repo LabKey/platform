@@ -57,7 +57,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         int rowId = keyFromMap(oldRow);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, rowId);
@@ -69,9 +69,9 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         SQLFragment sql = getAllRequestCountSql(container, specimen);
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
-            throw new IllegalStateException("Expected one and only one count of rows.");
+            throw new ValidationException("Expected one and only one count of rows.");
         else if (counts.size() > 0 && counts.get(0) != 0)
-            throw new IllegalStateException("Specimen may not be deleted because it has been used in a request.");
+            throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
 
         SampleManager.getInstance().deleteSpecimen(specimen);
         List<Map<String, Object>> rows = new ArrayList<>(1);
@@ -80,9 +80,9 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         {
             importSpecimens(user, container, rows, true);
         }
-        catch (IOException | ValidationException e)
+        catch (IOException e)
         {
-
+            throw new IllegalStateException(e.getMessage());
         }
 
         return oldRow;
@@ -117,7 +117,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
         catch (IOException e)
         {
-
+            throw new IllegalStateException(e.getMessage());
         }
 
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, globalUniqueId);
@@ -167,6 +167,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         externalId += 1;
         rowMap.put("ExternalId", externalId);
 
+        // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished
+        if (null == oldRow.get("requestable"))
+        {
+            Object obj = rowMap.get("requestable");
+            if (null != obj && !(Boolean)obj)
+                rowMap.put("requestable", null);
+        }
+
         List<Map<String, Object>> rows = new ArrayList<>(1);
         rows.add(rowMap);
 
@@ -176,7 +184,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
         catch (IOException e)
         {
-
+            throw new IllegalStateException(e.getMessage());
         }
 
         // The rowId will not have changed

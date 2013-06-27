@@ -319,6 +319,21 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         }
     }
 
+    public void changeRequestableColumn()
+    {   // TODO: finish fixing bug    (couple of options here)
+//        ColumnInfo requestableColumn = getColumn("requestable");
+//        SQLFragment sql = new SQLFragment("(CASE WHEN requestable IS NULL THEN 'Null' WHEN requestable = TRUE THEN 'True' ELSE 'False' END) AS RequestableSetting");
+//        ColumnInfo newRequestableColumn = new ExprColumn(this, "RequestableSetting", sql, JdbcType.VARCHAR, requestableColumn);
+//        requestableColumn.setUserEditable(false);
+//        requestableColumn.setHidden(true);
+
+    //    SQLFragment sql = new SQLFragment("CASE WHEN requestable IS NULL THEN ? ELSE ? END");
+//        sql.add(getSchema().getSqlDialect().getBooleanTRUE());
+//        sql.add(getSchema().getSqlDialect().getBooleanFALSE());
+//        ColumnInfo newRequestableColumn = new ExprColumn(this, "RequestableNull", sql, JdbcType.BOOLEAN, requestableColumn);
+    //    addColumn(newRequestableColumn);
+    }
+
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {

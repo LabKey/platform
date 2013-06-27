@@ -36,6 +36,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -63,6 +64,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -88,25 +90,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.AjaxCompletion;
-import org.labkey.api.view.BaseWebPartFactory;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.HBox;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
@@ -136,6 +120,7 @@ import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
@@ -5694,4 +5679,83 @@ public class SpecimenController extends BaseStudyController
             _columns = columns;
         }
     }
+
+    @RequiresPermissionClass(EditSpecimenDataPermission.class)
+    public static class UpdateSpecimenQueryRowAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            // Don't allow GlobalUniqueId to be edited
+            TableInfo tableInfo = tableForm.getTable();
+            if (null != tableInfo.getColumn("GlobalUniqueId"))
+                tableInfo.getColumn("GlobalUniqueId").setReadOnly(true);
+
+            ColumnInfo vialComments = tableInfo.getColumn("VialComments");
+            if (null != vialComments)
+            {
+                vialComments.setUserEditable(false);
+                vialComments.setHidden(true);
+            }
+
+            SpecimenController.fixSpecimenRequestableColumn(tableForm);
+            ButtonBar bb = createSubmitCancelButtonBar(tableForm);
+            UpdateView view = new UpdateView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, false);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Edit " + _form.getQueryName());
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(EditSpecimenDataPermission.class)
+    public static class InsertSpecimenQueryRowAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            TableInfo tableInfo = tableForm.getTable();
+            ColumnInfo vialComments = tableInfo.getColumn("VialComments");
+            if (null != vialComments)
+            {
+                vialComments.setUserEditable(false);
+                vialComments.setHidden(true);
+            }
+
+            SpecimenController.fixSpecimenRequestableColumn(tableForm);
+            InsertView view = new InsertView(tableForm, errors);
+            view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, true);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Insert " + _form.getQueryName());
+            return root;
+        }
+    }
+
+    private static void fixSpecimenRequestableColumn(QueryUpdateForm tableForm)
+    {
+        TableInfo tableInfo = tableForm.getTable(); //TODO: finish fixing bug
+        if (tableInfo instanceof SpecimenDetailTable)
+            ((SpecimenDetailTable)tableInfo).changeRequestableColumn();
+    }
+
 }
