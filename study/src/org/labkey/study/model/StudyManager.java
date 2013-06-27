@@ -115,7 +115,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.QueryHelper;
@@ -3573,36 +3572,26 @@ public class StudyManager
                 props.put(SearchService.PROPERTY.indentifiersHi.toString(), uniqueIds);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                // need to figure out if all study users can see demographic data or not
-                if (1==1)
+                // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)
+
+                // SimpleDocument
+                SimpleDocumentResource r = new SimpleDocumentResource(
+                        p, docid,
+                        c.getId(),
+                        "text/plain",
+                        displayTitle.getBytes(),
+                        execute, props
+                )
                 {
-                    // SimpleDocument
-                    SimpleDocumentResource r = new SimpleDocumentResource(
-                            p, docid,
-                            c.getId(),
-                            "text/plain",
-                            displayTitle.getBytes(),
-                            execute, props
-                    )
+                    @Override
+                    public void setLastIndexed(long ms, long modified)
                     {
-                        @Override
-                        public void setLastIndexed(long ms, long modified)
-                        {
-                            StudySchema ss = StudySchema.getInstance();
-                            new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
-                                " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
-                        }
-                    };
-                    task.addResource(r, SearchService.PRIORITY.item);
-                }
-                else
-                {
-                    // ActionResource
-                    ActionURL index = indexURL.clone().addParameter("participantId", ptid);
-                    ActionResource r = new ActionResource(subjectCategory, docid, execute, index, props);
-                    task.addResource(r, SearchService.PRIORITY.item);
-                    // If this is ever used then better update LastIndexed
-                }
+                        StudySchema ss = StudySchema.getInstance();
+                        new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
+                            " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
+                    }
+                };
+                task.addResource(r, SearchService.PRIORITY.item);
             }
         });
     }

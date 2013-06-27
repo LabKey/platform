@@ -27,7 +27,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
@@ -50,10 +49,6 @@ public class NoopSearchService implements SearchService
     IndexTask _dummyTask = new IndexTask()
     {
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
-        {
-        }
-
-        public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
         {
         }
 

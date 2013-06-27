@@ -28,19 +28,16 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -49,7 +46,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -635,30 +631,6 @@ public class WikiManager implements WikiService
             return;
 
         indexWikiContainerFast(task, c, modifiedSince, null);
-    }
-
-
-    public void indexWikiContainerSlow(@NotNull final SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
-    {
-        final ActionURL page = new ActionURL(WikiController.PageAction.class, null);
-
-        SimpleFilter f = SimpleFilter.createContainerFilter(c);
-        SearchService.LastIndexedClause clause = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, null);
-        f.addCondition(clause);
-        if (null != modifiedSince)
-            f.addCondition("modified", modifiedSince, CompareType.GTE);
-
-        new TableSelector(comm.getTableInfoPages(), PageFlowUtil.set("container", "name"), f, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String id = rs.getString(1);
-                String name = rs.getString(2);
-                ActionURL url = page.clone().setExtraPath(id).replaceParameter("name", name);
-                task.addResource(searchCategory, url, SearchService.PRIORITY.item);
-            }
-        });
     }
 
 
