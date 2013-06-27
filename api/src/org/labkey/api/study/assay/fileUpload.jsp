@@ -162,6 +162,8 @@
         errorCell.colSpan = 20;
         errorCell.innerHTML = "<label class='labkey-error'></label>";
         file.errorLabel = errorCell.children[0];
+
+        reindexFileUploadInputRows();
     }
 
     /**
@@ -186,7 +188,7 @@
         {
             // This is a reused file. Don't remove it, but strike it out and disable the form fields so they don't
             // actually post their values, which means the file won't be used
-            file.fileNameSpan.style['text-decoration'] = 'line-through';
+            file.fileNameSpan.style['textDecoration'] = 'line-through';
             file.hidden1.disabled = true;
             file.hidden2.disabled = true;
             file.active = false;
@@ -219,6 +221,7 @@
             if (file.fileInput)
             {
                 file.fileInput.name = PREFIX + (index > 0 ? index : "");
+                index++;
             }
         }
 
@@ -283,8 +286,7 @@
      */
     function updateFileLabel(file)
     {
-        if (file.fileInput.value)
-            showPathname(file.fileInput, file.fileNameLabel);
+        showPathname(file.fileInput, file.fileNameLabel);
     }
 
     /**
@@ -295,6 +297,11 @@
         // Fire off an AJAX request
         var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
         var fileName = file.fileInput.value;
+        if (!fileName || fileName == '')
+        {
+            Ext.get(file.errorLabel).update("");
+            return;
+        }
         var slashIndex = Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\"));
         if (slashIndex != -1)
         {

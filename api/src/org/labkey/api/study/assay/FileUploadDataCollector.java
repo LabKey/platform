@@ -104,15 +104,21 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
 
         Map<String, File> files = savePostedFiles(context, fileInputs);
 
+        // Figure out if we have any data files to work with -
+        boolean foundFiles = files.containsKey(_fileInputName);
+
         if (_maxFileInputs > 1)
         {
             // In the case that we're allowing reuse through this codepath
             // use any previously uploaded files that are still selected
             PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>();
-            files.putAll(previousCollector.createData(context));
+            Map<String, File> reusedFiles = previousCollector.createData(context);
+            files.putAll(reusedFiles);
+            // It's OK to just reuse files and not upload any new ones
+            foundFiles |= !reusedFiles.isEmpty();
         }
 
-        if (!files.containsKey(_fileInputName))
+        if (!foundFiles)
             throw new ExperimentException("No data file was uploaded. Please select a file.");
         return files;
     }

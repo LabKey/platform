@@ -303,8 +303,10 @@
 
             if (!config.failure) {
                 requestConfig.failure = function(response, options) {
-                    var json = LABKEY.ExtAdapter.decode(response.responseText);
-                    console.error('Failure occurred during getData', json);
+                    if (response.status != 0) {
+                        var json = LABKEY.ExtAdapter.decode(response.responseText);
+                        console.error('Failure occurred during getData', json);
+                    }
                 };
             } else {
                 requestConfig.failure = function(response, options) {
