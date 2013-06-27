@@ -84,7 +84,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         });
 
         this.id = this.name;
-        this._allowHeaderLock = this.allowHeaderLock && (Ext.isIE9 || Ext.isIE10p || Ext.isWebKit || Ext.isGecko);
+
+        this._allowHeaderLock = this.allowHeaderLock;
+        if (this._allowHeaderLock) {
+            if (this.plugins && Ext.isArray(this.plugins)) {
+                this.plugins.push(new LABKEY.DataRegion.plugins.HeaderLock());
+            }
+            else {
+                this.plugins = [new LABKEY.DataRegion.plugins.HeaderLock()];
+            }
+        }
 
         LABKEY.DataRegions[this.name] = this;
 
@@ -192,17 +201,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
     doDestroy : function()
     {
-        if (this.headerLock())
-        {
-            Ext.EventManager.un(window, 'load', this._resizeContainer, this);
-            Ext.EventManager.un(window, 'resize', this._resizeContainer, this);
-            Ext.EventManager.un(window, 'scroll', this._scrollContainer, this);
-            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this);
-            if (this.resizeTask) {
-                this.resizeTask.cancel();
-                delete this.resizeTask;
-            }
-        }
+        this.disableHeaderLock();
 
         if (this.msgbox)
         {
@@ -969,7 +968,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * @param part
      * @return {Ext.Element} The Ext.Element of the newly created message div.
      */
-    addMessage : function (html, part)
+    addMessage : function(html, part)
     {
         if (this.msgbox)
             this.msgbox.addMessage(html, part);
@@ -981,7 +980,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * @return {Ext.Element} The Ext.Element of the newly created message div.
      * @deprecated use addMessage(html, msg) instead.
      */
-    showMessage : function (html)
+    showMessage : function(html)
     {
         if (this.msgbox)
             this.msgbox.addMessage(html);
@@ -997,7 +996,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * Show a message in the header of this DataRegion with a loading indicator.
      * @param html the HTML source of the message to be shown
      */
-    showLoadingMessage : function (html)
+    showLoadingMessage : function(html)
     {
         html = html || "Loading...";
         this.addMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
@@ -1039,7 +1038,13 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             this.msgbox.setVisible(false);
             this.msgbox.clear();
-            this._resizeContainer(); // #13498
+            if (this.headerLock() && this.plugins)
+            {
+                for (var p=0; p < this.plugins.length; p++) {
+                    if (Ext.isFunction(this.plugins[p]['onResize']))
+                        this.plugins[p].onResize(); // 13498
+                }
+            }
         }
     },
 
@@ -1209,10 +1214,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             }
         }
 
-        if (this.headerLock()) {
-            this._initHeaderLock();
-        }
-
         this.rendered = true; // prevent Ext.Component.render() from doing anything
         this.el = this.form && Ext.get(this.form) || this.table;
     },
@@ -1222,218 +1223,14 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     disableHeaderLock : function() {
-        if (this.headerLock())
+        if (this.headerLock() && Ext.isArray(this.plugins))
         {
-            this._allowHeaderLock = false;
-            this.resizeTask.cancel();
-
-            Ext.EventManager.un(window, 'load', this._resizeContainer, this);
-            Ext.EventManager.un(window, 'resize', this._resizeContainer, this);
-            Ext.EventManager.un(window, 'scroll', this._scrollContainer, this);
-            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this);
-            delete this.resizeTask;
-        }
-    },
-
-    _initHeaderLock : function() {
-        // initialize constants
-        this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
-        if (!this.headerRow) {
-            this._allowHeaderLock = false;
-            return;
-        }
-        this.headerRowContent   = this.headerRow.child('td');
-        this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
-        this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
-        this.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + this.name);
-        this.paginationEl       = Ext.get('dataregion_header_' + this.name);
-
-        Ext.EventManager.on(window,   'resize', this._resizeContainer, this);
-        this.ensurePaginationVisible();
-
-        // check if the header row is being used
-        this.includeHeader = this.headerRow.isDisplayed();
-
-        // initialize row contents
-        // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
-        // during query execution, so we didn't get column metadata back
-        if (this.colHeaderRow)
-        {
-            this.rowContent = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
-        }
-        if (this.colHeaderRowSpacer)
-        {
-            this.rowSpacerContent = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
-        }
-        this.firstRow = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
-
-        // performance degradation
-        var tooManyColumns = this.rowContent.length > 80 || ((this.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
-        var tooManyRows = (this.rowCount && this.rowCount > 1000);
-
-        if (tooManyColumns || tooManyRows)
-        {
-            this._allowHeaderLock = false;
-            return;
-        }
-
-        // If no data rows exist just turn off header locking
-        if (this.firstRow.length == 0)
-        {
-            this.firstRow = Ext.query("tr[class=labkey-row]:first td", this.table.id);
-            if (this.firstRow.length == 0)
-            {
-                this._allowHeaderLock = false;
-                return;
+            for (var p=0; p < this.plugins.length; p++) {
+                if (Ext.isFunction(this.plugins[p]['disable'])) {
+                    this.plugins[p].disable();
+                }
             }
         }
-
-        // initialize additional listeners
-        Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
-        Ext.EventManager.on(window,   'scroll',          this._scrollContainer, this);
-        Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
-
-        // initialize panel listeners
-        // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
-        // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
-        this.on('afterpanelshow', function() {
-            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this); // suspend listener
-            this._resizeContainer();
-        }, this);
-
-        this.on('afterpanelhide', function() {
-            Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // resume listener
-            this._resizeContainer();
-        }, this);
-
-        // initialize timer task for resizing and scrolling
-        this.hdrCoord = [];
-        this.resizeTask = new Ext.util.DelayedTask(function(){
-            this._resetHeader(true);
-            this.ensurePaginationVisible();
-        }, this);
-
-        this._resetHeader(true);
-    },
-
-    ensurePaginationVisible : function() {
-
-        if (this.paginationEl)
-        {
-            // in case header locking is not on
-            if (!this.headerLock() || !this.hdrCoord || this.hdrCoord.length == 0)
-            {
-                this.hdrCoord = this._findPos();
-            }
-
-            var measure = Ext.getBody().getBox().width-this.hdrCoord[0];
-            if (measure < (this.headerRow.getWidth()))
-            {
-                this.paginationEl.applyStyles('width: ' +  measure + 'px;');
-            }
-        }
-    },
-
-    _calculateHeader : function(recalcPosition) {
-        this._calculateHeaderLock(recalcPosition);
-        this._scrollContainer();
-    },
-
-    _calculateHeaderLock : function(recalcPosition) {
-        var el, z, s, src, i;
-
-        for (i=0; i < this.rowContent.length; i++) {
-            src = Ext.get(this.firstRow[i]);
-            el  = Ext.get(this.rowContent[i]);
-
-            s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
-            el.setWidth(s.width); // 15420
-
-            z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
-            z.setSize(s);
-        }
-
-        if (recalcPosition === true) this.hdrCoord = this._findPos();
-        this.hdrLocked = false;
-    },
-
-    /**
-     * Returns an array of containing the following values:
-     * [0] - X-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
-     * [1] - Y-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
-     * [2] - Y-coordinate of the bottom of the object.
-     * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
-     * This method assumes interaction with the Header of the Data Region.
-     * @param o - The Ext.Element object to be measured againt that is considered the top of the Data Region.
-     */
-    _findPos : function() {
-        var o, xy, curbottom, hdrOffset=0;
-
-        if (this.includeHeader) {
-            o = (this.hdrLocked ? this.headerSpacer : this.headerRow);
-            hdrOffset = this.headerSpacer.getComputedHeight();
-        }
-        else {
-            o = (this.hdrLocked ? this.colHeaderRowSpacer : this.colHeaderRow);
-        }
-
-        xy = o.getXY();
-        curbottom = xy[1] + this.table.getHeight() - (o.getComputedHeight()*2);
-
-        return [ xy[0], xy[1], curbottom, hdrOffset ];
-    },
-
-    /**
-     * WARNING: This function is called often. Performance implications for each line.
-     * NOTE: window.pageYOffset and pageXOffset are not available in IE7-. For these document.documentElement.scrollTop
-     * and document.documentElement.scrollLeft could be used. Additionally, position: fixed is not recognized by
-     * IE7- and can be best approximated with position: absolute and explicit top/left.
-     */
-    _scrollContainer : function() {
-        // calculate Y scrolling
-        if (window.pageYOffset >= this.hdrCoord[1] && window.pageYOffset < this.hdrCoord[2]) {
-            // The header has reached the top of the window and needs to be locked
-            var tWidth = this.table.getComputedWidth();
-            this.headerSpacer.dom.style.display = "table-row";
-            this.colHeaderRowSpacer.dom.style.display = "table-row";
-            this.headerRow.applyStyles("top: 0; position: fixed; " +
-                    "min-width: " + tWidth + "px; z-index: 9000;"); // 13229
-            this.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
-            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.hdrCoord[3] + "px;" +
-                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC; z-index: 9000;"); // 13229
-            this.hdrLocked = true;
-        }
-        else if (this.hdrLocked && window.pageYOffset >= this.hdrCoord[2]) {
-            // The bottom of the Data Region is near the top of the window and the locked header
-            // needs to start 'sliding' out of view.
-            var top = this.hdrCoord[2]-window.pageYOffset;
-            this.headerRow.applyStyles("top: " + top + "px;");
-            this.colHeaderRow.applyStyles("top: " + (top + this.hdrCoord[3]) + "px;");
-        }
-        else if (this.hdrLocked) { // only reset if the header is locked
-            // The header should not be locked
-            this._resetHeader();
-        }
-
-        // Calculate X Scrolling
-        if (this.hdrLocked) {
-            this.headerRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
-            this.colHeaderRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
-        }
-    },
-
-    /**
-     * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
-     */
-    _resetHeader : function(recalc) {
-        this.hdrLocked = false;
-        this.headerRow.applyStyles("top: auto; position: static; min-width: 0;");
-        this.headerRowContent.applyStyles("min-width: 0;");
-        this.colHeaderRow.applyStyles("top: auto; position: static; box-shadow: none; min-width: 0;");
-        this.headerSpacer.dom.style.display = "none";
-        this.headerSpacer.setHeight(this.headerRow.getHeight());
-        this.colHeaderRowSpacer.dom.style.display = "none";
-        this._calculateHeader(recalc);
     },
 
     // private
@@ -1443,19 +1240,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         var pagination = el.child("div[class='labkey-pagination']", true);
         if (pagination)
             pagination.style.visibility = "visible";
-    },
-
-    // private
-    _resizeContainer : function ()
-    {
-        if (!this.table) return;
-
-        if (this.headerLock()) {
-            if (this.resizeTask) this.resizeTask.delay(110);
-        }
-        else {
-            this.ensurePaginationVisible();
-        }
     },
 
     // private
@@ -2129,6 +1913,257 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         window.location.assign(window.location.pathname + "?" + this.savedSearchString);
     }
 
+});
+
+LABKEY.DataRegion.plugins = {};
+LABKEY.DataRegion.plugins.HeaderLock = (function() {
+
+    var ensurePaginationVisible = function(dr) {
+
+        if (dr.paginationEl)
+        {
+            // in case header locking is not on
+            if (!dr.headerLock() || !dr.hdrCoord || dr.hdrCoord.length == 0)
+            {
+                dr.hdrCoord = findPos(dr);
+            }
+
+            var measure = Ext.getBody().getBox().width-dr.hdrCoord[0];
+            if (measure < (dr.headerRow.getWidth()))
+            {
+                dr.paginationEl.applyStyles('width: ' +  measure + 'px;');
+            }
+        }
+    };
+
+    /**
+     * Returns an array of containing the following values:
+     * [0] - X-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+     * [1] - Y-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+     * [2] - Y-coordinate of the bottom of the object.
+     * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
+     * This method assumes interaction with the Header of the Data Region.
+     */
+    var findPos = function(dr) {
+        var o, xy, curbottom, hdrOffset= 0;
+
+        if (dr.includeHeader) {
+            o = (dr.hdrLocked ? dr.headerSpacer : dr.headerRow);
+            hdrOffset = dr.headerSpacer.getComputedHeight();
+        }
+        else {
+            o = (dr.hdrLocked ? dr.colHeaderRowSpacer : dr.colHeaderRow);
+        }
+
+        xy = o.getXY();
+        curbottom = xy[1] + dr.table.getHeight() - (o.getComputedHeight()*2);
+
+        return [ xy[0], xy[1], curbottom, hdrOffset ];
+    };
+
+    var validBrowser = function() {
+        return (Ext.isIE9 || Ext.isIE10p || Ext.isWebKit || Ext.isGecko);
+    };
+
+    return {
+        init: function(dr) {
+            if (!dr.headerLock() || !validBrowser()) { return; }
+
+            this.dr = dr;
+
+            // initialize constants
+            dr.headerRow          = Ext.get('dataregion_header_row_' + dr.name);
+            if (!dr.headerRow) {
+                dr._allowHeaderLock = false;
+                return;
+            }
+            dr.headerRowContent   = dr.headerRow.child('td');
+            dr.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + dr.name);
+            dr.colHeaderRow       = Ext.get('dataregion_column_header_row_' + dr.name);
+            dr.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + dr.name);
+            dr.paginationEl       = Ext.get('dataregion_header_' + dr.name);
+
+            Ext.EventManager.on(window,   'resize', this.onResize, this);
+            ensurePaginationVisible(dr);
+
+            // check if the header row is being used
+            dr.includeHeader = dr.headerRow.isDisplayed();
+
+            // initialize row contents
+            // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
+            // during query execution, so we didn't get column metadata back
+            if (dr.colHeaderRow)
+            {
+                dr.rowContent = Ext.query(" > td[class*=labkey-column-header]", dr.colHeaderRow.id);
+            }
+            if (dr.colHeaderRowSpacer)
+            {
+                dr.rowSpacerContent = Ext.query(" > td[class*=labkey-column-header]", dr.colHeaderRowSpacer.id);
+            }
+            dr.firstRow = Ext.query("tr[class=labkey-alternate-row]:first td", dr.table.id);
+
+            // performance degradation
+            var tooManyColumns = dr.rowContent.length > 80 || ((dr.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
+            var tooManyRows = (dr.rowCount && dr.rowCount > 1000);
+
+            if (tooManyColumns || tooManyRows)
+            {
+                dr._allowHeaderLock = false;
+                return;
+            }
+
+            // If no data rows exist just turn off header locking
+            if (dr.firstRow.length == 0)
+            {
+                dr.firstRow = Ext.query("tr[class=labkey-row]:first td", dr.table.id);
+                if (dr.firstRow.length == 0)
+                {
+                    dr._allowHeaderLock = false;
+                    return;
+                }
+            }
+
+            // initialize additional listeners
+            Ext.EventManager.on(window,   'load',            this.onResize, this, {single: true});
+            Ext.EventManager.on(window,   'scroll',          this.onScroll, this);
+            Ext.EventManager.on(document, 'DOMNodeInserted', this.onResize, this); // Issue #13121
+
+            // initialize panel listeners
+            // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
+            // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
+            dr.on('afterpanelshow', function() {
+                Ext.EventManager.un(document, 'DOMNodeInserted', this.onResize, this); // suspend listener
+                this.onResize();
+            }, this);
+
+            dr.on('afterpanelhide', function() {
+                Ext.EventManager.on(document, 'DOMNodeInserted', this.onResize, this); // resume listener
+                this.onResize();
+            }, this);
+
+            // initialize timer task for resizing and scrolling
+            dr.hdrCoord = [];
+            dr.resizeTask = new Ext.util.DelayedTask(function(){
+                this.reset(true);
+                ensurePaginationVisible(this.dr);
+            }, this);
+
+            this.reset(true);
+        },
+
+        calculateHeaderPosition : function(recalcPosition) {
+            this.calculateLockPosition(recalcPosition);
+            this.onScroll();
+        },
+
+        calculateLockPosition : function(recalcPosition) {
+            var el, s, src, i=0, dr = this.dr;
+
+            for (; i < dr.rowContent.length; i++) {
+                src = Ext.get(dr.firstRow[i]);
+                el  = Ext.get(dr.rowContent[i]);
+
+                s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
+                el.setWidth(s.width); // 15420
+
+                Ext.get(dr.rowSpacerContent[i]).setSize(s);  // must be done after 'el' is set (ext side-effect?)
+            }
+
+            if (recalcPosition === true) dr.hdrCoord = findPos(dr);
+            dr.hdrLocked = false;
+        },
+
+        disable : function() {
+            var dr = this.dr;
+
+            dr._allowHeaderLock = false;
+
+            if (dr.resizeTask) {
+                dr.resizeTask.cancel();
+                delete dr.resizeTask;
+            }
+
+            Ext.EventManager.un(window, 'load', this.onResize, this);
+            Ext.EventManager.un(window, 'resize', this.onResize, this);
+            Ext.EventManager.un(window, 'scroll', this.onScroll, this);
+            Ext.EventManager.un(document, 'DOMNodeInserted', this.onResize, this);
+        },
+
+        /**
+         * WARNING: This function is called often. Performance implications for each line.
+         * NOTE: window.pageYOffset and pageXOffset are not available in IE7-. For these document.documentElement.scrollTop
+         * and document.documentElement.scrollLeft could be used. Additionally, position: fixed is not recognized by
+         * IE7- and can be best approximated with position: absolute and explicit top/left.
+         */
+        onScroll : function() {
+
+            var dr = this.dr, hrStyle='', chrStyle='';
+
+            // calculate Y scrolling
+            if (window.pageYOffset >= dr.hdrCoord[1] && window.pageYOffset < dr.hdrCoord[2]) {
+                // The header has reached the top of the window and needs to be locked
+                var tWidth = dr.table.getComputedWidth();
+                dr.headerSpacer.dom.style.display = "table-row";
+                dr.colHeaderRowSpacer.dom.style.display = "table-row";
+                hrStyle += "top: 0; position: fixed; min-width: " + tWidth + "px; z-index: 9000; "; // 13229
+                dr.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
+                chrStyle += "position: fixed; background: white; top: " + dr.hdrCoord[3] + "px; " +
+                        "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC; z-index: 9000; "; // 13229
+                dr.hdrLocked = true;
+            }
+            else if (dr.hdrLocked && window.pageYOffset >= dr.hdrCoord[2]) {
+                // The bottom of the Data Region is near the top of the window and the locked header
+                // needs to start 'sliding' out of view.
+                var top = dr.hdrCoord[2]-window.pageYOffset;
+                hrStyle  += "top: " + top + "px; ";
+                chrStyle += "top: " + (top + dr.hdrCoord[3]) + "px; ";
+            }
+            else if (dr.hdrLocked) { // only reset if the header is locked
+                // The header should not be locked
+                this.reset();
+            }
+
+            // Calculate X Scrolling
+            if (dr.hdrLocked) {
+                hrStyle  += "left: " + (dr.hdrCoord[0]-window.pageXOffset) + "px; ";
+                chrStyle += "left: " + (dr.hdrCoord[0]-window.pageXOffset) + "px; ";
+            }
+
+            if (hrStyle) { dr.headerRow.applyStyles(hrStyle); }
+            if (chrStyle) { dr.colHeaderRow.applyStyles(chrStyle); }
+        },
+
+        onResize : function() {
+
+            var dr = this.dr;
+
+            if (!dr.table) return;
+
+            if (dr.headerLock()) {
+                if (dr.resizeTask) { dr.resizeTask.delay(110); }
+            }
+            else {
+                ensurePaginationVisible(dr);
+            }
+        },
+
+        /**
+         * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
+         */
+        reset : function(recalc) {
+
+            var dr = this.dr;
+
+            dr.hdrLocked = false;
+            dr.headerRow.applyStyles("top: auto; position: static; min-width: 0;");
+            dr.headerRowContent.applyStyles("min-width: 0;");
+            dr.colHeaderRow.applyStyles("top: auto; position: static; box-shadow: none; min-width: 0;");
+            dr.headerSpacer.dom.style.display = "none";
+            dr.headerSpacer.setHeight(dr.headerRow.getHeight());
+            dr.colHeaderRowSpacer.dom.style.display = "none";
+            this.calculateHeaderPosition(recalc);
+        }
+    };
 });
 
 
