@@ -428,23 +428,6 @@ public class UserManager
     }
 
 
-    public static void updateUser(User currentUser, Map<String, Object> typedValues, Object pkVal) throws SQLException
-    {
-        typedValues.put("phone", PageFlowUtil.formatPhoneNo((String) typedValues.get("phone")));
-        typedValues.put("mobile", PageFlowUtil.formatPhoneNo((String) typedValues.get("mobile")));
-        typedValues.put("pager", PageFlowUtil.formatPhoneNo((String) typedValues.get("pager")));
-        Table.update(currentUser, CORE.getTableInfoUsers(), typedValues, pkVal);
-        clearUserList(currentUser.getUserId());
-
-        User principal = getUser((Integer)pkVal);
-
-        if (principal != null)
-        {
-            addToUserHistory(principal, "Contact information for " + principal.getEmail() + " was updated");
-        }
-    }
-
-
     public static String changeEmail(int userId, String oldEmail, ValidEmail newEmail, User currentUser)
     {
         if (null != getUser(newEmail))
