@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryService;
 
@@ -57,6 +58,13 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
 
     @Override
     public JdbcType getJdbcType()
+    {
+        return _type.type;
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getSqlType()
     {
         return _type.type;
     }
