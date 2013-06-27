@@ -559,10 +559,6 @@ LABKEY.vis.Plot = function(config){
 		// Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
 		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-        if(this.labels.x && this.labels.x.value){
-            this.setXLabel(this.labels.x.value, this.labels.x.lookClickable);
-        }
-
         var xTicks;
         var xTicksSet = this.paper.set();
         if(this.scales.x.scaleType == 'continuous'){
@@ -597,6 +593,10 @@ LABKEY.vis.Plot = function(config){
                 xTicksSet.attr('text-anchor', 'start').transform('t0,' + (this.grid.height + 12)+'r15');
                 break;
             }
+        }
+
+        if(this.labels.x && this.labels.x.value){
+            this.setXLabel(this.labels.x.value, this.labels.x.lookClickable);
         }
 
 		if(this.scales.yLeft && this.scales.yLeft.scale){
@@ -935,6 +935,10 @@ LABKEY.vis.Plot = function(config){
                 labelElements[name].text.attr({font: "18px verdana, arial, helvetica, sans-serif"});
             } else if(name == 'x'){
                 labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"}).attr({'text-anchor': 'middle'});
+                var bbox = labelElements[name].text.getBBox()
+                this.paper.rect(x - bbox.width/2, y - bbox.height/2, bbox.width, bbox.height)
+                        .attr({'stroke-width': 0, fill: this.bgColor? this.bgColor : '#fff'});
+                labelElements[name].text.toFront();
             } else if(name == 'yRight') {
                 labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"});
                 labelElements[name].text.transform("t0," + this.h+"r90");
