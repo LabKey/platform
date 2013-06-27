@@ -56,7 +56,6 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     private int _runId;
     private Integer _expRunId;
     private Integer _recordCount;
-    private TransformRun _transformRun;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
     public static final String ETL_PREFIX = "ETL Job: ";
@@ -82,13 +81,6 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
     public void logRunFinish(String status, Integer expRunId, Integer recordCount)
     {
-        assert DbSchema.get("dataintegration").getScope().isTransactionActive();
-
-//        TransformConfiguration config = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
-//        JSONObject json = _etlDescriptor.getTransformState(getTransformJobContext());
-//        config.setJsonState(json);
-//        TransformManager.get().saveTransformConfiguration(getUser(), config);
-
         TransformRun run = getTransformRun();
         if (run != null)
         {
@@ -133,17 +125,14 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
     private TransformRun getTransformRun()
     {
-        if (null == _transformRun)
+        TransformRun run  = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), _runId), null).getObject(TransformRun.class);
+        if (run == null)
         {
-            _transformRun = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), _runId), null).getObject(TransformRun.class);
-            if (_transformRun == null)
-            {
-                getLogger().error("Unable to find database record for run with TransformRunId " + _runId);
-                setStatus(ERROR_STATUS);
-            }
+            getLogger().error("Unable to find database record for run with TransformRunId " + _runId);
+            setStatus(ERROR_STATUS);
         }
 
-        return _transformRun;
+        return run;
     }
 
 
