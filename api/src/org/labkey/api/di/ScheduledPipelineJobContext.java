@@ -97,7 +97,7 @@ public class ScheduledPipelineJobContext implements ContainerUser
 
     // JobDataMap helpers
 
-    public static ScheduledPipelineJobContext getFromJobDetail(JobExecutionContext jobExecutionContext)
+    public static ScheduledPipelineJobContext getFromQuartzJobDetail(JobExecutionContext jobExecutionContext)
     {
         JobDataMap map = jobExecutionContext.getTrigger().getJobDataMap();
         Object result = map.get(ScheduledPipelineJobContext.class.getName());
@@ -111,15 +111,15 @@ public class ScheduledPipelineJobContext implements ContainerUser
         return (ScheduledPipelineJobContext) result;
     }
 
-    protected void writeJobDataMap(JobDataMap map)
+    protected void writeQuartzJobDataMap(JobDataMap map)
     {
         map.put(ScheduledPipelineJobContext.class.getName(), this);
     }
 
-    public JobDataMap getJobDataMap()
+    public JobDataMap getQuartzJobDataMap()
     {
         JobDataMap map = new JobDataMap();
-        writeJobDataMap(map);
+        writeQuartzJobDataMap(map);
         return map;
     }
 }
