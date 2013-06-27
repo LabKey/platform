@@ -167,6 +167,13 @@ Ext4.define('Ext.tree.DataViewsColumn', {
                 cls = record.get('cls');
 
             while (record) {
+
+                // 18062 - Hidden row appear on expand/collapse
+                if (record.isExpandable() && record.data && record['_hasExpandEvent'] !== true) {
+                    record['_hasExpandEvent'] = true;
+                    record.on('expand', function() { Ext4.Function.defer(this.hiddenFilter, 10, this) }, this);
+                }
+
                 if (!record.isRoot() || (record.isRoot() && view.rootVisible)) {
                     if (record.getDepth() === depth) {
                         buf.unshift(format(imgText,
@@ -937,7 +944,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      */
     hiddenFilter : function() {
 
-        var _custom = this._inCustomMode();
         var searchFields = ['name', 'categorylabel', 'type', 'modified', 'authorDisplayName', 'status'];
 
         var filter = function(rec) {
@@ -964,8 +970,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             }
 
-            // custom mode will show hidden
-            if (_custom) { return answer; }
+            // custom/edit modes will show hidden
+            if (this.customMode || this.editMode) { return answer; }
 
             // otherwise never show hidden records
             if (!rec.data.visible) { return false; }
@@ -981,11 +987,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return this.allowCustomize;
     },
 
-    // private
-    _inCustomMode : function() {
-        return this.customMode;
-    },
-
     /**
      * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
      * adminstrate view categories and determine what data types should be shown.
@@ -995,7 +996,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (!this.isCustomizable())
             return false;
 
-        this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
+        this.fireEvent((this.customMode ? 'disableCustomMode' : 'enableCustomMode'), this);
     },
 
     onEnableCustomMode : function() {

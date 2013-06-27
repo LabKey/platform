@@ -386,7 +386,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }];
         if (this.canEdit && !this.isSubmitted)
         {
-            items.push({xtype: 'label', width: 100, value: null});
+            items.push({xtype: 'label', width: 30, value: null});
             items.push({
                 xtype: 'panel',
                 layout: {type: 'vbox', align: 'center'},
