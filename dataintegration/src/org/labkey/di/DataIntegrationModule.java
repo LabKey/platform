@@ -38,7 +38,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
-import org.labkey.di.pipeline.BaseQueryTransformDescriptor;
+import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.view.DataIntegrationController;
@@ -123,7 +123,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         return new HashSet<Class>(Arrays.asList(
                 TransformManager.TestCase.class,
                 VariableMapImpl.TestCase.class,
-                BaseQueryTransformDescriptor.TestCase.class
+                TransformDescriptor.TestCase.class
         ));
     }
 

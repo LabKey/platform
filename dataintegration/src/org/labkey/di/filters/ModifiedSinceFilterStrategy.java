@@ -106,6 +106,10 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         List<Aggregate.Result> list = results.get(_tsCol.getName());
         Aggregate.Result maxResult = list.get(0);
         Date incrementalEndDate = ((Date)maxResult.getValue());
+
+        if (null != _context.getPipelineJob() && null == incrementalEndDate)
+            _context.getPipelineJob().getLogger().info("No new rows found in table: " + _table.getName());
+
         return (null != incrementalEndDate);
     }
 

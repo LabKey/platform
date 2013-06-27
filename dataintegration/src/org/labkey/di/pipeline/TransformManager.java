@@ -47,7 +47,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -56,6 +55,8 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
@@ -72,8 +73,6 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
-import org.quartz.impl.matchers.KeyMatcher;
-import org.quartz.listeners.JobListenerSupport;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -117,17 +116,13 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    private BaseQueryTransformDescriptor parseETL(Resource resource, String moduleName)
+    private TransformDescriptor parseETL(Resource resource, String moduleName)
     {
         try
         {
-            return new BaseQueryTransformDescriptor(resource, moduleName);
+            return new TransformDescriptor(resource, moduleName);
         }
-        catch (IOException e)
-        {
-            LOG.warn("Unable to parse " + resource, e);
-        }
-        catch (XmlException e)
+        catch (XmlException|IOException e)
         {
             LOG.warn("Unable to parse " + resource, e);
         }
@@ -173,7 +168,39 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized void runNow(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+    public synchronized ActionURL runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+            throws PipelineJobException
+    {
+        if (_shuttingDown)
+            throw new PipelineJobException("Could not create job: server is shutting down");
+
+        try
+        {
+            ContainerUser context = descriptor.getJobContext(container, user);
+            PipelineJob job = descriptor.getPipelineJob(context);
+            if (null == job)
+                throw new PipelineJobException("Could not create job: " + descriptor.toString());
+
+            try
+            {
+                PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
+                PipelineService.get().queueJob(job);
+                int jobid = PipelineService.get().getJobId(user, container, job.getJobGUID());
+                return new ActionURL("pipeline-status", "details", container).addParameter("rowId", jobid);
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+        }
+        finally
+        {
+            assert dumpScheduler();
+        }
+    }
+
+
+    public synchronized void runNowQuartz(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         if (_shuttingDown)
             return;
@@ -197,7 +224,7 @@ public class TransformManager implements DataIntegrationService
                 .withIdentity(triggerKey)
                 .forJob(jobKey)
                 .startNow()
-                .usingJobData(info.getJobDataMap())
+                .usingJobData(info.getQuartzJobDataMap())
                 .build();
 
             if (null != job)
@@ -246,7 +273,7 @@ public class TransformManager implements DataIntegrationService
                 .withIdentity(triggerKey)
                 .startNow()
                 .withSchedule(descriptor.getScheduleBuilder())
-                .usingJobData(info.getJobDataMap())
+                .usingJobData(info.getQuartzJobDataMap())
                 .build();
 
             if (null != job)
@@ -319,7 +346,7 @@ public class TransformManager implements DataIntegrationService
     private JobDetail jobFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
     {
         JobKey jobKey = JobKey.jobKey(descriptor.getId(), JOB_GROUP_NAME);
-        JobDetail job = JobBuilder.newJob(descriptor.getJobClass())
+        JobDetail job = JobBuilder.newJob(descriptor.getQuartzJobClass())
             .withIdentity(jobKey)
             .storeDurably()
             .build();
@@ -361,6 +388,17 @@ public class TransformManager implements DataIntegrationService
         DbScope scope = DbSchema.get("dataintegration").getScope();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=?", c.getId());
         return new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
+    }
+
+
+    public TransformConfiguration getTransformConfiguration(Container c, ScheduledPipelineJobDescriptor etl)
+    {
+        DbScope scope = DbSchema.get("dataintegration").getScope();
+        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=? and transformid=?", c.getId(), etl.getId());
+        TransformConfiguration ret = new SqlSelector(scope, sql).getObject(TransformConfiguration.class);
+        if (null != ret)
+            return ret;
+        return saveTransformConfiguration(null, new TransformConfiguration(etl, c));
     }
 
 
@@ -506,7 +544,7 @@ public class TransformManager implements DataIntegrationService
                     configXml = r;
                 if (null != configXml && configXml.isFile())
                 {
-                    BaseQueryTransformDescriptor descriptor = parseETL(configXml, module.getName());
+                    TransformDescriptor descriptor = parseETL(configXml, module.getName());
                     if (descriptor != null)
                     {
                         l.add(descriptor);
@@ -580,9 +618,9 @@ public class TransformManager implements DataIntegrationService
                 }
 
                 @Override
-                public Class<? extends Job> getJobClass()
+                public Class<? extends Job> getQuartzJobClass()
                 {
-                    return TransformJobRunner.class;
+                    return TransformQuartzJobRunner.class;
                 }
 
                 @Override
@@ -614,11 +652,11 @@ public class TransformManager implements DataIntegrationService
 
 
             assertEquals(0, counter.get());
-            TransformManager.get().runNow(d, c, user);
+            TransformManager.get().runNowQuartz(d, c, user);
             for (int i=0 ; i<10 && counter.get()<1 ; i++)
                 sleep(1);
             assertEquals(1, counter.get());
-            TransformManager.get().runNow(d, c, user);
+            TransformManager.get().runNowQuartz(d, c, user);
             for (int i=0 ; i<10 && counter.get()<2 ; i++)
                 sleep(2);
             assertEquals(2, counter.get());
@@ -703,9 +741,9 @@ public class TransformManager implements DataIntegrationService
             return _d.getScheduleDescription();
         }
 
-        public Class<? extends Job> getJobClass()
+        public Class<? extends Job> getQuartzJobClass()
         {
-            return _d.getJobClass();
+            return _d.getQuartzJobClass();
         }
 
         public ContainerUser getJobContext(Container c, User user)

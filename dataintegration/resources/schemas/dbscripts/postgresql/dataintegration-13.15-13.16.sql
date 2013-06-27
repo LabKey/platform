@@ -13,14 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.di.pipeline;
-
-/**
- * User: dax
- * Date: 4/16/13
- */
-public interface TransformJobSupport
-{
-    TransformDescriptor getTransformDescriptor();
-    TransformJobContext getTransformJobContext();
-}
+ALTER TABLE dataintegration.TransformRun ADD COLUMN TranformState TEXT

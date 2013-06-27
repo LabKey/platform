@@ -23,6 +23,9 @@ import java.util.Date;
 /**
  * User: jeckels
  * Date: 2/20/13
+ *
+ * Persistance object that goes with the dataintegration.transformrun table
+ *
  */
 @SuppressWarnings("UnusedDeclaration")
 public class TransformRun

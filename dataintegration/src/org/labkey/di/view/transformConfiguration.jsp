@@ -95,9 +95,18 @@ boolean isAdmin = context.hasPermission(AdminPermission.class);
         X.Ajax.request({
             url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
             params : params,
-            method : "POST"
-//        ,success : onSuccess
-//        ,failure : onFailure
+            method : "POST",
+            success : function(response)
+            {
+                var json = {};
+                try
+                {
+                    var json = response.responseJSON || LABKEY.ExtAdapter.decode(response.responseText);
+                } catch (x) {}
+                if ("pipelineURL" in json && json.pipelineURL)
+                    window.location = json.pipelineURL;
+            },
+            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:transformId}), window, true)
         });
     }
 

@@ -25,6 +25,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -202,10 +203,12 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            TransformManager.get().runNow(etl, getContainer(), getUser());
+            ActionURL pipelineURL = TransformManager.get().runNowPipeline(etl, getContainer(), getUser());
 
             JSONObject ret = new JSONObject();
             ret.put("success",true);
+            if (null != pipelineURL)
+                ret.put("pipelineURL",pipelineURL.toString());
             return new ApiSimpleResponse(ret);
         }
     }

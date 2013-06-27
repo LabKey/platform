@@ -33,12 +33,12 @@ import java.util.concurrent.Callable;
  * Date: 2013-03-18
  * Time: 4:05 PM
  */
-public class TransformJobRunner implements Job
+public class TransformQuartzJobRunner implements Job
 {
-    private static final Logger LOG = Logger.getLogger(TransformJobRunner.class);
+    private static final Logger LOG = Logger.getLogger(TransformQuartzJobRunner.class);
 
 
-    public TransformJobRunner()
+    public TransformQuartzJobRunner()
     {
     }
 
@@ -46,7 +46,7 @@ public class TransformJobRunner implements Job
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
-        ScheduledPipelineJobContext info = ScheduledPipelineJobContext.getFromJobDetail(context);
+        ScheduledPipelineJobContext info = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
 
         Callable c = d.getChecker(info);

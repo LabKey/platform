@@ -28,6 +28,9 @@ import java.util.Map;
  * User: matthewb
  * Date: 2013-03-13
  * Time: 4:52 PM
+ *
+ * Persistance object that goes with the dataintegration.transformconfigration table
+ *
  */
 public class TransformConfiguration extends Entity
 {
@@ -36,6 +39,9 @@ public class TransformConfiguration extends Entity
     boolean enabled = false;
     boolean verboseLogging = false;
     Date lastChecked = null;
+
+    JSONObject jsonState;
+
 
     public TransformConfiguration()
     {
@@ -101,6 +107,33 @@ public class TransformConfiguration extends Entity
         this.lastChecked = lastChecked;
     }
 
+
+    public String getTransformState()
+    {
+        return jsonState.toString();
+    }
+
+
+    public void setTransformState(String stringState)
+    {
+        if (null == stringState)
+            this.jsonState = new JSONObject();
+        else
+            this.jsonState = new JSONObject(stringState);
+    }
+
+    public JSONObject getJsonState()
+    {
+        if (null == jsonState)
+            jsonState = new JSONObject();
+        return jsonState;
+    }
+
+    public void setJsonState(JSONObject jsonState)
+    {
+        this.jsonState = jsonState;
+    }
+
     public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
     {
         if (null == map)
@@ -110,6 +143,7 @@ public class TransformConfiguration extends Entity
         map.put("enabled", isEnabled());
         map.put("verboseLogging", isVerboseLogging());
         map.put("lastChecked", getLastChecked());
+        map.put("state", getJsonState());
         return map;
     }
 }

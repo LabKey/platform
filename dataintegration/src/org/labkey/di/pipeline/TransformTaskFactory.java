@@ -18,7 +18,6 @@ package org.labkey.di.pipeline;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
 import java.util.Arrays;
@@ -48,9 +47,9 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
 
     public PipelineJob.Task createTask(PipelineJob pjob)
     {
-        TransformJob job = (TransformJob)pjob;
+        TransformPipelineJob job = (TransformPipelineJob)pjob;
         TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
-        BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
+        TransformDescriptor etl = support.getTransformDescriptor();
         TransformJobContext ctx = support.getTransformJobContext();
         return etl.createTask(this, job, ctx, 0);
     }

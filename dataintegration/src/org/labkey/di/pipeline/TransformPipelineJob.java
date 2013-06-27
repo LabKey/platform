@@ -15,6 +15,8 @@
  */
 package org.labkey.di.pipeline;
 
+import org.json.JSONObject;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -27,7 +29,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
@@ -49,18 +50,19 @@ import java.util.Set;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport
+public class TransformPipelineJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport
 {
-    private final BaseQueryTransformDescriptor _etlDescriptor;
+    private final TransformDescriptor _etlDescriptor;
     private int _runId;
     private Integer _expRunId;
     private Integer _recordCount;
+    private TransformRun _transformRun;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
     public static final String ETL_PREFIX = "ETL Job: ";
 
 
-    public TransformJob(TransformJobContext info, BaseQueryTransformDescriptor etlDescriptor)
+    public TransformPipelineJob(TransformJobContext info, TransformDescriptor etlDescriptor)
     {
         super(ETLPipelineProvider.NAME,
                 new ViewBackgroundInfo(info.getContainer(), info.getUser(), null),
@@ -80,6 +82,12 @@ public class TransformJob extends PipelineJob implements TransformJobSupport, Pr
 
     public void logRunFinish(String status, Integer expRunId, Integer recordCount)
     {
+        assert DbSchema.get("dataintegration").getScope().isTransactionActive();
+
+//        TransformConfiguration config = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
+//        JSONObject json = _etlDescriptor.getTransformState(getTransformJobContext());
+//        config.setJsonState(json);
+//        TransformManager.get().saveTransformConfiguration(getUser(), config);
 
         TransformRun run = getTransformRun();
         if (run != null)
@@ -109,6 +117,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport, Pr
         logRunFinish(status, _expRunId, _recordCount);
     }
 
+
     private void update(TransformRun run)
     {
         try
@@ -124,14 +133,17 @@ public class TransformJob extends PipelineJob implements TransformJobSupport, Pr
 
     private TransformRun getTransformRun()
     {
-        TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), _runId), null).getObject(TransformRun.class);
-        if (run == null)
+        if (null == _transformRun)
         {
-            getLogger().error("Unable to find database record for run with TransformRunId " + _runId);
-            setStatus(ERROR_STATUS);
+            _transformRun = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), _runId), null).getObject(TransformRun.class);
+            if (_transformRun == null)
+            {
+                getLogger().error("Unable to find database record for run with TransformRunId " + _runId);
+                setStatus(ERROR_STATUS);
+            }
         }
 
-        return run;
+        return _transformRun;
     }
 
 
@@ -153,7 +165,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport, Pr
     //
     // TransformJobSupport
     //
-    public BaseQueryTransformDescriptor getTransformDescriptor()
+    public TransformDescriptor getTransformDescriptor()
     {
         return _etlDescriptor;
     }

@@ -15,7 +15,10 @@
  */
 package org.labkey.di.pipeline;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.di.ScheduledPipelineJobContext;
@@ -31,6 +34,7 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
 {
     String _transformId;
     int _version;
+    PipelineJob _pipelineJob;
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -53,5 +57,17 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     public int getTransformVersion()
     {
         return _version;
+    }
+
+    public @Nullable PipelineJob getPipelineJob()
+    {
+        return _pipelineJob;
+    }
+
+    public void setPipelineJob(@NotNull PipelineJob job)
+    {
+        if (null != _pipelineJob && _pipelineJob != job)
+            throw new IllegalStateException("Context is already associated with a pipeline job");
+        _pipelineJob = job;
     }
 }

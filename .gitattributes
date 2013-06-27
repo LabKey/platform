@@ -814,6 +814,7 @@ dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.02-0.03
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.03-0.04.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.11.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.13-13.14.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.15-13.16.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.sql -text
@@ -823,6 +824,7 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.11-13.1
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.12-13.13.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.13-13.14.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.14-13.15.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.15-13.16.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
@@ -835,15 +837,15 @@ dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
-dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
 dataintegration/src/org/labkey/di/pipeline/TestTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
-dataintegration/src/org/labkey/di/pipeline/TransformJob.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
-dataintegration/src/org/labkey/di/pipeline/TransformJobRunner.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobSupport.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformManager.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformPipelineJob.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformQuartzJobRunner.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text

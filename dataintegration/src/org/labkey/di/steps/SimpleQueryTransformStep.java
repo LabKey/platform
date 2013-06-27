@@ -41,7 +41,7 @@ import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
-import org.labkey.di.pipeline.BaseQueryTransformDescriptor;
+import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
@@ -266,8 +266,8 @@ public class SimpleQueryTransformStep extends TransformTask
         {
             FilterStrategy.Factory factory = null;
             ScheduledPipelineJobDescriptor jd = _context.getJobDescriptor();
-            if (jd instanceof BaseQueryTransformDescriptor)
-                factory = ((BaseQueryTransformDescriptor)jd).getDefaultFilterFactory();
+            if (jd instanceof TransformDescriptor)
+                factory = ((TransformDescriptor)jd).getDefaultFilterFactory();
             if (null == factory)
                 factory = new ModifiedSinceFilterStrategy.Factory(jd);
 

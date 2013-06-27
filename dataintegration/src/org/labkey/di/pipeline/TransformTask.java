@@ -32,7 +32,7 @@ import java.util.Date;
  */
 abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactory>
 {
-    final private TransformJob _txJob;
+    final private TransformPipelineJob _txJob;
     final private RecordedActionSet _records = new RecordedActionSet();
     final private VariableMap _variableMap;
 
@@ -43,14 +43,14 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         super(factory, job);
 
-        _txJob = (TransformJob)job;
+        _txJob = (TransformPipelineJob)job;
         if (null != _txJob)
             _variableMap = new VariableMapImpl(_txJob.getVariableMap());
         else
             _variableMap = new VariableMapImpl();
     }
 
-    protected TransformJob getTransformJob()
+    protected TransformPipelineJob getTransformJob()
     {
         return _txJob;
     }

@@ -101,9 +101,9 @@ import java.util.concurrent.Callable;
  * User: jeckels
  * Date: 2/20/13
  */
-public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescriptor<ScheduledPipelineJobContext>, Serializable
+public class TransformDescriptor implements ScheduledPipelineJobDescriptor<ScheduledPipelineJobContext>, Serializable
 {
-    private static final Logger LOG = Logger.getLogger(BaseQueryTransformDescriptor.class);
+    private static final Logger LOG = Logger.getLogger(TransformDescriptor.class);
 
     /** How often to check if the definition has changed */
     private static final int UPDATE_CHECK_FREQUENCY = 2000;
@@ -136,7 +136,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
 
 
-    public BaseQueryTransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
+    public TransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
     {
         _resource = resource;
         _resourcePath = resource.getPath();
@@ -441,9 +441,9 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
 
     @Override
-    public Class<? extends Job> getJobClass()
+    public Class<? extends Job> getQuartzJobClass()
     {
-        return TransformJobRunner.class;
+        return TransformQuartzJobRunner.class;
     }
 
     @Override
@@ -462,7 +462,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws PipelineJobException
     {
-        TransformJob job = new TransformJob((TransformJobContext)context, this);
+        TransformPipelineJob job = new TransformPipelineJob((TransformJobContext)context, this);
         try
         {
             PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
@@ -492,10 +492,12 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
         job.setRunId(run.getTransformRunId());
+        ((TransformJobContext) context).setPipelineJob(job);
         return job;
     }
 
-    PipelineJob.Task createTask(TransformTaskFactory factory, TransformJob job, TransformJobContext context, int i)
+
+    PipelineJob.Task createTask(TransformTaskFactory factory, TransformPipelineJob job, TransformJobContext context, int i)
     {
         if (i != 0)
             throw new IllegalArgumentException();
@@ -555,7 +557,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     // get/build the task pipeline specific to this descriptor
     public TaskPipeline getTaskPipeline()
     {
-        TaskId pipelineId = new TaskId(TransformJob.class, getId());
+        TaskId pipelineId = new TaskId(TransformPipelineJob.class, getId());
         TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
 
         if (null == pipeline)
@@ -678,7 +680,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             // correctly caught with the appropriate error messages
             //
 
-            BaseQueryTransformDescriptor d;
+            TransformDescriptor d;
 
             d = checkValidSyntax(getFile(ONE_TASK));
             assert d._stepMetaDatas.size() == 1;
@@ -697,13 +699,13 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             d = checkValidSyntax(getFile("cron1h.xml"));
             assertEquals("0 0 * * * ?", d.getScheduleDescription());
 
-            checkInvalidSyntax(getFile(NO_ID), BaseQueryTransformDescriptor.ID_REQUIRED);
-            checkInvalidSyntax(getFile(DUP_ID), BaseQueryTransformDescriptor.DUPLICATE_ID);
-            checkInvalidSyntax(getFile(NO_CLASS), BaseQueryTransformDescriptor.TYPE_REQUIRED);
-            checkInvalidSyntax(getFile(UNKNOWN_CLASS), BaseQueryTransformDescriptor.INVALID_TYPE);
-            checkInvalidSyntax(getFile(INVALID_CLASS), BaseQueryTransformDescriptor.INVALID_TYPE);
-            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), BaseQueryTransformDescriptor.INVALID_SOURCE_OPTION);
-            checkInvalidSyntax(getFile(BAD_TARGET_OPT), BaseQueryTransformDescriptor.INVALID_TARGET_OPTION);
+            checkInvalidSyntax(getFile(NO_ID), TransformDescriptor.ID_REQUIRED);
+            checkInvalidSyntax(getFile(DUP_ID), TransformDescriptor.DUPLICATE_ID);
+            checkInvalidSyntax(getFile(NO_CLASS), TransformDescriptor.TYPE_REQUIRED);
+            checkInvalidSyntax(getFile(UNKNOWN_CLASS), TransformDescriptor.INVALID_TYPE);
+            checkInvalidSyntax(getFile(INVALID_CLASS), TransformDescriptor.INVALID_TYPE);
+            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformDescriptor.INVALID_SOURCE_OPTION);
+            checkInvalidSyntax(getFile(BAD_TARGET_OPT), TransformDescriptor.INVALID_TARGET_OPTION);
         }
 
         @Test
@@ -713,7 +715,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             // verifies that the correct task pipeline is setup for ONE_TASK and FOUR_TASK ETL configurations
             //
 
-            BaseQueryTransformDescriptor d1 = new BaseQueryTransformDescriptor(new EtlResource(getFile(ONE_TASK)), "junit");
+            TransformDescriptor d1 = new TransformDescriptor(new EtlResource(getFile(ONE_TASK)), "junit");
             TaskPipeline p1 = d1.getTaskPipeline();
             assert null != p1;
 
@@ -722,7 +724,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             assert null != p1;
             verifyTaskPipeline(p1, d1);
 
-            BaseQueryTransformDescriptor d4 = new BaseQueryTransformDescriptor(new EtlResource(getFile(FOUR_TASKS)), "junit");
+            TransformDescriptor d4 = new TransformDescriptor(new EtlResource(getFile(FOUR_TASKS)), "junit");
             TaskPipeline p4 = d4.getTaskPipeline();
             assert null != p4;
             verifyTaskPipeline(p4, d4);
@@ -736,7 +738,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
             try
             {
-                TransformJob job = runEtl(c, u, -1);
+                TransformPipelineJob job = runEtl(c, u, -1);
                 verifyEtl(job, true );
             }
             finally
@@ -754,7 +756,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
             try
             {
-                TransformJob job = runEtl(c, u, 1);
+                TransformPipelineJob job = runEtl(c, u, 1);
                 verifyEtl(job, false);
             }
             finally
@@ -773,15 +775,15 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
 
-        private TransformJob runEtl(Container c, User u, int failStep) throws Exception
+        private TransformPipelineJob runEtl(Container c, User u, int failStep) throws Exception
         {
             //
             // runs an ETL job (junit.xml) with two test tasks.  Tests the end to end scenario of running a checker,
             // executing a multi-step job, and logging the ETL as an experiment run
             //
-            BaseQueryTransformDescriptor d = new BaseQueryTransformDescriptor(new EtlResource(getFile(UNIT_TASKS)), "junit");
+            TransformDescriptor d = new TransformDescriptor(new EtlResource(getFile(UNIT_TASKS)), "junit");
             TransformJobContext context = new TransformJobContext(d, c, u);
-            TransformJob job = (TransformJob) d.getPipelineJob(context);
+            TransformPipelineJob job = (TransformPipelineJob) d.getPipelineJob(context);
 
             VariableMap map = job.getVariableMap();
             assert map.keySet().size() == 0;
@@ -805,17 +807,17 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             return job;
         }
 
-        private void verifyEtl(TransformJob transformJob, boolean isSuccess) throws Exception
+        private void verifyEtl(TransformPipelineJob transformJob, boolean isSuccess) throws Exception
         {
             TransformRun transformRun = verifyTransformRun(transformJob, isSuccess);
             if (isSuccess)
                 verifyTransformExp(transformRun, transformJob);
         }
 
-        private TransformRun verifyTransformRun(TransformJob job, boolean isSuccess)
+        private TransformRun verifyTransformRun(TransformPipelineJob job, boolean isSuccess)
         {
             int runId = job.getTransformRunId();
-            BaseQueryTransformDescriptor d = job.getTransformDescriptor();
+            TransformDescriptor d = job.getTransformDescriptor();
             TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), runId), null).getObject(TransformRun.class);
             String status = run.getStatus();
             Integer expId = run.getExpRunId();
@@ -846,16 +848,16 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
         // check that we logged the transform run experiment correctly
-        private void verifyTransformExp(TransformRun transformRun, TransformJob transformJob)
+        private void verifyTransformExp(TransformRun transformRun, TransformPipelineJob transformJob)
         {
-            BaseQueryTransformDescriptor d = transformJob.getTransformDescriptor();
+            TransformDescriptor d = transformJob.getTransformDescriptor();
             ExpRun expRun = ExperimentService.get().getExpRun(transformRun.getExpRunId());
 
             //
             // verify run standard properties
             //
             assert expRun.getJobId().intValue() == transformRun.getJobId().intValue();
-            assert expRun.getName().equalsIgnoreCase(TransformJob.ETL_PREFIX + d.getDescription());
+            assert expRun.getName().equalsIgnoreCase(TransformPipelineJob.ETL_PREFIX + d.getDescription());
 
             //
             // verify custom propeties
@@ -884,7 +886,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             //  verify protocol for this job
             //
             ExpProtocol protocol = expRun.getProtocol();
-            assert protocol.getName().equalsIgnoreCase(TransformJob.class.getName() + ":" + d.getId());
+            assert protocol.getName().equalsIgnoreCase(TransformPipelineJob.class.getName() + ":" + d.getId());
             List<ExpProtocolAction> actions = protocol.getSteps();
             // ignore input and output actions in count
             assert (actions.size() - 2) == d._stepMetaDatas.size();
@@ -902,7 +904,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
        }
 
 
-        private void verifyProtocolApplication(BaseQueryTransformDescriptor d, ExpProtocolApplication app, TransformRun transformRun)
+        private void verifyProtocolApplication(TransformDescriptor d, ExpProtocolApplication app, TransformRun transformRun)
         {
             if (app.getName().equalsIgnoreCase("Run inputs") || app.getName().equalsIgnoreCase("Run outputs"))
                 return;
@@ -949,7 +951,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             }
         }
 
-        private boolean isValidStep(BaseQueryTransformDescriptor d, String stepName)
+        private boolean isValidStep(TransformDescriptor d, String stepName)
         {
             for (SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
             {
@@ -960,7 +962,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             return false;
         }
 
-        private void verifyDatas(BaseQueryTransformDescriptor d, ExpData[] datas, int expectedCount, boolean isInput)
+        private void verifyDatas(TransformDescriptor d, ExpData[] datas, int expectedCount, boolean isInput)
         {
             assert datas.length == expectedCount;
 
@@ -971,7 +973,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
         // find the data name in the descriptor for this step
-        private void verifyData(BaseQueryTransformDescriptor d, String dataName, boolean isInput)
+        private void verifyData(TransformDescriptor d, String dataName, boolean isInput)
         {
             boolean found = false;
             for(SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
@@ -996,7 +998,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         private void waitForJobToFinish(PipelineJob job) throws Exception
         {
             SimpleFilter f = new SimpleFilter();
-            TransformJob tj = (TransformJob) job;
+            TransformPipelineJob tj = (TransformPipelineJob) job;
             TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
             f.addCondition(new FieldKey(null, "transformrunid"), tj.getTransformRunId(), CompareType.EQUAL);
 
@@ -1017,7 +1019,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
 
 
-        private void verifyTaskPipeline(TaskPipeline p, BaseQueryTransformDescriptor d)
+        private void verifyTaskPipeline(TaskPipeline p, TransformDescriptor d)
         {
             TaskId[] steps = p.getTaskProgression();
 
@@ -1029,10 +1031,10 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             assert expStep.getNamespaceClass() == ExpGeneratorId.class;
         }
 
-        private BaseQueryTransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
+        private TransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
         {
             EtlResource etl = new EtlResource(file);
-            return new BaseQueryTransformDescriptor(etl, "junit");
+            return new TransformDescriptor(etl, "junit");
         }
 
         private void checkInvalidSyntax(File file, String expected) throws IOException
@@ -1040,7 +1042,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             EtlResource etl = new EtlResource(file);
             try
             {
-                new BaseQueryTransformDescriptor(etl, "junit");
+                new TransformDescriptor(etl, "junit");
             }
             catch (XmlException x)
             {
