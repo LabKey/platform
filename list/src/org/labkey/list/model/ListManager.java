@@ -1087,6 +1087,7 @@ public class ListManager implements SearchService.DocumentProvider
                     // Have a duplicate
                     if (names.contains(dp.getName()))
                     {
+                        ModuleUpgrader.getLogger().warn("Duplicate column found in List: " + listDef.getName() + ". Column: " + dp.getName());
                         PropertyDescriptor pd = dp.getPropertyDescriptor();
                         pd.setName(pd.getName() + pd.getPropertyId());
 
@@ -1284,14 +1285,29 @@ public class ListManager implements SearchService.DocumentProvider
                     if (null == from)
                         continue;
                 }
-                else
+
+                // Cycle across the fromTable columns and look to make the column name legal and then try to match
+                for (ColumnInfo f : fromTable.getColumns())
                 {
-                    ModuleUpgrader.getLogger().error("Could not copy column: " + container.getId() + "-" + container.getPath() + " List: " + toListDef.getName() + to.getName());
+                    if (f.getName().toLowerCase().startsWith(name))
+                    {
+                        from = colMap.get(f.getName());
+                        if (null != from)
+                        {
+                            ModuleUpgrader.getLogger().warn("Column name for column: " + f.getName() + " in List: " + toListDef.getName() + " may not be unique.");
+                            break;
+                        }
+                    }
+                }
+
+                if (null == from)
+                {
+                    ModuleUpgrader.getLogger().warn("Could not copy column: " + container.getId() + "-" + container.getPath() + " List: " + toListDef.getName() + "." + to.getName());
                     continue;
                 }
             }
 
-            String legalName = to.getSelectName(); //schema.getDbSchema().getSqlDialect().makeLegalIdentifier(to.getSelectName());
+            String legalName = to.getSelectName();
             insertInto.append(sep).append(legalName);
             insertSelect.append(sep).append(from.getAlias());
             sep = ", ";
