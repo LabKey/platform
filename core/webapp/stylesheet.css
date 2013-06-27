@@ -2311,7 +2311,52 @@ div.labkey-wiki h1
     font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
 }
 
-.labkey-wiki pre
+/* for wikis in custom menus */
+div.labkey-webpart-menu div.labkey-wiki p {
+    padding: 0 2px 2px;
+}
+
+/* Knitr */
+div.labkey-knitr h1
+{
+    font-size: 2em;
+    margin: 0.83em 0;
+    font-weight: 500;
+}
+
+.labkey-knitr .heading-1, div.labkey-knitr h2
+{
+    font-size: 1.2em;
+    margin: 0.83em 0;
+    font-weight: bold;
+}
+
+.labkey-knitr .heading-1-1, div.labkey-knitr h3
+{
+    font-size: 1.0em;
+    margin: 0.83em 0;
+    font-weight: bold;
+}
+
+.labkey-knitr .heading-1-1-1, div.labkey-knitr h4
+{
+    text-transform: uppercase;
+    font-size: 0.8em;
+    margin: 0.83em 0 0.0px 0;
+    font-weight: bold;
+}
+
+.labkey-knitr .code
+{
+    padding-left: 0.25in;
+    padding-top: 5px; padding-bottom:5px;
+    background-color: #EEE;
+    border: 1px solid #CCC;
+    color: #2020BE;
+    font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+.labkey-knitr pre
 {
     margin-top : 0;
     max-width: 95%;
@@ -2319,19 +2364,13 @@ div.labkey-wiki h1
     white-space: pre-wrap;
 }
 
-.labkey-wiki pre code {
+.labkey-knitr pre code {
     display: block; padding: 0.5em;
 }
 
-.labkey-wiki code.r, .labkey-wiki code.cpp {
+.labkey-knitr code.r, .labkey-wiki code.cpp {
     background-color: #F8F8F8;
 }
-
-/* for wikis in custom menus */
-div.labkey-webpart-menu div.labkey-wiki p {
-    padding: 0 2px 2px;
-}
-
 
 /* R reports */
 table.labkey-r-tsvout
