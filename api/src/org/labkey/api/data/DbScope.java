@@ -1459,6 +1459,12 @@ public class DbScope
         }
 
         @Test(expected = IllegalStateException.class)
+        public void testStandaloneCommitException()
+        {
+            getLabkeyScope().commitTransaction();
+        }
+
+        @Test(expected = IllegalStateException.class)
         public void testNestedFailureCondition()
         {
             try (Transaction t = getLabkeyScope().ensureTransaction())
