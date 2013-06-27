@@ -84,7 +84,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         });
 
         this.id = this.name;
-        this._allowHeaderLock = this.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko);
+        this._allowHeaderLock = this.allowHeaderLock && (Ext.isIE9 || Ext.isIE10p || Ext.isWebKit || Ext.isGecko);
 
         LABKEY.DataRegions[this.name] = this;
 
@@ -1239,7 +1239,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
         if (!this.headerRow) {
-            console.log('header locking has been disabled on ' + this.name);
             this._allowHeaderLock = false;
             return;
         }
@@ -1251,9 +1250,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
         Ext.EventManager.on(window,   'resize', this._resizeContainer, this);
         this.ensurePaginationVisible();
-
-        // 17422 - match only against default QWP instances
-//        this.headerAsQWP = this.name && this.name.indexOf('aqwp') > -1;
 
         // check if the header row is being used
         this.includeHeader = this.headerRow.isDisplayed();
@@ -1271,6 +1267,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
         this.firstRow = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
 
+        // performance degradation
+        var tooManyColumns = this.rowContent.length > 80 || ((this.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
+        var tooManyRows = (this.rowCount && this.rowCount > 1000);
+
+        if (tooManyColumns || tooManyRows)
+        {
+            this._allowHeaderLock = false;
+            return;
+        }
+
         // If no data rows exist just turn off header locking
         if (this.firstRow.length == 0)
         {
@@ -1280,13 +1286,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 this._allowHeaderLock = false;
                 return;
             }
-        }
-
-        // performance degradation
-        if (this.rowContent.length > 80 || ((this.rowContent.length > 40) && !Ext.isWebKit) || (this.rowCount && this.rowCount > 1000))
-        {
-            this._allowHeaderLock = false;
-            return;
         }
 
         // initialize additional listeners
@@ -1348,12 +1347,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             el  = Ext.get(this.rowContent[i]);
 
             s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
-
-            // See Ext.Element.adjustWidth for how numeric vs string widths are initialzied
-//            if (this.headerAsQWP) {
-//                s.width = s.width + 'px';
-//                s.height = s.height + 'px';
-//            }
             el.setWidth(s.width); // 15420
 
             z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
