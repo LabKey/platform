@@ -176,7 +176,7 @@ public class RScriptEngine extends ExternalScriptEngine
         sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
 
         //
-        // if the format is markdown then we use a knit2html to combine kint and markdownToHtml functions
+        // if the format is markdown then we use a knit2html to combine knit and markdownToHtml functions
         // and return html to the user
         //
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)

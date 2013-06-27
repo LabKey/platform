@@ -265,7 +265,8 @@ public class ParamReplacementSvc
                 href.setReport(report);
                 href.setFile(new File(parentDirectory, href.getName()));
                 ScriptOutput o = href.renderAsScriptOutput();
-                m.appendReplacement(sb, o.getValue());
+                if (null != o)
+                    m.appendReplacement(sb, o.getValue());
             }
         }
         m.appendTail(sb);

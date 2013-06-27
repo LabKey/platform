@@ -112,14 +112,14 @@ public class KnitrOutput extends HtmlOutput
             // do post processing on this html to fixup any hrefs
             if (null != htmlIn)
             {
-                StringBuffer htmlOut = new StringBuffer();
+                StringBuilder htmlOut = new StringBuilder();
                 String pattern = ParamReplacementSvc.REPLACEMENT_PARAM;
 
                 if (_report.getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
                     pattern = ParamReplacementSvc.REPLACEMENT_PARAM_ESC;
 
                 // wrap with the labkey-wiki class to get consistent styling
-                htmlOut.append("<div class=\"labkey-wiki\">");
+                htmlOut.append("<div class=\"labkey-knitr\">");
 
                 // replace all ${hrefout:<filename>} with the appropriate url
                 htmlOut.append( ParamReplacementSvc.get().processHrefParamReplacement(_report,
