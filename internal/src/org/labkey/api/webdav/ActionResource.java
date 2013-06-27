@@ -40,6 +40,8 @@ import java.util.Map;
  * Date: Nov 12, 2009
  * Time: 10:33:38 AM
  */
+
+@Deprecated  // Avoid: yes, it's a simple way to index data, but it's inefficient, inflexible, and leads to poor search results.
 public class ActionResource extends AbstractDocumentResource
 {
     final String _docid;

@@ -144,8 +144,6 @@ public interface SearchService
 
         void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
 
-        void addResource(@NotNull SearchService.SearchCategory category, ActionURL url, SearchService.PRIORITY pri);
-
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
