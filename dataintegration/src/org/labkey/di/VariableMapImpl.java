@@ -15,6 +15,7 @@
  */
 package org.labkey.di;
 
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -146,6 +147,16 @@ public class VariableMapImpl implements VariableMap
             return declarations.get(key);
         return _outer.getDescriptor(key);
     }
+
+
+    public JSONObject toJSONObject()
+    {
+        JSONObject j = new JSONObject();
+        for (String key : keySet())
+            j.put(key, get(key));
+        return j;
+    }
+
 
     public static class TestCase extends Assert
     {

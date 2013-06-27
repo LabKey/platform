@@ -110,7 +110,7 @@ public class TransformConfiguration extends Entity
 
     public String getTransformState()
     {
-        return jsonState.toString();
+        return null==jsonState ? "{}" : jsonState.toString();
     }
 
 

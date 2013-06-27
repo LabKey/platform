@@ -45,7 +45,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
         _txJob = (TransformPipelineJob)job;
         if (null != _txJob)
-            _variableMap = new VariableMapImpl(_txJob.getVariableMap());
+            _variableMap = _txJob.getStepVariableMap(factory.getId().getName());
         else
             _variableMap = new VariableMapImpl();
     }

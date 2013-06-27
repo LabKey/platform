@@ -42,6 +42,7 @@ import org.labkey.di.data.TransformProperty;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +59,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     private Integer _recordCount;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
+    private final Map<String,VariableMapImpl> _stepVariableMaps = new HashMap<>();
     public static final String ETL_PREFIX = "ETL Job: ";
 
 
@@ -79,6 +81,16 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         return _variableMap;
     }
 
+
+    public VariableMap getStepVariableMap(String id)
+    {
+        VariableMapImpl vm = _stepVariableMaps.get(id);
+        if (null == vm)
+            _stepVariableMaps.put(id, vm = new VariableMapImpl(_variableMap));
+        return vm;
+    }
+
+
     public void logRunFinish(String status, Integer expRunId, Integer recordCount)
     {
         TransformRun run = getTransformRun();
@@ -91,7 +103,25 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             run.setRecordCount(recordCount);
             update(run);
         }
+
+        if (status.equals(PipelineJob.COMPLETE_STATUS))
+        {
+            JSONObject state = _variableMap.toJSONObject();
+            JSONObject steps = new JSONObject();
+            for (Map.Entry<String,VariableMapImpl> e : _stepVariableMaps.entrySet())
+            {
+                JSONObject step = e.getValue().toJSONObject();
+                if (null == step || step.isEmpty())
+                    continue;
+                steps.put(e.getKey(), step);
+            }
+            state.put("steps",steps);
+            TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
+            cfg.setJsonState(state);
+            TransformManager.get().saveTransformConfiguration(getUser(),cfg);
+        }
     }
+
 
     @Override
     protected void done(Throwable throwable)

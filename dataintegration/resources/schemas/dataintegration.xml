@@ -44,6 +44,7 @@
             <column columnName="Enabled"/>
             <column columnName="VerboseLogging"/>
             <column columnName="LastChecked"/>
+            <column columnName="TransformState"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>
