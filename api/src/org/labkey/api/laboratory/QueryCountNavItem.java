@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory;
 
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -36,6 +37,8 @@ import org.labkey.api.view.ActionURL;
  */
 public class QueryCountNavItem extends SingleNavItem
 {
+    private static final Logger _log = Logger.getLogger(QueryCountNavItem.class);
+
     private String _schema;
     private String _query;
     private SimpleFilter _filter = null;
@@ -95,8 +98,16 @@ public class QueryCountNavItem extends SingleNavItem
 
     public JSONObject toJSON(Container c, User u)
     {
-        Long total = getRowCount(c, u);
-        _itemText = total.toString();
+        try
+        {
+            Long total = getRowCount(c, u);
+            _itemText = total.toString();
+        }
+        catch (Exception e)
+        {
+            _log.error("Error calculating rowcount for table " + _schema + "." + _query, e);
+            _itemText = "0";
+        }
 
         return super.toJSON(c, u);
     }

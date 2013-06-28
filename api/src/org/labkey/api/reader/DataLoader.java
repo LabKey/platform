@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
@@ -27,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.etl.DataIterator;
@@ -89,6 +91,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     protected File _file = new File("Resource");
 
+    @NotNull
+    protected Map<String, ColumnInfo> _columnInfoMap = Collections.emptyMap();
     protected ColumnDescriptor[] _columns;
     private boolean _initialized = false;
     protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
@@ -151,6 +155,18 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public void setColumns(ColumnDescriptor[] columns)
     {
         _columns = columns;
+    }
+
+    // if provided, the header row will be inspected and compared to these ColumnInfos.  if imported columns match a known
+    // ColumnInfo, the datatype of this column will be preferentially used.  this can help avoid issues such as a varchar column
+    // where incoming data looks numeric.
+    public void setKnownColumns(List<ColumnInfo> cols)
+    {
+        if (cols == null || cols.size() == 0)
+            throw new IllegalArgumentException("List of columns cannot be null or empty");
+
+        boolean useMv = _mvIndicatorContainer != null ? !MvUtil.getIndicatorsAndLabels(_mvIndicatorContainer).isEmpty() : false;
+        _columnInfoMap = ImportAliasable.Helper.createImportMap(cols, useMv);
     }
 
     public void ensureColumn(ColumnDescriptor column) throws IOException
@@ -238,7 +254,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
             for (int f = 0; f < nCols; f++)
             {
+                List<Class> classesToTest = new ArrayList<Class>(Arrays.asList(CONVERT_CLASSES));
+
                 int classIndex = -1;
+                //NOTE: this means we have a header row
+                if (_skipLines == 1)
+                {
+                    String name = lineFields[0][f];
+                    if (_columnInfoMap.containsKey(name))
+                    {
+                        //preferentially use this class if it matches
+                        classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
+                    }
+                }
+
                 for (int line = inferStartLine; line < numLines; line++)
                 {
                     if (f >= lineFields[line].length)
@@ -253,12 +282,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     if ("".equals(field))
                         continue;
 
-                    for (int c = Math.max(classIndex, 0); c < CONVERT_CLASSES.length; c++)
+                    for (int c = Math.max(classIndex, 0); c < classesToTest.size(); c++)
                     {
                         //noinspection EmptyCatchBlock
                         try
                         {
-                            Object o = ConvertUtils.convert(field, CONVERT_CLASSES[c]);
+                            Object o = ConvertUtils.convert(field, classesToTest.get(c));
                             //We found a type that works. If it is more general than
                             //what we had before, we must use it.
                             if (o != null && c > classIndex)
@@ -270,7 +299,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         }
                     }
                 }
-                colDescs[f].clazz = classIndex == -1 ? String.class : CONVERT_CLASSES[classIndex];
+                colDescs[f].clazz = classIndex == -1 ? String.class : classesToTest.get(classIndex);
             }
         }
 

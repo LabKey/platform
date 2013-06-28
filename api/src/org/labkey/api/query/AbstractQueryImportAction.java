@@ -284,6 +284,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             BatchValidationException ve = new BatchValidationException();
             //di = wrap(di, ve);
             //importData(di, ve);
+
+            //apply known columns so loader can do better type conversion
+            if (loader != null && _target != null)
+                loader.setKnownColumns(_target.getColumns());
+
             int rowCount = importData(loader, file, originalName, ve);
 
             if (ve.hasErrors())
