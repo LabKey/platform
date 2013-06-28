@@ -137,7 +137,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
               'padding-right', 'line-height', 'font-size',
               'font-family', 'font-weight', 'font-style');
 
-        styles.width = this.el.getWidth()-25 + "px";
+        styles.width = this.el.getWidth()-50 + "px";
         this.editor.setStyle(styles);
         this.sizingDiv.setStyle(styles);
 
