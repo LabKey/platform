@@ -244,9 +244,14 @@
          * @param {Boolean} includeDetailsColumn Include the Details link column in the set of columns (defaults to false).
          *      If included, the column will have the name "~~Details~~". The underlying table/query must support details
          *      links or the column will be omitted in the response.
-         * @param {String} sort String description of the sort. It includes the column names listed in the URL of a sorted
-         *      data region (with an optional minus prefix to indicate descending order). In the case of a multi-column sort,
-         *      up to three column names can be included, separated by commas.
+         * @param {Object[]} sort Optional. Define how columns are sorted. An array of objects with the following properties:
+         *      <ul>
+         *          <li>
+         *              <strong>fieldKey</strong>: The field key of the column to sort. Can be a string, array of strings, or a
+         *               {@link LABKEY.FieldKey}
+         *          </li>
+         *          <li><strong>dir</strong>: {String} Optional. Can be 'ASC' or 'DESC', defaults to 'ASC'.</li>
+         *      </ul>
          * @param {Function} config.success Required. A function to be executed when the GetData request completes
          *      successfully. The function will
          *      be passed a {@link LABKEY.Query.Response} object.
@@ -301,11 +306,11 @@
             }
 
             if (config.columns) {
-                if (!config.columns instanceof Array) {
+                if (!(config.columns instanceof Array)) {
                     throw new Error('columns must be an array of FieldKeys.');
                 }
 
-                for (var i = 0; i < config.columns.length; i++) {
+                for (i = 0; i < config.columns.length; i++) {
                     config.columns[i] = validateFieldKey(config.columns[i]);
 
                     if (!config.columns[i]) {
@@ -328,7 +333,27 @@
                 jsonData.renderer.maxRows = config.maxRows;
             }
 
-            if(config.hasOwnProperty('sort')){
+            if(config.sort){
+                if(!(config.sort instanceof Array)){
+                    throw new Error('sort must be an array.');
+                }
+
+                for(i = 0; i < config.sort.length; i++){
+                    if(!config.sort[i].fieldKey){
+                        throw new Error("Each sort must specify a field key.");
+                    }
+
+                    config.sort[i].fieldKey = validateFieldKey(config.sort[i].fieldKey);
+
+                    if(!config.sort[i].fieldKey){
+                        throw new Error("Invalid field key specified for sort.");
+                    }
+
+                    if(config.sort[i].dir){
+                        config.sort[i].dir = config.sort[i].dir.toUpperCase();
+                    }
+                }
+
                 jsonData.renderer.sort = config.sort;
             }
 
