@@ -245,6 +245,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.win = new Ext.Window({
             title: title,
+            resizable: false,
             width: 875,
             height: 600,
             autoScroll: false,
@@ -718,7 +719,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            height : 180,
+            height : 175,
             cls: 'studyWizardDatasetList',
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
@@ -736,7 +737,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     {
                         if(store.data.items.length == 0)
                         {
-                            grid.setHeight(360);
+                            grid.setHeight(350);
                             hiddenGrid.hide();
                         }
                     }
@@ -749,7 +750,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            height : 180,
+            height : 175,
             cls: 'studyWizardHiddenDatasetList',
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
@@ -809,10 +810,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.allowRefresh)
         {
             this.snapshotOptions = new Ext.form.FormPanel({
-                defaults: {labelSeparator: ''},
                 items: [
                     {xtype: 'hidden', name: 'updateDelay', value: 30},
-                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, items: [
+                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, items: [
                         {name: 'autoRefresh', boxLabel: this.mode == 'publish'? 'None' : 'Automatic', inputValue: true, checked: true},
                         {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
                     }
