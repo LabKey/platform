@@ -20,6 +20,14 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.labkey.api.action.NullSafeBindException" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.HtmlView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.report.QueryReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -31,21 +39,54 @@
     String viewName = report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
 
     String renderId = "queryReport-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    StringBuilder sb = new StringBuilder();
+
+    if (report instanceof QueryReport)
+    {
+        BindException errors = new NullSafeBindException(this, "form");
+        QueryView view = ((QueryReport)report).createQueryView(context, errors);
+
+        if (errors.hasErrors())
+        {
+            sb.append("Unable to display the report");
+            for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+            {
+                sb.append("\n");
+                sb.append(error.getDefaultMessage());
+            }
+        }
+
+        if (view != null && view.getTable() == null)
+            sb.append("Unable to create table: " + view.getSettings().getQueryName() + ", you may not have access to that data.");
+    }
 %>
 
-<script>
+<%
+    if (sb.length() > 0)
+    {
+%>
+    <span class="labkey-error"><%=h(sb.toString(), true)%></span>
+<%
+    }
+    else
+    {
+%>
+    <script>
 
-    Ext.onReady(function() {
-        var qwp = new LABKEY.QueryWebPart({
-            renderTo    : <%=q(renderId)%>,
-            schemaName  : <%=q(schemaName)%>,
-            queryName   : <%=q(queryName)%>,
-            viewName    : <%=(viewName != null) ? q(viewName) : null%>,
-            showReports : false,
-            frame       : 'none',
-            allowChooseQuery : false
+        Ext.onReady(function() {
+            var qwp = new LABKEY.QueryWebPart({
+                renderTo    : <%=q(renderId)%>,
+                schemaName  : <%=q(schemaName)%>,
+                queryName   : <%=q(queryName)%>,
+                viewName    : <%=(viewName != null) ? q(viewName) : null%>,
+                showReports : false,
+                frame       : 'none',
+                allowChooseQuery : false
+            });
         });
-    });
-</script>
+    </script>
 
-<div id="<%= renderId%>" style="width:100%"></div>
+    <div id="<%= h(renderId)%>" style="width:100%"></div>
+<%
+    }
+%>

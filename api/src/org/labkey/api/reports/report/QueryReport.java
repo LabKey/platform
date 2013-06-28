@@ -127,7 +127,7 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
     }
 
-    private QueryView createQueryView(ViewContext context, BindException errors)
+    public QueryView createQueryView(ViewContext context, BindException errors)
     {
         String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
         String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
