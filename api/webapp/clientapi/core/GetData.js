@@ -124,8 +124,9 @@
     var validateTransform = function(transform) {
         var i;
 
-        if (!transform.type || transform.type === null || transform.type === undefined) {
-            throw new Error('Transformer type is required.');
+        // Issue 18138
+        if (!transform.type || transform.type !== 'aggregate') {
+            transform.type = 'aggregate';
         }
 
         if (transform.groupBy && transform.groupBy != null) {
@@ -179,14 +180,13 @@
          * @param {String} config.source.type Required. A string with value set to either "query" or "sql". Indicates if the value is
          *      "sql" then source.sql is required. If the value is "query" then source.queryName is required.
          * @param {*} config.source.schemaName Required. The schemaName to use in the request. Can be a string, array of strings, or LABKEY.FieldKey.
-         * @param {String} config.source.queryName The queryName to use in the request. Required if source.type = "query"
-         * @param {String} config.source.sql The LabKey SQL to use in the request. Required if source.type = "sql"
+         * @param {String} config.source.queryName The queryName to use in the request. Required if source.type = "query".
+         * @param {String} config.source.sql The LabKey SQL to use in the request. Required if source.type = "sql".
+         * @param {String} config.source.containerPath The path to the target container to execute the GetData call in.
          * @param {String} config.source.containerFilter Optional. The container filter to use in the request. See {@link LABKEY.Query.containerFilter}
          *      for valid container filter types.
          * @param {Object[]} config.transforms An array of objects with the following properties:
          *              <ul>
-         *                  <li><strong>type</strong>: {String} Required.</li>
-         *                  <li><strong>label</strong>: {String} Optional. The label used when the transform is rendered.</li>
          *                  <li>
          *                      <strong>pivot</strong>: {Object} Optional. An object with the following properties:
          *                      <ul>
@@ -237,10 +237,21 @@
          *              </ul>
          * @param {Array} config.columns Optional. An array containing {@link LABKEY.FieldKey} objects, strings, or arrays of strings.
          *      Used to specify which columns the user wants. The columns must match those returned from the last transform.
-         * @param {Function} config.success Required. A function to be executed when the GetData request completes successfully. The function will
+         * @param {Integer} maxRows The maximum number of rows to return from the server (defaults to 100000). If you want
+         *      to return all possible rows, set this config property to -1.
+         * @param {Integer} offset The index of the first row to return from the server (defaults to 0). Use this along
+         *      with the maxRows config property to request pages of data.
+         * @param {Boolean} includeDetailsColumn Include the Details link column in the set of columns (defaults to false).
+         *      If included, the column will have the name "~~Details~~". The underlying table/query must support details
+         *      links or the column will be omitted in the response.
+         * @param {String} sort String description of the sort. It includes the column names listed in the URL of a sorted
+         *      data region (with an optional minus prefix to indicate descending order). In the case of a multi-column sort,
+         *      up to three column names can be included, separated by commas.
+         * @param {Function} config.success Required. A function to be executed when the GetData request completes
+         *      successfully. The function will
          *      be passed a {@link LABKEY.Query.Response} object.
-         * @param {Function} config.failure Optional. If no failure function is provided the reponse is sent to the console via console.error.
-         *      If a function is provided the JSON response is passed to it as the only parameter.
+         * @param {Function} config.failure Optional. If no failure function is provided the reponse is sent to the console
+         *      via console.error. If a function is provided the JSON response is passed to it as the only parameter.
          * @returns {LABKEY.Ajax.request}
          */
         rawData: function(config) {
@@ -303,6 +314,22 @@
                 }
 
                 jsonData.renderer.columns = config.columns;
+            }
+
+            if(config.hasOwnProperty('offset')){
+                jsonData.renderer.offset = config.offset;
+            }
+
+            if(config.hasOwnProperty('includeDetailsColumn')){
+                jsonData.renderer.includeDetailsColumn = config.includeDetailsColumn;
+            }
+
+            if(config.hasOwnProperty('maxRows')){
+                jsonData.renderer.maxRows = config.maxRows;
+            }
+
+            if(config.hasOwnProperty('sort')){
+                jsonData.renderer.sort = config.sort;
             }
 
             if (!config.failure) {
