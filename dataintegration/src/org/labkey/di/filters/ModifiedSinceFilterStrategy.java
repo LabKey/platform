@@ -16,9 +16,11 @@
 package org.labkey.di.filters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -28,11 +30,13 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
+import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.FilterType;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -95,7 +99,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         init();
 
         SimpleFilter f = new SimpleFilter();
-        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestamp();
+        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson();
         if (null != incrementalStartTimestamp)
             f.addCondition(_tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
 
@@ -120,7 +124,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         init();
 
         SimpleFilter f = new SimpleFilter();
-        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestamp();
+        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson();
         if (null != incrementalStartTimestamp)
             f.addCondition(_tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
 
@@ -144,7 +148,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
     }
 
 
-    Date getLastSuccessfulIncrementalEndTimestamp()
+    Date getLastSuccessfulIncrementalEndTimestampExp()
     {
         // get the experiment run for the last successfully run transform for this configuration
         Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
@@ -155,6 +159,25 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
                 return (Date) map.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
         }
         return null;
+    }
+
+
+    Date getLastSuccessfulIncrementalEndTimestampJson()
+    {
+        TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
+        JSONObject state = cfg.getJsonState();
+        if (null == state || state.isEmpty() || null == state.getJSONObject("steps"))
+            return null;
+        JSONObject step = state.getJSONObject("steps").getJSONObject(_config.getId());
+        Object o = step.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
+        if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
+            return null;
+        try
+        {
+            return Timestamp.valueOf((String)o);
+        }
+        catch (Exception x){}
+        return (Date) JdbcType.TIMESTAMP.convert(o);
     }
 
 

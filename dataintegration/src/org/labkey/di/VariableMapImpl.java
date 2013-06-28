@@ -15,6 +15,7 @@
  */
 package org.labkey.di;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,6 +25,8 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.di.data.TransformProperty;
 
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -149,11 +152,24 @@ public class VariableMapImpl implements VariableMap
     }
 
 
+    // our default json encoding does not include MS
+    FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy/MM/dd HH:mm:ss");
+    DecimalFormat millisFormat = new DecimalFormat(".000");
+    DecimalFormat nanosFormat = new DecimalFormat(".000000000");
+
     public JSONObject toJSONObject()
     {
         JSONObject j = new JSONObject();
         for (String key : keySet())
-            j.put(key, get(key));
+        {
+            Object value = get(key);
+            // we need full fidelity round trip, so don't use regular json format
+            if (value instanceof java.sql.Timestamp)
+                value = value.toString();
+            else if (value instanceof Date)
+                value = new Timestamp(((Date)value).getTime()).toString();
+            j.put(key, value);
+        }
         return j;
     }
 

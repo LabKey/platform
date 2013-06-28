@@ -15,9 +15,12 @@
  */
 package org.labkey.di.filters;
 
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -28,6 +31,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
+import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
@@ -126,7 +130,7 @@ public class RunFilterStrategy implements FilterStrategy
     private Integer findNextRunId()
     {
         SimpleFilter f = new SimpleFilter();
-        Integer lastRunId = getLastSuccessfulRunId();
+        Integer lastRunId = getLastSuccessfulRunIdJSON();
         if (null != lastRunId)
             f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
 
@@ -167,7 +171,7 @@ public class RunFilterStrategy implements FilterStrategy
     }
 
 
-    Integer getLastSuccessfulRunId()
+    Integer getLastSuccessfulRunIdExp()
     {
         // get the experiment run for the last successfully run transform for this configuration
         Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
@@ -183,6 +187,17 @@ public class RunFilterStrategy implements FilterStrategy
             }
         }
         return null;
+    }
+
+
+    Integer getLastSuccessfulRunIdJSON()
+    {
+        TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
+        JSONObject state = cfg.getJsonState();
+        Object o = state.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
+        if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
+            return null;
+        return (Integer)JdbcType.INTEGER.convert(o);
     }
 
 

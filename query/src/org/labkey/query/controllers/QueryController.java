@@ -1301,7 +1301,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
 
     /**
      * Can be used to generate an excel template for import into a table.  Supported URL params include:
@@ -1312,6 +1311,7 @@ public class QueryController extends SpringActionController
      * captionType: determines which column property is used in the header.  either Label or Name
      *
      */
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
         public ExportExcelTemplateAction()
