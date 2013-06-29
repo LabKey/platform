@@ -27,6 +27,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
@@ -110,6 +111,19 @@ boolean isAdmin = context.hasPermission(AdminPermission.class);
         });
     }
 
+    function Transform_resetState(transformId)
+    {
+        var params = {'transformId':transformId};
+        X.Ajax.request({
+            url : <%=q(buildURL(DataIntegrationController.ResetTransformStateAction.class))%>,
+            params : params,
+            method : "POST",
+            success : function(response)
+            {
+            },
+            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:transformId}), window, true)
+        });
+    }
 
 
 // UI GLUE
@@ -138,6 +152,11 @@ function onRunNowClicked(el,id)
     Transform_runNow(id);
 }
 
+function onResetStateClicked(el, id)
+{
+    Transform_resetState(id);
+}
+
     Ext4.onReady(function() {
         Ext4.create('Ext.Button',  {
             text : 'View Processed Jobs',
@@ -162,6 +181,7 @@ function onRunNowClicked(el,id)
         <td class="labkey-column-header">Enabled</td>
         <td class="labkey-column-header">Verbose Logging</td>
         <td class="labkey-column-header">&nbsp;</td>
+        <td class="labkey-column-header">&nbsp;</td>
     </tr><%
 
 int row = 0;
@@ -185,8 +205,16 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td><%=generateButton("run now", "#", "onRunNowClicked(this," + q(descriptor.getId()) + "); return false;")%></td>
-        </tr><%
+        <td><%=generateButton("run now", "#", "onRunNowClicked(this," + q(descriptor.getId()) + "); return false;")%></td><%
+        if (configuration.getTransformState().contentEquals("{}"))
+        {
+            %><td><%=PageFlowUtil.generateDisabledButton("reset state")%></td><%
+        }
+        else
+        {
+            %><td><%=generateButton("reset state", "#", "onResetStateClicked(this," + q(descriptor.getId()) + "); return false;")%></td><%
+        }
+        %></tr><%
     }
     else
     {
@@ -196,6 +224,7 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox disabled="true" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
+        <td>&nbsp;</td>
         <td>&nbsp;</td>
         </tr><%
     }

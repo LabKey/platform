@@ -116,16 +116,7 @@
             queryName : 'transformrun',
             success : function(data)
             {
-                console.log(data.rows);
-                var validRows = data.rows;
-                var text;
-                for(var i = 0; i < data.rows.length; i++)
-                {
-                    text = validRows[i].TransformId.split("/");
-                    validRows[i].TransformId = text[text.length-2];
-                    validRows[i].TransformId = validRows[i].TransformId.charAt(0).toUpperCase() + validRows[i].TransformId.substring(1, validRows[i].TransformId.length);
-                }
-                jobStore.loadData(validRows);
+                jobStore.loadData(data.rows);
             },
             failure : function(){ /**/ },
             filterArray: [LABKEY.Filter.create('Description', ['ETL'], LABKEY.Filter.Types.CONTAINS)]

@@ -212,4 +212,39 @@ public class DataIntegrationController extends SpringActionController
             return new ApiSimpleResponse(ret);
         }
     }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ResetTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
+    {
+        @Override
+        public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
+        {
+            ViewContext context = getViewContext();
+
+            ScheduledPipelineJobDescriptor etl = getDescriptor(form);
+            if (null == etl)
+                throw new NotFoundException(form.getTransformId());
+
+            TransformConfiguration config = null;
+            List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
+            for (TransformConfiguration c : configs)
+            {
+                if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                {
+                    config = c;
+                    break;
+                }
+            }
+
+            if (config != null)
+            {
+                config.setTransformState(null);
+                TransformManager.get().saveTransformConfiguration(context.getUser(), config);
+            }
+
+            JSONObject ret = new JSONObject();
+            ret.put("success",true);
+            return new ApiSimpleResponse(ret);
+        }
+    }
 }
