@@ -738,7 +738,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return addColumn(name, indexIn);
             else
             {
-                _outputColumns.add(new Pair(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.add(new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
                 return _outputColumns.size()-1;
             }
         }
@@ -746,7 +746,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
         {
             if (!allowPassThrough)
-                _outputColumns.set(indexOut, new Pair(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.set(indexOut, new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
             return indexOut;
         }
     }

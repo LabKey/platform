@@ -21,7 +21,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
@@ -33,7 +33,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -135,53 +134,47 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
-        try
+        SQLFragment allRowsSQL;
+        SQLFragment nonBlankRowsSQL;
+        if (getStorageSchemaName() == null)
         {
-            // CONSIDER changing to EXISTS test or LIMIT 1 for performance
-            SQLFragment totalRowCountSQL;
-            SQLFragment nonBlankRowCountSQL;
-            if (getStorageSchemaName() == null)
-            {
-                SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
-                totalRowCountSQL = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
-                totalRowCountSQL.append(sqlObjectIds);
-                totalRowCountSQL.append(")");
+            SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
+            allRowsSQL = new SQLFragment("SELECT exp.object.objectId FROM exp.object WHERE exp.object.objectid IN (");
+            allRowsSQL.append(sqlObjectIds);
+            allRowsSQL.append(")");
 
-                nonBlankRowCountSQL = new SQLFragment("SELECT COUNT(op.objectId) AS value FROM exp.objectproperty op WHERE ");
-                nonBlankRowCountSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
-                nonBlankRowCountSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
-                nonBlankRowCountSQL.append(sqlObjectIds);
-                nonBlankRowCountSQL.append(") AND op.PropertyId = ?");
-                nonBlankRowCountSQL.add(prop.getPropertyId());
-            }
-            else if (domain.getStorageTableName() != null)
-            {
-                String table = domain.getStorageTableName();
-                totalRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table);
-                nonBlankRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
-                SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-                // Issue 17183 - Postgres uses lower case column names when quoting is required
-                nonBlankRowCountSQL.append("x." + dialect.makeLegalIdentifier(prop.getName().toLowerCase()) + " IS NOT NULL");
-                if (prop.isMvEnabled())
-                {
-                    nonBlankRowCountSQL.append(" OR x." + dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName()).toLowerCase()) + " IS NOT NULL");
-                }
-            }
-            else
-            {
-                return false;
-            }
-
-            Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), totalRowCountSQL, Map.class);
-            int totalRows = ((Number) maps[0].get("value")).intValue();
-            maps = Table.executeQuery(ExperimentService.get().getSchema(), nonBlankRowCountSQL, Map.class);
-            int nonBlankRows = ((Number) maps[0].get("value")).intValue();
-            return totalRows != nonBlankRows;
+            nonBlankRowsSQL = new SQLFragment("SELECT op.objectId FROM exp.objectproperty op WHERE ");
+            nonBlankRowsSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
+            nonBlankRowsSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
+            nonBlankRowsSQL.append(sqlObjectIds);
+            nonBlankRowsSQL.append(") AND op.PropertyId = ?");
+            nonBlankRowsSQL.add(prop.getPropertyId());
         }
-        catch (SQLException x)
+        else if (domain.getStorageTableName() != null)
         {
-            throw new RuntimeException(x);
+            String table = domain.getStorageTableName();
+            allRowsSQL = new SQLFragment("SELECT * FROM " + getStorageSchemaName() + "." + table);
+            nonBlankRowsSQL = new SQLFragment("SELECT * FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            // Issue 17183 - Postgres uses lower case column names when quoting is required
+            nonBlankRowsSQL.append("x.");
+            nonBlankRowsSQL.append(dialect.makeLegalIdentifier(prop.getName().toLowerCase()));
+            nonBlankRowsSQL.append(" IS NOT NULL");
+            if (prop.isMvEnabled())
+            {
+                nonBlankRowsSQL.append(" OR x.");
+                nonBlankRowsSQL.append(dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName()).toLowerCase()));
+                nonBlankRowsSQL.append(" IS NOT NULL");
+            }
         }
+        else
+        {
+            return false;
+        }
+
+        long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
+        long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
+        return totalRows != nonBlankRows;
     }
 
     @Override
