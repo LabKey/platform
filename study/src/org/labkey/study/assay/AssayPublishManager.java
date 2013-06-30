@@ -339,7 +339,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, true, defaultQCState, null, false);
+            List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, errors, true, true, defaultQCState, null, false);
             if (lsids.size() > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())

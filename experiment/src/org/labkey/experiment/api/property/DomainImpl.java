@@ -243,7 +243,7 @@ public class DomainImpl implements Domain
     {
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            List<DomainProperty> newlyRequiredProps = new ArrayList<>();
+            List<DomainProperty> checkRequiredStatus = new ArrayList<>();
             try
             {
                 if (isNew())
@@ -302,7 +302,7 @@ public class DomainImpl implements Domain
                     if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
-                            newlyRequiredProps.add(impl);
+                            checkRequiredStatus.add(impl);
                         impl.save(user, _dd, sortOrder++);
                         propsAdded.add(impl);
                         propChanged = true;
@@ -318,8 +318,17 @@ public class DomainImpl implements Domain
                             propsAdded.add(impl);
                         }
 
-                        if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
-                            newlyRequiredProps.add(impl);
+                        if (impl._pdOld != null)
+                        {
+                            // If this field is newly required, or it's required and we're disabling MV indicators on
+                            // it, make sure that all of the rows have values for it
+                            if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
+                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
+                            {
+                                checkRequiredStatus.add(impl);
+                            }
+                        }
+
                         finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
                         // Same any changes with a temp, guaranteed unique name. This is important in case a single save
                         // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
@@ -352,14 +361,14 @@ public class DomainImpl implements Domain
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
             }
 
-            if (!newlyRequiredProps.isEmpty() && null != kind)
+            if (!checkRequiredStatus.isEmpty() && null != kind)
             {
-                for (DomainProperty prop : newlyRequiredProps)
+                for (DomainProperty prop : checkRequiredStatus)
                 {
                     boolean hasRows = kind.hasNullValues(this, prop);
                     if (hasRows)
                     {
-                        throw new IllegalStateException("The property \"" + prop.getName() + "\" cannot be set to required when rows with blank values already exist.");
+                        throw new IllegalStateException("The property \"" + prop.getName() + "\" cannot be required when it contains rows with blank values.");
                     }
                 }
             }

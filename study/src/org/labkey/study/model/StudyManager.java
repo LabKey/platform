@@ -2879,7 +2879,7 @@ public class StudyManager
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger,
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger,
         boolean forUpdate)
             throws SQLException
     {
