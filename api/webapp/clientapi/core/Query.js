@@ -211,7 +211,7 @@ LABKEY.Query = new function()
          *        references underlying queries that are parameterized.
          * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
                  object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
-                 object. If set to "13.2" the succes handler will be passed a {@link LABKEY.Query.Response} object.
+                 object. If set to "13.2" the success handler will be passed a {@link LABKEY.Query.Response} object.
                  The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
                  will be another object (not just a scalar value) with a "value" property as well as other related properties
                  (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
@@ -409,7 +409,7 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
                 object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
-                object. If set to "13.2" the succes handler will be passed a {@link LABKEY.Query.Response} object.
+                object. If set to "13.2" the success handler will be passed a {@link LABKEY.Query.Response} object.
                 The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
                 will be another object (not just a scalar value) with a "value" property as well as other related properties
                 (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
