@@ -17,6 +17,7 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
@@ -30,7 +31,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
@@ -890,6 +890,10 @@ class SandboxContextFactory extends ContextFactory
         @Override
         public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType)
         {
+            // Unwrap JSONArrays to standard arrays first
+            if (obj instanceof JSONArray)
+                obj = ((JSONArray)obj).toArray();
+
             if (obj instanceof Map)
                 return new ScriptableMap(scope, (Map)obj);
             else if (obj instanceof List)

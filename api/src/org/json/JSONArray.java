@@ -921,11 +921,7 @@ public class JSONArray {
         Object[] valueArray = new Object[length()];
         for (int idx = 0; idx < length(); ++idx)
         {
-            Object entry = get(idx);
-            if (entry instanceof JSONObject || entry instanceof JSONArray)
-                throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
-            else
-                valueArray[idx] = entry;
+            valueArray[idx] = get(idx);
         }
         return valueArray;
     }
