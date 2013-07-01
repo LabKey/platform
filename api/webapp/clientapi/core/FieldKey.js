@@ -230,9 +230,24 @@ LABKEY.SchemaKey.fromString = function(str)
 LABKEY.SchemaKey.fromParts = function(parts)
 {
     var ret = null;
-    for (var i = 0; i < parts.length; i ++)
+    for (var i = 0; i < arguments.length; i ++)
     {
-        ret = new LABKEY.SchemaKey(ret, parts[i]);
+        var arg = arguments[i];
+        if (typeof arg === 'string')
+        {
+            ret = new LABKEY.SchemaKey(ret, arg);
+        }
+        else if (arg && arg.length)
+        {
+            for (var j = 0; j < arg.length; j++)
+            {
+                ret = new LABKEY.SchemaKey(ret, arg[j]);
+            }
+        }
+        else
+        {
+            throw "Illegal argument to fromParts: " + arg;
+        }
     }
     return ret;
 };
@@ -307,12 +322,27 @@ LABKEY.FieldKey.fromString = function(str)
  * @param {Array} parts Array of unencoded FieldKey string parts.
  * @returns {LABKEY.FieldKey}
  */
-LABKEY.FieldKey.fromParts = function(parts)
+LABKEY.FieldKey.fromParts = function()
 {
     var ret = null;
-    for (var i = 0; i < parts.length; i ++)
+    for (var i = 0; i < arguments.length; i ++)
     {
-        ret = new LABKEY.FieldKey(ret, parts[i]);
+        var arg = arguments[i];
+        if (typeof arg === 'string')
+        {
+            ret = new LABKEY.FieldKey(ret, arg);
+        }
+        else if (arg && arg.length)
+        {
+            for (var j = 0; j < arg.length; j++)
+            {
+                ret = new LABKEY.FieldKey(ret, arg[j]);
+            }
+        }
+        else
+        {
+            throw "Illegal argument to fromParts: " + arg;
+        }
     }
     return ret;
 };
