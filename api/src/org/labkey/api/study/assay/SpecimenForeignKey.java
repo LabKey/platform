@@ -316,7 +316,26 @@ public class SpecimenForeignKey extends LookupForeignKey
                 }
 
                 sql.append("\n\tLEFT OUTER JOIN study.vial AS " + vialSubqueryAlias);
-                sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
+                sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = ");
+
+                // Do type conversion if needed
+                if (specimenColumnInfo.getJdbcType() == JdbcType.VARCHAR)
+                {
+                    sql.append(assaySubqueryAlias);
+                    sql.append(".");
+                    sql.append(specimenColumnInfo.getAlias());
+                }
+                else
+                {
+                    sql.append("CAST(");
+                    sql.append(assaySubqueryAlias);
+                    sql.append(".");
+                    sql.append(specimenColumnInfo.getAlias());
+                    sql.append(" AS ");
+                    sql.append(getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR));
+                    sql.append(")");
+                }
+
                 if (targetStudy != null)
                 {
                     // We're in the middle of a copy to study, so ignore what the user selected as the target when they uploaded
