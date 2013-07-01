@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
@@ -168,6 +169,31 @@ checkRequired:
     }
 
 
+    class LengthValidator extends ColumnValidator
+    {
+        private final int scale;
+
+        LengthValidator(int col, int scale)
+        {
+            super(col);
+            this.scale = scale;
+        }
+
+        @Override
+        public String validate(Object value)
+        {
+            if (value instanceof String)
+            {
+                String s = (String)value;
+                if (s.length() > scale)
+                    return "Value too long for column \"" +  _data.getColumnInfo(index).getName() + "\"; maximum length is " + scale;
+            }
+
+            return null;
+        }
+    }
+
+
     // validate that there are no in-coming duplicates for unique key
     // does not validate against DB, just the import data
     class DuplicateSingleKeyValidator extends ColumnValidator
@@ -231,6 +257,15 @@ checkRequired:
     public void addUniqueValidator(int i, boolean caseSensitive)
     {
         addValidator(i, new DuplicateSingleKeyValidator(i, caseSensitive));
+    }
+
+    public void addLengthValidator(int i, ColumnInfo col)
+    {
+        if (col == null)
+            return;
+
+        if (col.getJdbcType().isText() && col.getJdbcType() != JdbcType.GUID && col.getScale() > 0)
+            addValidator(i, new LengthValidator(i, col.getScale()));
     }
 
 

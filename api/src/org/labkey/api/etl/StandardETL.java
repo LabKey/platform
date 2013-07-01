@@ -237,6 +237,9 @@ public class StandardETL implements DataIteratorBuilder
             else if (null != pair.dp && pair.dp.isRequired())
                 validate.addRequired(indexConvert, true);
 
+            // UNDONE: Issue 17998: add better max length validation everywhere (need to fixup tests for new behavior)
+            //validate.addLengthValidator(indexConvert, pair.target);
+
             if (null != pair.dp)
                 validate.addPropertyValidator(indexConvert, pair.dp);
         }
