@@ -762,11 +762,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         // Exceptions were not being handled by calling functions so we translate them here
-        catch (ExperimentException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        catch (IOException e)
+        catch (ExperimentException | IOException e)
         {
             throw UnexpectedException.wrap(e);
         }
