@@ -15,6 +15,7 @@
  */
 package org.labkey.query.reports.getdata;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Sort;
@@ -41,6 +42,7 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
     private Integer _maxRows = null;
     private Sort _sort = new Sort();
     private List<FieldKey> _columns;
+    @NotNull private String _dataRegionName = "dataregion";
 
     private void setOffset(int offset)
     {
@@ -70,12 +72,17 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
         _columns = columns;
     }
 
+    public void setDataRegionName(@NotNull String dataRegionName)
+    {
+        _dataRegionName = dataRegionName;
+    }
+
     @Override
     public ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors)
     {
         final QueryDefinition queryDefinition = QueryService.get().saveSessionQuery(context, context.getContainer(), source.getSchema().getSchemaName(), source.getLabKeySQL());
     
-        QuerySettings settings = new QuerySettings(context, "dataregion");
+        QuerySettings settings = new QuerySettings(context, _dataRegionName);
         settings.setOffset(_offset);
         settings.setBaseSort(_sort);
         if (_columns != null)
