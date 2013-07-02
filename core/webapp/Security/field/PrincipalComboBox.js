@@ -81,11 +81,9 @@ Ext4.define('Security.field.PrincipalComboBox', {
     {
         if (store != this.unfilteredStore)
         {
-            console.error("unexpected even: onDataChanged");
+            console.error("unexpected event: onDataChanged");
             return;
         }
-        var type = this.groupsOnly ? 'groups' : this.usersOnly ? 'users' : null;
-        store = Security.store.SecurityCache.filterPrincipalsStore(store, type, null, this.excludedPrincipals);
 
         this.callParent([store, false]);
         this.bindStore(store);
