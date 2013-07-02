@@ -466,7 +466,7 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
         if(this.showOutliers){
             for(i = 0; i < groupedData[group].length; i++){
                 var val = this.yMap.getValue(groupedData[group][i]);
-                if(val > biggestNotOutlier || val < smallestNotOutlier){
+                if(val != null && (val > biggestNotOutlier || val < smallestNotOutlier)){
                     var outlier;
                     var outlierX = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
 
