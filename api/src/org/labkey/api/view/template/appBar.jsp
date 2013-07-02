@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -76,7 +77,7 @@
                 <%
                         }
                     }
-                    if(context.getUser().isAdministrator() && context.getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
+                    if(context.hasPermission(context.getUser(), AdminPermission.class) && context.getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
                     {
                 %>
                     <li class="labkey-app-bar-add-tab" id="addTab">
