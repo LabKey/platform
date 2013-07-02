@@ -494,7 +494,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getLabel()
     {
         if (null == label && getFieldKey() != null)
-            label = labelFromName(getFieldKey().getName());
+            label = labelFromName(getName());
         return label;
     }
 

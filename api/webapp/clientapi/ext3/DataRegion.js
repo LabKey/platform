@@ -2802,7 +2802,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         //NOTE: _jsonType must be set prior to calling getInitialFilterType();
-        this._jsonType = (bound.displayFieldJsonType ? bound.displayFieldJsonType : bound.jsonType) || 'string'
+        this._jsonType = (bound.displayFieldJsonType ? bound.displayFieldJsonType : bound.jsonType) || 'string';
         Ext.apply(this, {
 
             // Either invoked from GWT, which will handle the commit itself.
