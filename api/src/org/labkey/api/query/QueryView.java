@@ -226,7 +226,10 @@ public class QueryView extends WebPartView<Object>
         _queryDef = settings.getQueryDef(_schema);
         // Disable external exports (scripts, etc) since they will run in a different HTTP session that doesn't
         // have access to the temporary query
-        _allowExportExternalQuery &= !_queryDef.isTemporary();
+        if (_queryDef != null)
+        {
+            _allowExportExternalQuery &= !_queryDef.isTemporary();
+        }
         _customView = settings.getCustomView(getViewContext(), getQueryDef());
         //_report = settings.getReportView(getViewContext());
     }
