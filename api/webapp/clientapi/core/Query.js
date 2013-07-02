@@ -2249,11 +2249,13 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             return this.rows[idx];
         }
 
-        return null;
+        throw new Error('No row found for index ' + idx);
     };
 
     /**
-     * Gets the row count from the reponse.
+     * Gets the row count from the reponse, which is the total number of rows in the query, not necessarily the number
+     * of rows returned. For example, if setting maxRows to 100 on a query that has 5,000 rows, getRowCount will return
+     * 5,000, not 100.
      * @returns {Integer}
      */
     LABKEY.Query.Response.prototype.getRowCount = function() {
