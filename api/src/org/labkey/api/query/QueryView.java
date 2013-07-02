@@ -224,6 +224,9 @@ public class QueryView extends WebPartView<Object>
             throw new IllegalStateException();
         _settings = settings;
         _queryDef = settings.getQueryDef(_schema);
+        // Disable external exports (scripts, etc) since they will run in a different HTTP session that doesn't
+        // have access to the temporary query
+        _allowExportExternalQuery &= !_queryDef.isTemporary();
         _customView = settings.getCustomView(getViewContext(), getQueryDef());
         //_report = settings.getReportView(getViewContext());
     }
@@ -743,7 +746,11 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
-            bar.add(createChartButton());
+            MenuButton chartButton = createChartButton();
+            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
+            {
+                bar.add(chartButton);
+            }
         }
 
         if (showInsertNewButton() && canInsert())

@@ -31,7 +31,7 @@ import java.io.Writer;
  */
 public class MenuButton extends ActionButton
 {
-    protected PopupMenu popupMenu;
+    protected final PopupMenu popupMenu;
 
     public MenuButton(String caption)
     {
