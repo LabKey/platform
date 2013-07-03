@@ -28,7 +28,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.isConfigurationChanged())
             {
-                this.viewPanel.getEl().mask('loading data...');
+                this.centerPanel.getEl().mask('loading data...');
 
                 if (!this.initialColumnList)
                 {
@@ -171,10 +171,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 scope: this,
                 show: function(){
-                    this.viewPanel.getEl().mask();
+                    this.centerPanel.getEl().mask();
                 },
                 hide: function(){
-                    this.viewPanel.getEl().unmask();
+                    this.centerPanel.getEl().unmask();
                 }
             }
         });
@@ -395,7 +395,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             disabled: true,
             handler: function(){
                 this.yMeasureWindow.hide();
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.yMeasurePanel.checkForChangesAndFireEvents();
             },
             scope: this
@@ -406,7 +406,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             disabled: true,
             handler: function(){
                 this.xMeasureWindow.hide();
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.xMeasurePanel.checkForChangesAndFireEvents();
             },
             scope: this
@@ -415,7 +415,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.yCancelBtn = Ext4.create("Ext.Button", {
             text: 'Cancel',
             handler: function(){
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.yMeasureWindow.close();
             },
             scope: this
@@ -424,7 +424,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.xCancelBtn = Ext4.create("Ext.Button", {
             text: 'Cancel',
             handler: function(){
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.xMeasureWindow.close();
             },
             scope: this
@@ -442,7 +442,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             buttons: [this.yOkBtn, this.yCancelBtn],
             listeners: {
                 'chartDefinitionChanged': function(){
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.yAxisMeasure = this.yMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
@@ -482,7 +482,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 hide: function(){
                     this.initialPanelValues = null;
-                    this.viewPanel.getEl().unmask();
+                    this.centerPanel.getEl().unmask();
                 },
                 beforeclose: function(){
                     // on close, we don't apply changes and let the panel restore its state
@@ -505,7 +505,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             buttons: [this.xOkBtn, this.xCancelBtn],
             listeners: {
                 'chartDefinitionChanged': function(){
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.xAxisMeasure = this.xMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
@@ -543,7 +543,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 hide: function(){
                     this.initialPanelValues = null;
-                    this.viewPanel.getEl().unmask();
+                    this.centerPanel.getEl().unmask();
                 },
                 beforeclose: function(){
                     // on close, we don't apply changes and let the panel restore its state
@@ -575,7 +575,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         if (!this.reportId)
                             this.updateWebpartTitle(this.typeToLabel[renderType]);
                     }
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
                 },
                 'closeOptionsWindow': function(canceling){
@@ -660,7 +660,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             store: this.groupingMeasureStore,
             listeners: {
                 chartDefinitionChanged: function(){
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
                 },
                 'closeOptionsWindow': function(canceling){
@@ -707,7 +707,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             pointClickFnHelp: this.getPointClickFnHelp(),
             listeners: {
                 chartDefinitionChanged: function(){
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
                 },
                 'closeOptionsWindow': function(canceling){
@@ -755,7 +755,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.mainTitleWindow.hide();
                 },
                 chartDefinitionChanged: function(){
-                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.centerPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(250);
                 },
                 resetTitle: function() {
@@ -777,11 +777,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 show: function(){
                     this.initialPanelValues = this.mainTitlePanel.getPanelOptionValues();
-                    this.viewPanel.getEl().mask();
+                    this.centerPanel.getEl().mask();
                 },
                 hide: function(){
                     this.initialPanelValues = null;
-                    this.viewPanel.getEl().unmask();
+                    this.centerPanel.getEl().unmask();
                 },
                 beforeclose: function(){
                     // on close, we don't apply changes and let the panel restore its state
@@ -972,7 +972,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.failure = function(response, opts){
                 var error, errorDiv;
 
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
 
                 if(response.exception){
                     error = '<p>' + response.exception + '</p>';
@@ -1521,7 +1521,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!forExport)
         {
-            this.viewPanel.getEl().mask('Rendering Chart...');
+            this.centerPanel.getEl().mask('Rendering Chart...');
             this.clearChartPanel();
         }
 
@@ -1539,7 +1539,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (!this.yAxisMeasure)
             {
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.showYMeasureWindow();
                 return;
             }
@@ -1560,7 +1560,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 if (!this.xAxisMeasure)
                 {
-                    this.viewPanel.getEl().unmask();
+                    this.centerPanel.getEl().unmask();
                     this.showXMeasureWindow();
                     return;
                 }
@@ -1625,14 +1625,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         if(yDataIsNull){
-            this.viewPanel.getEl().unmask();
+            this.centerPanel.getEl().unmask();
             Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
             this.setRenderRequested(false);
             return;
         }
 
         if(measureUndefined){
-            this.viewPanel.getEl().unmask();
+            this.centerPanel.getEl().unmask();
             Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showYMeasureWindow, this);
             this.setRenderRequested(false);
             return;
@@ -1726,7 +1726,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             } else {
                 // If the render type is not found it's probably a custom one that is no longer supported.
                 // So display an error to the user so they can change the plot type.
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
 
                 this.addWarningText(
                         "The requested plot type, " +
@@ -1844,7 +1844,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!forExport){
             this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
             this.exportPdfBtn.setDisabled(!this.supportedBrowser);
-            this.viewPanel.getEl().unmask();
+            this.centerPanel.getEl().unmask();
         } else{
             return newChartDiv.id;
         }
@@ -1942,14 +1942,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             if(allXDataIsNull){
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.setRenderRequested(false);
                 Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
                 return false;
             }
 
             if(measureUndefined){
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.setRenderRequested(false);
                 Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
                 return false;
@@ -1983,7 +1983,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             if(measureUndefined){
-                this.viewPanel.getEl().unmask();
+                this.centerPanel.getEl().unmask();
                 this.setRenderRequested(false);
                 Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
                 return false;
@@ -2031,7 +2031,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         if(measureUndefined){
-            this.viewPanel.getEl().unmask();
+            this.centerPanel.getEl().unmask();
             this.setRenderRequested(false);
             Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
             return false;
@@ -2296,7 +2296,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onSelectRowsSuccess: function(response){
         if(!this.yMeasureGrid.getEl() && !this.xMeasureGrid.getEl() && !this.mainTitlePanel.getEl()){
-            this.viewPanel.getEl().unmask();
+            this.centerPanel.getEl().unmask();
         }
 
         this.chartData = response;
@@ -2361,7 +2361,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     showYMeasureWindow: function(){
-        this.viewPanel.getEl().mask();
+        this.centerPanel.getEl().mask();
         this.yMeasureWindow.show();
 
         if(this.isDataLoading()){
@@ -2370,7 +2370,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     showXMeasureWindow: function(){
-        this.viewPanel.getEl().mask();
+        this.centerPanel.getEl().mask();
         this.xMeasureWindow.show();
 
         if(this.isDataLoading()){
