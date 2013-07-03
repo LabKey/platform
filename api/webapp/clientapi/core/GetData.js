@@ -268,13 +268,15 @@
             var jsonData = {
                 renderer: {type: 'json'}
             };
+
+            // Validate source before setting url so we can guarantee that we have a config.source.
+            validateSource(config.source);
+
             var requestConfig = {
                 method: 'POST',
-                url: LABKEY.ActionURL.buildURL('query', 'getData'),
+                url: LABKEY.ActionURL.buildURL('query', 'getData', config.source.containerPath),
                 jsonData: jsonData
             };
-
-            validateSource(config.source);
 
             // Shallow copy source so if the user adds unexpected properties to source the server doesn't throw errors.
             jsonData.source = {
