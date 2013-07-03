@@ -1008,10 +1008,13 @@ LABKEY.Utils.convertToTable(
                 LABKEY.loadedScripts(json.implicitJsIncludes);
 
             function onLoaded(){
-                if(json.html)
-                    targetElem.update(json.html, true); //execute scripts
-                if(success)
-                    success.call(scope || window);
+                if(json.html) {
+                    //execute scripts
+                    targetElem.update(json.html, true, function() {
+                        if (success)
+                            success.call(scope || window);
+                    }); //execute scripts
+                }
             }
         }
 

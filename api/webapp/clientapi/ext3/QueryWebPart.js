@@ -328,6 +328,16 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             this.userContainerFilter = this.removeableContainerFilter;
         }
 
+        if (config.requestURL)
+        {
+            this.requestURL = config.requestURL;
+        }
+
+        if (config.requestJSON)
+        {
+            this.requestJSON = config.requestJSON;
+        }
+
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
         //if (config.removeableAggregates)
         //{
@@ -336,6 +346,47 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         if (this.renderTo)
             this.render();
+    },
+
+    generateRequestJSON : function(params) {
+        var json = {};
+
+        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
+        if (params['sql'])
+        {
+            json.sql = params.sql;
+            delete params.sql;
+        }
+
+        //add the button bar config if any
+        if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
+            json.buttonBar = this.processButtonBar();
+
+        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
+        json.filters = {};
+        if (this.filters)
+            LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
+
+        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
+        if (this.sort)
+            json.filters[this.dataRegionName + ".sort"] = this.sort;
+
+        // Non-removable aggregates. We need to pass these as JSON, not on the URL.
+        if (this.aggregates)
+            LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
+
+        if (this.metadata)
+            json.metadata = this.metadata;
+
+        return json;
+    },
+
+    getRequestURL : function() {
+        return this.requestURL ? this.requestURL : LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath);
+    },
+
+    getRequestJSON : function (params) {
+        return this.requestJSON ? this.requestJSON : this.generateRequestJSON(params);
     },
 
     /**
@@ -504,35 +555,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (!this.renderTo)
             Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
 
-        var params = this.createParams(), json = {};
-
-        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
-        if (params['sql'])
-        {
-            json.sql = params.sql;
-            delete params.sql;
-        }
-
-        //add the button bar config if any
-        if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
-            json.buttonBar = this.processButtonBar();
-
-        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
-        json.filters = {};
-        if (this.filters)
-            LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
-
-        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
-        if (this.sort)
-            json.filters[this.dataRegionName + ".sort"] = this.sort;
-
-        // Non-removable aggregates. We need to pass these as JSON, not on the URL.
-        if (this.aggregates)
-            LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
-
-        if (this.metadata)
-            json.metadata = this.metadata;
-
+        var params = this.createParams(), json = this.getRequestJSON(params);
         // re-open designer after update
         var customizeViewTab = this.showViewPanel;
         if (dr)
@@ -556,7 +579,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
-            url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
+            url: this.getRequestURL(),
             method: 'POST',
             params: params,
             jsonData: json,
@@ -572,13 +595,12 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                     if (dr)
                         dr.destroy();
 
-                    LABKEY.Utils.loadAjaxContent(response, targetElem);
-
-                    //get the data region and subscribe to events
-                    Ext.onReady(function(){
+                    LABKEY.Utils.loadAjaxContent(response, targetElem, function(){
+                        //get the data region and subscribe to events
                         var dr = LABKEY.DataRegions[this.dataRegionName];
                         if (dr)
                         {
+                            console.log(dr);
                             this._attachListeners(dr);
                             LABKEY.DataRegions[this.dataRegionName].setQWP(this);
 
@@ -586,7 +608,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                                 dr.showCustomizeView(customizeViewTab, false, false);
 
                             if (this._success) //11425 : Make callback consistent with documentation
-                                Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
+                                Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this); //8721: need to use onReady()
                             this.fireEvent('success', dr, response);
                         }
                         else
@@ -599,7 +621,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                         }
 
                         this.fireEvent("render");
-                    }, this, {delay: 100});
+                    }, this);
                 }
                 else
                 {
@@ -633,6 +655,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     _attachListeners : function(dr) {
+        console.log('ATTACH LISTENERS');
         dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
         dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
         dr.on("beforesortchange", this.beforeSortChange, this);
@@ -719,12 +742,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     beforeOffsetChange : function(dataRegion, newoffset) {
+        console.log('BEFORE OFFSET');
         this.offset = newoffset;
         this.render();
         return false;
     },
 
     beforeMaxRowsChange : function(dataRegion, newmax) {
+        console.log('BEFORE MAX ROWS');
         this.maxRows = newmax;
         this.offset = 0;
         delete this.showRows;
