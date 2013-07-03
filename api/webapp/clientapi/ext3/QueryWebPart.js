@@ -639,7 +639,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     _attachListeners : function(dr) {
-        console.log('ATTACH LISTENERS');
         dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
         dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
         dr.on("beforesortchange", this.beforeSortChange, this);
