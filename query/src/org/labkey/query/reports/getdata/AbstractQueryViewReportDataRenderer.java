@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.controllers.QueryController;
 import org.springframework.validation.Errors;
@@ -82,7 +83,15 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
     {
         final QueryDefinition queryDefinition = QueryService.get().saveSessionQuery(context, context.getContainer(), source.getSchema().getSchemaName(), source.getLabKeySQL());
     
-        QuerySettings settings = new QuerySettings(context, _dataRegionName);
+        QuerySettings settings = new QuerySettings(context, _dataRegionName, queryDefinition.getName())
+        {
+            @Override
+            protected QueryDefinition createQueryDef(UserSchema schema)
+            {
+                return queryDefinition;
+            }
+        };
+        settings.setSchemaName(source.getSchema().getSchemaName());
         settings.setOffset(_offset);
         settings.setBaseSort(_sort);
         if (_columns != null)
@@ -100,15 +109,8 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
             settings.setMaxRows(_maxRows.intValue());
         }
     
-        QueryView view = new QueryView(source.getSchema(), settings, errors)
-        {
-            @Override
-            public QueryDefinition getQueryDef()
-            {
-                return queryDefinition;
-            }
-        };
-    
+        QueryView view = new QueryView(source.getSchema(), settings, errors);
+
         return createApiResponse(view);
     }
 
