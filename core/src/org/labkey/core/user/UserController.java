@@ -932,6 +932,36 @@ public class UserController extends SpringActionController
                     }
                 }
             }
+
+            String userId = form.getPkVal().toString();
+            if (userId == null)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
+                return;
+            }
+
+            User user = UserManager.getUser(NumberUtils.toInt(userId));
+            if (null == user)
+                throw new NotFoundException("User not found :" + userId);
+            String userEmailAddress = user.getEmail();
+            String displayName = (String)form.getTypedColumns().get("DisplayName");
+
+            if (displayName != null)
+            {
+                if (displayName.contains("@"))
+                {
+                    if (!displayName.equalsIgnoreCase(userEmailAddress))
+                        errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' should not contain '@'.");
+                }
+
+                //ensure that display name is unique
+                User existingUser = UserManager.getUserByDisplayName(displayName);
+                //if there's a user with this display name and it's not the user currently being edited
+                if (existingUser != null && !existingUser.equals(user))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
+                }
+            }
         }
 
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
@@ -1671,72 +1701,6 @@ public class UserController extends SpringActionController
             this.userId = userId;
             this.currentEmail = UserManager.getEmailForId(userId);
             this.message = message;
-        }
-    }
-
-    public static class UpdateForm extends TableViewForm
-    {
-        public UpdateForm()
-        {
-            super(CoreSchema.getInstance().getTableInfoUsers());
-        }
-
-        // CONSIDER: implements HasValidator
-        public void validateBind(BindException errors)
-        {
-            super.validateBind(errors);
-            Integer userId = (Integer) getPkVal();
-
-            if (userId == null)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
-                return;
-            }
-
-            User user = UserManager.getUser(userId);
-            if (null == user)
-                throw new NotFoundException("User not found :" + userId);
-            String userEmailAddress = user.getEmail();
-
-            String displayName = (String) getTypedValue("DisplayName");
-
-            if (displayName != null)
-            {
-                if (displayName.contains("@"))
-                {
-                    if (!displayName.equalsIgnoreCase(userEmailAddress))
-                        errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' should not contain '@'.");
-                }
-
-                //ensure that display name is unique
-                user = UserManager.getUserByDisplayName(displayName);
-                //if there's a user with this display name and it's not the user currently being edited
-                if (user != null && user.getUserId() != userId)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
-                }
-            }
-
-            String phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("phone"));
-
-            if (phoneNum.length() > 64)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Phone number greater than 64 characters: " + phoneNum);
-            }
-
-            phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("mobile"));
-
-            if (phoneNum.length() > 64)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Mobile number greater than 64 characters: " + phoneNum);
-            }
-
-            phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("pager"));
-
-            if (phoneNum.length() > 64)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Pager number greater than 64 characters: " + phoneNum);
-            }
         }
     }
 
