@@ -328,16 +328,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             this.userContainerFilter = this.removeableContainerFilter;
         }
 
-        if (config.requestURL)
-        {
-            this.requestURL = config.requestURL;
-        }
-
-        if (config.requestJSON)
-        {
-            this.requestJSON = config.requestJSON;
-        }
-
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
         //if (config.removeableAggregates)
         //{
@@ -346,39 +336,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         if (this.renderTo)
             this.render();
-    },
-
-    generateRequestJSON : function(params) {
-        var json = {};
-
-        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
-        if (params['sql'])
-        {
-            json.sql = params.sql;
-            delete params.sql;
-        }
-
-        //add the button bar config if any
-        if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
-            json.buttonBar = this.processButtonBar();
-
-        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
-        json.filters = {};
-        if (this.filters)
-            LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
-
-        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
-        if (this.sort)
-            json.filters[this.dataRegionName + ".sort"] = this.sort;
-
-        // Non-removable aggregates. We need to pass these as JSON, not on the URL.
-        if (this.aggregates)
-            LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
-
-        if (this.metadata)
-            json.metadata = this.metadata;
-
-        return json;
     },
 
     getRequestURL : function() {
@@ -555,7 +512,35 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (!this.renderTo)
             Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
 
-        var params = this.createParams(), json = this.getRequestJSON(params);
+        var params = this.createParams(), json = {};
+
+        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
+        if (params['sql'])
+        {
+            json.sql = params.sql;
+            delete params.sql;
+        }
+
+        //add the button bar config if any
+        if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
+            json.buttonBar = this.processButtonBar();
+
+        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
+        json.filters = {};
+        if (this.filters)
+            LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
+
+        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
+        if (this.sort)
+            json.filters[this.dataRegionName + ".sort"] = this.sort;
+
+        // Non-removable aggregates. We need to pass these as JSON, not on the URL.
+        if (this.aggregates)
+            LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
+
+        if (this.metadata)
+            json.metadata = this.metadata;
+
         // re-open designer after update
         var customizeViewTab = this.showViewPanel;
         if (dr)
@@ -579,7 +564,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
-            url: this.getRequestURL(),
+            url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
             method: 'POST',
             params: params,
             jsonData: json,
@@ -600,7 +585,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                         var dr = LABKEY.DataRegions[this.dataRegionName];
                         if (dr)
                         {
-                            console.log(dr);
                             this._attachListeners(dr);
                             LABKEY.DataRegions[this.dataRegionName].setQWP(this);
 
