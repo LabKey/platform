@@ -2004,7 +2004,11 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     /**
      * Gets the requested column from the row. Includes extended values such as display value, URL, etc.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
-     * @returns {Object} Returns an object that lets you fetch the extended values (display value, URL, etc) for a given column.
+     * @returns {Object} Returns an object for the given columnName passed in. The object will always contain a property
+     * named "value" that is the column's value, but it may also contain other properties about that column's value. For
+     * example, if the column was setup to track missing value information, it will also contain a property named mvValue
+     * (which is the raw value that is considered suspect), and a property named mvIndicator, which will be the string MV
+     * indicator (e.g., "Q").
      */
     LABKEY.Query.Row.prototype.get = function(columnName){
         columnName = columnName.toLowerCase();
