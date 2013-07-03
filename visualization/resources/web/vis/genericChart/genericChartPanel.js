@@ -988,6 +988,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     autoScroll: true
                 });
 
+                // Issue 18157
+                this.showOptionsBtn.setDisabled(true);
+                this.groupingBtn.setDisabled(true);
+                this.developerBtn.setDisabled(true);
+                this.toggleBtn.setDisabled(true);
+                this.saveBtn.setDisabled(true);
+                this.saveAsBtn.setDisabled(true);
+
                 this.viewPanel.add(errorDiv);
             };
             config.scope = this;
@@ -1571,7 +1579,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var measures = this.initMeasures(chartOptions, this.chartData, this.xAxisMeasure, this.yAxisMeasure);
         var pointClickFn = null;
 
-        if(measures.color && this.groupingMeasureStore.find('name', measures.color.name) === -1){
+        if(measures.color && this.groupingMeasureStore.find('name', measures.color.name, null, null, null, true) === -1){
             this.addWarningText(
                     '<p style="color: red; text-align: center;">The saved category for point color, "' +
                     measures.color.label +
@@ -1581,7 +1589,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             measures.color = undefined;
         }
 
-        if(measures.shape && this.groupingMeasureStore.find('name', measures.shape.name) === -1){
+        if(measures.shape && this.groupingMeasureStore.find('name', measures.shape.name, null, null, null, true) === -1){
             this.addWarningText(
                     '<p style="color: red; text-align: center;">The saved category for point shape, "' +
                     measures.shape.label +
@@ -1905,15 +1913,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     configureAxes: function(chartOptions, measures, scales){
+        var allXDataIsNull = true;
+        var measureUndefined = true;
+
         if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
             measures.x.acc = this.getContinuousXAcc(measures);
             scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
             var hasNegative = false;
             var hasZero = false;
-            var allXDataIsNull = true;
-            var measureUndefined = true;
 
-            // Check for values < 0, if log scale show error accordingly.
+            // Check if all values are null, undefined. If values < 0, if log scale show error accordingly.
             for(var i = 0; i < this.chartData.rows.length; i++){
                 var value = measures.x.acc(this.chartData.rows[i]);
 
@@ -1960,6 +1969,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         } else {
             measures.x.acc = this.getDiscreteXAcc(measures);
             scales.x = {scaleType: 'discrete'};
+
+            for(var i = 0; i < this.chartData.rows.length; i++){
+                var value = measures.x.acc(this.chartData.rows[i]);
+
+                if(value !== null){
+                    allXDataIsNull = false;
+                }
+
+                if(value !== undefined){
+                    measureUndefined = false;
+                }
+            }
+
+            if(measureUndefined){
+                this.viewPanel.getEl().unmask();
+                this.setRenderRequested(false);
+                Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
+                return false;
+            }
         }
 
         scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
@@ -2267,12 +2295,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     onSelectRowsSuccess: function(response){
-        this.viewPanel.getEl().unmask();
+        if(!this.yMeasureGrid.getEl() && !this.xMeasureGrid.getEl() && !this.mainTitlePanel.getEl()){
+            this.viewPanel.getEl().unmask();
+        }
+
         this.chartData = response;
         var sortedFields = this.sortFields(this.chartData.metaData.fields);
         this.yMeasureStore.loadRawData(sortedFields);
         this.xMeasureStore.loadRawData(sortedFields);
         this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
+
+        if(this.yMeasureGrid.getEl() && this.yMeasureGrid.getEl().isMasked()){
+            this.yMeasureGrid.getEl().unmask();
+        }
+
+        if(this.xMeasureGrid.getEl() && this.xMeasureGrid.getEl().isMasked()){
+            this.xMeasureGrid.getEl().unmask();
+        }
 
         this.setDataLoading(false);
 
@@ -2324,11 +2363,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     showYMeasureWindow: function(){
         this.viewPanel.getEl().mask();
         this.yMeasureWindow.show();
+
+        if(this.isDataLoading()){
+            this.yMeasureGrid.getEl().mask("Loading measures...");
+        }
     },
 
     showXMeasureWindow: function(){
         this.viewPanel.getEl().mask();
         this.xMeasureWindow.show();
+
+        if(this.isDataLoading()){
+            this.xMeasureGrid.getEl().mask("Loading measures...");
+        }
     },
 
     showMainTitleWindow: function(){
