@@ -3883,6 +3883,7 @@ a.labkey-main-menu-link:visited
     top: 0;
 }
 
+/* themestylesheet */
 .labkey-main-menu li
 {
     display: inline;
@@ -3894,6 +3895,7 @@ a.labkey-main-menu-link:visited
     font-size: 95%;
 }
 
+/* themestylesheet */
 .labkey-main-menu li.menu-projects {
     background: url(./_images/icon_menu_projects.png) no-repeat top center;
     background-color: rgba(0,0,0,0.3);
@@ -3989,6 +3991,7 @@ span.button-icon {
     padding: 5px 10px 10px 10px;
 }
 
+/* themestylesheet */
 .project-nav ul li {
     list-style: none;
     float: left;

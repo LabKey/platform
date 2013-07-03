@@ -41,6 +41,25 @@
     String webpart     = theme.getWebPartColor();
     String fontSize    = ThemeFont.getThemeFont(c).getNormalSize();
 
+    // TODO: Generate a different stylesheet for font changes
+    String liWidth = "11em";    // MEDIUM
+    String menuPadding = "6px";
+    if (fontSize.equalsIgnoreCase("14px"))
+    {
+        liWidth = "10em";       // LARGE
+        menuPadding = "5px";
+    }
+    else if (fontSize.equalsIgnoreCase("12px"))
+    {
+        liWidth = "10em";       // SMALL
+        menuPadding = "7px";
+    }
+    else if (fontSize.equalsIgnoreCase("11px"))
+    {
+        liWidth = "10em";       // SMALLEST
+        menuPadding = "7px";
+    }
+
     Color toolIconBackgroundColor = WebTheme.parseColor(link);
     int r = toolIconBackgroundColor.getRed();
     int g = toolIconBackgroundColor.getGreen();
@@ -656,6 +675,18 @@ li.labkey-app-bar-tab-inactive:hover {
 
 div.headermenu {
     background-color: #<%= link %>;
+}
+
+.labkey-main-menu li {
+    padding: <%=menuPadding%> 9px;
+}
+
+.labkey-main-menu li.menu-projects {
+    padding: <%=menuPadding%> 18px <%=menuPadding%> 23px;
+}
+
+.project-nav ul li {
+    width: <%=liWidth%>;
 }
 
 .project-nav ul li a:hover {

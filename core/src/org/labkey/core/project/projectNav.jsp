@@ -161,7 +161,11 @@
 </div>
 <%
         }
+        else
+        {
 %>
+<div style="padding-top: 10px"></div>
 <%
+        }
     }
 %>
