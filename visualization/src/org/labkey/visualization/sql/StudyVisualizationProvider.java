@@ -46,13 +46,12 @@ public class StudyVisualizationProvider extends VisualizationProvider
     {
         if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
         {
-            // add the visit sequencenum, label, and display order to the select list
+            // add the visit, label, and display order to the select list
             String subjectNounSingular = StudyService.get().getSubjectNounSingular(query.getContainer());
-            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/sequencenum", true), false);
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/Label", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/DisplayOrder", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/VisitDate", true), false);
-            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit", true), false);
         }
     }
 
@@ -86,7 +85,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
         if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
         {
-            for (String s : Arrays.asList("Visit/Visit/DisplayOrder","Visit/sequencenum","Visit/Visit/Label","Visit/Visit"))
+            for (String s : Arrays.asList("Visit/Visit","Visit/Visit/DisplayOrder","Visit/Visit/Label"))
             {
                 VisualizationSourceColumn col = columnAliases.get(subjectColumnName + s).iterator().next();
                 sql.append(", ");
