@@ -2467,6 +2467,11 @@ public class QueryController extends SpringActionController
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
 
+            if (null == getViewContext().getRequest().getParameter(QueryParam.maxRows.toString()))
+                form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);
+            else
+                form.getQuerySettings().setMaxRows(Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString())));
+
             Map<FieldKey, ColumnInfo> columns = service.getColumns(table, settings.getFieldKeys());
             if (columns.size() != 1)
             {
@@ -2474,7 +2479,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            ColumnInfo col = table.getColumn(settings.getFieldKeys().get(0));
+            ColumnInfo col = columns.get(settings.getFieldKeys().get(0));
             if (col == null)
             {
                 errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().get(0).getName() + "\" is not a valid column.");
@@ -2488,11 +2493,12 @@ public class QueryController extends SpringActionController
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
             // Regenerate the column since the alias may have changed after call to getSelectSQL()
-            col = table.getColumn(settings.getFieldKeys().get(0));
+            columns = service.getColumns(table, settings.getFieldKeys());
+            col = columns.get(settings.getFieldKeys().get(0));
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM(");
             sql.append(selectSql);
-            sql.append(") AS S ORDER BY value");
+            sql.append(") AS S ORDER BY value ").append("LIMIT ").append(settings.getMaxRows());
 
             return sql;
         }
