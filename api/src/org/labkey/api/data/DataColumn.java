@@ -256,7 +256,7 @@ public class DataColumn extends DisplayColumn
 
         out.write("new LABKEY.FilterDialog({\n");
         out.write("\tdataRegionName: " + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + ",\n");
-        out.write("\tboundColumn: ");
+        out.write("\tcolumn: ");
         // Grab the column metadata out of the LABKEY.DataRegion object
         out.write("LABKEY.DataRegions[");
         out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));

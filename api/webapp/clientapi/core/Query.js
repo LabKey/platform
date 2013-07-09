@@ -577,6 +577,9 @@ LABKEY.Query = new function()
 
             dataObject['query.columns'] = config.column;
 
+            if (config.maxRows && config.maxRows >= 0)
+                dataObject.maxRows = config.maxRows;
+
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
                 method : 'GET',

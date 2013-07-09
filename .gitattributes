@@ -1553,6 +1553,7 @@ api/webapp/clientapi/ext3/EditorGridPanel.js -text
 api/webapp/clientapi/ext3/ExtendedJsonReader.js -text
 api/webapp/clientapi/ext3/FieldKey.js -text
 api/webapp/clientapi/ext3/FileSystem.js -text
+api/webapp/clientapi/ext3/FilterDialog.js -text
 api/webapp/clientapi/ext3/FormPanel.js -text
 api/webapp/clientapi/ext3/GridView.js -text
 api/webapp/clientapi/ext3/HoverPopup.js -text

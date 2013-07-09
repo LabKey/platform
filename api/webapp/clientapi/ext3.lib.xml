@@ -5,6 +5,7 @@
         <script path="clientapi/ext3/ExtendedJsonReader.js"/>
         <script path="clientapi/ext3/FieldKey.js"/>
         <script path="clientapi/ext3/FileSystem.js"/>
+        <script path="clientapi/ext3/FilterDialog.js"/>
         <script path="clientapi/ext3/FormPanel.js"/>
         <script path="clientapi/ext3/GridView.js"/>
         <script path="clientapi/ext3/HoverPopup.js"/>
