@@ -62,7 +62,7 @@
 
             var nextByGroup = '';
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
-                    details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
+                    details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td></tr>';
             if (details.group)
                 innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateGroupingContent(details.group, true) + '</td></tr>';
         }
