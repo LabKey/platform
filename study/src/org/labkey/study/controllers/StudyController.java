@@ -5240,6 +5240,10 @@ public class StudyController extends BaseStudyController
 
         public String[] getStatuses()
         {
+            if(null == _statuses)
+            {
+                return new String[1];
+            }
             return _statuses;
         }
 
