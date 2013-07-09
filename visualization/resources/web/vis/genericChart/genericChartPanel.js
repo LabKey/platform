@@ -1575,7 +1575,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         var chartOptions = this.getChartOptions();
-        var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
+        var scales = {}, geom, plotConfig, newChartDiv, labels;
         var measures = this.initMeasures(chartOptions, this.chartData, this.xAxisMeasure, this.yAxisMeasure);
         var pointClickFn = null;
 
