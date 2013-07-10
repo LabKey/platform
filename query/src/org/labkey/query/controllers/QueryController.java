@@ -2498,7 +2498,9 @@ public class QueryController extends SpringActionController
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM(");
             sql.append(selectSql);
-            sql.append(") AS S ORDER BY value ").append("LIMIT ").append(settings.getMaxRows());
+            sql.append(") AS S ORDER BY value");
+
+            sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
 
             return sql;
         }
