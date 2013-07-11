@@ -91,7 +91,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return propsMap;
     }
 
-    public DomainProperty ensureProperty(Container container, User user, String name, String label, PropertyType type) throws ChangePropertyDescriptorException
+    public synchronized DomainProperty ensureProperty(Container container, User user, String name, String label, PropertyType type) throws ChangePropertyDescriptorException
     {
         Domain domain = getDomain(container);
         if (domain != null)
