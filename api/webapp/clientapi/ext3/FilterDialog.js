@@ -768,6 +768,8 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     filterOptimization: false,
 
+    emptyDisplayValue: '[Blank]',
+
     initComponent : function() {
 
         Ext.apply(this, {
@@ -845,7 +847,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
             // one selection
             if (selected.length == 1) {
-                filter = LABKEY.Filter.create(columnName, selected[0].get('value')); // default EQUAL
+                if (selected[0].get('displayValue') == this.emptyDisplayValue)
+                    filter = LABKEY.Filter.create(columnName, null, LABKEY.Filter.Types.ISBLANK);
+                else
+                    filter = LABKEY.Filter.create(columnName, selected[0].get('value')); // default EQUAL
             }
             else if (this.filterOptimization && selected.length > unselected.length) {
                 // Do the negation
@@ -907,7 +912,6 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     },
 
     getGridConfig : function(idx) {
-        console.log('grid config');
         var sm = new Ext.grid.CheckboxSelectionModel({
             listeners: {
                 selectionchange: {
@@ -968,7 +972,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     tpl: new Ext.XTemplate('<tpl for=".">' +
                             '<span class="labkey-link" ext:qtip="Click the label to select only this row.  ' +
                             'Click the checkbox to toggle this row and preserve other selections.">' +
-                            '{[!Ext.isEmpty(values["displayValue"]) ? Ext.util.Format.htmlEncode(values["displayValue"]) : "[Blank]"]}' +
+                            '{[Ext.util.Format.htmlEncode(values["displayValue"])]}' +
                             '</span></tpl>')
                 })
             ],
@@ -1187,7 +1191,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     }
 
                     if (hasBlank)
-                        recs.unshift(['', '', '']); // [Blank]
+                        recs.unshift(['', '', this.emptyDisplayValue]);
 
                     store.loadData(recs);
                     store.isLoading = false;
