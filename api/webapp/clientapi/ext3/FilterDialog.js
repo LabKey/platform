@@ -83,6 +83,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return this.allowFacet;
         }
 
+        this.allowFacet = false;
         switch (this.column.facetingBehaviorType) {
 
             case 'ALWAYS_ON':
@@ -96,7 +97,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 // OR if it is of type : (boolean, int, date, text), multiline excluded
                 if (this.column.lookup || this.column.dimension)
                     this.allowFacet = true;
-                else if (this.jsonType == 'boolean' || this.jsonType == 'int' ||
+                else if (this.jsonType == 'boolean' || this.jsonType == 'int' || this.jsonType == 'float' ||
                         (this.jsonType == 'string' && this.column.inputType != 'textarea'))
                     this.allowFacet = true;
                 break;
@@ -766,7 +767,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     applyContextFilters: true,
 
-    filterOptimization: false,
+    filterOptimization: true,
 
     emptyDisplayValue: '[Blank]',
 
@@ -854,31 +855,26 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             }
             else if (this.filterOptimization && selected.length > unselected.length) {
                 // Do the negation
-                if (unselected.length == 1) {
+                if (unselected.length == 1)
                     filter = LABKEY.Filter.create(columnName, unselected[0].get('value'), LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING);
-                }
-                else {
-                    // It's a NOT IN clause
-                    var value = '', sep = '';
-                    for (var s=0; s < unselected.length; s++) {
-                        value += sep + unselected[s].get('value');
-                        sep = ';';
-                    }
-                    filter = LABKEY.Filter.create(columnName, value, LABKEY.Filter.Types.NOT_IN);
-                }
+                else
+                    filter = LABKEY.Filter.create(columnName, this.delimitValues(unselected), LABKEY.Filter.Types.NOT_IN);
             }
             else {
-                // It's an IN clause
-                var value = '', sep = '';
-                for (var s=0; s < selected.length; s++) {
-                    value += sep + selected[s].get('value');
-                    sep = ';';
-                }
-                filter = LABKEY.Filter.create(columnName, value, LABKEY.Filter.Types.IN);
+                filter = LABKEY.Filter.create(columnName, this.delimitValues(selected), LABKEY.Filter.Types.IN);
             }
         }
 
         return filter;
+    },
+
+    delimitValues : function(valueArray) {
+        var value = '', sep = '';
+        for (var s=0; s < valueArray.length; s++) {
+            value += sep + valueArray[s].get('value');
+            sep = ';';
+        }
+        return value;
     },
 
     // Implement interface LABKEY.FilterDialog.ViewPanel
@@ -1079,23 +1075,13 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 }
 
                 if (recordNotFound) {
-                    // NOTE: this is sort of a hack.  we allow users to pick values from the faceted UI, but also let them manually enter
-                    // filters.  i think that's the right thing to do, but this means they can choose to filter on an invalid value.
-                    // if we hit this situation, rather then just ignore it, we switch to advanced UI
-                    console.log('failed to find record for associated filter');
+                    // cannot find any matching records
                     if (me.column.facetingBehaviorType != 'ALWAYS_ON')
                         me.fireEvent('invalidfilter');
                     return;
                 }
 
-                this.requestedRecords = records;
-                this.selectRequested();
-            },
-            selectRequested : function() {
-                if (this.requestedRecords) {
-                    this.getSelectionModel().selectRows(this.requestedRecords);
-                    this.requestedRecords = undefined;
-                }
+                this.getSelectionModel().selectRows(records);
             },
             selectAll : function() {
                 if (this.rendered) {
@@ -1107,11 +1093,21 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 }
             },
             selectNone : function() {
-                if(this.rendered) {
+                if (this.rendered) {
                     this.getSelectionModel().selectRows([]);
                 }
                 else {
                     this.on('render', this.selectNone, this, {single: true});
+                }
+            },
+            selectFilter : function(filter) {
+                var suffix = filter.getFilterType().getURLSuffix();
+                var negated = suffix == 'neqornull' || suffix == 'notin';
+
+                this.setValue(filter.getURLParameterValue(), negated);
+
+                if (!me.filterOptimization && negated) {
+                    me.fireEvent('invalidfilter');
                 }
             },
             scope : this
@@ -1132,16 +1128,8 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     grid.selectNone();
                 else if (numFilters == 0)
                     grid.selectAll();
-                else {
-                    var filter = this.filters[0];
-                    var suffix = filter.getFilterType().getURLSuffix();
-                    var negated = false;
-
-                    if (this.filterOptimization && (suffix == 'neqornull' || suffix == 'notin')) {
-                        negated = true;
-                    }
-                    grid.setValue(filter.getURLParameterValue(), negated);
-                }
+                else
+                    grid.selectFilter(this.filters[0]);
 
                 if (!grid.headerClick) {
                     grid.headerClick = true;
