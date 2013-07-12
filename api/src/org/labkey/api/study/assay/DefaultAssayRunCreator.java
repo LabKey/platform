@@ -17,7 +17,6 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -56,7 +54,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -64,7 +61,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -153,6 +149,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
 
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            // Check if the primary file from the previous import is no longer present for a re-run
+            if (primaryFile == null && !context.getUploadedData().isEmpty())
+            {
+                // Choose another file as the primary
+                primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
+            }
             final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
                     context.getProvider().createRunAsyncContext(context),
                     info,

@@ -169,11 +169,106 @@
         }
     };
 
+    var validateGetDataConfig = function(config) {
+        if (!config || config === null || config === undefined) {
+            throw new Error('A config object is required for GetData requests.');
+        }
+
+        var jsonData = {renderer: {}};
+        var i;
+        validateSource(config.source);
+
+        // Shallow copy source so if the user adds unexpected properties to source the server doesn't throw errors.
+        jsonData.source = {
+            type: config.source.type,
+            schemaName: config.source.schemaName
+        };
+
+        if (config.source.type === 'query') {
+            jsonData.source.queryName = config.source.queryName;
+        }
+
+        if (config.source.type === 'sql') {
+            jsonData.source.sql = config.source.sql;
+        }
+
+        if (config.transforms) {
+            if (!(config.transforms instanceof Array)) {
+                throw new Error("transforms must be an array.");
+            }
+
+            jsonData.transforms = config.transforms;
+            for (i = 0; i < jsonData.transforms.length; i++) {
+                validateTransform(jsonData.transforms[i]);
+            }
+        }
+
+        if (config.pivot) {
+            validatePivot(config.pivot);
+        }
+
+        if (config.columns) {
+            if (!(config.columns instanceof Array)) {
+                throw new Error('columns must be an array of FieldKeys.');
+            }
+
+            for (i = 0; i < config.columns.length; i++) {
+                config.columns[i] = validateFieldKey(config.columns[i]);
+
+                if (!config.columns[i]) {
+                    throw new Error('columns must be an array of FieldKeys.');
+                }
+            }
+
+            jsonData.renderer.columns = config.columns;
+        }
+
+        if(config.hasOwnProperty('offset')){
+            jsonData.renderer.offset = config.offset;
+        }
+
+        if(config.hasOwnProperty('includeDetailsColumn')){
+            jsonData.renderer.includeDetailsColumn = config.includeDetailsColumn;
+        }
+
+        if(config.hasOwnProperty('maxRows')){
+            jsonData.renderer.maxRows = config.maxRows;
+        }
+
+        if(config.sort){
+            if(!(config.sort instanceof Array)){
+                throw new Error('sort must be an array.');
+            }
+
+            for(i = 0; i < config.sort.length; i++){
+                if(!config.sort[i].fieldKey){
+                    throw new Error("Each sort must specify a field key.");
+                }
+
+                config.sort[i].fieldKey = validateFieldKey(config.sort[i].fieldKey);
+
+                if(!config.sort[i].fieldKey){
+                    throw new Error("Invalid field key specified for sort.");
+                }
+
+                if(config.sort[i].dir){
+                    config.sort[i].dir = config.sort[i].dir.toUpperCase();
+                }
+            }
+
+            jsonData.renderer.sort = config.sort;
+        }
+
+        return jsonData;
+    };
+
     /**
      * @namespace GetData static class to access javascript APIs related to our GetData API.
      */
     LABKEY.Query.GetData = {
         /**
+         * Used to get the raw data from a GetData request. Roughly equivalent to {@link LABKEY.Query.selectRows} or
+         * {@link LABKEY.Query.executeSql}, except it allows the user to pass the data through a series of transforms.
          * @function
          * @param {Object} config Required. An object which contains the following configuration properties:
          * @param {Object} config.source Required. An object which contains parameters related to the source of the request.
@@ -237,14 +332,14 @@
          *              </ul>
          * @param {Array} config.columns Optional. An array containing {@link LABKEY.FieldKey} objects, strings, or arrays of strings.
          *      Used to specify which columns the user wants. The columns must match those returned from the last transform.
-         * @param {Integer} maxRows The maximum number of rows to return from the server (defaults to 100000). If you want
+         * @param {Integer} config.maxRows The maximum number of rows to return from the server (defaults to 100000). If you want
          *      to return all possible rows, set this config property to -1.
-         * @param {Integer} offset The index of the first row to return from the server (defaults to 0). Use this along
+         * @param {Integer} config.offset The index of the first row to return from the server (defaults to 0). Use this along
          *      with the maxRows config property to request pages of data.
-         * @param {Boolean} includeDetailsColumn Include the Details link column in the set of columns (defaults to false).
+         * @param {Boolean} config.includeDetailsColumn Include the Details link column in the set of columns (defaults to false).
          *      If included, the column will have the name "~~Details~~". The underlying table/query must support details
          *      links or the column will be omitted in the response.
-         * @param {Object[]} sort Optional. Define how columns are sorted. An array of objects with the following properties:
+         * @param {Object[]} config.sort Optional. Define how columns are sorted. An array of objects with the following properties:
          *      <ul>
          *          <li>
          *              <strong>fieldKey</strong>: The field key of the column to sort. Can be a string, array of strings, or a
@@ -259,105 +354,15 @@
          *      via console.error. If a function is provided the JSON response is passed to it as the only parameter.
          * @returns {LABKEY.Ajax.request}
          */
-        rawData: function(config) {
-            if (!config || config === null || config === undefined) {
-                throw new Error('A config object is required for GetData');
-            }
-
-            var i;
-            var jsonData = {
-                renderer: {type: 'json'}
-            };
-
-            // Validate source before setting url so we can guarantee that we have a config.source.
-            validateSource(config.source);
+        getRawData: function(config) {
+            var jsonData = validateGetDataConfig(config);
+            jsonData.renderer.type = 'json';
 
             var requestConfig = {
                 method: 'POST',
                 url: LABKEY.ActionURL.buildURL('query', 'getData', config.source.containerPath),
                 jsonData: jsonData
             };
-
-            // Shallow copy source so if the user adds unexpected properties to source the server doesn't throw errors.
-            jsonData.source = {
-                type: config.source.type,
-                schemaName: config.source.schemaName
-            };
-
-            if (config.source.type === 'query') {
-                jsonData.source.queryName = config.source.queryName;
-            }
-
-            if (config.source.type === 'sql') {
-                jsonData.source.sql = config.source.sql;
-            }
-
-            if (config.transforms) {
-                if (!(config.transforms instanceof Array)) {
-                    throw new Error("transforms must be an array.");
-                }
-
-                jsonData.transforms = config.transforms;
-                for (i = 0; i < jsonData.transforms.length; i++) {
-                    validateTransform(jsonData.transforms[i]);
-                }
-            }
-
-            if (config.pivot) {
-                validatePivot(config.pivot);
-            }
-
-            if (config.columns) {
-                if (!(config.columns instanceof Array)) {
-                    throw new Error('columns must be an array of FieldKeys.');
-                }
-
-                for (i = 0; i < config.columns.length; i++) {
-                    config.columns[i] = validateFieldKey(config.columns[i]);
-
-                    if (!config.columns[i]) {
-                        throw new Error('columns must be an array of FieldKeys.');
-                    }
-                }
-
-                jsonData.renderer.columns = config.columns;
-            }
-
-            if(config.hasOwnProperty('offset')){
-                jsonData.renderer.offset = config.offset;
-            }
-
-            if(config.hasOwnProperty('includeDetailsColumn')){
-                jsonData.renderer.includeDetailsColumn = config.includeDetailsColumn;
-            }
-
-            if(config.hasOwnProperty('maxRows')){
-                jsonData.renderer.maxRows = config.maxRows;
-            }
-
-            if(config.sort){
-                if(!(config.sort instanceof Array)){
-                    throw new Error('sort must be an array.');
-                }
-
-                for(i = 0; i < config.sort.length; i++){
-                    if(!config.sort[i].fieldKey){
-                        throw new Error("Each sort must specify a field key.");
-                    }
-
-                    config.sort[i].fieldKey = validateFieldKey(config.sort[i].fieldKey);
-
-                    if(!config.sort[i].fieldKey){
-                        throw new Error("Invalid field key specified for sort.");
-                    }
-
-                    if(config.sort[i].dir){
-                        config.sort[i].dir = config.sort[i].dir.toUpperCase();
-                    }
-                }
-
-                jsonData.renderer.sort = config.sort;
-            }
 
             if (!config.failure) {
                 requestConfig.failure = function(response, options) {
@@ -388,6 +393,45 @@
             };
 
             return new LABKEY.Ajax.request(requestConfig);
+        },
+
+        /**
+         * Used to render a queryWebPart around a response from GetData.
+         * @function
+         * @param {Object} config The config object for renderQueryWebpart is nearly identical to {@link LABKEY.Query.GetData.getRawData},
+         * except it has an additional parameter <strong><em>webPartConfig</em></strong>, which is a config object for
+         * {@link LABKEY.QueryWebPart}. Note that the Query returned from GetData is a read-only temporary query, so some
+         * features of QueryWebPart may be ignored (i.e. <em>showInsertButton</em>, <em>deleteURL</em>, etc.).
+         * @see LABKEY.QueryWebPart
+         * @see LABKEY.Query.GetData.getRawData
+         */
+        renderQueryWebPart: function(config) {
+            var jsonData = validateGetDataConfig(config);
+            jsonData.renderer.type = 'json';
+            jsonData.renderer.maxRows = 0;
+
+            if (!config.webPartConfig) {
+                throw new Error("A webPartConfig object is required.");
+            }
+
+            var requestConfig = {
+                method: 'POST',
+                url: LABKEY.ActionURL.buildURL('query', 'getData', config.source.containerPath),
+                jsonData: jsonData,
+                success: function(response){
+                    var json = LABKEY.ExtAdapter.decode(response.responseText);
+                    config.webPartConfig.schemaName = config.source.schemaName;
+                    config.webPartConfig.queryName = json.queryName;
+                    new LABKEY.QueryWebPart(config.webPartConfig);
+                },
+                failure: function(response, options) {
+                    if (response.status != 0) {
+                        LABKEY.Utils.displayAjaxErrorResponse(response, null, true, "Error during GetData call");
+                    }
+                }
+            };
+
+            LABKEY.Ajax.request(requestConfig);
         }
     };
 })();

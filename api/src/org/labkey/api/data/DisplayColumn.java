@@ -30,6 +30,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -130,6 +132,11 @@ public abstract class DisplayColumn extends RenderColumn
                 ((HasViewContext)_compiled).setViewContext(context);
         }
         return _compiled;
+    }
+
+    public Set<ClientDependency> getClientDependencies()
+    {
+        return Collections.emptySet();
     }
 
     public abstract boolean isQueryColumn();

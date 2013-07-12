@@ -1387,7 +1387,7 @@ LABKEY.Query = new function()
 };
 
 /**
- * @class This class is used to construct filters when using APIs such as {@link LABKEY.Query.GetData.rawData},
+ * @class This class is used to construct filters when using APIs such as {@link LABKEY.Query.GetData.getRawData},
  *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql}. This is the base filter class, which requires
  *      the user specify a filter type from {@link LABKEY.Filter#Types}. Users can avoid the need for specifying a filter
  *      type by using a subclass of Filter such as {@link LABKEY.Query.Filter.Equals} or {@link LABKEY.Query.Filter.GreaterThan}, which
@@ -2104,11 +2104,11 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     * @class The class used to wrap the response object from {@link LABKEY.Query.GetData.rawData},
+     * @class The class used to wrap the response object from {@link LABKEY.Query.GetData.getRawData},
      *      {@link LABKEY.Query.selectRows}, and {@link LABKEY.Query.executeSql}.
-     * @param response The raw JSON response object returned from the server when executing {@link LABKEY.Query.GetData.rawData},
+     * @param response The raw JSON response object returned from the server when executing {@link LABKEY.Query.GetData.getRawData},
      *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql} when requiredVersion is 13.2.
-     * @see LABKEY.Query.GetData.rawData
+     * @see LABKEY.Query.GetData.getRawData
      * @see LABKEY.Query.selectRows
      * @see LABKEY.Query.executeSql
      * @constructor

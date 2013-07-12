@@ -2546,6 +2546,16 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
+        List<DisplayColumn> displayColumns = getDisplayColumns();
+
+        if (null != displayColumns)
+        {
+            for (DisplayColumn dc : displayColumns)
+            {
+                resources.addAll(dc.getClientDependencies());
+            }
+        }
+
         return resources;
     }
 }

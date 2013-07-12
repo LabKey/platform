@@ -30,7 +30,7 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td>
         "Use Get Data API" is selected by default, if you choose to use this setting you can pass the query config directly
-        to LABKEY.Query.GetData.RawData to retrieve the data, or you can modify the query config (add/removing transforms,
+        to LABKEY.Query.GetData.getRawData to retrieve the data, or you can modify the query config (add/removing transforms,
         etc) before passing it to RawData().
     </td></tr>
     <tr><td>&nbsp;</td></tr>

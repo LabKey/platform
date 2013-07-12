@@ -17,10 +17,13 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * User: adam
@@ -29,13 +32,16 @@ import java.util.Collection;
  */
 public class JavaScriptDisplayColumn extends DataColumn
 {
-    private final Collection<String> _dependencies;  // TODO: DisplayColumn implements getClientDependencies()?
+    private final LinkedHashSet<ClientDependency> _dependencies;
     private final StringExpression _eventExpression;
 
     public JavaScriptDisplayColumn(ColumnInfo col, Collection<String> dependencies, String javaScriptEvents)
     {
         super(col);
-        _dependencies = dependencies;
+
+        _dependencies = new LinkedHashSet<>();
+        for (String dependency : dependencies)
+            _dependencies.add(ClientDependency.fromFilePath(dependency));
         _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
     }
 
@@ -54,5 +60,11 @@ public class JavaScriptDisplayColumn extends DataColumn
         }
         else
             out.write("&nbsp;");
+    }
+
+    @Override
+    public Set<ClientDependency> getClientDependencies()
+    {
+        return _dependencies;
     }
 }

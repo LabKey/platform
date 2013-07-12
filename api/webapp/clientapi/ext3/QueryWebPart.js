@@ -338,14 +338,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             this.render();
     },
 
-    getRequestURL : function() {
-        return this.requestURL ? this.requestURL : LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath);
-    },
-
-    getRequestJSON : function (params) {
-        return this.requestJSON ? this.requestJSON : this.generateRequestJSON(params);
-    },
-
     /**
      * Acts as another constructor -- requires a LABKEY.DataRegion be provided at instantiation
      * NOTE: This will ignore most parameters provided and source solely from the DataRegion.
@@ -725,14 +717,12 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     beforeOffsetChange : function(dataRegion, newoffset) {
-        console.log('BEFORE OFFSET');
         this.offset = newoffset;
         this.render();
         return false;
     },
 
     beforeMaxRowsChange : function(dataRegion, newmax) {
-        console.log('BEFORE MAX ROWS');
         this.maxRows = newmax;
         this.offset = 0;
         delete this.showRows;

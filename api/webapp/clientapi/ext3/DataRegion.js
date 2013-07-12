@@ -161,9 +161,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             else
             {
                 msg = ("The current view has been customized.");
-                msg += " &nbsp;";
+                msg += "&nbsp;";
                 msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
-                msg += ", &nbsp;";
+                msg += "&nbsp;";
                 msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
             }
 
