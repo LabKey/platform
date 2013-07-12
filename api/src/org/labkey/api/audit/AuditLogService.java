@@ -26,7 +26,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -47,7 +51,41 @@ public class AuditLogService
     static private I _instance;
     static private final I _defaultProvider = new DefaultAuditProvider(); 
     private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<>();
+    private static Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
 
+    public static void registerAuditType(AuditTypeProvider provider)
+    {
+        if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
+        {
+            User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+
+            provider.initializeProvider(auditUser);
+            _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
+        }
+        else
+            throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
+    }
+
+    public static List<AuditTypeProvider> getAuditProviders()
+    {
+        List<AuditTypeProvider> providers = new ArrayList<>(_auditTypeProviders.values());
+
+        Collections.sort(providers, new Comparator<AuditTypeProvider>()
+        {
+            public int compare(AuditTypeProvider o1, AuditTypeProvider o2)
+            {
+                return (o1.getLabel().compareToIgnoreCase(o2.getLabel()));
+            }
+        });
+        return Collections.unmodifiableList(providers);
+    }
+
+    public static AuditTypeProvider getAuditProvider(String eventType)
+    {
+        return _auditTypeProviders.get(eventType.toLowerCase());
+    }
+
+    @Deprecated
     public static void addAuditViewFactory(AuditViewFactory factory)
     {
         AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
@@ -57,11 +95,13 @@ public class AuditLogService
                     + previous.getClass().getName() + " vs. " + factory.getClass().getName());
     }
 
+    @Deprecated
     public static AuditViewFactory getAuditViewFactory(String eventType)
     {
         return _auditViewFactories.get(eventType);
     }
 
+    @Deprecated
     public static List<AuditViewFactory> getAuditViewFactories()
     {
         List<AuditViewFactory> factories = new ArrayList<>(_auditViewFactories.values());
@@ -143,9 +183,16 @@ public class AuditLogService
         /**
          * An audit view factory is for creating customized views of specific audit event types.
          */
+        @Deprecated
         public void addAuditViewFactory(AuditViewFactory factory);
+        @Deprecated
         public AuditViewFactory getAuditViewFactory(String eventType);
+        @Deprecated
         public List<AuditViewFactory> getAuditViewFactories();
+
+        public void registerAuditType(AuditTypeProvider provider);
+        public List<AuditTypeProvider> getAuditProviders();
+        public AuditTypeProvider getAuditProvider(String eventType);
     }
 
     public interface AuditViewFactory

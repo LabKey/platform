@@ -118,8 +118,10 @@ api/src/org/labkey/api/attachments/DownloadURL.java -text
 api/src/org/labkey/api/attachments/FileAttachmentFile.java -text
 api/src/org/labkey/api/attachments/InputStreamAttachmentFile.java -text
 api/src/org/labkey/api/attachments/SpringAttachmentFile.java -text
+api/src/org/labkey/api/audit/AbstractAuditTypeProvider.java -text
 api/src/org/labkey/api/audit/AuditLogEvent.java -text
 api/src/org/labkey/api/audit/AuditLogService.java -text
+api/src/org/labkey/api/audit/AuditTypeProvider.java -text
 api/src/org/labkey/api/audit/ClientAPIAuditViewFactory.java -text
 api/src/org/labkey/api/audit/DefaultAuditProvider.java -text
 api/src/org/labkey/api/audit/SimpleAuditViewFactory.java -text
@@ -129,10 +131,12 @@ api/src/org/labkey/api/audit/data/ExperimentAuditColumn.java -text
 api/src/org/labkey/api/audit/data/ProtocolColumn.java -text
 api/src/org/labkey/api/audit/data/RunColumn.java -text
 api/src/org/labkey/api/audit/data/RunGroupColumn.java -text
+api/src/org/labkey/api/audit/query/AbstractAuditDomainKind.java -text
 api/src/org/labkey/api/audit/query/AuditDisplayColumnFactory.java -text
 api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
+api/src/org/labkey/api/audit/query/DefaultAuditTypeTable.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
 api/src/org/labkey/api/audit/view/AuditChangesView.java -text
 api/src/org/labkey/api/cache/BlockingCache.java -text

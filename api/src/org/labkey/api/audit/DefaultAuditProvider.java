@@ -25,11 +25,11 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.exp.Lsid;
 
 import java.util.Collections;
 import java.util.List;
@@ -125,6 +125,24 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public List<AuditLogService.AuditViewFactory> getAuditViewFactories()
     {
         return AuditLogService.getAuditViewFactories();
+    }
+
+    @Override
+    public void registerAuditType(AuditTypeProvider provider)
+    {
+        AuditLogService.registerAuditType(provider);
+    }
+
+    @Override
+    public List<AuditTypeProvider> getAuditProviders()
+    {
+        return AuditLogService.getAuditProviders();
+    }
+
+    @Override
+    public AuditTypeProvider getAuditProvider(String eventType)
+    {
+        return AuditLogService.getAuditProvider(eventType);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
