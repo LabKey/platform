@@ -854,7 +854,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
             return;
 
-        this.setSearchString(this.name, newQueryString);
+        // when filters change, remove offsets
+        var params = LABKEY.DataRegion.getParamValPairsFromString(newQueryString, [this.name + '.offset']);
+
+        this.setSearchString(this.name, LABKEY.DataRegion.buildQueryString(params));
     },
 
     /**
