@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
+/* dataintegration-13.10-13.11.sql */
+
 ALTER TABLE dataintegration.TransformRun
-  ADD ExpRunId INT;
+  ADD COLUMN ExpRunId INT;
 
 ALTER TABLE dataintegration.TransformRun
   ADD CONSTRAINT FK_TransformRun_ExpRunId FOREIGN KEY (ExpRunId) REFERENCES exp.ExperimentRun (RowId);
+
+/* dataintegration-13.13-13.14.sql */
+
+ALTER TABLE dataintegration.TransformRun RENAME RowId to TransformRunId;
+
+/* dataintegration-13.15-13.16.sql */
+
+ALTER TABLE dataintegration.TransformConfiguration ADD COLUMN TransformState TEXT;

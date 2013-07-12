@@ -55,7 +55,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -93,13 +92,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 13.10;
-    }
-
-    @Override
-    public void setVersion(double version)
-    {
-        super.setVersion(version);    //To change body of overridden methods use File | Settings | File Templates.
+        return 13.20;
     }
 
     protected void init()

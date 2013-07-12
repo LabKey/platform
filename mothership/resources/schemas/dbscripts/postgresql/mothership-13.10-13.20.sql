@@ -16,6 +16,11 @@
 
 /* mothership-13.10-13.11.sql */
 
-ALTER TABLE mothership.ExceptionStackTrace ADD ModifiedBy USERID;
-ALTER TABLE mothership.ExceptionStackTrace ADD Modified DATETIME;
+/* mothership-13.10-13.11.sql */
 
+ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN ModifiedBy USERID;
+ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN Modified TIMESTAMP;
+
+/* mothership-13.11-13.12.sql */
+
+ALTER TABLE mothership.serverinstallation ADD COLUMN usedinstaller boolean;

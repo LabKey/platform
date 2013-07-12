@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2005-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-CREATE TABLE core.DbSequences
+CREATE TABLE test.TestTable2
 (
-    RowId INT IDENTITY,
-    Container ENTITYID NOT NULL,
-    Name VARCHAR(500) NOT NULL,
-    Id INTEGER NOT NULL,
-    Value BIGINT NOT NULL,
+    _ts TIMESTAMP,
+    EntityId ENTITYID DEFAULT NEWID(),
+    RowId INT IDENTITY(1,1),
+    CreatedBy USERID,
+    Created DATETIME,
 
-    CONSTRAINT PK_DbSequences PRIMARY KEY (RowId),
-    CONSTRAINT UQ_DbSequences_Container_Name_Id UNIQUE (Container, Name, Id)
+    Container ENTITYID,            --container/path
+    Text NVARCHAR(195),        --filename
+
+    IntNull INT NULL,
+    IntNotNull INT NOT NULL,
+    DatetimeNull DATETIME NULL,
+    DatetimeNotNull DATETIME NOT NULL,
+    RealNull REAL NULL,
+    BitNull Bit NULL,
+    BitNotNull Bit NOT NULL,
+
+    CONSTRAINT PK_TestTable2 PRIMARY KEY (Container,Text)
 );

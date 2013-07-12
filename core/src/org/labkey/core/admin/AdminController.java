@@ -5682,33 +5682,65 @@ public class AdminController extends SpringActionController
             }
         }
 
-        if(visibleIndex == pagesList.size())
+        if (visibleIndex == pagesList.size())
         {
             return null;
         }
 
         if (direction == Portal.MOVE_DOWN)
         {
-            if(visibleIndex == pagesList.size() - 1)
+            if (visibleIndex == pagesList.size() - 1)
             {
                 return page;
             }
 
-            Portal.PortalPage nextPage = pagesList.get(visibleIndex + 1);
+            Portal.PortalPage nextPage = null;
+            List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
+            for (int i = visibleIndex + 1; i < pagesList.size(); i += 1)
+            {
+                Portal.PortalPage newPage = pagesList.get(i);
+                if (newPage.isCustomTab() || isPageInTabList(folderTabs, newPage))      // Ignore stealth pages
+                {
+                    nextPage = newPage;
+                    break;
+                }
+            }
+            if (null == nextPage)
+                return null;
             Portal.swapPageIndexes(getContainer(), page, nextPage);
             return nextPage;
         }
         else
         {
-            if(visibleIndex <= 1)
+            if (visibleIndex < 1)
             {
                 return page;
             }
 
-            Portal.PortalPage prevPage = pagesList.get(visibleIndex - 1);
+            Portal.PortalPage prevPage = null;
+            List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
+            for (int i = visibleIndex - 1; i >= 0; i -= 1)
+            {
+                Portal.PortalPage newPage = pagesList.get(i);
+                if (newPage.isCustomTab() || isPageInTabList(folderTabs, newPage))      // Ignore stealth pages
+                {
+                    prevPage = newPage;
+                    break;
+                }
+            }
+            if (null == prevPage)
+                return null;
             Portal.swapPageIndexes(getContainer(), page, prevPage);
             return prevPage;
         }
+    }
+
+    private boolean isPageInTabList(List<FolderTab> folderTabs, Portal.PortalPage page)
+    {
+        for (FolderTab folderTab : folderTabs)
+            if (folderTab.getName().equalsIgnoreCase(page.getPageId()))
+                return true;
+        return false;
     }
 
     @RequiresPermissionClass(AdminPermission.class)

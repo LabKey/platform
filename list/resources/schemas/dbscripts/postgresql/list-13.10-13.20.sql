@@ -13,9 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* list-13.10-13.11.sql */
 
-ALTER TABLE dataintegration.TransformRun
-  ADD COLUMN ExpRunId INT;
+CREATE SCHEMA list;
 
-ALTER TABLE dataintegration.TransformRun
-  ADD CONSTRAINT FK_TransformRun_ExpRunId FOREIGN KEY (ExpRunId) REFERENCES exp.ExperimentRun (RowId);
+/* list-13.11-13.12.sql */
+
+SELECT core.executeJavaUpgradeCode('upgradeListDomains');
+
+DROP TABLE exp.indexinteger, exp.indexvarchar;
+
+ALTER TABLE exp.list DROP CONSTRAINT uq_rowid;
+ALTER TABLE exp.list DROP COLUMN rowid;
+
+/* list-13.12-13.13.sql */
+
+SELECT core.executeJavaUpgradeCode('ensureListDomains');

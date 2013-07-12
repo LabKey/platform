@@ -63,7 +63,7 @@ public class ListModule extends DefaultModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 13.13;
+        return 13.20;
     }
 
     // Note: ExperimentModule handles the list schema
