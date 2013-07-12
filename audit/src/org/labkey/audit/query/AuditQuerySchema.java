@@ -17,6 +17,7 @@
 package org.labkey.audit.query;
 
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -60,9 +61,17 @@ public class AuditQuerySchema extends UserSchema
         if (_tables.isEmpty())
         {
             _tables.add(AUDIT_TABLE_NAME);
+
+            // old method of acquiring table names
             for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
             {
                 _tables.add(factory.getEventType());
+            }
+
+            // new audit table names
+            for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+            {
+                _tables.add(provider.getEventName());
             }
         }
         return _tables;
@@ -75,6 +84,13 @@ public class AuditQuerySchema extends UserSchema
         {
             return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
         }
+
+        if (AuditLogService.get().getAuditProvider(name) != null)
+        {
+            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
+            return provider.createTableInfo(this);
+        }
+
         return null;
     }
 }

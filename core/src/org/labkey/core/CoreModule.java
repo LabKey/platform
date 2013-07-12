@@ -152,6 +152,7 @@ import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.query.ContainerAuditViewFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
+import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
@@ -548,6 +549,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ClientAPIAuditViewFactory.getInstance());
+
+        AuditLogService.get().registerAuditType(new UserAuditProvider());
 
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());

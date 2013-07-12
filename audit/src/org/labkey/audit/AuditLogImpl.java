@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogService.AuditViewFactory;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -421,6 +422,24 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     public List<AuditViewFactory> getAuditViewFactories()
     {
         return AuditLogService.getAuditViewFactories();
+    }
+
+    @Override
+    public void registerAuditType(AuditTypeProvider provider)
+    {
+        AuditLogService.registerAuditType(provider);
+    }
+
+    @Override
+    public List<AuditTypeProvider> getAuditProviders()
+    {
+        return AuditLogService.getAuditProviders();
+    }
+
+    @Override
+    public AuditTypeProvider getAuditProvider(String eventType)
+    {
+        return AuditLogService.getAuditProvider(eventType);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

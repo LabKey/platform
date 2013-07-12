@@ -139,4 +139,11 @@ public class AuditModule extends DefaultModule
             schema.getScope().closeConnection();
         }
     }
+
+    @NotNull
+    @Override
+    public Set<DbSchema> getSchemasToTest()
+    {
+        return Collections.emptySet();
+    }
 }
