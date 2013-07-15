@@ -1,6 +1,7 @@
 package org.labkey.api.audit.query;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -310,6 +311,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public Set<String> getNonProvisionedTableNames()
     {
-        return Collections.emptySet();
+        // omit the legacy auditlog table, this can be removed once the
+        // table is dropped after migration
+        Set<String> tables = new CaseInsensitiveHashSet();
+        tables.add("auditlog");
+
+        return tables;
     }
 }
