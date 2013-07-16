@@ -555,6 +555,9 @@ LABKEY.Query = new function()
                         How To Find schemaName, queryName &amp; viewName</a>.
          * @param {String} [config.column] A single column for which the distinct results will be requested. This column
          *              must exist within the specified query.
+         * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
+         *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
+         *       config.containerPath.
          * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
          * @param {Function} config.success
          * @param {Function} config.failure
@@ -579,6 +582,9 @@ LABKEY.Query = new function()
 
             if (config.maxRows && config.maxRows >= 0)
                 dataObject.maxRows = config.maxRows;
+
+            if (config.containerFilter)
+                dataObject.containerFilter = config.containerFilter;
 
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
