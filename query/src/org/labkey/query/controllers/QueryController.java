@@ -2416,11 +2416,26 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class SelectDistinctForm extends QueryForm
+    {
+        private String _containerFilter;
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
-    public class SelectDistinctAction extends ApiAction<QueryForm>
+    public class SelectDistinctAction extends ApiAction<SelectDistinctForm>
     {
         @Override
-        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(SelectDistinctForm form, BindException errors) throws Exception
         {
             ensureQueryExists(form);
 
@@ -2461,16 +2476,27 @@ public class QueryController extends SpringActionController
         }
 
         @Nullable
-        private SQLFragment getDistinctSql(QueryForm form, BindException errors)
+        private SQLFragment getDistinctSql(SelectDistinctForm form, BindException errors)
         {
             TableInfo table = form.getSchema().getTable(form.getQueryName());
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
 
             if (null == getViewContext().getRequest().getParameter(QueryParam.maxRows.toString()))
-                form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);
+                settings.setMaxRows(DEFAULT_API_MAX_ROWS);
             else
-                form.getQuerySettings().setMaxRows(Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString())));
+                settings.setMaxRows(Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString())));
+
+            if (null != form.getContainerFilter())
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType =
+                        ContainerFilter.Type.valueOf(form.getContainerFilter());
+                settings.setContainerFilterName(containerFilterType.name());
+
+                if (table instanceof ContainerFilterable)
+                    ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), table.getUserSchema().getUser()));
+            }
 
             Map<FieldKey, ColumnInfo> columns = service.getColumns(table, settings.getFieldKeys());
             if (columns.size() != 1)
