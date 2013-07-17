@@ -404,6 +404,30 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return runTable;
     }
 
+    @Nullable
+    @Override
+    public String getDomainURI(String queryName)
+    {
+        String domainURI = null;
+        if (null != queryName)
+        {
+            if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), DATA_TABLE_NAME)) || queryName.equalsIgnoreCase(DATA_TABLE_NAME))
+            {
+                domainURI = getProvider().getResultsDomain(getProtocol()).getTypeURI();
+            }
+            else if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), RUNS_TABLE_NAME)) || queryName.equalsIgnoreCase(RUNS_TABLE_NAME))
+            {
+                domainURI = getProvider().getRunDomain(getProtocol()).getTypeURI();
+            }
+            else if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), BATCHES_TABLE_NAME)) || queryName.equalsIgnoreCase(BATCHES_TABLE_NAME))
+            {
+                domainURI = getProvider().getBatchDomain(getProtocol()).getTypeURI();
+            }
+        }
+
+        return domainURI;
+    }
+
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
