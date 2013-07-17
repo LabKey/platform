@@ -45,10 +45,11 @@ public class EditableSpecimenImporter extends SpecimenImporter
     private static final String VISIT = "visit_value";
     private static final String DRAW_TIMESTAMP = "draw_timestamp";
     private static final String GUID_COLNAME = "GlobalUniqueId";
+    private boolean _insert = false;
 
-    public EditableSpecimenImporter()
+    public EditableSpecimenImporter(boolean insert)
     {
-
+        _insert = insert;
     }
 
     public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
@@ -177,7 +178,9 @@ public class EditableSpecimenImporter extends SpecimenImporter
     protected void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
-        // do nothing
+        // Only check if inserting
+        if (_insert)
+            super.checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
     }
 
     private void markEventsObsolete(Container container, List<Map<String, Object>> rows)

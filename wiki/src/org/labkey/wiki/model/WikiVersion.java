@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 
 /**
@@ -212,9 +213,11 @@ public class WikiVersion
         _cache = cache;
     }
 
+    private static Pattern NON_VISUAL_RE = Pattern.compile("(<(script|form)[\\s>]|\\$\\{labkey\\.)");
+
     public boolean hasNonVisualElements()
     {
-        // look for form, script tag
-        return _body != null && _body.toLowerCase().matches("<(script|form)[\\s>]");
+        // look for form, script tag and ${labkey...} expressions
+        return _body != null && NON_VISUAL_RE.matcher(_body.toLowerCase()).find();
     }
 }

@@ -42,6 +42,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayFileWriter;
@@ -62,6 +63,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -766,6 +768,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    @Override
+    public void setCreated(Date created)
+    {
+        _object.setCreated(created);
+    }
+
+    public void setCreatedBy(User user)
+    {
+        _object.setCreatedBy(user == null ? 0 : user.getUserId());
     }
 
     private boolean hasOtherRunUsing(ExpData originalData, ExpRun originalRun)

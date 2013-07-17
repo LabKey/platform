@@ -29,7 +29,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
     constructor: function(config){
 
-        this.addEvents("beforecomplete", "complete", "canceledit", "updatefail", "validitychange");
+        this.addEvents("beforecomplete", "complete", "canceledit", "editstarted", "updatefail", "validitychange");
         Ext.apply(this, config);
         if (this.updateConfig)
         {
@@ -103,6 +103,8 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     startEdit: function(){
         if (this.editor || this.el.hasClass("labkey-edit-in-place-updating"))
             return;
+
+        this.fireEvent("editstarted", this.oldText);
 
         //create the editor as a peer to the bound element
         var config = {

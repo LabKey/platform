@@ -18,7 +18,7 @@
 
 -- Remove caBIG, #15050
 SELECT core.executeJavaUpgradeCode('handleUnknownModules');
-ALTER TABLE core.Containers DROP COLUMN CaBIGPublished;
+ALTER TABLE core.Containers DROP COLUMN CaBIGPublished CASCADE;
 
 /* core-12.12-12.13.sql */
 

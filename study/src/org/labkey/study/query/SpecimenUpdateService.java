@@ -29,12 +29,14 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.EditableSpecimenImporter;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.SpecimenEvent;
+import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -78,7 +80,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, rows, true);
+            importSpecimens(user, container, rows, true, false);
         }
         catch (IOException e)
         {
@@ -101,10 +103,20 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        Study study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            throw new IllegalStateException("No study found.");
+        String subjectColumnName = study.getSubjectColumnName();
         String globalUniqueId = (String)row.get("GlobalUniqueId");
-        if (null == globalUniqueId || null == row.get("ParticipantId") || null == row.get("SequenceNum"))
+        if (null == globalUniqueId || null == row.get(subjectColumnName) || null == row.get("SequenceNum"))
         {
-            throw new ValidationException("Global Unique Id, Participant Id and Sequence Num are required.");
+            throw new ValidationException("Global Unique Id, " + subjectColumnName + " and Sequence Num are required.");
+        }
+
+        if (!subjectColumnName.equalsIgnoreCase("participantid"))
+        {
+            row.put("participantid", row.get(subjectColumnName));
+            row.remove(subjectColumnName);
         }
 
         row.put("externalid", 1);
@@ -113,11 +125,15 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, rows, true);
+            importSpecimens(user, container, rows, true, true);
         }
         catch (IOException e)
         {
             throw new IllegalStateException(e.getMessage());
+        }
+        catch (IllegalStateException e)
+        {
+            throw new ValidationException(e.getMessage());
         }
 
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, globalUniqueId);
@@ -180,7 +196,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, rows, true);
+            importSpecimens(user, container, rows, true, false);
         }
         catch (IOException e)
         {
@@ -200,7 +216,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    public int keyFromMap(Map<String,Object> map) throws InvalidKeyException
+    private int keyFromMap(Map<String,Object> map) throws InvalidKeyException
     {
         if (null == map)
             throw new InvalidKeyException("No values provided");
@@ -218,14 +234,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         return rowInteger;
     }
 
-    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    private void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge, boolean insert) throws SQLException, IOException, ValidationException
     {
-        EditableSpecimenImporter importer = new EditableSpecimenImporter();
+        EditableSpecimenImporter importer = new EditableSpecimenImporter(insert);
         rows = importer.mapColumnNamesToTsvColumnNames(rows);
         importer.process(user, container, rows, merge);
     }
 
-    public static SQLFragment getNonFinalRequestCountSql(Container container, Specimen specimen)
+    private static SQLFragment getNonFinalRequestCountSql(Container container, Specimen specimen)
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(FinalState) FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
                 " WHERE FinalState = " + StudySchema.getInstance().getSqlDialect().getBooleanFALSE());
@@ -238,7 +254,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         return sql;
     }
 
-    public static SQLFragment getAllRequestCountSql(Container container, Specimen specimen)
+    private static SQLFragment getAllRequestCountSql(Container container, Specimen specimen)
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());

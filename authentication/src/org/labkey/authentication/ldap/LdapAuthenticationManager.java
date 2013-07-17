@@ -220,10 +220,10 @@ public class LdapAuthenticationManager
             {
                 ldapCtx = connectToLdap(url, ldapSearchConfig.username, ldapSearchConfig.password, saslAuthentication);
             }
-            catch (Exception e)
+            catch (NamingException e)
             {
                 _log.warn("Failed to connect to LDAP for search: " + ldapSearchConfig.username + "@" + url, e);
-                return false;
+                throw e;
             }
             
             String accountName = findLdapAccountNameFromEmail(ldapCtx, email);
