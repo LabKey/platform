@@ -314,47 +314,48 @@ public class DilutionManager
     public static PropDescCategory getPropDescCategory(String name)
     {
         PropDescCategory pdCat = new PropDescCategory(name);
-        if (name.contains("InRange"))
+        String lowerCaseName = name.toLowerCase();
+        if (lowerCaseName.contains("inrange"))
             pdCat.setRangeOrNum("inrange");
-        else if (name.contains("Number"))
+        else if (lowerCaseName.contains("number"))
             pdCat.setRangeOrNum("number");
 
-        if (name.startsWith("Point") && name.contains("IC"))
+        if (lowerCaseName.startsWith("point") && lowerCaseName.contains("ic"))
         {
             pdCat.setType("Point");
         }
-        else if (name.startsWith("Curve") && name.contains("IC"))
+        else if (lowerCaseName.startsWith("curve") && lowerCaseName.contains("ic"))
         {
-            if (name.contains("4pl"))
+            if (lowerCaseName.contains("4pl"))
                 pdCat.setType("IC_4pl");
-            else if (name.contains("5pl"))
+            else if (lowerCaseName.contains("5pl"))
                 pdCat.setType("IC_5pl");
-            else if (name.contains("poly"))
+            else if (lowerCaseName.contains("poly"))
                 pdCat.setType("IC_Poly");
             else
                 pdCat.setType("IC");
         }
-        else if (name.contains("AUC"))
+        else if (lowerCaseName.contains("auc"))
         {
-            String typePrefix = name.toLowerCase().contains("positive") ?  "PositiveAuc" : "Auc";
+            String typePrefix = lowerCaseName.contains("positive") ?  "PositiveAuc" : "Auc";
 
-            if (name.contains("4pl"))
+            if (lowerCaseName.contains("4pl"))
                 pdCat.setType(typePrefix + DilutionDataHandler.PL4_SUFFIX);
-            else if (name.contains("5pl"))
+            else if (lowerCaseName.contains("5pl"))
                 pdCat.setType(typePrefix + DilutionDataHandler.PL5_SUFFIX);
-            else if (name.contains("poly"))
+            else if (lowerCaseName.contains("poly"))
                 pdCat.setType(typePrefix + DilutionDataHandler.POLY_SUFFIX);
             else
                 pdCat.setType(typePrefix);
         }
-        else if (name.equalsIgnoreCase("specimen lsid"))
+        else if (lowerCaseName.equals("specimen lsid"))
             pdCat.setType("SpecimenLsid");
-        else if (name.equalsIgnoreCase("wellgroup name"))
+        else if (lowerCaseName.equals("wellgroup name"))
             pdCat.setType("WellgroupName");
-        else if (name.equalsIgnoreCase("fit error"))
+        else if (lowerCaseName.equals("fit error"))
             pdCat.setType("FitRrror");
 
-        pdCat.setOor(name.contains(OOR_INDICATOR_SUFFIX));
+        pdCat.setOor(lowerCaseName.contains(OOR_INDICATOR_SUFFIX.toLowerCase()));
         pdCat.setCutoffValue(cutoffValueFromName(name));
         return pdCat;
     }
@@ -378,22 +379,21 @@ public class DilutionManager
     @Nullable
     private static Integer cutoffValueFromName(String name)
     {
-        int icIndex = name.indexOf("IC");
+        int icIndex = name.toLowerCase().indexOf("ic");
         if (icIndex != -1)
         {
-            int usIndex = name.indexOf('_', icIndex);
-            int oorIndex = name.indexOf(OOR_INDICATOR_SUFFIX, icIndex);
-            String cutoffValue;
+            StringBuilder sb = new StringBuilder();
+            for (int i=(icIndex + 2); i < name.length(); i++)
+            {
+                char c = name.charAt(i);
+                if (Character.isDigit(c))
+                    sb.append(c);
+                else
+                    break;
+            }
 
-            if (usIndex != -1 && (usIndex-icIndex) <= 5)
-                cutoffValue = name.substring(icIndex + 2, usIndex);
-            else if (oorIndex != -1 && (oorIndex-icIndex) <= 5)
-                cutoffValue = name.substring(icIndex + 2, oorIndex);
-            else
-                cutoffValue = name.substring(icIndex + 2, name.length());
-
-            if (NumberUtils.isDigits(cutoffValue))
-                return NumberUtils.toInt(cutoffValue);
+            if (NumberUtils.isDigits(sb.toString()))
+                return NumberUtils.toInt(sb.toString());
         }
         return null;
     }

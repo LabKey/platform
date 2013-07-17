@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -113,7 +114,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         {
             throw new IOException("The number of paths did not match the number of names");
         }
-        Map<String, File> result = new HashMap<>();
+        Map<String, File> result = new LinkedHashMap<>();
 
         PipeRoot pipelineRoot = getPipelineRoot(context.getContainer());
 

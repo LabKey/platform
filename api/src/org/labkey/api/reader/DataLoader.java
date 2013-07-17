@@ -260,11 +260,14 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 //NOTE: this means we have a header row
                 if (_skipLines == 1)
                 {
-                    String name = lineFields[0][f];
-                    if (_columnInfoMap.containsKey(name))
+                    if (f < lineFields[0].length)
                     {
-                        //preferentially use this class if it matches
-                        classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
+                        String name = lineFields[0][f];
+                        if (_columnInfoMap.containsKey(name))
+                        {
+                            //preferentially use this class if it matches
+                            classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
+                        }
                     }
                 }
 

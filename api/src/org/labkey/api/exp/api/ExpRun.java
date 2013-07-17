@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -79,4 +80,7 @@ public interface ExpRun extends ExpObject
 
     /** archive Data Files primarily used when a file is deleted. */
     public void archiveDataFiles(User user);
+
+    void setCreated(Date created);
+    void setCreatedBy(User user);
 }

@@ -24,6 +24,7 @@ import org.labkey.api.view.JspView;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -113,7 +114,21 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             // use any previously uploaded files that are still selected
             PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>();
             Map<String, File> reusedFiles = previousCollector.createData(context);
-            files.putAll(reusedFiles);
+
+            // Merge the two sets of files
+            Map<String, File> mergedFiles = new HashMap<>();
+            int index = 0;
+            // Start with the reused ones so we preserve the original "primary" file if possible
+            for (Map.Entry<String, File> entry : reusedFiles.entrySet())
+            {
+                mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
+            }
+            // Add in any newly uploaded files
+            for (Map.Entry<String, File> entry : files.entrySet())
+            {
+                mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
+            }
+            files = mergedFiles;
             // It's OK to just reuse files and not upload any new ones
             foundFiles |= !reusedFiles.isEmpty();
         }

@@ -2007,7 +2007,10 @@ LABKEY.DataRegion.plugins.HeaderLock = (function() {
 
     return {
         init: function(dr) {
-            if (!dr.headerLock() || !validBrowser()) { return; }
+            if (!dr.headerLock() || !validBrowser()) {
+                dr._allowHeaderLock = false;
+                return;
+            }
 
             this.dr = dr;
 
@@ -2022,9 +2025,6 @@ LABKEY.DataRegion.plugins.HeaderLock = (function() {
             dr.colHeaderRow       = Ext.get('dataregion_column_header_row_' + dr.name);
             dr.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + dr.name);
             dr.paginationEl       = Ext.get('dataregion_header_' + dr.name);
-
-            Ext.EventManager.on(window,   'resize', this.onResize, this);
-            ensurePaginationVisible(dr);
 
             // check if the header row is being used
             dr.includeHeader = dr.headerRow.isDisplayed();
@@ -2067,6 +2067,9 @@ LABKEY.DataRegion.plugins.HeaderLock = (function() {
             Ext.EventManager.on(window,   'load',            this.onResize, this, {single: true});
             Ext.EventManager.on(window,   'scroll',          this.onScroll, this);
             Ext.EventManager.on(document, 'DOMNodeInserted', this.onResize, this); // Issue #13121
+
+            Ext.EventManager.on(window,   'resize', this.onResize, this);
+            ensurePaginationVisible(dr);
 
             // initialize panel listeners
             // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
