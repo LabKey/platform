@@ -83,7 +83,7 @@ public class ImageOutput extends AbstractParamReplacement
         return null;
     }
 
-    private boolean canDeleteFile()
+    protected boolean canDeleteFile()
     {
         Report report = getReport();
 

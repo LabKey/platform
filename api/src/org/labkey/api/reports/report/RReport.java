@@ -181,7 +181,6 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
             String value = d.getProperty(ScriptReportDescriptor.Prop.knitrFormat);
             if (value != null)
                 _knitrFormat = RReportDescriptor.getKnitrFormatFromString(value);
-
         }
 
         return _knitrFormat;
@@ -406,6 +405,41 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
         return script;
     }
+
+    /**
+     * If this R Report is using knitr then put all the results into the cache directory instead of a temp
+     * directory.  This enables knitr to do its own caching.  If this is a non-Knitr report then just follow
+     * usual cache behavior.  Note that knitr caching is not the same as report caching.  Report caching saves off the
+     * output parameters of the report and then serves them up without executing the script again if the incoming URL
+     * is the same.  For Knitr caching, we always run the R script and let the knitr library manage the caching options.
+     */
+
+    @Override
+    public File getReportDir()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
+            return super.getReportDir();
+
+        return getCacheDir();
+    }
+
+    @Override
+    public void clearCache()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
+            super.clearCache();
+    }
+
+    @Override
+    public boolean shouldCleanup()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
+            return super.shouldCleanup();
+
+        return false;
+    }
+
+
     @Override
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {

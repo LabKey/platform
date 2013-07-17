@@ -516,15 +516,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             @Override
             public List<ScriptOutput> cleanup(ScriptEngineReport report)
             {
-                // undone: this breaks our paradigm a bit - we need to ensure the view is rendered, however,
-                // undone: to cleanup the parameter, so maybe this isn't so wacky.
-                HttpView view = null;
-
-                if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
-                {
-                    // todo: remove the TempFileCleanup view class when we refactor
+                if (report.shouldCleanup())
                     FileUtil.deleteDir(new File(report.getReportDir().getAbsolutePath()));
-                }
 
                 return scriptOutputs;
             }
@@ -551,12 +544,17 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             @Override
             public HttpView cleanup(ScriptEngineReport report)
             {
-                if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
+                if (report.shouldCleanup())
                     view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
 
                 return view;
             }
         });
+    }
+
+    public boolean shouldCleanup()
+    {
+        return !BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
     }
 
 

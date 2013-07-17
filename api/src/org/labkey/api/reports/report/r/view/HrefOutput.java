@@ -16,6 +16,9 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -46,4 +49,21 @@ public class HrefOutput extends ImageOutput
         return null;
     }
 
+    @Override
+    protected boolean canDeleteFile()
+    {
+        Report report = getReport();
+
+        if (report != null)
+        {
+            // if this report is not using knitr then follow the usual rules for deleting files
+            if (report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.knitrFormat).equalsIgnoreCase(RReportDescriptor.KnitrFormat.None.name()))
+                return super.canDeleteFile();
+
+            // otherwise, don't delete the file
+            return false;
+        }
+
+        return true;
+    }
 }
