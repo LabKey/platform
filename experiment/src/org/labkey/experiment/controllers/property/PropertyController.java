@@ -474,13 +474,13 @@ public class PropertyController extends SpringActionController
     }
 
     @NotNull
-    private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user)
+    private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user) throws NotFoundException
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
         GWTDomain domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
         if (domain == null)
-            throw new RuntimeException("Could not find domain for " + domainURI);
+            throw new NotFoundException("Could not find domain for " + domainURI);
 
         return domain;
     }
