@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -642,5 +643,49 @@ public class UserManager
             }
         }
         return completions;
+    }
+
+    public static class UserAuditEvent extends AuditTypeEvent
+    {
+        int _user;
+
+        public UserAuditEvent()
+        {
+            super();
+        }
+
+        public UserAuditEvent(String container, String comment, User modifiedUser)
+        {
+            super(UserManager.USER_AUDIT_EVENT, container, comment);
+
+            if (modifiedUser != null)
+                _user = modifiedUser.getUserId();
+        }
+
+        public int getUser()
+        {
+            return _user;
+        }
+
+        public void setUser(int user)
+        {
+            _user = user;
+        }
+    }
+
+    /**
+     *
+     * @param modifiedUser the user id of the principal being modified
+     */
+    public static void addAuditEvent(User user, Container c,  @Nullable User modifiedUser, String msg)
+    {
+        AuditLogService.get().addEvent(user, c, UserManager.USER_AUDIT_EVENT,
+                modifiedUser != null ? modifiedUser.getUserId() : 0, msg);
+
+        // new implementation
+/*
+        UserAuditEvent event = new UserAuditEvent(ContainerManager.getRoot().getId(), msg, modifiedUser);
+        AuditLogService.get().addEvent(user, event);
+*/
     }
 }

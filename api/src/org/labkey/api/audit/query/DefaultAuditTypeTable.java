@@ -10,6 +10,11 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,5 +49,18 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
             return StringUtils.defaultIfEmpty(_provider.getDescription(), super.getDescription());
         }
         return super.getDescription();
+    }
+
+    private boolean isGuest(UserPrincipal user)
+    {
+        return user instanceof User && user.isGuest();
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        // Don't allow deletes or updates for audit events, and don't let guests insert
+        return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&
+            getContainer().hasPermission(user, perm);
     }
 }

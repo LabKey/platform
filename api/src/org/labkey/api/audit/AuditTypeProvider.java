@@ -35,4 +35,10 @@ public interface AuditTypeProvider
     //public Domain getDomain(Container c, User user);
     public TableInfo createTableInfo(UserSchema schema);
     public QueryView createDefaultQueryView();
+
+    /**
+     * Conversion from legacy untyped event fields to new provider specific
+     * fields
+     */
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event);
 }

@@ -70,7 +70,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         _baseFields.add(createFieldSpec("Modified", JdbcType.TIMESTAMP));
         _baseFields.add(createFieldSpec("ModifiedBy", JdbcType.INTEGER));
         _baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
-        _baseFields.add(createFieldSpec("ProjectId", JdbcType.INTEGER));    // should this be a varchar? are we storing id or entityid
+        _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("EntityId", JdbcType.VARCHAR));
     }
 

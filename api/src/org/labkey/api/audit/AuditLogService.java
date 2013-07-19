@@ -53,17 +53,26 @@ public class AuditLogService
     private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<>();
     private static Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
 
+    // flip this switch when migration is complete and we want to start logging to the new tables
+    public static boolean enableHardTableLogging()
+    {
+        return false;
+    }
+
     public static void registerAuditType(AuditTypeProvider provider)
     {
-        if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
+        if (enableHardTableLogging())
         {
-            User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
+            {
+                User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
 
-            provider.initializeProvider(auditUser);
-            _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
+                provider.initializeProvider(auditUser);
+                _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
+            }
+            else
+                throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
         }
-        else
-            throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
     }
 
     public static List<AuditTypeProvider> getAuditProviders()
@@ -141,10 +150,13 @@ public class AuditLogService
         @Deprecated // Use non-ViewContext version
         public AuditLogEvent addEvent(ViewContext context, String eventType, String key, String message);
 
+        @Deprecated // use AuditTypeEvent version
         public AuditLogEvent addEvent(User user, Container c, String eventType, String key, String message);
         public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message);
         public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message);
         public AuditLogEvent addEvent(AuditLogEvent event);
+
+        public <K extends AuditTypeEvent> K addEvent(User user, K event);
 
         /**
          * Adds the audit event, plus additional properties contained in the dataMap. The dataMap should map

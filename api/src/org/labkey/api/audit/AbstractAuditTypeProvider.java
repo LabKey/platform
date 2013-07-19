@@ -78,4 +78,16 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     {
         return ContainerManager.getSharedContainer();
     }
+
+    protected <K extends AuditTypeEvent> void copyStandardFields(K bean, AuditLogEvent event)
+    {
+        bean.setImpersonatedBy(event.getImpersonatedBy());
+        bean.setEntityId(event.getEntityId());
+        bean.setComment(event.getComment());
+        bean.setProjectId(event.getProjectId());
+        bean.setContainer(event.getContainerId());
+        bean.setEventType(event.getEventType());
+        bean.setCreated(event.getCreated());
+        bean.setCreatedBy(event.getCreatedBy());
+    }
 }

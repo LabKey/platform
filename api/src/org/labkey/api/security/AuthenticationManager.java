@@ -334,7 +334,7 @@ public class AuthenticationManager
         if (user.isGuest())
             AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, (String)null, msg);
         else
-            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(), msg);
+            UserManager.addAuditEvent(user, ContainerManager.getRoot(), user, msg);
     }
 
 

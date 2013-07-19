@@ -121,6 +121,7 @@ api/src/org/labkey/api/attachments/SpringAttachmentFile.java -text
 api/src/org/labkey/api/audit/AbstractAuditTypeProvider.java -text
 api/src/org/labkey/api/audit/AuditLogEvent.java -text
 api/src/org/labkey/api/audit/AuditLogService.java -text
+api/src/org/labkey/api/audit/AuditTypeEvent.java -text
 api/src/org/labkey/api/audit/AuditTypeProvider.java -text
 api/src/org/labkey/api/audit/ClientAPIAuditViewFactory.java -text
 api/src/org/labkey/api/audit/DefaultAuditProvider.java -text
