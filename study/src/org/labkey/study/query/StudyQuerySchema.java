@@ -522,7 +522,7 @@ public class StudyQuerySchema extends UserSchema
         {
             if ("SpecimenDetail".equalsIgnoreCase(settings.getQueryName()))
             {
-                return SpecimenQueryView.createView(context, SpecimenQueryView.ViewType.VIALS);
+                return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
             }
 
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());

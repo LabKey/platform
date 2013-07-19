@@ -361,6 +361,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return createView(context, filter, createDefaultSort(viewType), viewType, false, null, false);
     }
 
+    public static SpecimenQueryView createView(ViewContext context, QuerySettings settings, ViewType viewType)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        return createView(context, settings, filter, createDefaultSort(viewType), viewType, false, null, false);
+    }
+
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType, CohortFilter cohortFilter)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -446,6 +452,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = viewType.getQueryName();
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
+        return createView(context, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter, requireSequenceNum);
+    }
+
+    private static SpecimenQueryView createView(ViewContext context, QuerySettings qs, SimpleFilter filter, Sort sort, ViewType viewType,
+                                                boolean participantVisitFiltered, CohortFilter cohortFilter, boolean requireSequenceNum)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String viewName = viewType.getViewName();
         if (qs.getViewName() == null && viewName != null)
             qs.setViewName(viewName);

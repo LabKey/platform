@@ -60,6 +60,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -78,10 +79,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -99,6 +102,7 @@ import org.labkey.list.view.ListImportServiceImpl;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.labkey.list.view.ListQueryForm;
 import org.labkey.list.view.ListQueryView;
+import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -112,6 +116,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -316,6 +321,142 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, null);
+        }
+    }
+
+
+    public abstract class InsertUpdateAction extends FormViewAction<ListDefinitionForm>
+    {
+        protected abstract ActionURL getActionView(ListDefinition list, BindException errors);
+        protected abstract Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues);
+
+        @Override
+        public void validateCommand(ListDefinitionForm form, Errors errors)
+        {
+            /* No-op */
+        }
+
+        @Override
+        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ListDefinition list = form.getList(); // throws NotFoundException
+
+            ActionURL url = getActionView(list, errors);
+            Collection<Pair<String, String>> inputs = getInputs(list, url, getPropertyValues().getPropertyValues());
+
+            if (getViewContext().getRequest().getMethod().equalsIgnoreCase("POST"))
+            {
+                getPageConfig().setTemplate(PageConfig.Template.None);
+                return new HttpPostRedirectView(url.toString(), inputs);
+            }
+
+            throw new RedirectException(url);
+        }
+
+        @Override
+        public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ListDefinitionForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    /**
+     * DO NOT USE. This action has been deprecated in 13.2 in favor of the standard query/insertQueryRow action.
+     * Only here for backwards compatibility to resolve requests and redirect.
+     */
+    @Deprecated
+    @RequiresPermissionClass(InsertPermission.class)
+    public class InsertAction extends InsertUpdateAction
+    {
+        @Override
+        protected ActionURL getActionView(ListDefinition list, BindException errors)
+        {
+            TableInfo listTable = list.getTable(getUser());
+            return listTable.getUserSchema().getQueryDefForTable(listTable.getName()).urlFor(QueryAction.insertQueryRow, getContainer());
+        }
+
+        @Override
+        protected Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues)
+        {
+            Collection<Pair<String, String>> inputs = new ArrayList<>();
+
+            for (PropertyValue value : propertyValues)
+            {
+                if (value.getName().equalsIgnoreCase("returnURL"))
+                    url.addParameter("returnUrl", (String) value.getValue());
+                else
+                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
+            }
+
+            return inputs;
+        }
+    }
+
+
+    /**
+     * DO NOT USE. This action has been deprecated in 13.2 in favor of the standard query/updateQueryRow action.
+     * Only here for backwards compatibility to resolve requests and redirect.
+     */
+    @Deprecated
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateAction extends InsertUpdateAction
+    {
+        @Override
+        protected ActionURL getActionView(ListDefinition list, BindException errors)
+        {
+            TableInfo listTable = list.getTable(getUser());
+            return listTable.getUserSchema().getQueryDefForTable(listTable.getName()).urlFor(QueryAction.updateQueryRow, getContainer());
+        }
+
+        @Override
+        protected Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues)
+        {
+            Collection<Pair<String, String>> inputs = new ArrayList<>();
+            final String FORM_PREFIX = "quf_";
+
+            for (PropertyValue value : getPropertyValues().getPropertyValues())
+            {
+                if (value.getName().equalsIgnoreCase("returnURL"))
+                    url.addParameter("returnUrl", (String) value.getValue());
+                else if (value.getName().equalsIgnoreCase(list.getKeyName()) || (FORM_PREFIX + list.getKeyName()).equalsIgnoreCase(value.getName()))
+                {
+                    url.addParameter(list.getKeyName(), (String) value.getValue());
+                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
+                }
+                else
+                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
+            }
+
+            // support for .oldValues
+            try
+            {
+                // convert to map
+                HashMap<String, Object> oldValues = new HashMap<>();
+                for (Pair<String, String> entry : inputs)
+                {
+                    oldValues.put(entry.getKey().replace(FORM_PREFIX, ""), entry.getValue());
+                }
+                inputs.add(Pair.of(".oldValues", PageFlowUtil.encodeObject(oldValues)));
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Bad .oldValues on List.UpdateAction");
+            }
+
+
+            return inputs;
         }
     }
 

@@ -10,6 +10,7 @@ LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
 LABKEY.requiresScript("/survey/UsersCombo.js");
 LABKEY.requiresScript("/biotrust/AssociatedStudyQuestion.js");
+LABKEY.requiresScript("/biotrust/ContactCombo.js");
 LABKEY.requiresScript("/biotrust/ContactsPanel.js");
 LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
@@ -312,7 +313,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }));
     },
 
-    addSurveyEndPanel : function() {
+    addSurveyEndPanel : function(saveDisabledInfo) {
+
+        var simpleSaveCancel = this.saveSubmitMode && 'save/cancel' == this.saveSubmitMode;
 
         // add a final panel that has the Save/Submit buttons and required field checks
         this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
@@ -328,7 +331,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         this.saveBtn = Ext4.create('Ext.button.Button', {
             text: 'Save',
-            disabled: true,
+            disabled: !simpleSaveCancel,
             width: 150,
             height: 30,
             scope: this,
@@ -337,14 +340,22 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             }
         });
 
-        this.saveDisabledInfo = Ext4.create('Ext.form.DisplayField', {
-            hideLabel: true,
-            width: 250,
-            style: "text-align: center;",
-            hidden: this.surveyLabel != null,
-            value: "<span style='font-style: italic; font-size: 90%'>Note: The '" + this.labelCaption + "' field at the"
-                + " beginning of the form must be filled in before you can save the form*.</span>"
-        });
+        if (saveDisabledInfo)
+        {
+            this.saveDisabledInfo = saveDisabledInfo;
+        }
+        else
+        {
+            // Create if caller doesn't pass one in
+            this.saveDisabledInfo = Ext4.create('Ext.form.DisplayField', {
+                hideLabel: true,
+                width: 250,
+                style: "text-align: center;",
+                hidden: this.surveyLabel != null,
+                value: "<span style='font-style: italic; font-size: 90%'>Note: The '" + this.labelCaption + "' field at the"
+                    + " beginning of the form must be filled in before you can save the form*.</span>"
+            });
+        }
 
         this.autosaveInfo = Ext4.create('Ext.container.Container', {
             hideLabel: true,
@@ -375,27 +386,53 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             scope: this
         });
 
+        this.cancelBtn = Ext4.create('Ext.button.Button', {
+            text: 'Cancel',
+            disabled: !simpleSaveCancel,
+            width: 150,
+            height: 30,
+            scope: this,
+            handler: function(btn, evt) {
+                this.leavePage();
+            }
+        });
+
+
         // the set of buttons and text on the end survey page changes based on whether or not the survey was submitted
         // and whether or not the user can edit a submitted survey (i.e. is project/site admin)
         var items = [{
             xtype: 'panel',
             layout: {type: 'vbox', align: 'center'},
-            items: this.canEdit
-                    ? [this.updateSubmittedInfo, this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
-                    : [this.updateSubmittedInfo, this.doneBtn]
+            items:  simpleSaveCancel
+                    ? [this.saveBtn, this.saveDisabledInfo]
+                    : this.canEdit
+                      ? [this.updateSubmittedInfo, this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
+                      : [this.updateSubmittedInfo, this.doneBtn]
         }];
-        if (this.canEdit && !this.isSubmitted)
+        if (!simpleSaveCancel)
+        {
+            if (this.canEdit && !this.isSubmitted)
+            {
+                items.push({xtype: 'label', width: 30, value: null});
+                items.push({
+                    xtype: 'panel',
+                    layout: {type: 'vbox', align: 'center'},
+                    items: [this.submitBtn, this.submitInfo]
+                });
+            }
+        }
+        else
         {
             items.push({xtype: 'label', width: 30, value: null});
             items.push({
                 xtype: 'panel',
                 layout: {type: 'vbox', align: 'center'},
-                items: [this.submitBtn, this.submitInfo]
+                items: [this.cancelBtn]
             });
         }
 
         this.sections.push(Ext4.create('Ext.panel.Panel', {
-            title: this.canEdit ? 'Save / Submit' : 'Done',
+            title: simpleSaveCancel ? 'Save / Cancel' : (this.canEdit ? 'Save / Submit' : 'Done'),
             isDisabled: false,
             layout: {
                 type: 'hbox',
@@ -639,7 +676,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             for (var i=0; i < changeHandlers.length; i++)
             {
                 var info = changeHandlers[i];
-                var me = this.down('#item-' + info.name);
+                var me = this.findSurveyElement(info.name);
                 if (me)
                 {
                     var changeFn = info.fn;
@@ -817,5 +854,47 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     clearLoadingMask: function() {
         this.setLoading(false);
+    },
+
+    updateSaveInfo : function(saveInfo) {
+        var msg = "";
+
+        // add to message for each required field name that is visible
+        Ext4.each(this.requiredFieldNames, function(name){
+            var cmp = this.down('[name=' + name + ']');
+            if (cmp)
+            {
+                // get the field value to determine if it is not null (special case for radiogroups)
+                var value = cmp.getValue();
+                if (cmp.getXType() == "radiogroup")
+                    value = cmp.getChecked().length > 0 ? cmp.getValue() : null;
+
+                if (!cmp.isHidden() && !value)
+                    msg += "-" + (cmp.shortCaption ? cmp.shortCaption : name) + "<br/>";
+            }
+        }, this);
+
+        if (msg.length > 0)
+        {
+            msg = "<span style='font-style: italic; font-size: 90%'>"
+                    + "Note: The following fields must be valid before you can save the form:<br/>"
+                    + msg + "</span>";
+        }
+
+        saveInfo.update(msg);
+        this.saveBtn.setDisabled(msg.length > 0);
+    },
+
+    // Helper to parse date values coming from the server
+    getValueIfDate: function(value) {
+        return Ext4.Date.parse(value, "Y/m/d H:i:s", true);     // Returns null if parse fails
+    },
+
+    makeKeyWithSectionName: function(sectionName, key) {
+        return sectionName + '-' + key;
+    },
+
+    findSurveyElement: function (name) {
+        return this.down('[itemId="item-' + name + '"]');
     }
 });
