@@ -729,40 +729,48 @@ public class PublishResultsQueryView extends ResultsQueryView
                 String completionBase = getCompletionBase(ctx);
                 if (completionBase != null)
                 {
-                    try {
+                    if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
+                    {
+                        out.write("<script type=\"text/javascript\">LABKEY.requiresExt4Sandbox(true);\nLABKEY.requiresScript(\"completion.js\");</script>");
 
-                        if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
-                        {
-                            out.write("<script type=\"text/javascript\">LABKEY.requiresExt4Sandbox(true);\nLABKEY.requiresScript(\"completion.js\");</script>");
-                            ctx.put(RENDERED_REQUIRES_COMPLETION, true);
-                        }
-                        String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                        // wire up the completions div on input tag focus
                         StringBuilder sb = new StringBuilder();
-                        String value = PageFlowUtil.filter(getValue(ctx));
 
-                        sb.append("<script type=\"text/javascript\">");
-
-                        sb.append("Ext4.onReady(function(){\n" +
-                            "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                            "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                            "            completionUrl   : " + PageFlowUtil.jsString(completionBase) + ",\n" +
-                            "            sharedStore     : true,\n" +
-                            "            tagConfig   : {\n" +
-                            "                tag     : 'input',\n" +
-                            "                type    : 'text',\n" +
-                            "                name    : " + PageFlowUtil.jsString(_formElementName) + ",\n" +
-                            "                value   : " + PageFlowUtil.jsString(value) + ",\n" +
-                            "                tabindex: " + ctx.getResultSet().getRow() + ",\n" +
-                            "                autocomplete : 'off'\n" +
-                            "            }\n" +
-                            "        });\n" +
-                            "      });\n");
-                        sb.append("</script>\n");
-                        sb.append("<div id='").append(renderId).append("'></div>");
-
+                        sb.append("<script type=\"text/javascript\">\n" +
+                                  "   function onCompletionFocus(cmp) {\n" +
+                                  "      cmp.removeAttribute('onfocus');\n" +
+                                  "      Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                                  "         renderTo        : cmp.getAttribute('completionid'),\n" +
+                                  "         completionUrl   : cmp.getAttribute('completion'),\n" +
+                                  "         sharedStore     : true,\n" +
+                                  "         fieldId         : cmp.getAttribute('id')\n" +
+                                  "      });\n" +
+                                  "   }\n" +
+                                  "</script>\n");
                         out.write(sb.toString());
+                        ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
-                    catch (SQLException e) {}
+
+                    String inputId = "input-tag-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                    String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                    String value = PageFlowUtil.filter(getValue(ctx));
+
+                    StringBuilder sb = new StringBuilder();
+
+                    // render our own input tag and attach the completions div lazily when the input receives
+                    // focus
+                    sb.append("<input type=\"text\"");
+                    sb.append(" id=\"").append(PageFlowUtil.filter(inputId)).append("\"");
+                    sb.append(" name=\"" + _formElementName + "\"");
+                    sb.append(" completionid=\"").append(PageFlowUtil.filter(completionId)).append("\"");
+                    sb.append(" value=\"" + value + "\"");
+                    sb.append(" onfocus=\"onCompletionFocus(this);\"");
+                    sb.append(" completion=\"").append(PageFlowUtil.filter(completionBase)).append("\">");
+
+                    // the div we will lazily wire up completions to (needs to be a sibling to the input)
+                    sb.append("<div id=\"").append(PageFlowUtil.filter(completionId)).append("\">");
+
+                    out.write(sb.toString());
                 }
                 else
                 {

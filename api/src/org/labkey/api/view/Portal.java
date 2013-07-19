@@ -610,6 +610,7 @@ public class Portal
 
     public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
     {
+        boolean mustUpdateIndexes = false;              // Sometimes we just need to unhide some pages that are already there
         Map<String, PortalPage> pageMap = new HashMap<>(Portal.getPages(c, true));
         int maxOriginalIndex = 0;
         for (PortalPage p : pageMap.values())
@@ -626,6 +627,7 @@ public class Portal
                     return w1.getDefaultIndex() - w2.getDefaultIndex();
                 }
             });
+            mustUpdateIndexes = true;
         }
 
         ArrayList<PortalPage> allPages = new ArrayList<>();
@@ -656,12 +658,13 @@ public class Portal
                 }
                 else
                 {
-                    assert !resetIndexes;       // Only called from PageImporter who has already done saveParts on tab pages
+                    assert !resetIndexes;       // resetIndexes==true only when called from PageImporter who has already done saveParts on tab pages
                     newIndex += 1;
                     PortalPage p = new PortalPage();
                     p.setPageId(tab.getName());
                     p.setIndex(tab.getDefaultIndex() > 0 ? tab.getDefaultIndex() : newIndex);
                     allPages.add(p);
+                    mustUpdateIndexes = true;           // Adding a page so must update all indexes to accommodate
                 }
             }
 
@@ -693,11 +696,15 @@ public class Portal
             TableInfo portalTable = getTableInfoPortalPages();
             for (PortalPage p : allPages)
             {
-                p.setIndex(validPageIndex);
+                if (mustUpdateIndexes)
+                    p.setIndex(validPageIndex);
                 if (null != Portal.getPortalPage(c, p.getPageId()))
                     Table.update(null, portalTable, p, new Object[] {p.getContainer(), p.getPageId()});
                 else
+                {
+                    assert mustUpdateIndexes;
                     insertPortalPage(c, p);
+                }
                 validPageIndex -= 1;
             }
 

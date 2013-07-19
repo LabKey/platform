@@ -474,7 +474,8 @@ LABKEY.Query = new function()
                     config.schemaName,
                     config.queryName,
                     config.filterArray,
-                    config.sort
+                    config.sort,
+                    config.dataRegionName
                     );
 
             if (!config.showRows || config.showRows == 'paginated')
@@ -895,7 +896,7 @@ LABKEY.Query = new function()
         * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
         */
 
-        buildQueryParams: function(schemaName, queryName, filterArray, sort)
+        buildQueryParams: function(schemaName, queryName, filterArray, sort, dataRegionName)
         {
             var params = {};
             params['query.queryName'] = queryName;
@@ -903,7 +904,7 @@ LABKEY.Query = new function()
             if (sort)
                 params['query.sort'] = sort;
 
-            LABKEY.Filter.appendFilterParams(params, filterArray);
+            LABKEY.Filter.appendFilterParams(params, filterArray, dataRegionName);
 
             return params;
         },

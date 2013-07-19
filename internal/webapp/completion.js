@@ -12,7 +12,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
         Ext4.applyIf(config, {
             sharedStore     : false,
-            sharedStoreId   : 'autocomplete-shared-store',
+            sharedStoreId   : 'autocomplete-shared-store' + config.completionUrl,
             maxDivHeight    : 190                         // max height of the completion div before overflow
         });
 
@@ -28,17 +28,33 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
         var completionDiv = Ext.id();
         var completionBodyDiv = Ext.id();
-        this.fieldId = this.tagConfig.id || Ext.id();
 
-        this.tagConfig['id'] = this.fieldId;
+        // the tagConfig includes the input tag specification, also wire up
+        // divs for the completion elements
+        if (this.tagConfig)
+        {
+            this.fieldId = this.tagConfig.id || Ext.id();
+            this.tagConfig['id'] = this.fieldId;
 
-        this.html = Ext.DomHelper.createHtml(this.tagConfig);
-        this.html = this.html.concat(Ext.DomHelper.createHtml({
-            tag : 'div',
-            id  : completionDiv,
-            cls : 'labkey-completion',
-            children: [{tag : 'div', id : completionBodyDiv}]
-        }));
+            this.html = Ext.DomHelper.createHtml(this.tagConfig);
+            this.html = this.html.concat(Ext.DomHelper.createHtml({
+                tag : 'div',
+                id  : completionDiv,
+                cls : 'labkey-completion',
+                children: [{tag : 'div', id : completionBodyDiv}]
+            }));
+        }
+        else if (this.fieldId)
+        {
+            // wire up the completions to an existing input element, the fieldId
+            // should identify the input element
+            this.html = Ext.DomHelper.createHtml({
+                tag : 'div',
+                id  : completionDiv,
+                cls : 'labkey-completion',
+                children: [{tag : 'div', id : completionBodyDiv}]
+            });
+        }
 
         this.listeners = {
             render  :  {fn : function(cmp){
