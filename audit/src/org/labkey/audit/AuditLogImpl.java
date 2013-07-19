@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogService.AuditViewFactory;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -181,6 +182,11 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return _addEvent(user, event);
     }
 
+    public <K extends AuditTypeEvent> K addEvent(User user, K type)
+    {
+        return _addEvent(user, type);
+    }
+
     /**
      * Factory method to get an audit event from a property map.
      * @param clz - the event class to create.
@@ -270,6 +276,57 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             {
                 initializeAuditFactory(user, event);
                 return LogManager.get().insertEvent(user, event);
+            }
+        }
+        catch (Exception e)
+        {
+            _log.error("Failed to insert audit log event", e);
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    /**
+     * Currently only use for testing new audit providers, eventually this will replace the legacy addEvent method
+     * but only once the migration code is in place.
+     * @param user
+     * @param event
+     * @param <K>
+     * @return
+     */
+    private <K extends AuditTypeEvent> K _addEvent(User user, K event)
+    {
+        try
+        {
+            assert event.getContainer() != null : "Container cannot be null";
+
+            if (event.getContainer() == null)
+            {
+                _log.warn("container was not specified, defaulting to root container.");
+                Container root = ContainerManager.getRoot();
+                event.setContainer(root.getId());
+            }
+
+            if (!_logToDatabase.get())
+            {
+                /**
+                 * This is necessary because audit log service needs to be registered in the constructor
+                 * of the audit module, but the schema may not be created or updated at that point.  Events
+                 * that occur before startup is complete are therefore queued up and recorded after startup.
+                 */
+                synchronized (STARTUP_LOCK)
+                {
+                    if (_logToDatabase.get())
+                    {
+                        LogManager.get()._insertEvent(user, event);
+                    }
+                    //else
+                        //_eventQueue.add(new Pair<>(user, event));
+                }
+            }
+            else
+            {
+                LogManager.get()._insertEvent(user, event);
             }
         }
         catch (Exception e)

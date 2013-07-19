@@ -16,14 +16,32 @@
 
 package org.labkey.audit.model;
 
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.survey.model.Survey;
 import org.labkey.audit.AuditSchema;
 
+import java.beans.PropertyDescriptor;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -52,10 +70,92 @@ public class LogManager
         return getSchema().getTable("AuditLog");
     }
 
-    public AuditLogEvent insertEvent(User user, AuditLogEvent event) throws SQLException
+    public <K extends AuditTypeEvent> AuditLogEvent insertEvent(User user, AuditLogEvent event) throws SQLException
     {
         validateFields(event);
-        return Table.insert(user, getTinfoAuditLog(), event);
+
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(event.getEventType());
+
+        if (provider != null && AuditLogService.enableHardTableLogging())
+        {
+            K bean = provider.convertEvent(event);
+            bean = _insertEvent(user, bean);
+            return event;
+        }
+        else
+            return Table.insert(user, getTinfoAuditLog(), event);
+    }
+
+    public <K extends AuditTypeEvent> K _insertEvent(User user, K type) throws SQLException
+    {
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
+
+        if (provider != null)
+        {
+            try {
+
+                Container c = ContainerManager.getForId(type.getContainer());
+
+                BeanObjectFactory factory = new BeanObjectFactory(type.getClass());
+                Map<String, Object> props = new HashMap<>();
+                factory.toMap(type, props);
+
+                UserSchema schema = QueryService.get().getUserSchema(user, c, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+
+                if (schema != null)
+                {
+                    TableInfo table = schema.getTable(provider.getEventName());
+
+                    if (table instanceof DefaultAuditTypeTable)
+                    {
+                        // consider using etl data iterator for inserts
+                        TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
+                        K ret = Table.insert(user, dbTable, type);
+
+                        return ret;
+/*
+                        TableViewForm tvf = new TableViewForm(table);
+
+                        tvf.setTypedValues(props, false);
+
+                        Map<String, Object> values = tvf.getTypedColumns();
+                        QueryUpdateService qus = table.getUpdateService();
+                        if (qus == null)
+                            throw new IllegalArgumentException("The query '" + table.getName() + "' in the schema '" + table.getSchema().getName() + "' is not updatable.");
+
+                        Map<String, Object> row;
+
+                        BatchValidationException batchErrors = new BatchValidationException();
+                        List<Map<String, Object>> updated = qus.insertRows(user, c, Collections.singletonList(values), batchErrors, null);
+                        if (batchErrors.hasErrors())
+                            throw batchErrors;
+
+                        assert(updated.size() == 1);
+                        row = updated.get(0);
+
+                        K bean = (K)type.getClass().newInstance();
+                        return (K)factory.fromMap(bean, row);
+*/
+                    }
+                }
+            }
+            catch (SQLException x)
+            {
+                if (!SqlDialect.isConstraintException(x))
+                    throw x;
+            }
+/*
+            catch (BatchValidationException x)
+            {
+                throw new RuntimeException(x);
+            }
+*/
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
     }
 
     public AuditLogEvent getEvent(int rowId)

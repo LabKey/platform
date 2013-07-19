@@ -1,87 +1,110 @@
 package org.labkey.core.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.GroupManager;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
  * User: klum
- * Date: 7/9/13
+ * Date: 7/17/13
  */
-public class UserAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class GroupAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     @Override
     public String getEventName()
     {
-        return UserManager.USER_AUDIT_EVENT;
+        return GroupManager.GROUP_AUDIT_EVENT;
     }
 
     @Override
     public String getLabel()
     {
-        return "User events";
+        return "Group events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Describes information about user logins, impersonations, and modifications.";
+        return "Information about group modifications and security changes.";
     }
 
     @Override
     protected DomainKind getDomainKind()
     {
-        return new UserAuditDomainKind();
+        return new GroupAuditDomainKind();
     }
 
     @Override
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
     {
-        UserManager.UserAuditEvent bean = new UserManager.UserAuditEvent();
+        GroupAuditEvent bean = new GroupAuditEvent();
         copyStandardFields(bean, event);
 
         if (event.getIntKey1() != null)
             bean.setUser(event.getIntKey1());
 
+        if (event.getIntKey2() != null)
+            bean.setGroup(event.getIntKey2());
+
         return (K)bean;
     }
 
-    public static class UserAuditDomainKind extends AbstractAuditDomainKind
+    public static class GroupAuditEvent extends AuditTypeEvent
     {
-        public static final String NAME = "UserAuditDomain";
+        int _user;
+        int _group;
+
+        public GroupAuditEvent()
+        {
+            super();
+        }
+
+        public GroupAuditEvent(String container, String comment)
+        {
+            super(GroupManager.GROUP_AUDIT_EVENT, container, comment);
+        }
+
+        public int getUser()
+        {
+            return _user;
+        }
+
+        public void setUser(int user)
+        {
+            _user = user;
+        }
+
+        public int getGroup()
+        {
+            return _group;
+        }
+
+        public void setGroup(int group)
+        {
+            _group = group;
+        }
+    }
+
+    public static class GroupAuditDomainKind extends AbstractAuditDomainKind
+    {
+        public static final String NAME = "GroupAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
             _fields.add(createFieldSpec("User", JdbcType.INTEGER));
+            _fields.add(createFieldSpec("Group", JdbcType.INTEGER));
         }
 
         @Override

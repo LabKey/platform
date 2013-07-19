@@ -80,17 +80,26 @@ public class AuditQuerySchema extends UserSchema
     public TableInfo createTable(String name)
     {
         // event specific audit views are implemented as queries on the audit schema
+        if (AuditLogService.enableHardTableLogging())
+        {
+            if (AuditLogService.get().getAuditProvider(name) != null)
+            {
+                AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
+                return provider.createTableInfo(this);
+            }
+        }
+
         if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
         {
             return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
         }
 
-        if (AuditLogService.get().getAuditProvider(name) != null)
-        {
-            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
-            return provider.createTableInfo(this);
-        }
-
         return null;
+    }
+
+    @Override
+    protected boolean canReadSchema()
+    {
+        return true;
     }
 }

@@ -94,6 +94,7 @@ import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.TsvDataHandler;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
@@ -110,6 +111,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenApiController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -152,6 +154,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
 import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
+import org.labkey.study.samples.SpecimenCommentAuditProvider;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.AssayDesignerRole;
@@ -364,6 +367,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(SpecimenCommentAuditViewFactory.getInstance());
+
+        AuditLogService.registerAuditType(new AssayAuditProvider());
+        AuditLogService.registerAuditType(new DatasetAuditProvider());
+        AuditLogService.registerAuditType(new SpecimenCommentAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new EnrollmentReport());

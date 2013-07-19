@@ -730,6 +730,7 @@ core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/FileListTableInfo.java -text
+core/src/org/labkey/core/query/GroupAuditProvider.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditProvider.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
@@ -3097,6 +3098,7 @@ study/src/org/labkey/study/assay/TSVProtocolSchema.java -text
 study/src/org/labkey/study/assay/TsvAssayProvider.java -text
 study/src/org/labkey/study/assay/TsvDataHandler.java -text
 study/src/org/labkey/study/assay/TsvImportAction.java -text
+study/src/org/labkey/study/assay/query/AssayAuditProvider.java -text
 study/src/org/labkey/study/assay/query/AssayAuditViewFactory.java -text
 study/src/org/labkey/study/assay/query/AssayListPortalView.java -text
 study/src/org/labkey/study/assay/query/AssayListQueryView.java -text
@@ -3146,6 +3148,7 @@ study/src/org/labkey/study/controllers/samples/SpecimenApiController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
+study/src/org/labkey/study/dataset/DatasetAuditProvider.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
@@ -3393,6 +3396,7 @@ study/src/org/labkey/study/requirements/SpecimenRequestRequirementType.java -tex
 study/src/org/labkey/study/samples/SampleSearchBean.java -text
 study/src/org/labkey/study/samples/SampleSearchWebPart.java -text
 study/src/org/labkey/study/samples/SamplesWebPart.java -text
+study/src/org/labkey/study/samples/SpecimenCommentAuditProvider.java -text
 study/src/org/labkey/study/samples/SpecimenCommentAuditViewFactory.java -text
 study/src/org/labkey/study/samples/notifications/ActorNotificationRecipientSet.java -text
 study/src/org/labkey/study/samples/notifications/DefaultRequestNotification.java -text
