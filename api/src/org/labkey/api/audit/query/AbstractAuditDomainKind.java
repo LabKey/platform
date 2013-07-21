@@ -60,6 +60,9 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     private static final Set<String> _reservedNames = new HashSet<>();
     private Set<PropertyStorageSpec> _allColumns = new LinkedHashSet<>();
 
+    public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
+    public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
+
     static {
         _baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
         _baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR));
@@ -72,6 +75,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         _baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
         _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("EntityId", JdbcType.VARCHAR));
+        _baseFields.add(createFieldSpec("MessageId", JdbcType.INTEGER));
     }
 
     protected abstract String getNamespacePrefix();

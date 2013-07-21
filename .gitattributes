@@ -124,6 +124,7 @@ api/src/org/labkey/api/audit/AuditLogService.java -text
 api/src/org/labkey/api/audit/AuditTypeEvent.java -text
 api/src/org/labkey/api/audit/AuditTypeProvider.java -text
 api/src/org/labkey/api/audit/ClientAPIAuditViewFactory.java -text
+api/src/org/labkey/api/audit/ClientApiAuditProvider.java -text
 api/src/org/labkey/api/audit/DefaultAuditProvider.java -text
 api/src/org/labkey/api/audit/SimpleAuditViewFactory.java -text
 api/src/org/labkey/api/audit/data/DataMapColumn.java -text
@@ -506,6 +507,7 @@ api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorId.java -text
 api/src/org/labkey/api/exp/property/DefaultPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Domain.java -text
+api/src/org/labkey/api/exp/property/DomainAuditProvider.java -text
 api/src/org/labkey/api/exp/property/DomainAuditViewFactory.java -text
 api/src/org/labkey/api/exp/property/DomainKind.java -text
 api/src/org/labkey/api/exp/property/DomainProperty.java -text
@@ -5076,7 +5078,9 @@ internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/src/org/labkey/api/webdav/ActionResource.java -text
+internal/src/org/labkey/api/webdav/FileSystemAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemAuditViewFactory.java -text
+internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
