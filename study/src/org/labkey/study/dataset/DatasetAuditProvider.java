@@ -143,8 +143,8 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             _fields.add(createFieldSpec("DatasetId", JdbcType.INTEGER));
             _fields.add(createFieldSpec("HasDetails", JdbcType.BOOLEAN));
             _fields.add(createFieldSpec("UploadLog", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("OldValues", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("NewValues", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
 
         }
 

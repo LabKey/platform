@@ -160,6 +160,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
         AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
+        AuditLogService.registerAuditType(new MessageAuditProvider());
         ServiceRegistry.get().registerService(EmailService.I.class, new EmailServiceImpl());
 
         // Editors can read and respond to secure message boards

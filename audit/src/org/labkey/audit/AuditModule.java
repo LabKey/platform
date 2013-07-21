@@ -78,6 +78,8 @@ public class AuditModule extends DefaultModule
     {
         AuditQuerySchema.register();
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
+        AuditLogService.registerAuditType(new SiteSettingsAuditProvider());
+
         AuditController.registerAdminConsoleLinks();
 
         // This schema conversion can't use the normal UpgradeCode process because it requires Ontology service to be started

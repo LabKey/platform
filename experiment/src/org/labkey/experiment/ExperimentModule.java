@@ -28,6 +28,7 @@ import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -228,6 +229,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().addAuditViewFactory(DomainAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ExperimentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(SampleSetAuditViewFactory.getInstance());
+
+        AuditLogService.registerAuditType(new DomainAuditProvider());
+        AuditLogService.registerAuditType(new ExperimentAuditProvider());
+        AuditLogService.registerAuditType(new SampleSetAuditProvider());
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new ExpDataFileListener());
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));

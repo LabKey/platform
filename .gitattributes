@@ -98,6 +98,7 @@ announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/EmailServiceImpl.java -text
+announcements/src/org/labkey/announcements/MessageAuditProvider.java -text
 announcements/src/org/labkey/announcements/MessageAuditViewFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsWriterFactory.java -text
@@ -193,6 +194,7 @@ audit/src/org/labkey/audit/AuditLogImpl.java -text
 audit/src/org/labkey/audit/AuditModule.java -text
 audit/src/org/labkey/audit/AuditSchema.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditDetailsModel.java -text
+audit/src/org/labkey/audit/SiteSettingsAuditProvider.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditViewFactory.java -text
 audit/src/org/labkey/audit/auditLog.jsp -text
 audit/src/org/labkey/audit/model/LogManager.java -text
@@ -726,7 +728,9 @@ core/src/org/labkey/core/project/folderNav.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projectNav.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
+core/src/org/labkey/core/query/AttachmentAuditProvider.java -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
+core/src/org/labkey/core/query/ContainerAuditProvider.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/FileListTableInfo.java -text
@@ -1186,6 +1190,7 @@ experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/DerivedSamplePropertyHelper.java -text
 experiment/src/org/labkey/experiment/DotGraph.java -text
 experiment/src/org/labkey/experiment/ExpDataFileListener.java -text
+experiment/src/org/labkey/experiment/ExperimentAuditProvider.java -text
 experiment/src/org/labkey/experiment/ExperimentAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
@@ -1208,6 +1213,7 @@ experiment/src/org/labkey/experiment/ProtocolDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ProtocolWebPart.java -text
 experiment/src/org/labkey/experiment/RunGroupWebPart.java -text
 experiment/src/org/labkey/experiment/RunTypeWebPart.java -text
+experiment/src/org/labkey/experiment/SampleSetAuditProvider.java -text
 experiment/src/org/labkey/experiment/SampleSetAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/SampleSetDisplayColumn.java -text
 experiment/src/org/labkey/experiment/SampleSetWebPart.java -text
@@ -1518,6 +1524,7 @@ list/src/org/labkey/list/model/FileNameUniquifier.java -text
 list/src/org/labkey/list/model/FolderListImporter.java -text
 list/src/org/labkey/list/model/FolderListWriter.java -text
 list/src/org/labkey/list/model/IntegerListDomainKind.java -text
+list/src/org/labkey/list/model/ListAuditProvider.java -text
 list/src/org/labkey/list/model/ListAuditViewFactory.java -text
 list/src/org/labkey/list/model/ListDef.java -text
 list/src/org/labkey/list/model/ListDefinitionImpl.java -text
@@ -2283,7 +2290,9 @@ query/src/org/labkey/query/TableWriter.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
+query/src/org/labkey/query/audit/QueryAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryAuditViewFactory.java -text
+query/src/org/labkey/query/audit/QueryUpdateAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryUpdateAuditViewFactory.java -text
 query/src/org/labkey/query/controllers/AbstractExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
@@ -2530,6 +2539,7 @@ search/src/org/apache/lucene/index/IndexGate.java -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text
 search/src/org/labkey/search/SearchModule.java -text
+search/src/org/labkey/search/audit/SearchAudiProvider.java -text
 search/src/org/labkey/search/model/AbstractIndexTask.java -text
 search/src/org/labkey/search/model/AbstractSearchService.java -text
 search/src/org/labkey/search/model/CrawlerTest.java -text

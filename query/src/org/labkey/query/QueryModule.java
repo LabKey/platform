@@ -57,7 +57,9 @@ import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
@@ -195,6 +197,9 @@ public class QueryModule extends DefaultModule
 
         AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(QueryUpdateAuditViewFactory.getInstance());
+
+        AuditLogService.registerAuditType(new QueryAuditProvider());
+        AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
     }
 
     @Override
