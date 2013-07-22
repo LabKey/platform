@@ -944,7 +944,15 @@ groupByLoop:
         if (expr instanceof QQuery)
         {
             QueryRelation subquery = ((QQuery)expr)._select;
-            subquery.resolveFields();
+            if (null == subquery)
+            {
+                if (getParseErrors().isEmpty())
+                    getParseErrors().add(new QueryException("Unexpected error: select field is null"));
+            }
+            else
+            {
+                subquery.resolveFields();
+            }
             return expr;
         }
         if (expr instanceof QRowStar)
