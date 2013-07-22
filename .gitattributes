@@ -243,7 +243,6 @@ bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptModel.java -text
 bigiron/src/org/labkey/bigiron/sas/sasExportScript.jsp -text
 cbcassay/CBCAssay.iml -text
-cbcassay/build.xml -text
 cbcassay/data/ex_20081016_131859.small.dat -text
 cbcassay/data/ex_20090115_jul08BAD.dat -text
 cbcassay/module.properties -text
@@ -261,6 +260,7 @@ cbcassay/src/org/labkey/cbcassay/data/CBCData.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
+core/build.xml -text
 core/module.properties -text
 core/resources/schemas/core.xml -text
 core/resources/schemas/dbscripts/postgresql/core-0.00-10.30.sql -text
@@ -1501,7 +1501,6 @@ issues/src/org/labkey/issue/updateView.jsp -text
 issues/webapp/issues/hashbang.js -text
 list/List.iml -text
 list/ListGWT.iml -text
-list/build.xml -text
 list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
 list/gwtsrc/org/labkey/list/client/GWTList.java -text
 list/gwtsrc/org/labkey/list/client/ListDesigner.java -text
@@ -1645,6 +1644,7 @@ mothership/src/org/labkey/mothership/StackTraceDisplayColumn.java -text
 mothership/src/org/labkey/mothership/editUpgradeMessage.jsp -text
 mothership/src/org/labkey/mothership/query/ExceptionStackTraceQueryView.java -text
 mothership/src/org/labkey/mothership/query/MothershipSchema.java -text
+pipeline/build.xml -text
 pipeline/lib/activemq-core-4.1.1-sources.zip -text
 pipeline/lib/activemq-core-4.1.1.jar -text
 pipeline/lib/addressing-1.0.jar -text
@@ -2134,6 +2134,7 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
+query/build.xml -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
@@ -2512,7 +2513,6 @@ query/webapp/reports/r.gif -text
 query/webapp/reports/rowExpander.js -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
-search/build.xml -text
 search/lib/instructions.txt -text
 search/lib/lucene-4.3.0.src.zip -text
 search/lib/lucene-analyzers-common-4.3.0.jar -text
@@ -3650,7 +3650,6 @@ study/webapp/study/tools/specimen_search.png -text
 study/webapp/study/tools/study_overview.png -text
 study/webapp/study/tools/timeline_chart.png -text
 survey/Survey.iml -text
-survey/build.xml -text
 survey/module.properties -text
 survey/resources/schemas/dbscripts/postgresql/obsolete/survey-0.00-0.01.sql -text
 survey/resources/schemas/dbscripts/postgresql/survey-0.00-13.10.sql -text
@@ -3685,7 +3684,6 @@ survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/UsersCombo.js -text
 survey/webapp/survey/surveyDesignPanel.js -text
 timeline/Timeline.iml -text
-timeline/build.xml -text
 timeline/minifyTimeline -text
 timeline/module.properties -text
 timeline/src/META-INF/timeline/scripts.txt -text
@@ -3929,7 +3927,6 @@ timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-api.js -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.css -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.js -text
 visualization/Visualization.iml -text
-visualization/build.xml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
 visualization/resources/web/timechart.lib.xml -text
@@ -3978,6 +3975,7 @@ visualization/webapp/visualization/report/scatter_plot.gif -text
 visualization/webapp/visualization/report/scatter_plot.png -text
 visualization/webapp/visualization/report/timechart.gif -text
 visualization/webapp/visualization/report/timechart.png -text
+wiki/build.xml -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text
 wiki/module.properties -text

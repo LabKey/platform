@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="Build Pipeline" default="build" basedir="../../">
+    <dirname property="moduleDir" file="${ant.file}"/>
+
+    <!-- TODO: Need to set some properties for this to work standalone -->
+    <target name="init">
+    </target>
+
+    <target name="build" depends="init, build_module" />
+
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module" description="Builds pipeline module and deploys into LabKey installation.">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module"
+             inheritall="true">
+        </ant>
+
+        <!-- Copy the pipeline library JARs -->
+        <property name="deploy.pipeline.lib.dir" value="${deploy.dir}/pipelineLib" />
+        <mkdir dir="${deploy.pipeline.lib.dir}" />
+        <copy todir="${deploy.pipeline.lib.dir}" preservelastmodified="true" file="${lib.dir}/build/servlet-api.jar" />
+    </target>
+</project>

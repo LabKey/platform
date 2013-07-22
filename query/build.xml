@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="Build Query" default="build" basedir="../../">
+    <dirname property="moduleDir" file="${ant.file}"/>
+
+    <target name="init">
+        <property name="build.dir" value="${basedir}${file.separator}..${file.separator}build" />
+        <property name="gensrc.dir" value="${build.dir}/gensrc" />
+    </target>
+
+    <target name="build" depends="init">
+        <antcall target="build_module" inheritall="true" />
+    </target>
+
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module" depends="sql"
+            description="Invokes antlr, builds query module and deploys into LabKey installation.">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module"
+             inheritall="true">
+        </ant>
+    </target>
+
+    <target name="sql" depends="query_init">
+        <java classname="org.antlr.Tool">
+            <classpath path="${moduleDir}/lib/antlr-3.3.jar"/>
+            <arg value="-o"/>
+            <arg value="${moduleAdditionalSrcPath}/org/labkey/query/sql/antlr"/>
+            <arg value="${moduleDir}/src/org/labkey/query/sql/SqlBase.g" />
+        </java>
+    </target>
+
+    <target name="query_init">
+        <property name="moduleAdditionalSrcPath" value="${gensrc.dir}/antlr" />
+        <mkdir dir="${moduleAdditionalSrcPath}/org/labkey/query/sql/antlr"/>
+    </target>
+</project>

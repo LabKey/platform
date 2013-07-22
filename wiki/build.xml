@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="Build Pipeline" default="build" basedir="../../">
+    <dirname property="moduleDir" file="${ant.file}"/>
+
+    <!-- TODO: Need to set some properties for build_module to work standalone -->
+    <target name="init">
+    </target>
+
+    <target name="build" depends="init, build_module" />
+
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module" description="Builds wiki module and deploys into LabKey installation.">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module"
+             inheritall="true">
+        </ant>
+    </target>
+
+    <target name="compile-radeox-jar" description="Builds radeox.jar from sources and copies to /server/modules/wiki/lib">
+        <property name="build.dir" value="${basedir}/../build"/>
+        <mkdir dir="${build.dir}/radeox"/>
+        <ant antfile="build.xml" target="jar" dir="${moduleDir}/radeox"/>
+        <ant antfile="build.xml" target="jar-api" dir="${moduleDir}/radeox"/>
+        <copy todir="${moduleDir}/lib">
+            <fileset dir="${moduleDir}/radeox/lib" includes="radeox*.jar" />
+        </copy>
+    </target>
+</project>
