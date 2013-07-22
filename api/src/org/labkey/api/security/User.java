@@ -46,6 +46,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private Date _lastLogin = null;
     private boolean _active = false;
     private String _phone;
+    private String _mobile;
+    private String _pager;
+    private String _im;
+    private String _description;
+
     private GUID entityId;
 
     private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
@@ -280,6 +285,46 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setPhone(String phone)
     {
         _phone = phone;
+    }
+
+    public String getMobile()
+    {
+        return _mobile;
+    }
+
+    public void setMobile(String mobile)
+    {
+        _mobile = mobile;
+    }
+
+    public String getPager()
+    {
+        return _pager;
+    }
+
+    public void setPager(String pager)
+    {
+        _pager = pager;
+    }
+
+    public String getIM()
+    {
+        return _im;
+    }
+
+    public void setIM(String im)
+    {
+        _im = im;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 
     public GUID getEntityId()

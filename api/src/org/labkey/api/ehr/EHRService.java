@@ -18,13 +18,20 @@ package org.labkey.api.ehr;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.dataentry.DataEntryForm;
+import org.labkey.api.ehr.dataentry.FormSection;
+import org.labkey.api.ehr.demographics.DemographicsProvider;
+import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -54,6 +61,10 @@ abstract public class EHRService
     abstract public void registerTriggerScript(Module owner, Resource script);
 
     abstract public List<Resource> getExtraTriggerScripts(Container c);
+
+    abstract public void registerDemographicsProvider(DemographicsProvider provider);
+
+    abstract public Collection<DemographicsProvider> getDemographicsProviders(Container c);
 
     abstract public void registerTableCustomizer(Module owner, Class<? extends TableCustomizer> customizer);
 
@@ -110,7 +121,9 @@ abstract public class EHRService
 
     abstract public void registerFormType(DataEntryForm form);
 
-    abstract public void registerSimpleFormType(FORM_TYPE type, Module m, String schema, String query, String category);
+    abstract public void registerSimpleFormType(FORM_TYPE type, Module m, String category, String label, String schema, String query);
+
+    abstract public void registerFormType(FORM_TYPE type, Module m, String category, String name, String label, List<FormSection> sections);
 
     public static enum FORM_TYPE
     {
@@ -118,4 +131,18 @@ abstract public class EHRService
         Encounter(),
         Request();
     }
+
+    abstract public List<FieldKey> getDefaultFieldKeys(TableInfo ti);
+
+    abstract public void registerMoreActionsButton(ButtonConfigFactory btn, String schema, String query);
+
+    abstract public List<ButtonConfigFactory> getMoreActionsButtons(TableInfo ti);
+
+    abstract public boolean hasDataEntryPermission (String schemaName, String queryName, Container c, User u);
+
+    abstract public boolean hasDataEntryPermission (TableInfo ti);
+
+    abstract public boolean hasPermission (TableInfo ti, Class<? extends Permission> perm);
+
+    abstract public boolean hasPermission (String schemaName, String queryName, Container c, User u, Class<? extends Permission> perm);
 }

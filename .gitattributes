@@ -412,8 +412,14 @@ api/src/org/labkey/api/ehr/HistoryRow.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/DataEntryForm.java -text
+api/src/org/labkey/api/ehr/dataentry/EncounterFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/FormElement.java -text
 api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/SimpleFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/TaskFormSection.java -text
+api/src/org/labkey/api/ehr/demographics/AbstractDemographicsProvider.java -text
+api/src/org/labkey/api/ehr/demographics/AbstractListDemographicsProvider.java -text
+api/src/org/labkey/api/ehr/demographics/DemographicsProvider.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/AsyncDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text

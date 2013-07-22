@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: bimber
@@ -36,6 +37,8 @@ public interface HistoryDataSource
     public String getName();
 
     public boolean isAvailable(Container c, User u);
+
+    public Set<String> getAllowableCategoryGroups(Container c, User u);
 
     public List<HistoryRow> getRows(Container c, User u, String subjectId, Date minDate, Date maxDate, boolean redacted);
 

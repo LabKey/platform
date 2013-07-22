@@ -111,4 +111,15 @@ public class BuiltInButtonConfig implements ButtonConfig
     {
         _hidden = hidden;
     }
+
+    public BuiltInButtonConfig clone()
+    {
+        BuiltInButtonConfig ret = new BuiltInButtonConfig(_originalCaption, _caption);
+        ret.setInsertAfter(_insertAfter);
+        ret.setInsertBefore(_insertBefore);
+        ret.setInsertPosition(_insertPosition);
+        ret.setHidden(_hidden);
+
+        return ret;
+    }
 }

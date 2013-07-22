@@ -16,6 +16,7 @@
 package org.labkey.api.ldk.table;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
@@ -60,20 +61,26 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _clientDependencies = clientDependencies;
     }
 
-    public NavTree create(Container c, User u)
+    public NavTree create(TableInfo ti)
     {
+        Container c = ti.getUserSchema().getContainer();
         NavTree tree = new NavTree();
         tree.setText(_text);
         if (_url != null)
             tree.setHref(_url.copy(c).getActionURL().toString());
-        tree.setScript(_jsHandler);
+        tree.setScript(getJsHandler(ti));
 
         return tree;
     }
 
-    public boolean isAvailable(Container c, User u)
+    protected String getJsHandler(TableInfo ti)
     {
-        return c.getActiveModules().contains(_owner);
+        return _jsHandler;
+    }
+
+    public boolean isAvailable(TableInfo ti)
+    {
+        return ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
     }
 
     public Set<ClientDependency> getClientDependencies(Container c, User u)

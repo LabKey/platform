@@ -29,6 +29,7 @@ import org.labkey.data.xml.ButtonMenuItem;
 import org.labkey.data.xml.PermissionType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -140,6 +141,30 @@ public class ButtonBarConfig
         if (buttonBarOptions.isSetOnRender())
         {
             _onRenderScript = buttonBarOptions.getOnRender();
+        }
+    }
+
+    public ButtonBarConfig(ButtonBarConfig cfg)
+    {
+        this(new JSONObject());
+        if (cfg.getPosition() != null)
+            this.setPosition(cfg.getPosition());
+
+        this.setIncludeStandardButtons(cfg.isIncludeStandardButtons());
+        if (cfg.getScriptIncludes() != null)
+            this.setScriptIncludes(Arrays.copyOfRange(cfg.getScriptIncludes(), 0 , cfg.getScriptIncludes().length));
+
+        this._hiddenStandardButtons = new HashSet<>(cfg._hiddenStandardButtons);
+        this._onRenderScript = cfg._onRenderScript;
+
+        if (cfg.getItems() != null)
+        {
+            List<ButtonConfig> items = new ArrayList<>();
+            for (ButtonConfig btn : cfg.getItems())
+            {
+                items.add(btn.clone());
+            }
+            this.setItems(items);
         }
     }
 

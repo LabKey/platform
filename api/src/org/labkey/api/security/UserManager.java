@@ -429,6 +429,28 @@ public class UserManager
     }
 
 
+    public static void updateUser(User currentUser, User toUpdate) throws SQLException
+    {
+        Map<String, Object> typedValues = new HashMap<>();
+        typedValues.put("phone", PageFlowUtil.formatPhoneNo(toUpdate.getPhone()));
+        typedValues.put("mobile", PageFlowUtil.formatPhoneNo(toUpdate.getMobile()));
+        typedValues.put("pager", PageFlowUtil.formatPhoneNo(toUpdate.getPager()));
+        typedValues.put("im", toUpdate.getIM());
+
+        if (!currentUser.isGuest())
+            typedValues.put("displayName", toUpdate.getDisplayName(currentUser));
+
+        typedValues.put("firstName", toUpdate.getFirstName());
+        typedValues.put("lastName", toUpdate.getLastName());
+        typedValues.put("description", toUpdate.getDescription());
+
+        Table.update(currentUser, CORE.getTableInfoUsers(), typedValues, toUpdate.getUserId());
+        clearUserList(toUpdate.getUserId());
+
+        addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
+    }
+
+
     public static String changeEmail(int userId, String oldEmail, ValidEmail newEmail, User currentUser)
     {
         if (null != getUser(newEmail))

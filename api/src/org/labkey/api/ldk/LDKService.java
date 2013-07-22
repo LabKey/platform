@@ -15,6 +15,7 @@
  */
 package org.labkey.api.ldk;
 
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.security.User;
@@ -30,6 +31,9 @@ abstract public class LDKService
 {
     static LDKService instance;
 
+    public static final String ALL_TABLES = "~~ALL_TABLES~~";
+    public static final String ALL_SCHEMAS = "~~ALL_SCHEMAS~~";
+
     public static LDKService get()
     {
         return instance;
@@ -42,9 +46,11 @@ abstract public class LDKService
 
     abstract public TableCustomizer getDefaultTableCustomizer();
 
-    abstract public TableCustomizer getBuiltInColumnsCustomizer();
+    abstract public TableCustomizer getBuiltInColumnsCustomizer(boolean disableFacetingForNumericCols);
 
     abstract public TableCustomizer getColumnsOrderCustomizer();
 
     abstract public Map<String, Object> getContainerSizeJson(Container c, User u, boolean includeAllRootTypes, boolean includeFileCount);
+
+    abstract public void applyNumericSort(AbstractTableInfo ti, String colName);
 }

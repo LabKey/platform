@@ -103,7 +103,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _javascriptClass;
     }
 
-    protected void setJavascriptClass(String javascriptClass)
+    public void setJavascriptClass(String javascriptClass)
     {
         _javascriptClass = javascriptClass;
     }

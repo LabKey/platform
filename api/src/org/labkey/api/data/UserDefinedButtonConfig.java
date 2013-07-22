@@ -24,6 +24,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -227,5 +228,31 @@ public class UserDefinedButtonConfig implements ButtonConfig
         {
             wrapOnClick(ctx, child);
         }
+    }
+
+    public UserDefinedButtonConfig clone()
+    {
+        UserDefinedButtonConfig ret = new UserDefinedButtonConfig();
+        ret.setText(_text);
+        ret.setUrl(_url);
+        ret.setOnClick(_onClick);
+        ret.setAction(_action);
+        ret.setRequiresSelection(_requiresSelection);
+        ret.setPermission(_permission);
+        ret.setInsertAfter(_insertAfter);
+        ret.setInsertBefore(_insertBefore);
+        ret.setInsertPosition(_insertPosition);
+
+        if (_menuItems != null)
+        {
+            List<NavTree> items = new ArrayList<>();
+            for (NavTree item : _menuItems)
+            {
+                items.add(new NavTree(item));
+            }
+            ret.setMenuItems(items);
+        }
+
+        return ret;
     }
 }

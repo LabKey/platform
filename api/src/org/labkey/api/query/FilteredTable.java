@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -75,7 +76,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         _importMsg = _rootTable.getImportMessage();
         _importTemplates = _rootTable.getRawImportTemplates();
         // UNDONE: lazy load button bar config????
-        _buttonBarConfig = _rootTable.getButtonBarConfig();
+        _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
         _auditBehaviorType = _rootTable.getAuditBehavior();
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate

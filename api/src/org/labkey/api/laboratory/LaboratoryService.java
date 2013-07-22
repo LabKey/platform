@@ -18,6 +18,7 @@ package org.labkey.api.laboratory;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -105,11 +106,11 @@ abstract public class LaboratoryService
 
     abstract public void registerQueryButton(ButtonConfigFactory btn, String schema, String query);
 
-    abstract public List<ButtonConfigFactory> getQueryButtons(Container c, User u, String schema, String query);
+    abstract public List<ButtonConfigFactory> getQueryButtons(TableInfo ti);
 
     abstract public void registerAssayButton(ButtonConfigFactory btn, String providerName, String domain);
 
-    abstract public List<ButtonConfigFactory> getAssayButtons(Container c, User u, String providerName, String domain);
+    abstract public List<ButtonConfigFactory> getAssayButtons(TableInfo ti, String providerName, String domain);
 
     abstract public TableCustomizer getLaboratoryTableCustomizer();
 

@@ -18,6 +18,7 @@ package org.labkey.api.ldk.table;
 import org.labkey.api.data.ButtonConfig;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
@@ -31,9 +32,9 @@ import java.util.Set;
  */
 public interface ButtonConfigFactory
 {
-    public NavTree create(Container c, User u);
+    public NavTree create(TableInfo ti);
 
-    public boolean isAvailable(Container c, User u);
+    public boolean isAvailable(TableInfo ti);
 
     public Set<ClientDependency> getClientDependencies(Container c, User u);
 }
