@@ -640,7 +640,7 @@ public class ExcelFactory
         public void testExcelFileImportShouldSucceed()  throws Exception
         {
             JSONArray jsonArray = startImportFile("Formulas.xlsx");
-            if(jsonArray == null && AppProps.getInstance().isDevMode())
+            if(jsonArray == null && !AppProps.getInstance().isDevMode())
                 return;
             try
             {
