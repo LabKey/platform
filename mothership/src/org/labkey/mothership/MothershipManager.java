@@ -270,7 +270,7 @@ public class MothershipManager
                 existingInstallation.setServerIP(installation.getServerIP());
                 existingInstallation.setServerHostName(hostName);
                 existingInstallation.setSystemDescription(getBestString(existingInstallation.getSystemDescription(), installation.getSystemDescription()));
-                if (installation.isUsedInstaller())
+                if (installation.getUsedInstaller())
                 {
                     // The existing installation may have been an upgrade from an earlier version before we started recording usage of the installer
                     existingInstallation.setUsedInstaller(true);

@@ -134,7 +134,7 @@ public class ServerInstallation
         _serverHostName = serverHostName;
     }
 
-    public Boolean isUsedInstaller()
+    public Boolean getUsedInstaller()
     {
         return _usedInstaller;
     }
