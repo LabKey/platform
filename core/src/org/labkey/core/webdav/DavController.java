@@ -1246,11 +1246,7 @@ public class DavController extends SpringActionController
                     }
                 }
             }
-            catch (IOException x)
-            {
-                throw x;
-            }
-            catch (DavException x)
+            catch (IOException|DavException|ConfigurationException x)
             {
                 throw x;
             }
