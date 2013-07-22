@@ -641,7 +641,7 @@ public class ExcelFactory
         {
             JSONArray jsonArray = startImportFile("Formulas.xlsx");
             if(jsonArray == null && !AppProps.getInstance().isDevMode())
-                return;
+                return; // test requires dev mode
             try
             {
                 assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
@@ -668,10 +668,11 @@ public class ExcelFactory
 
         private void attemptImportExpectError(String filename, Class exceptionClass)
         {
-
             try
             {
-                startImportFile(filename);
+                JSONArray jsonArray = startImportFile(filename);
+                if(jsonArray == null && !AppProps.getInstance().isDevMode())
+                    return; // test requires dev mode
                 fail("Should have failed before this point");
             }
             catch(Exception e)
