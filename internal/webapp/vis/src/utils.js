@@ -145,6 +145,6 @@ LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
     return null;
 };
 
-LABKEY.vis.isValid = function(value){
+LABKEY.vis.isValid = function(value) {
     return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
 };
