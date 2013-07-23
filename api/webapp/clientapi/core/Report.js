@@ -50,6 +50,7 @@ LABKEY.Report = new function(){
          * this allows an R script to setup an R environment and then use this environment in
          * subsequent R scripts.
          * @param {Object} config A configuration object with the following properties.
+         * @param {Object} config.clientContext Client supplied identifier returned in a call to getSessions()
          * @param {Function} config.success The function to call with the resulting information.
          * This function will be passed a single parameter of type object, which will have the following
          * properties:
@@ -66,11 +67,15 @@ LABKEY.Report = new function(){
          */
         createSession : function(config) {
             var containerPath = config && config.containerPath;
+            var createParams = {};
+            createParams["clientContext"] = config.clientContext;
+
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("reports", "createSession", containerPath ),
                 method: 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                jsonData : createParams
             });
         },
 
@@ -94,6 +99,33 @@ LABKEY.Report = new function(){
                 url: LABKEY.ActionURL.buildURL("reports", "deleteSession", config.containerPath),
                 method: 'POST',
                 params: params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
+        /**
+         * Returns a list of report sessions created via createSession
+         *
+         * @param {Object} config A configuration object with the following properties.
+         * @param {Function} config.success The function to call if the operation is successful.  This function will
+         * receive an object with the following properties
+         * <ul>
+         *     <li>reportSessions:  a reportSession[] of any sessions that have been created by the client
+         * </ul>
+         *
+         * @param {Function} [config.failure] A function to call if an error occurs. This function
+         * will receive one parameter of type object with the following properites:
+         * <ul>
+         *  <li>exception: The exception message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
+         * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
+         */
+        getSessions : function(config) {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("reports", "getSessions", config.containerPath),
+                method: 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });

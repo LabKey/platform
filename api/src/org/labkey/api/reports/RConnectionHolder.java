@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 import org.rosuda.REngine.Rserve.RConnection;
+import java.util.HashSet;
 
 //
 // This object and its held RConnection will outlive the underlying ScriptEngine
@@ -26,12 +27,28 @@ public class RConnectionHolder implements HttpSessionBindingListener
 {
     RConnection _connection;
     boolean _inUse;
+    Object _clientContext; // client supplied value to help identify a report session
+    String _reportSessionId;
+    static final HashSet<String> _reportSessions = new HashSet<>();
 
-    public RConnectionHolder()  {}
+    public RConnectionHolder(String reportSessionId, Object clientContext)
+    {
+        _clientContext = clientContext;
+        _reportSessionId = reportSessionId;
+        synchronized(_reportSessions)
+        {
+            _reportSessions.add(reportSessionId);
+        }
+    }
 
     protected void finalize()
     {
         close();
+    }
+
+    public static HashSet<String> getReportSessions()
+    {
+        return _reportSessions;
     }
 
     public void valueBound(HttpSessionBindingEvent httpSessionBindingEvent)
@@ -42,6 +59,11 @@ public class RConnectionHolder implements HttpSessionBindingListener
     public void valueUnbound(HttpSessionBindingEvent httpSessionBindingEvent)
     {
         close();
+        synchronized (_reportSessions)
+        {
+            if (_reportSessions.contains(_reportSessionId))
+                _reportSessions.remove(_reportSessionId);
+        }
     }
 
     public RConnection getConnection()
@@ -61,6 +83,16 @@ public class RConnectionHolder implements HttpSessionBindingListener
     public boolean isInUse()
     {
         return _inUse;
+    }
+
+    public Object getClientContext()
+    {
+        return _clientContext;
+    }
+
+    public String getReportSessionId()
+    {
+        return _reportSessionId;
     }
 
     public void setInUse(boolean value)
