@@ -157,6 +157,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -579,10 +580,25 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class CreateSessionAction extends MutatingApiAction
+    public static class CreateSessionForm
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        private Object _clientContext;
+
+        public Object getClientContext()
+        {
+            return _clientContext;
+        }
+
+        public void setClientContext(Object clientContext)
+        {
+            _clientContext = clientContext;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CreateSessionAction extends MutatingApiAction<CreateSessionForm>
+    {
+        public ApiResponse execute(CreateSessionForm form, BindException errors) throws Exception
         {
             String reportSessionId = null;
             //
@@ -592,7 +608,8 @@ public class ReportsController extends SpringActionController
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
             {
                 reportSessionId = "LabKey.ReportSession" + UniqueID.getServerSessionScopedUID();
-                getViewContext().getSession().setAttribute(reportSessionId, new RConnectionHolder());
+                getViewContext().getSession().setAttribute(reportSessionId,
+                        new RConnectionHolder(reportSessionId, form.getClientContext()));
             }
             else
             {
@@ -635,12 +652,12 @@ public class ReportsController extends SpringActionController
                     RConnectionHolder rh = (RConnectionHolder) getViewContext().getSession().getAttribute(reportSessionId);
                     if (rh != null)
                     {
-                        getViewContext().getSession().removeAttribute(reportSessionId);
                         synchronized(rh)
                         {
                             if (!rh.isInUse())
                             {
                                 rh.setConnection(null);
+                                getViewContext().getSession().removeAttribute(reportSessionId);
                             }
                             else
                             {
@@ -818,6 +835,73 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class getSessionsAction extends MutatingApiAction
+    {
+        public static final String REPORT_SESSIONS = "reportSessions";
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ArrayList<ReportSession> outputReportSessions = new ArrayList<>();
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                synchronized (RConnectionHolder.getReportSessions())
+                {
+                    Iterator<String> i = RConnectionHolder.getReportSessions().iterator();
+                    while (i.hasNext())
+                    {
+                        String reportSessionId = i.next();
+                        // ensure we only return valid sessions for this session state
+                        RConnectionHolder rh = (RConnectionHolder) getViewContext().getSession().getAttribute(reportSessionId);
+                        if (rh != null)
+                        {
+                            outputReportSessions.add(new ReportSession(rh));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //
+                // consider: don't throw an exception
+                //
+                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.putBeanList(REPORT_SESSIONS, outputReportSessions, "reportSessionId", "inUse", "clientContext");
+            return response;
+        }
+
+        public class ReportSession
+        {
+            private String _reportSessionId;
+            private boolean _inUse;
+            private Object _clientContext;
+
+            public ReportSession(RConnectionHolder rh)
+            {
+                _reportSessionId = rh.getReportSessionId();
+                _inUse = rh.isInUse();
+                _clientContext = rh.getClientContext();
+            }
+
+            public boolean getInUse()
+            {
+                return _inUse;
+            }
+
+            public String getReportSessionId()
+            {
+                return _reportSessionId;
+            }
+
+            public Object getClientContext()
+            {
+                return _clientContext;
+            }
+        }
+    }
 
     @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
