@@ -346,7 +346,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public boolean isExt3Required()
     {
-        return lookupBooleanValue(EXT3_REQUIRED, true);
+        return lookupBooleanValue(EXT3_REQUIRED, false);
     }
 
     public ExceptionReportingLevel getExceptionReportingLevel()

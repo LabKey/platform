@@ -97,7 +97,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 // OR if it is of type : (boolean, int, date, text), multiline excluded
                 if (this.column.lookup || this.column.dimension)
                     this.allowFacet = true;
-                else if (this.jsonType == 'boolean' || this.jsonType == 'int' || this.jsonType == 'float' ||
+                else if (this.jsonType == 'boolean' || this.jsonType == 'int' ||
                         (this.jsonType == 'string' && this.column.inputType != 'textarea'))
                     this.allowFacet = true;
                 break;

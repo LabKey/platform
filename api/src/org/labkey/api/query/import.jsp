@@ -18,12 +18,22 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
+        return resources;
+    }
+%>
 <%
-    ViewContext context = HttpView.currentContext();
     AbstractQueryImportAction.ImportViewBean bean = (AbstractQueryImportAction.ImportViewBean)HttpView.currentModel();
     final String copyPasteDivId = "copypasteDiv" + getRequestScopedUID();
     final String uploadFileDivId = "uploadFileDiv" + getRequestScopedUID();
@@ -58,27 +68,22 @@
 <div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
-<table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
-<tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Copy/paste text</span></th>
-    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
-</tr>
-<tr><td colspan=2 style="display:inline;"><div id="<%=text(copyPasteDivId)%>"></div></td></tr>
-</table>
-<br>
 <table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Upload file (.xls, .csv, .txt)</span></th>
-    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>
+    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+", "#", null, "id='" + uploadFileDivId + "Expando'")%></tr>
 <tr><td colspan=2><div id="<%=text(uploadFileDivId)%>"></div></td></tr>
 </table>
-
-<script type="text/javascript">
-    LABKEY.requiresScript("FileUploadField.js");
-</script>
+<br />
+<table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
+<tr class="labkey-wp-header" style="min-width:600px;">
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Copy/paste text</span></th>
+    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;", "#", null, "id='" + copyPasteDivId + "Expando'")%></th>
+</tr>
+<tr><td colspan=2 style="display:inline;"><div id="<%=text(copyPasteDivId)%>"></div></td></tr>
+</table>
 
 <script type="text/javascript"> (function(){
-    var $json = Ext.util.JSON.encode;
     var $html = Ext.util.Format.htmlEncode;
 
     var importTsvDiv = Ext.get(<%=q(copyPasteDivId)%>);
@@ -123,7 +128,7 @@
     {
         submitForm(uploadFileForm);
     }
-    
+
     function submitForm(form)
     {
         if (!form)
@@ -218,8 +223,7 @@
             errors.push("... total of " + total + " errors");
         }
 
-        var errorHtml = errors.join("<br>");
-        return errorHtml;
+        return errors.join("<br>");
     }
 
 
@@ -235,7 +239,7 @@
                 err = "row " + rowNumber + ": " + err;
             collection.push(err);
         }
-        
+
         if (Ext.isArray(errors))
         {
             for (var i=0 ; i<errors.length ; i++)
@@ -255,8 +259,10 @@
             }
             else
             {
-                for (var p in errors)
-                    collection.push(errors[p]);
+                for (var p in errors) {
+                    if (errors.hasOwnProperty(p))
+                        collection.push(errors[p]);
+                }
             }
         }
 
@@ -360,4 +366,5 @@
 
     Ext.onReady(onReady);
 
-})(); </script>
+})();
+</script>
