@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.dataentry.DataEntryForm;
 import org.labkey.api.ehr.dataentry.FormSection;
 import org.labkey.api.ehr.demographics.DemographicsProvider;
+import org.labkey.api.ehr.history.HistoryDataSource;
 import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;

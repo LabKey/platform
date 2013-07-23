@@ -407,8 +407,6 @@ api/src/org/labkey/api/di/DataIntegrationService.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
-api/src/org/labkey/api/ehr/HistoryDataSource.java -text
-api/src/org/labkey/api/ehr/HistoryRow.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/DataEntryForm.java -text
@@ -420,6 +418,10 @@ api/src/org/labkey/api/ehr/dataentry/TaskFormSection.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractDemographicsProvider.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractListDemographicsProvider.java -text
 api/src/org/labkey/api/ehr/demographics/DemographicsProvider.java -text
+api/src/org/labkey/api/ehr/history/AbstractDataSource.java -text
+api/src/org/labkey/api/ehr/history/HistoryDataSource.java -text
+api/src/org/labkey/api/ehr/history/HistoryRow.java -text
+api/src/org/labkey/api/ehr/history/HistoryRowImpl.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/AsyncDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
