@@ -18,10 +18,9 @@ package org.labkey.api.data;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 
-import java.sql.Types;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -34,10 +33,10 @@ public class TableChange
     final ChangeType type;
     final String schemaName;
     final String tableName;
-    Collection<PropertyStorageSpec> columns = new HashSet<>();
-    Collection<Index> indices = new HashSet<>();
-    Map<String, String> columnRenames = new HashMap<>();
-    Map<Index, Index> indexRenames = new HashMap<>();
+    Collection<PropertyStorageSpec> columns = new LinkedHashSet<>();
+    Collection<Index> indices = new LinkedHashSet<>();
+    Map<String, String> columnRenames = new LinkedHashMap<>();
+    Map<Index, Index> indexRenames = new LinkedHashMap<>();
 
     public TableChange(String schemaName, String tableName, ChangeType changeType)
     {

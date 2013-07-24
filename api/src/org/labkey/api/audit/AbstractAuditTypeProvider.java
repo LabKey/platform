@@ -1,7 +1,7 @@
 package org.labkey.api.audit;
 
-import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -14,8 +14,9 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
+import java.util.Map;
+
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/11/13
  */
@@ -29,7 +30,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public void initializeProvider(User user)
     {
-        Domain domain = getDomain(user);
+        Domain domain = getDomain();
 
         // if the domain doesn't exist, create it
         if (domain == null)
@@ -38,7 +39,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 DomainKind domainKind = getDomainKind();
                 PropertyService.get().registerDomainKind(domainKind);
 
-                String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), user);
+                String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
                 domain = PropertyService.get().createDomain(getDomainContainer(), domainURI, domainKind.getKindName());
                 domain.save(user);
             }
@@ -46,15 +47,18 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             {
                 throw new RuntimeException(e);
             }
+
+            AuditLogService.get().migrateProvider(this, domain);
         }
     }
 
-    protected Domain getDomain(User user)
+    @Override
+    public final Domain getDomain()
     {
         DomainKind domainKind = getDomainKind();
         PropertyService.get().registerDomainKind(domainKind);
 
-        String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), user);
+        String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
 
         return PropertyService.get().getDomain(getDomainContainer(), domainURI);
     }
@@ -62,7 +66,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain(userSchema.getUser());
+        Domain domain = getDomain();
         DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
         return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema);
@@ -72,6 +76,15 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public QueryView createDefaultQueryView()
     {
         throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public Map<String, String> legacyNameMap()
+    {
+        Map<String, String> legacyNames = new CaseInsensitiveHashMap<>();
+        legacyNames.put("ContainerId", "Container");
+        legacyNames.put("Date", "Created");
+        return legacyNames;
     }
 
     public static Container getDomainContainer()
@@ -90,4 +103,5 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         bean.setCreated(event.getCreated());
         bean.setCreatedBy(event.getCreatedBy());
     }
+
 }

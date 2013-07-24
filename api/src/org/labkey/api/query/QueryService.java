@@ -138,7 +138,7 @@ abstract public class QueryService
      * Loops through the field keys and turns them into ColumnInfos based on the base table
      */
     @NotNull
-    abstract public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, Collection<FieldKey> fields);
+    abstract public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields);
     @NotNull
     abstract public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns);
 

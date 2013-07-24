@@ -70,11 +70,10 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         _baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
         _baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
-        _baseFields.add(createFieldSpec("Modified", JdbcType.TIMESTAMP));
-        _baseFields.add(createFieldSpec("ModifiedBy", JdbcType.INTEGER));
         _baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
         _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("EntityId", JdbcType.VARCHAR));
+        // CONSIDER: remove for now, introduce later if needed
         _baseFields.add(createFieldSpec("MessageId", JdbcType.INTEGER));
     }
 

@@ -26,6 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -149,6 +150,11 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public AuditTypeProvider getAuditProvider(String eventType)
     {
         return AuditLogService.getAuditProvider(eventType);
+    }
+
+    @Override
+    public void migrateProvider(AuditTypeProvider provider, Domain domain)
+    {
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

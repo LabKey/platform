@@ -8,8 +8,9 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
+import java.util.Map;
+
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/8/13
  */
@@ -18,7 +19,6 @@ public interface AuditTypeProvider
     /**
      * The audit event name associated with this audit provider. Must be
      * unique within the system.
-     * @return
      */
     public String getEventName();
     public String getLabel();
@@ -27,12 +27,12 @@ public interface AuditTypeProvider
     /**
      * Perform any initialization of the provider at registration time such as
      * domain creation.
-     * @param user
+     * @param user User useed when saving the backing Domain.
      */
     public void initializeProvider(User user);
 
     //public DomainKind getDomainKind();
-    //public Domain getDomain(Container c, User user);
+    public Domain getDomain();
     public TableInfo createTableInfo(UserSchema schema);
     public QueryView createDefaultQueryView();
 
@@ -41,4 +41,10 @@ public interface AuditTypeProvider
      * fields
      */
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event);
+
+    /**
+     * Mapping from old audit table names ("intKey1" and "key1" to the new column names.)
+     */
+    Map<String, String> legacyNameMap();
+
 }

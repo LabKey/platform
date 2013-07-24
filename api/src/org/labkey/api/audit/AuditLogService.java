@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
@@ -205,6 +206,13 @@ public class AuditLogService
         public void registerAuditType(AuditTypeProvider provider);
         public List<AuditTypeProvider> getAuditProviders();
         public AuditTypeProvider getAuditProvider(String eventType);
+
+        /**
+         * Called when registering a AuditTypeProvider to migrate
+         * data from the old audit log to the new provisioned audit log tables
+         * in version 13.3.
+         */
+        public void migrateProvider(AuditTypeProvider provider, Domain domain);
     }
 
     public interface AuditViewFactory
