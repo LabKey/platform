@@ -1,37 +1,20 @@
 package org.labkey.core.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/9/13
  */
@@ -71,6 +54,14 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
             bean.setUser(event.getIntKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<String, String> legacyNameMap()
+    {
+        Map<String, String> legacyNames = super.legacyNameMap();
+        legacyNames.put("intKey1", "User");
+        return legacyNames;
     }
 
     public static class UserAuditDomainKind extends AbstractAuditDomainKind

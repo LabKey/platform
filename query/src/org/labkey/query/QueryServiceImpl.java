@@ -900,7 +900,7 @@ public class QueryServiceImpl extends QueryService
     }
 
     @NotNull
-    public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, Collection<FieldKey> fields)
+    public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields)
     {
         return getColumns(table, fields, Collections.<ColumnInfo>emptySet());
     }

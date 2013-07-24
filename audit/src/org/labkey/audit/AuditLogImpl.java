@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -34,27 +35,36 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.audit.model.LogManager;
+import org.labkey.audit.query.AuditLogTable;
 import org.labkey.audit.query.AuditQuerySchema;
 import org.labkey.audit.query.AuditQueryViewImpl;
 
@@ -64,8 +74,6 @@ import java.beans.XMLEncoder;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -558,13 +566,91 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         }
     }
 
+    @Override
     public String getDomainURI(String eventType)
     {
         return new Lsid("AuditLogService", eventType).toString();
     }
 
+    @Override
     public String getPropertyURI(String eventType, String propertyName)
     {
         return new Lsid("AuditLogService", eventType).toString() + '#' + propertyName;
     }
+
+    @Override
+    public void migrateProvider(AuditTypeProvider provider, Domain domain)
+    {
+        if (ModuleLoader.getInstance().isNewInstall())
+            return;
+
+        // Get the old audit table table (requires admin priviledges to see all rows in all containers)
+        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.siteAdminRole), true);
+        Container rootContainer = ContainerManager.getRoot();
+        UserSchema schema = AuditLogService.get().createSchema(user, rootContainer);
+        AuditLogTable sourceTable = new AuditLogTable(schema, LogManager.get().getTinfoAuditLog(), provider.getEventName());
+        sourceTable.setContainerFilter(ContainerFilter.EVERYTHING);
+
+        // UNDONE: Don't perform migration if audit.auditlog table has already been deleted from the database
+
+        _log.info("Migrating audit type " + provider.getEventName());
+
+        // Get the new audit provisioned table
+        DbSchema dbSchema = DbSchema.get(AuditSchema.SCHEMA_NAME);
+        SchemaTableInfo targetTable = StorageProvisioner.createTableInfo(domain, dbSchema);
+
+
+        // Create map of columns
+        Map<String, String> legacyNameMap = provider.legacyNameMap();
+        Map<FieldKey, ColumnInfo> sourceColumns = Table.createColumnMap(sourceTable, null);
+        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
+        for (ColumnInfo c : sourceColumns.values())
+        {
+            if (null != c.getPropertyURI())
+                colMap.put(c.getPropertyURI(), c);
+            colMap.put(c.getName(), c);
+
+            // mapping from 'intKey1' to new column name
+            String newName = legacyNameMap.get(c.getName());
+            if (newName != null)
+                colMap.put(newName, c);
+        }
+
+
+        // Generate SQL insert
+        SQLFragment insertInto = new SQLFragment("INSERT INTO ").append(targetTable.getSelectName()).append(" (");
+        SQLFragment insertSelect = new SQLFragment("SELECT ");
+        String sep = "";
+
+        for (ColumnInfo targetCol : targetTable.getColumns())
+        {
+            ColumnInfo fromCol = colMap.get(targetCol.getPropertyURI());
+            if (null == fromCol)
+                fromCol = colMap.get(targetCol.getName());
+
+            if (null == fromCol)
+            {
+                _log.warn(String.format("Could not copy column '%s'", targetCol.getName()));
+                continue;
+            }
+
+            insertInto.append(sep).append(targetCol.getSelectName());
+            insertSelect.append(sep).append(fromCol.getAlias());
+
+            sep = ", ";
+        }
+        insertInto.append(")\n");
+        insertInto.append(insertSelect);
+        insertInto.append("\n FROM (\n");
+        insertInto.append(QueryService.get().getSelectSQL(sourceTable, sourceColumns.values(), null, null, Table.ALL_ROWS, 0, true));
+        insertInto.append(") x\n");
+
+        _log.info(insertInto);
+
+        SqlExecutor exec = new SqlExecutor(dbSchema);
+        int count = exec.execute(insertInto);
+
+        _log.info(String.format("Migrated %d rows for audit type %s", count, provider.getEventName()));
+    }
+
 }
