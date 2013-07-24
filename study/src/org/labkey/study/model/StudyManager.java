@@ -435,16 +435,14 @@ public class StudyManager
         createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId));
     }
 
-    public void createDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
+    public void createDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
     {
         if (dataSetDefinition.getDataSetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
         DbScope scope = StudySchema.getInstance().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             ensureViewCategory(user, dataSetDefinition);
             _datasetHelper.create(user, dataSetDefinition);
             // This method call has the side effect of ensuring that we have a domain. If we don't create it here,
@@ -452,11 +450,11 @@ public class StudyManager
             // and ends up attempting to create the domain as well
             dataSetDefinition.getStorageTableInfo();
 
-            scope.commitTransaction();
+            transaction.commit();
         }
-        finally
+        catch (SQLException e)
         {
-            scope.closeConnection();
+            throw new RuntimeSQLException(e);
         }
         indexDataset(null, dataSetDefinition);
     }
@@ -1739,25 +1737,18 @@ public class StudyManager
     @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, int id)
     {
-        try
+        DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
+        // update old rows w/o entityid
+        if (null != ds && null == ds.getEntityId())
         {
-            DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
-            // update old rows w/o entityid
-            if (null != ds && null == ds.getEntityId())
-            {
-                ds.setEntityId(GUID.makeGUID());
-                Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
-                _datasetHelper.clearCache(ds);
-                ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
-                // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
-                //updateDataSetDefinition(null, ds);
-            }
-            return ds;
+            ds.setEntityId(GUID.makeGUID());
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
+            _datasetHelper.clearCache(ds);
+            ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
+            // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
+            //updateDataSetDefinition(null, ds);
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return ds;
     }
 
     @Nullable
@@ -2854,34 +2845,33 @@ public class StudyManager
         }
     }
 
-    /** @Deprecated pass in a BatchValidationException, not List<String>  */
+    /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        List<String> lsids = def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
+        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, logger, false);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
 
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        return def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
+        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, logger, false);
     }
     
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger,
-        boolean forUpdate)
-            throws SQLException
+    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger,
+                                          boolean forUpdate)
     {
         if (data.isEmpty())
             return Collections.emptyList();
@@ -2889,13 +2879,13 @@ public class StudyManager
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
-        List<String> lsids = def.importDatasetData(study, user, it, context, checkDuplicates, defaultQCState, logger, forUpdate);
+        List<String> lsids = def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, logger, forUpdate);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
 
 
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
             throws SQLException
     {
         if (data.isEmpty())
@@ -2903,7 +2893,7 @@ public class StudyManager
 
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         DataIteratorContext context = new DataIteratorContext(errors);
-        return def.importDatasetData(study, user, it, context, checkDuplicates, defaultQCState, logger, false);
+        return def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, logger, false);
     }
 
 
@@ -2985,10 +2975,7 @@ public class StudyManager
                 // add all the properties that exist for the domain
                 DomainProperty[] existingProperties = d.getProperties();
                 List<DomainProperty> l = new ArrayList<>(existingProperties.length);
-                for (DomainProperty p : existingProperties)
-                {
-                    l.add(p);
-                }
+                Collections.addAll(l, existingProperties);
                 domainsPropertiesMap.put(d.getTypeURI(), l);
             }
             // Issue 14569:  during study reimport be sure to look for a column has been deleted.
@@ -3346,9 +3333,8 @@ public class StudyManager
     /**
      * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
      * @param fireNotification - true to fire the changed notification.
-     * @throws SQLException
      */
-    public static void dataSetModified(DataSetDefinition def, User user, boolean fireNotification) throws SQLException
+    public static void dataSetModified(DataSetDefinition def, User user, boolean fireNotification)
     {
         def = def.createMutable();
         def.setModified(new Date());
@@ -3661,7 +3647,7 @@ public class StudyManager
         if (null == parent)
             return;
 
-        ActionURL begin = new ActionURL("project", "begin", study.getContainer());
+        ActionURL begin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(study.getContainer());
         String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false).toString();
         ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, study.getContainer());
         AttachmentService.Service serv = AttachmentService.get();
@@ -3684,20 +3670,13 @@ public class StudyManager
 
     public StudyImpl[] getAncillaryStudies(Container sourceStudyContainer)
     {
-        try
-        {
-            // in the upgrade case there  may not be any ancillary studyies
-            TableInfo t = StudySchema.getInstance().getTableInfoStudy();
-            ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
-            if (null == ssci || ssci.isUnselectable())
-                return new StudyImpl[0];
-            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS,
-                    new SimpleFilter("SourceStudyContainerId", sourceStudyContainer), null, StudyImpl.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        // in the upgrade case there  may not be any ancillary studyies
+        TableInfo t = StudySchema.getInstance().getTableInfoStudy();
+        ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
+        if (null == ssci || ssci.isUnselectable())
+            return new StudyImpl[0];
+        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS,
+                new SimpleFilter("SourceStudyContainerId", sourceStudyContainer), null).getArray(StudyImpl.class);
     }
 /*
     public void forceDatasetSnapshotRefresh(Study study)
@@ -4199,7 +4178,7 @@ public class StudyManager
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
 
             StudyManager.getInstance().importDatasetData(
-                    _studyDateBased, _context.getUser(),
+                    _context.getUser(),
                     (DataSetDefinition)def, dl, columnMap,
                     errors, true, null, null);
         }

@@ -1541,9 +1541,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, DataIteratorContext context, boolean checkDuplicates, QCState defaultQCState, Logger logger
+    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context, boolean checkDuplicates, QCState defaultQCState, Logger logger
             , boolean forUpdate)
-            throws SQLException
     {
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
@@ -1809,15 +1808,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         @Override
                         protected int getFirstValue()
                         {
-                            try
-                            {
-                                return getMaxKeyValue()+1;
-                            }
-                            catch (SQLException x)
-                            {
-                                throw new RuntimeSQLException(x);
-                            }
-                            }
+                            return getMaxKeyValue()+1;
+                        }
                     };
                     indexKeyProperty = it.addColumn(key, call);
                 }
@@ -2236,7 +2228,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private List<String> insertData(User user, DataIteratorBuilder in,
             boolean checkDuplicates, DataIteratorContext context, QCState defaultQCState,
             Logger logger, boolean forUpdate)
-            throws SQLException
     {
         ArrayList<String> lsids = new ArrayList<>();
         DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, forUpdate);
@@ -2550,14 +2541,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      * Gets the current highest key value for a server-managed key field.
      * If no data is returned, this method returns 0.
      */
-    private int getMaxKeyValue() throws SQLException
+    private int getMaxKeyValue()
     {
         TableInfo tInfo = getStorageTableInfo();
-        Integer newKey = Table.executeSingleton(tInfo.getSchema(),
-                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo,
-                null,
-                Integer.class
-                );
+        Integer newKey = new SqlSelector(tInfo.getSchema(),
+                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo).getObject(Integer.class);
         return newKey.intValue();
     }
 

@@ -339,7 +339,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, errors, true, true, defaultQCState, null, false);
+            List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, true, defaultQCState, null, false);
             if (lsids.size() > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -367,10 +367,6 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
             return url;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         catch (ChangePropertyDescriptorException e)
         {
@@ -451,7 +447,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     private Map<String, String> ensurePropertyDescriptors(
             User user, DataSetDefinition dataset,
-            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws SQLException, UnauthorizedException, ChangePropertyDescriptorException
+            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws ChangePropertyDescriptorException
     {
         Domain domain = dataset.getDomain();
         if (domain == null)
@@ -574,7 +570,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     private boolean renameRunPropertyToBatch(Domain domain, Map<String, String> propertyNamesToUris, Set<String> newPdNames, String newPdName, User user)
-            throws SQLException, ChangePropertyDescriptorException
+            throws ChangePropertyDescriptorException
     {
         if (newPdName.startsWith(AssayService.BATCH_COLUMN_NAME))
         {
@@ -603,18 +599,16 @@ public class AssayPublishManager implements AssayPublishService.Service
         return false;
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol)
     {
         return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, DataSet.TYPE_STANDARD, null, protocol);
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        try
+        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
-            schema.getScope().ensureTransaction();
-
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
@@ -631,12 +625,8 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
 
-            schema.getScope().commitTransaction();
+            transaction.commit();
             return newDataSet;
-        }
-        finally
-        {
-            schema.getScope().closeConnection();
         }
     }
 
@@ -749,7 +739,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                     QCState defaultQCState = null;
                     if (defaultQCStateId != null)
                         defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-                    lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+                    lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, true, defaultQCState, null);
                     if (!errors.hasErrors())
                         scope.commitTransaction();
                 }

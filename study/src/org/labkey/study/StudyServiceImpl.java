@@ -214,7 +214,7 @@ public class StudyServiceImpl implements StudyService.Service
             dataMap.add(mergeData);
 
             List<String> result = StudyManager.getInstance().importDatasetData(
-                study, u, def, dataMap, errors, true, true, defaultQCState, null, true);
+                    u, def, dataMap, errors, true, defaultQCState, null, true);
 
             if (errors.size() > 0)
             {

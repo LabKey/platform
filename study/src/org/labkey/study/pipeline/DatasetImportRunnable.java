@@ -182,7 +182,6 @@ public class DatasetImportRunnable implements Runnable
                     assert cpuImport.start();
                     _job.info(_datasetDefinition.getLabel() + ": Starting import");
                     List<String> imported = StudyManager.getInstance().importDatasetData(
-                            _study,
                             _job.getUser(),
                             _datasetDefinition,
                             loader,

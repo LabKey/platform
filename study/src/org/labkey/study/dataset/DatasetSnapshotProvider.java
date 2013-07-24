@@ -217,7 +217,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                         // import the data
                         BatchValidationException ve = new BatchValidationException();
-                        StudyManager.getInstance().importDatasetData(study, context.getUser(), def, new TabLoader(sb, true),
+                        StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
                                 new CaseInsensitiveHashMap<String>(), ve, true, null, null);
 
                         for (ValidationException e : ve.getRowErrors())
@@ -414,7 +414,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
 
                         // import the new data
-                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(),
+                        newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
                                 dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
                                 importErrors, true, null, null);
 

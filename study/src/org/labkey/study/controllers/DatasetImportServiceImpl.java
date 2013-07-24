@@ -79,8 +79,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         try
         {
             StudyManager.getInstance().importDatasetData(
-                study,
-                getUser(),
+                    getUser(),
                 def,
                 loader,
                 columnMap,
@@ -90,15 +89,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 null
             );
         }
-        catch (IOException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        catch (ServletException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        catch (SQLException e)
+        catch (IOException | ServletException | SQLException e)
         {
             throw UnexpectedException.wrap(e);
         }

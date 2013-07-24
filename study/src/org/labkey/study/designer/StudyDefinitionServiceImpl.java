@@ -188,26 +188,18 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), "Assays");
         categoryId = category.getRowId();
 
-        try
+        for (GWTAssayDefinition assayDefinition : studyDefinition.getAssaySchedule().getAssays())
         {
-            for (GWTAssayDefinition assayDefinition : studyDefinition.getAssaySchedule().getAssays())
+            int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getName());
+            if (dsId == -1)
             {
-                int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getName());
-                if (dsId == -1)
+                DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getName(),
+                        null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
+                if (datasetDefinition != null)
                 {
-                    DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getName(),
-                            null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
-                    if (datasetDefinition != null)
-                    {
-                        datasetDefinition.provisionTable();
-                    }
+                    datasetDefinition.provisionTable();
                 }
-
             }
-        }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
         }
 
         return studyDefinition;
