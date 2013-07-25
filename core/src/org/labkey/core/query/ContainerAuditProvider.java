@@ -6,13 +6,21 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -22,6 +30,18 @@ import java.util.Set;
  */
 public class ContainerAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
+        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
+    }
+
     @Override
     protected DomainKind getDomainKind()
     {
@@ -53,6 +73,22 @@ public class ContainerAuditProvider extends AbstractAuditTypeProvider implements
         copyStandardFields(bean, event);
 
         return (K)bean;
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
     }
 
     public static class ContainerAuditDomainKind extends AbstractAuditDomainKind

@@ -18,6 +18,10 @@ package org.labkey.audit;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.WriteableAppProps;
@@ -86,13 +90,28 @@ public class AuditController extends SpringActionController
         protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             String selected = form.getView();
-            if (selected == null)
-                selected = AuditLogService.get().getAuditViewFactories().get(0).getEventType();
 
-            AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
-            if (factory != null)
-                return factory.createDefaultQueryView(getViewContext());
-            return null;
+            if (AuditLogService.enableHardTableLogging())
+            {
+                if (selected == null)
+                    selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
+
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
+
+                return schema.createView(getViewContext(), settings, errors);
+            }
+            else
+            {
+                if (selected == null)
+                    selected = AuditLogService.get().getAuditViewFactories().get(0).getEventType();
+
+                AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
+                if (factory != null)
+                    return factory.createDefaultQueryView(getViewContext());
+
+                return null;
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
