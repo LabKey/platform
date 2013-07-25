@@ -41,15 +41,15 @@ public class StringListBox extends ListBox implements HasText, ChangeListener
         for (int i = 0; i < values.length; i++)
             list.add(values[i]);
 
-        init(list, selected, allowExtension);
+        init(list, selected, allowExtension, false);
     }
 
-    public StringListBox(List/*<String>*/ values, String selected, boolean allowExtension)
+    public StringListBox(List/*<String>*/ values, String selected, boolean allowExtension, boolean addSelectedWithoutMatch)
     {
-        init(values, selected, allowExtension);
+        init(values, selected, allowExtension, addSelectedWithoutMatch);
     }
 
-    private void init(List/*<String>*/ values, String selected, boolean allowExtension)
+    private void init(List/*<String>*/ values, String selected, boolean allowExtension, boolean addSelectedWithoutMatch)
     {
         this.values = values;
         this.allowExtension = allowExtension;
@@ -71,7 +71,7 @@ public class StringListBox extends ListBox implements HasText, ChangeListener
         }
         if (!match)
         {
-            if (null != selected && !allowExtension)
+            if (null != selected && !allowExtension && !addSelectedWithoutMatch)
                 throw new IllegalArgumentException("Item " + selected + " not found in list.");
             if (null != selected)
             {
