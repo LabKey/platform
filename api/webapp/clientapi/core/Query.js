@@ -560,6 +560,7 @@ LABKEY.Query = new function()
          *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
          *       config.containerPath.
          * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
+         * @param {String} [config.viewName] Name of a view to use.  This is potentially important if this view contains filters on the data.
          * @param {Function} config.success
          * @param {Function} config.failure
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -580,6 +581,9 @@ LABKEY.Query = new function()
             );
 
             dataObject['query.columns'] = config.column;
+
+            if (config.viewName)
+                dataObject['query.viewName'] = config.viewName;
 
             if (config.maxRows && config.maxRows >= 0)
                 dataObject.maxRows = config.maxRows;
