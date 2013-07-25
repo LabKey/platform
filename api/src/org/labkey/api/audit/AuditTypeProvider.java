@@ -4,6 +4,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -41,8 +42,8 @@ public interface AuditTypeProvider
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event);
 
     /**
-     * Mapping from old audit table names ("intKey1" and "key1" to the new column names.)
+     * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)
      */
-    Map<String, String> legacyNameMap();
+    Map<FieldKey, String> legacyNameMap();
 
 }

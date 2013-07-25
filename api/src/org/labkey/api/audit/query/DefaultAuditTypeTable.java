@@ -8,7 +8,6 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -32,9 +31,9 @@ import java.util.Map;
 public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 {
     protected AuditTypeProvider _provider;
-    protected Map<String, String> _legacyNameMap;
+    protected Map<FieldKey, String> _legacyNameMap;
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
-
+    
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
     {
         super(StorageProvisioner.createTableInfo(domain, dbSchema), schema);
@@ -77,7 +76,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     {
         return _defaultVisibleColumns;
     }
-
+    
     protected void initColumns()
     {
         for (ColumnInfo col : getColumns())
@@ -116,8 +115,39 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         if (col != null)
             return col;
 
+        // Now check for 'Property/...' columns
+        if (name.equalsIgnoreCase("Property"))
+        {
+            // UNDONE: backwards compat to "Property/*" columns
+//            col = new ColumnInfo("Property", this);
+//            col.setFk(new LookupForeignKey()
+//            {
+//                @Override
+//                public TableInfo getLookupTableInfo()
+//                {
+//                    return new VirtualPropertiesTable();
+//                }
+//            });
+        }
+
+        // Other legacy audit columns
+
         return null;
     }
+
+//    private class VirtualPropertiesTable extends VirtualTable
+//    {
+//        public VirtualPropertiesTable(DbSchema schema)
+//        {
+//            super(schema, DefaultAuditTypeTable.this.getUserSchema());
+//
+//            for (FieldKey fieldKey : _legacyNameMap.keySet())
+//            {
+//                if (fieldKey.getParent().equals("Property"))
+//                    this.addColumn(...)
+//            }
+//        }
+//    }
 
     @Nullable
     @Override

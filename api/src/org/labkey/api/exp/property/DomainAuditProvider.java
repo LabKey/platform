@@ -12,22 +12,26 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class DomainAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_DOMAIN_URI = "DomainUri";
+    public static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
+
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
@@ -36,7 +40,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
-        defaultVisibleColumns.add(FieldKey.fromParts("DomainUri"));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DOMAIN_URI));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
@@ -77,7 +81,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             @Override
             protected void initColumn(ColumnInfo col)
             {
-                if ("domainuri".equalsIgnoreCase(col.getName()))
+                if (COLUMN_NAME_DOMAIN_URI.equalsIgnoreCase(col.getName()))
                 {
                     final ColumnInfo container = getColumn(FieldKey.fromParts("Container"));
                     final ColumnInfo name = getColumn(FieldKey.fromParts("DomainName"));
@@ -111,6 +115,15 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         bean.setDomainName(event.getKey3());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_DOMAIN_URI);
+        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_DOMAIN_NAME);
+        return legacyNames;
     }
 
     public static class DomainAuditEvent extends AuditTypeEvent
@@ -156,8 +169,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("DomainUri", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("DomainName", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DOMAIN_URI, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DOMAIN_NAME, JdbcType.VARCHAR));
         }
 
         @Override

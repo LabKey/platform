@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
@@ -57,6 +56,10 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {
+            // UNDONE: We need to create hard-table columns -- should we give them names to match the purpose found in LABKEY.Utils.onError()?
+            // key1: error type
+            // key2: url
+            // key3: stacktrace
             return Collections.emptySet();
         }
 

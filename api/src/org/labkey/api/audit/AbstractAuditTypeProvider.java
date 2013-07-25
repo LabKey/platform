@@ -1,19 +1,20 @@
 package org.labkey.api.audit;
 
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -73,11 +74,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     }
 
     @Override
-    public Map<String, String> legacyNameMap()
+    public Map<FieldKey, String> legacyNameMap()
     {
-        Map<String, String> legacyNames = new CaseInsensitiveHashMap<>();
-        legacyNames.put("ContainerId", "Container");
-        legacyNames.put("Date", "Created");
+        Map<FieldKey, String> legacyNames = new HashMap<>();
+        legacyNames.put(FieldKey.fromParts("ContainerId"), "Container");
+        legacyNames.put(FieldKey.fromParts("Date"), "Created");
         return legacyNames;
     }
 

@@ -33,6 +33,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
