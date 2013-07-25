@@ -74,6 +74,7 @@ import java.beans.XMLEncoder;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -600,9 +601,24 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         SchemaTableInfo targetTable = StorageProvisioner.createTableInfo(domain, dbSchema);
 
 
+        // Create list of sourceColumns on sourceTable
+        List<FieldKey> sourceFields = new ArrayList<>();
+        for (ColumnInfo c : sourceTable.getColumns())
+            sourceFields.add(c.getFieldKey());
+
+        // Include sourceColumns from the sourceTable's domain
+        Domain legacyDomain = PropertyService.get().getDomain(ContainerManager.getSharedContainer(), getDomainURI(provider.getEventName())); // assumes event name doesn't change
+        if (legacyDomain != null)
+        {
+            for (DomainProperty dp : legacyDomain.getProperties())
+                sourceFields.add(FieldKey.fromParts("Property", dp.getName()));
+        }
+
+        Map<FieldKey, ColumnInfo> sourceColumns = QueryService.get().getColumns(sourceTable, sourceFields);
+
+
         // Create map of columns
-        Map<String, String> legacyNameMap = provider.legacyNameMap();
-        Map<FieldKey, ColumnInfo> sourceColumns = Table.createColumnMap(sourceTable, null);
+        Map<FieldKey, String> legacyNameMap = provider.legacyNameMap();
         Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo c : sourceColumns.values())
         {
@@ -610,8 +626,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 colMap.put(c.getPropertyURI(), c);
             colMap.put(c.getName(), c);
 
-            // mapping from 'intKey1' to new column name
-            String newName = legacyNameMap.get(c.getName());
+            // mapping from 'intKey1' or 'Property/Foo' to new column name
+            String newName = legacyNameMap.get(c.getFieldKey());
             if (newName != null)
                 colMap.put(newName, c);
         }

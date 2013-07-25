@@ -30,6 +30,8 @@ import java.util.Set;
  */
 public class UserAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_USER = "User";
+
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
@@ -37,7 +39,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("User"));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER));
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
@@ -79,10 +81,10 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     }
 
     @Override
-    public Map<String, String> legacyNameMap()
+    public Map<FieldKey, String> legacyNameMap()
     {
-        Map<String, String> legacyNames = super.legacyNameMap();
-        legacyNames.put("intKey1", "User");
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_USER);
         return legacyNames;
     }
 
@@ -97,7 +99,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
             @Override
             protected void initColumn(ColumnInfo col)
             {
-                if ("user".equalsIgnoreCase(col.getName()))
+                if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
                     UserIdForeignKey.initColumn(col);
             }
 
@@ -117,7 +119,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("User", JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
         }
 
         @Override

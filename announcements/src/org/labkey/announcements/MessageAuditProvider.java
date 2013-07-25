@@ -8,18 +8,23 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.MailHelper;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class MessageAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_FROM = "From";
+    public static final String COLUMN_NAME_TO = "To";
+    public static final String COLUMN_NAME_CONTENT_TYPE = "ContentType";
+
     @Override
     protected DomainKind getDomainKind()
     {
@@ -55,6 +60,16 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
         bean.setContentType(event.getKey3());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_FROM);
+        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_TO);
+        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_CONTENT_TYPE);
+        return legacyNames;
     }
 
     public static class MessageAuditEvent extends AuditTypeEvent

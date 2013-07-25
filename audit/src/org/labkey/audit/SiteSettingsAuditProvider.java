@@ -8,18 +8,22 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.WriteableAppProps;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_CHANGES = "Changes";
+
     @Override
     protected DomainKind getDomainKind()
     {
@@ -53,6 +57,14 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         return (K)bean;
     }
 
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("Property", AbstractWriteableSettingsGroup.AUDIT_PROP_DIFF), COLUMN_NAME_CHANGES);
+        return legacyNames;
+    }
+
     public static class SiteSettingsAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SiteSettingsAuditDomain";
@@ -60,7 +72,7 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("Changes", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_CHANGES, JdbcType.VARCHAR));
         }
 
         @Override
