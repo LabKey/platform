@@ -73,12 +73,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     }
 
     @Override
-    public QueryView createDefaultQueryView()
-    {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
     public Map<String, String> legacyNameMap()
     {
         Map<String, String> legacyNames = new CaseInsensitiveHashMap<>();

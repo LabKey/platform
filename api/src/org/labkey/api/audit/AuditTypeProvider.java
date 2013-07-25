@@ -31,10 +31,8 @@ public interface AuditTypeProvider
      */
     public void initializeProvider(User user);
 
-    //public DomainKind getDomainKind();
     public Domain getDomain();
     public TableInfo createTableInfo(UserSchema schema);
-    public QueryView createDefaultQueryView();
 
     /**
      * Conversion from legacy untyped event fields to new provider specific
