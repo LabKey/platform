@@ -18,16 +18,13 @@ package gwt.client.org.labkey.study.designer.client;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
-import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import gwt.client.org.labkey.study.designer.client.model.*;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -66,59 +63,22 @@ public class AssayPanel extends Composite
             });
             vpanel.add(descriptionEditor);
             vpanel.add(eg);
-
-            HorizontalPanel linkPanel = new HorizontalPanel();
-            linkPanel.setSpacing(8);
-            Anchor editLink = new Anchor("Edit Assay List");
-            editLink.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent e)
-                {
-                    final AssayDefinitionDialog dlg = new AssayDefinitionDialog(AssayPanel.this, studyDef.getAssays());
-                    dlg.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());
-                    dlg.show();
-                    //For some reason GWT scrolls to top async after showing dialog. So scroll back
-                    DeferredCommand.addCommand(new Command(){
-
-                        public void execute()
-                        {
-                            WindowUtil.scrollIntoView(dlg);
-                        }
-                    });
-                }
-            });
-            linkPanel.add(editLink);
-
-            Anchor editSamplesLink = new Anchor("Edit Sample Types");
-            editSamplesLink.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent e)
-                {
-                    final SampleTypeDefinitionDialog dlg = new SampleTypeDefinitionDialog(AssayPanel.this, studyDef.getSampleTypes());
-                    dlg.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());
-                    dlg.show();
-                    //For some reason GWT scrolls to top async after showing dialog. So scroll back
-                    DeferredCommand.addCommand(new Command(){
-
-                        public void execute()
-                        {
-                            WindowUtil.scrollIntoView(dlg);
-                        }
-                    });
-                    dlg.show();
-                    dlg.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());
-                    WindowUtil.scrollIntoView(dlg);
-                }
-            });
-            linkPanel.add(editSamplesLink);
-
-            vpanel.add(linkPanel);
         }
         else
         {
-            HTML description = new HTML(StringUtils.filter(assaySchedule.getDescription(), true));
-            vpanel.add(description);
-            vpanel.add(eg);
+            if (eg.getCategoryRowCount() == 0 && assaySchedule.getTimepoints().size() == 0)
+            {
+                String html = "No assays have been scheduled.";
+                if (designer.canEdit)
+                    html += "<br>Click the edit button to add assays.";
+                vpanel.add(new HTML(html));
+            }
+            else
+            {
+                HTML description = new HTML(StringUtils.filter(assaySchedule.getDescription(), true));
+                vpanel.add(description);
+                vpanel.add(eg);
+            }
         }
 
         eg.updateAll();
@@ -173,29 +133,7 @@ public class AssayPanel extends Composite
             if (col == 0)
             {
                 final GWTAssayDefinition ad = assaySchedule.getAssay(categoryIndex);
-                final Label lb = new Label(ad.getName());
-                if (null != ad.getDescription())
-                    lb.setTitle(ad.getDescription());
-                /*
-                lb.addClickListener(new ClickListener()
-                {
-                    public void onClick(Widget sender)
-                    {
-                        AssayDefinitionDialog dialog = new AssayDefinitionDialog(ad, true);
-                        dialog.setPopupPosition(lb.getAbsoluteLeft(), lb.getAbsoluteTop() + lb.getOffsetHeight());
-                        dialog.addChangeListener(new ChangeListener()
-                        {
-                            public void onChange(Widget sender)
-                            {
-                                updateAll();
-                                designer.setDirty(true);
-                            }
-                        });
-                        dialog.show();
-                        WindowUtil.scrollIntoView(dialog);
-                    }
-                });
-                */
+                final Label lb = new Label(ad.getAssayName());
                 return lb;
             }
             else
@@ -210,7 +148,7 @@ public class AssayPanel extends Composite
             if (col == 0)
                 return assaySchedule.getAssay(categoryIndex);
             else
-                return assaySchedule.getAssay(categoryIndex).getDefaultLab();
+                return assaySchedule.getAssay(categoryIndex).getLab();
         }
 
         Object getEventValue(int categoryIndex, GWTTimepoint tp)
@@ -242,8 +180,8 @@ public class AssayPanel extends Composite
                 addItem("<Select Assay>");
                 for (int i = 0; i < studyDef.getAssays().size(); i++)
                 {
-                    GWTAssayDefinition ad = (GWTAssayDefinition) studyDef.getAssays().get(i);
-                    addItem(ad.getName());
+                    String assayName = studyDef.getAssays().get(i);
+                    addItem(assayName);
                 }
             }
 
@@ -259,42 +197,25 @@ public class AssayPanel extends Composite
 
             public void onChange(Widget sender)
             {
-                GWTAssayDefinition assayDef =  (GWTAssayDefinition) studyDef.getAssays().get(this.getSelectedIndex() - 1);
-                if (assaySchedule.getAssays().contains(assayDef))
+                String assayName = studyDef.getAssays().get(this.getSelectedIndex() - 1);
+                boolean exists = false;
+                for (GWTAssayDefinition assayDefinition : assaySchedule.getAssays())
                 {
-                    //Not necessarily adding here..
-                    setSelectedIndex(0);
-                    if (Window.confirm(assayDef.getName() + " is already listed in this assay plan. Would you like to add a new variant of that assay?"))
+                    if (assayName.equals(assayDefinition.getAssayName()))
                     {
-                        //Assay Names might be of the form
-                        //Neutralizing Antibodies Panel 1 or something. So we get rid of panel number
-                        //and add one on as needed.
-                        String baseName = assayDef.getName();
-                        if (baseName.indexOf("Panel") != -1)
-                            baseName = baseName.substring(0, baseName.indexOf("Panel") + 5);
-                        else
-                            baseName = baseName + " Panel";
-                        String name;
-                        for (int panelIndex = 2; ; panelIndex++)
-                        {
-                            name = baseName + " " + panelIndex;
-                            if (null == assaySchedule.findAssayByName(name))
-                                break;
-                        }
-
-                        final GWTAssayDefinition newAssay = new GWTAssayDefinition(assayDef);
-                        newAssay.setName(name);
-                        newAssay.setLocked(false);
-
-                        AssayDefinitionDialog dialog = new AssayDefinitionDialog(AssayPanel.this, newAssay);
-                        dialog.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());
-                        dialog.show();
-                        WindowUtil.scrollIntoView(dialog);
+                        exists = true;
+                        break;
                     }
+                }
+
+                if (exists)
+                {
+                    setSelectedIndex(0);
+                    Window.alert(assayName + " is already listed in this assay plan.");
                 }
                 else
                 {
-                    ghostAssayDefinition = assayDef;
+                    ghostAssayDefinition = new GWTAssayDefinition(assayName, null);
                     designer.setDirty(true);
                     externalListeners.fireChange(this);
                 }
@@ -333,26 +254,26 @@ public class AssayPanel extends Composite
         private ListBox getLabPicker(final GWTAssayDefinition assayDefinition)
         {
 
-            String [] labs = assayDefinition.getLabs();
-            String defaultLab = assayDefinition.getDefaultLab();
+            List<String> labs = studyDef.getLabs();
+            String selectedLab = assayDefinition.getLab();
 
             ListBox lb = new ListBox();
             //If selection is not valid, just add it to the top of the picker to reflect current state
-            if (null == defaultLab || null == labs || !Arrays.asList(labs).contains(defaultLab))
+            if (null == selectedLab || null == labs || !labs.contains(selectedLab))
             {
-                lb.addItem(defaultLab == null ? "" : defaultLab);
+                lb.addItem(selectedLab == null ? "" : selectedLab);
                 lb.setItemSelected(0, true);
             }
             if (null != labs)
-                for (int i = 0; i < labs.length; i++)
+                for (int i = 0; i < labs.size(); i++)
                 {
-                    lb.addItem(labs[i]);
-                    if (labs[i].equals(defaultLab))
+                    lb.addItem(labs.get(i));
+                    if (labs.get(i).equals(selectedLab))
                         lb.setItemSelected(i, true);
                 }
             lb.addChangeListener(new ChangeListener() {
                 public void onChange(Widget sender) {
-                    assayDefinition.setDefaultLab(((ListBox) sender).getItemText(((ListBox) sender).getSelectedIndex()));
+                    assayDefinition.setLab(((ListBox) sender).getItemText(((ListBox) sender).getSelectedIndex()));
                     designer.setDirty(true);
                 }
             });
@@ -408,7 +329,8 @@ public class AssayPanel extends Composite
 
             void updateLabel()
             {
-                label.setText(checkbox.isChecked() ? getAssayNote().getSampleMeasure().toString() : "");
+                if (checkbox.isChecked() && getAssayNote() != null)
+                    label.setText(getAssayNote().getSampleMeasure() != null && !getAssayNote().getSampleMeasure().isEmpty() ? getAssayNote().getSampleMeasure().toString() : "Add Measure");
             }
 
             class SampleMeasureDialog extends DialogBox
@@ -418,7 +340,12 @@ public class AssayPanel extends Composite
                 {
                     this.setText("Edit Measurement");
                     VerticalPanel vp = new VerticalPanel();
-                    editor = new SampleMeasurePanel(new GWTSampleMeasure(getAssayNote().getSampleMeasure()), studyDef);
+
+                    if (getAssayNote() != null && getAssayNote().getSampleMeasure() != null)
+                        editor = new SampleMeasurePanel(new GWTSampleMeasure(getAssayNote().getSampleMeasure()), studyDef);
+                    else
+                        editor = new SampleMeasurePanel(new GWTSampleMeasure(), studyDef);
+
                     vp.add(editor);
                     HorizontalPanel hp = new HorizontalPanel();
                     hp.add(new Button("OK", new ClickListener()

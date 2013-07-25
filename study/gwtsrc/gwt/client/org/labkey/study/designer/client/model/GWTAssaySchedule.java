@@ -80,7 +80,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
         if (null == tpatMap)
             return null;
 
-        return (GWTAssayNote) tpatMap.get(tp);
+        return tpatMap.get(tp);
     }
 
     public void addAssay(GWTAssayDefinition ad)
@@ -108,7 +108,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
     {
         for (GWTAssayDefinition assayDefinition : assays)
         {
-            if (assayDefinition.getName().equalsIgnoreCase(name))
+            if (assayDefinition.getAssayName().equalsIgnoreCase(name))
                 return assayDefinition;
         }
         return null;

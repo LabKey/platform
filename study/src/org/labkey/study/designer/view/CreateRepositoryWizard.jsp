@@ -26,10 +26,12 @@
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
     Container container = HttpView.currentContext().getContainer();
-    String species = DesignerController.getStudyDefinition(form, container).getAnimalSpecies();
+    User user = HttpView.currentContext().getUser();
+    String species = DesignerController.getStudyDefinition(form, user, container).getAnimalSpecies();
     ActionURL cancelUrl = new ActionURL(DesignerController.CancelWizardAction.class, container).addParameter("studyId", String.valueOf(form.getStudyId()));
     if (null != form.getMessage())
     {%>
@@ -173,12 +175,12 @@ if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_SAMPLES &&
 }
 if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
 {
-    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, container).getGroups();
+    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, user, container).getGroups();
     int nParticipants = 0;
     for (GWTCohort group : groups)
         nParticipants += group.getCount();
 %>
-    This study defines <%=DesignerController.getStudyDefinition(form, container).getGroups().size()%> cohorts with a total of
+    This study defines <%=DesignerController.getStudyDefinition(form, user, container).getGroups().size()%> cohorts with a total of
     <%=nParticipants%> subjects.
     <%
         ActionURL xlUrl = HttpView.currentContext().cloneActionURL().setAction(DesignerController.GetParticipantExcelAction.class);
@@ -231,7 +233,7 @@ if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
 }
 if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
 {
-    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, container).getGroups();
+    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, user, container).getGroups();
     int nParticipants = 0;
     for (GWTCohort group : groups)
         nParticipants += group.getCount();

@@ -18,8 +18,6 @@ package gwt.client.org.labkey.study.designer.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-import java.util.Arrays;
-
 /**
  * User: Mark Igra
  * Date: Dec 14, 2006
@@ -27,12 +25,8 @@ import java.util.Arrays;
  */
 public class GWTAssayDefinition implements IsSerializable
 {
-    private String name;
-    private String description;
-    private String[] labs;
-    private String defaultLab;
-    private GWTSampleMeasure defaultMeasure;
-    private boolean locked;
+    private String assayName;
+    private String lab;
 
     public GWTAssayDefinition()
     {
@@ -41,25 +35,19 @@ public class GWTAssayDefinition implements IsSerializable
 
     public GWTAssayDefinition(GWTAssayDefinition copyFrom)
     {
-        this.name = copyFrom.name;
-        this.labs = copyFrom.labs;
-        this.defaultLab = copyFrom.defaultLab;
-        this.description = copyFrom.description;
-        this.defaultMeasure = new GWTSampleMeasure(copyFrom.defaultMeasure);
+        this.assayName = copyFrom.assayName;
+        this.lab = copyFrom.lab;
     }
 
-    public GWTAssayDefinition(String name, String[] labs, GWTSampleMeasure defaultMeasure)
+    public GWTAssayDefinition(String assayName, String lab)
     {
-        this.name = name;
-        this.labs = labs;
-        if (null != labs && labs.length > 0)
-            this.defaultLab = labs[0];
-        this.defaultMeasure = defaultMeasure;
+        this.assayName = assayName;
+        this.lab = lab;
     }
 
     public String toString()
     {
-        return name;
+        return assayName;
     }
     
     public boolean equals(Object o)
@@ -68,115 +56,32 @@ public class GWTAssayDefinition implements IsSerializable
             return false;
 
         GWTAssayDefinition ad = (GWTAssayDefinition) o;
-        return (name == null ? ad.name == null : name.equals(ad.name)) &&
-                (labs == null ? ad.labs == null : labs.equals(ad.labs)) &&
-                (defaultLab == null ? ad.defaultLab == null : defaultLab.equals(ad.defaultLab));
+        return (assayName == null ? ad.assayName == null : assayName.equals(ad.assayName)) &&
+                (lab == null ? ad.lab == null : lab.equals(ad.lab));
     }
 
     public int hashCode()
     {
-        return (name == null ? 0 : name.hashCode()) ^ (labs == null ? 1 : labs.hashCode()) ^ (defaultLab == null ? 2 : defaultLab.hashCode());
+        return (assayName == null ? 0 : assayName.hashCode()) ^ (lab == null ? 1 : lab.hashCode());
     }
 
-//    public Element toElement(Document doc)
-//    {
-//        Element el = createTag(doc, "name", name, "defaultLab", defaultLab);
-//        Element elLabs = doc.createElement("Labs");
-//        for (int l = 0; l < labs.length; l++)
-//        {
-//            Element elLab = doc.createElement("Lab");
-//            elLab.setAttribute("name", labs[l]);
-//            elLabs.appendChild(elLab);
-//        }
-//        el.appendChild(elLabs);
-//        el.appendChild(defaultMeasure.toElement(doc));
-//        XMLUtils.addTextTag(el, "description", description);
-//
-//        return el;
-//    }
-//
-//    public GWTAssayDefinition(Element el)
-//    {
-//        name = el.getAttribute("name");
-//        defaultLab = el.getAttribute("defaultLab");
-//        Element elLabs = XMLUtils.getChildElement(el, "Labs");
-//        NodeList nl = elLabs.getElementsByTagName("Lab");
-//        ArrayList/*<String>*/ labsList = new ArrayList/*<String>*/();
-//        labs = new String[nl.getLength()];
-//        for (int i = 0; i < nl.getLength(); i++)
-//        {
-//            Element elLab = (Element) nl.item(i);
-//            labs[i] = elLab.getAttribute("name");
-//        }
-//        defaultMeasure = new GWTSampleMeasure(XMLUtils.getChildElement(el, new GWTSampleMeasure().tagName()));
-//        description = XMLUtils.getTextTag(el, "description");
-//    }
-
-    public String getName()
+    public String getAssayName()
     {
-        return name;
+        return assayName;
     }
 
-    public void setName(String name)
+    public void setAssayName(String assayName)
     {
-        this.name = name;
+        this.assayName = assayName;
     }
 
-    public String getDescription()
+    public String getLab()
     {
-        return description;
+        return lab;
     }
 
-    public void setDescription(String description)
+    public void setLab(String lab)
     {
-        this.description = description;
-    }
-
-    public String[] getLabs()
-    {
-        return labs;
-    }
-
-    public void setLabs(String[] labs)
-    {
-        this.labs = labs;
-        //Make sure default lab is valid
-        if (labs != null && labs.length > 0)
-        {
-            if (this.defaultLab == null || !Arrays.asList(labs).contains(this.defaultLab))
-                this.defaultLab = labs[0];
-        }
-        else
-            this.defaultLab = null;
-    }
-
-    public String getDefaultLab()
-    {
-        return defaultLab;
-    }
-
-    public void setDefaultLab(String defaultLab)
-    {
-        this.defaultLab = defaultLab;
-    }
-
-    public GWTSampleMeasure getDefaultMeasure()
-    {
-        return defaultMeasure;
-    }
-
-    public void setDefaultMeasure(GWTSampleMeasure defaultMeasure)
-    {
-        this.defaultMeasure = defaultMeasure;
-    }
-
-    public void setLocked(boolean locked)
-    {
-        this.locked = locked;
-    }
-
-    public boolean isLocked()
-    {
-        return locked;
+        this.lab = lab;
     }
 }

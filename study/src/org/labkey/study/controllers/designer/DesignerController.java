@@ -69,7 +69,6 @@ import org.labkey.study.designer.StudyDesignVersion;
 import org.labkey.study.designer.XMLSerializer;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.VaccineStudyWebPart;
 import org.springframework.validation.BindException;
@@ -363,7 +362,7 @@ public class DesignerController extends SpringActionController
                 jsonObject.put("studyId", info.getStudyId());
                 jsonObject.put("active", info.isActive());
                 jsonObject.put("container", containerJSON(info.getContainer()));
-                jsonObject.put("studyDefinition", JSONSerializer.toJSON(StudyDesignManager.get().getGWTStudyDefinition(getContainer(), info)));
+                jsonObject.put("studyDefinition", JSONSerializer.toJSON(StudyDesignManager.get().getGWTStudyDefinition(getUser(), getContainer(), info)));
                 jsonDesigns.put(jsonObject);
             }
 
@@ -426,7 +425,7 @@ public class DesignerController extends SpringActionController
             int studyId = form.getStudyId();
             StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
             StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
-            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
+            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), getUser(), getContainer());
 
             form.setMessage(null); //We're reusing the form, so reset the message.
             validateStep(form, info); //Make sure we are not in some weird back/forward state
@@ -792,17 +791,17 @@ public class DesignerController extends SpringActionController
             form.setWizardStep(WizardStep.CONFIRM);
     }
 
-    public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, Container container) throws SQLException
+    public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, User user, Container container) throws SQLException
     {
         StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(container, form.getStudyId());
         if (info == null)
             throw new IllegalStateException("Could not find StudyDesignInfo for studyId " + form.getStudyId());
-        return StudyDesignManager.get().getGWTStudyDefinition(container, info);
+        return StudyDesignManager.get().getGWTStudyDefinition(user, container, info);
     }
 
     private GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form) throws SQLException
     {
-        return getStudyDefinition(form, getContainer());
+        return getStudyDefinition(form, getUser(), getContainer());
     }
 
     @SuppressWarnings("unchecked")
@@ -845,7 +844,7 @@ public class DesignerController extends SpringActionController
         if (null != info)
         {
             StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(c.getProject(), info.getStudyId());
-            GWTStudyDefinition def =  XMLSerializer.fromXML(version.getXML());
+            GWTStudyDefinition def =  XMLSerializer.fromXML(version.getXML(), u, c);
             def.setCavdStudyId(version.getStudyId());
             def.setRevision(version.getRevision());
             return def;

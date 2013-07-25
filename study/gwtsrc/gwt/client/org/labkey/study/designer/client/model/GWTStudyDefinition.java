@@ -22,7 +22,6 @@ import com.google.gwt.user.client.ui.ChangeListenerCollection;
 import com.google.gwt.user.client.ui.SourcesChangeEvents;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -43,16 +42,19 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     private GWTImmunizationSchedule immunizationSchedule = new GWTImmunizationSchedule();
     private GWTAssaySchedule assaySchedule = new GWTAssaySchedule();
     private List<GWTCohort> groups = new ArrayList<GWTCohort>();
-    private List<GWTAssayDefinition> assays = new ArrayList<GWTAssayDefinition>();
     private List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
     private List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
-    private List<GWTSampleType> sampleTypes = new ArrayList<GWTSampleType>(Arrays.asList(GWTSampleType.DEFAULTS));
+
+    private List<String> assays = new ArrayList<String>();
+    private List<String> labs = new ArrayList<String>();
+    private List<String> sampleTypes = new ArrayList<String>();
+    private List<String> units = new ArrayList<String>();
+    private List<String> immunogenTypes = new ArrayList<String>();
+    private List<String> genes = new ArrayList<String>();
+    private List<String> routes = new ArrayList<String>();
+    private List<String> subTypes = new ArrayList<String>();
 
     private String description;
-    public static String[] immunogenTypes = {"Adenovirus-5", "Adenovirus-6", "Canarypox", "MVA", "Fowlpox", "NYVAC", "Vaccinia", "VEE", "AAV-2", "DNA", "Subunit Protein", "Subunit Peptide"};
-    public static String[] genes = {"Gag", "Pol", "Nef", "Env", "Tat", "Rev"};
-    public static String[] routes = {"Intramuscular (IM)", "Subcutaneous (SC)", "Intradermal (ID)", "Mucosal"};
-    public static String[] subTypes = {"Clade A", "Clade B", "Clade C", "Clade D", "Circulating Type"};
 
     public GWTStudyDefinition()
     {
@@ -76,14 +78,38 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     public static GWTStudyDefinition getDefaultTemplate()
     {
         GWTStudyDefinition study = new GWTStudyDefinition();
-        //Initialize Assays
-        List<GWTAssayDefinition> assays = study.getAssays();
-        String[] labs = new String[] {"Lab 1", "Lab 2"};
-        assays.add(new GWTAssayDefinition("ELISPOT", new String[] {"Schmitz"}, new GWTSampleMeasure(2, GWTSampleMeasure.Unit.ML, GWTSampleType.SERUM)));
-        assays.add(new GWTAssayDefinition("Neutralizing Antibodies Panel 1", new String[] {"Montefiori", "Seaman"}, new GWTSampleMeasure(2, GWTSampleMeasure.Unit.ML, GWTSampleType.SERUM)));
-        assays.add(new GWTAssayDefinition("ICS", new String[] {"McElrath", "Schmitz"}, new GWTSampleMeasure(2.0e6, GWTSampleMeasure.Unit.CELLS, GWTSampleType.PBMC)));
-        assays.add(new GWTAssayDefinition("ELISA", labs, new GWTSampleMeasure(2.5e6, GWTSampleMeasure.Unit.CELLS, GWTSampleType.PBMC)));
+        return study;
+    }
+
+    public static GWTStudyDefinition getDefaultTemplateWithValues()
+    {
+        GWTStudyDefinition study = new GWTStudyDefinition();
+
+        List<String> assays = study.getAssays();
+        assays.add("ELISPOT");
+        assays.add("Neutralizing Antibodies Panel 1");
+        assays.add("ICS");
+        assays.add("ELISA");
         study.setAssays(assays);
+
+        List<String> labs = study.getLabs();
+        labs.add("Lab 1");
+        labs.add("Lab 2");
+        study.setLabs(labs);
+
+        List<String> units = study.getUnits();
+        units.add("ml");
+        units.add("ul");
+        units.add("cells");
+        study.setUnits(units);
+
+        List<String> sampleTypes = study.getSampleTypes();
+        sampleTypes.add("Plasma");
+        sampleTypes.add("Serum");
+        sampleTypes.add("PBMC");
+        sampleTypes.add("Vaginal Mucosal");
+        sampleTypes.add("Nasal Mucosal");
+        study.setSampleTypes(sampleTypes);
 
         study.getGroups().add(new GWTCohort("Vaccine", "First Group", 30));
         study.getGroups().add(new GWTCohort("Placebo", "Second Group", 30));
@@ -91,12 +117,11 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         study.getAdjuvants().add(new GWTAdjuvant("Adjuvant1", null, null));
         study.getAdjuvants().add(new GWTAdjuvant("Adjuvant2", null, null));
 
-        GWTImmunogen immunogen = new GWTImmunogen("Cp1", "1.5e10 Ad vg", "Canarypox", routes[0]);
-        immunogen.getAntigens().add(new GWTAntigen("A1", genes[0], "Clade B", null, null));
+        GWTImmunogen immunogen = new GWTImmunogen("Cp1", "1.5e10 Ad vg", "Canarypox", "Intramuscular (IM)");
+        immunogen.getAntigens().add(new GWTAntigen("A1", "Gag", "Clade B", null, null));
         study.getImmunogens().add(immunogen);
 
-
-        immunogen = new GWTImmunogen("gp120", "1.6e8 Ad vg", "Subunit Protein", routes[0]);
+        immunogen = new GWTImmunogen("gp120", "1.6e8 Ad vg", "Subunit Protein", "Intramuscular (IM)");
         immunogen.getAntigens().add(new GWTAntigen("Env", "Env", null, null, null));
         study.getImmunogens().add(immunogen);
 
@@ -124,99 +149,14 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         study.getImmunizationSchedule().setImmunization(study.getGroups().get(1), tp2, immunization4);
 
         for (int i = 0; i < study.getAssays().size(); i++)
-            study.getAssaySchedule().addAssay(study.getAssays().get(i));
+        {
+            GWTSampleMeasure measure = new GWTSampleMeasure(2, study.getUnits().get(0), study.getSampleTypes().get(0));
+            GWTAssayDefinition assayDef =  new GWTAssayDefinition(study.getAssays().get(i), "Lab 1");
+            study.getAssaySchedule().addAssay(assayDef);
+        }
 
         return study;
     }
-
-//    public Document toXML()
-//    {
-//        Document doc = XMLParser.createDocument();
-//        doc.appendChild(toElement(doc));
-//        return doc;
-//    }
-//
-//    public Element toElement(Document doc)
-//    {
-//        Element root = createTag(doc, "grant", grant, "investigator", investigator, "animalSpecies", animalSpecies);
-//        Element immunogensElement = doc.createElement(new GWTImmunogen().pluralTagName());
-//        for (int i = 0; i < immunogens.size(); i++)
-//        {
-//            GWTImmunogen immunogen = (GWTImmunogen) immunogens.get(i);
-//            immunogensElement.appendChild(immunogen.toElement(doc));
-//        }
-//        root.appendChild(immunogensElement);
-//        Element adjuvantsElement = doc.createElement(new GWTAdjuvant().pluralTagName());
-//        for (int i = 0; i < adjuvants.size(); i++)
-//        {
-//            GWTAdjuvant adjuvant = (GWTAdjuvant) adjuvants.get(i);
-//            adjuvantsElement.appendChild(adjuvant.toElement(doc));
-//        }
-//        root.appendChild(adjuvantsElement);
-//
-//        Element assaysElement = doc.createElement(new GWTAssayDefinition().pluralTagName());
-//        for (int i = 0; i < assays.size(); i++)
-//        {
-//            GWTAssayDefinition a = (GWTAssayDefinition) assays.get(i);
-//            assaysElement.appendChild(a.toElement(doc));
-//        }
-//        root.appendChild(assaysElement);
-//        Element groupsElement = doc.createElement(new GWTCohort().pluralTagName());
-//        for (int i = 0; i < groups.size(); i++)
-//        {
-//            GWTCohort g = (GWTCohort) groups.get(i);
-//            groupsElement.appendChild(g.toElement(doc));
-//        }
-//        root.appendChild(groupsElement);
-//        root.appendChild(immunizationSchedule.toElement(doc));
-//        root.appendChild(assaySchedule.toElement(doc));
-//
-//        return root;
-//    }
-//
-//    public GWTStudyDefinition(Document doc, int cavdStudyId, int revision)
-//    {
-//        Element elDef = doc.getDocumentElement();
-//        //doc.normalize();
-//        grant = elDef.getAttribute("grant");
-//        investigator = elDef.getAttribute("investigator");
-//        animalSpecies = elDef.getAttribute("animalSpecies");
-//        this.cavdStudyId = cavdStudyId;
-//        this.revision = revision;
-//        Element immunogensElement = XMLUtils.getChildElement(elDef, new GWTImmunogen().pluralTagName());
-//        NodeList nlImmunogens = immunogensElement.getChildNodes();
-//        for (int i = 0; i < nlImmunogens.getLength(); i++)
-//            immunogens.add(new GWTImmunogen((Element) nlImmunogens.item(i)));
-//        Element adjuvantsElement = XMLUtils.getChildElement(elDef, new GWTAdjuvant().pluralTagName());
-//        NodeList nlAdjuvants = adjuvantsElement.getChildNodes();
-//        for (int i = 0; i < nlAdjuvants.getLength(); i++)
-//            adjuvants.add(new GWTAdjuvant((Element) nlAdjuvants.item(i)));
-//        Element assaysElement = XMLUtils.getChildElement(elDef, new GWTAssayDefinition().pluralTagName());
-//        if (null != assaysElement)
-//        {
-//            NodeList nl = elDef.getElementsByTagName(new GWTAssayDefinition().tagName());
-//            for (int i = 0; i < nl.getLength(); i++)
-//            {
-//                Element elAssay = (Element) nl.item(i);
-//                assays.add(new GWTAssayDefinition(elAssay));
-//            }
-//        }
-//        Element groupsElement = XMLUtils.getChildElement(elDef, new GWTCohort().pluralTagName());
-//        if (null != groupsElement)
-//        {
-//            NodeList nl = elDef.getElementsByTagName(new GWTCohort().tagName());
-//            for (int i = 0; i < nl.getLength(); i ++)
-//            {
-//                Element elCohort = (Element) nl.item(i);
-//                groups.add(new GWTCohort(elCohort));
-//            }
-//        }
-//        Element immunizationScheduleElement = XMLUtils.getChildElement(elDef, new GWTImmunizationSchedule().tagName());
-//        immunizationSchedule = new GWTImmunizationSchedule(immunizationScheduleElement, this);
-//        Element assayScheduleElement = XMLUtils.getChildElement(elDef, new GWTAssaySchedule().tagName());
-//        assaySchedule = new GWTAssaySchedule(assayScheduleElement, assays);
-//
-//    }
 
     public boolean equals(GWTStudyDefinition d)
     {
@@ -264,12 +204,12 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         this.groups = groups;
     }
 
-    public List<GWTAssayDefinition> getAssays()
+    public List<String> getAssays()
     {
         return assays;
     }
 
-    public void setAssays(List<GWTAssayDefinition> assays)
+    public void setAssays(List<String> assays)
     {
         this.assays = assays;
     }
@@ -364,16 +304,73 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         return description;
     }
 
-    public List<GWTSampleType> getSampleTypes()
+    public List<String> getSampleTypes()
     {
-        if (null == sampleTypes)
-            sampleTypes = new ArrayList<GWTSampleType>(Arrays.asList(GWTSampleType.DEFAULTS));
-        
         return sampleTypes;
     }
 
-    public void setSampleTypes(List<GWTSampleType> sampleTypes)
+    public void setSampleTypes(List<String> sampleTypes)
     {
         this.sampleTypes = sampleTypes;
+    }
+
+    public List<String> getImmunogenTypes()
+    {
+        return immunogenTypes;
+    }
+
+    public void setImmunogenTypes(List<String> immunogenTypes)
+    {
+        this.immunogenTypes = immunogenTypes;
+    }
+
+    public List<String> getGenes()
+    {
+        return genes;
+    }
+
+    public void setGenes(List<String> genes)
+    {
+        this.genes = genes;
+    }
+
+    public List<String> getRoutes()
+    {
+        return routes;
+    }
+
+    public void setRoutes(List<String> routes)
+    {
+        this.routes = routes;
+    }
+
+    public List<String> getSubTypes()
+    {
+        return subTypes;
+    }
+
+    public void setSubTypes(List<String> subTypes)
+    {
+        this.subTypes = subTypes;
+    }
+
+    public List<String> getLabs()
+    {
+        return labs;
+    }
+
+    public void setLabs(List<String> labs)
+    {
+        this.labs = labs;
+    }
+
+    public List<String> getUnits()
+    {
+        return units;
+    }
+
+    public void setUnits(List<String> units)
+    {
+        this.units = units;
     }
 }

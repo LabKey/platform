@@ -21,7 +21,6 @@ import gwt.client.org.labkey.study.designer.client.model.GWTAssayNote;
 import gwt.client.org.labkey.study.designer.client.model.GWTAssaySchedule;
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
-import gwt.client.org.labkey.study.designer.client.model.GWTSampleType;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.commons.lang3.StringUtils;
@@ -178,11 +177,11 @@ public class StudyDesignManager
         return (null == designs || designs.length == 0) ? null : designs[0];
     }
 
-    public GWTStudyDefinition getGWTStudyDefinition(Container c, StudyDesignInfo info) throws SQLException
+    public GWTStudyDefinition getGWTStudyDefinition(User user, Container c, StudyDesignInfo info) throws SQLException
     {
         StudyDesignVersion version = getStudyDesignVersion(info.getContainer(), info.getStudyId());
 
-        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
+        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), user, info.getContainer());
         mergeStudyProperties(def, info);
         def.setCavdStudyId(info.getStudyId());
 
@@ -317,6 +316,27 @@ public class StudyDesignManager
         new SqlExecutor(getSchema()).execute(updateContainers);
     }
 
+    public void deleteStudyDesignLookupValues(Container c, Set<TableInfo> deletedTables) throws SQLException
+    {
+        Filter filter = SimpleFilter.createContainerFilter(c);
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignGenes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignGenes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignRoutes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignRoutes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignSubTypes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignSampleTypes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignSampleTypes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignUnits(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignUnits());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignAssays(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignAssays());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignLabs(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignLabs());
+    }
+
     public void inactivateStudyDesign(Container c) throws SQLException
     {
         //If designs were sourced from another folder. Just move ownership back so new studies can be created
@@ -361,7 +381,7 @@ public class StudyDesignManager
 
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
-        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
+        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), user, studyFolder);
 
         StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
         study.setTimepointType(TimepointType.DATE);
@@ -486,12 +506,12 @@ public class StudyDesignManager
         GWTAssaySchedule assaySchedule = studyDefinition.getAssaySchedule();
         List<GWTTimepoint> timepoints = assaySchedule.getTimepoints();
         Collections.sort(timepoints);
-        Map<GWTTimepoint, Map<GWTSampleType,Integer>> vialsPerSampleType = new HashMap<>();
-        for (GWTAssayDefinition def : (List<GWTAssayDefinition>) assaySchedule.getAssays())
+        Map<GWTTimepoint, Map<String,Integer>> vialsPerSampleType = new HashMap<>();
+        for (GWTAssayDefinition def : assaySchedule.getAssays())
         {
             for (GWTTimepoint tp : timepoints)
             {
-                Map<GWTSampleType, Integer> timepointSamples = vialsPerSampleType.get(tp);
+                Map<String, Integer> timepointSamples = vialsPerSampleType.get(tp);
                 if (null == timepointSamples)
                 {
                     timepointSamples = new HashMap<>();
@@ -504,14 +524,6 @@ public class StudyDesignManager
                     measure = note.getSampleMeasure();
                     timepointSamples.put(measure.getType(),  1);
                 }
-
-//                Integer i = timepointSamples.get(measure.getType());
-//                if (null == i)
-//                    i = 1;
-//                else           For now, stick with one vial of each samle type
-//                    i = i + 1;
-//
-//                timepointSamples.put(measure.getType(), i);
             }
         }
 
@@ -521,7 +533,7 @@ public class StudyDesignManager
         for (GWTTimepoint tp : timepoints)
         {
             List<GWTCohort> groups = (List<GWTCohort>) studyDefinition.getGroups();
-            Map<GWTSampleType, Integer> timepointSamples = vialsPerSampleType.get(tp);
+            Map<String, Integer> timepointSamples = vialsPerSampleType.get(tp);
             String cohort = null;
             int cohortIndex = 0;
             int participantIndex = 0;
@@ -532,16 +544,15 @@ public class StudyDesignManager
                     startDate = studyStartDate;
 
                 String ptid = participant.get("ParticipantId").toString();
-                for (GWTSampleType st : timepointSamples.keySet())
+                for (String st : timepointSamples.keySet())
                 {
                     String sampleId = ptid + "-" + tp.getDays();
                     Map<String,Object> m = new HashMap<>();
                     m.put(SimpleSpecimenImporter.VISIT, timepointIndex);
                     m.put(SimpleSpecimenImporter.PARTICIPANT_ID, ptid);
                     m.put(SimpleSpecimenImporter.SAMPLE_ID, sampleId);
-                    m.put(SimpleSpecimenImporter.VIAL_ID, sampleId + (timepointSamples.size() == 1 ? "" : st.getShortCode()));
-                    m.put(SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE, st.getPrimaryType());
-                    m.put(SimpleSpecimenImporter.DERIVIATIVE_TYPE, st.getName());
+                    m.put(SimpleSpecimenImporter.VIAL_ID, sampleId + (timepointSamples.size() == 1 ? "" : st));
+                    m.put(SimpleSpecimenImporter.DERIVIATIVE_TYPE, st);
                     m.put(SimpleSpecimenImporter.DRAW_TIMESTAMP, getDay(startDate, tp.getDays()));
                     rows.add(m);
                 }
@@ -597,5 +608,32 @@ public class StudyDesignManager
         }
 
         return info;
+    }
+
+    public List<String> getStudyDesignLookupValues(User user, Container c, TableInfo studyDesignTable)
+    {
+        return getStudyDesignLookupValues(user, c, studyDesignTable, true, true);
+    }
+
+    public List<String> getStudyDesignLookupValues(User user, Container c, TableInfo studyDesignTable, boolean includeProject, boolean excludeInactive)
+    {
+        if (c != null && studyDesignTable != null)
+        {
+            SimpleFilter filter = new SimpleFilter();
+            if (includeProject)
+            {
+                ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(user);
+                filter.addCondition(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"), c));
+            }
+            else
+                filter = SimpleFilter.createContainerFilter(c);
+
+            if (excludeInactive)
+                filter.addCondition(FieldKey.fromParts("Inactive"), false);
+
+            return new TableSelector(studyDesignTable, Collections.singleton("Name"), filter, new Sort("Name")).getArrayList(String.class);
+        }
+        else
+            return Collections.emptyList();
     }
 }

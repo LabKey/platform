@@ -21,11 +21,12 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import gwt.client.org.labkey.study.designer.client.model.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.study.StudySchema;
 import org.labkey.study.xml.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,12 +38,12 @@ public class XMLSerializer
 {
     private static Logger _log = Logger.getLogger(XMLSerializer.class);
 
-    public static GWTStudyDefinition fromXML(String xml)
+    public static GWTStudyDefinition fromXML(String xml, User user, Container c)
     {
-        return fromXML(xml, null);
+        return fromXML(xml, null, user, c);
     }
 
-    public static GWTStudyDefinition fromXML(String xml, GWTStudyDefinition template)
+    public static GWTStudyDefinition fromXML(String xml, GWTStudyDefinition template, User user, Container c)
     {
 
         StudyDesignDocument doc;
@@ -59,21 +60,24 @@ public class XMLSerializer
         assert validate(doc);
         
         GWTStudyDefinition def = new GWTStudyDefinition();
+
+        // Set the initial lookup values based on the Container/Project study design lookup tables
+        def.setImmunogenTypes(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes()));
+        def.setGenes(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignGenes()));
+        def.setRoutes(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignRoutes()));
+        def.setSubTypes(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignSubTypes()));
+        def.setSampleTypes(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes()));
+        def.setUnits(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignUnits()));
+        def.setAssays(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignAssays()));
+        def.setLabs(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignLabs()));
+
+        // set the study top level properties based on the saved info
         def.setStudyName(xdesign.getName());
         def.setGrant(xdesign.getGrantName());
         def.setInvestigator(xdesign.getInvestigator());
         def.setAnimalSpecies(xdesign.getAnimalSpecies());
         if (xdesign.isSetDescription())
             def.setDescription(xdesign.getDescription());
-
-        if (xdesign.isSetSampleTypes())
-        {
-            SampleType[] xsampleTypes = xdesign.getSampleTypes().getSampleTypeArray();
-            List<GWTSampleType> gsampleTypes = new ArrayList<>(xsampleTypes.length);
-            for (SampleType sampleType : xsampleTypes)
-                gsampleTypes.add(new GWTSampleType(sampleType.getName(), sampleType.getPrimaryType(), sampleType.getCode()));
-            def.setSampleTypes(gsampleTypes);
-        }
 
         List<GWTImmunogen> immunogens = new ArrayList<>();
         for (Immunogen immunogen : xdesign.getImmunogens().getImmunogenArray())
@@ -92,40 +96,6 @@ public class XMLSerializer
             adjuvants.add(new GWTAdjuvant(adjuvant.getName(), adjuvant.getDose(), adjuvant.getAdmin()));
         def.setAdjuvants(adjuvants);
 
-        if (null  != template)
-        {
-            List<GWTAssayDefinition> validatedAssays = new ArrayList<>();
-            for (GWTAssayDefinition templateAssay : (List<GWTAssayDefinition>) template.getAssays())
-            {
-                GWTAssayDefinition copy = new GWTAssayDefinition(templateAssay);
-                copy.setLocked(true);
-                validatedAssays.add(copy);
-            }
-            def.setAssays(validatedAssays);
-        }
-        
-        for (AssayDefinition xassayDef : xdesign.getAssayDefinitions().getAssayDefinitionArray())
-        {
-            if (null != findAssayDefinition(xassayDef.getName(), def.getAssays()))
-                continue;
-
-            //TODO: If not in template, mark this as "deprecated" since no longer in global list
-            GWTAssayDefinition gassayDef = new GWTAssayDefinition();
-            gassayDef.setDefaultMeasure(createGWTSampleMeasure(xassayDef.getSampleMeasure(), def));
-            gassayDef.setDefaultLab(xassayDef.getDefaultLab());
-            gassayDef.setName(xassayDef.getName());
-            if (null != xassayDef.getLabs())
-            {
-                Lab[] labs = xassayDef.getLabs().getLabArray();
-                String[] labNames = new String[labs.length];
-                for (int i = 0; i < labs.length; i++)
-                    labNames[i] = labs[i].getName();
-                gassayDef.setLabs(labNames);
-            }
-
-            def.getAssays().add(gassayDef);
-        }
-
         //TODO: XML for cohort descriptions
         for (Cohort cohort : xdesign.getCohorts().getCohortArray())
             def.getGroups().add(new GWTCohort(cohort.getName(), null, cohort.getCount()));
@@ -137,15 +107,13 @@ public class XMLSerializer
 
         AssaySchedule.Assays assays = xAssaySchedule.getAssays();
         if (null != assays)
+        {
             for (AssayRef ref : assays.getAssayRefArray())
             {
-                GWTAssayDefinition src = findAssayDefinition(ref.getAssayName(), def.getAssays());
-                if (null == src) //This should not happen now that deletions to assay list are reflected in assay schedule
-                    continue;
-                GWTAssayDefinition gad = src;
-                gad.setDefaultLab(ref.getLab());
+                GWTAssayDefinition gad = new GWTAssayDefinition(ref.getAssayName(), ref.getLab());
                 gAssaySchedule.getAssays().add(gad);
             }
+        }
 
         //Note: timepoint storage is somewhat redundant for backward compatibility
         //The complete list of timepoints is retrieved here to support empty schdules
@@ -165,12 +133,7 @@ public class XMLSerializer
             GWTTimepoint.Unit unit = GWTTimepoint.Unit.fromString(tp.getDisplayUnit());
             GWTTimepoint gtp = new GWTTimepoint(tp.getName(), tp.getDays()/unit.daysPerUnit, unit);
             GWTAssayDefinition gad = findAssayDefinition(evt.getAssayName(), gAssaySchedule.getAssays());
-            if (null == gad)
-            {
-                gad = findAssayDefinition(evt.getAssayName(), def.getAssays());
-                gAssaySchedule.addAssay(gad);
-            }
-            gAssaySchedule.setAssayPerformed(gad, gtp, new GWTAssayNote(createGWTSampleMeasure(evt.getSampleMeasure(), def)));
+            gAssaySchedule.setAssayPerformed(gad, gtp, new GWTAssayNote(createGWTSampleMeasure(evt.getSampleMeasure())));
         }
         def.setAssaySchedule(gAssaySchedule);
 
@@ -224,19 +187,10 @@ public class XMLSerializer
             if (null != def.getDescription())
                 x.setDescription(def.getDescription());
 
-            StudyDesign.SampleTypes xSampleTypes = x.addNewSampleTypes();
-            for (GWTSampleType gsampleType : (List<GWTSampleType>) def.getSampleTypes())
-            {
-                SampleType xsampleType = xSampleTypes.addNewSampleType();
-                xsampleType.setCode(gsampleType.getShortCode());
-                xsampleType.setName(gsampleType.getName());
-                xsampleType.setPrimaryType(gsampleType.getPrimaryType());
-            }
-
             StudyDesign.Immunogens immunogens = x.addNewImmunogens();
             for (int i = 0; i < def.getImmunogens().size(); i++)
             {
-                GWTImmunogen gImmunogen = (GWTImmunogen) def.getImmunogens().get(i);
+                GWTImmunogen gImmunogen = def.getImmunogens().get(i);
                 Immunogen xImmunogen = immunogens.addNewImmunogen();
                 xImmunogen.setAdmin(gImmunogen.getAdmin());
                 xImmunogen.setName(gImmunogen.getName());
@@ -260,7 +214,7 @@ public class XMLSerializer
             StudyDesign.Adjuvants adjuvants = x.addNewAdjuvants();
             for (int i = 0; i < def.getAdjuvants().size(); i++)
             {
-                GWTAdjuvant gAdjuvant = (GWTAdjuvant) def.getAdjuvants().get(i);
+                GWTAdjuvant gAdjuvant = def.getAdjuvants().get(i);
                 Adjuvant xImmunogen = adjuvants.addNewAdjuvant();
                 xImmunogen.setAdmin(gAdjuvant.admin);
                 xImmunogen.setName(gAdjuvant.getName());
@@ -271,23 +225,10 @@ public class XMLSerializer
             StudyDesign.Cohorts cohorts = x.addNewCohorts();
             for (int i = 0; i < def.getGroups().size(); i++)
             {
-                GWTCohort gwtCohort = (GWTCohort) def.getGroups().get(i);
+                GWTCohort gwtCohort = def.getGroups().get(i);
                 Cohort cohort = cohorts.addNewCohort();
                 cohort.setName(gwtCohort.getName());
                 cohort.setCount(gwtCohort.getCount());
-            }
-
-            StudyDesign.AssayDefinitions assayDefinitions = x.addNewAssayDefinitions();
-            for (GWTAssayDefinition gAssayDefinition : (List<GWTAssayDefinition>) def.getAssays())
-            {
-                AssayDefinition xAssayDefinition = assayDefinitions.addNewAssayDefinition();
-                xAssayDefinition.setName(gAssayDefinition.getName());
-                xAssayDefinition.setSampleMeasure(createSampleMeasure(gAssayDefinition.getDefaultMeasure()));
-                xAssayDefinition.setDefaultLab(gAssayDefinition.getDefaultLab());
-                AssayDefinition.Labs labs = xAssayDefinition.addNewLabs();
-                if (null != gAssayDefinition.getLabs())
-                    for (String labName : gAssayDefinition.getLabs())
-                        labs.addNewLab().setName(labName);
             }
 
             ImmunizationSchedule xImmunizationSchedule = x.addNewImmunizationSchedule();
@@ -299,19 +240,19 @@ public class XMLSerializer
                 immunizationTimepoints.add(createTimepoint(gtp));
             timepointsElem.setTimepointArray(immunizationTimepoints.toArray(new Timepoint[immunizationTimepoints.size()]));
 
-            for (GWTCohort gCohort : (List<GWTCohort>) def.getGroups())
+            for (GWTCohort gCohort : def.getGroups())
             {
-                for (GWTTimepoint gtp : (List<GWTTimepoint>) gSchedule.getTimepoints())
+                for (GWTTimepoint gtp : gSchedule.getTimepoints())
                 {
                     GWTImmunization gImmunization = gSchedule.getImmunization(gCohort, gtp);
                     if (null != gImmunization)
                     {
                         ImmunizationEvent evt = xImmunizationSchedule.addNewImmunizationEvent();
                         Immunization immunization = evt.addNewImmunization();
-                        for (GWTImmunogen gImmunogen : (List<GWTImmunogen>) gImmunization.immunogens)
+                        for (GWTImmunogen gImmunogen : gImmunization.immunogens)
                             immunization.addNewImmunogenRef().setName(gImmunogen.getName());
 
-                        for (GWTAdjuvant gAdjuvant : (List<GWTAdjuvant>) gImmunization.adjuvants)
+                        for (GWTAdjuvant gAdjuvant : gImmunization.adjuvants)
                             immunization.addNewAdjuvantRef().setName(gAdjuvant.getName());
 
                         evt.setGroupName(gCohort.getName());
@@ -333,19 +274,19 @@ public class XMLSerializer
                 scheduleTimepoints.add(createTimepoint(gtp));
             timepoints.setTimepointArray(scheduleTimepoints.toArray(new Timepoint[scheduleTimepoints.size()]));
 
-            for (GWTAssayDefinition gwtAssayDefinition : (List<GWTAssayDefinition>) gAssaySchedule.getAssays())
+            for (GWTAssayDefinition gwtAssayDefinition : gAssaySchedule.getAssays())
             {
                 AssayRef assayRef = assays.addNewAssayRef();
-                assayRef.setAssayName(gwtAssayDefinition.getName());
-                assayRef.setLab(gwtAssayDefinition.getDefaultLab());
+                assayRef.setAssayName(gwtAssayDefinition.getAssayName());
+                assayRef.setLab(gwtAssayDefinition.getLab());
                 
-                for (GWTTimepoint gwtTimepoint : (List<GWTTimepoint>) gAssaySchedule.getTimepoints())
+                for (GWTTimepoint gwtTimepoint : gAssaySchedule.getTimepoints())
                 {
                     GWTAssayNote gwtAssayNote = gAssaySchedule.getAssayPerformed(gwtAssayDefinition, gwtTimepoint);
                     if (null != gwtAssayNote)
                     {
                         AssayEvent evt = xAssaySchedule.addNewAssayEvent();
-                        evt.setAssayName(gwtAssayDefinition.getName());
+                        evt.setAssayName(gwtAssayDefinition.getAssayName());
                         evt.setTimepoint(createTimepoint(gwtTimepoint));
                         evt.setSampleMeasure(createSampleMeasure(gwtAssayNote.getSampleMeasure()));
                     }
@@ -363,9 +304,9 @@ public class XMLSerializer
     }
 
 
-    static GWTSampleMeasure createGWTSampleMeasure(SampleMeasure measure, GWTStudyDefinition parent)
+    static GWTSampleMeasure createGWTSampleMeasure(SampleMeasure measure)
     {
-        return new GWTSampleMeasure(measure.getAmount(), GWTSampleMeasure.Unit.fromString(measure.getUnit()), GWTSampleType.fromString(measure.getType(), parent));
+        return new GWTSampleMeasure(measure.getAmount(), measure.getUnit(), measure.getType());
     }
 
     static Timepoint createTimepoint(GWTTimepoint gtp)
@@ -382,19 +323,21 @@ public class XMLSerializer
     static SampleMeasure createSampleMeasure(GWTSampleMeasure gwtSampleMeasure)
     {
         SampleMeasure sm = SampleMeasure.Factory.newInstance();
-        sm.setAmount(gwtSampleMeasure.getAmount());
-        if (null != gwtSampleMeasure.getType())
-            sm.setType(gwtSampleMeasure.getType().toString());
-        if (null != gwtSampleMeasure.getUnit())
-            sm.setUnit(gwtSampleMeasure.getUnit().getStorageName());
-
+        if (gwtSampleMeasure != null && !gwtSampleMeasure.isEmpty())
+        {
+            sm.setAmount(gwtSampleMeasure.getAmount());
+            if (null != gwtSampleMeasure.getType())
+                sm.setType(gwtSampleMeasure.getType());
+            if (null != gwtSampleMeasure.getUnit())
+                sm.setUnit(gwtSampleMeasure.getUnit());
+        }
         return sm;
     }
 
     static GWTAssayDefinition findAssayDefinition(String assayName, List<GWTAssayDefinition> assays)
     {
         for (GWTAssayDefinition def : assays)
-            if (def.getName().equals(assayName))
+            if (def.getAssayName().equals(assayName))
                 return def;
 
         return null;

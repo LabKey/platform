@@ -34,7 +34,7 @@ public class GWTAssayNote implements IsSerializable
 
     public GWTAssayNote(GWTAssayDefinition assay)
     {
-        this.sampleMeasure = null != assay ? new GWTSampleMeasure(assay.getDefaultMeasure()) : null;
+        this.sampleMeasure = null;
     }
 
     public GWTAssayNote(GWTSampleMeasure sampleMeasure)
@@ -61,7 +61,7 @@ public class GWTAssayNote implements IsSerializable
 
     public String toString()
     {
-        return "[x] " + sampleMeasure.toString();
+        return "[x] " + (!sampleMeasure.isEmpty() ? sampleMeasure.toString() : "");
     }
 
     public GWTSampleMeasure getSampleMeasure()

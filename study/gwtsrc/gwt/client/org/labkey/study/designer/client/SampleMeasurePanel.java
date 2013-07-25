@@ -19,7 +19,6 @@ package gwt.client.org.labkey.study.designer.client;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
-import gwt.client.org.labkey.study.designer.client.model.GWTSampleType;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 
 /**
@@ -67,7 +66,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         {
             public void onChange(Widget sender)
             {
-                sampleMeasure.setType(GWTSampleType.fromString(lbSampleType.getItemText(lbSampleType.getSelectedIndex()), studyDef));
+                sampleMeasure.setType(lbSampleType.getItemText(lbSampleType.getSelectedIndex()));
                 listeners.fireChange(SampleMeasurePanel.this);
             }
         });
@@ -77,7 +76,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         {
             public void onChange(Widget sender)
             {
-                sampleMeasure.setUnit(GWTSampleMeasure.Unit.fromString(lbUnits.getItemText(lbUnits.getSelectedIndex())));
+                sampleMeasure.setUnit(lbUnits.getItemText(lbUnits.getSelectedIndex()));
                 listeners.fireChange(SampleMeasurePanel.this);
             }
         });
@@ -89,11 +88,20 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
     private void init(GWTSampleMeasure sampleMeasure)
     {
         this.sampleMeasure = sampleMeasure;
+
+        //If selection is not valid, just add it to the top of the picker to reflect current state
+        String selectedType = sampleMeasure.getType();
+        if (null == selectedType || null == studyDef.getSampleTypes() || !studyDef.getSampleTypes().contains(selectedType))
+        {
+            lbSampleType.addItem(selectedType == null ? "" : selectedType);
+            lbSampleType.setSelectedIndex(0);
+        }
+
         for (int i = 0; i < studyDef.getSampleTypes().size(); i++)
         {
-            GWTSampleType st = (GWTSampleType) studyDef.getSampleTypes().get(i);
-            lbSampleType.addItem(st.toString());
-            if (st.equals(sampleMeasure.getType()))
+            String st = studyDef.getSampleTypes().get(i);
+            lbSampleType.addItem(st);
+            if (st.equals(selectedType))
                 lbSampleType.setSelectedIndex(i);
             lbSampleType.addChangeListener(new ChangeListener()
             {
@@ -104,11 +112,19 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
             });
         }
 
-        for (int i = 0; i < GWTSampleMeasure.Unit.ALL.length; i++)
+        //If selection is not valid, just add it to the top of the picker to reflect current state
+        String selectedUnit = sampleMeasure.getUnit();
+        if (null == selectedUnit || null == studyDef.getUnits() || !studyDef.getUnits().contains(selectedUnit))
         {
-            GWTSampleMeasure.Unit unit = GWTSampleMeasure.Unit.ALL[i];
-            lbUnits.addItem(unit.toString());
-            if (unit.equals(sampleMeasure.getUnit()))
+            lbUnits.addItem(selectedUnit == null ? "" : selectedUnit);
+            lbUnits.setSelectedIndex(0);
+        }
+
+        for (int i = 0; i < studyDef.getUnits().size(); i++)
+        {
+            String unit = studyDef.getUnits().get(i);
+            lbUnits.addItem(unit);
+            if (unit.equals(selectedUnit))
                 lbUnits.setSelectedIndex(i);
             lbUnits.addChangeListener(new ChangeListener()
             {

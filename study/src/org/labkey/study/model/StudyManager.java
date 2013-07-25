@@ -2165,6 +2165,7 @@ public class StudyManager
             scope.ensureTransaction();
 
             StudyDesignManager.get().deleteStudyDesigns(c, deletedTables);
+            StudyDesignManager.get().deleteStudyDesignLookupValues(c, deletedTables);
 
             for (DataSetDefinition dsd : dsds)
                 deleteDataset(study, user, dsd, false);

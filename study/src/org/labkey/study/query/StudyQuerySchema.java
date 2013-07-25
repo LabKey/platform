@@ -44,6 +44,14 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
+import org.labkey.study.query.studydesign.StudyDesignGenesTable;
+import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignLabsTable;
+import org.labkey.study.query.studydesign.StudyDesignRoutesTable;
+import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignSubTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignUnitsTable;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
@@ -154,8 +162,17 @@ public class StudyQuerySchema extends UserSchema
     {
         Set<String> ret = new LinkedHashSet<>();
 
-        // Always add StudyProperties, even if we have no study
+        // Always add StudyProperties and study designer lookup tables, even if we have no study
         ret.add("StudyProperties");
+        ret.add("StudyDesignImmunogenTypes");
+        ret.add("StudyDesignGenes");
+        ret.add("StudyDesignRoutes");
+        ret.add("StudyDesignSubTypes");
+        ret.add("StudyDesignSampleTypes");
+        ret.add("StudyDesignUnits");
+        ret.add("StudyDesignAssays");
+        ret.add("StudyDesignLabs");
+
         if (_study != null)
         {
             // All these require studies defined
@@ -297,6 +314,40 @@ public class StudyQuerySchema extends UserSchema
         {
             LocationTable ret = new LocationTable(this);
             return ret;
+        }
+
+        // always expose the study designer lookup tables
+        if ("StudyDesignImmunogenTypes".equalsIgnoreCase(name))
+        {
+            return new StudyDesignImmunogenTypesTable(this);
+        }
+        if ("StudyDesignGenes".equalsIgnoreCase(name))
+        {
+            return new StudyDesignGenesTable(this);
+        }
+        if ("StudyDesignRoutes".equalsIgnoreCase(name))
+        {
+            return new StudyDesignRoutesTable(this);
+        }
+        if ("StudyDesignSubTypes".equalsIgnoreCase(name))
+        {
+            return new StudyDesignSubTypesTable(this);
+        }
+        if ("StudyDesignSampleTypes".equalsIgnoreCase(name))
+        {
+            return new StudyDesignSampleTypesTable(this);
+        }
+        if ("StudyDesignUnits".equalsIgnoreCase(name))
+        {
+            return new StudyDesignUnitsTable(this);
+        }
+        if ("StudyDesignAssays".equalsIgnoreCase(name))
+        {
+            return new StudyDesignAssaysTable(this);
+        }
+        if ("StudyDesignLabs".equalsIgnoreCase(name))
+        {
+            return new StudyDesignLabsTable(this);
         }
 
         if (_study == null)

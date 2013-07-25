@@ -28,15 +28,15 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializable
 {
     private double amount;
-    private Unit unit = Unit.ML;
-    private GWTSampleType type;
+    private String unit;
+    private String type;
 
     public GWTSampleMeasure()
     {
 
     }
     
-    public GWTSampleMeasure(double amount, Unit unit, GWTSampleType type)
+    public GWTSampleMeasure(double amount, String unit, String type)
     {
         this.amount = amount;
         this.unit = unit;
@@ -67,6 +67,12 @@ public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializab
 
 
     }
+
+    public boolean isEmpty()
+    {
+        return amount == 0.0 && unit == null && type == null;
+    }
+
     public int hashCode()
     {
         return new Double(amount).hashCode() ^ (unit.hashCode() << 1) ^ (type.hashCode() << 2);
@@ -93,80 +99,23 @@ public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializab
         this.amount = amount;
     }
 
-    public Unit getUnit()
+    public String getUnit()
     {
         return unit;
     }
 
-    public void setUnit(Unit unit)
+    public void setUnit(String unit)
     {
         this.unit = unit;
     }
 
-    public GWTSampleType getType()
+    public String getType()
     {
         return type;
     }
 
-    public void setType(GWTSampleType type)
+    public void setType(String type)
     {
         this.type = type;
-    }
-
-
-    public static class Unit implements IsSerializable
-    {
-        public Unit()
-        {
-
-        }
-        String name;
-        String storageName; //3 chars or less support by specimen tools
-
-        private Unit(String name, String storageName)
-        {
-            this.name = name;
-            this.storageName = storageName;
-        }
-
-        public String toString()
-        {
-            return name;
-        }
-
-        public int hashCode()
-        {
-            return name.hashCode();
-        }
-
-        public boolean equals(Object x)
-        {
-            return null == x ? false : ((Unit) x).name.equals(name);
-        }
-
-        public String getStorageName()
-        {
-            return storageName;
-        }
-
-        //NOTE: DO NOT CHANGE THE STORAGE NAME, IT SHOULD BE CONSTANT FOR RETRIEVING FROM DATABASE
-        public static final Unit ML = new Unit("ml", "ML");
-        public static final Unit MICROLITER = new Unit("ul", "UL");
-        public static final Unit CELLS = new Unit("cells", "CEL");
-        
-        public static final Unit[] ALL = new Unit [] {ML, MICROLITER, CELLS};
-        public static Unit fromString(String str)
-        {
-            for (int i = 0; i < ALL.length; i++)
-                if (ALL[i].name.equalsIgnoreCase(str))
-                    return ALL[i];
-
-            for (int i = 0; i < ALL.length; i++)
-                if (ALL[i].storageName.equalsIgnoreCase(str))
-                    return ALL[i];
-
-            return null;
-        }
-
     }
 }

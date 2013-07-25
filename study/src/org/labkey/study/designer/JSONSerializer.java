@@ -153,20 +153,9 @@ public class JSONSerializer
             if (null != def.getDescription())
                 j.put("description", def.getDescription());
 
-
-            for (GWTSampleType gsampleType : (List<GWTSampleType>) def.getSampleTypes())
-            {
-                JSONObject sampleType = new JSONObject();
-                sampleType.put("code", gsampleType.getShortCode());
-                sampleType.put("name", gsampleType.getName());
-                sampleType.put("primaryType", gsampleType.getPrimaryType());
-
-                j.append("sampleTypes", sampleType);
-            }
-
             for (int i = 0; i < def.getImmunogens().size(); i++)
             {
-                GWTImmunogen gImmunogen = (GWTImmunogen) def.getImmunogens().get(i);
+                GWTImmunogen gImmunogen = def.getImmunogens().get(i);
 
                 JSONObject jImmunogen = new JSONObject();
                 jImmunogen.put("admin", gImmunogen.getAdmin());
@@ -193,7 +182,7 @@ public class JSONSerializer
 
             for (int i = 0; i < def.getAdjuvants().size(); i++)
             {
-                GWTAdjuvant gAdjuvant = (GWTAdjuvant) def.getAdjuvants().get(i);
+                GWTAdjuvant gAdjuvant = def.getAdjuvants().get(i);
                 JSONObject jAdjuvant = new JSONObject();
                 jAdjuvant.put("admin", gAdjuvant.admin);
                 jAdjuvant.put("name", gAdjuvant.getName());
@@ -204,25 +193,17 @@ public class JSONSerializer
 
             for (int i = 0; i < def.getGroups().size(); i++)
             {
-                GWTCohort gwtCohort = (GWTCohort) def.getGroups().get(i);
+                GWTCohort gwtCohort = def.getGroups().get(i);
                 JSONObject jCohort = new JSONObject();
                 jCohort.put("name", gwtCohort.getName());
                 jCohort.put("count", gwtCohort.getCount());
                 j.append("cohorts", jCohort);
             }
 
-            for (GWTAssayDefinition gAssayDefinition : (List<GWTAssayDefinition>) def.getAssays())
-            {
-                JSONObject jAssayDefinition = new JSONObject();
-                jAssayDefinition.put("name", gAssayDefinition.getName());
-                jAssayDefinition.put("sampleMeasure", createSampleMeasure(gAssayDefinition.getDefaultMeasure()));
-                j.append("assayDefinitions", jAssayDefinition);
-            }
-
             GWTImmunizationSchedule gSchedule = def.getImmunizationSchedule();
-            for (GWTCohort gCohort : (List<GWTCohort>) def.getGroups())
+            for (GWTCohort gCohort : def.getGroups())
             {
-                for (GWTTimepoint gtp : (List<GWTTimepoint>) gSchedule.getTimepoints())
+                for (GWTTimepoint gtp : gSchedule.getTimepoints())
                 {
                     GWTImmunization gImmunization = gSchedule.getImmunization(gCohort, gtp);
                     if (null != gImmunization)
@@ -230,10 +211,10 @@ public class JSONSerializer
                         JSONObject jevt = new JSONObject();
                         jevt.put("groupName", gCohort.getName());
                         jevt.put("timepoint", createTimepoint(gtp));
-                        for (GWTImmunogen gImmunogen : (List<GWTImmunogen>) gImmunization.immunogens)
+                        for (GWTImmunogen gImmunogen : gImmunization.immunogens)
                             jevt.append("immunogens", gImmunogen.getName());
 
-                        for (GWTAdjuvant gAdjuvant : (List<GWTAdjuvant>) gImmunization.adjuvants)
+                        for (GWTAdjuvant gAdjuvant : gImmunization.adjuvants)
                             jevt.append("adjuvants", gAdjuvant.getName());
 
                         j.append("immunizations", jevt);
@@ -247,15 +228,15 @@ public class JSONSerializer
                 jAssaySchedule.put("description", gAssaySchedule.getDescription());
 
 
-            for (GWTAssayDefinition gwtAssayDefinition : (List<GWTAssayDefinition>) gAssaySchedule.getAssays())
+            for (GWTAssayDefinition gwtAssayDefinition : gAssaySchedule.getAssays())
             {
-                for (GWTTimepoint gwtTimepoint : (List<GWTTimepoint>) gAssaySchedule.getTimepoints())
+                for (GWTTimepoint gwtTimepoint : gAssaySchedule.getTimepoints())
                 {
                     GWTAssayNote gwtAssayNote = gAssaySchedule.getAssayPerformed(gwtAssayDefinition, gwtTimepoint);
                     if (null != gwtAssayNote)
                     {
                         JSONObject jAssay = new JSONObject();
-                        jAssay.put("name", gwtAssayDefinition.getName());
+                        jAssay.put("name", gwtAssayDefinition.getAssayName());
                         jAssay.put("timepoint", createTimepoint(gwtTimepoint));
                         jAssay.put("sampleMeasure", createSampleMeasure(gwtAssayNote.getSampleMeasure()));
                         jAssaySchedule.append("assays", jAssay);
@@ -311,7 +292,7 @@ public class JSONSerializer
         JSONObject sm = new JSONObject();
         sm.put("type", gwtSampleMeasure.getType().toString());
         sm.put("amount", gwtSampleMeasure.getAmount());
-        sm.put("unit", gwtSampleMeasure.getUnit().getStorageName());
+        sm.put("unit", gwtSampleMeasure.getUnit());
 
         return sm;
     }
@@ -325,15 +306,6 @@ public class JSONSerializer
         sm.put("unit", sampleMeasure.getUnit());
 
         return sm;
-    }
-
-    static GWTAssayDefinition findAssayDefinition(String assayName, List<GWTAssayDefinition> assays)
-    {
-        for (GWTAssayDefinition def : assays)
-            if (def.getName().equals(assayName))
-                return def;
-
-        return null;
     }
 
     static GWTImmunogen findImmunogen(String name, List<GWTImmunogen> immunogens)

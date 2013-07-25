@@ -60,7 +60,7 @@
 <%
 
     }
-    GWTStudyDefinition revision = StudyDesignManager.get().getGWTStudyDefinition(info.getContainer(), info);
+    GWTStudyDefinition revision = StudyDesignManager.get().getGWTStudyDefinition(user, info.getContainer(), info);
 %>
 <%
     if (null == study.getDescription() && null != revision.getDescription()) //No study description. Generate one from the study design

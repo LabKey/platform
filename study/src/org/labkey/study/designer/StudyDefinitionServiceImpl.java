@@ -106,9 +106,6 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         try
         {
             GWTStudyDefinition def = DesignerController.getTemplate(getUser(), getContainer());
-            //Lock the assays
-            for (GWTAssayDefinition assayDef : def.getAssays())
-                assayDef.setLocked(true);
             def.setCavdStudyId(0);
             def.setRevision(0);
             def.setStudyName(null);
@@ -133,7 +130,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                 version = StudyDesignManager.get().getStudyDesignVersion(container, studyId);
 
             GWTStudyDefinition template = getTemplate();
-            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template);
+            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template, getUser(), container);
             def.setCavdStudyId(version.getStudyId());
             def.setRevision(version.getRevision());
             StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
@@ -190,10 +187,10 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
 
         for (GWTAssayDefinition assayDefinition : studyDefinition.getAssaySchedule().getAssays())
         {
-            int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getName());
+            int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getAssayName());
             if (dsId == -1)
             {
-                DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getName(),
+                DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
                         null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
                 if (datasetDefinition != null)
                 {

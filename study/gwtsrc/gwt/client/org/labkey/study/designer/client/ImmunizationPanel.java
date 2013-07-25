@@ -45,8 +45,9 @@ public class ImmunizationPanel extends Composite
         immunizationGrid = new ImmunizationGrid(parent);
         immunizationGrid.updateAll();
         VerticalPanel vpanel = new VerticalPanel();
-        if (designer.isReadOnly()) {
-            if (immunizationSchedule.getTimepoints().size() == 0)
+        if (designer.isReadOnly())
+        {
+            if (immunizationGrid.getCategoryRowCount() == 0 && immunizationSchedule.getTimepoints().size() == 0)
             {
                 String html = "No immunizations have been scheduled.";
                 if (designer.canEdit)
@@ -102,7 +103,7 @@ public class ImmunizationPanel extends Composite
 
         int getCategoryRowCount()
         {
-            return studyDef.getGroups().size();  //To change body of implemented methods use File | Settings | File Templates.
+            return studyDef.getGroups().size();
         }
 
         Widget getCategoryHeader(int col)

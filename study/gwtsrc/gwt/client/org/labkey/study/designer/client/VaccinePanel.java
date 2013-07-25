@@ -34,10 +34,12 @@ public class VaccinePanel extends Composite
     private GWTAdjuvant ghostAdjuvant = new GWTAdjuvant();
     private GWTImmunogen ghostImmunogen = new GWTImmunogen();
     private Designer designer;
+    GWTStudyDefinition studyDef;
 
     public VaccinePanel(Designer parent, List immunogens, List adjuvants)
     {
         this.designer = parent;
+        this.studyDef = parent.getDefinition();
         this.immunogens = immunogens;
         this.adjuvants = adjuvants;
 
@@ -48,9 +50,21 @@ public class VaccinePanel extends Composite
         vPanel.add(new HTML("<h2>Immunogens</h2>"));
         if (designer.isReadOnly())
         {
-            html = "This section describes the immunogens and adjuvants evaluated in the study.";
-            if (designer.isCanEdit())
-                html += "<br> To change the set of immunogens and adjuvants, click the edit button below.";
+            if (immunogens == null || immunogens.size() == 0)
+            {
+                html = "No immunogens have been defined.";
+                if (designer.canEdit)
+                    html += "<br> To add immunogens, click the edit button below.";
+                vPanel.add(new HTML(html));
+            }
+            else
+            {
+                html = "This section describes the immunogens and adjuvants evaluated in the study.";
+                if (designer.isCanEdit())
+                    html += "<br> To change the set of immunogens and adjuvants, click the edit button below.";
+                vPanel.add(new HTML(html));
+                vPanel.add(getImmunogenGrid());
+            }
         }
         else
         {
@@ -59,12 +73,20 @@ public class VaccinePanel extends Composite
                     "<li>Immunogens should have unique names. " +
                     "<li>If possible the immunogen description should include specific sequences of HIV Antigens included in the immunogen." +
                     "<li>Use the immunizations tab to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</ul><br>";
+            vPanel.add(new HTML(html));
+            vPanel.add(getImmunogenGrid());
         }
-        vPanel.add(new HTML(html));
-        vPanel.add(getImmunogenGrid());
-        if (!designer.isReadOnly() || (null != adjuvants && adjuvants.size() > 0))
+
+        vPanel.add(new HTML("<h2>Adjuvants</h2>"));
+        if (designer.isReadOnly() && (null == adjuvants || adjuvants.size() == 0))
         {
-            vPanel.add(new HTML("<h2>Adjuvants</h2>"));
+            html = "No adjuvants have been defined.";
+            if (designer.canEdit)
+                html += "<br> To add adjuvants, click the edit button below.";
+            vPanel.add(new HTML(html));
+        }
+        else
+        {
             vPanel.add(getAdjuvantGrid());
         }
     }
@@ -177,7 +199,7 @@ public class VaccinePanel extends Composite
             }
             else if (col == 3)
             {
-                final StringListBox routeList = new StringListBox(GWTStudyDefinition.routes, StringUtils.trimToNull(immunogen.getAdmin()), true);
+                final StringListBox routeList = new StringListBox(studyDef.getRoutes(), StringUtils.trimToNull(immunogen.getAdmin()), false, true);
                 routeList.setTitle("Immunogen " + (row + 1) + " route");
                 routeList.addChangeListener(new ChangeListener(){
                     public void onChange(Widget sender)
@@ -205,7 +227,7 @@ public class VaccinePanel extends Composite
 
             if (col == 1)
             {
-                final StringListBox lb = new StringListBox(GWTStudyDefinition.immunogenTypes, immunogen.getType(), true);
+                final StringListBox lb = new StringListBox(studyDef.getImmunogenTypes(), StringUtils.trimToNull(immunogen.getType()), false, true);
                 lb.setTitle("Immunogen " + (row + 1) + " type");
                 lb.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender)
@@ -331,7 +353,7 @@ public class VaccinePanel extends Composite
         {
             if (col == 0)
             {
-                final StringListBox listBox = new StringListBox(GWTStudyDefinition.genes, StringUtils.trimToNull(antigen.getGene()), true);
+                final StringListBox listBox = new StringListBox(studyDef.getGenes(), StringUtils.trimToNull(antigen.getGene()), false, true);
                 listBox.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender)
                     {
@@ -343,7 +365,7 @@ public class VaccinePanel extends Composite
             }
             if (col == 1)
             {
-                final StringListBox listBox = new StringListBox(GWTStudyDefinition.subTypes, StringUtils.trimToNull(antigen.getSubtype()), true);
+                final StringListBox listBox = new StringListBox(studyDef.getSubTypes(), StringUtils.trimToNull(antigen.getSubtype()), false, true);
                 listBox.setText(StringUtils.trimToEmpty(antigen.getSubtype()));
                 listBox.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender)
@@ -561,7 +583,7 @@ public class VaccinePanel extends Composite
                     });
                     return doseTextBox;
                 case 2:
-                    StringListBox listBox = new StringListBox(GWTStudyDefinition.routes, StringUtils.trimToNull(adjuvant.admin), true);
+                    StringListBox listBox = new StringListBox(studyDef.getRoutes(), StringUtils.trimToNull(adjuvant.admin), false, true);
                     text = adjuvant.admin;
                     listBox.addChangeListener(new ChangeListener() {
                         public void onChange(Widget sender)
