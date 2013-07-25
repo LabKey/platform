@@ -23,6 +23,7 @@ import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -31,6 +32,10 @@ import java.util.List;
 public interface ProteinService
 {
     public int ensureProtein(String sequence, String organism, String name, String description);
+
+    public int ensureProteinAndIdentifier(String sequence, String organism, String identifer, String description, String identifierType);
+
+    public void ensureIdentifiers(int seqId, Map<String, String> identifierAndTypes);
 
     public void registerProteinSearchView(QueryViewProvider<ProteinSearchForm> provider);
     public void registerPeptideSearchView(QueryViewProvider<PeptideSearchForm> provider);
