@@ -129,6 +129,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -2514,6 +2515,37 @@ public class QueryController extends SpringActionController
 
             // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
             SimpleFilter filter = new SimpleFilter(settings.getBaseFilter());
+
+            // Support for 'viewName'
+            if (null != settings.getViewName())
+            {
+                try
+                {
+                    CustomView view = service.getCustomView(getUser(), getContainer(), getUser(), settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
+                    if (null != view)
+                    {
+                        CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
+                        if (null != fs)
+                        {
+                            for (FilterInfo fi : fs.getFilter())
+                            {
+                                ColumnInfo column = columns.get(fi.getField());
+                                Object value = fi.getValue();
+                                if (null != column)
+                                {
+                                    value = CompareType.convertParamValue(column, value);
+                                }
+                                filter.addClause(new CompareType.CompareClause(fi.getField(), fi.getOp(), value));
+                            }
+                        }
+                    }
+                }
+                catch (URISyntaxException e)
+                {
+                    //ignore
+                }
+            }
+
             filter.addUrlFilters(getViewContext().getActionURL(), "query");
 
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
