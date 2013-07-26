@@ -57,7 +57,7 @@ public class HrefOutput extends ImageOutput
         if (report != null)
         {
             // if this report is not using knitr then follow the usual rules for deleting files
-            if (report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.knitrFormat).equalsIgnoreCase(RReportDescriptor.KnitrFormat.None.name()))
+            if (RReportDescriptor.KnitrFormat.None.name().equalsIgnoreCase(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.knitrFormat)))
                 return super.canDeleteFile();
 
             // otherwise, don't delete the file
