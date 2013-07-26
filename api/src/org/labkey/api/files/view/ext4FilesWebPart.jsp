@@ -91,12 +91,14 @@
 
         var fb = Ext4.create('File.panel.Browser', {
             renderTo : <%=q(bean.getContentId())%>,
+            containerPath : <%=q(c.getPath())%>,
             height: <%= height %>,
             showFolderTree: <%=bean.isShowFolderTree()%>,
             expandFolderTree: <%=!bean.isFolderTreeCollapsed()%>,
             disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
+            isPipelineRoot : <%=bean.isPipelineRoot()%>,
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
