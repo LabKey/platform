@@ -9,19 +9,23 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/19/13
  */
 public class FileSystemAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EVENT_TYPE = "FileSystem";
+
+    public static final String COLUMN_NAME_DIRECTORY = "Directory";
+    public static final String COLUMN_NAME_FILE = "File";
 
     @Override
     protected DomainKind getDomainKind()
@@ -57,6 +61,15 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         bean.setFile(event.getKey2());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_DIRECTORY);
+        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_FILE);
+        return legacyNames;
     }
 
     public static class FileSystemAuditEvent extends AuditTypeEvent
@@ -102,8 +115,8 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("Directory", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("File", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DIRECTORY, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_FILE, JdbcType.VARCHAR));
         }
 
         @Override

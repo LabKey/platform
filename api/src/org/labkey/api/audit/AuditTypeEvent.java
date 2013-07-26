@@ -5,7 +5,6 @@ import org.labkey.api.security.User;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/12/13
  */
