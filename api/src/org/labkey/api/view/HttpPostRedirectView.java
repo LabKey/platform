@@ -31,6 +31,8 @@ import java.util.Map;
  *
  * Renders an HTML form that will POST inputs to a URL.
  * Set the PageConfig template to Template.None before rendering the view.
+ *
+ * @see HttpRedirectView
  */
 public class HttpPostRedirectView extends HttpView
 {

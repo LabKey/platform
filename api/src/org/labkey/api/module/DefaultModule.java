@@ -266,7 +266,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     final public void startup(ModuleContext moduleContext)
     {
-        Resource xml = _resolver.lookup(Path.parse(XML_FILENAME));
+        Resource xml = getModuleResolver().lookup(Path.parse(XML_FILENAME));
         if(xml != null)
             loadXmlFile(xml);
 
@@ -751,6 +751,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build Time", getBuildTime());
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
+        props.put("Source Path", getSourcePath());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
 
         return props;
@@ -910,13 +911,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public Resolver getModuleResolver()
     {
+        if (_resolver == null)
+            _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
+
         return _resolver;
     }
 
     @Override
     public Resource getModuleResource(Path path)
     {
-        return _resolver.lookup(path);
+        return getModuleResolver().lookup(path);
     }
 
     public Resource getModuleResource(String path)
@@ -934,6 +938,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public void clearResourceCache()
     {
+        if (_resolver == null)
+            return;
         _resolver.clear();
     }
 

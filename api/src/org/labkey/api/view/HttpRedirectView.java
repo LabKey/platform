@@ -24,6 +24,8 @@ import java.io.PrintWriter;
  * User: matthewb
  * Date: 2011-11-09
  * Time: 1:28 PM
+ *
+ * @see HttpPostRedirectView
  */
 public class HttpRedirectView extends HttpView
 {

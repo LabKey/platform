@@ -108,7 +108,7 @@ public class ModuleLoader implements Filter
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
-    private static final Map<String, Module> _schemaNameToModule = new HashMap<>();
+    private static final Map<String, Module> _schemaNameToModule = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
@@ -480,7 +480,19 @@ public class ModuleLoader implements Filter
                     if (moduleName == null || moduleName.length() == 0)
                         throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
 
-                    SimpleModule simpleModule = new SimpleModule();
+                    // Create the module instance
+                    DefaultModule simpleModule;
+                    if (props.containsKey("ModuleClass"))
+                    {
+                        String moduleClassName = props.getProperty("ModuleClass");
+                        Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
+                        simpleModule = moduleClass.newInstance();
+                    }
+                    else
+                    {
+                        simpleModule = new SimpleModule();
+                    }
+
                     simpleModule.setName(moduleName);
                     simpleModule.setSourcePath(moduleDir.getAbsolutePath());
                     BeanUtils.populate(simpleModule, props);
@@ -1078,9 +1090,9 @@ public class ModuleLoader implements Filter
         return moduleMap.get(name);
     }
 
-    public Module getModule(Class<? extends Module> moduleClass)
+    public <M extends Module> M getModule(Class<M> moduleClass)
     {
-        return moduleClassMap.get(moduleClass);
+        return (M)moduleClassMap.get(moduleClass);
     }
 
     public Module getCoreModule()
