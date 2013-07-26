@@ -1,20 +1,43 @@
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
+import org.labkey.list.controllers.ListController;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
+ * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
@@ -25,6 +48,18 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     public static final String COLUMN_NAME_LIST_DOMAIN_URI = "ListDomainUri";
     public static final String COLUMN_NAME_LIST_ITEM_ENTITY_ID = "ListItemEntityId";
     public static final String COLUMN_NAME_LIST_NAME = "ListName";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_LIST_DOMAIN_URI));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     protected DomainKind getDomainKind()
@@ -51,6 +86,41 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     }
 
     @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_LIST_DOMAIN_URI.equalsIgnoreCase(col.getName()))
+                {
+                    final ColumnInfo nameCol = getColumn(FieldKey.fromParts(COLUMN_NAME_LIST_NAME));
+                    final ColumnInfo containerCol = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+
+                    col.setLabel("List");
+                    col.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            return new DomainAuditViewFactory.DomainColumn(colInfo, containerCol, nameCol);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+    }
+
+    @Override
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
     {
         ListAuditEvent bean = new ListAuditEvent();
@@ -63,6 +133,21 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         bean.setListItemEntityId(event.getKey2());
         bean.setListName(event.getKey3());
 
+        return (K)bean;
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        ListAuditEvent bean = convertEvent(event);
+
+        if (dataMap != null)
+        {
+            if (dataMap.containsKey(ListAuditDomainKind.OLD_RECORD_PROP_NAME))
+                bean.setOldRecord(String.valueOf(dataMap.get(ListAuditDomainKind.OLD_RECORD_PROP_NAME)));
+            if (dataMap.containsKey(ListAuditDomainKind.NEW_RECORD_PROP_NAME))
+                bean.setNewRecord(String.valueOf(dataMap.get(ListAuditDomainKind.NEW_RECORD_PROP_NAME)));
+        }
         return (K)bean;
     }
 

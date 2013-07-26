@@ -1,5 +1,6 @@
 package org.labkey.study.dataset;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -65,6 +66,22 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
 
         bean.setUploadLog(event.getKey1());
 
+        return (K)bean;
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        DatasetAuditEvent bean = convertEvent(event);
+
+        if (dataMap != null)
+        {
+            if (dataMap.containsKey(DatasetAuditDomainKind.OLD_RECORD_PROP_NAME))
+                bean.setOldValues(String.valueOf(dataMap.get(DatasetAuditDomainKind.OLD_RECORD_PROP_NAME)));
+
+            if (dataMap.containsKey(DatasetAuditDomainKind.NEW_RECORD_PROP_NAME))
+                bean.setNewValues(String.valueOf(dataMap.get(DatasetAuditDomainKind.NEW_RECORD_PROP_NAME)));
+        }
         return (K)bean;
     }
 

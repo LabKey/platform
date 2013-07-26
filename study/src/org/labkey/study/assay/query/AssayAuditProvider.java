@@ -1,5 +1,6 @@
 package org.labkey.study.assay.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -63,6 +64,25 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         bean.setTargetStudy(event.getKey1());
 
+        return (K)bean;
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        AssayAuditEvent bean = convertEvent(event);
+
+        if (dataMap != null)
+        {
+            if (dataMap.containsKey("datasetid"))
+                bean.setDatasetId((Integer)dataMap.get("datasetid"));
+
+            if (dataMap.containsKey("sourceLsid"))
+                bean.setSourceLsid(String.valueOf(dataMap.get("sourceLsid")));
+
+            if (dataMap.containsKey("recordCount"))
+                bean.setRecordCount((Integer)dataMap.get("recordCount"));
+        }
         return (K)bean;
     }
 

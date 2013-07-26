@@ -1,5 +1,6 @@
 package org.labkey.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -51,10 +52,48 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     @Override
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
     {
-        AuditTypeEvent bean = new AuditTypeEvent();
+        SiteSettingsAuditEvent bean = new SiteSettingsAuditEvent();
         copyStandardFields(bean, event);
 
         return (K)bean;
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        SiteSettingsAuditEvent bean = convertEvent(event);
+
+        if (dataMap != null)
+        {
+            if (dataMap.containsKey(WriteableAppProps.AUDIT_PROP_DIFF))
+                bean.setChanges(String.valueOf(dataMap.get(WriteableAppProps.AUDIT_PROP_DIFF)));
+        }
+        return (K)bean;
+    }
+
+    public static class SiteSettingsAuditEvent extends AuditTypeEvent
+    {
+        private String _changes;
+
+        public SiteSettingsAuditEvent()
+        {
+            super();
+        }
+
+        public SiteSettingsAuditEvent(String container, String comment)
+        {
+            super(WriteableAppProps.AUDIT_EVENT_TYPE, container, comment);
+        }
+
+        public String getChanges()
+        {
+            return _changes;
+        }
+
+        public void setChanges(String changes)
+        {
+            _changes = changes;
+        }
     }
 
     @Override

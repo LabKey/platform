@@ -1,5 +1,6 @@
 package org.labkey.query.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -60,6 +61,21 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         bean.setSchemaName(event.getKey2());
         bean.setQueryName(event.getKey3());
 
+        return (K)bean;
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        QueryUpdateAuditEvent bean = convertEvent(event);
+
+        if (dataMap != null)
+        {
+            if (dataMap.containsKey(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME))
+                bean.setOldRecord(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME)));
+            if (dataMap.containsKey(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME))
+                bean.setNewRecord(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME)));
+        }
         return (K)bean;
     }
 

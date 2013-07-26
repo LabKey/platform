@@ -19,6 +19,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -98,6 +99,7 @@ public class AuditController extends SpringActionController
 
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
                 QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
+                settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
                 return schema.createView(getViewContext(), settings, errors);
             }

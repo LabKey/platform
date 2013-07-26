@@ -100,6 +100,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     private static final Map<String, Boolean> _factoryInitialized = new HashMap<>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<>();
+    private Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
     private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
 
@@ -122,6 +123,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             while (!_eventQueue.isEmpty())
             {
                 Pair<User, AuditLogEvent> event = _eventQueue.remove();
+                _addEvent(event.first, event.second);
+            }
+
+            while (!_eventTypeQueue.isEmpty())
+            {
+                Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
                 _addEvent(event.first, event.second);
             }
         }
@@ -332,8 +339,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                     {
                         LogManager.get()._insertEvent(user, event);
                     }
-                    //else
-                        //_eventQueue.add(new Pair<>(user, event));
+                    else
+                        _eventTypeQueue.add(new Pair<>(user, (AuditTypeEvent)event));
                 }
             }
             else
@@ -511,28 +518,41 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return AuditLogService.getAuditProvider(eventType);
     }
 
-    public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
+    public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
-        DbSchema schema = AuditSchema.getInstance().getSchema();
-
-        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+        if (AuditLogService.enableHardTableLogging())
         {
-            event = addEvent(event);
-            if (event != null)
+            AuditTypeProvider provider = getAuditProvider(event.getEventType());
+            if (provider != null)
             {
-                String parentLsid = domainURI + ':' + event.getRowId();
-
-                SQLFragment updateSQL = new SQLFragment();
-                updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
-                updateSQL.add(parentLsid);
-                updateSQL.add(event.getRowId());
-                new SqlExecutor(LogManager.get().getSchema()).execute(updateSQL);
-
-                addEventProperties(parentLsid, domainURI, dataMap);
+                K bean = provider.convertEvent(event, dataMap);
+                addEvent(event.getCreatedBy(), bean);
             }
-            transaction.commit();
-
             return event;
+        }
+        else
+        {
+            DbSchema schema = AuditSchema.getInstance().getSchema();
+
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
+                event = addEvent(event);
+                if (event != null)
+                {
+                    String parentLsid = domainURI + ':' + event.getRowId();
+
+                    SQLFragment updateSQL = new SQLFragment();
+                    updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
+                    updateSQL.add(parentLsid);
+                    updateSQL.add(event.getRowId());
+                    new SqlExecutor(LogManager.get().getSchema()).execute(updateSQL);
+
+                    addEventProperties(parentLsid, domainURI, dataMap);
+                }
+                transaction.commit();
+
+                return event;
+            }
         }
     }
 
