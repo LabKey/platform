@@ -131,6 +131,9 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
         {
             String uri = (String)getBoundColumn().getValue(ctx);
             String cId = (String)ctx.get("ContainerId");
+            if (cId == null)
+                cId = (String)ctx.get("Container");
+
             if (uri != null && cId != null)
             {
                 Container c = ContainerManager.getForId(cId);

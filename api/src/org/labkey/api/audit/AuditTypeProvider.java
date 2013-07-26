@@ -1,5 +1,6 @@
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -40,6 +41,8 @@ public interface AuditTypeProvider
      * fields
      */
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event);
+
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap);
 
     /**
      * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)

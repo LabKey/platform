@@ -157,7 +157,8 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     {
     }
 
-    public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
+    @Override
+    public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
         return new AuditLogEvent();
     }

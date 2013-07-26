@@ -154,8 +154,11 @@ public class AuditLogService
 
         @Deprecated // use AuditTypeEvent version
         public AuditLogEvent addEvent(User user, Container c, String eventType, String key, String message);
+        @Deprecated // use AuditTypeEvent version
         public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message);
+        @Deprecated // use AuditTypeEvent version
         public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message);
+        @Deprecated // use AuditTypeEvent version
         public AuditLogEvent addEvent(AuditLogEvent event);
 
         public <K extends AuditTypeEvent> K addEvent(User user, K event);
@@ -167,7 +170,7 @@ public class AuditLogService
          * for the query views to correctly display the additional properties, URI's for domains and properties
          * should be created using the methods on this service.
          */
-        public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI);
+        public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI);
 
         /**
          * Convenience methods to properly construct lsids with the correct audit namespace

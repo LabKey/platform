@@ -1,9 +1,11 @@
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -25,6 +27,17 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_SCHEMA_NAME = "auditLog";
     public static final String SCHEMA_NAME = "audit";
+
+    public static final String COLUMN_NAME_ROW_ID = "RowId";
+    public static final String COLUMN_NAME_CONTAINER = "Container";
+    public static final String COLUMN_NAME_COMMENT = "Comment";
+    public static final String COLUMN_NAME_EVENT_TYPE = "EventType";
+    public static final String COLUMN_NAME_CREATED = "Created";
+    public static final String COLUMN_NAME_CREATED_BY = "CreatedBy";
+    public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
+    public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
+    public static final String COLUMN_NAME_ENTITY_ID = "EntityId";
+    public static final String COLUMN_NAME_MESSAGE_ID = "MessageId";
 
     protected abstract DomainKind getDomainKind();
 
@@ -99,4 +112,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         bean.setCreatedBy(event.getCreatedBy());
     }
 
+    @Override
+    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
+    {
+        if (dataMap == null)
+            return convertEvent(event);
+        else
+            throw new IllegalArgumentException("Provider needs to override convertEvent in order to handle a non-null dataMap");
+    }
 }
