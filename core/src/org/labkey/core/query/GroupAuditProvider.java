@@ -8,18 +8,23 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.GroupManager;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/17/13
  */
 public class GroupAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+
+    public static final String COLUMN_NAME_USER = "User";
+    public static final String COLUMN_NAME_GROUP = "Group";
+
     @Override
     public String getEventName()
     {
@@ -57,6 +62,15 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             bean.setGroup(event.getIntKey2());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_USER);
+        legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_GROUP);
+        return legacyNames;
     }
 
     public static class GroupAuditEvent extends AuditTypeEvent
@@ -103,8 +117,8 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("User", JdbcType.INTEGER));
-            _fields.add(createFieldSpec("Group", JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_GROUP, JdbcType.INTEGER));
         }
 
         @Override

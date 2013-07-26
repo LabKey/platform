@@ -2540,7 +2540,7 @@ search/src/org/apache/lucene/index/IndexGate.java -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text
 search/src/org/labkey/search/SearchModule.java -text
-search/src/org/labkey/search/audit/SearchAudiProvider.java -text
+search/src/org/labkey/search/audit/SearchAuditProvider.java -text
 search/src/org/labkey/search/model/AbstractIndexTask.java -text
 search/src/org/labkey/search/model/AbstractSearchService.java -text
 search/src/org/labkey/search/model/CrawlerTest.java -text

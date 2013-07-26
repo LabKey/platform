@@ -8,18 +8,21 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
-public class SearchAudiProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class SearchAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EVENT_TYPE = "SearchAuditEvent";
+
+    public static final String COLUMN_NAME_QUERY = "Query";
 
     @Override
     protected DomainKind getDomainKind()
@@ -56,6 +59,14 @@ public class SearchAudiProvider extends AbstractAuditTypeProvider implements Aud
         return (K)bean;
     }
 
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_QUERY);
+        return legacyNames;
+    }
+
     public static class SearchAuditEvent extends AuditTypeEvent
     {
         private String _query;
@@ -88,7 +99,7 @@ public class SearchAudiProvider extends AbstractAuditTypeProvider implements Aud
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("Query", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_QUERY, JdbcType.VARCHAR));
         }
 
         @Override

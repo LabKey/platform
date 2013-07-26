@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.MultiValueMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -41,6 +42,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -75,6 +77,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -617,9 +620,16 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         Map<FieldKey, ColumnInfo> sourceColumns = QueryService.get().getColumns(sourceTable, sourceFields);
 
 
-        // Create map of columns
+        // Create map of columns (multiple sourceColumns may be mapped to the same targetColumn)
         Map<FieldKey, String> legacyNameMap = provider.legacyNameMap();
-        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
+        MultiValueMap<String, ColumnInfo> colMap = new MultiValueMap<String, ColumnInfo>(new CaseInsensitiveHashMap<Collection<ColumnInfo>>())
+        {
+            @Override
+            protected Collection<ColumnInfo> createValueCollection()
+            {
+                return new LinkedList<>();
+            }
+        };
         for (ColumnInfo c : sourceColumns.values())
         {
             if (null != c.getPropertyURI())
@@ -638,20 +648,43 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         SQLFragment insertSelect = new SQLFragment("SELECT ");
         String sep = "";
 
+        SqlDialect dialect = targetTable.getSqlDialect();
         for (ColumnInfo targetCol : targetTable.getColumns())
         {
-            ColumnInfo fromCol = colMap.get(targetCol.getPropertyURI());
-            if (null == fromCol)
-                fromCol = colMap.get(targetCol.getName());
+            Collection<ColumnInfo> fromCols = colMap.get(targetCol.getPropertyURI());
+            if (null == fromCols)
+                fromCols = colMap.get(targetCol.getName());
 
-            if (null == fromCol)
+            if (null == fromCols || fromCols.size() == 0)
             {
                 _log.warn(String.format("Could not copy column '%s'", targetCol.getName()));
                 continue;
             }
 
             insertInto.append(sep).append(targetCol.getSelectName());
-            insertSelect.append(sep).append(fromCol.getAlias());
+
+            insertSelect.append(sep);
+
+            // COALESCE multiple columns into a single value (e.g. oldRecordMap and oldRecord)
+            String coalesceSep = "";
+            if (fromCols.size() > 1)
+                insertSelect.append("COALESCE(");
+
+            for (ColumnInfo fromCol : fromCols)
+            {
+                insertSelect.append(coalesceSep);
+                // DatasetAuditProvider has a 'HasDetails' boolean column that must be converted from an int
+                boolean castNeeded = targetCol.getJdbcType() != fromCol.getJdbcType();
+                if (castNeeded)
+                    insertSelect.append("CAST(");
+                insertSelect.append(fromCol.getAlias());
+                if (castNeeded)
+                    insertSelect.append(" AS ").append(dialect.sqlTypeNameFromJdbcType(targetCol.getJdbcType())).append(")");
+                coalesceSep = ", ";
+            }
+
+            if (fromCols.size() > 1)
+                insertSelect.append(")");
 
             sep = ", ";
         }

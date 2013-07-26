@@ -8,18 +8,26 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.study.assay.AssayPublishManager;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/17/13
  */
 public class AssayAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+
+    public static final String COLUMN_NAME_PROTOCOL = "Protocol";
+    public static final String COLUMN_NAME_TARGET_STUDY = "TargetStudy";
+    public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
+    public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
+    public static final String COLUMN_NAME_RECORD_COUNT = "RecordCount";
+
     @Override
     public String getEventName()
     {
@@ -56,6 +64,19 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         bean.setTargetStudy(event.getKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_PROTOCOL);
+        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_TARGET_STUDY);
+
+        legacyMap.put(FieldKey.fromParts("Property", "sourceLsid"), COLUMN_NAME_SOURCE_LSID);
+        legacyMap.put(FieldKey.fromParts("Property", "datasetId"), COLUMN_NAME_DATASET_ID);
+        legacyMap.put(FieldKey.fromParts("Property", "recordCount"), COLUMN_NAME_RECORD_COUNT);
+        return legacyMap;
     }
 
     public static class AssayAuditEvent extends AuditTypeEvent
@@ -135,11 +156,11 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("Assay/Protocol", JdbcType.INTEGER));
-            _fields.add(createFieldSpec("TargetStudy", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("DatasetId", JdbcType.INTEGER));
-            _fields.add(createFieldSpec("SourceLsid", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("RecordCount", JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL, JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_TARGET_STUDY, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DATASET_ID, JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_SOURCE_LSID, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_RECORD_COUNT, JdbcType.INTEGER));
         }
 
         @Override

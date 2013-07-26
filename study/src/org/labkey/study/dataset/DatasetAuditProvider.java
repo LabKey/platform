@@ -8,19 +8,24 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.study.assay.AssayPublishManager;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/18/13
  */
 public class DatasetAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String DATASET_AUDIT_EVENT = "DatasetAuditEvent";
+
+    public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
+    public static final String COLUMN_NAME_HAS_DETAILS = "HasDetails";
+    public static final String COLUMN_NAME_UPLOAD_LOG = "UploadLog";
 
     @Override
     public String getEventName()
@@ -61,6 +66,18 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         bean.setUploadLog(event.getKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_DATASET_ID);
+        legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_HAS_DETAILS);
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_UPLOAD_LOG);
+        legacyNames.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.OLD_RECORD_PROP_NAME), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
+        legacyNames.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.NEW_RECORD_PROP_NAME), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
+        return legacyNames;
     }
 
     public static class DatasetAuditEvent extends AuditTypeEvent
@@ -140,12 +157,11 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("DatasetId", JdbcType.INTEGER));
-            _fields.add(createFieldSpec("HasDetails", JdbcType.BOOLEAN));
-            _fields.add(createFieldSpec("UploadLog", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DATASET_ID, JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_HAS_DETAILS, JdbcType.BOOLEAN));
+            _fields.add(createFieldSpec(COLUMN_NAME_UPLOAD_LOG, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
-
         }
 
         @Override

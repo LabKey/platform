@@ -8,18 +8,23 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class QueryAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_AUDIT_EVENT = "QueryExportAuditEvent";
+    public static final String COLUMN_NAME_SCHEMA_NAME = "SchemaName";
+    public static final String COLUMN_NAME_QUERY_NAME = "QueryName";
+    public static final String COLUMN_NAME_DETAILS_URL = "DetailsUrl";
+    public static final String COLUMN_NAME_DATA_ROW_COUNT = "DataRowCount";
 
     @Override
     protected DomainKind getDomainKind()
@@ -59,6 +64,17 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
             bean.setDataRowCount(event.getIntKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_SCHEMA_NAME);
+        legacyMap.put(FieldKey.fromParts("key2"), COLUMN_NAME_QUERY_NAME);
+        legacyMap.put(FieldKey.fromParts("key3"), COLUMN_NAME_DETAILS_URL);
+        legacyMap.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_DATA_ROW_COUNT);
+        return legacyMap;
     }
 
     public static class QueryAuditEvent extends AuditTypeEvent
@@ -126,10 +142,10 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("SchemaName", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("QueryName", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("DetailsUrl", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("DataRowCount", JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_SCHEMA_NAME, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_QUERY_NAME, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DETAILS_URL, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_DATA_ROW_COUNT, JdbcType.INTEGER));
         }
 
         @Override

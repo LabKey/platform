@@ -8,18 +8,23 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_UPDATE_AUDIT_EVENT = "QueryUpdateAuditEvent";
+
+    public static final String COLUMN_NAME_ROW_PK = "RowPk";
+    public static final String COLUMN_NAME_SCHEMA_NAME = "SchemaName";
+    public static final String COLUMN_NAME_QUERY_NAME = "QueryName";
 
     @Override
     protected DomainKind getDomainKind()
@@ -56,6 +61,18 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         bean.setQueryName(event.getKey3());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ROW_PK);
+        legacyMap.put(FieldKey.fromParts("key2"), COLUMN_NAME_SCHEMA_NAME);
+        legacyMap.put(FieldKey.fromParts("key3"), COLUMN_NAME_QUERY_NAME);
+        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.OLD_RECORD_PROP_NAME), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
+        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.NEW_RECORD_PROP_NAME), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
+        return legacyMap;
     }
 
     public static class QueryUpdateAuditEvent extends AuditTypeEvent
@@ -134,9 +151,9 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("RowPk", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("SchemaName", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("QueryName", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_ROW_PK, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_SCHEMA_NAME, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_QUERY_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }

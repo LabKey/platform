@@ -44,7 +44,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.search.audit.SearchAudiProvider;
+import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.DocumentConversionServiceImpl;
@@ -154,7 +154,7 @@ public class SearchModule extends DefaultModule
         }
 
         AuditLogService.get().addAuditViewFactory(new SearchAuditViewFactory());
-        AuditLogService.registerAuditType(new SearchAudiProvider());
+        AuditLogService.registerAuditType(new SearchAuditProvider());
 
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());

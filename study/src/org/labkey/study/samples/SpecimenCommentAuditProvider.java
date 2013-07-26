@@ -8,19 +8,22 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 import org.labkey.study.assay.AssayPublishManager;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/18/13
  */
 public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String SPECIMEN_COMMENT_EVENT = "SpecimenCommentEvent";
+
+    public static final String COLUMN_NAME_VIAL_ID = "VialId";
 
     @Override
     protected DomainKind getDomainKind()
@@ -57,6 +60,14 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         return (K)bean;
     }
 
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_VIAL_ID);
+        return legacyNames;
+    }
+
     public static class SpecimenCommentAuditEvent extends AuditTypeEvent
     {
         private String _vialId;
@@ -90,7 +101,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("VialId", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_VIAL_ID, JdbcType.VARCHAR));
         }
 
         @Override

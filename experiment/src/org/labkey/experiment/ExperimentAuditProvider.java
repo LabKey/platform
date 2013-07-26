@@ -8,18 +8,24 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class ExperimentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EXPERIMENT_AUDIT_EVENT = "ExperimentAuditEvent";
+
+    public static final String COLUMN_NAME_PROTOCOL_LSID = "ProtocolLsid";
+    public static final String COLUMN_NAME_RUN_LSID = "RunLsid";
+    public static final String COLUMN_NAME_PROTOCOL_RUN = "ProtocolRun";
+    public static final String COLUMN_NAME_RUN_GROUP = "RunGroup";
 
     @Override
     protected DomainKind getDomainKind()
@@ -59,6 +65,17 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             bean.setRunGroup(event.getIntKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_PROTOCOL_LSID);
+        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_RUN_LSID);
+        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_PROTOCOL_RUN);
+        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_RUN_GROUP);
+        return legacyNames;
     }
 
     public static class ExperimentAuditEvent extends AuditTypeEvent
@@ -126,10 +143,10 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("ProtocolLsid", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("RunLsid", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("ProtocolRun", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("RunGroup", JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL_LSID, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_RUN_LSID, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL_RUN, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_RUN_GROUP, JdbcType.INTEGER));
         }
 
         @Override

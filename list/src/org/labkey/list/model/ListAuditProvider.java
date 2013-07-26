@@ -8,17 +8,24 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class ListAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+
+    public static final String COLUMN_NAME_LIST_ID = "ListId";
+    public static final String COLUMN_NAME_LIST_DOMAIN_URI = "ListDomainUri";
+    public static final String COLUMN_NAME_LIST_ITEM_ENTITY_ID = "ListItemEntityId";
+    public static final String COLUMN_NAME_LIST_NAME = "ListName";
+
     @Override
     protected DomainKind getDomainKind()
     {
@@ -57,6 +64,22 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         bean.setListName(event.getKey3());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_LIST_ID);
+        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_LIST_DOMAIN_URI);
+        legacyMap.put(FieldKey.fromParts("key2"), COLUMN_NAME_LIST_ITEM_ENTITY_ID);
+        legacyMap.put(FieldKey.fromParts("key3"), COLUMN_NAME_LIST_NAME);
+        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.OLD_RECORD_PROP_NAME), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
+        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.NEW_RECORD_PROP_NAME), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
+        // Unused Property/oldRecord and Property/newRecord columns should just be migrated to the oldRecordMap and newRecordMap columns
+        legacyMap.put(FieldKey.fromParts("Property", "OldRecord"), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
+        legacyMap.put(FieldKey.fromParts("Property", "NewRecord"), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
+        return legacyMap;
     }
 
     public static class ListAuditEvent extends AuditTypeEvent
@@ -146,10 +169,10 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("ListId", JdbcType. INTEGER));
-            _fields.add(createFieldSpec("ListDomainUri", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("ListItemEntityId", JdbcType.VARCHAR));
-            _fields.add(createFieldSpec("ListName", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ID, JdbcType. INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_LIST_DOMAIN_URI, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ITEM_ENTITY_ID, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_LIST_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }

@@ -20,15 +20,17 @@ import org.labkey.api.query.UserSchema;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/19/13
  */
 public class AttachmentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_ATTACHMENT = "Attachment";
+
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
@@ -38,7 +40,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Attachment"));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_ATTACHMENT));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
@@ -75,6 +77,14 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         bean.setAttachment(event.getKey1());
 
         return (K)bean;
+    }
+
+    @Override
+    public Map<FieldKey, String> legacyNameMap()
+    {
+        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
+        return legacyMap;
     }
 
     @Override
@@ -126,7 +136,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec("Attachment", JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_ATTACHMENT, JdbcType.VARCHAR));
         }
 
         @Override
