@@ -22,12 +22,32 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String currentView = (String)HttpView.currentModel();
+/*
     List<AuditTypeProvider> providers = AuditLogService.get().getAuditProviders();
 
     if (currentView == null)
         currentView = providers.get(0).getEventName();
+*/
+
+    List<AuditLogService.AuditViewFactory> factories = AuditLogService.get().getAuditViewFactories();
+
+    if (currentView == null)
+        currentView = factories.get(0).getEventType();
 
 %>
+<form action="" method="get">
+    <select name="view" onchange="this.form.submit()">
+<%
+    for (AuditLogService.AuditViewFactory factory : factories)
+    {
+%>
+        <option value="<%=h(factory.getEventType())%>"<%=h(factory.getEventType().equals(currentView) ? " selected" : "")%>><%=h(factory.getName())%></option>
+<%
+    }
+%>
+
+%>
+<%--
 <form action="" method="get">
     <select name="view" onchange="this.form.submit()">
 <%
@@ -38,5 +58,6 @@
 <%
     }
 %>
+--%>
     </select>
 </form>
