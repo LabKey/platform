@@ -56,23 +56,11 @@ Ext4.define('File.panel.Admin', {
 
     getItems: function(){
         return [
-//            this.getActionsPanel(), TODO: Create the actions panel. Skipping for this sprint (13.1 Sprint 2)
+            this.getActionsPanel(),
             this.getFilePropertiesPanel(),
             this.getToolBarPanel(),
             this.getGeneralSettingsPanel()
         ];
-    },
-
-    getActionsPanel: function(){
-//        this.actionsPanel = Ext4.create('', {
-//            title: 'Actions'
-//        });
-
-//        this.actionsPanel.on('activate', function(){
-//            this.resetDefaultsButton.show();
-//        }, this);
-
-//        return this.actionsPanel;
     },
 
     getFilePropertiesPanel: function(){
@@ -105,6 +93,19 @@ Ext4.define('File.panel.Admin', {
             this.resetDefaultsButton.show();
         }, this);
         return this.toolBarPanel;
+    },
+
+    getActionsPanel : function(){
+        this.actionsPanel = Ext4.create('File.panel.ActionsPanel', {
+            title : 'Actions',
+            containerPath : this.containerPath,
+            isPipelineRoot : this.isPipelineRoot,
+            importDataEnabled: this.pipelineFileProperties.importDataEnabled
+        });
+//        this.actionsPanel.on('activate', function(){
+//            this.resetDefaultsButton.show();
+//        },  this);
+        return this.actionsPanel;
     },
 
     getGeneralSettingsPanel: function(){
@@ -148,9 +149,10 @@ Ext4.define('File.panel.Admin', {
     onSubmit: function(button, event, handler){
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
+            importDataEnabled : Ext4.getCmp('showImportCheckbox').getValue(),
             expandFileUpload: this.showUploadCheckBox.getValue(),
-            fileConfig: this.filePropertiesPanel.getFileConfig()
-            //actions: this.actionsPanel.getActionConfigs()
+            fileConfig: this.filePropertiesPanel.getFileConfig(),
+            actions: this.actionsPanel.getActionsForSubmission()
         };
 
         if(this.toolBarPanel.gridConfigsChanged())
