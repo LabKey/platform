@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import gwt.client.org.labkey.study.designer.client.model.*;
+import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.ui.StringListBox;
 
@@ -72,8 +74,24 @@ public class VaccinePanel extends Composite
                     "<li>Each adjuvant should be listed in the adjuvant grid. " +
                     "<li>Immunogens should have unique names. " +
                     "<li>If possible the immunogen description should include specific sequences of HIV Antigens included in the immunogen." +
-                    "<li>Use the immunizations tab to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</ul><br>";
+                    "<li>Use the immunizations tab to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</ul>";
             vPanel.add(new HTML(html));
+
+            if ("true".equals(PropertyUtil.getServerProperty("canAdmin")))
+            {
+                HorizontalPanel hp = new HorizontalPanel();
+                hp.add(new ImageButton("Configure Lookup Values", new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        VaccineLookupConfigDialog dlg = new VaccineLookupConfigDialog();
+                        dlg.setPopupPosition(sender.getAbsoluteLeft(), sender.getAbsoluteTop() + sender.getOffsetHeight());
+                        dlg.show();
+                    }
+                }));
+                vPanel.add(hp);
+            }
+
             vPanel.add(getImmunogenGrid());
         }
 
@@ -662,5 +680,50 @@ public class VaccinePanel extends Composite
             }
         }
         return true;
+    }
+
+    private class VaccineLookupConfigDialog extends DialogBox
+    {
+        // NOTE: this is temparary UI until we convert to using Ext4 for the study designer
+        public VaccineLookupConfigDialog()
+        {
+            this.setText("Configure Lookup Values");
+            VerticalPanel vp = new VerticalPanel();
+
+            String containerPath = PropertyUtil.getContainerPath();
+            String baseFolderURL = PropertyUtil.getContextPath() + "/query" + containerPath + "/executeQuery.view?schemaName=study&query.queryName=";
+            String projectPath = containerPath.indexOf("/", 1) == -1 ? containerPath : containerPath.substring(0, containerPath.indexOf("/", 1));
+            String baseProjectURL = PropertyUtil.getContextPath() + "/query" + projectPath + "/executeQuery.view?schemaName=study&query.queryName=";
+            String html = "Configure lookup values at the project level to be shared across<br/>study designs or within this folder for study specific properties.<br/><br/><table>";
+
+            String projectLink = baseProjectURL + "StudyDesignImmunogenTypes";
+            String folderLink = baseFolderURL + "StudyDesignImmunogenTypes";
+            html += "<tr><td>Immunogen Types:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
+
+            projectLink = baseProjectURL + "StudyDesignRoutes";
+            folderLink = baseFolderURL + "StudyDesignRoutes";
+            html += "<tr><td>Routes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
+
+            projectLink = baseProjectURL + "StudyDesignGenes";
+            folderLink = baseFolderURL + "StudyDesignGenes";
+            html += "<tr><td>Genes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
+
+            projectLink = baseProjectURL + "StudyDesignSubTypes";
+            folderLink = baseFolderURL + "StudyDesignSubTypes";
+            html += "<tr><td>SubTypes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr></table><br/>";
+
+            vp.add(new HTML(html));
+
+            HorizontalPanel hp = new HorizontalPanel();
+            hp.add(new ImageButton("Done", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    VaccineLookupConfigDialog.this.hide();
+                }
+            }));
+            vp.add(hp);
+            this.setWidget(vp);
+        }
     }
 }

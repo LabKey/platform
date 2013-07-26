@@ -241,6 +241,19 @@ public class Designer implements EntryPoint
 
         if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
         {
+            if (!isReadOnly())
+            {
+                buttonPanel.add(new ImageButton("Configure Lookup Values", new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        AssayLookupConfigDialog dlg = new AssayLookupConfigDialog();
+                        dlg.setPopupPosition(sender.getAbsoluteLeft(), sender.getAbsoluteTop() + sender.getOffsetHeight());
+                        dlg.show();
+                    }
+                }));
+            }
+
             if (definition.getAssaySchedule().getAssays().size() > 0)
             {
                 Widget createPlaceholderDatasetsButton = new ImageButton("Create Assay Datasets", new ClickHandler()

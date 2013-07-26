@@ -2626,6 +2626,7 @@ study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetServiceAsync.java
 study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java -text
 study/gwtsrc/gwt/client/org/labkey/study/dataset/client/model/GWTDataset.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/ActivatingLabel.java -text
+study/gwtsrc/gwt/client/org/labkey/study/designer/client/AssayLookupConfigDialog.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/AssayPanel.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/DescriptionWidget.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/Designer.java -text
