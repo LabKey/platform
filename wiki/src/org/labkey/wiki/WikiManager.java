@@ -807,6 +807,7 @@ public class WikiManager implements WikiService
         return getHtml(c, name);
     }
 
+    @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
         Wiki wiki = new Wiki(c, new HString(name));
