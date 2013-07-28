@@ -92,4 +92,85 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
         return false;
     }
+
+    public void updateSaveConfig()
+    {
+        if (getJSON() != null)
+        {
+            setJSON(updateJSON(getJSON()));
+        }
+    }
+
+    private String updateJSON(String json)
+    {
+        JSONObject oldJson = new JSONObject(json);
+        JSONObject newJson = new JSONObject();
+        JSONObject oldChartConfig = oldJson.getJSONObject("chartConfig");
+
+        if(oldChartConfig.get("geomOptions") != null)
+        {
+            return json;
+        }
+
+        JSONObject oldChartOptions = oldChartConfig.getJSONObject("chartOptions");
+        JSONObject newChartConfig = new JSONObject();
+        JSONObject measures = new JSONObject();
+        JSONObject labels = new JSONObject();
+        JSONObject scales = new JSONObject();
+        JSONObject geomOptions = new JSONObject();
+
+        // Copy over queryConfig, that does not need to change.
+        newJson.put("queryConfig", oldJson.getJSONObject("queryConfig"));
+
+        measures.put("x", oldChartConfig.get("xAxisMeasure"));
+        measures.put("y", oldChartConfig.get("yAxisMeasure"));
+
+        if (oldChartOptions.get("grouping") != null) {
+            JSONObject grouping = oldChartOptions.getJSONObject("grouping");
+            if (grouping.get("colorType") != null && grouping.get("colorType").equals("measure")) {
+                measures.put("color", grouping.getJSONObject("colorMeasure"));
+            }
+
+            // Change naming of point to shape since that's how it's represented in the vis API.
+            if (grouping.get("pointType") != null && grouping.get("pointType").equals("measure")) {
+                measures.put("shape", grouping.getJSONObject("pointMeasure"));
+            }
+        }
+
+        if (oldChartOptions.get("developer") != null && oldChartOptions.getJSONObject("developer").get("pointClickFn") != null) {
+            measures.put("pointClickFn", oldChartOptions.getJSONObject("developer").get("pointClickFn"));
+        }
+
+        newChartConfig.put("measures", measures);
+
+        labels.put("x", oldChartOptions.getJSONObject("xAxis").get("label"));
+        labels.put("y", oldChartOptions.getJSONObject("yAxis").get("label"));
+        labels.put("main", oldChartOptions.get("mainTitle"));
+        newChartConfig.put("labels", labels);
+
+        // Convert scaleType to trans since that's how it is represented in the vis API.
+        scales.put("x", new JSONObject().put("trans", oldChartOptions.getJSONObject("xAxis").get("scaleType")));
+        scales.put("y", new JSONObject().put("trans", oldChartOptions.getJSONObject("yAxis").get("scaleType")));
+        newChartConfig.put("scales", scales);
+
+        if (oldChartConfig.get("curveFit") != null) {
+            newChartConfig.put("curveFit", oldChartConfig.get("curveFit"));
+        }
+
+        geomOptions.put("boxFillColor", oldChartOptions.get("fillColor"));
+        geomOptions.put("lineColor", oldChartOptions.get("lineColor"));
+        geomOptions.put("lineWidth", oldChartOptions.get("lineWidth"));
+        geomOptions.put("opacity", oldChartOptions.get("opacity"));
+        geomOptions.put("pointFillColor", oldChartOptions.get("pointColor"));
+        geomOptions.put("pointSize", oldChartOptions.get("pointSize"));
+        newChartConfig.put("geomOptions", geomOptions);
+
+        newChartConfig.put("renderType", oldChartOptions.get("renderType"));
+        newChartConfig.put("width", oldChartOptions.get("width"));
+        newChartConfig.put("height", oldChartOptions.get("height"));
+
+        newJson.put("chartConfig", newChartConfig);
+
+        return newJson.toString();
+    }
 }
