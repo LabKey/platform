@@ -6,11 +6,11 @@
 
 LABKEY.vis.GenericChartHelper = new function(){
     var getChartType = function(renderType, xAxisType) {
-        if (renderType === 'auto_plot') {
-            return (xAxisType === 'string' || xAxisType === 'boolean') ? 'box_plot' : 'scatter_plot';
+        if (renderType === "box_plot" || renderType === "scatter_plot") {
+            return renderType;
         }
 
-        return renderType;
+        return (xAxisType === 'string' || xAxisType === 'boolean') ? 'box_plot' : 'scatter_plot';
     };
 
     var generateLabels = function(labels, measures) {
@@ -27,10 +27,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         };
     };
 
-    var generateScales = function(chartType, measures, savedScales, aes, data) {
+    var generateScales = function(chartType, measures, savedScales, aes, responseData, defaultFormatFn) {
         var scales = {};
-        //TODO: determine if we should show the same or similar errors when we can't produce a chart with a log scale
-        // i.e. values <=0 or null.
+        var data = responseData.rows;
+        var fields = responseData.metaData.fields;
 
         if (chartType === "box_plot") {
             scales.x = {scaleType: 'discrete'}; // Force discrete x-axis scale for box plots.
@@ -57,6 +57,28 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             scales.y = {scaleType: 'continuous', trans: savedScales.y.trans};
+        }
+
+        for (var i = 0; i < fields.length; i++) {
+            var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
+
+            if (type == 'int' || type == 'float') {
+                if (fields[i].name == measures.x.name) {
+                    if (fields[i].extFormatFn) {
+                        scales.x.tickFormat = eval(fields[i].extFormatFn);
+                    } else if (defaultFormatFn) {
+                        scales.x.tickFormat = defaultFormatFn;
+                    }
+                }
+
+                if (fields[i].name == measures.y.name) {
+                    if (fields[i].extFormatFn) {
+                        scales.y.tickFormat = eval(fields[i].extFormatFn);
+                    } else if (defaultFormatFn) {
+                        scales.y.tickFormat = defaultFormatFn;
+                    }
+                }
+            }
         }
 
         return scales;
@@ -200,11 +222,11 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var generateGroupingAcc = function(measureName){
         return function(row) {
-            var valueObj = row[measureName];
+            var measureObj = row[measureName];
             var value = null;
 
-            if(valueObj){
-                value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
+            if(measureObj){
+                value = measureObj.displayValue ? measureObj.displayValue : measureObj.value;
             }
 
             if(value === null || value === undefined){
@@ -220,10 +242,16 @@ LABKEY.vis.GenericChartHelper = new function(){
             schemaName: schemaName,
             queryName: queryName,
             xAxis: measures.x.name,
-            yAxis: measures.y.name,
-            colorName: measures.color.name,
-            pointName: measures.shape.name
+            yAxis: measures.y.name
         };
+
+        if (measures.shape) {
+            measureInfo.colorName = measures.color.name;
+        }
+
+        if (measures.color) {
+            measureInfo.pointName = measures.shape.name
+        }
 
         // using new Function is quicker than eval(), even in IE.
         var pointClickFn = new Function('return ' + fnString)();

@@ -282,10 +282,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             renderType: this.getRenderType(),
             opacity: this.getOpacity(),
             pointSize: this.getPointSize(),
-            pointColor: this.getPointColor(),
+            pointFillColor: this.getPointColor(),
             lineWidth: this.getLineWidth(),
             lineColor: this.getLineColor(),
-            fillColor: this.getFillColor(),
+            boxFillColor: this.getFillColor(),
             width: this.getWidth(),
             height: this.getHeight()
         };
@@ -301,11 +301,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (initValues.hasOwnProperty("pointSize"))
             this.setPointSize(initValues.pointSize);
         if (initValues.hasOwnProperty("pointColor"))
-            this.setPointColor(initValues.pointColor);
-        if (initValues.hasOwnProperty("lineColor"))
+            this.setPointColor(initValues.pointFillColor);
+        if (initValues.hasOwnProperty("pointFillColor"))
             this.setLineColor(initValues.lineColor);
-        if (initValues.hasOwnProperty("fillColor"))
-            this.setFillColor(initValues.fillColor);
+        if (initValues.hasOwnProperty("boxFillColor"))
+            this.setFillColor(initValues.boxFillColor);
         if (initValues.hasOwnProperty("width"))
             this.setWidth(initValues.width);
         if (initValues.hasOwnProperty("height"))
@@ -314,43 +314,43 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.hasChanges = false;
     },
 
-    setPanelOptionValues: function(config){
+    setPanelOptionValues: function(chartConfig){
         this.suppressEvents = true;
 
-        if(config.renderType){
-            this.setRenderType(config.renderType);
+        if(chartConfig.renderType){
+            this.setRenderType(chartConfig.renderType);
         }
 
-        if(config.opacity){
-            this.setOpacity(config.opacity);
+        if(chartConfig.geomOptions.opacity){
+            this.setOpacity(chartConfig.geomOptions.opacity);
         }
 
-        if(config.pointSize){
-            this.setPointSize(config.pointSize);
+        if(chartConfig.geomOptions.pointSize){
+            this.setPointSize(chartConfig.geomOptions.pointSize);
         }
 
-        if(config.pointColor){
-            this.setPointColor(config.pointColor);
+        if(chartConfig.geomOptions.pointFillColor){
+            this.setPointColor(chartConfig.geomOptions.pointFillColor);
         }
 
-        if(config.lineWidth){
-            this.setLineWidth(config.lineWidth);
+        if(chartConfig.geomOptions.lineWidth){
+            this.setLineWidth(chartConfig.geomOptions.lineWidth);
         }
 
-        if(config.lineColor){
-            this.setLineColor(config.lineColor);
+        if(chartConfig.geomOptions.lineColor){
+            this.setLineColor(chartConfig.geomOptions.lineColor);
         }
 
-        if(config.fillColor){
-            this.setFillColor(config.fillColor);
+        if(chartConfig.geomOptions.boxFillColor){
+            this.setFillColor(chartConfig.geomOptions.boxFillColor);
         }
 
-        if(config.width){
-            this.setWidth(config.width);
+        if(chartConfig.width){
+            this.setWidth(chartConfig.width);
         }
 
-        if(config.height){
-            this.setHeight(config.height);
+        if(chartConfig.height){
+            this.setHeight(chartConfig.height);
         }
 
         this.suppressEvents = false;

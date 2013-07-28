@@ -16,6 +16,7 @@
 
 package org.labkey.visualization;
 
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;
@@ -41,12 +42,12 @@ public class VisualizationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.20;
+        return 13.21;
     }
 
     public boolean hasScripts()
     {
-        return false;
+        return true;
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -68,5 +69,11 @@ public class VisualizationModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new VisualizationUpgradeCode();
     }
 }

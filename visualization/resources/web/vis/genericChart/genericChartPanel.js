@@ -11,6 +11,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-genericchartpanel',
 
+    measures: {},
+
     constructor : function(config) {
 
         Ext4.QuickTips.init();
@@ -125,11 +127,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
-        this.exportPdfBtn = Ext4.create('Ext.button.Button', {
-            text: 'Export PDF',
-            disabled: true,
-            tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null, 
-            scope: this
+        this.exportBtn = Ext4.create('Ext.button.Button', {
+            text: 'Export',
+            scope: this,
+            menu: {
+                items: [
+                    {text: 'Export as PDF', disabled: true, tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null}
+//                    {text: 'Export as Script', disabled: true}
+                ]
+            }
         });
 
         this.helpBtn = Ext4.create('Ext.button.Button', {
@@ -188,7 +194,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.toggleBtn.setText('View Data');
                     this.showOptionsBtn.show();
                     this.groupingBtn.show();
-                    this.exportPdfBtn.show();
+                    this.exportBtn.show();
 
                     if(this.customButtons){
                         for(var i = 0; i < this.customButtons.length; i++){
@@ -203,7 +209,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.toggleBtn.setText('View Chart');
                     this.showOptionsBtn.hide();
                     this.groupingBtn.hide();
-                    this.exportPdfBtn.hide();
+                    this.exportBtn.hide();
 
                     if(this.customButtons){
                         for(var i = 0; i < this.customButtons.length; i++){
@@ -220,7 +226,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var tbarItems = [
             this.toggleBtn,
-            this.exportPdfBtn
+            this.exportBtn
         ];
 
         if (this.editMode)
@@ -312,8 +318,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var hidden = record.get('hidden');
                         return (!hidden && (type == 'int' || type == 'float' || type == 'double'))
                     });
-                    if(this.yAxisMeasure){
-                        var measure = this.yMeasureStore.findRecord('name', this.yAxisMeasure.name);
+                    if(this.measures.y){
+                        var measure = this.yMeasureStore.findRecord('name', this.measures.y.name);
                         if(measure){
                             this.yMeasureGrid.getSelectionModel().select(measure, false, true);
                             this.yMeasureChoice = this.yMeasureGrid.getSelectionModel().getSelection()[0].data;
@@ -339,8 +345,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var hidden = record.get('hidden');
                         return !hidden
                     });
-                    if(this.xAxisMeasure){
-                        var measure = this.xMeasureStore.findRecord('name', this.xAxisMeasure.name);
+                    if(this.measures.x){
+                        var measure = this.xMeasureStore.findRecord('name', this.measures.x.name);
                         if(measure){
                             this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                             this.xMeasureChoice = this.xMeasureGrid.getSelectionModel().getSelection()[0].data;
@@ -443,7 +449,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.centerPanel.getEl().mask('Rendering Chart...');
-                    this.yAxisMeasure = this.yMeasureChoice;
+                    this.measures.y = this.yMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
                 scope: this
@@ -468,7 +474,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                     this.yOkBtn.setDisabled(!this.yMeasureGrid.getSelectionModel().hasSelection());
 
-                    if (!this.yAxisMeasure)
+                    if (!this.measures.y)
                     {
                         this.yCancelBtn.hide();
                         this.yMeasurePanel.hideNonMeasureElements();
@@ -506,7 +512,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.centerPanel.getEl().mask('Rendering Chart...');
-                    this.xAxisMeasure = this.xMeasureChoice;
+                    this.measures.x = this.xMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
                 scope: this
@@ -529,7 +535,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                     this.xOkBtn.setDisabled(!this.xMeasureGrid.getSelectionModel().hasSelection());
 
-                    if (!this.xAxisMeasure)
+                    if (!this.measures.x)
                     {
                         this.xCancelBtn.hide();
                         this.xMeasurePanel.hideNonMeasureElements();
@@ -760,7 +766,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 resetTitle: function() {
                     // need a reset title function.
-                    this.mainTitlePanel.setMainTitle((this.queryLabel || this.queryName) + ' - ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label))
+                    this.mainTitlePanel.setMainTitle((this.queryLabel || this.queryName) + ' - ' + Ext4.util.Format.htmlEncode(this.measures.y.label))
                 },
                 scope: this
             }
@@ -1036,10 +1042,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if(!this.editMode || this.firstLoad){
             // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
             columns = [];
-            var groupingData = this.getChartConfig().chartOptions.grouping;
+            var measures = this.getChartConfig().measures;
 
-            if(this.xAxisMeasure){
-                columns.push(this.xAxisMeasure.name);
+            if(measures.x){
+                columns.push(measures.x.name);
             } else if(this.autoColumnXName){
                 columns.push(this.autoColumnXName);
             } else {
@@ -1053,18 +1059,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
-            if(this.yAxisMeasure){
-                columns.push(this.yAxisMeasure.name);
+            if(measures.y){
+                columns.push(measures.y.name);
             } else if(this.autoColumnYName){
                 columns.push(this.autoColumnYName);
             }
 
-            if(groupingData.colorType === "measure"){
-                columns.push(groupingData.colorMeasure.name)
+            if(measures.color){
+                columns.push(measures.color.name)
             }
 
-            if(groupingData.pointType === "measure"){
-                columns.push(groupingData.pointMeasure.name);
+            if(measures.shape){
+                columns.push(measures.shape.name);
             }
         } else {
             // If we're in edit mode then we can load all of the columns.
@@ -1077,39 +1083,62 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getChartConfig : function() {
-
         var config = {};
+        var xAxisOptions = this.xMeasurePanel.getPanelOptionValues();
+        var yAxisOptions = this.yMeasurePanel.getPanelOptionValues();
+        var chartOptions = this.optionsPanel.getPanelOptionValues();
+        var groupingOptions = this.groupingPanel.getPanelOptionValues();
+        var developerOptions = this.developerPanel.getPanelOptionValues();
+        var mainTitle = this.mainTitlePanel.getPanelOptionValues().title;
 
-        if (this.xAxisMeasure)
-        {
-            config.xAxisMeasure = {
-                label   : this.xAxisMeasure.label,
-                name    : this.xAxisMeasure.name,
-                hidden  : this.xAxisMeasure.hidden,
-                measure : this.xAxisMeasure.measure,
-                type    : this.xAxisMeasure.type,
-                displayFieldJsonType : this.xAxisMeasure.displayFieldJsonType,
-                normalizedType       : this.xAxisMeasure.normalizedType
-            }
+        config.width = chartOptions.width;
+        config.height = chartOptions.height;
+        config.renderType = chartOptions.renderType;
+        config.geomOptions = {
+            boxFillColor: chartOptions.boxFillColor,
+            lineColor: chartOptions.lineColor,
+            lineWidth: chartOptions.lineWidth,
+            opacity: chartOptions.opacity,
+            pointFillColor: chartOptions.pointFillColor,
+            pointSize: chartOptions.pointSize
+        };
+        config.scales = {
+            x: {trans: xAxisOptions.scaleTrans},
+            y: {trans: yAxisOptions.scaleTrans}
+        };
+        config.labels = {
+            x: xAxisOptions.label,
+            y: yAxisOptions.label
+        };
+
+        if(!this.mainTitlePanel.userEditedTitle || mainTitle == null || mainTitle == undefined){
+            config.labels.main = this.getDefaultTitle();
+            this.mainTitlePanel.setMainTitle(config.labels.main, true);
+        } else {
+            config.labels.main = mainTitle;
         }
 
-        if (this.yAxisMeasure)
-        {
-            config.yAxisMeasure = {
-                label   : this.yAxisMeasure.label,
-                name    : this.yAxisMeasure.name,
-                hidden  : this.yAxisMeasure.hidden,
-                measure : this.yAxisMeasure.measure,
-                type    : this.yAxisMeasure.type,
-                displayFieldJsonType : this.yAxisMeasure.displayFieldJsonType,
-                normalizedType       : this.yAxisMeasure.normalizedType
-            }
+        config.measures = Ext4.apply({}, this.measures);
+
+        if (groupingOptions.color) {
+            config.measures.color = groupingOptions.color;
         }
 
-        if (this.curveFit)
+        if (groupingOptions.shape) {
+            config.measures.shape = groupingOptions.shape;
+        }
+
+        if (developerOptions.pointClickFn) {
+            config.measures.pointClickFn = this.developerPanel.removeLeadingComments(developerOptions.pointClickFn);
+        }
+
+        if (this.curveFit) {
             config.curveFit = this.curveFit;
+        }
 
-        config.chartOptions = this.getChartOptions();
+        if (this.getCustomChartOptions) {
+            config.customOptions = this.getCustomChartOptions();
+        }
 
         return config;
     },
@@ -1416,7 +1445,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     loadSavedConfig : function(config) {
-
         this.allowCustomize = config.editable;
 
         this.schemaName = config.schemaName;
@@ -1462,14 +1490,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (json.chartConfig)
         {
-            this.yAxisMeasure = json.chartConfig.yAxisMeasure;
-            this.xAxisMeasure = json.chartConfig.xAxisMeasure;
-            if(!json.chartConfig.chartOptions){
+            this.measures = json.chartConfig.measures;
+
+            if(!json.chartConfig){
                 this.optionsPanel.setPanelOptionValues({renderType: this.renderType});
             } else {
-                this.optionsPanel.setPanelOptionValues(json.chartConfig.chartOptions);
-                if(json.chartConfig.chartOptions.mainTitle != null && json.chartConfig.chartOptions.mainTitle != undefined){
-                    this.mainTitlePanel.setMainTitle(json.chartConfig.chartOptions.mainTitle, true);
+                this.optionsPanel.setPanelOptionValues(json.chartConfig);
+                if(json.chartConfig.labels.main != null && json.chartConfig.labels.main != undefined){
+                    this.mainTitlePanel.setMainTitle(json.chartConfig.labels.main, true);
                     if(this.getDefaultTitle() != this.mainTitlePanel.getPanelOptionValues().title){
                         this.mainTitlePanel.userEditedTitle = true;
                     }
@@ -1477,26 +1505,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.mainTitlePanel.setMainTitle(this.getDefaultTitle(), true);
                 }
 
-                if(json.chartConfig.chartOptions.xAxis){
-                    this.xMeasurePanel.setPanelOptionValues(json.chartConfig.chartOptions.xAxis)
-                    if(this.xAxisMeasure && this.xMeasurePanel.getAxisLabel() != this.getDefaultXAxisLabel()){
+                if(json.chartConfig.scales.x || json.chartConfig.labels.x){
+                    this.xMeasurePanel.setPanelOptionValues(json.chartConfig.labels.x, json.chartConfig.scales.x)
+                    if(this.measures.x && this.xMeasurePanel.getAxisLabel() != this.getDefaultXAxisLabel()){
                         this.xMeasurePanel.userEditedLabel = true;
                     }
                 }
 
-                if(json.chartConfig.chartOptions.yAxis){
-                    this.yMeasurePanel.setPanelOptionValues(json.chartConfig.chartOptions.yAxis)
-                    if(this.yAxisMeasure && this.yMeasurePanel.getAxisLabel() != this.getDefaultYAxisLabel()){
+                if(json.chartConfig.labels.y || json.chartConfig.scales.y){
+                    this.yMeasurePanel.setPanelOptionValues(json.chartConfig.labels.y, json.chartConfig.scales.y)
+                    if(this.measures.y && this.yMeasurePanel.getAxisLabel() != this.getDefaultYAxisLabel()){
                         this.yMeasurePanel.userEditedLabel = true;
                     }
                 }
 
-                if(json.chartConfig.chartOptions.grouping){
-                    this.groupingPanel.setPanelOptionValues(json.chartConfig.chartOptions.grouping);
+                if(json.chartConfig.measures.color || json.chartConfig.measures.shape){
+                    this.groupingPanel.setPanelOptionValues(json.chartConfig.measures);
                 }
 
-                if (json.chartConfig.chartOptions.developer)
-                    this.developerPanel.setPanelOptionValues(json.chartConfig.chartOptions.developer);
+                if (json.chartConfig.measures.pointClickFn){
+                    this.developerPanel.setPanelOptionValues(json.chartConfig.measures);
+                }
             }
 
             if (json.chartConfig.curveFit)
@@ -1508,332 +1537,86 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.updateChartTask.delay(500);
     },
 
-    renderPlot: function(forExport) {
-        var measure;
-        var customRenderType = null;
-        var getFormatFn = function(field){
-            return field.extFormatFn ? eval(field.extFormatFn) : this.defaultNumberFormat;
-        };
-
-        if(this.customRenderTypes && this.customRenderTypes[this.renderType]){
-            customRenderType = this.customRenderTypes[this.renderType];
-        }
-
+    renderPlot: function(forExport){
         if (!forExport)
         {
             this.centerPanel.getEl().mask('Rendering Chart...');
             this.clearChartPanel();
         }
 
-        if (!this.yAxisMeasure && !forExport)
-        {
-            if (this.autoColumnYName)
-            {
-                measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
-                if (measure){
-                    this.yMeasureGrid.getSelectionModel().select(measure, false, true);
-                    this.yMeasurePanel.selectionChange(true);
-                    this.yAxisMeasure = measure.data;
-                }
-            }
-
-            if (!this.yAxisMeasure)
-            {
-                this.centerPanel.getEl().unmask();
-                this.showYMeasureWindow();
-                return;
-            }
-        }
-
-        if (!this.xAxisMeasure && !forExport)
-        {
-            if(this.renderType !== "box_plot" && this.renderType !== "auto_plot"){
-                if (this.autoColumnXName)
-                {
-                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
-                    if (measure) {
-                        this.xMeasureGrid.getSelectionModel().select(measure, false, true);
-                        this.xMeasurePanel.selectionChange(true);
-                        this.xAxisMeasure = measure.data;
-                    }
-                }
-
-                if (!this.xAxisMeasure)
-                {
-                    this.centerPanel.getEl().unmask();
-                    this.showXMeasureWindow();
-                    return;
-                }
-            } else {
-                measure = this.xMeasureStore.findRecord('label', 'Cohort');
-                if (measure) {
-                    this.xMeasureGrid.getSelectionModel().select(measure, false, true);
-                    this.xMeasurePanel.selectionChange(true);
-                    this.xAxisMeasure = measure.data;
-                }
-           }
-        }
-
-        var chartOptions = this.getChartOptions();
-        var scales = {}, geom, plotConfig, newChartDiv, labels;
-        var measures = this.initMeasures(chartOptions, this.chartData, this.xAxisMeasure, this.yAxisMeasure);
-        var pointClickFn = null;
-
-        if(measures.color && this.groupingMeasureStore.find('name', measures.color.name, null, null, null, true) === -1){
-            this.addWarningText(
-                    '<p style="color: red; text-align: center;">The saved category for point color, "' +
-                    measures.color.label +
-                    '", is not available. It may have been deleted or renamed. </p>'
-            );
-
-            measures.color = undefined;
-        }
-
-        if(measures.shape && this.groupingMeasureStore.find('name', measures.shape.name, null, null, null, true) === -1){
-            this.addWarningText(
-                    '<p style="color: red; text-align: center;">The saved category for point shape, "' +
-                    measures.shape.label +
-                    '", is not available. It may have been deleted or renamed. </p>'
-            );
-
-            measures.shape = undefined;
-        }
-
-        // Check if y axis actually has data first, if not show error message and have user select new measure.
-        var yDataIsNull = true;
-        var measureUndefined = true;
-        var invalidYLogValues = false;
-        var yHasZeroes = false;
-
-        for(var i = 0; i < this.chartData.rows.length; i++){
-            var yValue = measures.y.acc(this.chartData.rows[i]);
-            if(yValue !== null){
-                yDataIsNull = false;
-            }
-
-            if(yValue !== undefined){
-                measureUndefined = false;
-            }
-
-            if(yValue < 0 || yValue === null || yValue === undefined){
-                invalidYLogValues = true;
-            }
-
-            if(yValue === 0){
-                yHasZeroes = true;
-            }
-        }
-
-        if(yDataIsNull){
-            this.centerPanel.getEl().unmask();
-            Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
-            this.setRenderRequested(false);
+        if (!this.initMeasures(forExport)) {
+            // initMeasures returns false and opens the x/y measure panel if a measure is not chosen by the user.
             return;
         }
-
-        if(measureUndefined){
-            this.centerPanel.getEl().unmask();
-            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showYMeasureWindow, this);
-            this.setRenderRequested(false);
-            return;
-        }
-
-        if(chartOptions.yAxis.scaleType === 'log'){
-            if(invalidYLogValues){
-                this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.");
-                chartOptions.yAxis.scaleType = 'linear';
-                this.yMeasurePanel.setScaleType('linear');
-            } else if(yHasZeroes){
-                this.addWarningText("Some y-axis values are 0. Plotting all y-axis values as y+1");
-            }
-        }
-
-        // create a new function from the pointClickFn string provided by the developer
-        if (chartOptions.developer.pointClickFn){
-            // the developer is expected to return a function, so we encapalate it within the anonymous function
-            // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
-            var devPointClickFn = new Function("", "return " + this.developerPanel.removeLeadingComments(chartOptions.developer.pointClickFn));
-
-            pointClickFn = function(measureInfo) {
-                return function(clickEvent, data) {
-                    // call the developers function, within the anonymous function, with the params as defined for the developer
-                    devPointClickFn().call(this, data, measureInfo, clickEvent);
-                }
-            };
-        }
-
-        var xClickHandler = function(scopedThis){
-            return function(){
-                scopedThis.showXMeasureWindow();
-            }
-        };
-
-        var yClickHandler = function(scopedThis){
-            return function(){
-                scopedThis.showYMeasureWindow();
-            }
-        };
-
-        var mainTitleClickHandler = function(scopedThis){
-            return function(){
-                scopedThis.showMainTitleWindow();
-            }
-        };
 
         newChartDiv = Ext4.create('Ext.container.Container', {
             border: 1,
             autoEl: {tag: 'div'},
             autoScroll: true
         });
-
         this.viewPanel.add(newChartDiv);
 
-        // TODO: make line charts render if this.xAxisMeasure.type == "date"
-        if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)) {
-            if(!this.configureBoxPlotAxes(chartOptions, measures, scales)){
-                return;
-            }
-            
-            geom = new LABKEY.vis.Geom.Boxplot({
-                lineWidth: chartOptions.lineWidth,
-                outlierOpacity: chartOptions.opacity,
-                outlierFill: '#' + chartOptions.pointColor,
-                outlierSize: chartOptions.pointSize,
-                color: '#' + chartOptions.lineColor,
-                fill: '#' + chartOptions.fillColor
-            });
-        } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
-            if(!this.configureAxes(chartOptions, measures, scales)){
-                return;
+        var GCH = LABKEY.vis.GenericChartHelper;
+        var chartConfig = this.getChartConfig();
+        var customRenderType, chartType, geom, aes, scales, labels, layerConfig, plotConfig, newChartDiv, width, height;
+
+        chartConfig.measures.x = this.measures.x;
+        chartConfig.measures.y = this.measures.y;
+
+        if (this.customRenderTypes && this.customRenderTypes[this.renderType]) {
+            customRenderType = this.customRenderTypes[this.renderType];
+        }
+        chartType = GCH.getChartType(this.renderType, chartConfig.measures.x.normalizedType);
+        aes = GCH.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
+        scales = GCH.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
+        geom = GCH.generateGeom(chartType, chartConfig.geomOptions);
+        labels = this.configureLabels(forExport, chartConfig);
+        width = chartConfig.width ? chartConfig.width : !forExport ? newChartDiv.getWidth() : 1200;
+        height = chartConfig.height ? chartConfig.height : !forExport ? newChartDiv.getHeight() - 25 : 600;
+
+        if (customRenderType) {
+            if (customRenderType.generateAes) {
+                aes = customRenderType.generateAes(this, chartConfig, aes);
             }
 
-            geom = new LABKEY.vis.Geom.Point({
-                opacity: chartOptions.opacity,
-                size: chartOptions.pointSize,
-                color: '#' + chartOptions.pointColor
-            });
+            if (customRenderType.generateScales) {
+                scales = customRenderType.generateScales(this, chartConfig, scales);
+            }
+        }
+
+
+        this.validateGroupingMeasures(chartConfig.measures);
+
+        if (!this.validateXAxis(chartType, chartConfig, aes, scales, this.chartData.rows)) {
+            return;
+        }
+
+        if (!this.validateYAxis(chartType, chartConfig, aes, scales, this.chartData.rows)) {
+            return;
+        }
+
+        if (customRenderType && customRenderType.generatePlotConfig) {
+            plotConfig = customRenderType.generatePlotConfig(this, chartConfig, newChartDiv.id, width, height, this.chartData.rows, aes, scales, labels);
         } else {
-            if(customRenderType){
-                if(customRenderType.configureAxes){
-                    if(!customRenderType.configureAxes(this, chartOptions, measures, scales)){
-                        return;
-                    }
-                } else {
-                    if(!this.configureAxes(chartOptions, measures, scales)){
-                        return;
-                    }
-                }
-            } else {
-                // If the render type is not found it's probably a custom one that is no longer supported.
-                // So display an error to the user so they can change the plot type.
-                this.centerPanel.getEl().unmask();
+            layerConfig = {
+                data: this.chartData.rows,
+                geom: geom
+            };
 
-                this.addWarningText(
-                        "The requested plot type, " +
-                        this.renderType +
-                        ", was not found. Please try choosing a different plot type from the options panel."
-                );
-
-                newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
-                    autoEl: 'div',
-                    style: 'color: red; text-align: center;',
-                    html: this.warningText
-                }));
-
-                return;
-            }
-        }
-
-        for(var i = 0; i < this.chartData.metaData.fields.length; i++){
-            var field = this.chartData.metaData.fields[i];
-            var type = field.displayFieldJsonType ? field.displayFieldJsonType : field.type;
-
-            if(type == 'int' || type == 'float'){
-                if(field.name == this.yAxisMeasure.name){
-                    scales.y.tickFormat = getFormatFn.call(this, field);
-                }
-
-                if(this.xAxisMeasure && field.name == this.xAxisMeasure.name){
-                    scales.x.tickFormat = getFormatFn.call(this, field);
-                }
-            }
-        }
-
-        var mainLabel = chartOptions.mainTitle;
-        var yLabel = (chartOptions.yAxis.label != null && chartOptions.yAxis.label != undefined) ?
-                chartOptions.yAxis.label :
-                Ext4.util.Format.htmlEncode(this.yAxisMeasure.label);
-        var xLabel = chartOptions.xAxis.label ? chartOptions.xAxis.label : "";
-
-        if(!forExport && this.editMode){
-            if(mainLabel == null || Ext4.util.Format.trim(mainLabel) == ""){
-                mainLabel = "Edit Title";
-            }
-            
-            if(yLabel == null || Ext4.util.Format.trim(yLabel) == ""){
-                yLabel = "Edit Axis Label";
-            }
-            
-            if(xLabel == null || Ext4.util.Format.trim(xLabel) == ""){
-                if(this.xAxisMeasure){
-                    xLabel = "Edit Axis Label";
-                } else {
-                    xLabel = "Choose a column";
-                }
-            }
-        }
-
-        labels = {
-            main: {
-                value: mainLabel,
-                lookClickable: !forExport && this.editMode,
-                listeners: {
-                    click: this.editMode ? mainTitleClickHandler(this) : null
-                }
-            },
-            y: {
-                value: yLabel,
-                lookClickable: !forExport && this.editMode,
-                listeners: {
-                    click: this.editMode ? yClickHandler(this) : null
-                }
-            },
-            x: {
-                value: xLabel,
-                lookClickable: !forExport && this.editMode,
-                listeners: {
-                    click: this.editMode ? xClickHandler(this) : null
-                }
-            }
-
-        };
-
-        var width = chartOptions.width ? chartOptions.width : !forExport ? newChartDiv.getWidth() : 1200;
-        var height = chartOptions.height ? chartOptions.height : !forExport ? newChartDiv.getHeight() - 25 : 600;
-
-        if(customRenderType){
-            plotConfig = customRenderType.generatePlotConfig(this, chartOptions, measures, newChartDiv.id, width, height, this.chartData.rows, labels, scales);
-            plotConfig.aes = customRenderType.generateAes(this, chartOptions, measures, pointClickFn);
-        } else {
-            plotConfig = this.generatePlotConfig(
-                    geom,
-                    newChartDiv.id,
-                    width,
-                    height,
-                    this.chartData.rows,
-                    labels,
-                    scales
-            );
-
-            plotConfig.aes = this.generateAes(geom, measures, pointClickFn);
+            plotConfig = {
+                renderTo: newChartDiv.id,
+                width: width,
+                height: height,
+                labels: labels,
+                aes: aes,
+                scales: scales,
+                layers: [new LABKEY.vis.Layer(layerConfig)],
+                data: this.chartData.rows
+            };
         }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
-
-        if(this.chartData.rowCount > 5000){
-            this.addWarningText('<p style="text-align: center;">The 5,000 row limit for plotting has been reached. Consider filtering your data.</p>');
-        }
 
         newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
             autoEl: 'div',
@@ -1842,20 +1625,263 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }));
 
         if (!forExport){
-            this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
-            this.exportPdfBtn.setDisabled(!this.supportedBrowser);
+            this.enableExportPdf();
+//            this.enableExportScript();
             this.centerPanel.getEl().unmask();
         } else{
             return newChartDiv.id;
         }
 
         this.setRenderRequested(false); // We just rendered the plot, we don't need to request another render.
+    },
 
-        if(!forExport && this.editMode){
-            // Update the SVG thumbnail
-            var thumbnail = this.renderPlot(true);
-            this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
-            this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+    initMeasures: function(forExport){
+        // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
+        var measure;
+
+        if (!this.measures.y && !forExport)
+        {
+            if (this.autoColumnYName)
+            {
+                measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
+                if (measure){
+                    this.yMeasureGrid.getSelectionModel().select(measure, false, true);
+                    this.yMeasurePanel.selectionChange(true);
+                    this.measures.y = measure.data;
+                }
+            }
+
+            if (!this.measures.y)
+            {
+                this.centerPanel.getEl().unmask();
+                this.showYMeasureWindow();
+                return false;
+            }
+        }
+
+        if (!this.measures.x && !forExport)
+        {
+            if(this.renderType !== "box_plot" && this.renderType !== "auto_plot"){
+                if (this.autoColumnXName)
+                {
+                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
+                    if (measure) {
+                        this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                        this.xMeasurePanel.selectionChange(true);
+                        this.measures.x = measure.data;
+                    }
+                }
+
+                if (!this.measures.x)
+                {
+                    this.centerPanel.getEl().unmask();
+                    this.showXMeasureWindow();
+                    return false;
+                }
+            } else {
+                measure = this.xMeasureStore.findRecord('label', 'Cohort');
+                if (measure) {
+                    this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                    this.xMeasurePanel.selectionChange(true);
+                    this.measures.x = measure.data;
+                }
+            }
+        }
+
+        return true;
+    },
+
+    validateYAxis: function(chartType, chartConfig, aes, scales, data){
+        // Verifies that the y axis is actually present and has data.
+        // Also checks to make sure that data can be used in a log scale (if applicable).
+        // Returns true if everything is good to go, false otherwise.
+
+        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false;
+
+        for (var i = 0; i < data.length; i ++) {
+            var value = aes.y(data[i]);
+
+            if (value !== undefined) {
+                measureUndefined = false;
+            }
+
+            if (value !== null) {
+                dataIsNull = false;
+            }
+
+            if (value < 0 || value === null || value === undefined) {
+                invalidLogValues = true;
+            }
+
+            if (value === 0 ) {
+                hasZeroes = true;
+            }
+        }
+
+        if (dataIsNull) {
+            this.centerPanel.getEl().unmask();
+            Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
+            this.setRenderRequested(false);
+            return false
+        }
+
+        if (measureUndefined) {
+            this.centerPanel.getEl().unmask();
+            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' was not found. It may have been renamed or removed.', this.showYMeasureWindow, this);
+            this.setRenderRequested(false);
+            return false;
+        }
+
+        if (scales.y.trans == "log") {
+            if (invalidLogValues) {
+                this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.");
+                scales.y.trans = 'linear';
+                this.yMeasurePanel.setScaleTrans('linear');
+            } else if (hasZeroes) {
+                this.addWarningText("Some y-axis values are 0. Plotting all y-axis values as y+1");
+                var yAcc = aes.y;
+                aes.y = function(row){return yAcc(row) + 1};
+            }
+        }
+
+        return true;
+    },
+    validateXAxis: function(chartType, chartConfig, aes, scales, data){
+        // Verifies that the x axis is actually present and has data.
+        // Also checks to make sure that data can be used in a log scale (if applicable).
+        // Returns true if everything is good to go, false otherwise.
+
+        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false;
+
+        for (var i = 0; i < data.length; i ++) {
+            var value = aes.x(data[i]);
+
+            if (value !== undefined) {
+                measureUndefined = false;
+            }
+
+            if (value !== null) {
+                dataIsNull = false;
+            }
+
+            if (value < 0 || value === null || value === undefined) {
+                invalidLogValues = true;
+            }
+
+            if (value === 0 ) {
+                hasZeroes = true;
+            }
+        }
+
+        if (measureUndefined) {
+            this.centerPanel.getEl().unmask();
+            this.setRenderRequested(false);
+            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
+            return false;
+        }
+
+        if (chartType == "scatter_plot") {
+            if (dataIsNull) {
+                this.centerPanel.getEl().unmask();
+                this.setRenderRequested(false);
+                Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
+                return false;
+            }
+
+            if (scales.x.trans == "log") {
+                if (invalidLogValues) {
+                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
+                    scales.x.trans = 'linear';
+                    this.xMeasurePanel.setScaleTrans('linear');
+                } else if (hasZeroes) {
+                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
+                    var xAcc = aes.x;
+                    aes.x = function(row){return xAcc(row) + 1};
+                }
+            }
+        }
+
+        return true;
+    },
+
+    validateGroupingMeasures: function(measures){
+        // Checks to make sure the grouping measures are still available, if not we show an error.
+
+        if(measures.color && this.groupingMeasureStore.find('name', measures.color.name, null, null, null, true) === -1){
+            this.addWarningText(
+                    '<p style="color: red; text-align: center;">The saved category for point color, "' +
+                            measures.color.label +
+                            '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            measures.color = undefined;
+        }
+
+        if(measures.shape && this.groupingMeasureStore.find('name', measures.shape.name, null, null, null, true) === -1){
+            this.addWarningText(
+                    '<p style="color: red; text-align: center;">The saved category for point shape, "' +
+                            measures.shape.label +
+                            '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            measures.shape = undefined;
+        }
+    },
+
+    configureLabels: function(forExport, chartConfig){
+        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels, chartConfig.measures);
+
+        if (!forExport) {
+            labels.x.lookClickable = true;
+            labels.x.listeners = {
+                click: this.getXClickHandler(this)
+            };
+
+            labels.y.lookClickable = true;
+            labels.y.listeners = {
+                click: this.getYClickHandler(this)
+            };
+
+            labels.main.lookClickable = true;
+            labels.main.listeners = {
+                click: this.getMainClickHandler(this)
+            };
+
+            if (this.editMode) {
+                if(labels.main.value == null || Ext4.util.Format.trim(labels.main.value) == '') {
+                    labels.main.value = "Edit Title";
+                }
+
+                if(labels.y.value == null || Ext4.util.Format.trim(labels.y.value) == '') {
+                    labels.main.value = "Edit Axis Label";
+                }
+
+                if(labels.x.value == null || Ext4.util.Format.trim(labels.x.value) == '') {
+                    if (chartConfig.measures.x) {
+                        labels.x.value = "Edit Axis Label";
+                    } else {
+                        labels.x.value = "Choose a column";
+                    }
+                }
+            }
+        }
+
+        return labels;
+    },
+
+    getXClickHandler: function(scopedThis){
+        return function(){
+            scopedThis.showXMeasureWindow();
+        }
+    },
+    getYClickHandler: function(scopedThis){
+        return function(){
+            scopedThis.showYMeasureWindow();
+        }
+    },
+    getMainClickHandler: function(scopedThis){
+        return function(){
+            scopedThis.showMainTitleWindow();
         }
     },
 
@@ -1875,176 +1901,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return (renderType == 'auto_plot' && (xAxisType == 'string' || xAxisType == 'boolean'));
     },
 
-    getDiscreteXAcc: function(measures){
-        return function(row){
-            var valueObj = row[measures.x.name];
-            var value = null;
-
-            if(valueObj){
-                value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
-            } else {
-                return undefined;
-            }
-
-            if(value === null){
-                value = "Not in " + measures.x.label;
-            }
-
-            return value;
-        };
-    },
-
-    getContinuousXAcc: function(measures){
-        return function(row){
-            var value = null;
-
-            if(row[measures.x.name]){
-                value = row[measures.x.name].value;
-
-                if(Math.abs(value) === Infinity){
-                    value = null;
-                }
-
-                return value;
-            } else {
-                return undefined;
-            }
-        }
-    },
-
-    configureAxes: function(chartOptions, measures, scales){
-        var allXDataIsNull = true;
-        var measureUndefined = true;
-
-        if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
-            measures.x.acc = this.getContinuousXAcc(measures);
-            scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
-            var hasNegative = false;
-            var hasZero = false;
-
-            // Check if all values are null, undefined. If values < 0, if log scale show error accordingly.
-            for(var i = 0; i < this.chartData.rows.length; i++){
-                var value = measures.x.acc(this.chartData.rows[i]);
-
-                if(value !== null){
-                    allXDataIsNull = false;
-                }
-
-                if(value !== undefined){
-                    measureUndefined = false;
-                }
-
-                if(value < 0 || value === null){
-                    hasNegative = true;
-                } else if(value === 0){
-                    hasZero = true;
-                }
-            }
-
-            if(allXDataIsNull){
-                this.centerPanel.getEl().unmask();
-                this.setRenderRequested(false);
-                Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
-                return false;
-            }
-
-            if(measureUndefined){
-                this.centerPanel.getEl().unmask();
-                this.setRenderRequested(false);
-                Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
-                return false;
-            }
-
-            if(scales.x.trans === 'log'){
-                if(hasNegative){
-                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
-                    scales.x.trans = 'linear';
-                    this.xMeasurePanel.setScaleType('linear');
-                }
-
-                if(hasZero && !hasNegative){
-                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
-                }
-            }
-        } else {
-            measures.x.acc = this.getDiscreteXAcc(measures);
-            scales.x = {scaleType: 'discrete'};
-
-            for(var i = 0; i < this.chartData.rows.length; i++){
-                var value = measures.x.acc(this.chartData.rows[i]);
-
-                if(value !== null){
-                    allXDataIsNull = false;
-                }
-
-                if(value !== undefined){
-                    measureUndefined = false;
-                }
-            }
-
-            if(measureUndefined){
-                this.centerPanel.getEl().unmask();
-                this.setRenderRequested(false);
-                Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
-                return false;
-            }
-        }
-
-        scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
-
-        return true;
-    },
-
-    configureBoxPlotAxes: function(chartOptions, measures, scales){
-        if(this.xAxisMeasure){
-            measures.x.acc = this.getDiscreteXAcc(measures);
-        } else {
-            measures.x.acc = function(row){return measures.x.name};
-        }
-
-        scales.x = {scaleType: 'discrete'};
-        var yMin = d3.min(this.chartData.rows, measures.y.acc);
-        var yMax = d3.max(this.chartData.rows, measures.y.acc);
-        var yPadding = ((yMax - yMin) * .1);
-        var measureUndefined = true;
-
-        if (chartOptions.yAxis.scaleType == "log"){
-            // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
-            // When subtracting padding we have to make sure we still produce valid values for a log scale.
-            // log([value less than 0]) = NaN.
-            // log(0) = -Infinity.
-            if(yMin - yPadding > 0){
-                yMin = yMin - yPadding;
-            }
-        } else {
-            yMin = yMin - yPadding;
-        }
-
-        scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
-
-        for(var i = 0; i < this.chartData.rows.length; i++){
-            var value = measures.x.acc(this.chartData.rows[i]);
-
-            if(value !== undefined){
-                measureUndefined = false;
-            }
-        }
-
-        if(measureUndefined){
-            this.centerPanel.getEl().unmask();
-            this.setRenderRequested(false);
-            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
-            return false;
-        }
-
-        return true;
-    },
-
     clearChartPanel: function(){
         this.clearWarningText();
         this.viewPanel.removeAll();
-        this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
-        this.exportPdfBtn.disable();
+
+        this.disableExportPdf();
+        // TODO: enable when export template is done.
+//        this.disableExportScript();
     },
 
     clearWarningText: function(){
@@ -2059,8 +1922,58 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
+    getExportItem: function(menuLabel) {
+        var menuItems = this.exportBtn.menu.items.items;
+        var exportPdfItem;
+
+        for (var i = 0; i < menuItems.length; i++) {
+            if (menuItems[i].text == menuLabel) {
+                exportPdfItem = menuItems[i];
+                break;
+            }
+        }
+
+        return exportPdfItem;
+    },
+
+    enableExportPdf: function() {
+        var exportPdfItem = this.getExportItem("Export as PDF");
+
+        if(exportPdfItem){
+            exportPdfItem.setDisabled(!this.supportedBrowser);
+            exportPdfItem.addListener('click', this.exportChartToPdf, this);
+        }
+    },
+
+    disableExportPdf: function() {
+        var exportPdfItem = this.getExportItem("Export as PDF");
+
+        if(exportPdfItem){
+            exportPdfItem.setDisabled(true);
+            exportPdfItem.removeListener('click', this.exportChartToPdf);
+        }
+    },
+
+    enableExportScript: function() {
+        var exportPdfItem = this.getExportItem("Export as Script");
+
+        if(exportPdfItem){
+            exportPdfItem.setDisabled(false);
+            exportPdfItem.addListener('click', this.exportChartToScript, this);
+        }
+    },
+
+    disableExportScript: function() {
+        var exportPdfItem = this.getExportItem("Export as Script");
+
+        if(exportPdfItem){
+            exportPdfItem.setDisabled(true);
+            exportPdfItem.removeListener('click', this.exportChartToScript);
+        }
+    },
+
     exportChartToPdf: function() {
-        var tempDivId = this.renderPlot(true);
+        var tempDivId = this.renderPlot('pdf');
         if (tempDivId)
         {
             // export the temp chart as a pdf with the chart title as the file name
@@ -2069,83 +1982,125 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    initMeasures: function(chartOptions, chartData, xMeasure, yMeasure){
-        var measures = {};
+    exportChartToScript: function() {
+        var chartConfig = this.getChartConfig();
+        var queryConfig = this.getQueryConfig(true);
 
-        if(chartOptions.grouping.colorType === 'measure'){
-            measures.color = {
-                name: chartOptions.grouping.colorMeasure.name,
-                label: chartOptions.grouping.colorMeasure.label,
-                acc: function(row){
-                    var valueObj = row[measures.color.name];
-                    var value;
-                    if(valueObj){
-                        value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
-                    } else {
-                        value = null;
-                    }
+        // Only push the required columns.
+        queryConfig.columns = [];
+        queryConfig.columns.push(chartConfig.xAxisMeasure.name);
+        queryConfig.columns.push(chartConfig.yAxisMeasure.name);
 
-                    if(value === null || value === undefined){
-                        value = "n/a";
-                    }
-
-                    return value;
-                }
-            };
-        }
-
-        if(chartOptions.grouping.pointType === 'measure'){
-            measures.shape = {
-                name: chartOptions.grouping.pointMeasure.name,
-                label: chartOptions.grouping.pointMeasure.label,
-                acc: function(row){
-                    var valueObj = row[measures.shape.name];
-                    var value = null;
-
-                    if(valueObj){
-                        value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
-                    }
-
-                    if(value === null || value === undefined){
-                        value = "n/a";
-                    }
-
-                    return value;
-                }
-            };
-        }
-
-        measures.x = {
-            name: xMeasure ? xMeasure.name : chartData.queryName,
-            label: xMeasure ? xMeasure.label : chartData.queryName,
-            acc: null // The x-axis accessor depends on the render type. This will be set later.
-        };
-
-        measures.y = {
-            name: yMeasure.name,
-            label: yMeasure.label,
-            acc: function(row){
-                var value = null;
-
-                if(row[yMeasure.name]){
-                    value = row[yMeasure.name].value;
-
-                    if(Math.abs(value) === Infinity){
-                        value = null;
-                    }
-
-                    if(value === false || value === true){
-                        value = value.toString();
-                    }
-
-                    return value;
-                } else {
-                    return undefined;
-                }
+        if (chartConfig.chartOptions.grouping){
+            if (chartConfig.chartOptions.grouping.colorType === 'measure') {
+                queryConfig.columns.push(chartConfig.chartOptions.grouping.colorMeasure.name);
             }
+
+            if (chartConfig.chartOptions.grouping.pointType === 'measure') {
+                queryConfig.columns.push(chartConfig.chartOptions.grouping.pointMeasure.name);
+            }
+        }
+
+        var templateConfig = {
+            chartConfig: chartConfig,
+            queryConfig: queryConfig
         };
 
-        return measures;
+        console.log(JSON.stringify(templateConfig));
+
+        var script = this.compileScriptTemplate(templateConfig);
+        this.showExportScriptWindow(script);
+    },
+
+    compileScriptTemplate: function(input) {
+        var template =
+                '<div id="exportedChart"></div>\n' +
+                '<script type="text/javascript">\n' +
+                '   (function(){\n' +
+                '       var loadVisDependencies = function(callback, scope) {\n' +
+                '           var scripts = [ \n' +
+                '               "/vis/lib/d3-2.0.4.min.js",\n' +
+                '               "/vis/lib/raphael-min-2.1.0.js",\n' +
+                '               "/vis/lib/patches.js",\n' +
+                '               "/vis/src/utils.js",\n' +
+                '               "/vis/src/geom.js",\n' +
+                '               "/vis/src/stat.js",\n' +
+                '               "/vis/src/scale.js",\n' +
+                '               "/vis/src/layer.js",\n' +
+                '               "/vis/src/plot.js"\n' +
+                '           ];\n' +
+                '           LABKEY.requiresScript(scripts, true, callback, scope, true);\n' +
+                '       };\n' +
+                '\n' +
+                '       var selectRowsCallback = function() {\n' +
+                '           console.log("Select Rows Complete. Let\'s render a chart.");\n' +
+                '       };\n' +
+                '\n' +
+                '       var visCallback = function(){\n' +
+                '            console.log("Vis libraries loaded, let\'s get to work...");\n' +
+                '            var selectRowsConfig = {{queryConfig}};\n' +
+                '            selectRowsConfig.success = selectRowsCallback;\n' +
+                '            LABKEY.Query.selectRows(selectRowsConfig);\n' +
+                '       };\n' +
+                '       loadVisDependencies(visCallback);\n' +
+                '   })();\n' +
+                '</script>';
+
+        template = template.replace('{{queryConfig}}', LABKEY.ExtAdapter.encode(input.queryConfig));
+
+        return template;
+    },
+
+    showExportScriptWindow: function(script) {
+        this.exportScriptCode = script;
+
+        if (!this.exportScriptWindow) {
+            this.exportScriptId = 'textarea-' + Ext4.id();
+            this.exportScriptTextAreaHTML = Ext4.create('Ext.Panel', {
+                padding : '10px 0 0 0',
+                border: false,
+                html: '<textarea id="' + this.exportScriptId + '" name="export-script-textarea"'
+                        + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>',
+                listeners: {
+                    afterrender: function(cmp) {
+                        var el = Ext4.get(this.exportScriptId);
+                        var size = cmp.getSize();
+
+                        if (el) {
+                            this.codeMirror = CodeMirror.fromTextArea(el.dom, {
+                                mode            : 'text/html',
+                                lineNumbers     : true,
+                                lineWrapping    : true,
+                                indentUnit      : 3
+                            });
+
+                            this.codeMirror.setSize(null, size.height + 'px');
+                            this.codeMirror.setValue(this.exportScriptCode);
+                            LABKEY.codemirror.RegisterEditorInstance('export-script-textarea', this.codeMirror);
+                        }
+                    },
+                    scope: this
+                }
+            });
+
+            this.exportScriptWindow = Ext4.create('Ext.window.Window', {
+                title: "Export Script",
+                cls: 'data-window',
+                border: false,
+                frame: false,
+                width: 800,
+                resizeable: false,
+                closeAction: 'hide',
+                items: [{
+                    xtype: 'panel',
+                    items: [this.exportScriptTextAreaHTML]
+                }]
+            });
+        } else {
+            this.codeMirror.setValue(this.exportScriptCode);
+        }
+
+        this.exportScriptWindow.show();
     },
 
     generateAes: function(geom, measures, pointClickFn){
@@ -2411,17 +2366,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getDefaultTitle: function(){
         if(this.defaultTitleFn){
-            return this.defaultTitleFn(this.queryName, this.queryLabel, this.yAxisMeasure ? this.yAxisMeasure.label : null, this.xAxisMeasure ? this.xAxisMeasure.label : null);
+            return this.defaultTitleFn(this.queryName, this.queryLabel, this.measures.y ? this.measures.y.label : null, this.measures.x ? this.measures.x.label : null);
         }
-        return (this.queryLabel || this.queryName) + (this.yAxisMeasure ? ' - ' + this.yAxisMeasure.label : '');
+        return (this.queryLabel || this.queryName) + (this.measures.y ? ' - ' + this.measures.y.label : '');
     },
 
     getDefaultYAxisLabel: function(){
-        return this.yAxisMeasure ? this.yAxisMeasure.label : 'y-axis';
+        return this.measures.y ? this.measures.y.label : 'y-axis';
     },
 
     getDefaultXAxisLabel: function(){
-        return this.xAxisMeasure.label
+        return this.measures.x.label;
     },
 
     /**
@@ -2557,11 +2512,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getNoneThumbnailURL: function(){
-        if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)){
+        if(!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType)){
             return LABKEY.contextPath + '/visualization/report/box_plot.png';
         }
 
-        if(this.xAxisMeasure && this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
+        if(this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType)){
             return LABKEY.contextPath + '/visualization/report/scatter_plot.png';
         }
 

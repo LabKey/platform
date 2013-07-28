@@ -185,12 +185,17 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
     },
 
     getPanelOptionValues: function() {
-        return {
-            colorType: this.getColorType(),
-            colorMeasure: this.getColorMeasure(),
-            pointType: this.getPointType(),
-            pointMeasure: this.getPointMeasure()
+        var values = {};
+
+        if (this.getColorType() == "measure") {
+            values.color = this.getColorMeasure();
         }
+
+        if (this.getPointType() == "measure") {
+            values.shape = this.getPointMeasure();
+        }
+
+        return values;
     },
 
     restoreValues: function(initValues) {
@@ -217,20 +222,14 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
     setPanelOptionValues: function(config){
         this.suppressEvents = true;
 
-        if(config.colorType){
-            this.setColorType(config.colorType);
+        if(config.color){
+            this.setColorType('measure');
+            this.setColorMeasure(config.color);
         }
 
-        if(config.colorMeasure){
-            this.setColorMeasure(config.colorMeasure);
-        }
-
-        if(config.pointType){
-            this.setPointType(config.pointType);
-        }
-
-        if(config.pointMeasure){
-            this.setPointMeasure(config.pointMeasure);
+        if(config.shape){
+            this.setPointType('measure');
+            this.setPointMeasure(config.shape);
         }
 
         this.suppressEvents = false;
