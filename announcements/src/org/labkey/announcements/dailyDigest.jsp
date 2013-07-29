@@ -45,7 +45,7 @@
 
             if (null != threadURL)
             {
-                %><tr><td><a href="<%=h(threadURL)%>">View this <%=h(conversationName)%></a></td></tr><%
+                %><tr><td><a href="<%=h(threadURL.getURIString())%>">View this <%=h(conversationName)%></a></td></tr><%
             }
 
             threadURL = AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId());%>
@@ -67,7 +67,7 @@
 
     if (null != threadURL)
     {
-        %><tr><td><a href="<%=threadURL%>">View this <%=h(conversationName)%></a></td></tr><%
+        %><tr><td><a href="<%=h(threadURL.getURIString())%>">View this <%=h(conversationName)%></a></td></tr><%
     }
 
     %>
