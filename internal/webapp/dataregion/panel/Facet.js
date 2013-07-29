@@ -91,7 +91,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     getContainerEl : function(dr) {
         if (dr && dr.name) {
-            return Ext4.get(dr.name).up('div');
+            var el = Ext4.get(dr.name);
+            if (el)
+                return el.up('div');
         }
     },
 
@@ -155,8 +157,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         if (dr) {
             this.dataRegion = LABKEY.DataRegions[dr.name];
             LABKEY.DataRegions[dr.name].setFacet(this);
+
             var tableEl = this.getDataRegionTableEl(this.dataRegion);
-            tableEl.setWidth(tableEl.getBox().width);
+            if (tableEl) {
+                tableEl.setWidth(tableEl.getBox().width);
+            }
+
             var box = this.getBox();
             this._resizeTask(this, box.width, box.height);
 
@@ -206,7 +212,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     _resizeTask : function(panel, w, h, oldW, oldH) {
 
         // Resize data region wrapper
-        var wrap = Ext4.get('dataregion_' + this.dataRegion.name).parent('div.labkey-data-region-wrap');
+        var wrap = Ext4.get('dataregion_' + this.dataRegion.name);
+
+        if (wrap)
+            wrap = wrap.parent('div.labkey-data-region-wrap');
+
         if (wrap) {
             var box = wrap.getBox();
 

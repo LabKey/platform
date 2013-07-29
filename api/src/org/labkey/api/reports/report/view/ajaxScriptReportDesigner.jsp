@@ -206,13 +206,9 @@ var f_scope<%=text(uid)%> = new (function() {
         if (!readOnly)
         {
             var code = Ext.get(<%=q(scriptId)%>);
-            var cmp = Ext.get('tabsDiv' + '<%=text(uid)%>');
-
-            var size = tab.getSize();
 
             if (code) {
 
-                var me = this;
                 this.codeMirror = CodeMirror.fromTextArea(code.dom, {
                     mode            : <%=q((report.getEditAreaSyntax() != null) ? report.getEditAreaSyntax() : "text/plain")%>,
                     lineNumbers     : true,
@@ -223,7 +219,6 @@ var f_scope<%=text(uid)%> = new (function() {
                     }
                 });
 
-                //this.codeMirror.setValue(<%=q(StringUtils.trimToEmpty(bean.getScript()))%>);
                 LABKEY.codemirror.RegisterEditorInstance('script-report-editor', this.codeMirror);
             }
         }
