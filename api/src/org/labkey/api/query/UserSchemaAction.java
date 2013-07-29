@@ -44,6 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -193,7 +194,10 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                         if (!(oldValues instanceof CaseInsensitiveMapWrapper))
                             oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
                     }
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
+
+                    // 18292 - updateRows expects a null list in the case of an "empty" or null map.
+                    List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), oldKeys, null);
                 }
 
                 transaction.commit();
