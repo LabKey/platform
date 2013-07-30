@@ -99,6 +99,7 @@
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot : <%=bean.isPipelineRoot()%>,
+            adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
