@@ -25,9 +25,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
@@ -78,7 +77,7 @@
 
         if (!singleEmptyContainer)
         {
-            List<Container> containers = Arrays.asList(ContainerManager.getAllChildren(c));
+            Set<Container> containers = ContainerManager.getAllChildren(c);
             %>
             <tr><td>You are about to delete the following <%=h("project".equals(containerType) ? "project and its subfolders" : ("folder" + (recurse ? "s" : "")))%>:</td></tr>
             <tr><td><ul><%
@@ -110,7 +109,7 @@
         </table>
 
         <table><tr>
-            <td><form action="<%=buildURL(AdminController.DeleteFolderAction.class)%><%=text(recurse ? "recurse=1" : "")%>" method="post">
+            <td><form action="<%=h(buildURL(AdminController.DeleteFolderAction.class))%><%=text(recurse ? "recurse=1" : "")%>" method="post">
                 <%=generateSubmitButton("Delete")%></form></td>
             <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
         </tr></table><%

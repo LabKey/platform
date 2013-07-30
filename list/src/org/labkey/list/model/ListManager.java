@@ -860,7 +860,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-    public void ensureListDomains(User user)
+    public void ensureListDomains()
     {
         Container root = ContainerManager.getRoot();
 

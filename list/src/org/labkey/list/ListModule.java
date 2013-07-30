@@ -174,7 +174,7 @@ public class ListModule extends DefaultModule
             if (moduleContext.isNewInstall())
                 return;
 
-            ListManager.get().ensureListDomains(moduleContext.getUpgradeUser());
+            ListManager.get().ensureListDomains();
         }
     }
 }

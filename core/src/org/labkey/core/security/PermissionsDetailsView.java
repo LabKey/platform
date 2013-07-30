@@ -135,10 +135,9 @@ public class PermissionsDetailsView extends WebPartView
 
             if (_c.hasChildren())
             {
-                Container[] children = ContainerManager.getAllChildren(_c);
                 boolean childrenAdminOnly = true;
 
-                for (Container child : children)
+                for (Container child : ContainerManager.getAllChildren(_c))
                 {
                     if (!SecurityManager.isAdminOnlyPermissions(child))
                     {

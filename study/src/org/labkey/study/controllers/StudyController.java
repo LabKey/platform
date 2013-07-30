@@ -775,7 +775,7 @@ public class StudyController extends BaseStudyController
                 return new TypeNotFoundAction().getView(form, errors);
 
             _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISITKEY), 0);
-            VisitImpl visit = null;
+            VisitImpl visit;
             if (_visitId != 0)
             {
                 assert study.getTimepointType() != TimepointType.CONTINUOUS;
@@ -1595,8 +1595,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<>(getStudyRedirectIfNull(), "manageLocations.jsp", getStudyRedirectIfNull(), errors);
-            return view;
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageLocations.jsp", getStudyRedirectIfNull(), errors);
         }
 
         public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
@@ -1692,11 +1691,7 @@ public class StudyController extends BaseStudyController
                         errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
                 }
             }
-            catch(ServletException e)
-            {
-                errors.reject(null, e.getMessage());
-            }
-            catch(SQLException e)
+            catch(ServletException | SQLException e)
             {
                 errors.reject(null, e.getMessage());
             }
@@ -1863,8 +1858,7 @@ public class StudyController extends BaseStudyController
             if (null == _visit)
                 throw new NotFoundException();
 
-            ModelAndView view = new StudyJspView<>(study, "confirmDeleteVisit.jsp", _visit, errors);
-            return view;
+            return new StudyJspView<>(study, "confirmDeleteVisit.jsp", _visit, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1897,11 +1891,7 @@ public class StudyController extends BaseStudyController
                         errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
                 }
             }
-            catch(ServletException e)
-            {
-                errors.reject(null, e.getMessage());
-            }
-            catch(SQLException e)
+            catch(ServletException | SQLException e)
             {
                 errors.reject(null, e.getMessage());
             }
@@ -2005,7 +1995,6 @@ public class StudyController extends BaseStudyController
         ImportDataSetForm _form = null;
         StudyImpl _study = null;
         DataSetDefinition _def = null;
-        boolean isAliasImport = false;
 
         public ImportAction()
         {
@@ -2029,7 +2018,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getViewContext().getUser();
-            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).createDatasetTableInternal(_def);
+            TableInfo t = new StudyQuerySchema(_study, user, true).createDatasetTableInternal(_def);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -2052,7 +2041,7 @@ public class StudyController extends BaseStudyController
                 return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
-                return new RequirePipelineView((StudyImpl)_study, true, errors);
+                return new RequirePipelineView(_study, true, errors);
 
             return getDefaultImportView(form, errors);
         }
@@ -2071,7 +2060,7 @@ public class StudyController extends BaseStudyController
             Pair<List<String>, UploadLog> result;
             try
             {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, true, file, originalName, columnMap, errors);
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, true, file, originalName, columnMap, errors);
             }
             catch (ServletException x)
             {
@@ -2798,11 +2787,6 @@ public class StudyController extends BaseStudyController
         {
             final StudyManager studyMgr = StudyManager.getInstance();
             final StudyImpl study = studyMgr.getStudy(context.getContainer());
-            QCStateSet qcStateSet = null;
-            if (StudyManager.getInstance().showQCStates(context.getContainer()))
-            {
-                qcStateSet = QCStateSet.getSelectedStates(context.getContainer(), encodedQCState);
-            }
 
             DataSetDefinition def = studyMgr.getDataSetDefinition(study, dataset);
             if (null == def)

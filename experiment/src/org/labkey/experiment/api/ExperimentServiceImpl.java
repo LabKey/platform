@@ -1791,8 +1791,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             OntologyManager.moveContainer(c, oldParent, newParent);
 
             // do the same for all of its children
-            Container[] aCon = ContainerManager.getAllChildren(c);
-            for (Container ctemp : aCon)
+            for (Container ctemp : ContainerManager.getAllChildren(c))
             {
                 OntologyManager.moveContainer(ctemp, oldParent, newParent);
             }
