@@ -132,8 +132,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this,
             menu: {
                 items: [
-                    {text: 'Export as PDF', disabled: true, tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null}
-//                    {text: 'Export as Script', disabled: true}
+                    {text: 'Export as PDF', disabled: true, tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null},
+                    {text: 'Export as Script', disabled: true}
                 ]
             }
         });
@@ -435,9 +435,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             scope: this
         });
-
-        // TODO: pull out all of the measure window relate components and make something like:
-        // Labkey.vis.GenericMeasurePanel so we have less duplicate code.
 
         this.yMeasurePanel = Ext4.create('LABKEY.vis.GenericChartAxisPanel',{
             border: false,
@@ -1626,8 +1623,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!forExport){
             this.enableExportPdf();
-//            this.enableExportScript();
+            this.enableExportScript();
             this.centerPanel.getEl().unmask();
+            if(this.editMode){
+                // Update thumbnail
+                var thumbnail = this.renderPlot(true);
+                this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
+                this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+            }
         } else{
             return newChartDiv.id;
         }
@@ -1906,8 +1909,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.viewPanel.removeAll();
 
         this.disableExportPdf();
-        // TODO: enable when export template is done.
-//        this.disableExportScript();
+        this.disableExportScript();
     },
 
     clearWarningText: function(){
@@ -1988,17 +1990,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Only push the required columns.
         queryConfig.columns = [];
-        queryConfig.columns.push(chartConfig.xAxisMeasure.name);
-        queryConfig.columns.push(chartConfig.yAxisMeasure.name);
+        queryConfig.columns.push(chartConfig.measures.x.name);
+        queryConfig.columns.push(chartConfig.measures.y.name);
 
-        if (chartConfig.chartOptions.grouping){
-            if (chartConfig.chartOptions.grouping.colorType === 'measure') {
-                queryConfig.columns.push(chartConfig.chartOptions.grouping.colorMeasure.name);
-            }
+        if (chartConfig.measures.color) {
+            queryConfig.columns.push(chartConfig.measures.color.name);
+        }
 
-            if (chartConfig.chartOptions.grouping.pointType === 'measure') {
-                queryConfig.columns.push(chartConfig.chartOptions.grouping.pointMeasure.name);
-            }
+        if (chartConfig.measures.shape) {
+            queryConfig.columns.push(chartConfig.measures.shape.name);
         }
 
         var templateConfig = {
@@ -2006,83 +2006,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             queryConfig: queryConfig
         };
 
-        console.log(JSON.stringify(templateConfig));
-
-        var script = this.compileScriptTemplate(templateConfig);
-        this.showExportScriptWindow(script);
+        this.showExportScriptWindow(templateConfig);
     },
 
-    compileScriptTemplate: function(input) {
-        var template =
-                '<div id="exportedChart"></div>\n' +
-                '<script type="text/javascript">\n' +
-                '   (function(){\n' +
-                '       var loadVisDependencies = function(callback, scope) {\n' +
-                '           var scripts = [ \n' +
-                '               "/vis/lib/d3-2.0.4.min.js",\n' +
-                '               "/vis/lib/raphael-min-2.1.0.js",\n' +
-                '               "/vis/lib/patches.js",\n' +
-                '               "/vis/src/utils.js",\n' +
-                '               "/vis/src/geom.js",\n' +
-                '               "/vis/src/stat.js",\n' +
-                '               "/vis/src/scale.js",\n' +
-                '               "/vis/src/layer.js",\n' +
-                '               "/vis/src/plot.js"\n' +
-                '           ];\n' +
-                '           LABKEY.requiresScript(scripts, true, callback, scope, true);\n' +
-                '       };\n' +
-                '\n' +
-                '       var selectRowsCallback = function() {\n' +
-                '           console.log("Select Rows Complete. Let\'s render a chart.");\n' +
-                '       };\n' +
-                '\n' +
-                '       var visCallback = function(){\n' +
-                '            console.log("Vis libraries loaded, let\'s get to work...");\n' +
-                '            var selectRowsConfig = {{queryConfig}};\n' +
-                '            selectRowsConfig.success = selectRowsCallback;\n' +
-                '            LABKEY.Query.selectRows(selectRowsConfig);\n' +
-                '       };\n' +
-                '       loadVisDependencies(visCallback);\n' +
-                '   })();\n' +
-                '</script>';
 
-        template = template.replace('{{queryConfig}}', LABKEY.ExtAdapter.encode(input.queryConfig));
-
-        return template;
-    },
-
-    showExportScriptWindow: function(script) {
-        this.exportScriptCode = script;
-
+    showExportScriptWindow: function(templateConfig) {
         if (!this.exportScriptWindow) {
-            this.exportScriptId = 'textarea-' + Ext4.id();
-            this.exportScriptTextAreaHTML = Ext4.create('Ext.Panel', {
-                padding : '10px 0 0 0',
-                border: false,
-                html: '<textarea id="' + this.exportScriptId + '" name="export-script-textarea"'
-                        + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>',
-                listeners: {
-                    afterrender: function(cmp) {
-                        var el = Ext4.get(this.exportScriptId);
-                        var size = cmp.getSize();
-
-                        if (el) {
-                            this.codeMirror = CodeMirror.fromTextArea(el.dom, {
-                                mode            : 'text/html',
-                                lineNumbers     : true,
-                                lineWrapping    : true,
-                                indentUnit      : 3
-                            });
-
-                            this.codeMirror.setSize(null, size.height + 'px');
-                            this.codeMirror.setValue(this.exportScriptCode);
-                            LABKEY.codemirror.RegisterEditorInstance('export-script-textarea', this.codeMirror);
-                        }
-                    },
-                    scope: this
-                }
-            });
-
+            this.scriptPanel = Ext4.create('LABKEY.vis.GenericChartScriptPanel', {templateConfig: templateConfig});
             this.exportScriptWindow = Ext4.create('Ext.window.Window', {
                 title: "Export Script",
                 cls: 'data-window',
@@ -2093,11 +2023,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 closeAction: 'hide',
                 items: [{
                     xtype: 'panel',
-                    items: [this.exportScriptTextAreaHTML]
+                    items: [this.scriptPanel]
                 }]
             });
         } else {
-            this.codeMirror.setValue(this.exportScriptCode);
+            this.scriptPanel.setScriptValue(templateConfig);
         }
 
         this.exportScriptWindow.show();

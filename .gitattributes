@@ -3950,6 +3950,7 @@ visualization/resources/web/vis/genericChart/genericChartGroupingPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartHelper.js -text
 visualization/resources/web/vis/genericChart/genericChartOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartPanel.js -text
+visualization/resources/web/vis/genericChart/genericChartScriptPanel.js -text
 visualization/resources/web/vis/genericOptionsPanel.js -text
 visualization/resources/web/vis/mainTitleOptionsPanel.js -text
 visualization/resources/web/vis/saveOptionsPanel.js -text

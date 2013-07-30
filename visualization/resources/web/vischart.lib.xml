@@ -10,6 +10,7 @@
         <script path="vis/genericChart/genericChartOptionsPanel.js"/>
         <script path="vis/genericChart/genericChartAxisPanel.js"/>
         <script path="vis/genericChart/genericChartGroupingPanel.js"/>
+        <script path="vis/genericChart/genericChartScriptPanel.js"/>
         <script path="vis/genericChart/genericChartPanel.js"/>
     </library>
     <dependencies>

@@ -246,7 +246,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         };
 
         if (measures.shape) {
-            measureInfo.colorName = measures.color.name;
+            measureInfo.shapeName = measures.shape.name;
         }
 
         if (measures.color) {
