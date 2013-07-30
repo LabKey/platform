@@ -109,6 +109,8 @@ Ext4.define('File.panel.Browser', {
 
     actionsConfig : [],
 
+    adminUser : false,
+
     actionsUpToDate : false,
 
     // provides a default color for backgrounds if they are shown
@@ -462,7 +464,7 @@ Ext4.define('File.panel.Browser', {
             }
         }
 
-        this.addDocked({xtype:'toolbar', dock: 'top', items: buttons});
+        this.addDocked({xtype:'toolbar', dock: 'top', items: buttons, enableOverflow : true});
     },
 
     executeToolbarAction : function(item, e)
@@ -790,7 +792,18 @@ Ext4.define('File.panel.Browser', {
             disableCaching:false,
             success : function(response){
                 var actionConfigs = Ext4.decode(response.responseText);
+                this.importDataEnabled = actionConfigs.config.importDataEnabled ? actionConfigs.config.importDataEnabled : false;
                 actionConfigs = actionConfigs.config.actions;
+
+                if(!this.importDataEnabled && !this.adminUser)
+                {
+                    this.actions.importData.hide();
+                }
+                else
+                {
+                    this.actions.importData.show();
+                }
+
                 for(var i = 0; i < actionConfigs.length; i++)
                 {
                     this.actionsConfig[actionConfigs[i].id] = actionConfigs[i];
@@ -890,7 +903,6 @@ Ext4.define('File.panel.Browser', {
         return false;
     },
 
-    //TODO THIS IS A MARKER FOR YOU TO KNOW WHERE THIS THING IS
     processImportData : function(btn)
     {
         var actionMap = [],
@@ -904,7 +916,6 @@ Ext4.define('File.panel.Browser', {
         {
             var group = this.actionGroups[ag];
             pa = group.actions[0];
-            this.adminUser = true;
 
             var bad = 0;
             for(var i=0; i < group.actions.length; i++){
