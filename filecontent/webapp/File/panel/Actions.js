@@ -186,9 +186,6 @@ Ext4.define('File.panel.ActionsPanel',  {
                 scope: this
             });
         }
-
-        else
-            this.renderDialog();
     },
 
     getPipelineActions : function(response)
@@ -206,6 +203,8 @@ Ext4.define('File.panel.ActionsPanel',  {
             {
                 var pUtil = actions[i];
                 var links = pUtil.links.items;
+                if(!links)
+                    links = [pUtil.links];
 
                 if (!links) continue;
 
@@ -225,9 +224,9 @@ Ext4.define('File.panel.ActionsPanel',  {
                         }
 
                         data.actions.push({
-                            type: link.text,
+                            type: pUtil.links.text,
                             id: link.id,
-                            actionId : link.id,
+                            actionId : pUtil.links.id,
                             display: display,
                             action: link.text,
                             href: link.href,
@@ -262,6 +261,11 @@ Ext4.define('File.panel.ActionsPanel',  {
             data: data.actions
         });
 
+        var groupingFeature = Ext4.create('Ext.grid.feature.Grouping', {
+            groupHeaderTpl: '{name}', //print the number of items in the group
+            startCollapsed: false // start all groups collapsed
+        });
+
         this.actionGrid = Ext4.create('Ext.grid.Panel', {
             store: store,
             columns: [
@@ -269,7 +273,7 @@ Ext4.define('File.panel.ActionsPanel',  {
                 { text: 'Enabled', dataIndex: 'enabled', xtype : 'checkcolumn', width : 100 },
                 { text: 'Show on Toolbar', dataIndex: 'showOnToolbar', xtype : 'checkcolumn', width : 150 }
             ],
-            features: [{ftype:'grouping'}],
+            features: [groupingFeature],
             algin : 'bottom',
             height : 400
         });
