@@ -239,7 +239,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
             finally
             {
-                if (in != null) { try { in.close(); } catch (IOException e) {} }
+                if (in != null) { try { in.close(); } catch (IOException ignored) {} }
             }
         }
         else if (LIST_NAMESPACE_SUFFIX.equals(type))

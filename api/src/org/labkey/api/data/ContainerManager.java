@@ -615,9 +615,8 @@ public class ContainerManager
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
     {
         List<Container> result = new ArrayList<>();
-        Container[] containers = getAllChildren(parent);
 
-        for (Container container : containers)
+        for (Container container : getAllChildren(parent))
         {
             if (container.hasPermission(u, perm) && (includeWorkbooksAndTabs || !container.isWorkbookOrTab()))
             {
@@ -632,9 +631,7 @@ public class ContainerManager
     // Returns true only if user has the specified permission in the entire container tree starting at root
     public static boolean hasTreePermission(Container root, User u,  Class<? extends Permission> perm)
     {
-        Container[] all = getAllChildren(root);
-
-        for (Container c : all)
+        for (Container c : getAllChildren(root))
             if (!c.hasPermission(u, perm))
                 return false;
 
@@ -642,9 +639,7 @@ public class ContainerManager
     }
 
 
-    private static final String[] emptyStringArray = new String[0];
-
-    public static Map<String, Container> getChildrenMap(Container parent)
+    private static Map<String, Container> getChildrenMap(Container parent)
     {
         if (parent.getType() != Container.TYPE.normal)
         {
@@ -653,35 +648,29 @@ public class ContainerManager
             return Collections.emptyMap();
         }
 
-        String[] childIds = (String[]) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
+        List<String> childIds = (List<String>) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
         if (null == childIds)
         {
             try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
             {
-                Container[] children = new SqlSelector(CORE.getSchema(),
+                List<Container> children = new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        parent.getId()).getArray(Container.class);
-                if (children.length == 0)
+                        parent.getId()).getArrayList(Container.class);
+
+                childIds = new ArrayList<>(children.size());
+                for (Container c : children)
                 {
-                    CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), emptyStringArray);
-                    // No database changes to commit, but need to decrement the counter
-                    t.commit();
-                    return Collections.emptyMap();
-                }
-                childIds = new String[children.length];
-                for (int i=0 ; i<children.length ; i++)
-                {
-                    Container c = children[i];
-                    childIds[i] = c.getId();
+                    childIds.add(c.getId());
                     _addToCache(c);
                 }
+                childIds = Collections.unmodifiableList(childIds);
                 CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
-                // No database changes to commit, but need to decrement the counter
+                // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
             }
         }
 
-        if (childIds == emptyStringArray)
+        if (childIds.isEmpty())
             return Collections.emptyMap();
 
         // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily alphabetical
@@ -692,8 +681,7 @@ public class ContainerManager
             if (null != c)
                 ret.put(c.getName(), c);
         }
-        assert null != (ret = Collections.unmodifiableMap(ret));
-        return ret;
+        return Collections.unmodifiableMap(ret);
     }
 
 
@@ -723,16 +711,15 @@ public class ContainerManager
 
         try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
         {
-            Container[] ret = new SqlSelector(
+            Container result = new SqlSelector(
                     CORE.getSchema(),
                     "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?",
-                    id).getArray(Container.class);
-            // No database changes to commit, but need to decrement the counter
-            Container result = ret.length == 0 ? null : ret[0];
+                    id).getObject(Container.class);
             if (result != null)
             {
                 result = _addToCache(result);
             }
+            // No database changes to commit, but need to decrement the counter
             t.commit();
 
             return result;
@@ -771,22 +758,16 @@ public class ContainerManager
             try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
             {
                 // Special case for ROOT.  Never return null -- either database error or corrupt database
-                Container[] ret = new SqlSelector(CORE.getSchema(),
-                        "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL").getArray(Container.class);
+                Container result = new SqlSelector(CORE.getSchema(),
+                        "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL").getObject(Container.class);
 
-                if (ret.length == 0)
+                if (result == null)
                     throw new RootContainerException("Root container does not exist");
 
-                if (ret.length > 1)
-                    throw new RootContainerException("More than one root container was found");
-
-                if (null == ret[0])
-                    throw new RootContainerException("Root container is NULL");
-
-                _addToCache(ret[0]);
+                _addToCache(result);
                 // No database changes to commit, but need to decrement the counter
                 t.commit();
-                return ret[0];
+                return result;
             }
         }
         else
@@ -978,9 +959,9 @@ public class ContainerManager
             User user = viewContext.getUser();
             String projectId = project.getId();
 
-            Container[] folders = ContainerManager.getAllChildren(project);
+            List<Container> folders = new ArrayList<>(ContainerManager.getAllChildren(project));
 
-            Arrays.sort(folders);
+            Collections.sort(folders);
 
             Set<Container> containersInTree = new HashSet<>();
 
@@ -1307,12 +1288,12 @@ public class ContainerManager
     }
 
 
-    private static Container[] _getAllChildrenFromCache(Container c)
+    private static Set<Container> _getAllChildrenFromCache(Container c)
     {
-        return (Container[]) CACHE.get(CONTAINER_ALL_CHILDREN_PREFIX + c.getId());
+        return (Set<Container>) CACHE.get(CONTAINER_ALL_CHILDREN_PREFIX + c.getId());
     }
 
-    private static void _addAllChildrenToCache(Container c, Container[] children)
+    private static void _addAllChildrenToCache(Container c, Set<Container> children)
     {
         CACHE.put(CONTAINER_ALL_CHILDREN_PREFIX + c.getId(), children);
     }
@@ -1333,7 +1314,7 @@ public class ContainerManager
     // UNDONE: use Path directly instead of toString()
     private static String toString(Container c)
     {
-        return StringUtils.strip(c.getPath(), "/").toLowerCase();
+        return toString(c.getParsedPath());
     }
 
     private static String toString(Path p)
@@ -1412,18 +1393,18 @@ public class ContainerManager
 
 
     /** including root node */
-    public static Container[] getAllChildren(Container root)
+    public static Set<Container> getAllChildren(Container root)
     {
-        Container[] allChildren = _getAllChildrenFromCache(root);
-        if (allChildren != null)
-            return allChildren.clone(); // don't let callers modify the array in the cache
+        Set<Container> children = _getAllChildrenFromCache(root);
+        if (children != null)
+            return children;
 
-        LinkedHashSet<Container> containerList = getAllChildrenDepthFirst(root);
-        containerList.add(root);
+        children = getAllChildrenDepthFirst(root);
+        children.add(root);
 
-        allChildren = containerList.toArray(new Container[containerList.size()]);
-        _addAllChildrenToCache(root, allChildren);
-        return allChildren.clone(); // don't let callers modify the array in the cache
+        children = Collections.unmodifiableSet(children); // don't let callers modify the cached copy
+        _addAllChildrenToCache(root, children);
+        return children;
     }
 
 
@@ -1829,52 +1810,46 @@ public class ContainerManager
 
         try
         {
-            try
-            {
-                c = getForPath(path);
-            }
-            catch (RootContainerException e)
-            {
-                // Ignore this -- root doesn't exist yet
-            }
-            boolean newContainer = false;
-
-            if (c == null)
-            {
-                LOG.debug("Creating new container for path '" + path + "'");
-                newContainer = true;
-                c = ensureContainer(path);
-            }
-
-            if (c == null)
-            {
-                throw new IllegalStateException("Unable to ensure container for path '" + path + "'");
-            }
-
-            // Only set permissions if there are no explicit permissions
-            // set for this object or we just created it
-            Integer policyCount = null;
-            if (!newContainer)
-            {
-                policyCount = Table.executeSingleton(CORE.getSchema(),
-                    "SELECT COUNT(*) FROM " + CORE.getTableInfoPolicies() + " WHERE ResourceId = ?",
-                    new Object[]{c.getId()}, Integer.class);
-            }
-
-            if (newContainer || 0 == policyCount.intValue())
-            {
-                LOG.debug("Setting permissions for '" + path + "'");
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
-                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
-                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
-                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
-                SecurityPolicyManager.savePolicy(policy);
-            }
+            c = getForPath(path);
         }
-        catch (SQLException e)
+        catch (RootContainerException e)
         {
-            throw new RuntimeSQLException(e);
+            // Ignore this -- root doesn't exist yet
         }
+        boolean newContainer = false;
+
+        if (c == null)
+        {
+            LOG.debug("Creating new container for path '" + path + "'");
+            newContainer = true;
+            c = ensureContainer(path);
+        }
+
+        if (c == null)
+        {
+            throw new IllegalStateException("Unable to ensure container for path '" + path + "'");
+        }
+
+        // Only set permissions if there are no explicit permissions
+        // set for this object or we just created it
+        Integer policyCount = null;
+        if (!newContainer)
+        {
+            policyCount = new SqlSelector(CORE.getSchema(),
+                "SELECT COUNT(*) FROM " + CORE.getTableInfoPolicies() + " WHERE ResourceId = ?",
+                c.getId()).getObject(Integer.class);
+        }
+
+        if (newContainer || 0 == policyCount.intValue())
+        {
+            LOG.debug("Setting permissions for '" + path + "'");
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
+            SecurityPolicyManager.savePolicy(policy);
+        }
+
         return c;
     }
 
