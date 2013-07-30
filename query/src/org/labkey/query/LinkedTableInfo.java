@@ -15,19 +15,15 @@
  */
 package org.labkey.query;
 
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.flag.FlagForeignKey;
 import org.labkey.api.query.DetailsURL;
@@ -43,8 +39,6 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.queryCustomView.FilterType;
-import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import java.util.Collection;
@@ -168,47 +162,8 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
     {
-        namedFilters = namedFilters == null ? Collections.<String, NamedFiltersType>emptyMap() : namedFilters;
-
-        if (xmlTable != null && xmlTable.isSetFilters())
-        {
-            LocalOrRefFiltersType xmlFilters = xmlTable.getFilters();
-            if (xmlFilters.isSetRef())
-            {
-                String refId = xmlFilters.getRef();
-                if (!addMatchingFilters(namedFilters, refId))
-                {
-                    errors.add(new QueryException("Could not find filter with id '" + refId + "'"));
-                }
-            }
-            else
-            {
-                addFilters(xmlFilters.getFilterArray());
-            }
-        }
-
         super.loadAllButCustomizerFromXML(schema, xmlTable, namedFilters, errors);
     }
-
-    /** @return true if match was found, false if it's not in the array */
-    private boolean addMatchingFilters(Map<String, NamedFiltersType> namedFilters, String refId)
-    {
-        NamedFiltersType filtersType = namedFilters.get(refId);
-        if (filtersType != null)
-        {
-            addFilters(filtersType.getFilterArray());
-            return true;
-        }
-        return false;
-    }
-
-    private void addFilters(FilterType[] xmlFilters)
-    {
-        SimpleFilter filter = SimpleFilter.fromXml(xmlFilters);
-        if (filter != null)
-            addCondition(filter);
-    }
-
 
     @NotNull
     @Override

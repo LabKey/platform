@@ -19,9 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
@@ -72,7 +72,7 @@ public class SchemaQueryReportDataSource extends AbstractQueryReportDataSource
         return LinkedSchema.generateLabKeySQL(getQueryDefinition().getTable(getSchema(), new ArrayList<QueryException>(), true), new LinkedSchema.SQLWhereClauseSource()
         {
             @Override
-            public List<String> getWhereClauses()
+            public List<String> getWhereClauses(TableInfo sourceTable)
             {
                 return Collections.emptyList();
             }

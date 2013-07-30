@@ -25,6 +25,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.LinkedSchemaCustomizer;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.query.DefaultSchema;
@@ -288,7 +289,7 @@ public class LinkedSchema extends ExternalSchema
 
     public interface SQLWhereClauseSource
     {
-        List<String> getWhereClauses();
+        List<String> getWhereClauses(TableInfo sourceTable);
     }
 
     private class XmlFilterWhereClauseSource implements SQLWhereClauseSource
@@ -301,7 +302,7 @@ public class LinkedSchema extends ExternalSchema
         }
 
         @Override
-        public List<String> getWhereClauses()
+        public List<String> getWhereClauses(TableInfo sourceTable)
         {
             List<String> result = new ArrayList<>();
             if (_xmlFilters != null)
@@ -310,15 +311,31 @@ public class LinkedSchema extends ExternalSchema
                 {
                     // Add the WHERE from the referenced, shared filter
                     NamedFiltersType filter = _namedFilters.get(_xmlFilters.getRef());
-                    if (filter != null && filter.sizeOfWhereArray() > 0)
+                    if (filter != null)
                     {
-                        result.addAll(Arrays.asList(filter.getWhereArray()));
+                        if (filter.sizeOfWhereArray() > 0)
+                        {
+                            result.addAll(Arrays.asList(filter.getWhereArray()));
+                        }
+                        if (filter.getFilterArray() != null)
+                        {
+                            SimpleFilter simpleFilter = SimpleFilter.fromXml(filter.getFilterArray());
+                            if (simpleFilter != null)
+                            {
+                                result.add(simpleFilter.toLabKeySQL(QueryService.get().getColumns(sourceTable, simpleFilter.getAllFieldKeys())));
+                            }
+                        }
                     }
                 }
                 else
                 {
                     // Add the filters that are specific to this table
                     result.addAll(Arrays.asList(_xmlFilters.getWhereArray()));
+                    SimpleFilter simpleFilter = SimpleFilter.fromXml(_xmlFilters.getFilterArray());
+                    if (simpleFilter != null)
+                    {
+                        result.add(simpleFilter.toLabKeySQL(QueryService.get().getColumns(sourceTable, simpleFilter.getAllFieldKeys())));
+                    }
                 }
             }
             return result;
@@ -364,8 +381,8 @@ public class LinkedSchema extends ExternalSchema
         sql.append(sourceTable.getName());
         sql.append("\"\n");
 
-        // Apply LabKey sql <where> style filters.  The <filter> style filters will be applied in .loadFromXML().
-        List<String> whereClauses = whereClauseSource.getWhereClauses();
+        // Apply LabKey SQL <where> style filters and <filter> style filters.
+        List<String> whereClauses = whereClauseSource.getWhereClauses(sourceTable);
         if (!whereClauses.isEmpty())
         {
             String filterSep = " WHERE ";
