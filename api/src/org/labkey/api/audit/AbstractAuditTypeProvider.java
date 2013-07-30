@@ -5,10 +5,8 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
@@ -61,8 +59,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             {
                 throw new RuntimeException(e);
             }
-
-            AuditLogService.get().migrateProvider(this, domain);
         }
     }
 

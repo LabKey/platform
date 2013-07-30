@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
@@ -33,7 +32,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -221,7 +219,9 @@ public class AuditLogService
          * data from the old audit log to the new provisioned audit log tables
          * in version 13.3.
          */
-        public void migrateProvider(AuditTypeProvider provider, Domain domain);
+        public void migrateProvider(AuditTypeProvider provider);
+
+        public boolean hasProviderMigrated(AuditTypeProvider provider);
     }
 
     public interface AuditViewFactory
