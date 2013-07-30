@@ -72,6 +72,12 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)FileSystemAuditEvent.class;
+    }
+
     public static class FileSystemAuditEvent extends AuditTypeEvent
     {
         private String _directory;      // the directory name

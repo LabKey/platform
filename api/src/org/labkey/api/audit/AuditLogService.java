@@ -182,7 +182,12 @@ public class AuditLogService
         public List<AuditLogEvent> getEvents(String eventType, int key);
         public List<AuditLogEvent> getEvents(SimpleFilter filter);
         public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort);
+
+        @Deprecated // convert usages to getAuditEvent
         public AuditLogEvent getEvent(int rowId);
+
+        @Nullable
+        public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 
         public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter);
 

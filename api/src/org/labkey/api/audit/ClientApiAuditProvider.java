@@ -84,6 +84,12 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)ClientApiAuditEvent.class;
+    }
+
     public static class ClientApiAuditEvent extends AuditTypeEvent
     {
         private String _subType;

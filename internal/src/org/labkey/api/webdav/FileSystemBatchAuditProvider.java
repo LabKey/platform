@@ -54,6 +54,12 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
         return (K)bean;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)AuditTypeEvent.class;
+    }
+
     public static class FileSystemBatchAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "FileSystemBatchAuditDomain";

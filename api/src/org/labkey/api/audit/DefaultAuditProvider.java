@@ -89,6 +89,13 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         return new AuditLogEvent();
     }
 
+    @Nullable
+    @Override
+    public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)
+    {
+        return null;
+    }
+
     public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter)
     {
         UserSchema schema = createSchema(context.getUser(), context.getContainer());

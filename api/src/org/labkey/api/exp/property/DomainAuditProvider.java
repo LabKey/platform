@@ -126,6 +126,12 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)DomainAuditEvent.class;
+    }
+
     public static class DomainAuditEvent extends AuditTypeEvent
     {
         private String _domainUri;

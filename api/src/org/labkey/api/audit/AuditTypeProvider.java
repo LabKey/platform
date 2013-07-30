@@ -44,6 +44,7 @@ public interface AuditTypeProvider
 
     public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap);
 
+    public <K extends AuditTypeEvent> Class<K> getEventClass();
     /**
      * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)
      */
