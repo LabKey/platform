@@ -213,7 +213,19 @@ public class CustomViewUtil
         TableInfo tinfo = queryDef.getTable(null, true);
 
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> columns = view.getColumnProperties();
-        if (columns.size() == 0 && tinfo != null)
+        if (columns.isEmpty())
+        {
+            // Defer to the list of columns from the default view if possible
+            if (view.getName() != null)
+            {
+                CustomView defaultView = queryDef.getCustomView(user, null, null);
+                if (defaultView != null)
+                {
+                    columns = defaultView.getColumnProperties();
+                }
+            }
+        }
+        if (columns.isEmpty() && tinfo != null)
         {
             columns = new ArrayList<>();
             for (FieldKey key : tinfo.getDefaultVisibleColumns())

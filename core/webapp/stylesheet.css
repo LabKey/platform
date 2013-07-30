@@ -582,12 +582,12 @@ a.labkey-menu-button:hover span
 */
 .labkey-dataregion-msg .labkey-button
 {
-    display: none;
+    visibility: hidden;
 }
 
 .labkey-dataregion-msg:hover .labkey-button
 {
-    display: inline;
+    visibility: visible;
 }
 
 /* This is the class for the down arrow that can be included in a button.
