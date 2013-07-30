@@ -16,6 +16,7 @@
 
 package org.labkey.audit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
@@ -35,11 +36,15 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -77,6 +82,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -613,11 +619,33 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return new Lsid("AuditLogService", eventType).toString() + '#' + propertyName;
     }
 
+    private static final String AUDIT_MIGRATE_PROPSET = "audit-hardtable-migration-13.3";
+
     @Override
-    public void migrateProvider(AuditTypeProvider provider, Domain domain)
+    public boolean hasProviderMigrated(AuditTypeProvider provider)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, false);
+        if (props != null && "true".equalsIgnoreCase(props.get(provider.getEventName())))
+            return true;
+
+        return false;
+    }
+
+    @Override
+    public void migrateProvider(AuditTypeProvider provider)
     {
         if (ModuleLoader.getInstance().isNewInstall())
             return;
+
+        if (hasProviderMigrated(provider))
+        {
+            _log.info("Audit provider '" + provider.getEventName() + "' has already been migrated");
+            return;
+        }
+
+        Domain domain = provider.getDomain();
+        if (domain == null)
+            throw new RuntimeException("Audit provider '" + provider.getEventName() + "' domain not found");
 
         // Get the old audit table table (requires admin priviledges to see all rows in all containers)
         User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.siteAdminRole), true);
@@ -731,6 +759,45 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         int count = exec.execute(insertInto);
 
         _log.info(String.format("Migrated %d rows for audit type %s", count, provider.getEventName()));
+
+        postMigrate(provider);
+    }
+
+
+    private void postMigrate(AuditTypeProvider provider)
+    {
+        // mark this provider as migrated
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
+        props.put(provider.getEventName(), "true");
+        PropertyManager.saveProperties(props);
+
+        // Check if we've migrated all rows from the old audit table
+        TableInfo auditLogTable = LogManager.get().getTinfoAuditLog();
+        SQLFragment frag = new SQLFragment();
+        frag.append("SELECT DISTINCT EventType FROM ").append(auditLogTable, "a").append(" ");
+        SimpleFilter filter = new SimpleFilter();
+        filter.addClause(new NotClause(new InClause(FieldKey.fromParts("EventType"), props.keySet())));
+        frag.append(filter.getSQLFragment(auditLogTable.getSqlDialect()));
+        SqlSelector selector = new SqlSelector(auditLogTable.getSchema(), frag);
+        if (!selector.exists())
+        {
+            _log.info("All audit event types have been migrated.");
+            completeMigration();
+        }
+        else
+        {
+            String[] remainingEventTypes = selector.getArray(String.class);
+            _log.info("Remaining audit event types to migrate: " + StringUtils.join(Arrays.asList(remainingEventTypes), ", "));
+        }
+    }
+
+    private void completeMigration()
+    {
+        // delete old audit table
+
+        // delete old audit domains and properties
+
+        // delete property values
     }
 
 }
