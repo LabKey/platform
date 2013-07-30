@@ -123,6 +123,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 "beforeclearsort",
                 "beforeclearfilter",
                 "beforeclearallfilters",
+                "beforeclearallparameters",
                 "beforechangeview",
                 "beforeshowrowschange",
                 "beforesetparameters",
@@ -886,6 +887,14 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this._removeParams([".", ".offset"]);
     },
 
+    /** Removes all parameters from the DataRegion */
+    clearAllParameters : function ()
+    {
+        if (false === this.fireEvent("beforeclearallparameters", this))
+            return;
+        this._removeParams([".param.", ".offset"]);
+    },
+
     /**
      * Returns the user filter from the URL. The filter is represented as an Array of objects of the form:
      * <ul>
@@ -1198,6 +1207,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // removes all filter, sort, and container filter parameters
             skipPrefixes.push(".");
             skipPrefixes.push(".sort");
+            skipPrefixes.push(".columns");
             skipPrefixes.push(".containerFilterName");
         }
 
@@ -1671,6 +1681,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 var additionalFields = {};
                 var userFilter = this.getUserFilter();
                 var userSort = this.getUserSort();
+                var userColumns = this.getParameter(this.name + ".columns");
 
                 for (var i = 0; i < userFilter.length; i++)
                     additionalFields[userFilter[i].fieldKey] = true;
@@ -1719,6 +1730,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                             query       : json,
                             userFilter  : userFilter,
                             userSort    : userSort,
+                            userColumns : userColumns,
                             userContainerFilter       : this.getUserContainerFilter(),
                             allowableContainerFilters : this.allowableContainerFilters
                         });
@@ -2589,6 +2601,8 @@ LABKEY.DataRegion.getParamValPairsFromString = function(queryString, skipPrefixe
                         if (paramPair[0] == skipPrefix)
                             continue PARAM_LOOP;
                         if (paramPair[0].indexOf("~") > 0)
+                            continue PARAM_LOOP;
+                        if (paramPair[0].indexOf(".param.") > 0)
                             continue PARAM_LOOP;
                         if (paramPair[0] == skipPrefix + "sort")
                             continue PARAM_LOOP;

@@ -263,6 +263,8 @@ public abstract class AbstractDataRegion extends DisplayElement
                 headerMessage.append("&nbsp;=&nbsp;");
                 headerMessage.append(PageFlowUtil.filter(entry.getValue()));
             }
+            headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
+                    PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;", null));
             headerMessage.append("&nbsp;&nbsp;");
         }
 

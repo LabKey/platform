@@ -157,6 +157,20 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             }
             this.customView.sort = newSortArray;
 
+            this.userColumns = config.userColumns;
+            if (this.userColumns)
+            {
+                this.customView.columns = [];
+                var columnNames = this.userColumns.split(",");
+                for (var i = 0; i < columnNames.length; i++)
+                {
+                    this.customView.columns.push({
+                        fieldKey : columnNames[i],
+                        key : columnNames[i]
+                    });
+                }
+            }
+
             // Add user containerFilter
             this.userContainerFilter = config.userContainerFilter;
             if (this.userContainerFilter && this.customView.containerFilter != this.userContainerFilter)
