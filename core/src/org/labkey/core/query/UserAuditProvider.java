@@ -111,6 +111,12 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         };
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)UserManager.UserAuditEvent.class;
+    }
+
     public static class UserAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "UserAuditDomain";

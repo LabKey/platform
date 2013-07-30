@@ -71,6 +71,12 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         return (K)bean;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)SiteSettingsAuditEvent.class;
+    }
+
     public static class SiteSettingsAuditEvent extends AuditTypeEvent
     {
         private String _changes;

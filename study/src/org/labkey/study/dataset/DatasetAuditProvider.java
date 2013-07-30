@@ -97,6 +97,12 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)DatasetAuditEvent.class;
+    }
+
     public static class DatasetAuditEvent extends AuditTypeEvent
     {
         private int _datasetId;

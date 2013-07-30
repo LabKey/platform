@@ -52,6 +52,12 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         return (K)bean;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)AuditTypeEvent.class;
+    }
+
     public static class SampleSetAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SampleSetAuditDomain";

@@ -77,6 +77,12 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
         return legacyMap;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)QueryAuditEvent.class;
+    }
+
     public static class QueryAuditEvent extends AuditTypeEvent
     {
         private String _schemaName;

@@ -78,6 +78,12 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)ExperimentAuditEvent.class;
+    }
+
     public static class ExperimentAuditEvent extends AuditTypeEvent
     {
         private String _protocolLsid;

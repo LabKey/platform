@@ -92,6 +92,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
@@ -714,37 +715,55 @@ public class ListController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            AuditLogEvent event = AuditLogService.get().getEvent(id);
-            if (event != null && event.getLsid() != null)
-            {
-                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-                if (dataMap != null)
-                {
-                    String oldRecord;
-                    String newRecord;
-                    boolean isEncoded = false;
-                    if (dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME)) ||
-                            dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME)))
-                    {
-                        isEncoded = true;
-                        oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME));
-                        newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME));
-                    }
-                    else
-                    {
-                        oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "oldRecord"));
-                        newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "newRecord"));
-                    }
+            String comment = null;
+            String oldRecord = null;
+            String newRecord = null;
+            boolean isEncoded = false;
 
-                    if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
-                    {
-                        return new ItemDetails(event, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
-                    }
-                    else
-                        return new HtmlView("No details available for this event.");
+            if (AuditLogService.enableHardTableLogging())
+            {
+                ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
+
+                if (event != null)
+                {
+                    comment = event.getComment();
+                    oldRecord = event.getOldRecordMap();
+                    newRecord = event.getNewRecordMap();
+                    isEncoded = true;
                 }
             }
-            throw new NotFoundException("Unable to find the audit history detail for this event");
+            else
+            {
+                AuditLogEvent event = AuditLogService.get().getEvent(id);
+                if (event != null && event.getLsid() != null)
+                {
+                    comment = event.getComment();
+                    Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+                    if (dataMap != null)
+                    {
+                        if (dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME)) ||
+                                dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME)))
+                        {
+                            isEncoded = true;
+                            oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME));
+                            newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME));
+                        }
+                        else
+                        {
+                            oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "oldRecord"));
+                            newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "newRecord"));
+                        }
+                    }
+                }
+                throw new NotFoundException("Unable to find the audit history detail for this event");
+            }
+
+            if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
+            {
+                return new ItemDetails(comment, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
+            }
+            else
+                return new HtmlView("No details available for this event.");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -759,15 +778,15 @@ public class ListController extends SpringActionController
 
     private static class ItemDetails extends WebPartView
     {
-        AuditLogEvent _event;
+        String _comment;
         String _oldRecord;
         String _newRecord;
         boolean _isEncoded;
         String _returnUrl;
 
-        public ItemDetails(AuditLogEvent event, String oldRecord, String newRecord, boolean isEncoded, String returnUrl)
+        public ItemDetails(String comment, String oldRecord, String newRecord, boolean isEncoded, String returnUrl)
         {
-            _event = event;
+            _comment = comment;
             _oldRecord = oldRecord;
             _newRecord = newRecord;
             _isEncoded = isEncoded;
@@ -790,7 +809,7 @@ public class ListController extends SpringActionController
                 out.write("<tr><td></td></tr>");
 
                 out.write("<tr class=\"labkey-wp-header\"><th align=\"left\">Item Changes</th></tr>");
-                out.write("<tr><td>Comment:&nbsp;<i>" + PageFlowUtil.filter(_event.getComment()) + "</i></td></tr>");
+                out.write("<tr><td>Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
                 out.write("<tr><td><table>\n");
                 if (!StringUtils.isEmpty(_oldRecord))
                     _renderRecord("previous:", _oldRecord, out);
@@ -819,7 +838,7 @@ public class ListController extends SpringActionController
 
             out.write("<table>\n");
             out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
-            out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(_event.getComment()) + "</i></td></tr>");
+            out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
             out.write("<tr><td/>\n");
 
             for (Map.Entry<String, String> entry : prevProps.entrySet())

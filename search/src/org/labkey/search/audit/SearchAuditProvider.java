@@ -67,6 +67,12 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)SearchAuditEvent.class;
+    }
+
     public static class SearchAuditEvent extends AuditTypeEvent
     {
         private String _query;

@@ -68,6 +68,12 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)SpecimenCommentAuditEvent.class;
+    }
+
     public static class SpecimenCommentAuditEvent extends AuditTypeEvent
     {
         private String _vialId;

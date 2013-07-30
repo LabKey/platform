@@ -16,6 +16,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -101,6 +102,12 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
                 return defaultVisibleColumns;
             }
         };
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)AttachmentAuditEvent.class;
     }
 
     public static class AttachmentAuditEvent extends AuditTypeEvent

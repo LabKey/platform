@@ -99,6 +99,12 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         return legacyMap;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)AssayAuditEvent.class;
+    }
+
     public static class AssayAuditEvent extends AuditTypeEvent
     {
         private int _assayProtocol;

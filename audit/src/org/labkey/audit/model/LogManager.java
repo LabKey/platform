@@ -18,6 +18,7 @@ package org.labkey.audit.model;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
@@ -29,11 +30,14 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
 
 import java.beans.PropertyDescriptor;
@@ -162,6 +166,25 @@ public class LogManager
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         return new TableSelector(getTinfoAuditLog(), filter, null).getObject(AuditLogEvent.class);
+    }
+
+    @Nullable
+    public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)
+    {
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(eventType);
+        if (provider != null)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, HttpView.currentContext().getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(provider.getEventName());
+                TableSelector selector = new TableSelector(table, null, null);
+
+                return (K)selector.getObject(rowId, provider.getEventClass());
+            }
+        }
+        return null;
     }
 
     public List<AuditLogEvent> getEvents(Filter filter, Sort sort)

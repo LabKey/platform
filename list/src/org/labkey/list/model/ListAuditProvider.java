@@ -7,6 +7,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -31,6 +32,7 @@ import org.labkey.list.controllers.ListController;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +93,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         Domain domain = getDomain();
         DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -118,6 +120,17 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                 return defaultVisibleColumns;
             }
         };
+
+        Map<String, FieldKey> params = new HashMap<>();
+
+        params.put("listId", FieldKey.fromParts(COLUMN_NAME_LIST_ID));
+        params.put("entityId", FieldKey.fromParts(COLUMN_NAME_ENTITY_ID));
+        params.put("rowId", FieldKey.fromParts(COLUMN_NAME_ROW_ID));
+
+        DetailsURL url = new DetailsURL(new ActionURL(ListController.ListItemDetailsAction.class, userSchema.getContainer()), params);
+        table.setDetailsURL(url);
+
+        return table;
     }
 
     @Override
@@ -144,9 +157,9 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         if (dataMap != null)
         {
             if (dataMap.containsKey(ListAuditDomainKind.OLD_RECORD_PROP_NAME))
-                bean.setOldRecord(String.valueOf(dataMap.get(ListAuditDomainKind.OLD_RECORD_PROP_NAME)));
+                bean.setOldRecordMap(String.valueOf(dataMap.get(ListAuditDomainKind.OLD_RECORD_PROP_NAME)));
             if (dataMap.containsKey(ListAuditDomainKind.NEW_RECORD_PROP_NAME))
-                bean.setNewRecord(String.valueOf(dataMap.get(ListAuditDomainKind.NEW_RECORD_PROP_NAME)));
+                bean.setNewRecordMap(String.valueOf(dataMap.get(ListAuditDomainKind.NEW_RECORD_PROP_NAME)));
         }
         return (K)bean;
     }
@@ -167,14 +180,20 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         return legacyMap;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)ListAuditEvent.class;
+    }
+
     public static class ListAuditEvent extends AuditTypeEvent
     {
         private int _listId;
         private String _listDomainUri;
         private String _listItemEntityId;
         private String _listName;
-        private String _oldRecord;
-        private String _newRecord;
+        private String _oldRecordMap;
+        private String _newRecordMap;
 
         public ListAuditEvent()
         {
@@ -226,24 +245,24 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             _listName = listName;
         }
 
-        public String getOldRecord()
+        public String getOldRecordMap()
         {
-            return _oldRecord;
+            return _oldRecordMap;
         }
 
-        public void setOldRecord(String oldRecord)
+        public void setOldRecordMap(String oldRecordMap)
         {
-            _oldRecord = oldRecord;
+            _oldRecordMap = oldRecordMap;
         }
 
-        public String getNewRecord()
+        public String getNewRecordMap()
         {
-            return _newRecord;
+            return _newRecordMap;
         }
 
-        public void setNewRecord(String newRecord)
+        public void setNewRecordMap(String newRecordMap)
         {
-            _newRecord = newRecord;
+            _newRecordMap = newRecordMap;
         }
     }
 

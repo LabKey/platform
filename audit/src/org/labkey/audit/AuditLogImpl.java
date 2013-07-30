@@ -485,6 +485,17 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
+    @Nullable
+    @Override
+    public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)
+    {
+        if (AuditLogService.enableHardTableLogging())
+        {
+            return LogManager.get().getAuditEvent(user, eventType, rowId);
+        }
+        return null;
+    }
+
     public void addAuditViewFactory(AuditViewFactory factory)
     {
         AuditLogService.addAuditViewFactory(factory);

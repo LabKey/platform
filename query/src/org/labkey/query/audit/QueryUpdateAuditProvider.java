@@ -91,6 +91,12 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return legacyMap;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)QueryUpdateAuditEvent.class;
+    }
+
     public static class QueryUpdateAuditEvent extends AuditTypeEvent
     {
         private String _rowPk;

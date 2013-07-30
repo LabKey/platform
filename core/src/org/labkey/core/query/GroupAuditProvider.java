@@ -73,6 +73,12 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)GroupAuditEvent.class;
+    }
+
     public static class GroupAuditEvent extends AuditTypeEvent
     {
         int _user;

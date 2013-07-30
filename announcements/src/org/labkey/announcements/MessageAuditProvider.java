@@ -72,6 +72,12 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
         return legacyNames;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)MessageAuditEvent.class;
+    }
+
     public static class MessageAuditEvent extends AuditTypeEvent
     {
         private String _from;

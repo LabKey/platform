@@ -90,6 +90,12 @@ public class ContainerAuditProvider extends AbstractAuditTypeProvider implements
         };
     }
 
+    @Override
+    public <K extends AuditTypeEvent> Class<K> getEventClass()
+    {
+        return (Class<K>)AuditTypeEvent.class;
+    }
+
     public static class ContainerAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "ContainerAuditDomain";
