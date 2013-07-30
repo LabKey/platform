@@ -13,6 +13,7 @@
         <script path="File/panel/Toolbar.js"/>
         <script path="File/panel/FilePropertiesPanel.js"/>
         <script path="File/panel/Actions.js"/>
+        <script path="File/panel/EmailProps.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4"/>

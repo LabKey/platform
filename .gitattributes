@@ -1399,6 +1399,7 @@ filecontent/webapp/File/panel/Actions.js -text
 filecontent/webapp/File/panel/Admin.js -text
 filecontent/webapp/File/panel/Applet.js -text
 filecontent/webapp/File/panel/Browser.js -text
+filecontent/webapp/File/panel/EmailProps.js -text
 filecontent/webapp/File/panel/FilePropertiesPanel.js -text
 filecontent/webapp/File/panel/Toolbar.js -text
 filecontent/webapp/File/panel/TransferApplet.js -text

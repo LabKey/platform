@@ -344,7 +344,6 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'Configure email notifications on file actions.',
             hideText: true,
             handler : this.onEmailPreferences,
-            disabled : true,
             scope: this
         });
 
@@ -1489,10 +1488,9 @@ Ext4.define('File.panel.Browser', {
     },
 
     onEmailPreferences : function(btn) {
-        Ext4.Msg.alert('Email Preferences', 'This feature is not yet implemented.');
-//        var prefDlg = new LABKEY.EmailPreferencesPanel({containerPath: this.containerPath});
-//
-//        prefDlg.show();
+        var prefDlg = Ext4.create('LABKEY.EmailFolderPreferences',{containerPath: this.containerPath});
+
+        prefDlg.show();
     },
 
     _moveOnCallback : function(fs, src, dest, rec) {
