@@ -1,8 +1,10 @@
 package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
@@ -71,6 +73,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
             if (!hasPermission(user, AdminPermission.class))
                 throw new QueryUpdateServiceException("Only admins are allowed to insert into this table.");
 
+            validateValues(row);
             return super.insertRow(user, container, row);
         }
 
@@ -80,6 +83,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
             if (!hasPermission(user, AdminPermission.class))
                 throw new QueryUpdateServiceException("Only admins are allowed to update records in this table.");
 
+            validateValues(row);
             return super.updateRow(user, container, row, oldRow);
         }
 
@@ -90,6 +94,20 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                 throw new QueryUpdateServiceException("Only admins are allowed to delete records from this table.");
 
             return super.deleteRow(user, container, oldRowMap);
+        }
+
+        private void validateValues(Map<String, Object> row) throws ValidationException
+        {
+            // Issue 18313
+            for (ColumnInfo col : getRealTable().getColumns())
+            {
+                if (col != null && row.get(col.getName()) != null && col.getJdbcType() == JdbcType.VARCHAR && col.getScale() > 0)
+                {
+                    String value = row.get(col.getName()).toString();
+                    if (value != null && value.length() > col.getScale())
+                        throw new ValidationException("Value is too long for field " + col.getLabel() + ", a maximum length of " + col.getScale() + " is allowed.");
+                }
+            }
         }
     }
 }
