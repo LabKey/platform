@@ -310,7 +310,6 @@ Ext4.define('File.panel.Browser', {
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
             iconCls: 'iconDBCommit',
             disabledClass:'x-button-disabled',
-            disabled: true,
             tooltip: 'Import data from files into the database, or analyze data files',
             scope: this
         });
@@ -664,6 +663,7 @@ Ext4.define('File.panel.Browser', {
             if (p && p[p.length-1] != '/')
                 p += '/';
             this.ensureVisible(this.fileSystem.getOffsetURL());
+            this.onRefresh();
         }, this, {single: true});
 
         this.on('gridchange', this.expandPath, this);
@@ -903,17 +903,20 @@ Ext4.define('File.panel.Browser', {
         return false;
     },
 
-    processImportData : function(btn)
+    processImportData : function()
     {
         var actionMap = [],
                 actions = [],
                 items   = [],
                 alreadyChecked = false, // Whether we've already found an enabled action to make the default selection
-                hasAdmin = false, pa, links;
+                hasAdmin = false, pa, shrink;
 
         //TODO make this work for multiple file selection (MFS)
         for (var ag in this.actionGroups)
         {
+            if(!this.selectedRecord)
+                break;
+
             var group = this.actionGroups[ag];
             pa = group.actions[0];
 
@@ -979,10 +982,6 @@ Ext4.define('File.panel.Browser', {
 
 //                radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'warning-icon-alt.png');}, this);
             }
-            else
-            {
-//                radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'info.png');}, this);
-            }
             actions.push(radioGroup);
         }
 
@@ -1010,18 +1009,30 @@ Ext4.define('File.panel.Browser', {
                 bodyStyle : 'padding:10px;',
                 border    : false
             });
+            shrink = true;
         }
-
-        var win = Ext4.create('Ext.Window', {
-            title: 'Import Data',
-            width: 725,
-            height: 400,
-            cls: 'extContainer',
-            autoScroll: true,
-            closeAction:'close',
-            modal: true,
-            items: items,
-            buttons: [{
+        else if(!this.selectedRecord)
+        {
+            items.push({
+                html      : 'No files selected to process.',
+                bodyStyle : 'padding:10px;',
+                border    : false
+            });
+            shrink = true;
+        }
+        else if(!radioGroup)
+        {
+            items.push({
+                html      : 'There are no actions capable of processing ' + this.selectedRecord.data.name,
+                bodyStyle : 'padding:10px;',
+                border    : false
+            });
+            shrink = true;
+        }
+        var buttons = [];
+        if(!shrink)
+        {
+            buttons = [{
                 text: 'Import',
                 id: 'btn_submit',
                 listeners: {click:function(button, event) {
@@ -1032,7 +1043,27 @@ Ext4.define('File.panel.Browser', {
                 text: 'Cancel',
                 id: 'btn_cancel',
                 handler: function(){win.close();}
-            }]
+            }];
+        }
+        else
+        {
+            buttons = [{
+                text: 'Cancel',
+                id: 'btn_cancel',
+                handler: function(){win.close();}
+            }];
+        }
+
+
+        var win = Ext4.create('Ext.Window', {
+            title: 'Import Data',
+            width: shrink ? 300 : 725,
+            height: shrink ? 150 : 400,
+            cls: 'extContainer',
+            autoScroll: true,
+            modal: true,
+            items: items,
+            buttons: buttons
         });
         win.show();
     },
@@ -1161,9 +1192,6 @@ Ext4.define('File.panel.Browser', {
             }
             if (this.actions.deletePath) {
                 this.actions.deletePath.setDisabled(false);
-            }
-            if (this.actions.importData) {
-                this.actions.importData.setDisabled(false);
             }
         }
 
@@ -1471,7 +1499,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    // TODO: Support multiple selection download -- migrate to file system
+    // TODO: Support multiple selection download -- migrate to file system (MFS)
     onDownload : function(config) {
 
         var recs = (config && config.recs) ? config.recs : this.getGrid().getSelectionModel().getSelection();
@@ -1744,6 +1772,7 @@ Ext4.define('File.panel.Browser', {
             }, this);
         }
         this.refreshTask.delay(250);
+        this.selectedRecord = undefined;
     },
 
     onTreeUp : function() {
