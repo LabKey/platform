@@ -1406,8 +1406,13 @@ public class SimpleFilter implements Filter
         }
     }
 
+    @Nullable
     public static SimpleFilter fromXml(FilterType[] xmlFilters)
     {
+        if (xmlFilters.length == 0)
+        {
+            return null;
+        }
         SimpleFilter filter = new SimpleFilter();
         for (FilterType xmlFilter : xmlFilters)
         {
