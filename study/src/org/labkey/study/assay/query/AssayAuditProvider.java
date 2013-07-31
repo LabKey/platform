@@ -5,14 +5,34 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.data.ProtocolColumn;
+import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.ContainerContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.controllers.StudyController;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +48,19 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
     public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
     public static final String COLUMN_NAME_RECORD_COUNT = "RecordCount";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROTOCOL));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SOURCE_LSID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     public String getEventName()
@@ -48,6 +81,71 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_PROTOCOL.equalsIgnoreCase(col.getName()))
+                {
+                    final ColumnInfo containerCol = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+
+                    col.setLabel("Assay/Protocol");
+                    col.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            return new ProtocolColumn(colInfo, containerCol, null);
+                        }
+                    });
+                }
+                else if (COLUMN_NAME_SOURCE_LSID.equalsIgnoreCase(col.getName()))
+                {
+                    final ColumnInfo containerCol = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+
+                    col.setLabel("Run");
+                    col.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            return new RunColumn(colInfo, containerCol, null);
+                        }
+                    });
+                }
+                else if (COLUMN_NAME_TARGET_STUDY.equalsIgnoreCase(col.getName()))
+                {
+                    LookupForeignKey fk = new LookupForeignKey("Container", "Label") {
+                        public TableInfo getLookupTableInfo()
+                        {
+                            return StudySchema.getInstance().getTableInfoStudy();
+                        }
+                    };
+                    col.setLabel("Target Study");
+                    col.setFk(fk);
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+        FieldKey containerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
+        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        url.setStrictContainerContextEval(true);
+
+        table.setDetailsURL(url);
+
+        return table;
+    }
+
+    @Override
     protected DomainKind getDomainKind()
     {
         return new AssayAuditDomainKind();
@@ -60,7 +158,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         copyStandardFields(bean, event);
 
         if (event.getIntKey1() != null)
-            bean.setAssayProtocol(event.getIntKey1());
+            bean.setProtocol(event.getIntKey1());
 
         bean.setTargetStudy(event.getKey1());
 
@@ -74,8 +172,8 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         if (dataMap != null)
         {
-            if (dataMap.containsKey("datasetid"))
-                bean.setDatasetId((Integer)dataMap.get("datasetid"));
+            if (dataMap.containsKey("datasetId"))
+                bean.setDatasetId((Integer)dataMap.get("datasetId"));
 
             if (dataMap.containsKey("sourceLsid"))
                 bean.setSourceLsid(String.valueOf(dataMap.get("sourceLsid")));
@@ -107,7 +205,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
     public static class AssayAuditEvent extends AuditTypeEvent
     {
-        private int _assayProtocol;
+        private int _protocol;
         private String _targetStudy;
         private int _datasetId;
         private String _sourceLsid;
@@ -123,14 +221,14 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
             super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
         }
 
-        public int getAssayProtocol()
+        public int getProtocol()
         {
-            return _assayProtocol;
+            return _protocol;
         }
 
-        public void setAssayProtocol(int assayProtocol)
+        public void setProtocol(int protocol)
         {
-            _assayProtocol = assayProtocol;
+            _protocol = protocol;
         }
 
         public String getTargetStudy()

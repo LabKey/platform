@@ -5,13 +5,24 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.GroupManager;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +35,20 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
     public static final String COLUMN_NAME_USER = "User";
     public static final String COLUMN_NAME_GROUP = "Group";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_GROUP));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     public String getEventName()
@@ -77,6 +102,45 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)GroupAuditEvent.class;
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Group");
+                    col.setFk(new GroupAuditViewFactory.GroupForeignKey());
+                    col.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            return new GroupAuditViewFactory.GroupDisplayColumn(colInfo);
+                        }
+                    });
+                }
+                else if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
+                {
+                    UserIdForeignKey.initColumn(col);
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+
+        return table;
     }
 
     public static class GroupAuditEvent extends AuditTypeEvent

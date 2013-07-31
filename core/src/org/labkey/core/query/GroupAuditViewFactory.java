@@ -215,7 +215,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    private static class GroupDisplayColumn extends DataColumn
+    public static class GroupDisplayColumn extends DataColumn
     {
         private ColumnInfo _groupId;
 

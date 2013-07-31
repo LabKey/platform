@@ -130,7 +130,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         table.getColumn("IntKey3").setHidden(true);
     }
 
-    private static class QueryDetailsColumn extends DetailsColumn
+    public static class QueryDetailsColumn extends DetailsColumn
     {
         ColumnInfo _containerCol, _schemaCol, _queryCol, _sortFilterCol;
 

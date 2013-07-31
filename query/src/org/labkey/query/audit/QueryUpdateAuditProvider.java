@@ -6,12 +6,21 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +35,20 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
     public static final String COLUMN_NAME_ROW_PK = "RowPk";
     public static final String COLUMN_NAME_SCHEMA_NAME = "SchemaName";
     public static final String COLUMN_NAME_QUERY_NAME = "QueryName";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     protected DomainKind getDomainKind()
@@ -72,9 +95,9 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         if (dataMap != null)
         {
             if (dataMap.containsKey(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME))
-                bean.setOldRecord(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME)));
+                bean.setOldRecordMap(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME)));
             if (dataMap.containsKey(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME))
-                bean.setNewRecord(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME)));
+                bean.setNewRecordMap(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME)));
         }
         return (K)bean;
     }
@@ -97,13 +120,47 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return (Class<K>)QueryUpdateAuditEvent.class;
     }
 
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_SCHEMA_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Schema Name");
+                }
+                else if (COLUMN_NAME_QUERY_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Query Name");
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+        DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
+        url.setStrictContainerContextEval(true);
+        table.setDetailsURL(url);
+
+        return table;
+    }
+
     public static class QueryUpdateAuditEvent extends AuditTypeEvent
     {
         private String _rowPk;
         private String _schemaName;
         private String _queryName;
-        private String _oldRecord;
-        private String _newRecord;
+        private String _oldRecordMap;
+        private String _newRecordMap;
 
         public QueryUpdateAuditEvent()
         {
@@ -145,24 +202,24 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             _queryName = queryName;
         }
 
-        public String getOldRecord()
+        public String getOldRecordMap()
         {
-            return _oldRecord;
+            return _oldRecordMap;
         }
 
-        public void setOldRecord(String oldRecord)
+        public void setOldRecordMap(String oldRecordMap)
         {
-            _oldRecord = oldRecord;
+            _oldRecordMap = oldRecordMap;
         }
 
-        public String getNewRecord()
+        public String getNewRecordMap()
         {
-            return _newRecord;
+            return _newRecordMap;
         }
 
-        public void setNewRecord(String newRecord)
+        public void setNewRecordMap(String newRecordMap)
         {
-            _newRecord = newRecord;
+            _newRecordMap = newRecordMap;
         }
     }
 

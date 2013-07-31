@@ -5,13 +5,33 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.query.SpecimenQueryView;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +44,19 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     public static final String SPECIMEN_COMMENT_EVENT = "SpecimenCommentEvent";
 
     public static final String COLUMN_NAME_VIAL_ID = "VialId";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_VIAL_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     protected DomainKind getDomainKind()
@@ -72,6 +105,74 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)SpecimenCommentAuditEvent.class;
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_VIAL_ID.equalsIgnoreCase(col.getName()))
+                {
+                    final ColumnInfo containerColumn = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+                    col.setLabel("Vial Id");
+
+                    col.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(final ColumnInfo colInfo)
+                        {
+                        return new DataColumn(colInfo)
+                        {
+                            public void addQueryColumns(Set<ColumnInfo> columns)
+                            {
+                                columns.add(containerColumn);
+                                super.addQueryColumns(columns);
+                            }
+
+                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                            {
+                                Object containerId = containerColumn.getValue(ctx);
+                                String globalUniqueId = (String) getValue(ctx);
+                                if (globalUniqueId == null)
+                                    return;
+
+                                Container container = ContainerManager.getForId(containerId.toString());
+                                if (container == null)
+                                {
+                                    return;
+                                }
+
+                                ActionURL url = SpecimenController.getSamplesURL(container);
+                                url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
+                                url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                                url.addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+
+                                out.write("<a href=\"");
+                                out.write(PageFlowUtil.filter(url.getLocalURIString()));
+                                out.write("\">");
+                                out.write(PageFlowUtil.filter(globalUniqueId));
+                                out.write("</a>");
+                            }
+                        };
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+
+        return table;
     }
 
     public static class SpecimenCommentAuditEvent extends AuditTypeEvent

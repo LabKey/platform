@@ -98,6 +98,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
@@ -5155,28 +5156,54 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(AuditChangesForm form, BindException errors) throws Exception
         {
             int auditRowId = form.getAuditRowId();
-            AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
-            if (event == null)
-            {
-                throw new NotFoundException("Could not find event " + auditRowId + " to display.");
-            }
+            String comment = null;
+            String oldRecord = null;
+            String newRecord = null;
 
-            Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-            String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                    QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
-                    QueryUpdateAuditViewFactory.OLD_RECORD_PROP_NAME));
-            String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                    QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
-                    QueryUpdateAuditViewFactory.NEW_RECORD_PROP_NAME));
+            if (AuditLogService.enableHardTableLogging())
+            {
+                QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
+
+                if (event != null)
+                {
+                    comment = event.getComment();
+                    oldRecord = event.getOldRecordMap();
+                    newRecord = event.getNewRecordMap();
+                }
+            }
+            else
+            {
+                AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
+                if (event == null)
+                {
+                    throw new NotFoundException("Could not find event " + auditRowId + " to display.");
+                }
+
+                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+                oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
+                        QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
+                        QueryUpdateAuditViewFactory.OLD_RECORD_PROP_NAME));
+                newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
+                        QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
+                        QueryUpdateAuditViewFactory.NEW_RECORD_PROP_NAME));
+            }
 
             if (oldRecord != null || newRecord != null)
             {
                 Map<String,String> oldData = QueryAuditViewFactory.decodeFromDataMap(oldRecord);
                 Map<String,String> newData = QueryAuditViewFactory.decodeFromDataMap(newRecord);
 
-                return new AuditChangesView(event, oldData, newData);
+                return new AuditChangesView(comment, oldData, newData);
             }
-            return null;
+            return new NoRecordView();
+        }
+
+        private class NoRecordView extends HttpView
+        {
+            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            {
+                out.write("<p>No current record found</p>");
+            }
         }
 
         @Override

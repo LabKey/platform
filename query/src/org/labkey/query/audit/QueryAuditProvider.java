@@ -5,12 +5,20 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +33,21 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     public static final String COLUMN_NAME_QUERY_NAME = "QueryName";
     public static final String COLUMN_NAME_DETAILS_URL = "DetailsUrl";
     public static final String COLUMN_NAME_DATA_ROW_COUNT = "DataRowCount";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DATA_ROW_COUNT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     protected DomainKind getDomainKind()
@@ -81,6 +104,41 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)QueryAuditEvent.class;
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            protected void initColumn(ColumnInfo col)
+            {
+                if (COLUMN_NAME_DATA_ROW_COUNT.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Data Row Count");
+                }
+                else if (COLUMN_NAME_SCHEMA_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Schema Name");
+                }
+                else if (COLUMN_NAME_QUERY_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Query Name");
+                }
+            }
+
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+
+        return table;
     }
 
     public static class QueryAuditEvent extends AuditTypeEvent

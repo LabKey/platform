@@ -39,6 +39,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -760,7 +761,11 @@ public class ListController extends SpringActionController
 
             if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
             {
-                return new ItemDetails(comment, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
+                Map<String,String> oldData = ListAuditViewFactory.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = ListAuditViewFactory.decodeFromDataMap(newRecord);
+
+                return new AuditChangesView(comment, oldData, newData);
+                //return new ItemDetails(comment, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
             }
             else
                 return new HtmlView("No details available for this event.");
@@ -776,6 +781,9 @@ public class ListController extends SpringActionController
     }
 
 
+    /**
+     * @deprecated delete after audit hard table migration
+     */
     private static class ItemDetails extends WebPartView
     {
         String _comment;

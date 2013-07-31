@@ -121,13 +121,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             }
         };
 
-        Map<String, FieldKey> params = new HashMap<>();
-
-        params.put("listId", FieldKey.fromParts(COLUMN_NAME_LIST_ID));
-        params.put("entityId", FieldKey.fromParts(COLUMN_NAME_ENTITY_ID));
-        params.put("rowId", FieldKey.fromParts(COLUMN_NAME_ROW_ID));
-
-        DetailsURL url = new DetailsURL(new ActionURL(ListController.ListItemDetailsAction.class, userSchema.getContainer()), params);
+        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${entityId}&rowId=${rowId}");
         table.setDetailsURL(url);
 
         return table;
