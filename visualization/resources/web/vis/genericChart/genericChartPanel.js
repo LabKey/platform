@@ -319,7 +319,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         return (!hidden && (type == 'int' || type == 'float' || type == 'double'))
                     });
                     if(this.measures.y){
-                        var measure = this.yMeasureStore.findRecord('name', this.measures.y.name);
+                        var measure = this.yMeasureStore.findRecord('name', this.measures.y.name, 0, false, true, true);
                         if(measure){
                             this.yMeasureGrid.getSelectionModel().select(measure, false, true);
                             this.yMeasureChoice = this.yMeasureGrid.getSelectionModel().getSelection()[0].data;
@@ -346,7 +346,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         return !hidden
                     });
                     if(this.measures.x){
-                        var measure = this.xMeasureStore.findRecord('name', this.measures.x.name);
+                        var measure = this.xMeasureStore.findRecord('name', this.measures.x.name, 0, false, true, true);
                         if(measure){
                             this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                             this.xMeasureChoice = this.xMeasureGrid.getSelectionModel().getSelection()[0].data;
@@ -1646,7 +1646,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (this.autoColumnYName)
             {
-                measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
+                measure = this.yMeasureStore.findRecord('name', this.autoColumnYName, 0, false, true, true);
                 if (measure){
                     this.yMeasureGrid.getSelectionModel().select(measure, false, true);
                     this.yMeasurePanel.selectionChange(true);
@@ -1667,7 +1667,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.renderType !== "box_plot" && this.renderType !== "auto_plot"){
                 if (this.autoColumnXName)
                 {
-                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
+                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName, 0, false, true, true);
                     if (measure) {
                         this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                         this.xMeasurePanel.selectionChange(true);
@@ -1682,7 +1682,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     return false;
                 }
             } else {
-                measure = this.xMeasureStore.findRecord('label', 'Cohort');
+                measure = this.xMeasureStore.findRecord('label', 'Cohort', 0, false, true, true);
                 if (measure) {
                     this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                     this.xMeasurePanel.selectionChange(true);
