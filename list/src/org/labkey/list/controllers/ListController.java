@@ -756,7 +756,8 @@ public class ListController extends SpringActionController
                         }
                     }
                 }
-                throw new NotFoundException("Unable to find the audit history detail for this event");
+                else
+                    throw new NotFoundException("Unable to find the audit history detail for this event");
             }
 
             if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
@@ -764,7 +765,10 @@ public class ListController extends SpringActionController
                 Map<String,String> oldData = ListAuditViewFactory.decodeFromDataMap(oldRecord);
                 Map<String,String> newData = ListAuditViewFactory.decodeFromDataMap(newRecord);
 
-                return new AuditChangesView(comment, oldData, newData);
+                AuditChangesView view = new AuditChangesView(comment, oldData, newData);
+                view.setReturnUrl(getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
+
+                return view;
                 //return new ItemDetails(comment, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
             }
             else
