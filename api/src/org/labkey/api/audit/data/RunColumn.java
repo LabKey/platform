@@ -49,6 +49,9 @@ public class RunColumn extends ExperimentAuditColumn
     {
         String runLsid = (String)getBoundColumn().getValue(ctx);
         String cId = (String)ctx.get("ContainerId");
+        if (cId == null)
+            cId = (String)ctx.get("Container");
+
         if (runLsid != null && cId != null)
         {
             Container c = ContainerManager.getForId(cId);

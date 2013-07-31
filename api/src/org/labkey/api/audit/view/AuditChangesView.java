@@ -15,7 +15,6 @@
  */
 package org.labkey.api.audit.view;
 
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
@@ -32,13 +31,13 @@ import java.util.Map;
  */
 public class AuditChangesView extends HttpView
 {
-    private final AuditLogEvent event;
+    private String _comment;
     private final Map<String,String> oldData;
     private final Map<String,String> newData;
 
-    public AuditChangesView(AuditLogEvent event, Map<String,String> oldData, Map<String,String> newData)
+    public AuditChangesView(String comment, Map<String,String> oldData, Map<String,String> newData)
     {
-        this.event = event;
+        this._comment = comment;
         if (oldData != null)
         {
             this.oldData = new CaseInsensitiveHashMap<>(oldData);
@@ -65,7 +64,7 @@ public class AuditChangesView extends HttpView
 
         out.write("<table>\n");
         out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
-        out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(event.getComment()) + "</i></td></tr>");
+        out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
 
         boolean update = !oldData.isEmpty() && !newData.isEmpty();
 

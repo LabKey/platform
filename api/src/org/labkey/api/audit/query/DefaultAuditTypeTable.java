@@ -6,6 +6,7 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -48,6 +49,9 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         _defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
         _defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         _defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
+
+        ColumnInfo rowIdColumn = getColumn(FieldKey.fromParts("rowId"));
+        rowIdColumn.setSortDirection(Sort.SortDirection.DESC);
 
         // setup lookups for the standard fields
         ColumnInfo created = getColumn("Created");

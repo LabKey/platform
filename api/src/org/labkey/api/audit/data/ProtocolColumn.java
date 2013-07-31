@@ -48,6 +48,9 @@ public class ProtocolColumn extends ExperimentAuditColumn
     {
         Object protocolId = getBoundColumn().getValue(ctx);
         String cId = (String)ctx.get("ContainerId");
+        if (cId == null)
+            cId = (String)ctx.get("Container");
+
         if (protocolId != null && cId != null)
         {
             Container c = ContainerManager.getForId(cId);
