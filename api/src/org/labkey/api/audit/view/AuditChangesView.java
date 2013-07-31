@@ -34,6 +34,7 @@ public class AuditChangesView extends HttpView
     private String _comment;
     private final Map<String,String> oldData;
     private final Map<String,String> newData;
+    private String _returnUrl;
 
     public AuditChangesView(String comment, Map<String,String> oldData, Map<String,String> newData)
     {
@@ -115,6 +116,23 @@ public class AuditChangesView extends HttpView
             out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
             out.write(modified + " field(s) were modified</i></td></tr>");
         }
+
+        if (_returnUrl != null)
+        {
+            out.write("<tr><td>");
+            out.write(PageFlowUtil.generateButton("Done", _returnUrl));
+            out.write("</td></tr>");
+        }
         out.write("</table>\n");
+    }
+
+    public String getReturnUrl()
+    {
+        return _returnUrl;
+    }
+
+    public void setReturnUrl(String returnUrl)
+    {
+        _returnUrl = returnUrl;
     }
 }
