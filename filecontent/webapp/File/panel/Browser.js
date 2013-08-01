@@ -147,7 +147,7 @@ Ext4.define('File.panel.Browser', {
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
-
+        Ext4.Ajax.timeout = 60000;
         this.callParent();
     },
 
@@ -400,7 +400,8 @@ Ext4.define('File.panel.Browser', {
     configureFileBrowser : function(response) {
         var json = Ext4.JSON.decode(response.responseText);
         if (json.config) {
-            this.updateActions();
+            var update = new Ext4.util.DelayedTask(this.updateActions);
+            update.delay(250);
             this.addTbarActions(json.config);
         }
     },
