@@ -114,6 +114,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.GroupAuditProvider;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
@@ -1310,9 +1311,19 @@ public class UserController extends SpringActionController
             view.addView(accessView);
 
             if (c.isRoot())
-                view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
+            {
+                if (AuditLogService.enableHardTableLogging())
+                    view.addView(GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors));
+                else
+                    view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
+            }
             else
-                view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId()));
+            {
+                if (AuditLogService.enableHardTableLogging())
+                    view.addView(GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors));
+                else
+                    view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId()));
+            }
 
             if (form.getRenderInHomeTemplate())
             {

@@ -45,6 +45,11 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -79,6 +84,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.core.query.GroupAuditProvider;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
@@ -942,9 +948,37 @@ public class SecurityController extends SpringActionController
 
         if (getUser().isAdministrator())
         {
-            AuditLogQueryView log = GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId());
-            log.setFrame(WebPartView.FrameType.TITLE);
-            view.addView(log);
+            if (AuditLogService.enableHardTableLogging())
+            {
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (schema != null)
+                {
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), group.getUserId());
+                    List<FieldKey> columns = new ArrayList<>();
+
+                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
+                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
+                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
+                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
+
+                    settings.setBaseFilter(filter);
+                    settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
+                    settings.setFieldKeys(columns);
+                    QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                    auditView.setFrame(WebPartView.FrameType.TITLE);
+                    auditView.setTitle("Group Membership History");
+
+                    view.addView(auditView);
+                }
+            }
+            else
+            {
+                AuditLogQueryView log = GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId());
+                log.setFrame(WebPartView.FrameType.TITLE);
+                view.addView(log);
+            }
         }
 
         return view;
@@ -1861,8 +1895,23 @@ public class SecurityController extends SpringActionController
             Collections.sort(rows); // the sort is done using the user display name
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
             view.addView(new JspView<>("/org/labkey/core/user/userAccess.jsp", bean, errors));
-            
-            view.addView(GroupAuditViewFactory.getInstance().createFolderView(getViewContext(), getContainer()));
+
+            if (AuditLogService.enableHardTableLogging())
+            {
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (schema != null)
+                {
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                    settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
+                    QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                    auditView.setTitle("Access Modification History For This Folder");
+
+                    view.addView(auditView);
+                }
+            }
+            else
+                view.addView(GroupAuditViewFactory.getInstance().createFolderView(getViewContext(), getContainer()));
             return view;
         }
 

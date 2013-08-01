@@ -175,6 +175,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
+    @Deprecated
     public AuditLogQueryView createGroupView(ViewContext context, int groupId)
     {
         SimpleFilter filter = new SimpleFilter("IntKey2", groupId);
@@ -187,6 +188,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
+    @Deprecated
     public AuditLogQueryView createFolderView(ViewContext context, Container container)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", container.getId());

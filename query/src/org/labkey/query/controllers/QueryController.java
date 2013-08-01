@@ -5180,6 +5180,7 @@ public class QueryController extends SpringActionController
                 }
 
                 Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+                comment = event.getComment();
                 oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
                         QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
                         QueryUpdateAuditViewFactory.OLD_RECORD_PROP_NAME));

@@ -1,24 +1,33 @@
 package org.labkey.core.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -141,6 +150,62 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         };
 
         return table;
+    }
+
+    @Nullable
+    public static QueryView createSiteUserView(ViewContext context, int userId, BindException errors)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), userId);
+
+        List<FieldKey> columns = new ArrayList<>();
+
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_PROJECT_ID));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
+
+        return createUserView(context, filter, "Access Modification History:", columns, errors);
+    }
+
+    @Nullable
+    public static QueryView createProjectMemberView(ViewContext context, int userId, Container project, BindException errors)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), userId);
+        filter.addCondition(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_PROJECT_ID), project.getId());
+
+        List<FieldKey> columns = new ArrayList<>();
+
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
+
+        return createUserView(context, filter, "Access Modification History For This Project:", columns, errors);
+    }
+
+    @Nullable
+    private static QueryView createUserView(ViewContext context, SimpleFilter filter, String title, List<FieldKey> columns, BindException errors)
+    {
+        if (AuditLogService.enableHardTableLogging())
+        {
+            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+            if (schema != null)
+            {
+                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+
+                settings.setBaseFilter(filter);
+                settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
+                settings.setFieldKeys(columns);
+                QueryView auditView = schema.createView(context, settings, errors);
+                auditView.setTitle(title);
+
+                return auditView;
+            }
+            return null;
+        }
+        else
+            throw new IllegalArgumentException("Hard table logging is not enabled for this audit event type");
     }
 
     public static class GroupAuditEvent extends AuditTypeEvent

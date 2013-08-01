@@ -39,6 +39,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -47,6 +48,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -72,8 +74,11 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -101,6 +106,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -1475,7 +1481,20 @@ public class FileContentController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return FileSystemAuditViewFactory.getInstance().createFileContentView(getViewContext());
+            if (AuditLogService.enableHardTableLogging())
+            {
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+
+                if (schema != null)
+                {
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                    settings.setQueryName(FileSystemAuditProvider.EVENT_TYPE);
+                    return schema.createView(getViewContext(), settings, errors);
+                }
+                return null;
+            }
+            else
+                return FileSystemAuditViewFactory.getInstance().createFileContentView(getViewContext());
         }
 
         public NavTree appendNavTrail(NavTree root)
