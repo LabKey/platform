@@ -133,19 +133,18 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     restoreValues: function(initValues){
         this.setPanelOptionValues(initValues);
-
-        this.hasChanges = false;        
+        this.hasChanges = false;
     },
 
-    setPanelOptionValues: function(label, scale) {
+    setPanelOptionValues: function(config) {
         this.suppressEvents = true;
 
-        if(label){
-            this.setAxisLabel(label);
+        if(config.label){
+            this.setAxisLabel(config.label);
         }
 
-        if(scale && scale.trans){
-            this.setScaleTrans(scale.trans);
+        if(config.scaleTrans){
+            this.setScaleTrans(config.scaleTrans);
         }
 
         this.suppressEvents = false;

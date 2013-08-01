@@ -300,9 +300,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setOpacity(initValues.opacity);
         if (initValues.hasOwnProperty("pointSize"))
             this.setPointSize(initValues.pointSize);
-        if (initValues.hasOwnProperty("pointColor"))
-            this.setPointColor(initValues.pointFillColor);
         if (initValues.hasOwnProperty("pointFillColor"))
+            this.setPointColor(initValues.pointFillColor);
+        if (initValues.hasOwnProperty("lineColor"))
             this.setLineColor(initValues.lineColor);
         if (initValues.hasOwnProperty("boxFillColor"))
             this.setFillColor(initValues.boxFillColor);

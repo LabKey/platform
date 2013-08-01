@@ -10,19 +10,26 @@ LABKEY.vis.GenericChartHelper = new function(){
             return renderType;
         }
 
+        if(!xAxisType) {
+            // On some charts (non-study box plots) we don't require an x-axis, instead we generate one box plot for
+            // all of the data of your y-axis. If there is no xAxisType, then we have a box plot. Scatter plots require
+            // an x-axis measure.
+            return 'box_plot';
+        }
+
         return (xAxisType === 'string' || xAxisType === 'boolean') ? 'box_plot' : 'scatter_plot';
     };
 
-    var generateLabels = function(labels, measures) {
+    var generateLabels = function(labels) {
         return {
             main: {
                 value: labels.main ? labels.main : ''
             },
             x: {
-                value: labels.x ? labels.x : Ext4.util.Format.htmlEncode(measures.x.label)
+                value: labels.x ? labels.x : ''
             },
             y: {
-                value: labels.y ? labels.y : Ext4.util.Format.htmlEncode(measures.y.label)
+                value: labels.y ? labels.y : ''
             }
         };
     };
@@ -63,7 +70,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
             if (type == 'int' || type == 'float') {
-                if (fields[i].name == measures.x.name) {
+                if (measures.x && fields[i].name == measures.x.name) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
                     } else if (defaultFormatFn) {
@@ -87,7 +94,9 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {};
 
-        if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int") {
+        if(chartType == "box_plot" && !measures.x) {
+            aes.x = generateMeasurelessAcc(queryName);
+        } else if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int") {
             aes.x = generateContinuousAcc(measures.x.name);
         } else {
             aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
@@ -136,14 +145,17 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var generatePointHover = function(measures){
         return function(row) {
-            var hover = measures.x.label + ': ';
+            var hover;
 
-            if(row[measures.x.name].displayValue){
-                hover = hover + row[measures.x.name].displayValue;
-            } else {
-                hover = hover + row[measures.x.name].value;
+            if(measures.x) {
+                hover = measures.x.label + ': ';
+
+                if(row[measures.x.name].displayValue){
+                    hover = hover + row[measures.x.name].displayValue;
+                } else {
+                    hover = hover + row[measures.x.name].value;
+                }
             }
-
 
             hover = hover + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
 
@@ -235,6 +247,14 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             return value;
         };
+    };
+
+    var generateMeasurelessAcc = function(measureName) {
+        // Used for boxplots that do not have an x-axis measure. Instead we just return the
+        // queryName for every row.
+        return function(row) {
+            return measureName;
+        }
     };
 
     var generatePointClickFn = function(measures, schemaName, queryName, fnString){

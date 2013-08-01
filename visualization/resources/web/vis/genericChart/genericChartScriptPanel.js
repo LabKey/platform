@@ -45,7 +45,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        };\n" +
             "        var aes = gch.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
             "        var scales = gch.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
-            "        var labels = gch.generateLabels(chartConfig.labels, chartConfig.measures);\n" +
+            "        var labels = gch.generateLabels(chartConfig.labels);\n" +
             "        var plotConfig = {\n" +
             "            renderTo: 'exportedChart',\n" +
             "            width: chartConfig.width ? chartConfig.width : DEFAULT_WIDTH,\n" +
@@ -97,6 +97,12 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
     },
 
     initComponent: function(){
+        this.buttons = [{
+            text: 'Close',
+            scope: this,
+            handler: function(){this.fireEvent('closeOptionsWindow');}
+        }];
+
         this.on('afterrender', function(cmp){
             var el = Ext4.get(this.codeMirrorId);
             var size = cmp.getSize();
@@ -117,7 +123,13 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
     },
 
     setScriptValue: function(templateConfig){
-        this.codeMirror.setValue(this.compileTemplate(templateConfig));
+        if(this.codeMirror) {
+            this.codeMirror.setValue(this.compileTemplate(templateConfig));
+        } else {
+            // The panel may not have been rendered yet, so instead we stash the template config.
+            // which will be compiled after render.
+            this.templateConfig = templateConfig;
+        }
     },
 
     compileTemplate: function(input) {
