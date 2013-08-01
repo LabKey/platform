@@ -792,8 +792,16 @@ Ext4.define('File.panel.Browser', {
             disableCaching:false,
             success : function(response){
                 var actionConfigs = Ext4.decode(response.responseText);
-                this.importDataEnabled = actionConfigs.config.importDataEnabled ? actionConfigs.config.importDataEnabled : false;
-                actionConfigs = actionConfigs.config.actions;
+
+                if(actionConfigs.config.actions)
+                {
+                    this.importDataEnabled = actionConfigs.config.importDataEnabled ? actionConfigs.config.importDataEnabled : false;
+                    actionConfigs = actionConfigs.config.actions;
+                }
+                else
+                {
+                    actionConfigs = [];
+                }
 
                 if(!this.importDataEnabled && !this.adminUser)
                 {
@@ -940,7 +948,12 @@ Ext4.define('File.panel.Browser', {
                 columns    : 1,
                 labelSeparator: '',
                 items      : [],
-                scope : this
+                scope : this,
+                listeners : {
+                    render : function(rg){
+                        rg.setHeight(rg.getHeight()+10);
+                    }
+                }
             });
 
 
@@ -948,7 +961,7 @@ Ext4.define('File.panel.Browser', {
             for (var i=0; i < group.actions.length; i++)
             {
                 var action = group.actions[i];
-                if (action.link.href && (action.link.enabled || this.adminUser))
+                if (action.link.href && (action.enabled || this.adminUser))
                 {
                     var label = action.link.text;
 
@@ -963,7 +976,6 @@ Ext4.define('File.panel.Browser', {
                     radioGroup.add({
                         xtype: 'radio',
                         checked: action.enabled && !alreadyChecked,
-                        disabled: !action.enabled,
                         labelSeparator: '',
                         boxLabel: label,
                         name: 'importAction',
@@ -975,12 +987,6 @@ Ext4.define('File.panel.Browser', {
                         alreadyChecked = true;
                     }
                 }
-            }
-            if (!pa.enabled)
-            {
-                radioGroup.disabled = true;
-
-//                radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'warning-icon-alt.png');}, this);
             }
             actions.push(radioGroup);
         }
@@ -1002,7 +1008,7 @@ Ext4.define('File.panel.Browser', {
             });
         }
 
-        if (!this.importDataEnabled)
+        if (!this.importDataEnabled  && !this.adminUser)
         {
             items.push({
                 html      : 'This dialog has been disabled from the admin panel and is only visible to Administrators.',
@@ -1058,7 +1064,7 @@ Ext4.define('File.panel.Browser', {
         var win = Ext4.create('Ext.Window', {
             title: 'Import Data',
             width: shrink ? 300 : 725,
-            height: shrink ? 150 : 400,
+            height: shrink ? 150 : undefined,
             cls: 'extContainer',
             autoScroll: true,
             modal: true,
