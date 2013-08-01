@@ -47,6 +47,11 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -75,6 +80,7 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -244,7 +250,28 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public HttpView getHistoryView(ViewContext context, AttachmentParent parent)
     {
-        return AttachmentAuditViewFactory.createAttachmentView(context, parent);
+        if (AuditLogService.enableHardTableLogging())
+        {
+            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+            if (schema != null)
+            {
+                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_CONTAINER), parent.getContainerId());
+                filter.addCondition(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_ENTITY_ID), parent.getEntityId());
+
+                settings.setBaseFilter(filter);
+                settings.setQueryName(AttachmentService.ATTACHMENT_AUDIT_EVENT);
+
+                QueryView view = schema.createView(context, settings);
+                view.setTitle("Attachments History:");
+
+                return view;
+            }
+            return null;
+        }
+        else
+            return AttachmentAuditViewFactory.createAttachmentView(context, parent);
     }
 
     @Override

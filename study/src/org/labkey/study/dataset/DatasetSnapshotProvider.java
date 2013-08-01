@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -501,7 +503,25 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
             DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
             if (dsDef != null)
-                return DatasetAuditViewFactory.getInstance().createDatasetView(context, dsDef);
+            {
+                if (AuditLogService.enableHardTableLogging())
+                {
+                    UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+                    if (schema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(DatasetAuditProvider.COLUMN_NAME_DATASET_ID), dsDef.getRowId());
+
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName(DatasetAuditProvider.DATASET_AUDIT_EVENT);
+
+                        return schema.createView(context, settings);
+                    }
+                    return null;
+                }
+                else
+                    return DatasetAuditViewFactory.getInstance().createDatasetView(context, dsDef);
+            }
         }
         return null;
     }

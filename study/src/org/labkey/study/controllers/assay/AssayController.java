@@ -30,6 +30,8 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -39,6 +41,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
@@ -60,6 +63,7 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -99,10 +103,12 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
+import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
@@ -605,7 +611,29 @@ public class AssayController extends SpringActionController
             _protocol = form.getProtocol();
             VBox view = new VBox();
             view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
-            view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
+
+            if (AuditLogService.enableHardTableLogging())
+            {
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+
+                if (schema != null)
+                {
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                    SimpleFilter filter = new SimpleFilter();
+                    if (_protocol.getRowId() != -1)
+                        filter.addCondition(FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_PROTOCOL), _protocol.getRowId());
+                    filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER), getContainer()));
+
+                    settings.setBaseFilter(filter);
+                    settings.setQueryName(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+                    view.addView(schema.createView(getViewContext(), settings, errors));
+                }
+            }
+            else
+            {
+                view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
+            }
             setHelpTopic(new HelpTopic("publishHistory"));
             return view;
         }

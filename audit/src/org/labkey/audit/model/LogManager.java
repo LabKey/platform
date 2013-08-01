@@ -104,7 +104,7 @@ public class LogManager
                 Map<String, Object> props = new HashMap<>();
                 factory.toMap(type, props);
 
-                UserSchema schema = QueryService.get().getUserSchema(user, c, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+                UserSchema schema = AuditLogService.getAuditLogSchema(user, c);
 
                 if (schema != null)
                 {
@@ -174,7 +174,7 @@ public class LogManager
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(eventType);
         if (provider != null)
         {
-            UserSchema schema = QueryService.get().getUserSchema(user, HttpView.currentContext().getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+            UserSchema schema = AuditLogService.getAuditLogSchema(user, HttpView.currentContext().getContainer());
 
             if (schema != null)
             {

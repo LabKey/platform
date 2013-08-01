@@ -99,7 +99,7 @@ public class AuditController extends SpringActionController
                 if (selected == null)
                     selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
 
-                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                 QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
                 settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
