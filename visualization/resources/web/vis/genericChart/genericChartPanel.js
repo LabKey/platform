@@ -1558,7 +1558,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (json.chartConfig)
         {
-            this.measures = json.chartConfig.measures;
+            this.measures = {};
+            this.measures.x = json.chartConfig.measures.x;
+            this.measures.y = json.chartConfig.measures.y;
 
             if(!json.chartConfig){
                 this.optionsPanel.setPanelOptionValues({renderType: this.renderType});
@@ -2048,7 +2050,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     exportChartToPdf: function() {
-        var tempDivId = this.renderPlot('pdf');
+        var tempDivId = this.renderPlot(true);
         if (tempDivId)
         {
             // export the temp chart as a pdf with the chart title as the file name

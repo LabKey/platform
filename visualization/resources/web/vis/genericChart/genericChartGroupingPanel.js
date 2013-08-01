@@ -239,7 +239,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         return this.store;
     },
 
-    getColorType: function(value){
+    getColorType: function(){
         return this.colorTypeRadioGroup.getValue().colorType;
     },
 
