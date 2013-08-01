@@ -268,7 +268,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             path += offset;
             getModelBean().setRootPath(path);
         }
-        getModelBean().setSize(Integer.parseInt(webPartDescriptor.getPropertyMap().get("size")));
+        if(webPartDescriptor.getPropertyMap().get("size") != null)
+        {
+            getModelBean().setSize(Integer.parseInt(webPartDescriptor.getPropertyMap().get("size")));
+
+        }
+        else
+        {
+            getModelBean().setSize(350);
+        }
+
         getModelBean().setRootOffset(form.getRootOffset());
 
 

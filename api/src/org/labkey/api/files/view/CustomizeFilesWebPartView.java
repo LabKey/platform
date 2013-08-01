@@ -44,7 +44,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         private String _location;
         private Portal.WebPart _webPart;
         private String _rootOffset;
-        private int size;
+        private int size = 350;
 
         public CustomizeWebPartForm(Portal.WebPart webPart)
         {
@@ -57,7 +57,10 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             fileSet = propertyMap.get("fileSet");
             path = propertyMap.get("path");
             _rootOffset = propertyMap.get("rootOffset");
-            size = Integer.parseInt(propertyMap.get("size"));
+
+            if(propertyMap.get("size") != null)
+                size = Integer.parseInt(propertyMap.get("size"));
+
             _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get("folderTreeVisible"));
 
             useFileSet = fileSet != null;
