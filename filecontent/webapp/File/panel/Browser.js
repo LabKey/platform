@@ -568,6 +568,7 @@ Ext4.define('File.panel.Browser', {
             if (this.grid) {
                 this.getGrid().getEl().unmask();
             }
+            this.updateActions();
         }, this);
 
         return this.fileStore;
@@ -830,7 +831,7 @@ Ext4.define('File.panel.Browser', {
         this.actionMap = {};
         this.actionGroups = {};
 
-        if (actions && actions.length && this.importDataEnabled)
+        if (actions && actions.length && (this.importDataEnabled || this.adminUser))
         {
             var pipelineActions = this.parseActions(actions);
             for (var i=0; i < pipelineActions.length; i++)
