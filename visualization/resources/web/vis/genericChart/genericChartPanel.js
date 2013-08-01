@@ -1613,11 +1613,39 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.updateChartTask.delay(500);
     },
 
+    handleNoData: function(){
+        // Issue 18339
+        this.setRenderRequested(false);
+        var error = 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict. Try removing or adjusting any filters if possible.';
+        var errorDiv = Ext4.create('Ext.container.Container', {
+            border: 1,
+            autoEl: {tag: 'div'},
+            html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + error,
+            autoScroll: true
+        });
+        this.showOptionsBtn.setDisabled(true);
+        this.groupingBtn.setDisabled(true);
+        this.developerBtn.setDisabled(true);
+        this.saveBtn.setDisabled(true);
+        this.saveAsBtn.setDisabled(true);
+        this.disableExportPdf();
+        this.disableExportScript();
+        this.toggleBtn.setDisabled(false); // Keep the toggle button enabled so the user can remove filters
+        this.clearChartPanel();
+        this.viewPanel.add(errorDiv);
+    },
+
     renderPlot: function(forExport){
         if (!forExport)
         {
             this.centerPanel.getEl().mask('Rendering Chart...');
             this.clearChartPanel();
+        }
+
+        if (this.chartData.rows.length === 0) {
+            this.centerPanel.getEl().unmask();
+            this.handleNoData();
+            return;
         }
 
         if (!this.initMeasures(forExport)) {
@@ -1642,6 +1670,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.customRenderTypes && this.customRenderTypes[this.renderType]) {
             customRenderType = this.customRenderTypes[this.renderType];
         }
+
         chartType = GCH.getChartType(this.renderType, chartConfig.measures.x ? chartConfig.measures.x.normalizedType : null);
         aes = GCH.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
         scales = GCH.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
@@ -1659,7 +1688,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scales = customRenderType.generateScales(this, chartConfig, scales);
             }
         }
-
 
         this.validateGroupingMeasures(chartConfig.measures);
 
@@ -2119,16 +2147,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.setDataLoading(false);
 
-        if(this.isRenderRequested()){
-            // If it's already been requested then we just need to request it again, since
-            // this time we have the data to render.
-            this.requestRender(false);
-        }
+        if (response.rows.length === 0) {
+            this.handleNoData();
+        } else {
+            if(this.isRenderRequested()){
+                // If it's already been requested then we just need to request it again, since
+                // this time we have the data to render.
+                this.requestRender(false);
+            }
 
-        if(this.firstLoad){
-            // Set first load to false after our first sucessful callback.
-            this.firstLoad = false;
-            this.fireEvent('dataRequested');
+            if(this.firstLoad){
+                // Set first load to false after our first sucessful callback.
+                this.firstLoad = false;
+                this.fireEvent('dataRequested');
+            }
         }
     },
 
