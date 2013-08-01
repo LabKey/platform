@@ -21,6 +21,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableAppProps;
 
+import java.util.Date;
 import java.util.Map;
 
 /*
@@ -31,48 +32,32 @@ import java.util.Map;
 
 public class SiteSettingsAuditDetailsModel
 {
-    private AuditLogEvent _event = null;
-    private Map<String,Object> _eventProps = null;
     private User _user = null;
     private FastDateFormat _dateFormat = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
+    private String _diff;
+    private User _createdBy;
+    private Date _created;
 
-    public SiteSettingsAuditDetailsModel()
+    public SiteSettingsAuditDetailsModel(String diff, User createdBy, Date created)
     {
-    }
-
-    public SiteSettingsAuditDetailsModel(AuditLogEvent event, Map<String,Object> eventProps)
-    {
-        assert null != event;
-        assert null != eventProps;
-
-        _event = event;
-        _eventProps = eventProps;
-    }
-
-    public AuditLogEvent getEvent()
-    {
-        return _event;
-    }
-
-    public Map<String, Object> getEventProps()
-    {
-        return _eventProps;
+        _diff = diff;
+        _createdBy = createdBy;
+        _created = created;
     }
 
     public String getDiff()
     {
-        String diff = (String)(_eventProps.get(AuditLogService.get().getPropertyURI(WriteableAppProps.AUDIT_EVENT_TYPE, WriteableAppProps.AUDIT_PROP_DIFF)));
-        if(null == diff || 0 == diff.length())
-            diff = "<p>No details were recorded.</p>";
-        return diff;
+        if(null == _diff || 0 == _diff.length())
+            _diff = "<p>No details were recorded.</p>";
+        return _diff;
     }
 
     public String getWhen()
     {
-        if(null == _event)
+        if(null == _created)
             return "(unknown)";
 
-        return _dateFormat.format(_event.getCreated());
+        return _dateFormat.format(_created);
     }
 
     public User getUser()
@@ -80,10 +65,10 @@ public class SiteSettingsAuditDetailsModel
         if(null != _user)
             return _user;
         
-        if(null == _event)
+        if(null == _createdBy)
             return null;
 
-        _user = _event.getCreatedBy();
+        _user = _createdBy;
         return _user;
     }
 }

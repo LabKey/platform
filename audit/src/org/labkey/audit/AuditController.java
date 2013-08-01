@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.*;
@@ -39,6 +40,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -167,16 +169,39 @@ public class AuditController extends SpringActionController
             if (null == form.getId() || form.getId().intValue() < 0)
                 throw new NotFoundException("The audit log details key was not provided!");
 
-            //get the audit event
-            AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
+            String diff = null;
+            User createdBy = null;
+            Date created = null;
 
-            if (null == event)
-                throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
+            if (AuditLogService.enableHardTableLogging())
+            {
+                SiteSettingsAuditProvider.SiteSettingsAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), WriteableAppProps.AUDIT_EVENT_TYPE, form.getId());
 
-            Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+                if (event != null)
+                {
+                    diff = event.getChanges();
+                    createdBy = event.getCreatedBy();
+                    created = event.getCreated();
+                }
+            }
+            else
+            {
+                //get the audit event
+                AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
 
-            //create the model and view
-            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(event, eventProps);
+                if (null == event)
+                    throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
+
+                Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+
+                //create the model and view
+
+                diff = (String)(eventProps.get(AuditLogService.get().getPropertyURI(WriteableAppProps.AUDIT_EVENT_TYPE, WriteableAppProps.AUDIT_PROP_DIFF)));
+                createdBy = event.getCreatedBy();
+                created = event.getCreated();
+            }
+
+            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(diff, createdBy, created);
             return new JspView<>("/org/labkey/audit/siteSettingsAuditDetails.jsp", model);
         }
 

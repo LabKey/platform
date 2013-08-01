@@ -6,14 +6,26 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.view.ActionURL;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +36,16 @@ import java.util.Set;
 public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String COLUMN_NAME_CHANGES = "Changes";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+    }
 
     @Override
     protected DomainKind getDomainKind()
@@ -75,6 +97,27 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)SiteSettingsAuditEvent.class;
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+        DetailsURL url = DetailsURL.fromString("audit/showSiteSettingsAuditDetails.view?id=${rowId}");
+        url.setStrictContainerContextEval(true);
+        table.setDetailsURL(url);
+
+        return table;
     }
 
     public static class SiteSettingsAuditEvent extends AuditTypeEvent

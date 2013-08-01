@@ -25,6 +25,6 @@
 %>
 
 <p>On <%=h(model.getWhen())%>,
-    <b><%=null == model.getUser() ? "user id " + model.getEvent().getCreatedBy().getUserId() : h(model.getUser().getFriendlyName())%></b>
+    <b><%=h(null == model.getUser() ? "user id " + model.getUser().getUserId() : h(model.getUser().getFriendlyName()))%></b>
     modified the site settings in the following way:</p>
-<%=model.getDiff()%>
+<%=text(model.getDiff())%>
