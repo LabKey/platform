@@ -33,6 +33,19 @@
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
+    String small = "";
+    String medium = "";
+    String large = "";
+
+    System.out.println(form.getSize());
+
+    if(form.getSize() == 350)
+        small = "checked";
+    else if(form.getSize() == 650)
+        medium = "checked";
+    else
+        large = "checked";
+
 %>
 <form action="<%=postUrl%>" method="post">
     You can configure this web part to show files from the default directory for this folder or
@@ -63,6 +76,14 @@
                 <td><input type="checkbox" name="folderTreeVisible" <%=form.isFolderTreeVisible() ? "checked" : ""%>></td>
             </tr>
 <%      } %>
+        <tr>
+            <td class="labkey-form-label">Webpart Size</td>
+            <td>
+                <input type="radio" name="size" value="350" <%=small%>/>Small<br>
+                <input type="radio" name="size" value="650" <%=medium%>/>Medium<br>
+                <input type="radio" name="size" value="1000" <%=large%>/>Large<br>
+            </td>
+        </tr>
 
         <tr><td></td></tr>
         <tr><td></td><td><%=generateSubmitButton("Submit")%></td></tr>

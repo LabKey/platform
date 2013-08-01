@@ -50,7 +50,7 @@
     Container c = context.getContainer();
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-    int height = 350;
+    int height = bean.getSize();
 %>
 
 <%  if (!bean.isEnabled()) { %>

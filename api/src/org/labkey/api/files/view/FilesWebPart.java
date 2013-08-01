@@ -268,6 +268,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             path += offset;
             getModelBean().setRootPath(path);
         }
+        getModelBean().setSize(Integer.parseInt(webPartDescriptor.getPropertyMap().get("size")));
         getModelBean().setRootOffset(form.getRootOffset());
 
 
@@ -444,6 +445,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private File _rootDirectory;
         private boolean _expandFileUpload;
         private boolean _disableGeneralAdminSettings;
+        private int size;
 
         public enum actions {
             download,
@@ -638,5 +640,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             _disableGeneralAdminSettings = disableGeneralAdminSettings;
         }
+
+        public int getSize()
+        {
+            return size;
+        }
+
+        public void setSize(int size)
+        {
+            this.size = size;
+        }
+
     }
 }
