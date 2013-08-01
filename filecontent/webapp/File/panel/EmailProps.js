@@ -73,6 +73,7 @@
             var radioGroup = Ext4.create('Ext.form.RadioGroup', {
                 //fieldLabel: 'Email Notification Settings',
                 columns: 1,
+                width : 630,
                 labelSeparator: '',
                 items: radioItems
             });
