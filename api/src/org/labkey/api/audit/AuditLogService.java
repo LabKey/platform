@@ -24,6 +24,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
@@ -138,6 +139,12 @@ public class AuditLogService
 
         _instance = provider;
         ServiceRegistry.get().registerService(AuditLogService.I.class, provider);
+    }
+
+    @Nullable
+    static public UserSchema getAuditLogSchema(User user, Container container)
+    {
+        return QueryService.get().getUserSchema(user, container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
     }
 
     public interface I
