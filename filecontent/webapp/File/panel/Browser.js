@@ -919,7 +919,7 @@ Ext4.define('File.panel.Browser', {
                 actions = [],
                 items   = [],
                 alreadyChecked = false, // Whether we've already found an enabled action to make the default selection
-                hasAdmin = false, pa, shrink;
+                hasAdmin = false, pa, shrink, shortMessage, longMessage;
 
         //TODO make this work for multiple file selection (MFS)
         for (var ag in this.actionGroups)
@@ -930,7 +930,9 @@ Ext4.define('File.panel.Browser', {
             var group = this.actionGroups[ag];
             pa = group.actions[0];
 
-            var bad = 0;
+            var bad = 0, badFiles = [];
+            var potential = false;
+
             for(var i=0; i < group.actions.length; i++){
                 if(group.actions[i].files.length <= 0)
                 {
@@ -938,23 +940,58 @@ Ext4.define('File.panel.Browser', {
                 }
                 else if(!this.isValidFileCheck(group.actions[i].files, this.selectedRecord.data.name))
                 {
-                    bad++;
+                    badFiles.push(group.actions[i].files);
                 }
             }
             if(bad == group.actions.length)
                 continue;
+            else if(bad + badFiles.length == group.actions.length)
+            {
+                potential = true;
+            }
+
+            badFiles['fileset'] = {};
+            for(var i = 0; i < badFiles.length; i++)
+            {
+                for(var j = 0; j < badFiles[i].length; j++)
+                {
+                    badFiles['fileset'][badFiles[i][j]] = true;
+                }
+            }
+
+            if(!potential)
+            {
+                shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv"> using ' + '1' + ' of ' + pa.files.length + ' files</span>';
+                longMessage = 'This action will use the selected file: <br>' + this.selectedRecord.data.name;
+            }
+            else
+            {
+                shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv">None of the selected files can be used</span>';
+                longMessage = 'The following files could be used for this action: <br>'
+                for(var key in badFiles['fileset'])
+                {
+                    longMessage += key + '<br>';
+                }
+            }
+
+
 
             var radioGroup = Ext4.create('Ext.form.RadioGroup', {
-                fieldLabel : group.label + '<br>' + 'using ' + '1' + ' of ' + pa.files.length + ' files',
+                fieldLabel : shortMessage,
+                labelWidth : 250,
                 itemCls    : 'x-check-group',
                 columns    : 1,
                 labelSeparator: '',
                 items      : [],
                 scope : this,
+                tooltip : longMessage,
                 listeners : {
                     render : function(rg){
                         rg.setHeight(rg.getHeight()+10);
-                    }
+                        console.log(rg);
+                        !potential ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');;
+                    },
+                    scope : this
                 }
             });
 
@@ -981,8 +1018,8 @@ Ext4.define('File.panel.Browser', {
                         labelSeparator: '',
                         boxLabel: label,
                         name: 'importAction',
-                        inputValue: action.id
-                        //width: 250
+                        inputValue: action.id,
+                        disabled : potential
                     });
                     if (action.enabled)
                     {
@@ -1838,6 +1875,25 @@ Ext4.define('File.panel.Browser', {
                     }).show();
                 },
                 failure: function(){}
+            });
+        }
+    },
+
+    setFormFieldTooltip : function(component, icon)
+    {
+        var label = component.getEl().down('label');
+        if (label) {
+            var helpImage = label.createChild({
+                tag: 'img',
+                src: LABKEY.contextPath + '/_images/' + icon,
+                style: 'margin-bottom: 0px; margin-left: 8px; padding: 0px;',
+                width: 12,
+                height: 12
+            });
+            Ext4.QuickTips.register({
+                target: helpImage,
+                text: component.tooltip,
+                title: ''
             });
         }
     },
