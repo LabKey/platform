@@ -983,56 +983,44 @@ public class QueryServiceImpl extends QueryService
         for (ColumnInfo column : columns)
             columnMap.put(column.getFieldKey(), column);
 
-        Set<FieldKey> fieldKeys = new HashSet<>();
-
-        if (filter != null)
-            fieldKeys.addAll(filter.getWhereParamFieldKeys());
-
-        if (sort != null)
-            for (Sort.SortField field : sort.getSortList())
-                fieldKeys.add(field.getFieldKey());
-
         ArrayList<ColumnInfo> ret = null;
 
-        for (FieldKey fieldKey : fieldKeys)
+        if (filter != null)
         {
-            if (fieldKey == null)
-                continue;
-
-            if (columnMap.containsKey(fieldKey))
-                continue;
-
-            ColumnInfo column = getColumn(manager, table, columnMap, fieldKey);
-
-            if (column != null)
+            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
             {
-                assert Table.checkColumn(table, column, "ensureRequiredColumns():");
-                assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
-
-                // getColumn() might return a column with a different field key than we asked for!
-                if (!column.getFieldKey().equals(fieldKey))
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                if (col != null)
                 {
-                    if (columnMap.containsKey(column.getFieldKey()))
-                    {
-                        columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
-                        continue;
-                    }
+                    if (null == ret)
+                        ret = new ArrayList<>(columns);
+
+                    ret.add(col);
                 }
-
-                if (null == ret)
-                    ret = new ArrayList<>(columns);
-
-                ret.add(column);
             }
-            else
+        }
+
+        if (sort != null)
+        {
+            for (Sort.SortField field : sort.getSortList())
             {
-                if (unresolvedColumns != null)
-                    unresolvedColumns.add(fieldKey);
+                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
+                if (col != null)
+                {
+                    ret = resolveSortColumns(col, table, columnMap, unresolvedColumns, manager, columns, ret, false);
+                }
+                //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
+                else if (columnMap.containsKey(field.getFieldKey()))
+                {
+                    ret = resolveSortColumns(columnMap.get(field.getFieldKey()), table, columnMap, unresolvedColumns, manager, columns, ret, true);
+                }
             }
         }
 
         if (unresolvedColumns != null)
         {
+            _log.warn("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns.toString());
+
             for (FieldKey field : unresolvedColumns)
             {
                 if (filter instanceof SimpleFilter)
@@ -1047,6 +1035,88 @@ public class QueryServiceImpl extends QueryService
         }
         assert null == ret || ret.size() > 0;
         return null == ret ? columns : ret;
+    }
+
+    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, Collection<ColumnInfo> columns, ArrayList<ColumnInfo> ret, boolean addSortKeysOnly)
+    {
+        if (col.getSortFieldKeys() != null)
+        {
+            List<ColumnInfo> toAdd = new ArrayList<>();
+            for (FieldKey key : col.getSortFieldKeys())
+            {
+                ColumnInfo sortCol = resolveFieldKey(FieldKey.fromParts(col.getFieldKey().getParent(), key), col.getParentTable(), columnMap, null, manager);
+                if (sortCol != null)
+                {
+                    toAdd.add(sortCol);
+                }
+                else
+                {
+                    // if we cannot find the sortCols, which could occur if we have a Query over a raw table,
+                    // default to the raw value
+                    toAdd.clear();
+                    if (!columnMap.containsKey(col.getFieldKey()))
+                        toAdd.add(col);
+
+                    break;
+                }
+            }
+
+            if (toAdd.size() > 0)
+            {
+                if (null == ret)
+                    ret = new ArrayList<>(columns);
+
+                ret.addAll(toAdd);
+            }
+        }
+        else
+        {
+            if (!addSortKeysOnly)
+            {
+                if (null == ret)
+                    ret = new ArrayList<>(columns);
+
+                ret.add(col);
+            }
+        }
+
+        return ret;
+    }
+
+    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
+    {
+        if (fieldKey == null)
+            return null;
+
+        if (columnMap.containsKey(fieldKey))
+            return null;
+
+        ColumnInfo column = getColumn(manager, table, columnMap, fieldKey);
+
+        if (column != null)
+        {
+            assert Table.checkColumn(table, column, "ensureRequiredColumns():");
+            assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
+
+            // getColumn() might return a column with a different field key than we asked for!
+            if (!column.getFieldKey().equals(fieldKey))
+            {
+                if (columnMap.containsKey(column.getFieldKey()))
+                {
+                    columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
+                    return null;
+                }
+            }
+
+            return column;
+        }
+        else
+        {
+            if (unresolvedColumns != null)
+                unresolvedColumns.add(fieldKey);
+        }
+
+        return null;
     }
 
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
@@ -1706,10 +1776,13 @@ public class QueryServiceImpl extends QueryService
 		{
 			if (usePrimaryKey && !column.isKeyField())
 				continue;
-			ColumnInfo sortField = column.getSortField();
-			if (sortField != null)
+			List<ColumnInfo> sortFields = column.getSortFields();
+			if (sortFields != null)
 			{
-				sort.appendSortColumn(sortField.getFieldKey(), column.getSortDirection(), false);
+                for (ColumnInfo sortField : sortFields)
+                {
+                    sort.appendSortColumn(sortField.getFieldKey(), column.getSortDirection(), false);
+                }
 				return;
 			}
 		}

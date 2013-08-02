@@ -36,9 +36,12 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -506,10 +509,21 @@ public class QueryTable extends QueryRelation
         if (_query._strictColumnList)
             return Collections.emptySet();
 
-        Set<RelationColumn> suggested = new HashSet<>();
+        Set<RelationColumn> suggested = new LinkedHashSet<>();
         Set<FieldKey> suggestedContainerColumns = new HashSet<>();
 
-        for (RelationColumn rc : selected)
+        // sort columns so any suggested columns will be appended in a consistent order
+        List<RelationColumn> sorted = new ArrayList<>(selected);
+        Collections.sort(sorted, new Comparator<RelationColumn>()
+        {
+            @Override
+            public int compare(RelationColumn o1, RelationColumn o2)
+            {
+                return o1.getFieldKey().compareTo(o2.getFieldKey());
+            }
+        });
+
+        for (RelationColumn rc : sorted)
         {
             TableColumn tc = (TableColumn)rc;
             FieldKey fk = tc._col.getFieldKey();
@@ -530,6 +544,14 @@ public class QueryTable extends QueryRelation
 
             if (tc._col.getFk() != null)
                 addSuggestedColumns(suggested, tc._col.getFk().getSuggestedColumns());
+
+            if (tc._col.getSortFieldKeys() != null)
+            {
+                for (FieldKey key : tc._col.getSortFieldKeys())
+                {
+                    addSuggestedColumn(suggested, key);
+                }
+            }
         }
         suggested.removeAll(selected);
         return suggested;

@@ -2944,7 +2944,7 @@ public class QueryController extends SpringActionController
             {
                 if (isSuccessOnValidationError())
                 {
-                    e.addToErrors(errors);
+                    response.put("errors", createResponseWriter().getJSON(e));
                 }
                 else
                 {
@@ -3088,6 +3088,7 @@ public class QueryController extends SpringActionController
             }
 
             int startingErrorIndex = 0;
+            int errorCount = 0;
             try
             {
                 for (int i = 0; i < commands.length(); i++)
@@ -3115,14 +3116,23 @@ public class QueryController extends SpringActionController
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
 
+                    //this would be populated in executeJson when a BatchValidationException is thrown
+                    if (commandResponse.containsKey("errors"))
+                    {
+                        errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
+                    }
+
                     // If we encountered errors with this particular command and the client requested that don't treat
                     // the whole request as a failure (non-200 HTTP status code), stash the errors for this particular
                     // command in its response section.
+                    // NOTE: executeJson should handle and serialize BatchValidationException
+                    // these errors upstream
                     if (errors.getErrorCount() > startingErrorIndex && isSuccessOnValidationError())
                     {
                         commandResponse.put("errors", ApiResponseWriter.convertToJSON(errors, startingErrorIndex).getValue());
                         startingErrorIndex = errors.getErrorCount();
                     }
+
                     resultArray.put(commandResponse);
                 }
 
@@ -3147,10 +3157,12 @@ public class QueryController extends SpringActionController
                     scope.closeConnection();
                 }
             }
+
+            errorCount += errors.getErrorCount();
             JSONObject result = new JSONObject();
             result.put("result", resultArray);
             result.put("committed", committed);
-            result.put("errorCount", errors.getErrorCount());
+            result.put("errorCount", errorCount);
             return new ApiSimpleResponse(result);
         }
     }
