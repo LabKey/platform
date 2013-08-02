@@ -1972,16 +1972,32 @@ public class QueryController extends SpringActionController
                 {
                     ActionURL auditURL = new ActionURL(url);
 
-                    QueryView historyView = QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(),
-                            auditURL.getParameter(QueryParam.schemaName),
-                            auditURL.getParameter(QueryParam.queryName),
-                            auditURL.getParameter("keyValue"));
+                    if (AuditLogService.enableHardTableLogging())
+                    {
+                        QueryView historyView = QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(),
+                                auditURL.getParameter(QueryParam.schemaName),
+                                auditURL.getParameter(QueryParam.queryName),
+                                auditURL.getParameter("keyValue"), errors);
 
 
-                    historyView.setFrame(WebPartView.FrameType.PORTAL);
-                    historyView.setTitle("History");
+                        historyView.setFrame(WebPartView.FrameType.PORTAL);
+                        historyView.setTitle("History");
 
-                    view.addView(historyView);
+                        view.addView(historyView);
+                    }
+                    else
+                    {
+                        QueryView historyView = QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(),
+                                auditURL.getParameter(QueryParam.schemaName),
+                                auditURL.getParameter(QueryParam.queryName),
+                                auditURL.getParameter("keyValue"));
+
+
+                        historyView.setFrame(WebPartView.FrameType.PORTAL);
+                        historyView.setTitle("History");
+
+                        view.addView(historyView);
+                    }
                 }
             }
             return view;
@@ -5120,7 +5136,10 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryUpdateAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
+            if (AuditLogService.enableHardTableLogging())
+                return QueryUpdateAuditProvider.createHistoryQueryView(getViewContext(), form, errors);
+            else
+                return QueryUpdateAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
         }
 
         @Override
@@ -5136,7 +5155,10 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryDetailsForm form, BindException errors) throws Exception
         {
-            return QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(), form);
+            if (AuditLogService.enableHardTableLogging())
+                return QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(), form, errors);
+            else
+                return QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(), form);
         }
 
         @Override

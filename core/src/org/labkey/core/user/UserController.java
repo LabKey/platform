@@ -116,6 +116,7 @@ import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditProvider;
 import org.labkey.core.query.GroupAuditViewFactory;
+import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
@@ -802,8 +803,26 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter("IntKey1");
-            return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext(), projectMemberFilter);
+            if (AuditLogService.enableHardTableLogging())
+            {
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (schema != null)
+                {
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                    SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter(UserAuditProvider.COLUMN_NAME_USER);
+
+                    settings.setBaseFilter(projectMemberFilter);
+                    settings.setQueryName(UserManager.USER_AUDIT_EVENT);
+                    return schema.createView(getViewContext(), settings, errors);
+                }
+                return null;
+            }
+            else
+            {
+                SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter("IntKey1");
+                return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext(), projectMemberFilter);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1509,15 +1528,42 @@ public class UserController extends SpringActionController
 
             if (isProjectAdminOrBetter)
             {
-                SimpleFilter filter = new SimpleFilter("IntKey1", _detailsUserId);
-                filter.addCondition("EventType", UserManager.USER_AUDIT_EVENT);
+                if (AuditLogService.enableHardTableLogging())
+                {
+                    UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                    if (auditLogSchema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_USER), _detailsUserId);
 
-                AuditLogQueryView queryView = AuditLogService.get().createQueryView(getViewContext(), filter, UserManager.USER_AUDIT_EVENT);
-                queryView.setVisibleColumns(new String[]{"CreatedBy", "Date", "Comment"});
-                queryView.setTitle("History:");
-                queryView.setSort(new Sort("-Date"));
+                        List<FieldKey> columns = new ArrayList<>();
 
-                view.addView(queryView);
+                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED));
+                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED_BY));
+                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_COMMENT));
+
+                        settings.setFieldKeys(columns);
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName(UserManager.USER_AUDIT_EVENT);
+
+                        QueryView auditView = auditLogSchema.createView(getViewContext(), settings, errors);
+                        auditView.setTitle("History:");
+
+                        view.addView(auditView);
+                    }
+                }
+                else
+                {
+                    SimpleFilter filter = new SimpleFilter("IntKey1", _detailsUserId);
+                    filter.addCondition("EventType", UserManager.USER_AUDIT_EVENT);
+
+                    AuditLogQueryView queryView = AuditLogService.get().createQueryView(getViewContext(), filter, UserManager.USER_AUDIT_EVENT);
+                    queryView.setVisibleColumns(new String[]{"CreatedBy", "Date", "Comment"});
+                    queryView.setTitle("History:");
+                    queryView.setSort(new Sort("-Date"));
+
+                    view.addView(queryView);
+                }
             }
 
             return view;

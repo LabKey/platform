@@ -3,6 +3,7 @@ package org.labkey.query.audit;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -11,12 +12,19 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ViewContext;
+import org.labkey.query.controllers.QueryController;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -152,6 +160,56 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         table.setDetailsURL(url);
 
         return table;
+    }
+
+    public static QueryView createHistoryQueryView(ViewContext context, QueryForm form, BindException errors)
+    {
+        if (AuditLogService.enableHardTableLogging())
+        {
+            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+            if (schema != null)
+            {
+                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), form.getSchemaName());
+                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), form.getQueryName());
+
+                settings.setBaseFilter(filter);
+                settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
+                return schema.createView(context, settings, errors);
+            }
+            return null;
+        }
+        else
+            throw new IllegalArgumentException("Hard table logging is not enabled for this audit event type");
+    }
+
+    public static QueryView createDetailsQueryView(ViewContext context, QueryController.QueryDetailsForm form, BindException errors)
+    {
+        return createDetailsQueryView(context, form.getSchemaName(), form.getQueryName(), form.getKeyValue(), errors);
+    }
+
+    public static QueryView createDetailsQueryView(ViewContext context, String schemaName, String queryName, String keyValue, BindException errors)
+    {
+        if (AuditLogService.enableHardTableLogging())
+        {
+            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+            if (schema != null)
+            {
+                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), schemaName);
+                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), queryName);
+                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_ROW_PK), keyValue);
+
+                settings.setBaseFilter(filter);
+                settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
+                return schema.createView(context, settings, errors);
+            }
+            return null;
+        }
+        else
+            throw new IllegalArgumentException("Hard table logging is not enabled for this audit event type");
     }
 
     public static class QueryUpdateAuditEvent extends AuditTypeEvent

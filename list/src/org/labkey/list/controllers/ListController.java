@@ -46,6 +46,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -61,9 +62,14 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -557,9 +563,32 @@ public class ListController extends SpringActionController
                 WebPartView linkView = new HtmlView(PageFlowUtil.textLink("hide item history", getViewContext().cloneActionURL().deleteParameter("showHistory")));
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
-                WebPartView history = ListAuditViewFactory.getInstance().createListItemDetailsView(getViewContext(), item.getEntityId());
-                history.setFrame(WebPartView.FrameType.NONE);
-                view.addView(history);
+
+                if (AuditLogService.enableHardTableLogging())
+                {
+                    UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                    if (schema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                        SimpleFilter filter = new SimpleFilter();
+                        filter.addCondition(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_ITEM_ENTITY_ID), item.getEntityId());
+
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
+                        QueryView history = schema.createView(getViewContext(), settings, errors);
+
+                        history.setTitle("List Item History:");
+                        history.setFrame(WebPartView.FrameType.NONE);
+                        view.addView(history);
+                    }
+                }
+                else
+                {
+                    WebPartView history = ListAuditViewFactory.getInstance().createListItemDetailsView(getViewContext(), item.getEntityId());
+                    history.setFrame(WebPartView.FrameType.NONE);
+                    view.addView(history);
+                }
             }
             else
             {
@@ -686,7 +715,26 @@ public class ListController extends SpringActionController
         {
             _list = form.getList();
             if (_list != null)
-                return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
+            {
+                if (AuditLogService.enableHardTableLogging())
+                {
+                    UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                    if (schema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                        SimpleFilter filter = new SimpleFilter();
+                        filter.addCondition(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_DOMAIN_URI), _list.getDomain().getTypeURI());
+
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
+                        return schema.createView(getViewContext(), settings, errors);
+                    }
+                    return new HtmlView("Unable to create the List history view");
+                }
+                else
+                    return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
+            }
             else
                 return new HtmlView("Unable to find the specified List");
         }
