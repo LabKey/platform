@@ -32,6 +32,26 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        LABKEY.requiresScript((LABKEY.devMode ? devScripts : productionScripts), true, callback, scope, true);\n" +
             "    };\n" +
             "\n" +
+            "    var renderMessages = function(id, messages) {\n" +
+            "        var errorDiv;\n" +
+            "        var el = document.getElementById(id);\n" +
+            "        var child;\n" +
+            "        if (el && el.children.length > 0) {\n" +
+            "            child = el.children[0];\n" +
+            "        }\n" +
+            "\n" +
+            "        for (var i = 0; i < messages.length; i++) {\n" +
+            "            errorDiv = document.createElement('div');\n" +
+            "            errorDiv.setAttribute('class', 'labkey-error');\n" +
+            "            errorDiv.innerHTML = messages[i];\n" +
+            "            if(child) {\n" +
+            "                el.insertBefore(errorDiv, child);\n" +
+            "            } else {\n" +
+            "                el.appendChild(errorDiv);\n" +
+            "            }\n" +
+            "        }\n" +
+            "    };\n" +
+            "\n" +
             "    var selectRowsCallback = function(responseData) {\n" +
             "        // After the data is loaded we can render the chart.\n" +
             "        // chartConfig is the saved information about the chart (labels, scales, etc.)\n" +
@@ -46,6 +66,29 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var aes = gch.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
             "        var scales = gch.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
             "        var labels = gch.generateLabels(chartConfig.labels);\n" +
+            "        var messages = [];\n" +
+            "        var validation = gch.validateXAxis(chartType, chartConfig, aes, scales, responseData.rows);\n" +
+            "        \n" +
+            "        if (validation.message != null) {\n" +
+            "            messages.push(validation.message);\n" +
+            "        }\n" +
+            "\n" +
+            "        if (!validation.success) {\n" +
+            "            renderMessages('exportedChart', messages);\n" +
+            "            return;\n" +
+            "        }\n" +
+            "\n" +
+            "        validation = gch.validateYAxis(chartType, chartConfig, aes, scales, responseData.rows);\n" +
+            "\n" +
+            "        if (validation.message != null) {\n" +
+            "            messages.push(validation.message);\n" +
+            "        }\n" +
+            "\n" +
+            "        if (!validation.success) {\n" +
+            "            renderMessages('exportedChart', messages);\n" +
+            "            return;\n" +
+            "        }\n" +
+            "\n" +
             "        var plotConfig = {\n" +
             "            renderTo: 'exportedChart',\n" +
             "            width: chartConfig.width ? chartConfig.width : DEFAULT_WIDTH,\n" +
@@ -59,6 +102,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var plot = new LABKEY.vis.Plot(plotConfig);\n" +
             "        \n" +
             "        plot.render();\n" +
+            "        renderMessages('exportedChart', messages);\n" +
             "    };\n" +
             "\n" +
             "    var dependencyCallback = function() {\n" +

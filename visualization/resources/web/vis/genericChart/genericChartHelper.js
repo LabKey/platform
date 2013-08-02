@@ -299,6 +299,108 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
     };
 
+    var validateXAxis = function(chartType, chartConfig, aes, scales, data){
+        // Verifies that the x axis is actually present and has data.
+        // Also checks to make sure that data can be used in a log scale (if applicable).
+        // Returns true if everything is good to go, false otherwise.
+        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
+
+        for (var i = 0; i < data.length; i ++) {
+            var value = aes.x(data[i]);
+
+            if (value !== undefined) {
+                measureUndefined = false;
+            }
+
+            if (value !== null) {
+                dataIsNull = false;
+            }
+
+            if (value < 0 || value === null || value === undefined) {
+                invalidLogValues = true;
+            }
+
+            if (value === 0 ) {
+                hasZeroes = true;
+            }
+        }
+
+        if (measureUndefined) {
+            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' was not found. It may have been renamed or removed.';
+            return {success: false, message: message};
+        }
+
+        if (chartType == "scatter_plot") {
+            if (dataIsNull) {
+                message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' are null. Please choose a different measure';
+                return {success: false, message: message};
+            }
+
+            if (scales.x.trans == "log") {
+                if (invalidLogValues) {
+                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
+                    scales.x.trans = 'linear';
+                } else if (hasZeroes) {
+                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
+                    var xAcc = aes.x;
+                    aes.x = function(row){return xAcc(row) + 1};
+                }
+            }
+        }
+
+        return {success: true, message: message};
+    };
+
+    var validateYAxis = function(chartType, chartConfig, aes, scales, data){
+        // Verifies that the y axis is actually present and has data.
+        // Also checks to make sure that data can be used in a log scale (if applicable).
+        // Returns true if everything is good to go, false otherwise.
+
+        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
+
+        for (var i = 0; i < data.length; i ++) {
+            var value = aes.y(data[i]);
+
+            if (value !== undefined) {
+                measureUndefined = false;
+            }
+
+            if (value !== null) {
+                dataIsNull = false;
+            }
+
+            if (value < 0 || value === null || value === undefined) {
+                invalidLogValues = true;
+            }
+
+            if (value === 0 ) {
+                hasZeroes = true;
+            }
+        }
+
+        if (dataIsNull) {
+            message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' are null. Please choose a different measure';
+            return {success: false, message: message};
+        }
+
+        if (measureUndefined) {
+            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' was not found. It may have been renamed or removed.';
+            return {success: false, message: message};
+        }
+
+        if (scales.y.trans == "log") {
+            if (invalidLogValues) {
+                message = "Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.";
+                scales.y.trans = 'linear';
+            } else if (hasZeroes) {
+                message = "Some y-axis values are 0. Plotting all y-axis values as y+1";
+                var yAcc = aes.y;
+                aes.y = function(row){return yAcc(row) + 1};
+            }
+        }
+        return {success: true, message: message};
+    };
+
     return {
         getChartType: getChartType,
         generateLabels: generateLabels,
@@ -310,6 +412,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateContinuousAcc: generateContinuousAcc,
         generateGroupingAcc: generateGroupingAcc,
         generatePointClickFn: generatePointClickFn,
-        generateGeom: generateGeom
+        generateGeom: generateGeom,
+        validateXAxis: validateXAxis,
+        validateYAxis: validateYAxis
     };
 };

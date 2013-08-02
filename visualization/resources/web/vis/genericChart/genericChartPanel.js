@@ -1800,116 +1800,62 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     validateYAxis: function(chartType, chartConfig, aes, scales, data){
-        // Verifies that the y axis is actually present and has data.
-        // Also checks to make sure that data can be used in a log scale (if applicable).
-        // Returns true if everything is good to go, false otherwise.
+        var validation = LABKEY.vis.GenericChartHelper.validateYAxis(chartType, chartConfig, aes, scales, data);
 
-        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false;
-
-        for (var i = 0; i < data.length; i ++) {
-            var value = aes.y(data[i]);
-
-            if (value !== undefined) {
-                measureUndefined = false;
+        if(validation.success === true) {
+            if(validation.message != null) {
+                this.addWarningText(validation.message);
             }
 
-            if (value !== null) {
-                dataIsNull = false;
-            }
-
-            if (value < 0 || value === null || value === undefined) {
-                invalidLogValues = true;
-            }
-
-            if (value === 0 ) {
-                hasZeroes = true;
-            }
-        }
-
-        if (dataIsNull) {
+            return true;
+        } else {
             this.centerPanel.getEl().unmask();
-            Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
             this.setRenderRequested(false);
-            return false
-        }
 
-        if (measureUndefined) {
-            this.centerPanel.getEl().unmask();
-            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' was not found. It may have been renamed or removed.', this.showYMeasureWindow, this);
-            this.setRenderRequested(false);
+            if (this.editMode) {
+                Ext.MessageBox.alert('Error', validation.message, this.showYMeasureWindow, this);
+            } else {
+                this.clearChartPanel();
+                var errorDiv = Ext4.create('Ext.container.Container', {
+                    border: 1,
+                    autoEl: {tag: 'div'},
+                    html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
+                    autoScroll: true
+                });
+                this.viewPanel.add(errorDiv);
+            }
             return false;
         }
-
-        if (scales.y.trans == "log") {
-            if (invalidLogValues) {
-                this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.");
-                scales.y.trans = 'linear';
-                this.yMeasurePanel.setScaleTrans('linear');
-            } else if (hasZeroes) {
-                this.addWarningText("Some y-axis values are 0. Plotting all y-axis values as y+1");
-                var yAcc = aes.y;
-                aes.y = function(row){return yAcc(row) + 1};
-            }
-        }
-
-        return true;
     },
+
     validateXAxis: function(chartType, chartConfig, aes, scales, data){
-        // Verifies that the x axis is actually present and has data.
-        // Also checks to make sure that data can be used in a log scale (if applicable).
-        // Returns true if everything is good to go, false otherwise.
+        var validation = LABKEY.vis.GenericChartHelper.validateXAxis(chartType, chartConfig, aes, scales, data);
 
-        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false;
-
-        for (var i = 0; i < data.length; i ++) {
-            var value = aes.x(data[i]);
-
-            if (value !== undefined) {
-                measureUndefined = false;
+        if(validation.success === true) {
+            if(validation.message != null) {
+                this.addWarningText(validation.message);
             }
 
-            if (value !== null) {
-                dataIsNull = false;
-            }
-
-            if (value < 0 || value === null || value === undefined) {
-                invalidLogValues = true;
-            }
-
-            if (value === 0 ) {
-                hasZeroes = true;
-            }
-        }
-
-        if (measureUndefined) {
+            return true;
+        } else {
             this.centerPanel.getEl().unmask();
             this.setRenderRequested(false);
-            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
+
+            if (this.editMode) {
+                Ext.MessageBox.alert('Error', validation.message, this.showXMeasureWindow, this);
+            } else {
+                this.clearChartPanel();
+                var errorDiv = Ext4.create('Ext.container.Container', {
+                    border: 1,
+                    autoEl: {tag: 'div'},
+                    html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
+                    autoScroll: true
+                });
+                this.viewPanel.add(errorDiv);
+            }
+
             return false;
         }
-
-        if (chartType == "scatter_plot") {
-            if (dataIsNull) {
-                this.centerPanel.getEl().unmask();
-                this.setRenderRequested(false);
-                Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
-                return false;
-            }
-
-            if (scales.x.trans == "log") {
-                if (invalidLogValues) {
-                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
-                    scales.x.trans = 'linear';
-                    this.xMeasurePanel.setScaleTrans('linear');
-                } else if (hasZeroes) {
-                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
-                    var xAcc = aes.x;
-                    aes.x = function(row){return xAcc(row) + 1};
-                }
-            }
-        }
-
-        return true;
     },
 
     validateGroupingMeasures: function(measures){
@@ -2127,7 +2073,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     onSelectRowsSuccess: function(response){
-        if(!this.yMeasureGrid.getEl() && !this.xMeasureGrid.getEl() && !this.mainTitlePanel.getEl()){
+        if(!this.yMeasureWindow.isVisible() || !this.xMeasureWindow.isVisible() || !this.mainTitleWindow.isVisible()) {
             this.centerPanel.getEl().unmask();
         }
 
