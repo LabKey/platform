@@ -1,5 +1,6 @@
 package org.labkey.api.ehr.dataentry;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -30,7 +31,12 @@ public class SimpleFormSection extends AbstractFormSection
 
     public SimpleFormSection(String schemaName, String queryName, String label, String xtype)
     {
-        super(queryName, label, xtype);
+        this(schemaName, queryName, label, xtype, EHRService.FORM_SECTION_LOCATION.Body);
+    }
+
+    public SimpleFormSection(String schemaName, String queryName, String label, String xtype, EHRService.FORM_SECTION_LOCATION location)
+    {
+        super(queryName, label, xtype, location);
         _schemaName = schemaName;
         _queryName = queryName;
     }
@@ -48,9 +54,14 @@ public class SimpleFormSection extends AbstractFormSection
     {
         JSONObject json = super.toJSON(c, u);
 
-        json.put("schemaName", _schemaName);
-        json.put("queryName", _queryName);
+        JSONArray queries = new JSONArray();
 
+        JSONObject q = new JSONObject();
+        q.put("schemaName", _schemaName);
+        q.put("queryName", _queryName);
+        queries.put(q);
+
+        json.put("queries", queries);
         return json;
     }
 

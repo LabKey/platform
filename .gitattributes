@@ -409,11 +409,15 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/AnimalDetailsFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/DataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/EncounterFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/FormElement.java -text
 api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/RequestForm.java -text
+api/src/org/labkey/api/ehr/dataentry/RequestFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/SimpleFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/TaskForm.java -text
 api/src/org/labkey/api/ehr/dataentry/TaskFormSection.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractDemographicsProvider.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractListDemographicsProvider.java -text

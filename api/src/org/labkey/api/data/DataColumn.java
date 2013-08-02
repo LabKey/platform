@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 public class DataColumn extends DisplayColumn
@@ -47,7 +48,7 @@ public class DataColumn extends DisplayColumn
 
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
-    private ColumnInfo _sortColumn;
+    private List<ColumnInfo> _sortColumns;
     private ColumnInfo _filterColumn;
 
     private String _inputType;
@@ -67,7 +68,7 @@ public class DataColumn extends DisplayColumn
         _boundColumn = col;
         _displayColumn = getDisplayField(col, withLookups);
         _nowrap = _displayColumn.isNoWrap();
-        _sortColumn = _displayColumn.getSortField();
+        _sortColumns = _displayColumn.getSortFields();
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
@@ -181,8 +182,11 @@ public class DataColumn extends DisplayColumn
             keys.add(_displayColumn.getFieldKey());
         if (_filterColumn != null)
             keys.add(_filterColumn.getFieldKey());
-        if (_sortColumn != null)
-            keys.add(_sortColumn.getFieldKey());
+        if (_sortColumns != null)
+        {
+            for (ColumnInfo col : _sortColumns)
+                keys.add(col.getFieldKey());
+        }
         if (_boundColumn.getEffectiveURL() instanceof DetailsURL)
         {
             keys.addAll(((DetailsURL) _boundColumn.getEffectiveURL()).getFieldKeys());
@@ -197,13 +201,13 @@ public class DataColumn extends DisplayColumn
             columns.add(_displayColumn);
         if (_filterColumn != null)
             columns.add(_filterColumn);
-        if (_sortColumn != null)
-            columns.add(_sortColumn);
+        if (_sortColumns != null)
+            columns.addAll(_sortColumns);
     }
 
     public boolean isSortable()
     {
-        return _sortColumn != null;
+        return _sortColumns != null && _sortColumns.size() > 0;
     }
 
     public Object getValue(RenderContext ctx)
@@ -280,7 +284,7 @@ public class DataColumn extends DisplayColumn
     public String getClearSortScript(RenderContext ctx)
     {
         String tableName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
-        String fieldKey = _sortColumn.getFieldKey().toString();
+        String fieldKey = _displayColumn.getFieldKey().toString();
         return "LABKEY.DataRegions[" + tableName + "].clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
     }
 
@@ -685,13 +689,13 @@ public class DataColumn extends DisplayColumn
 
     public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
     {
-        if (_sortColumn == null)
+        if (_sortColumns == null || _sortColumns.size() == 0)
         {
             return;
         }
         String uri;
         String regionName = ctx.getCurrentRegion().getName();
-        String fieldKey = _sortColumn.getFieldKey().toString();
+        String fieldKey = _displayColumn.getFieldKey().toString();
         uri = "doSort("+ PageFlowUtil.jsString(regionName) + "," + PageFlowUtil.jsString(fieldKey) + ",'" + h(sort.getDir()) + "')";
         out.write(uri);
     }

@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.ehr.EHRService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -45,7 +46,10 @@ abstract public class AbstractFormSection implements FormSection
     private String _label;
     private String _xtype;
     private String _clientModelClass = "EHR.model.DefaultClientModel";
-    private List<String> _configSources = new ArrayList<>();
+    private String _clientStoreClass = "EHR.data.DataEntryClientStore";
+    private EHRService.FORM_SECTION_LOCATION _location = EHRService.FORM_SECTION_LOCATION.Body;
+
+    private List<String> _configSources = new ArrayList<String>();
 
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
@@ -53,9 +57,15 @@ abstract public class AbstractFormSection implements FormSection
 
     public AbstractFormSection(String name, String label, String xtype)
     {
+        this(name, label, xtype, EHRService.FORM_SECTION_LOCATION.Body);
+    }
+
+    public AbstractFormSection(String name, String label, String xtype, EHRService.FORM_SECTION_LOCATION location)
+    {
         _name = name;
         _label = label;
         _xtype = xtype;
+        _location = location;
     }
 
     public String getName()
@@ -73,9 +83,34 @@ abstract public class AbstractFormSection implements FormSection
         return _xtype;
     }
 
+    public EHRService.FORM_SECTION_LOCATION getLocation()
+    {
+        return _location;
+    }
+
+    public void setLocation(EHRService.FORM_SECTION_LOCATION location)
+    {
+        _location = location;
+    }
+
     public String getClientModelClass()
     {
         return _clientModelClass;
+    }
+
+    public String getClientStoreClass()
+    {
+        return _clientStoreClass;
+    }
+
+    protected void setClientModelClass(String clientModelClass)
+    {
+        _clientModelClass = clientModelClass;
+    }
+
+    protected void setClientStoreClass(String clientStoreClass)
+    {
+        _clientStoreClass = clientStoreClass;
     }
 
     public List<String> getConfigSources()
@@ -148,9 +183,12 @@ abstract public class AbstractFormSection implements FormSection
         json.put("label", getLabel());
         json.put("xtype", getXtype());
         json.put("clientModelClass", getClientModelClass());
+        json.put("clientStoreClass", getClientStoreClass());
+        json.put("location", getLocation().name());
         json.put("fieldConfigs", getFieldConfigs(c, u));
         json.put("configSources", getConfigSources());
         json.put("tbarButtons", getTbarButtons());
+        json.put("tbarMoreActionButtons", getTbarMoreActionButtons());
 
         return json;
     }
@@ -161,6 +199,20 @@ abstract public class AbstractFormSection implements FormSection
         defaultButtons.add("ADDRECORD");
         defaultButtons.add("DELETERECORD");
         defaultButtons.add("ADDANIMALS");
+        defaultButtons.add("SELECTALL");
+
+        return defaultButtons;
+    }
+
+    public List<String> getTbarMoreActionButtons()
+    {
+        List<String> defaultButtons = new ArrayList<String>();
+
+        defaultButtons.add("DUPLICATE");
+        defaultButtons.add("BULKEDIT");
+        defaultButtons.add("APPLYTEMPLATE");
+        defaultButtons.add("SAVEASTEMPLATE");
+
         return defaultButtons;
     }
 

@@ -151,19 +151,28 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("sections", sections);
         json.put("permissions", getPermissionMap(c, u));
         json.put("buttons", getButtonConfigs());
+        json.put("moreActionButtons", getMoreActionButtonConfigs());
 
         return json;
     }
 
-    private List<String> getButtonConfigs()
+    protected List<String> getButtonConfigs()
+    {
+        List<String> defaultButtons = new ArrayList<String>();
+        defaultButtons.add("SAVEDRAFT");
+        defaultButtons.add("CLOSE");
+        defaultButtons.add("SUBMIT");
+
+        return defaultButtons;
+    }
+
+    protected List<String> getMoreActionButtonConfigs()
     {
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("VALIDATEALL");
-        defaultButtons.add("SAVEDRAFT");
         defaultButtons.add("REVIEW");
-        defaultButtons.add("SUBMIT");
+        defaultButtons.add("FORCESUBMIT");
         defaultButtons.add("DISCARD");
-        defaultButtons.add("CLOSE");
 
         return defaultButtons;
     }

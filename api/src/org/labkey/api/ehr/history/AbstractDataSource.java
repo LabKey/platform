@@ -55,7 +55,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
     private String _schema;
     private String _query;
     private String _categoryText;
-    private String _categoryGroup;
+    private String _primaryGroup;
     private String _name;
     private String _subjectIdField = "Id";
     protected static final Logger _log = Logger.getLogger(HistoryDataSource.class);
@@ -74,13 +74,13 @@ abstract public class AbstractDataSource implements HistoryDataSource
         this(schema, query, categoryText, categoryText);
     }
 
-    public AbstractDataSource(String schema, String query, String categoryText, String categoryGroup)
+    public AbstractDataSource(String schema, String query, String categoryText, String primaryGroup)
     {
         _schema = schema;
         _query = query;
         _name = categoryText;
         _categoryText = categoryText;
-        _categoryGroup = categoryGroup;
+        _primaryGroup = primaryGroup;
     }
 
     public String getName()
@@ -136,7 +136,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
                 Results results = new ResultsImpl(rs, cols);
                 Date date = results.getTimestamp(getDateField());
                 String categoryText = getCategoryText(results);
-                String categoryGroup = getCategoryGroup(results);
+                String categoryGroup = getPrimaryGroup(results);
 
                 String html = getHtml(results, redacted);
                 String subjectId = results.getString(FieldKey.fromString(_subjectIdField));
@@ -168,12 +168,12 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
     public Set<String> getAllowableCategoryGroups(Container c, User u)
     {
-        return Collections.singleton(_categoryGroup);
+        return Collections.singleton(_primaryGroup);
     }
 
-    protected String getCategoryGroup(Results rs) throws SQLException
+    protected String getPrimaryGroup(Results rs) throws SQLException
     {
-        return _categoryGroup;
+        return _primaryGroup;
     }
 
     private Collection<ColumnInfo> getColumns(TableInfo ti)

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
@@ -470,35 +471,55 @@ public class Sort
             return "";
 
         StringBuffer sb = new StringBuffer("ORDER BY ");
-        String sep = "";
+
+        //NOTE: we are translating between the raw sort, and the sortFieldKeys() provided by that column
+        Set<String>  distinctKeys = new CaseInsensitiveHashSet();
         for (SortField sf : _sortList)
         {
-            sb.append(sep);
             FieldKey fieldKey = sf.getFieldKey();
-            String alias = fieldKey.getName();
-            // If we have an mv indicator column, we need to sort on it secondarily
-            ColumnInfo mvIndicatorColumn = null;
             ColumnInfo colinfo = columns.get(fieldKey);
-            if (colinfo != null)
+            if (colinfo == null)
             {
-                alias = colinfo.getAlias();
-                if (colinfo.isMvEnabled())
+                appendColumnToSort(sf, dialect, fieldKey.getName(), distinctKeys, sb);
+            }
+            else
+            {
+                List<ColumnInfo> sortFields = colinfo.getSortFields();
+                if (sortFields != null)
                 {
-                    mvIndicatorColumn = columns.get(colinfo.getMvColumnName());
+                    for (ColumnInfo sortCol : sortFields)
+                    {
+                        appendColumnToSort(sf, dialect, sortCol.getAlias(), distinctKeys, sb);
+
+                        // If we have an mv indicator column, we need to sort on it secondarily
+                        if (sortCol.isMvEnabled())
+                        {
+                            ColumnInfo mvIndicatorColumn = columns.get(sortCol.getMvColumnName());
+
+                            if (mvIndicatorColumn != null)
+                            {
+                                SortField mvSortField = new SortField(mvIndicatorColumn.getName(), sf.getSortDirection());
+                                appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sb);
+                            }
+                        }
+                    }
                 }
             }
-
-            sb.append(sf.toOrderByString(dialect, alias));
-            if (mvIndicatorColumn != null)
-            {
-                SortField mvSortField = new SortField(mvIndicatorColumn.getName(), sf.getSortDirection());
-                sb.append(", ");
-                sb.append(mvSortField.toOrderByString(dialect, mvIndicatorColumn.getAlias()));
-            }
-            sep = ", ";
         }
 
         return sb.toString();
+    }
+
+    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, StringBuffer sb)
+    {
+        if (distinctKeys.contains(alias))
+            return;
+
+        if(distinctKeys.size() > 0)
+            sb.append(", ");
+
+        sb.append(sf.toOrderByString(dialect, alias));
+        distinctKeys.add(alias);
     }
 
     // Return an English version of the sort

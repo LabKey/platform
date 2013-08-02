@@ -219,6 +219,11 @@ public abstract class ApiResponseWriter
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
+        writeJsonObj(getJSON(e));
+    }
+
+    public JSONObject getJSON(BatchValidationException e) throws IOException
+    {
         JSONObject obj = new JSONObject();
         JSONArray arr = new JSONArray();
         String message = null;
@@ -231,10 +236,11 @@ public abstract class ApiResponseWriter
         }
         obj.put("success", Boolean.FALSE);
         obj.put("errors", arr);
+        obj.put("errorCount", arr.length());
         obj.put("exception", message);
         obj.put("extraContext", e.getExtraContext());
 
-        writeJsonObj(obj);
+        return obj;
     }
 
     public void write(ValidationException e) throws IOException

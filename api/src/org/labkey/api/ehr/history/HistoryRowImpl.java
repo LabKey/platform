@@ -32,7 +32,7 @@ public class HistoryRowImpl implements HistoryRow
     private Date _date;
     private Date _enddate;
     private Integer _projectId;
-    private String _categoryGroup;
+    private String _primaryGroup;
     private String _categoryText;
     private String _performedBy;
     private String _caseId;
@@ -46,10 +46,10 @@ public class HistoryRowImpl implements HistoryRow
     protected final static SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     protected final static SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
 
-    public HistoryRowImpl(String categoryText, String categoryGroup, String subjectId, Date date, String html)
+    public HistoryRowImpl(String categoryText, String primaryGroup, String subjectId, Date date, String html)
     {
         _categoryText = categoryText;
-        _categoryGroup = categoryGroup;
+        _primaryGroup = primaryGroup;
         _subjectId = subjectId;
         _date = date;
         _html = html;
@@ -60,9 +60,9 @@ public class HistoryRowImpl implements HistoryRow
         JSONObject json = new JSONObject();
 
         json.put("dateGroup", _subjectId + "_" + getSortDateString());
-        json.put("typeGroup", _subjectId + "_" + _categoryGroup);
+        json.put("typeGroup", _subjectId + "_" + _primaryGroup);
 
-        json.put("type", _categoryGroup);
+        json.put("type", _primaryGroup);
         json.put("sortDate", getSortDateString());
 
         json.put("id", _subjectId);
@@ -96,12 +96,12 @@ public class HistoryRowImpl implements HistoryRow
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
-            _log.error("Invalid date: " + _date + " for table: " + _categoryGroup + " and animal " + _subjectId, e);
+            _log.error("Invalid date: " + _date + " for table: " + _primaryGroup + " and animal " + _subjectId, e);
             return "";
         }
         catch (Exception e)
         {
-            _log.error("Error creating sortDateString for animal: " + _subjectId + ", " + _categoryGroup, e);
+            _log.error("Error creating sortDateString for animal: " + _subjectId + ", " + _primaryGroup, e);
             return "";
         }
     }
@@ -126,9 +126,9 @@ public class HistoryRowImpl implements HistoryRow
         return _categoryText;
     }
 
-    public String getCategoryGroup()
+    public String getPrimaryGroup()
     {
-        return _categoryGroup;
+        return _primaryGroup;
     }
 
     public String getTimeString()

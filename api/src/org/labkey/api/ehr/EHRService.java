@@ -130,7 +130,15 @@ abstract public class EHRService
     {
         Task(),
         Encounter(),
-        Request();
+        Run(),
+        Request()
+    }
+
+    public static enum FORM_SECTION_LOCATION
+    {
+        Header(),
+        Body(),
+        Tabs()
     }
 
     abstract public List<FieldKey> getDefaultFieldKeys(TableInfo ti);

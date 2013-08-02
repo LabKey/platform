@@ -176,13 +176,16 @@ public class JSONObject extends HashMap<String, Object>
      * @param map A map object that can be used to initialize the contents of
      *  the JSONObject.
      */
-    public JSONObject(Map<String, Object> map) {
+    public JSONObject(Map<?, Object> map) {
+        //ensure keys are strings
         if (map != null)
         {
-            putAll(map);
+            for (Map.Entry entry : map.entrySet())
+            {
+                put(entry.getKey() == null ? null : entry.getKey().toString(), entry.getValue());
+            }
         }
     }
-
 
     /**
      * Construct a JSONObject from an Object using bean getters.

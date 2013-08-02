@@ -136,7 +136,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
-    private FieldKey sortFieldKey = null;
+    private List<FieldKey> sortFieldKeys = null;
     private List<ConditionalFormat> conditionalFormats = new ArrayList<>();
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
@@ -341,7 +341,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setWidth(col.getWidth());
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
-        setSortFieldKey(col.getSortFieldKey());
+        setSortFieldKeys(col.getSortFieldKeys());
         if (col.getConceptURI() != null)
             setConceptURI(col.getConceptURI());
         setIsUnselectable(col.isUnselectable());
@@ -585,21 +585,60 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     }
 
-    public ColumnInfo getSortField()
+    public List<ColumnInfo> getSortFields()
     {
         if (getParentTable() == null)
-            return this;
+            return Collections.singletonList(this);
 
-        ColumnInfo sortCol = this;
-        if (sortFieldKey != null)
+        List<ColumnInfo> sortCols = new ArrayList<ColumnInfo>();
+        if (sortFieldKeys != null)
         {
+            List<FieldKey> translatedFieldKeys = new ArrayList<FieldKey>();
+            for (FieldKey sortFieldKey : sortFieldKeys)
+            {
+                translatedFieldKeys.add(FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey));
+            }
+
             // The column may be on a separate table via a lookup, so use QueryService to resolve it
-            FieldKey translatedFieldKey = FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey);
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Collections.singleton(translatedFieldKey));
-            sortCol = columns.get(translatedFieldKey);
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), translatedFieldKeys);
+            if (columns.size() != translatedFieldKeys.size() || columns.values().contains(null))
+            {
+                //if we cannot resolve any of the intended columns, rather than proceed
+                // with just 1 of them, default back to the original column
+                StringBuilder msg = new StringBuilder("Unable to resolve one or more sortFieldKeys for column: " + getFieldKey() + " on table: " + (getParentTable() != null ? getParentTable().getName() : "") + ".  The fieldKeys are: ");
+                for (FieldKey k : translatedFieldKeys)
+                {
+                    msg.append(k.toString()).append(", ");
+                }
+                _log.warn(msg);
+
+                sortCols = new ArrayList<>();
+                sortCols.add(this);
+            }
+            else
+            {
+                for (FieldKey fk : translatedFieldKeys)
+                {
+                    sortCols.add(columns.get(fk));
+                }
+            }
         }
-        if (sortCol != null && getParentTable().getSqlDialect().isSortableDataType(sortCol.getSqlTypeName()))
-            return sortCol;
+        else
+        {
+            sortCols.add(this);
+        }
+
+        if (sortCols.size() > 0)
+        {
+            for (ColumnInfo sortCol : sortCols)
+            {
+                //is this the right place to do this check?
+                if (!getParentTable().getSqlDialect().isSortableDataType(sortCol.getSqlTypeName()))
+                    return null;
+            }
+
+            return sortCols;
+        }
 
         return null;
     }
@@ -938,7 +977,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetPropertyURI())
             propertyURI = xmlCol.getPropertyURI();
         if (xmlCol.isSetSortColumn())
-            sortFieldKey = FieldKey.fromString(xmlCol.getSortColumn());
+            setSortFieldKeysFromXml(xmlCol.getSortColumn());
         if (xmlCol.isSetSortDescending())
             setSortDirection(xmlCol.getSortDescending() ? Sort.SortDirection.DESC : Sort.SortDirection.ASC);
         if (xmlCol.isSetDescription())
@@ -1027,6 +1066,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 _log.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
+    }
+
+    private void setSortFieldKeysFromXml(String xml)
+    {
+        List<FieldKey> keys = new ArrayList<FieldKey>();
+        for (String key : xml.split(","))
+        {
+            keys.add(FieldKey.fromString(key));
+        }
+
+        setSortFieldKeys(keys);
     }
 
     public static String labelFromName(String name)
@@ -1261,6 +1311,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         public String getLookupDisplayName()
         {
             return _displayColumnName;
+        }
+
+        public boolean isUseRawFKValue()
+        {
+            return _useRawFKValue;
         }
 
         public TableInfo getLookupTableInfo()
@@ -1612,15 +1667,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.jdbcType = null;
     }
 
-    public FieldKey getSortFieldKey()
+    public List<FieldKey> getSortFieldKeys()
     {
-        return sortFieldKey;
+        return sortFieldKeys;
     }
 
-    public void setSortFieldKey(FieldKey sortFieldKey)
+    public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
-        this.sortFieldKey = sortFieldKey;
+        this.sortFieldKeys = sortFieldKeys;
     }
 
     public void setJdbcType(JdbcType type)
@@ -1843,6 +1898,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         remapUrlFieldKeys(parent, remap);
         remapForeignKeyFieldKeys(parent, remap);
+        remapSortFieldKeys(parent, remap);
         DisplayColumnFactory factory = getDisplayColumnFactory();
         if (null != factory && DEFAULT_FACTORY != factory && factory instanceof RemappingDisplayColumnFactory)
             ((RemappingDisplayColumnFactory)factory).remapFieldKeys(parent, remap);
@@ -1869,6 +1925,20 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setFk(remappedFk);
     }
 
+
+    protected void remapSortFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        if (getSortFieldKeys() == null)
+            return;
+
+        List<FieldKey> remappedKeys = new ArrayList<FieldKey>();
+        for (FieldKey key : getSortFieldKeys())
+        {
+            remappedKeys.add(FieldKey.remap(key, parent, remap));
+        }
+
+        setSortFieldKeys(remappedKeys);
+    }
 
     private void checkLocked()
     {

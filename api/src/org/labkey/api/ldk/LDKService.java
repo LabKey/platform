@@ -52,5 +52,5 @@ abstract public class LDKService
 
     abstract public Map<String, Object> getContainerSizeJson(Container c, User u, boolean includeAllRootTypes, boolean includeFileCount);
 
-    abstract public void applyNumericSort(AbstractTableInfo ti, String colName);
+    abstract public void applyNaturalSort(AbstractTableInfo ti, String colName);
 }
