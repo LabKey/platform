@@ -1969,31 +1969,52 @@ public class QueryServiceImpl extends QueryService
                     String comment = String.format(action.getCommentDetailed(), row.size());
 
                     AuditLogEvent event = _createAuditRecord(user, c, table, comment, row);
-                    String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
 
                     switch (action)
                     {
                         case INSERT:
+                        {
+                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
                             if (oldRecord != null)
                                 dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, oldRecord);
                             break;
-
+                        }
                         case DELETE:
+                        {
+                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
                             if (oldRecord != null)
                                 dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
                             break;
-
+                        }
                         case UPDATE:
                         {
                             assert (params.length >= 2);
 
-                            if (oldRecord != null)
-                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
-
                             List<Map<String, Object>> updatedRows = params[1];
                             Map<String, Object> updatedRow = updatedRows.get(i);
 
-                            String newRecord = QueryAuditViewFactory.encodeForDataMap(updatedRow);
+                            // remove unmodified values from the original row
+                            Map<String, Object> modifiedRow = new HashMap<>();
+
+                            for (Map.Entry<String, Object> entry : row.entrySet())
+                            {
+                                if (updatedRow.containsKey(entry.getKey()))
+                                {
+                                    Object newValue = updatedRow.get(entry.getKey());
+                                    if (entry.getValue().equals(newValue))
+                                        row.remove(entry.getKey());
+                                    else
+                                        modifiedRow.put(entry.getKey(), newValue);
+                                }
+                                else
+                                    row.remove(entry.getKey());
+                            }
+
+                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
+                            if (oldRecord != null)
+                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+
+                            String newRecord = QueryAuditViewFactory.encodeForDataMap(modifiedRow);
                             if (newRecord != null)
                                 dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
                             break;
