@@ -18,7 +18,11 @@ package org.labkey.list.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -31,6 +35,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -52,17 +57,19 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.controllers.ListController;
+import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.util.GUID.makeGUID;
 
@@ -489,16 +496,67 @@ public class ListDefinitionImpl implements ListDefinition
 
         if (null != qus)
         {
+            boolean supportsDiscussions = true; // getDiscussionSetting().getValue() != 0; // DiscussionSetting.None
+            boolean supportsAttachments = true;
+
+//            for (DomainProperty prop : getDomain().getProperties())
+//            {
+//                if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+//                    supportsAttachments = true;
+//            }
+
             try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
             {
-                // Delete all the rows
-                Map<String, Object>[] rows = new TableSelector(table, Table.ALL_COLUMNS, null, null).getMapArray();
-                qus.deleteRows(user, getContainer(), Arrays.asList(rows), null);
+                if (supportsAttachments || supportsDiscussions)
+                {
+                    Container c = getContainer();
+                    int increment = 1000;
+                    int index = 0;
+                    int offset = increment;
+
+                    // Delete all the rows
+                    Map<String, Object>[] rows = new TableSelector(table, new CaseInsensitiveHashSet("entityId"), null, null).getMapArray();
+                    int size = rows.length;
+
+                    Set<String> entityIds;
+                    List<AttachmentParent> attachmentParents;
+                    String eid;
+
+                    while (index < size)
+                    {
+                        // Build up set of entityIds and AttachmentParents
+                        entityIds = new HashSet<>();
+                        attachmentParents = new ArrayList<>();
+
+                        int start = index;
+                        int end = Math.min(offset, size);
+                        for (int i = start; i < end; i++)
+                        {
+                            eid = (String) rows[i].get("entityId"); // LQUS.ID property
+                            if (null != eid)
+                            {
+                                entityIds.add(eid);
+                                attachmentParents.add(new ListItemAttachmentParent(eid, c));
+                            }
+                        }
+
+                        // Delete Discussions
+                        if (supportsDiscussions)
+                            DiscussionService.get().deleteDiscussions(c, table.getUserSchema().getUser(), entityIds);
+
+                        // Delete Attachments
+                        if (supportsAttachments)
+                            AttachmentService.get().deleteAttachments(attachmentParents);
+
+                        index = end;
+                        offset += increment;
+                    }
+                }
 
                 // Unindex all item docs and the entire list doc
                 ListManager.get().deleteIndexedList(this);
 
-                //then delete the list itself
+                // then delete the list itself
                 Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
                 Domain domain = getDomain();
                 domain.delete(user);

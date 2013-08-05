@@ -4074,6 +4074,12 @@ span.button-icon {
     margin-right: 2px;
 }
 
+.folder-nav ul li span.noread {
+    padding: 4px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
 .folder-nav .clbl span.marked {
     padding: 0 0 0 10px;
     margin: 0 3px;

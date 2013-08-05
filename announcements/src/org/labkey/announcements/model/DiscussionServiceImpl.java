@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -245,6 +246,22 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         }
     }
 
+    @Override
+    public void deleteDiscussions(Container container, User user, Collection<String> identifiers)
+    {
+        AnnouncementModel[] anns = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
+        for (AnnouncementModel ann : anns)
+        {
+            try
+            {
+                AnnouncementManager.deleteAnnouncement(container, ann.getRowId());
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+    }
 
     public void unlinkDiscussions(Container c, String identifier, User user)
     {

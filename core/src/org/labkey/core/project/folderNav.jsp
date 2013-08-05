@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -56,6 +57,10 @@
 
     public String getTrailLink(Container c, User u, String ctxPath)
     {
+        if (c.hasPermission(u, ReadPermission.class))
+        {
+            return "<span>" + c.getName() + "</span>" + getTrailSeparator(ctxPath);
+        }
         return "<a href=\"" + c.getStartURL(u) +"\">" + c.getName() + "</a>" + getTrailSeparator(ctxPath);
     }
 %>
