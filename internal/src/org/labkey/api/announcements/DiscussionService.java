@@ -25,6 +25,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.action.ReturnUrlForm;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Collection;
+
 /**
  * Discussion service is a wrapper for the Announcements controller used as a forum for discussing objects/pages
  *
@@ -63,6 +65,7 @@ public class DiscussionService
         public DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
         public void deleteDiscussions(Container container, User user, String... identifier);
+        public void deleteDiscussions(Container container, User user, Collection<String> identifiers);
 
         public boolean hasDiscussions(Container container, String identifier);
 

@@ -19,6 +19,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -96,11 +100,28 @@ public class InsertView extends DataView
         if (null == _initialValues)
         {
             Map<String, Object> initialValues = new HashMap<>();
-            for (ColumnInfo col : getTable().getColumns())
+
+            Domain domain = getTable().getDomain();
+
+            if (null != domain)
             {
-                Object defaultValue = col.getDefaultValue();
-                if (defaultValue != null)
-                    initialValues.put(col.getName(), defaultValue);
+                Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(ctx.getContainer(), domain);
+                ColumnInfo column;
+                for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
+                {
+                    column = getTable().getColumn(FieldKey.fromParts(entry.getKey().getName()));
+                    if (null != column)
+                        initialValues.put(column.getName(), entry.getValue());
+                }
+            }
+            else
+            {
+                for (ColumnInfo col : getTable().getColumns())
+                {
+                    Object defaultValue = col.getDefaultValue();
+                    if (defaultValue != null)
+                        initialValues.put(col.getName(), defaultValue);
+                }
             }
             if (!initialValues.isEmpty())
                 _initialValues = initialValues;

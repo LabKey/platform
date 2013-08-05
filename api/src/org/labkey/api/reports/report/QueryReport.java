@@ -190,6 +190,8 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         return null;
     }
 
+    // issue : 18356 - I'm not sure why we would want to delete a custom view that a report is wrapping.
+/*
     public void beforeDelete(ContainerUser context)
     {
         CustomView view = getCustomView(context);
@@ -200,6 +202,7 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         }
         super.beforeDelete(context);
     }
+*/
 
     @Override
     public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)

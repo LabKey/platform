@@ -5020,7 +5020,6 @@ internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text
 internal/src/org/labkey/api/data/DropDownList.java -text
 internal/src/org/labkey/api/data/ExtendedTable.java -text
-internal/src/org/labkey/api/data/ExtendedTableUpdateService.java -text
 internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text
@@ -5051,6 +5050,7 @@ internal/src/org/labkey/api/message/settings/AbstractConfigTypeProvider.java -te
 internal/src/org/labkey/api/message/settings/MessageConfigService.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
+internal/src/org/labkey/api/query/ExtendedTableUpdateService.java -text
 internal/src/org/labkey/api/query/SimpleQueryUpdateService.java -text
 internal/src/org/labkey/api/query/SimpleTableDomainKind.java -text
 internal/src/org/labkey/api/query/SimpleUserSchema.java -text

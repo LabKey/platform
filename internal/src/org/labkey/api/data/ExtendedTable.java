@@ -22,8 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ExtendedTableUpdateService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
@@ -35,8 +34,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**

@@ -70,6 +70,7 @@ public class AttachmentService
 
         public void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
         public void deleteAttachments(AttachmentParent... parent);
+        public void deleteAttachments(Collection<AttachmentParent> parents);
 
         /**
          * @param auditUser set to null to skip audit

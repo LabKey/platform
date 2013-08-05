@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.data;
+package org.labkey.api.query;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.SimpleQueryUpdateService;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -55,9 +47,13 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return super._select(container, keys);
+        Map<String, Object> row = super.getRow(user, container, keys);
+        Map<String, Object> extendedRow = _baseTableUpdateService.getRow(user, container, keys);
+
+        row.putAll(extendedRow);
+        return row;
     }
 
     @Override

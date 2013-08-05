@@ -150,7 +150,11 @@ public class FolderMenu extends NavTreeMenu
                 out.print("</a>");
             }
             else
+            {
+                out.print("<span class=\"noread\">");
                 out.print(filter(nav.getText()));
+                out.print("</span>");
+            }
         }
 
         if (hasChildren)
