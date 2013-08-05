@@ -677,7 +677,6 @@ LABKEY.Security = new function()
          *              <li>name: the name of the Module Property.</li>
          *              <li>moduleName: the name of the module specifying this property.</li>
          *              <li>effectiveValue: the value of the property, including a value potentially inherited from parent containers.</li>
-         *              <li>effectiveValue: the value of the property, including a value potentially inherited from parent containers.</li>
          *              <li>value: the value of the property as set for this specific container</li>
          *          </ul>
          *      </li>
