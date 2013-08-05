@@ -1636,8 +1636,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     renderPlot: function(forExport){
-        if (!forExport)
-        {
+        if (!forExport) {
             this.centerPanel.getEl().mask('Rendering Chart...');
             this.clearChartPanel();
         }
@@ -1729,6 +1728,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }));
 
         if (!forExport){
+            this.showOptionsBtn.setDisabled(false);
+            this.groupingBtn.setDisabled(false);
+            this.developerBtn.setDisabled(false);
+            this.saveBtn.setDisabled(false);
+            this.saveAsBtn.setDisabled(false);
             this.enableExportPdf();
             this.enableExportScript();
             this.centerPanel.getEl().unmask();

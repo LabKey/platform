@@ -338,10 +338,10 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             if (scales.x.trans == "log") {
                 if (invalidLogValues) {
-                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
+                    message = "Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.";
                     scales.x.trans = 'linear';
                 } else if (hasZeroes) {
-                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
+                    message = "Some x-axis values are 0. Plotting all x-axis values as x+1";
                     var xAcc = aes.x;
                     aes.x = function(row){return xAcc(row) + 1};
                 }
