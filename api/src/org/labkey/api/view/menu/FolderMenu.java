@@ -62,7 +62,10 @@ public class FolderMenu extends NavTreeMenu
         {
             out.print("<div class=\"folder-nav\"><ul class=\"folder-nav-top\">");
             for (NavTree element : _elements)
-                renderLinks(element, 0, "", element.getId(), getViewContext(), out);
+            {
+                if (null != element)
+                    renderLinks(element, 0, "", element.getId(), getViewContext(), out);
+            }
             out.print("</ul></div>");
         }
     }

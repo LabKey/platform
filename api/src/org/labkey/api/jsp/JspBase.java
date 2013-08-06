@@ -652,6 +652,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
+    protected final _HtmlString _hs(String html)
+    {
+        return new _HtmlString(html);
+    }
+
     /**
      * This is just a marker for JspBase helper methods that return Html and do not need to be encoded
      * No one should ever see this class it should just get pass directly from the helper to out.write()
