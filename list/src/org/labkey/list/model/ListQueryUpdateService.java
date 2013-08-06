@@ -114,7 +114,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 Map<String, Object> raw = new TableSelector(getQueryTable(), keyFilter, null).getMap();
 
-                if (raw.size() > 0)
+                if (null != raw && raw.size() > 0)
                 {
                     ret = new CaseInsensitiveHashMap<>();
 

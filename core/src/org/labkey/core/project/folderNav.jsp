@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -50,22 +51,23 @@
     ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, ctx.getContainer());
 %>
 <%!
-    public String getTrailSeparator(String ctxPath)
+    public _HtmlString getTrailSeparator(String ctxPath)
     {
-        return "&nbsp;<img src=\"" + ctxPath + "/_images/arrow_breadcrumb.png\" alt=\"\">&nbsp;";
+        return _hs("&nbsp;<img src=\"" + ctxPath + "/_images/arrow_breadcrumb.png\" alt=\"\">&nbsp;");
     }
 
-    public String getTrailLink(Container c, User u, String ctxPath)
+    public _HtmlString getTrailLink(Container c, User u, String ctxPath)
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return "<span>" + c.getName() + "</span>" + getTrailSeparator(ctxPath);
+            return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator(ctxPath));
         }
-        return "<a href=\"" + c.getStartURL(u) +"\">" + c.getName() + "</a>" + getTrailSeparator(ctxPath);
+        return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator(ctxPath));
     }
 %>
 <div>
 <%
+    // Only show the nav trail if subfolders exist
     if (size > 1)
     {
 %>
@@ -77,8 +79,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user, contextPath)%><%
                 }
-                if (size > 0)
-                    %><span style="color: black;"><%=containers.get(size-1).getName()%></span><%
+                %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
             }
             else
             {
@@ -91,8 +92,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user, contextPath)%><%
                 }
-                if (size > 0)
-                    %><span style="color: black;"><%=containers.get(size-1).getName()%></span><%
+                %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
             }
         %>
     </div>
@@ -175,11 +175,11 @@
     if (ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=contextPath%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=text(contextPath)%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
 <%
     }
 %>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=text(contextPath)%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
     <script type="text/javascript">
         (function(){
             var p = document.getElementById('permalink');
