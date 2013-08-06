@@ -43,7 +43,7 @@
 </p>
 <%
     Container c = getContainer();
-    boolean isAdmin = getUser().isAdministrator();
+    boolean isAdmin = getUser().isSiteAdmin();
     QueryUrlsImpl urls = new QueryUrlsImpl();
 
     List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));

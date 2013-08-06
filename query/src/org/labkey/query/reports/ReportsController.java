@@ -70,7 +70,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -1726,7 +1725,7 @@ public class ReportsController extends SpringActionController
                 // Only site administrators can specify a path, #14445
                 if (null != filePath)
                 {
-                    if (!getUser().isAdministrator())
+                    if (!getUser().isSiteAdmin())
                         throw new UnauthorizedException();
                 }
 
@@ -1769,7 +1768,7 @@ public class ReportsController extends SpringActionController
         {
             AttachmentReport report = (AttachmentReport) (form.isUpdate() ? form.getReportId().getReport(getViewContext()) : ReportService.get().createReportInstance(AttachmentReport.TYPE));
 
-            if (getUser().isAdministrator())
+            if (getUser().isSiteAdmin())
             {
                 // only an admin can create or update an attachment report with a server path
                 if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)

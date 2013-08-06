@@ -72,7 +72,7 @@ private Object outputJob(String status, PipelineJob job,
 
     boolean canCancel = c.hasPermission(user, DeletePermission.class);
     boolean canClear = canCancel;
-    boolean isAdmin = user.isAdministrator();
+    boolean isAdmin = user.isSiteAdmin();
 
     boolean isAllContainers = request.getParameter(PipelineController.StatusParams.allcontainers.toString()) != null;
 

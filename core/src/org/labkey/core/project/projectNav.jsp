@@ -153,7 +153,7 @@
     </ul>
 </div>
 <%
-        if (getViewContext().getUser().isAdministrator())
+        if (getViewContext().getUser().isSiteAdmin())
         {
 %>
 <div class="project-menu-buttons">

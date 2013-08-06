@@ -119,7 +119,7 @@
     else if (bean.getAdminView())
         out.println("</table>");
 
-    if (user.isAdministrator() || c.hasPermission(user, AdminPermission.class)) {
+    if (user.isSiteAdmin() || c.hasPermission(user, AdminPermission.class)) {
 %>
         <table>
             <tr><td>&nbsp;</td></tr>

@@ -24,7 +24,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.AssayBaseQueryView;
 import org.labkey.api.util.ReturnURLString;
@@ -91,7 +90,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
     @Override
     protected boolean canDelete()
     {
-        return getViewContext().getUser().isAdministrator() &&
+        return getViewContext().getUser().isSiteAdmin() &&
                getViewContext().hasPermission(DeletePermission.class);
     }
 

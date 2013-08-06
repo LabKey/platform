@@ -81,7 +81,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         DataView view = super.createDataView();
 
         if (allowEditing() &&
-                getUser().isAdministrator() &&
+                getUser().isSiteAdmin() &&
                 StudyManager.getInstance().showCohorts(getContainer(), getUser()))
         {
             TableInfo tableInfo = view.getDataRegion().getTable();

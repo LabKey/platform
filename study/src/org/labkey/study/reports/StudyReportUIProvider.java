@@ -191,7 +191,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             }
 
             // external report
-            if (context.getUser().isAdministrator())
+            if (context.getUser().isSiteAdmin())
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);

@@ -96,7 +96,7 @@ Ext4.onReady(function(){
 
     var isFolderAdmin  = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
         isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
-        isSiteAdmin    = <%= user.isAdministrator() ? "true" : "false" %>,
+        isSiteAdmin    = <%= user.isSiteAdmin() ? "true" : "false" %>,
         isRoot         = <%= c.isRoot() ? "true" : "false" %>,
         doneURL        = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
 
@@ -180,9 +180,9 @@ Ext4.onReady(function(){
     IMPERSONATE
 --%>
 <%
-    if (user.isAdministrator() || project != null && project.hasPermission(user, AdminPermission.class))
+    if (user.isSiteAdmin() || project != null && project.hasPermission(user, AdminPermission.class))
     {
-        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isAdministrator() ? root : null!=project ? project : c, user, false);
+        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isSiteAdmin() ? root : null!=project ? project : c, user, false);
         if (impersonateView.hasUsers())
         {
             %>

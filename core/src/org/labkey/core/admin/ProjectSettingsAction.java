@@ -85,7 +85,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         super.checkPermissions();
 
-        if (getViewContext().getContainer().isRoot() && !getViewContext().getUser().isAdministrator())
+        if (getViewContext().getContainer().isRoot() && !getViewContext().getUser().isSiteAdmin())
             throw new UnauthorizedException();
     }
 
@@ -447,7 +447,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
 
                         // only site admins can configure the pipeline root
-                        if (getViewContext().getUser().isAdministrator())
+                        if (getViewContext().getUser().isSiteAdmin())
                         {
                             box.addView(new HttpView()
                             {

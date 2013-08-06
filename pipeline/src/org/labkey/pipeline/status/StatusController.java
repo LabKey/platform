@@ -99,7 +99,7 @@ public class StatusController extends SpringActionController
         Container c = getContainer();
         if (c == null || c.isRoot())
         {
-            if (!getUser().isAdministrator())
+            if (!getUser().isSiteAdmin())
             {
                 throw new UnauthorizedException();
             }

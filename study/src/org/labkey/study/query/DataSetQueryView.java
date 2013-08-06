@@ -379,7 +379,7 @@ public class DataSetQueryView extends StudyQueryView
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
             {
-                if ((user.isAdministrator() || canWrite))
+                if ((user.isSiteAdmin() || canWrite))
                 {
                     // manage dataset
                     ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDataSetId()), "Manage Dataset");
@@ -417,7 +417,7 @@ public class DataSetQueryView extends StudyQueryView
                 List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
                 bar.addAll(buttons);
 
-                if (user.isAdministrator() || canWrite)
+                if (user.isSiteAdmin() || canWrite)
                 {
                     ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());

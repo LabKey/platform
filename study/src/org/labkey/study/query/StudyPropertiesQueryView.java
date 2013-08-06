@@ -21,7 +21,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.StudyImpl;
@@ -58,7 +57,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
     {
         DataView view = super.createDataView();
         if (allowEditing() &&
-                getUser().isAdministrator())
+                getUser().isSiteAdmin())
         {
             view.getDataRegion().addDisplayColumn(0, new EditColumn(view.getRenderContext().getContainer()));
         }

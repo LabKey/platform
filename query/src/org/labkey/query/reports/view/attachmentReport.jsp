@@ -41,11 +41,11 @@
 
     if (form.isUpdate())
     {
-        canUseDiskFile = HttpView.currentContext().getUser().isAdministrator();
+        canUseDiskFile = HttpView.currentContext().getUser().isSiteAdmin();
     }
     else
     {
-        canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && form.getReportId() == null;
+        canUseDiskFile = HttpView.currentContext().getUser().isSiteAdmin() && form.getReportId() == null;
     }
 
     String action = (form.isUpdate() ? "update" : "create") + "attachmentReport";

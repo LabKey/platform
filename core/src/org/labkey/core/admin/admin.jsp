@@ -55,7 +55,7 @@
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
 
-    if (context.getUser().isAdministrator())
+    if (context.getUser().isSiteAdmin())
     {
     %>
     <tr><td colspan="2"><%

@@ -65,7 +65,7 @@ else
     {
         %><tr><td>The document crawler is running.</td></tr><%
 
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
         {
         %>
         <tr><td><input type="hidden" name="pause" value="1"></td></tr>
@@ -76,7 +76,7 @@ else
     {
         %><tr><td>The document crawler is paused.</td></tr><%
 
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
         {
         %>
         <tr><td><input type="hidden" name="start" value="1"></td></tr>
@@ -86,7 +86,7 @@ else
     %>
         </table>
     </form></p><%
-    if (user.isAdministrator())
+    if (user.isSiteAdmin())
     {
     %>
     <p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">

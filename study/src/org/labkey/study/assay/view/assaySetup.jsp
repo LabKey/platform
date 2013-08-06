@@ -34,7 +34,7 @@
 
     PipelineService pipeService = PipelineService.get();
     boolean hasPipelineRoot = pipeService.hasValidPipelineRoot(c);
-    boolean canSetPipelineRoot = user.isAdministrator();
+    boolean canSetPipelineRoot = user.isSiteAdmin();
 %>
 
 <% if (!hasAssayProtocols) { %>

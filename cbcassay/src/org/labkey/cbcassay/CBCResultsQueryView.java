@@ -76,7 +76,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
 
     protected boolean canEdit()
     {
-        return getUser().isAdministrator() && (getViewContext().hasPermission(UpdatePermission.class) || getViewContext().hasPermission(DeletePermission.class));
+        return getUser().isSiteAdmin() && (getViewContext().hasPermission(UpdatePermission.class) || getViewContext().hasPermission(DeletePermission.class));
     }
 
     protected boolean canDelete()

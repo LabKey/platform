@@ -33,8 +33,6 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -44,9 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbooksTableInfo;
-import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -188,7 +184,7 @@ public class CoreQuerySchema extends UserSchema
         //only site admins are allowed to see all site users,
         //so if the user is not a site admin, add a filter that will
         //generate an empty set (CONSIDER: should we throw an exception here instead?)
-        if (!getUser().isAdministrator())
+        if (!getUser().isSiteAdmin())
             addNullSetFilter(users);
         users.setName("SiteUsers");
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
@@ -257,7 +253,7 @@ public class CoreQuerySchema extends UserSchema
 
         ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
-        final boolean isSiteAdmin = getUser().isAdministrator();
+        final boolean isSiteAdmin = getUser().isSiteAdmin();
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
             public TableInfo getLookupTableInfo()
@@ -376,7 +372,7 @@ public class CoreQuerySchema extends UserSchema
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getUser().isAdministrator() ? getSiteUsers() : getUsers();
+                return getUser().isSiteAdmin() ? getSiteUsers() : getUsers();
             }
         });
 

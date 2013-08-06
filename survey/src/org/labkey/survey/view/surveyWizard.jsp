@@ -69,7 +69,7 @@
 
     // we allow editing for 1) non-submitted surveys 2) submitted surveys (that are not locked) if the user is a project or site admin
     Container project = ctx.getContainer().getProject();
-    boolean isAdmin = (project != null && project.hasPermission(ctx.getUser(), AdminPermission.class)) || ctx.getUser().isAdministrator();
+    boolean isAdmin = (project != null && project.hasPermission(ctx.getUser(), AdminPermission.class)) || ctx.getUser().isSiteAdmin();
     boolean canEdit = !locked && ((!submitted && ctx.getContainer().hasPermission(ctx.getUser(), UpdatePermission.class)) || isAdmin);
 
     String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());

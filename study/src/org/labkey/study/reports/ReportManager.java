@@ -287,7 +287,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     public boolean canDeleteReport(User user, Container c, int reportId)
     {
-        if (!user.isAdministrator())
+        if (!user.isSiteAdmin())
         {
             try
             {

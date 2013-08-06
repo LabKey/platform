@@ -2028,7 +2028,7 @@ public class StudyController extends BaseStudyController
         @Override
         protected void validatePermission(User user, BindException errors)
         {
-            if (user.isAdministrator() || canWrite(_def, user))
+            if (user.isSiteAdmin() || canWrite(_def, user))
                 return;
             throw new UnauthorizedException("Can't update dataset: " + _def.getName());
         }

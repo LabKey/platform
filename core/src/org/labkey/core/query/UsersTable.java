@@ -20,7 +20,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -103,7 +102,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         setDefaultVisibleColumns(_defaultColumns);
 
         // The details action requires admin permission so don't offer the link if they can't see it
-        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), AdminPermission.class))
+        if (getUser().isSiteAdmin() || getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ColumnInfo userIdCol = getColumn(FieldKey.fromParts("UserId"));
             if (userIdCol != null)
@@ -136,7 +135,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             // handle the email column through a different code path
             _illegalColumns.add("Email");
 
-            if (!getUser().isAdministrator() && !getContainer().hasPermission(getUser(), AdminPermission.class))
+            if (!getUser().isSiteAdmin() && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 //_illegalColumns.add("UserId");
                 _illegalColumns.add("Phone");

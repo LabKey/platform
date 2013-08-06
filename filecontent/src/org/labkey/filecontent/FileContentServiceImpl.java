@@ -819,7 +819,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public SQLFragment listFilesQuery(@NotNull User currentUser)
     {
         SQLFragment frag = new SQLFragment();
-        if (currentUser == null || !currentUser.isAdministrator())
+        if (currentUser == null || !currentUser.isSiteAdmin())
         {
             frag.append("SELECT\n");
             frag.append("  CAST(NULL AS VARCHAR) AS Container,\n");

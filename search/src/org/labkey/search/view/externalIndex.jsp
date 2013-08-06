@@ -67,7 +67,7 @@ if (null != ss)
             </td></tr>
             <%
 
-            if (user.isAdministrator())
+            if (user.isSiteAdmin())
             {
             %>
             <tr><td colspan="2">

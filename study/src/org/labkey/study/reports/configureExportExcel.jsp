@@ -32,7 +32,7 @@
     StudyImpl s = view.getModelBean();
     User user = (User)request.getUserPrincipal();
     List<LocationImpl> locations = s.getLocations();
-    boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, AdminPermission.class);
+    boolean isAdmin = user.isSiteAdmin() || s.getContainer().hasPermission(user, AdminPermission.class);
  %>
 
 <div width="600px">

@@ -40,7 +40,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.util.*;
@@ -375,7 +374,7 @@ public class SecurityController extends SpringActionController
                 Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
                 root.addChild(study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
 
-                if (getUser().isAdministrator())
+                if (getUser().isSiteAdmin())
                     root.addChild("Manage Views",
                         new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).getLocalURIString());
             }

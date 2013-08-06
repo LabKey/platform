@@ -48,7 +48,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -214,7 +213,7 @@ public class FileContentController extends SpringActionController
             File dir = p.getFileSystemDirectory();
             if (null == dir)
             {
-                if (getUser().isAdministrator())
+                if (getUser().isSiteAdmin())
                     return HttpView.redirect("showAdmin.view");
                 else
                     throw new NotFoundException();
@@ -525,7 +524,7 @@ public class FileContentController extends SpringActionController
            for (AttachmentDirectory attDir : svc.getRegisteredDirectories(c))
                out.write("<a href='begin.view?fileSetName=" + PageFlowUtil.filter(attDir.getLabel()) + "'>" + PageFlowUtil.filter(attDir.getLabel()) + "</a><br>");
 
-           if (HttpView.currentContext().getUser().isAdministrator())
+           if (HttpView.currentContext().getUser().isSiteAdmin())
                out.write("<br>" + PageFlowUtil.textLink("Configure", "showAdmin.view"));
        }
    }

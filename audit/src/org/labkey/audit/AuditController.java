@@ -18,9 +18,7 @@ package org.labkey.audit;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
@@ -75,7 +73,7 @@ public class AuditController extends SpringActionController
 
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
-            if (!getViewContext().getUser().isAdministrator())
+            if (!getViewContext().getUser().isSiteAdmin())
             {
                 throw new UnauthorizedException();
             }

@@ -574,7 +574,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            if (!getUser().isAdministrator())
+            if (!getUser().isSiteAdmin())
             {
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
@@ -951,7 +951,7 @@ public class AdminController extends SpringActionController
         {
             super.checkPermissions();
 
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
                 throw new UnauthorizedException();
         }
 
@@ -971,7 +971,7 @@ public class AdminController extends SpringActionController
         {
             super.checkPermissions();
 
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
                 throw new UnauthorizedException();
         }
 
@@ -1010,7 +1010,7 @@ public class AdminController extends SpringActionController
         {
             super.checkPermissions();
 
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
                 throw new UnauthorizedException();
         }
 
@@ -1039,7 +1039,7 @@ public class AdminController extends SpringActionController
         {
             super.checkPermissions();
 
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
                 throw new UnauthorizedException();
         }
 
@@ -3629,7 +3629,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
             {
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
@@ -3639,7 +3639,7 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
             {
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
@@ -3680,7 +3680,7 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isAdministrator())
+            if (getContainer().isRoot() && !getUser().isSiteAdmin())
             {
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
@@ -4525,7 +4525,7 @@ public class AdminController extends SpringActionController
             Container c = getContainer();
 
             // Must be site admin to delete a project
-            if (c.isProject() && !getUser().isAdministrator())
+            if (c.isProject() && !getUser().isSiteAdmin())
             {
                 throw new UnauthorizedException();
             }

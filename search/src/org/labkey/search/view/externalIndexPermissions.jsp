@@ -51,7 +51,7 @@ Ext.QuickTips.init();
 <script type="text/javascript">
 var isFolderAdmin = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
 var isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
-var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
+var isSiteAdmin = <%= user.isSiteAdmin() ? "true" : "false" %>;
 var isRoot = <%= c.isRoot() ? "true" : "false" %>;
 
 var $ = Ext.get;

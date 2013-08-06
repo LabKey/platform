@@ -60,7 +60,7 @@
     if (null == parent)
     {
         out.println("The file set for this directory is not configured properly.");
-        if (me.isShowAdmin() && context.getUser().isAdministrator())
+        if (me.isShowAdmin() && context.getUser().isSiteAdmin())
         {
             %><%=textLink("Configure Directories", new ActionURL(ShowAdminAction.class, c))%><%
         }
@@ -174,7 +174,7 @@ if (context.hasPermission(UpdatePermission.class))
         manage.addParameter("fileSetName", fileSetName);
     %><%=textLink("Manage Files", manage)%>&nbsp;<%
 }
-if (me.isShowAdmin() && context.getUser().isAdministrator())
+if (me.isShowAdmin() && context.getUser().isSiteAdmin())
 {
     %><%=textLink("Configure", new ActionURL(ShowAdminAction.class, c))%>&nbsp;<%
 }%>
@@ -199,7 +199,7 @@ if (me.isShowAdmin() && context.getUser().isAdministrator())
     String adminError(ViewContext context)
     {
         StringBuilder sb = new StringBuilder();
-        if (context.getUser().isAdministrator())
+        if (context.getUser().isSiteAdmin())
         {
             ActionURL url = new ActionURL(BeginAction.class, context.getContainer().getProject());
             sb.append("<a href=\"").append(url).append("\">Configure root</a>");

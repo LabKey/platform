@@ -255,7 +255,7 @@ public class PipelineServiceImpl extends PipelineService
     public boolean canModifyPipelineRoot(User user, Container container)
     {
         //per Britt--user must be site admin
-        return container != null && !container.isRoot() && user.isAdministrator();
+        return container != null && !container.isRoot() && user.isSiteAdmin();
     }
 
     @NotNull

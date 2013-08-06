@@ -81,7 +81,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         // disallow a non admin user from editing a server AttachmentReport
-        if (StringUtils.isNotEmpty(getFilePath()) && !user.isAdministrator())
+        if (StringUtils.isNotEmpty(getFilePath()) && !user.isSiteAdmin())
         {
             errors.add(new SimpleValidationError("You must be an administrator in order to edit this report."));
             return false;

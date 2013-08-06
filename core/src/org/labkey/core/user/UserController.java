@@ -37,7 +37,6 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.JdbcType;
@@ -47,7 +46,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -253,7 +251,7 @@ public class UserController extends SpringActionController
     {
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
 
-        if (user != null && (user.isAdministrator() || c.hasPermission(user, AdminPermission.class)))
+        if (user != null && (user.isSiteAdmin() || c.hasPermission(user, AdminPermission.class)))
             columnNames = columnNames + ", UserId, Created, LastLogin, Active";
 
         return columnNames;
@@ -269,7 +267,7 @@ public class UserController extends SpringActionController
         final User user = getUser();
         Container c = getContainer();
         ActionURL currentURL = getViewContext().getActionURL();
-        boolean isSiteAdmin = user.isAdministrator();
+        boolean isSiteAdmin = user.isSiteAdmin();
         boolean isAnyAdmin = isSiteAdmin || c.hasPermission(user, AdminPermission.class);
 
         assert isOwnRecord || isAnyAdmin;
@@ -625,7 +623,7 @@ public class UserController extends SpringActionController
             settings.getBaseFilter().addAllClauses(filter);
 
             final boolean forExport2 = forExport;
-            final boolean isSiteAdmin = getUser().isAdministrator();
+            final boolean isSiteAdmin = getUser().isSiteAdmin();
             final boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
 
             QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings, errors)
@@ -681,7 +679,7 @@ public class UserController extends SpringActionController
             users.addView(createQueryView(form, errors, false, "Users"));
 
             // Folder admins can't impersonate
-            if (impersonateView.hasUsers() && (getUser().isAdministrator() || isProjectAdmin()))
+            if (impersonateView.hasUsers() && (getUser().isSiteAdmin() || isProjectAdmin()))
             {
                 return new VBox(impersonateView, users);
             }
@@ -713,7 +711,7 @@ public class UserController extends SpringActionController
         User user = getUser();
 
         // Site admin can do anything
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
             return;
 
         Container c = getContainer();
@@ -743,7 +741,7 @@ public class UserController extends SpringActionController
 
     private void requiresProjectOrSiteAdmin(User user) throws UnauthorizedException
     {
-        if (!(user.isAdministrator() || isProjectAdmin(user)))
+        if (!(user.isSiteAdmin() || isProjectAdmin(user)))
             throw new UnauthorizedException();
     }
 
@@ -774,7 +772,7 @@ public class UserController extends SpringActionController
 
         if (c.isRoot())
         {
-            if (!getUser().isAdministrator())
+            if (!getUser().isSiteAdmin())
                 throw new UnauthorizedException();
         }
         else
@@ -890,7 +888,7 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
-            if (user.isAdministrator() || isOwnRecord)
+            if (user.isSiteAdmin() || isOwnRecord)
             {
                 ButtonBar bb = createSubmitCancelButtonBar(form);
                 bb.addContextualRole(OwnerRole.class);
@@ -990,7 +988,7 @@ public class UserController extends SpringActionController
             _userId = user.getUserId();
             boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
 
-            if (user.isAdministrator() || isOwnRecord)
+            if (user.isSiteAdmin() || isOwnRecord)
             {
                 TableInfo table = form.getTable();
                 if (table instanceof UsersTable)
@@ -1041,7 +1039,7 @@ public class UserController extends SpringActionController
 
         private boolean mustCheckPermissions(User user, int userRecordId)
         {
-            if (user.isAdministrator())
+            if (user.isSiteAdmin())
                 return false;
 
             return user.getUserId() != userRecordId;
@@ -1373,7 +1371,7 @@ public class UserController extends SpringActionController
         Container c = getContainer();
         if (c.isRoot())
         {
-            if (getUser().isAdministrator())
+            if (getUser().isSiteAdmin())
                 root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
         }
         else
@@ -1411,7 +1409,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException("User does not exist");
 
             Container c = getContainer();
-            boolean isSiteAdmin = user.isAdministrator();
+            boolean isSiteAdmin = user.isSiteAdmin();
             boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
 
             ValidEmail detailsEmail = null;
@@ -1892,7 +1890,7 @@ public class UserController extends SpringActionController
             Container container = getContainer();
             User currentUser = getUser();
 
-            if (container.isRoot() && !currentUser.isAdministrator())
+            if (container.isRoot() && !currentUser.isSiteAdmin())
                 throw new UnauthorizedException("Only site administrators may see users in the root container!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -2009,7 +2007,7 @@ public class UserController extends SpringActionController
                     "able to navigate outside the project and you will not inherit any of the user's site-level roles " +
                     "(e.g., Site Administrator, Developer).");
 
-                if (user.isAdministrator())
+                if (user.isSiteAdmin())
                     instructions += "<br><br>" + PageFlowUtil.filter("As a site administrator, you can also impersonate " +
                         "from the Admin Console; when impersonating from there, you can access all the user's projects " +
                         "and you inherit the user's site-level roles.  This provides a more complete picture of the user's " +

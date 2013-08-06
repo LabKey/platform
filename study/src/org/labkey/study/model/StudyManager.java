@@ -1521,7 +1521,7 @@ public class StudyManager
         if (user == null)
             return false;
 
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
             return true;
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -1552,7 +1552,7 @@ public class StudyManager
 
     public void assertCohortsViewable(Container container, User user)
     {
-        if (!user.isAdministrator())
+        if (!user.isSiteAdmin())
         {
             StudyImpl study = StudyManager.getInstance().getStudy(container);
 

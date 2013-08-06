@@ -581,7 +581,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                         // only allow saving changes to a submitted survey for project and site admin
                         Container project = getContainer().getProject();
-                        boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isAdministrator();
+                        boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isSiteAdmin();
                         if (survey.getSubmitted() != null && !isAdmin)
                         {
                             response.put("errorInfo", "You are not allowed to update a survey that has already been submitted.");

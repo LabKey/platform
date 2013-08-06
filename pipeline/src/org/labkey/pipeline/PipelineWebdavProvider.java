@@ -114,7 +114,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return user.isAdministrator() || c.getPolicy().getPermissions(user).size() > 0;
+            return user.isSiteAdmin() || c.getPolicy().getPermissions(user).size() > 0;
         }
 
         @Override

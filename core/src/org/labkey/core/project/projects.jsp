@@ -44,7 +44,7 @@
     JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
     ViewContext ctx = me.getViewContext();
-    boolean isAdmin = ctx.getUser().isAdministrator();
+    boolean isAdmin = ctx.getUser().isSiteAdmin();
     boolean hasPermission;
 
     Container target;

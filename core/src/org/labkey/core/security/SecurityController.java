@@ -45,7 +45,6 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -946,7 +945,7 @@ public class SecurityController extends SpringActionController
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
-        if (getUser().isAdministrator())
+        if (getUser().isSiteAdmin())
         {
             if (AuditLogService.enableHardTableLogging())
             {
@@ -1842,7 +1841,7 @@ public class SecurityController extends SpringActionController
                     {
                         html = "This feature requires graphviz to be installed; ";
 
-                        if (getUser().isAdministrator())
+                        if (getUser().isSiteAdmin())
                             html += "see " + new HelpTopic("thirdPartyCode").getSimpleLinkHtml("the LabKey installation instructions") + " for more information.";
                         else
                             html += "contact a server administrator about this problem.";
@@ -2022,7 +2021,7 @@ public class SecurityController extends SpringActionController
             c = ContainerManager.createContainer(junit, "SecurityController-" + GUID.makeGUID());
 
             User site = TestContext.get().getUser();
-            assertTrue(site.isAdministrator());
+            assertTrue(site.isSiteAdmin());
 
             User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com")).getUser();
             User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com")).getUser();

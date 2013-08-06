@@ -48,12 +48,12 @@
     //site admins to do this.  however, folder admin can disable sharing on a folder
     //if this folder already has a custom file root, only a site admin can make further changes
     User user = getViewContext().getUser();
-    boolean canChangeFileSettings = getViewContext().getContainer().hasPermission(user, AdminPermission.class) || user.isAdministrator();
-    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !getViewContext().getUser().isAdministrator())
+    boolean canChangeFileSettings = getViewContext().getContainer().hasPermission(user, AdminPermission.class) || user.isSiteAdmin();
+    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !getViewContext().getUser().isSiteAdmin())
     {
         canChangeFileSettings = false;
     }
-    boolean canSetCustomFileRoot = getViewContext().getUser().isAdministrator();
+    boolean canSetCustomFileRoot = getViewContext().getUser().isSiteAdmin();
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>

@@ -81,7 +81,7 @@ public class LdapController extends SpringActionController
 
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
-            if (!getUser().isAdministrator())
+            if (!getUser().isSiteAdmin())
             {
                 throw new UnauthorizedException();
             }

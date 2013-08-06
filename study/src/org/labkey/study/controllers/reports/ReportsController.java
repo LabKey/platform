@@ -157,7 +157,7 @@ public class ReportsController extends BaseStudyController
         {
             if (_study == null)
                 return root.addChild("No Study In Folder");
-            else if (getUser().isAdministrator())
+            else if (getUser().isSiteAdmin())
                 return root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             else
                 return root.addChild("Views");
@@ -1873,7 +1873,7 @@ public class ReportsController extends BaseStudyController
             appendRootNavTrail(root);
 
 
-            if (getUser().isAdministrator())
+            if (getUser().isSiteAdmin())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
         }
         catch (Exception e)
@@ -1889,7 +1889,7 @@ public class ReportsController extends BaseStudyController
         {
             Study study = appendRootNavTrail(root);
 
-            if (getUser().isAdministrator())
+            if (getUser().isSiteAdmin())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             
             VisitImpl visit = null;

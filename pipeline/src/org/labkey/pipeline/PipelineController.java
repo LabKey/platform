@@ -1137,7 +1137,7 @@ public class PipelineController extends SpringActionController
 
     protected Container getJobDataContainer() throws Exception
     {
-        if (getUser().isAdministrator() &&
+        if (getUser().isSiteAdmin() &&
                 getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null)
         {
             return null;

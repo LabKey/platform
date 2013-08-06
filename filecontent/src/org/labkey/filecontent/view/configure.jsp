@@ -49,7 +49,7 @@
         %><div style="color:green;"><%=text(form.getMessage())%></div><%
     }
 
-    if (ctx.getUser().isAdministrator())
+    if (ctx.getUser().isSiteAdmin())
     {
         File rootFile = service.getFileRoot(ctx.getContainer());
         ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
@@ -118,7 +118,7 @@ Each file set is an additional directory that stores files accessible to users o
 </table>
 </form>
 <%
-if (ctx.getUser().isAdministrator())
+if (ctx.getUser().isSiteAdmin())
 {
 %>
 <br><b>Additional Information</b><br>

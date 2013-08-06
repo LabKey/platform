@@ -162,7 +162,7 @@ public class PipelineQueryView extends QueryView
             // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
             // the user is an administrator, and this is the pipeline administration page.
             if (!PipelineService.get().isEnterprisePipeline() &&
-                    getUser().isAdministrator() && getContainer().isRoot())
+                    getUser().isSiteAdmin() && getContainer().isRoot())
             {
                 ActionButton showQueue = new ActionButton(PipelineController.urlStatus(getContainer(), true), "Show Queue");
                 bar.add(showQueue);
