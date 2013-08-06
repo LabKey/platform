@@ -27,25 +27,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -1111,15 +1093,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 return type;
         }
 
-        try
-        {
-            String typeName = Table.executeSingleton(getExpSchema(), findTypeSql, new Object[]{lsid.toString()}, String.class);
-            return LsidType.get(typeName);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        String typeName = new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getObject(String.class);
+        return LsidType.get(typeName);
     }
 
     public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)

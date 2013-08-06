@@ -50,7 +50,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -82,7 +81,7 @@ import java.util.Map;
 @RequiresPermissionClass(AdminPermission.class)
 public class ProjectSettingsAction extends FormViewAction<AdminController.ProjectSettingsForm>
 {
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    public void checkPermissions() throws UnauthorizedException
     {
         super.checkPermissions();
 
@@ -123,9 +122,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         if (form.isResourcesTab())
             return handleResourcesPost(c, errors);
         else if (form.isMenuTab())
-            return handleMenuPost(c, form, errors);
+            return handleMenuPost(c, form);
         else if (form.isFilesTab())
-            return handleFilesPost(c, form, errors);
+            return handleFilesPost(form, errors);
         else
             return handlePropertiesPost(c, form, errors);
     }
@@ -268,13 +267,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return true;
     }
 
-    private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
+    private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form)
     {
         ContainerManager.setMenuEnabled(c, getViewContext().getUser(), form.isEnableMenuBar());
         return true;
     }
 
-    private boolean handleFilesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws Exception
+    private boolean handleFilesPost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
 
@@ -319,7 +318,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return root;
     }
 
-    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException, AttachmentService.DuplicateFilenameException
+    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException
     {
         User user = getViewContext().getUser();
 
@@ -342,7 +341,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     }
 
 
-    private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
+    private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
     {
         User user = getViewContext().getUser();
 
@@ -360,7 +359,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         AttachmentCache.clearFavIconCache();
     }
 
-    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
+    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
     {
         User user = getViewContext().getUser();
 
@@ -408,80 +407,83 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
             if (c.isRoot() || c.isProject())
             {
-                if ("resources".equals(tabId))
+                switch (tabId)
                 {
-                    LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
-                    return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
-                }
-                else if ("properties".equals(tabId))
-                {
-                    LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
-                    return new JspView<>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
-                }
-                else if ("menubar".equals(tabId))
-                {
-                    if (c.isRoot())
-                        throw new NotFoundException("Menu bar must be configured for each project separately.");
-                    WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
-                    v.setView("menubar", new VBox());
-                    //TODO: propagate ClientDependencies
-                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
-
-                    return v;
-                }
-                else if ("files".equals(tabId))
-                {
-                    if (c.isRoot())
-                        throw new NotFoundException("Files must be configured for each project separately.");
-
-                    if (!_reshow || _form.isPipelineRootForm())
+                    case "resources":
                     {
-                        try
-                        {
-                            FolderManagementAction.setConfirmMessage(getViewContext(), _form);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                        }
+                        LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
+                        return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
                     }
-                    VBox box = new VBox();
-                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
-
-                    // only site admins can configure the pipeline root
-                    if (getViewContext().getUser().isAdministrator())
+                    case "properties":
                     {
-                        box.addView(new HttpView() {
-                            protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                                WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
-                            }
-                        });
-
-                        SetupForm form = SetupForm.init(c);
-                        form.setShowAdditionalOptionsLink(true);
-                        form.setErrors(_errors);
-                        PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
-
-                        if (pipeRoot != null)
-                        {
-                            for (String errorMessage : pipeRoot.validate())
-                                _errors.addError(new LabkeyError(errorMessage));
-                        }
-                        box.addView(PipelineService.get().getSetupView(form));
-                        box.addView(new HttpView() {
-                            protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                                WebPartView.endTitleFrame(out);
-                            }
-                        });
+                        LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
+                        return new JspView<>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
                     }
+                    case "menubar":
+                        if (c.isRoot())
+                            throw new NotFoundException("Menu bar must be configured for each project separately.");
+                        WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
+                        v.setView("menubar", new VBox());
+                        //TODO: propagate ClientDependencies
+                        Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
 
-                    // add the folder tree view to show all folders and file content settings for this project
-                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
-                    
-                    return box;
+                        return v;
+                    case "files":
+                        if (c.isRoot())
+                            throw new NotFoundException("Files must be configured for each project separately.");
+
+                        if (!_reshow || _form.isPipelineRootForm())
+                        {
+                            try
+                            {
+                                FolderManagementAction.setConfirmMessage(getViewContext(), _form);
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                            }
+                        }
+                        VBox box = new VBox();
+                        box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
+
+                        // only site admins can configure the pipeline root
+                        if (getViewContext().getUser().isAdministrator())
+                        {
+                            box.addView(new HttpView()
+                            {
+                                protected void renderInternal(Object model, PrintWriter out) throws Exception
+                                {
+                                    WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
+                                }
+                            });
+
+                            SetupForm form = SetupForm.init(c);
+                            form.setShowAdditionalOptionsLink(true);
+                            form.setErrors(_errors);
+                            PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
+
+                            if (pipeRoot != null)
+                            {
+                                for (String errorMessage : pipeRoot.validate())
+                                    _errors.addError(new LabkeyError(errorMessage));
+                            }
+                            box.addView(PipelineService.get().getSetupView(form));
+                            box.addView(new HttpView()
+                            {
+                                protected void renderInternal(Object model, PrintWriter out) throws Exception
+                                {
+                                    WebPartView.endTitleFrame(out);
+                                }
+                            });
+                        }
+
+                        // add the folder tree view to show all folders and file content settings for this project
+                        box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
+
+                        return box;
+                    default:
+                        throw new NotFoundException("Unknown tab id");
                 }
-                else
-                    throw new NotFoundException("Unknown tab id");
             }
             else
             {

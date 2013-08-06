@@ -68,7 +68,6 @@ public class PipelineStatusManager
      *
      * @param path file path to for the associated file
      * @return the corresponding <code>PipelineStatusFileImpl</code>
-     * @throws SQLException database error
      */
     public static PipelineStatusFileImpl getStatusFile(File path)
     {
@@ -96,20 +95,7 @@ public class PipelineStatusManager
      */
     private static PipelineStatusFileImpl getStatusFile(Filter filter)
     {
-        try
-        {
-            PipelineStatusFileImpl[] asf =
-                    Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
-
-            if (asf.length == 0)
-                return null;
-
-            return asf[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
     }
 
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
@@ -358,9 +344,8 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container) throws SQLException
     {
-        return Table.executeSingleton(_schema.getSchema(),
-            "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ? ",
-            new Object[]{container.getId(), parentId,PipelineJob.COMPLETE_STATUS }, Integer.class);
+        return new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ?",
+                container, parentId, PipelineJob.COMPLETE_STATUS).getObject(Integer.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)

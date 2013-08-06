@@ -55,14 +55,7 @@ public class CoreUpgradeCode implements UpgradeCode
     // the 10.1 scripts run (see #9927).
     private String getRootId()
     {
-        try
-        {
-            return Table.executeSingleton(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL", null, String.class);
-        }
-        catch (SQLException e)
-        {
-            return null;
-        }
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL").getObject(String.class);
     }
 
     // invoked by core-11.20-11.30.sql
@@ -99,15 +92,9 @@ public class CoreUpgradeCode implements UpgradeCode
                 FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
                 SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
 
-                Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection();
-
-                try
+                try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())
                 {
                     SqlScriptManager.runScript(context.getUpgradeUser(), script, context, conn);
-                }
-                finally
-                {
-                    conn.close();
                 }
             }
         }

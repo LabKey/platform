@@ -494,9 +494,9 @@ public class AnnouncementManager
     }
 
 
-    private static int getParentRowId(AnnouncementModel ann) throws SQLException
+    private static int getParentRowId(AnnouncementModel ann)
     {
-        return Table.executeSingleton(_comm.getSchema(), "SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId=?", new Object[]{ann.getParent()}, Integer.class);
+        return new SqlSelector(_comm.getSchema(), "SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?", ann.getParent()).getObject(Integer.class);
     }
 
 
