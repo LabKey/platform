@@ -70,7 +70,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
