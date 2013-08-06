@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -158,7 +157,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _displayName;
     }
 
-    public boolean isAdministrator()
+    public boolean isSiteAdmin()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
@@ -191,7 +190,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     {
         Set<Role> roles = new HashSet<>();
 
-        if (isAdministrator())
+        if (isSiteAdmin())
             roles.add(RoleManager.siteAdminRole);
         if (isDeveloper())
             roles.add(RoleManager.getRole(DeveloperRole.class));

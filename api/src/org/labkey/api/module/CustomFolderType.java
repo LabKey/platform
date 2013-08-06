@@ -139,7 +139,7 @@ public class CustomFolderType implements FolderType
         else
         {
             tabs.add(new NavTree("Projects", PageFlowUtil.urlProvider(CoreUrls.class).getProjectsURL(context.getContainer())));
-            if (context.getUser().isAdministrator())
+            if (context.getUser().isSiteAdmin())
             {
                 url = PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
                 tabs.add(new NavTree("Admin Console", url));

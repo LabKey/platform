@@ -174,7 +174,7 @@ public class GroupManager
                 sb.append("\t").append(g.getUserId()).append(" [");
                 appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n " + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
-                if (g.isProjectGroup() || user.isAdministrator())
+                if (g.isProjectGroup() || user.isSiteAdmin())
                 {
                     appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
                     appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");

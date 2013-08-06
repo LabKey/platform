@@ -643,7 +643,7 @@ function setDisabled(checkbox, label, disabled)
                 </td>
             </tr> <%
                 // must be project admin (or above to to share a report to child folders            
-                if (ctx.getUser().isAdministrator() || ReportUtil.isInRole(ctx.getUser(), c, ProjectAdminRole.class))
+                if (ctx.getUser().isSiteAdmin() || ReportUtil.isInRole(ctx.getUser(), c, ProjectAdminRole.class))
                 {
             %>
             <tr><td>

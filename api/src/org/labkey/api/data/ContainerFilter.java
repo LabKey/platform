@@ -438,7 +438,7 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
         {
-            if (_user.isAdministrator() && container.isRoot())
+            if (_user.isSiteAdmin() && container.isRoot())
                 return new SQLFragment("1 = 1");
             return super.getSQLFragment(schema,containerColumnSQL,container,useJDBCParameters,allowNulls);
         }
@@ -792,7 +792,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            if (_user.isAdministrator())
+            if (_user.isSiteAdmin())
             {
                 // Don't bother filtering, the user can see everything
                 return null;

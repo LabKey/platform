@@ -29,18 +29,15 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
@@ -115,7 +112,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 msg.append(") previously set for this folder does not exist or cannot be reached at this time.");
 
                 //if current user is an admin, include a link to the pipeline setup page
-                if(getViewContext().getUser().isAdministrator())
+                if(getViewContext().getUser().isSiteAdmin())
                 {
                     ActionURL urlhelper = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer());
                     msg.append("</p><p><a href='").append(urlhelper.getLocalURIString()).append("'>[Setup Pipeline]</a></p>");

@@ -75,7 +75,7 @@
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
 <%= PageFlowUtil.getStandardIncludes(c, user, userAgent, bean.getClientDependencies()) %><%
-if(user.isAdministrator())
+if(user.isSiteAdmin())
 {
     String webPartPermissionsource = contextPath + "/WebPartPermissionsPanel.js?" + PageFlowUtil.getServerSessionHash();
     %>
@@ -103,7 +103,7 @@ if (null != bean.getStyles())
     String script = AnalyticsService.getTrackingScript();
     if (StringUtils.isNotEmpty(script))
     {
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
             {%><!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> --><%}
         %><%=script%><%
     }

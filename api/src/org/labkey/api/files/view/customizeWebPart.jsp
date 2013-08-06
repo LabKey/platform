@@ -62,7 +62,7 @@
                 <option value="<%=h(attDir.getLabel())%>" <%=attDir.getLabel().equals(form.getFileSet()) ? "SELECTED" : ""%>><%=h(attDir.getLabel())%></option>
 <%          } %>
             </select>
-<%          if (ctx.getUser().isAdministrator())
+<%          if (ctx.getUser().isSiteAdmin())
             {
                 ActionURL configUrl = urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer()); %>
                 <a href="<%=h(configUrl)%>">Configure File Roots</a>

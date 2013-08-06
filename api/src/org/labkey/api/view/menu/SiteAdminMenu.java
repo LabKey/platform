@@ -47,7 +47,7 @@ public class SiteAdminMenu extends NavTreeMenu
         NavTree[] admin = null;
         Container root = ContainerManager.getRoot();
 
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
         {
             SecurityUrls securityUrls = PageFlowUtil.urlProvider(SecurityUrls.class);
 

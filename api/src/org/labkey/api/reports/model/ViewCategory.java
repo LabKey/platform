@@ -88,7 +88,7 @@ public class ViewCategory extends Entity implements Comparable
 
     public boolean canEdit(Container container, User user)
     {
-        return user.isAdministrator();
+        return user.isSiteAdmin();
     }
 
     public boolean canDelete(Container container, User user)

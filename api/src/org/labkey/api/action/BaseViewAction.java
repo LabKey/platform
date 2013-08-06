@@ -661,7 +661,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
             if (isPOST)
             {
-                if (!user.isAdministrator())
+                if (!user.isSiteAdmin())
                 {
                     throw new UnauthorizedException();
                 }
@@ -680,7 +680,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
-        if (requiresSiteAdmin && !user.isAdministrator())
+        if (requiresSiteAdmin && !user.isSiteAdmin())
         {
             throw new UnauthorizedException();
         }

@@ -293,7 +293,7 @@ public class ContainerManager
             if (null != c.getProject())
                 adminGroupId = SecurityManager.getGroupId(c.getProject(), "Administrators", false);
             boolean isProjectAdmin = (null != adminGroupId) && user != null && user.isInGroup(adminGroupId.intValue());
-            if (!isProjectAdmin && user != null && !user.isAdministrator() || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+            if (!isProjectAdmin && user != null && !user.isSiteAdmin() || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
                 SecurityManager.setInheritPermissions(c);
         }
 

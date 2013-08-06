@@ -2034,7 +2034,7 @@ public class PageFlowUtil
         userProps.put("canDelete", null != container && container.hasPermission(user, DeletePermission.class));
         userProps.put("canDeleteOwn", null != container && container.hasPermission(user, ACL.PERM_DELETEOWN));
         userProps.put("isAdmin", null != container && container.hasPermission(user, AdminPermission.class));
-        userProps.put("isSystemAdmin", user.isAdministrator());
+        userProps.put("isSystemAdmin", user.isSiteAdmin());
         userProps.put("isGuest", user.isGuest());
         json.put("user", userProps);
         SecurityLogger.outdent();

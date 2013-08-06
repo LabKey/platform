@@ -110,7 +110,7 @@ public class Overview
 
     public boolean isGlobalAdmin()
     {
-        return getUser().isAdministrator();
+        return getUser().isSiteAdmin();
     }
 
     public User getUser()

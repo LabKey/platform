@@ -164,7 +164,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         {
             public TableInfo getLookupTableInfo()
             {
-                String tableName = _userSchema.getUser().isAdministrator() ? "SiteUsers" : "Users";
+                String tableName = _userSchema.getUser().isSiteAdmin() ? "SiteUsers" : "Users";
                 return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), "core").getTable(tableName);
             }
         });

@@ -139,7 +139,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     {
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
         AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
-        ActionURL impersonateURL = user.isAdministrator() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(c.getProject());
+        ActionURL impersonateURL = user.isSiteAdmin() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(c.getProject());
         NavTree userMenu = new NavTree("User", impersonateURL);
         menu.addChild(userMenu);
     }
@@ -164,7 +164,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
             if (impersonatedUser.equals(adminUser))
                 throw new UnauthorizedImpersonationException("Can't impersonate yourself", getFactory());
 
-            if (adminUser.isAdministrator())
+            if (adminUser.isSiteAdmin())
                 return;
 
             // Project admin...

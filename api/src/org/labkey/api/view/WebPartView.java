@@ -595,7 +595,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         nMenu.addChild(customize);
                     }
 
-                    if (getViewContext().getUser().isAdministrator())
+                    if (getViewContext().getUser().isSiteAdmin())
                     {
                         Portal.WebPart webPart = Portal.getPart(context.getContainer(), getWebPartRowId());
 

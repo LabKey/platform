@@ -500,7 +500,7 @@ public class SecurityManager
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
             project = null;
         impersonate(viewContext, new ImpersonateUserContextFactory(project, user, impersonatedUser, returnURL));
     }
@@ -526,7 +526,7 @@ public class SecurityManager
         }
         else
         {
-            if (user.isAdministrator())
+            if (user.isSiteAdmin())
                 project = null;
             impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, role, returnURL));
         }
@@ -2481,7 +2481,7 @@ public class SecurityManager
                     msg.setTo(email.getEmailAddress());
                     SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                appendClickToSeeMail = currentUser.isAdministrator();
+                appendClickToSeeMail = currentUser.isSiteAdmin();
             }
 
             User newUser = newUserStatus.getUser();
@@ -2518,7 +2518,7 @@ public class SecurityManager
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");
-            appendMailHelpText(message, messageContentsURL, currentUser.isAdministrator());
+            appendMailHelpText(message, messageContentsURL, currentUser.isSiteAdmin());
 
             User newUser = UserManager.getUser(email);
 

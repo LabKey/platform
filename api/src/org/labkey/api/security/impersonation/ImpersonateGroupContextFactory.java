@@ -91,7 +91,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     private static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
     {
         // Site admin can impersonate any group
-        if (user.isAdministrator())
+        if (user.isSiteAdmin())
             return true;
 
         // Project admin...

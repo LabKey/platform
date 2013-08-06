@@ -34,7 +34,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
-import javax.management.relation.RoleStatus;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.Set;
@@ -173,7 +172,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         private void verifyPermissions(@Nullable Container project, User user)
         {
             // Site admin can impersonate anywhere
-            if (user.isAdministrator())
+            if (user.isSiteAdmin())
                 return;
 
             // Must not be root
