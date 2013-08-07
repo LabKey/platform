@@ -10,6 +10,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             '<script type="text/javascript">\n' +
             "// Wrap in function to prevent leaking variables into global namespace.\n" +
             "(function() {\n" +
+            "    var chartId = 'exportedChart';\n" +
             "    var loadVisDependencies = function(callback, scope) {\n" +
             "        var devScripts = [\n" +
             "            '/vis/lib/d3-2.0.4.min.js',\n" +
@@ -74,7 +75,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        }\n" +
             "\n" +
             "        if (!validation.success) {\n" +
-            "            renderMessages('exportedChart', messages);\n" +
+            "            renderMessages(chartId, messages);\n" +
             "            return;\n" +
             "        }\n" +
             "\n" +
@@ -85,12 +86,12 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        }\n" +
             "\n" +
             "        if (!validation.success) {\n" +
-            "            renderMessages('exportedChart', messages);\n" +
+            "            renderMessages(chartId, messages);\n" +
             "            return;\n" +
             "        }\n" +
             "\n" +
             "        var plotConfig = {\n" +
-            "            renderTo: 'exportedChart',\n" +
+            "            renderTo: chartId,\n" +
             "            width: chartConfig.width ? chartConfig.width : DEFAULT_WIDTH,\n" +
             "            height: chartConfig.height? chartConfig.height : DEFAULT_HEIGHT,\n" +
             "            labels: labels,\n" +
@@ -102,7 +103,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var plot = new LABKEY.vis.Plot(plotConfig);\n" +
             "        \n" +
             "        plot.render();\n" +
-            "        renderMessages('exportedChart', messages);\n" +
+            "        renderMessages(chartId, messages);\n" +
             "    };\n" +
             "\n" +
             "    var dependencyCallback = function() {\n" +

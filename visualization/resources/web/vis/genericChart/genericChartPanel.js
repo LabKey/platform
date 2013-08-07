@@ -1005,8 +1005,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             showUpdateColumn        : false,
             showRecordSelectors     : false,
             quickChartDisabled      : true,
+            showPagination          : true,
             buttonBar   : {
-                position : 'none'
+                includeStandardButton: false,
+                items: [LABKEY.QueryWebPart.standardButtons.pageSize]
             },
             listeners : {
                 render : function() {
