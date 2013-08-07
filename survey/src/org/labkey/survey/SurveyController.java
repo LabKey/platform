@@ -616,7 +616,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 Map<String, Object> row = doInsertUpdate(tvf, errors, survey.getResponsesPk() == null);
                                 if (errors.hasErrors())
                                 {
-                                    response.put("errorInfo", errors.getFieldError().getDefaultMessage());
+                                    response.put("errorInfo", errors.getMessage());
                                     response.put("success", false);
                                 }
                                 else
