@@ -92,51 +92,52 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                 SubfoldersDocument document = SubfoldersDocument.Factory.parse(subfoldersIS);
                 for (SubfolderType subfolderNode : document.getSubfolders().getSubfolderArray())
                 {
-                    if (Arrays.asList(subfoldersDir.listDirs()).indexOf(subfolderNode.getName()) == -1)
+                    String subfolderName = subfoldersDir.makeLegalName(subfolderNode.getName());
+                    if (Arrays.asList(subfoldersDir.listDirs()).indexOf(subfolderName) == -1)
                     {
-                        ctx.getLogger().error("Could not find content directory for subfolder: " + getFilePath(subfoldersDir, subfolderNode.getName()));
+                        ctx.getLogger().error("Could not find content directory for subfolder: " + getFilePath(subfoldersDir, subfolderName));
                     }
                     else
                     {
-                        VirtualFile subfolderDir = subfoldersDir.getDir(subfolderNode.getName());
+                        VirtualFile subfolderDir = subfoldersDir.getDir(subfolderName);
 
                         // locate the folder.xml file for the given subfolder
                         InputStream folderXmlIS = subfolderDir.getInputStream("folder.xml");
                         if (folderXmlIS == null)
                         {
-                            ctx.getLogger().error("Could not find expected folder.xml file: " + getFilePath(subfoldersDir, subfolderNode.getName()));
+                            ctx.getLogger().error("Could not find expected folder.xml file: " + getFilePath(subfoldersDir, subfolderName));
                             continue;
                         }
                         FolderDocument folderXml = FolderDocument.Factory.parse(folderXmlIS);
 
                         // create a new child container if one does not already exist
-                        Container childContainer = ctx.getContainer().getChild(subfolderNode.getName());
+                        Container childContainer = ctx.getContainer().getChild(subfolderName);
                         if (childContainer == null)
                         {
                             String title = folderXml.getFolder().getTitle();
                             String description = folderXml.getFolder().getDescription();
                             Container.TYPE cType = folderXml.getFolder().isSetType() ? Container.TYPE.typeFromString(folderXml.getFolder().getType()) : Container.TYPE.normal;
-                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderNode.getName(), title, description, cType, ctx.getUser());
+                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderName, title, description, cType, ctx.getUser());
 
                             // set the child container to inherit permissions from the parent by default
                             SecurityManager.setInheritPermissions(childContainer);
-                            ctx.getLogger().info("New container created with inherited permissions for " + subfolderNode.getName());
+                            ctx.getLogger().info("New container created with inherited permissions for " + subfolderName);
                         }
                         else
                         {
                             if (!childContainer.hasPermission(ctx.getUser(), AdminPermission.class))
                             {
-                                ctx.getLogger().error("You must have admin permissions to replace the subfolder: " + getFilePath(subfoldersDir, subfolderNode.getName()));
+                                ctx.getLogger().error("You must have admin permissions to replace the subfolder: " + getFilePath(subfoldersDir, subfolderName));
                                 continue;
                             }
                         }
 
                         // import the subfolder with the folderDir as the root with a new import context
-                        ctx.getLogger().info("Loading folder archive for " + subfolderNode.getName());
+                        ctx.getLogger().info("Loading folder archive for " + subfolderName);
                         FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getLoggerGetter(), subfolderDir);
                         FolderImporterImpl importer = new FolderImporterImpl(job);
                         importer.process(job, folderCtx, subfolderDir);
-                        ctx.getLogger().info("Done importing folder archive for " + subfolderNode.getName());
+                        ctx.getLogger().info("Done importing folder archive for " + subfolderName);
                     }
                 }
 
