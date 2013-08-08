@@ -60,9 +60,9 @@
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator(ctxPath));
+            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator(ctxPath));
         }
-        return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator(ctxPath));
+        return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator(ctxPath));
     }
 %>
 <div>
