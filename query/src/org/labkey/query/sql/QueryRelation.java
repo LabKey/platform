@@ -99,7 +99,12 @@ public abstract class QueryRelation
     {
         return _query.getParseErrors();
     }
-    
+
+    public void reportWarning(String string, @Nullable QNode node)
+    {
+        _query.reportWarning(string, null==node?0:node.getLine(), null==node?0:node.getColumn());
+    }
+
 
     abstract void declareFields();
 

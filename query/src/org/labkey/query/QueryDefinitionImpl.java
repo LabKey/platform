@@ -267,16 +267,25 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return "";
     }
 
+
+
     public List<QueryParseException> getParseErrors(QuerySchema schema)
     {
-        List<QueryParseException> ret = new ArrayList<>();
+        ArrayList<QueryParseException> ret = new ArrayList<>();
+        validateQuery(schema, ret, null);
+        return ret;
+    }
 
+
+    @Override
+    public boolean validateQuery(QuerySchema schema, @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
+    {
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            List<XmlError> errors = new ArrayList<>();
-            options.setErrorListener(errors);
+            List<XmlError> xmlErrors = new ArrayList<>();
+            options.setErrorListener(xmlErrors);
             try
             {
                 TablesDocument table = TablesDocument.Factory.parse(metadata, options);
@@ -284,20 +293,25 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                ret.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle), null, xmle.getError().getLine(), xmle.getError().getColumn()));
+                errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle), null, xmle.getError().getLine(), xmle.getError().getColumn()));
             }
-            for (XmlError xmle : errors)
+            for (XmlError xmle : xmlErrors)
             {
-                ret.add(new MetadataParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
+                errors.add(new MetadataParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
             }
         }
         else
         {
-            for (QueryException e : getQuery(schema).getParseErrors())
-                ret.add(wrapParseException(e, true));
+            Query q = getQuery(schema);
+            for (QueryException e : q.getParseErrors())
+                errors.add(wrapParseException(e, true));
+            if (errors.isEmpty() && null != warnings)
+                warnings.addAll(q.getParseWarnings());
         }
-        return ret;
+        return errors.isEmpty();
     }
+
+
 
     static QueryParseException wrapParseException(Throwable e, boolean metadataExists)
     {

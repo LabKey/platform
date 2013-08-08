@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -104,6 +105,7 @@ public class Query
 	String _querySource;
     boolean _strictColumnList = false;
 	private ArrayList<QueryException> _parseErrors = new ArrayList<>();
+    private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
 
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
@@ -400,6 +402,22 @@ public class Query
     public List<QueryException> getParseErrors()
     {
         return _parseErrors;
+    }
+
+
+    public List<QueryParseException> getParseWarnings()
+    {
+        return _parseWarnings;
+    }
+
+    public void reportWarning(String warning)
+    {
+        _parseWarnings.add(new QueryParseWarning(warning, null, 0, 0));
+    }
+
+    public void reportWarning(String warning, int line, int col)
+    {
+        _parseWarnings.add(new QueryParseWarning(warning, null, line, col));
     }
 
 

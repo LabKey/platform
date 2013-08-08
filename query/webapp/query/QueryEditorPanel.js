@@ -645,14 +645,19 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
         function onSuccess(json, response, opts)
         {
-            if (json.parseErrors)
+            this.clearErrors();
+
+            if (json.parseErrors || json.parseWarnings)
             {
                 // There are errors
                 var msgs = [];
-                var errors = json.parseErrors;
+                var errors = json.parseErrors || json.parseWarnings;
                 for (var i=0; i<errors.length;i++)
                     msgs.push(errors[i]);
-                this.showErrors(msgs);
+                if (errors === json.parseErrors)
+                    this.showErrors(msgs);
+                else
+                    this.showWarnings(msgs);
             }
             else
                 this.clearErrors();
@@ -679,7 +684,12 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-    showErrors : function(errors)
+    showWarnings : function(errors)
+    {
+        this.showErrors(errors, "labkey-warning-messages error-container");
+    },
+
+    showErrors : function(errors, css)
     {
         var tabEl;
         if (errors && errors.length > 0)
@@ -700,7 +710,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             return;
         }
 
-        var inner = '<div class="labkey-error error-container"><ul>';
+        var inner = '<div class="' + (css || "labkey-error error-container") + '"><ul>';
         for (var e = 0; e < errors.length; e++)
         {
             inner += '<li>' + errors[e].msg + '</li>'

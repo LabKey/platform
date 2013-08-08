@@ -800,7 +800,9 @@ public class QueryController extends SpringActionController
                     query.save(getUser(), getContainer());
 
                     // the query was successfully saved, validate the query but return any errors in the success response
-                    List<QueryParseException> parseErrors = query.getParseErrors(form.getSchema());
+                    List<QueryParseException> parseErrors = new ArrayList<>();
+                    List<QueryParseException> parseWarnings = new ArrayList<>();
+                    query.validateQuery(form.getSchema(), parseErrors, parseWarnings);
                     if (!parseErrors.isEmpty())
                     {
                         JSONArray errorArray = new JSONArray();
@@ -810,6 +812,16 @@ public class QueryController extends SpringActionController
                             errorArray.put(e.toJSON(form.ff_queryText));
                         }
                         response.put("parseErrors", errorArray);
+                    }
+                    else if (!parseWarnings.isEmpty())
+                    {
+                        JSONArray errorArray = new JSONArray();
+
+                        for (QueryException e : parseWarnings)
+                        {
+                            errorArray.put(e.toJSON(form.ff_queryText));
+                        }
+                        response.put("parseWarnings", errorArray);
                     }
                 }
             }

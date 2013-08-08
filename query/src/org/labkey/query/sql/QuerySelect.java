@@ -364,6 +364,7 @@ groupByLoop:
             while (fieldKeys.containsKey(new FieldKey(null,"Expression" + ++expressionUniq)))
                 ;
             name = "Expression" + expressionUniq;
+            reportWarning("Automatially creating alias for expression column: " + name, column._node);
             if (null == column._key)
                 column._key = new FieldKey(null,name);
             fieldKeys.put(column._key, column._key);
