@@ -120,6 +120,9 @@ public class ReportUtil
         url.replaceParameter(ScriptReportDescriptor.Prop.scriptExtension.name(), bean.getScriptExtension());
         url.replaceParameter(TabStripView.TAB_PARAM, ScriptReport.TAB_SOURCE);
 
+        // issue 18390, don't want reportId on the create report action
+        url.deleteParameter(ReportDescriptor.Prop.reportId);
+
         return _getChartDesignerURL(url, bean);
     }
 
