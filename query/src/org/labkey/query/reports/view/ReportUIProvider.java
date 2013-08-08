@@ -141,7 +141,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
             rBean.setRedirectUrl(returnUrl.getLocalURIString());
-            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean),
+            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, rBean),
                     _getIconPath(RReport.TYPE)));
         }
 

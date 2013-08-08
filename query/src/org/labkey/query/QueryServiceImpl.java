@@ -2013,7 +2013,8 @@ public class QueryServiceImpl extends QueryService
                             List<Map<String, Object>> updatedRows = params[1];
                             Map<String, Object> updatedRow = updatedRows.get(i);
 
-                            // remove unmodified values from the original row
+                            // only record modified fields
+                            Map<String, Object> originalRow = new HashMap<>();
                             Map<String, Object> modifiedRow = new HashMap<>();
 
                             for (Map.Entry<String, Object> entry : row.entrySet())
@@ -2021,16 +2022,15 @@ public class QueryServiceImpl extends QueryService
                                 if (updatedRow.containsKey(entry.getKey()))
                                 {
                                     Object newValue = updatedRow.get(entry.getKey());
-                                    if (Objects.equals(entry.getValue(), newValue))
-                                        row.remove(entry.getKey());
-                                    else
+                                    if (!Objects.equals(entry.getValue(), newValue))
+                                    {
+                                        originalRow.put(entry.getKey(), entry.getValue());
                                         modifiedRow.put(entry.getKey(), newValue);
+                                    }
                                 }
-                                else
-                                    row.remove(entry.getKey());
                             }
 
-                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
+                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(originalRow);
                             if (oldRecord != null)
                                 dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
 
