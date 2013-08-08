@@ -52,6 +52,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
@@ -869,6 +870,10 @@ abstract public class AbstractTableInfo implements TableInfo
 
             for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
             {
+                // this shouldn't happen since columnName is required
+                if (null == xmlColumn.getColumnName())
+                    throw new ConfigurationException("Table schema has column with empty columnName attribute: ", xmlTable.getTableName());
+
                 if (xmlColumn.getWrappedColumnName() != null)
                 {
                     wrappedColumns.add(xmlColumn);
