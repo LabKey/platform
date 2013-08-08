@@ -486,12 +486,14 @@ public class AssayManager implements AssayService.Interface
     }
 
     @Override
+    // TODO: Delete this?  Unused...
     /** Recurse through the container tree, upgrading any assay protocols that live there */
     public void upgradeAssayDefinitions(User user, double targetVersion)
     {
         upgradeAssayDefinitions(user, ContainerManager.getRoot(), targetVersion);
     }
 
+    // TODO: Delete this?  Unused...
     private void upgradeAssayDefinitions(User user, Container c, double targetVersion)
     {
         try

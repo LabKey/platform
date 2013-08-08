@@ -238,7 +238,7 @@ public class SqlScriptController extends SpringActionController
             // and don't run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                for (String name : new String[]{"luminex-11.31-12.10.sql", "study-11.101-11.20.sql", "query-12.301-13.10.sql"})
+                for (String name : new String[]{"luminex-11.31-12.10.sql", "query-12.301-13.10.sql"})
                 {
                     if (-1 == html.indexOf(name))
                         html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
@@ -307,6 +307,7 @@ public class SqlScriptController extends SpringActionController
 
             double fromVersion = form.getFromVersion();
             double toVersion = form.getToVersion();
+            boolean includeSingleScripts = form.getIncludeSingleScripts();
 
             for (Module module : modules)
             {
@@ -322,8 +323,9 @@ public class SqlScriptController extends SpringActionController
                         for (String schemaName : schemaNames)
                         {
                             ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+                            List<SqlScript> scripts = consolidator.getScripts();
 
-                            if (!consolidator.getScripts().isEmpty())
+                            if (!scripts.isEmpty() && (includeSingleScripts || scripts.size() > 1))
                                 consolidators.add(consolidator);
                         }
                     }
@@ -340,6 +342,9 @@ public class SqlScriptController extends SpringActionController
             formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(toVersion));
             formHtml.append("\"/></td></tr>\n");
+            formHtml.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
+            formHtml.append(includeSingleScripts ? " checked" : "");
+            formHtml.append("/>Include single scripts</td></tr>\n");
             formHtml.append("    <tr><td colspan=2>");
             formHtml.append(PageFlowUtil.generateSubmitButton("Update"));
             formHtml.append("</td></tr>\n");
@@ -485,6 +490,7 @@ public class SqlScriptController extends SpringActionController
         private String _schema;
         private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10) / 10;
         private double _toVersion = _fromVersion + 0.1;
+        private boolean _includeSingleScripts = false;
 
         public String getModule()
         {
@@ -528,6 +534,17 @@ public class SqlScriptController extends SpringActionController
         public void setToVersion(double toVersion)
         {
             _toVersion = toVersion;
+        }
+
+        public boolean getIncludeSingleScripts()
+        {
+            return _includeSingleScripts;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setIncludeSingleScripts(boolean includeSingleScripts)
+        {
+            _includeSingleScripts = includeSingleScripts;
         }
     }
 

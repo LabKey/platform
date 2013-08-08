@@ -82,43 +82,6 @@ public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
 
-    // called at 11.10->11.101
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void renameObjectIdToRowId(final ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        // This needs to happen later, after all of the AssayProviders have been registered
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                AssayService.get().upgradeAssayDefinitions(moduleContext.getUpgradeUser(), 11.101);
-            }
-        });
-    }
-
-    /* called at 11.11->11.12, PostgreSQL only, to move to case-insensitive UNIQUE INDEXes */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void uniquifyDatasetNamesAndLabels(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        try
-        {
-            TableInfo datasets = DbSchema.get("study").getTable("Dataset");
-            UpgradeUtils.uniquifyValues(datasets.getColumn("Name"), new Sort("DatasetId"), false, true);
-            UpgradeUtils.uniquifyValues(datasets.getColumn("Label"), new Sort("DatasetId"), false, true);
-        }
-        catch (SQLException se)
-        {
-            throw UnexpectedException.wrap(se);
-        }
-    }
-
     /* called at 11.21-11.22, adds studyProtocolEntityIds to each study. */
     @SuppressWarnings({"UnusedDeclaration"})
     public void assignProtocolDocumentEntityId(ModuleContext moduleContext)

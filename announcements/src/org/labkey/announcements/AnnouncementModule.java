@@ -141,12 +141,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return true;
     }
 
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new CommUpgradeCode();
-    }
-
     public String getTabName(ViewContext context)
     {
         return "Messages";
