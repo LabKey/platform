@@ -124,6 +124,7 @@ public interface QueryDefinition
     void delete(User user, boolean fireChangeEvent) throws SQLException;
 
     List<QueryParseException> getParseErrors(QuerySchema schema);
+    boolean validateQuery(QuerySchema schema, List<QueryParseException> errors, List<QueryParseException> warnings);
 
     @Nullable ActionURL urlFor(QueryAction action);
     /** Used for URLs that don't require row-level info, like insert or grid URLs */

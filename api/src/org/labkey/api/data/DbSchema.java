@@ -468,6 +468,9 @@ public class DbSchema
                     {
                         TableInfo table = schema.getTable(tableName);
 
+                        if (null == table)
+                            fail("Could not create table instance: " + tableName);
+
                         if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
                             continue;
 
