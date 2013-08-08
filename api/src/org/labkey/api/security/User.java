@@ -157,6 +157,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _displayName;
     }
 
+    // Is the user a Site Administrator? This is NOT a check for AdminPermission.
     public boolean isSiteAdmin()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);

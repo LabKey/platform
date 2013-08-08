@@ -318,7 +318,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 185 usages
+    // 152 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
