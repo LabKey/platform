@@ -227,7 +227,7 @@ public class Query
                 return;
             }
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
-            parser.parseQuery(queryText, _parseErrors);
+            parser.parseQuery(queryText, _parseErrors, _parseWarnings);
             if (!_parseErrors.isEmpty())
                 return;
             _parameters = parser.getParameters();

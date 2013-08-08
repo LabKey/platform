@@ -29,12 +29,15 @@ import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -69,6 +72,7 @@ public class SqlParser
 	private static Logger _log = Logger.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
+    List<QueryParseException> _parseWarnings;
     QNode _root;
     ArrayList<QParameter> _parameters;
     final SqlDialect _dialect;
@@ -102,9 +106,10 @@ public class SqlParser
     }
 
 
-	public QNode parseQuery(String str, List<? super QueryParseException> errors)
+	public QNode parseQuery(@NotNull String str, @NotNull List<? super QueryParseException> errors, @Nullable List<QueryParseException> warnings)
 	{
 		_parseErrors = new ArrayList<>();
+        _parseWarnings = null==warnings ? new ArrayList<QueryParseException>() : warnings;
 		try
 		{
  			_SqlParser parser = new _SqlParser(str, _parseErrors);
@@ -633,6 +638,11 @@ public class SqlParser
 		for (int i=0 ; i<node.getChildCount() ; i++)
 		{
             CommonTree child = (CommonTree)node.getChild(i);
+            if (child.getType() == COMMA)
+            {
+                _parseWarnings.add(new QueryParseWarning("Trailing comma in select list", null, child.getLine(), child.getCharPositionInLine()));
+                continue;
+            }
 			QNode q = convertParseTree(child);
 			if (q != null)
 				l.add(q);
@@ -1351,7 +1361,7 @@ public class SqlParser
         private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<>();
-			QNode q = (new SqlParser()).parseQuery(sql,errors);
+			QNode q = (new SqlParser()).parseQuery(sql,errors,null);
 			if (errors.size() > 0)
 				fail(errors.get(0).getMessage() + "\n" + sql);
 			else
@@ -1362,7 +1372,7 @@ public class SqlParser
 		private void bad(String sql)
 		{
 			List<QueryParseException> errors = new ArrayList<>();
-			QNode q = (new SqlParser()).parseQuery(sql,errors);
+			QNode q = (new SqlParser()).parseQuery(sql,errors,null);
 			if (errors.size() == 0)
 				fail("BAD: " + sql);
 		}
@@ -1405,7 +1415,7 @@ public class SqlParser
             for (Pair<String,String> test : parseStmts)
             {
                 List<QueryParseException> errors = new ArrayList<>();
-                QNode e = new SqlParser().parseQuery(test.first,errors);
+                QNode e = new SqlParser().parseQuery(test.first,errors,null);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);

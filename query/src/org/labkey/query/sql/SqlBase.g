@@ -377,8 +377,8 @@ whereClause
 
 
 selectedPropertiesList
-    // weird trailing comma for backward compatibility
-	: selectedProperty (COMMA! selectedProperty)* (COMMA!)?
+    // weird trailing comma for backward compatibility, leave trailing comma in tree so we can create warnung (see SqlParser)
+	: selectedProperty (COMMA! selectedProperty)* (COMMA)?
 	;
 
 

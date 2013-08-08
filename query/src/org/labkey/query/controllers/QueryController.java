@@ -5084,7 +5084,7 @@ public class QueryController extends SpringActionController
     {
         QNode _parse(String s, List<QueryParseException> errors)
         {
-            return new SqlParser().parseQuery(s, errors);
+            return new SqlParser().parseQuery(s, errors, null);
         }
 
         @Override

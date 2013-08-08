@@ -225,7 +225,7 @@ public class QueryServiceImpl extends QueryService
         return new TableQueryDefinition(schema, tableName);
     }
 
-    public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schemaName)
+    public Map<String, QueryDefinition> getQueryDefs(User user, @NotNull Container container, String schemaName)
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<>();
 
@@ -235,12 +235,12 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public List<QueryDefinition> getQueryDefs(User user, Container container)
+    public List<QueryDefinition> getQueryDefs(User user, @NotNull Container container)
     {
         return new ArrayList<>(getAllQueryDefs(user, container, null, true, false).values());
     }
 
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
+    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, @NotNull Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
 
@@ -371,7 +371,7 @@ public class QueryServiceImpl extends QueryService
         return result;
     }
 
-    public QueryDefinition getQueryDef(User user, Container container, String schema, String name)
+    public QueryDefinition getQueryDef(User user, @NotNull Container container, String schema, String name)
     {
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>();
 
@@ -381,7 +381,7 @@ public class QueryServiceImpl extends QueryService
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, String schema, String query, boolean includeInherited, boolean sharedOnly)
+    private Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query, boolean includeInherited, boolean sharedOnly)
     {
         // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(owner, container, schema, false, true);
