@@ -33,6 +33,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
+import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -166,6 +167,23 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
             }
         }
         return _domains;
+    }
+
+    public void logProperties(Logger logger)
+    {
+        logger.info("***** Start Run Properties *****");
+        for (Map.Entry<DomainProperty, String> entry : this._runProperties.entrySet())
+        {
+            logger.info("\t"+entry.getKey().getLabel()+": " + entry.getValue());
+        }
+        logger.info("***** End Run Properties *****");
+        logger.info("***** Start Batch Properties *****");
+        for (Map.Entry<DomainProperty, String> entry : this._batchProperties.entrySet())
+        {
+            logger.info("\t"+entry.getKey().getLabel()+": " + entry.getValue());
+        }
+        logger.info("***** End Batch Properties *****");
+
     }
 
     @NotNull

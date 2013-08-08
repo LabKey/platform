@@ -60,6 +60,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         setLogFile(FT_LOG.newFile(primaryFile.getParentFile(), baseName));
         _forceSaveBatchProps = forceSaveBatchProps;
 
+        context.logProperties(getLogger());
         _context = context;
         _batchId = batch.getRowId();
         _primaryFile = primaryFile;
