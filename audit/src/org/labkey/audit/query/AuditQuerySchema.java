@@ -75,7 +75,8 @@ public class AuditQuerySchema extends UserSchema
             // new audit table names
             for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
             {
-                _tables.add(provider.getEventName());
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(provider.getEventName()))
+                    _tables.add(provider.getEventName());
             }
         }
         return _tables;
