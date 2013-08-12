@@ -22,7 +22,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -286,16 +285,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             // Do a complicated join if we can identify a target study so that we choose the right specimen
             if (targetStudyCol != null || targetStudy != null)
             {
-                ColumnInfo objectIdCol = columns.get(objectIdFK);
-                Sort sort = null;
-                if (getParentTable().getSqlDialect().isPostgreSQL())
-                {
-                    // This sort is a hack to get Postgres to choose a better plan - it flips the query from using a nested loop
-                    // join to a merge join on the aggregate query
-                    sort = new Sort(objectIdCol.getName());
-                }
                 // Select all the assay-side specimen columns that we'll need to do the comparison
-                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;

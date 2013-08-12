@@ -29,6 +29,7 @@ import org.labkey.api.study.StudyService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,9 +44,15 @@ public class SurveyMetadataBuilder
     private JSONObject _surveyDesign;
     private Map<String, SharedFieldBuilder> _fieldsSharedBetweenDatasets = new HashMap<>();
     private boolean _completedSharedFields = false;
+    private Container _container;
+    private User _user;
+    private int _uniquifier = 1;
+    private JSONArray _questions;
 
-    public SurveyMetadataBuilder()
+    public SurveyMetadataBuilder(Container container, User user)
     {
+        _container = container;
+        _user = user;
         JSONObject survey = new JSONObject();
         survey.put("layout", "auto");
         survey.put("sections", new JSONArray());
@@ -78,42 +85,68 @@ public class SurveyMetadataBuilder
             _fieldsSharedBetweenDatasets.put(field.toLowerCase(), null);
     }
 
-    public void addSectionFromDataset(@Nullable String sectionTitle, Container container, User user, String datasetName,
+    // Add section with a question for each user editable column in the table
+    public void addSectionFromTable(@Nullable String sectionTitle, TableInfo tableInfo,
+                                    Set<String> disableFieldsForEdit, int width, int labelWidth)
+    {
+        String sectionName = null != sectionTitle ? sectionTitle : tableInfo.getTitle();
+        addSectionHelper(tableInfo, sectionName, tableInfo.getName().toLowerCase(), disableFieldsForEdit, width, labelWidth, true);
+    }
+
+    // Add section with a question for each user editable column in the dataset
+    public void addSectionFromDataset(@Nullable String sectionTitle, String datasetName,
                                       Set<String> disableFieldsForEdit, int width, int labelWidth)
     {
-        Study study = StudyService.get().getStudy(container);
+        Study study = StudyService.get().getStudy(_container);
         if (null == study)
             throw new IllegalStateException("No study found.");
         DataSet dataset = study.getDataSetByName(datasetName);
         if (null == dataset)
             throw new IllegalStateException("Dataset " + datasetName + " not found.");
 
-        JSONObject section = new JSONObject();
         String sectionName = null != sectionTitle ? sectionTitle : dataset.getLabel();
+        TableInfo tableInfo = dataset.getTableInfo(_user);
+        addSectionHelper(tableInfo, sectionName, datasetName.toLowerCase(), disableFieldsForEdit, width, labelWidth, false);
+    }
+
+    private void addSectionHelper(TableInfo tableInfo, String sectionName, String queryName,
+                                  Set<String> disableFieldsForEdit, int width, int labelWidth, boolean initDisabled)
+    {
+        JSONObject section = new JSONObject();
         section.put("title", sectionName);
-        section.put("queryName", datasetName.toLowerCase());
+        section.put("queryName", queryName);
+        List<ColumnInfo> columns = tableInfo.getUserEditableColumns();
+        String uniquePrefix = queryName;
+        JSONArray questions = new JSONArray();
+        addTableHelper(tableInfo, section, columns, questions, uniquePrefix, disableFieldsForEdit, width, labelWidth);
+        section.put("questions", questions);
+        section.put("initDisabled", initDisabled);
+        _surveyDesign.getJSONObject("survey").getJSONArray("sections").put(section);
+    }
 
-        TableInfo tableInfo = dataset.getTableInfo(user);
-
+    private void addTableHelper(TableInfo tableInfo, JSONObject section, List<ColumnInfo> columns, JSONArray questions,
+                                String uniquePrefix, Set<String> disableFieldsForEdit, int width, int labelWidth)
+    {
         // Primary keys
         JSONArray pkArray = new JSONArray();
         for (ColumnInfo pkColumn : tableInfo.getPkColumns())
             pkArray.put(pkColumn.getName());
         section.put("primaryKeys", pkArray);
 
-        JSONArray questions = new JSONArray();
-        for (ColumnInfo column : tableInfo.getColumns())
+        for (ColumnInfo column : columns)
         {
-            if (column.isUserEditable())
+            if (!column.isHidden())
             {
                 String columnName = column.getName();
-                String uniqueName = datasetName.toLowerCase() + "-" + columnName.toLowerCase();
+                String uniqueName = uniquePrefix + "-" + columnName.toLowerCase();
                 JSONObject extConfig = new JSONObject();
-                extConfig.put("width", width);
-                extConfig.put("labelWidth", labelWidth);
+                if (0 != width)
+                    extConfig.put("width", width);
+                if (0 != labelWidth)
+                    extConfig.put("labelWidth", labelWidth);
                 extConfig.put("name", uniqueName);
                 extConfig.put("fieldLabel", column.getLabel());
-                setType(extConfig, column);
+                setType(extConfig, column, _container);
                 JSONObject question = new JSONObject();
 
                 boolean columnIsDependent = false;
@@ -123,18 +156,25 @@ public class SurveyMetadataBuilder
                     {
                         // First time name is seen
                         SharedFieldBuilder fieldBuilder = new SharedFieldBuilder();
-                        fieldBuilder.independent = uniqueName;
+                        fieldBuilder.independentQuestionName = uniqueName;
+                        fieldBuilder.independentType = (String)extConfig.get("xtype");
                         _fieldsSharedBetweenDatasets.put(columnName.toLowerCase(), fieldBuilder);
                     }
                     else
                     {
-                        extConfig.put("disabled", true);
-                        question.put("listeners", new JSONObject());
                         SharedFieldBuilder fieldBuilder = _fieldsSharedBetweenDatasets.get(columnName.toLowerCase());
+                        question.put("listeners", new JSONObject());
                         fieldBuilder.dependentListeners.add(question.getJSONObject("listeners"));
                         fieldBuilder.dependentNames.add(uniqueName);
+                        extConfig.put("disabled", true);
+                        extConfig.put("xtype", fieldBuilder.independentType);           // type must match independent type
+                        extConfig.put("dependentField", true);
                         columnIsDependent = true;
                     }
+                }
+                else if (column.isReadOnly())
+                {
+                    extConfig.put("disabled", true);
                 }
                 question.put("extConfig", extConfig);
                 question.put("name", columnName);           // Needs to be not lowercased
@@ -144,15 +184,91 @@ public class SurveyMetadataBuilder
                 questions.put(question);
             }
         }
-        section.put("questions", questions);
+    }
+
+    public JSONObject makeCustomSection(String sectionTitle, int width, int labelWidth, int padding)
+    {
+        JSONObject section = new JSONObject();
+        section.put("title", sectionTitle);
+        section.put("defaultLabelWidth", labelWidth);
+        section.put("defaultWidth", width);
+        if (padding >= 0)
+            section.put("padding", padding);
+        _questions = new JSONArray();
+        return section;
+    }
+
+    public void addCheckboxedSubSection(JSONObject section, String checkboxLabel, TableInfo tableInfo, List<ColumnInfo> columns,
+                                        String filterColumnName, Object filterValue, boolean initHidden)
+    {
+        String uniquifier = String.valueOf(_uniquifier++);
+        String uniquePrefix = tableInfo.getName().toLowerCase() + uniquifier;
+        int width = 150;      //(int)section.get("defaultWidth");
+        int labelWidth = 100; //(int)section.get("defaultLabelWidth");
+        String checkboxName = uniquePrefix + "-checkbox";
+        JSONObject extConfig = new JSONObject();
+        extConfig.put("width", width);
+        extConfig.put("labelWidth", labelWidth);
+        extConfig.put("name", checkboxName);
+        extConfig.put("fieldLabel", checkboxLabel);
+        extConfig.put("xtype", "checkbox");
+        extConfig.put("submitValue", false);        // Checkbox only to control visibility of subsection
+        JSONObject question = new JSONObject();
+        question.put("extConfig", extConfig);
+        question.put("name", checkboxName);
+        _questions.put(question);
+
+        JSONArray subSectionQuestions = new JSONArray();
+        JSONObject subSection = new JSONObject();
+        addTableHelper(tableInfo, subSection, columns, subSectionQuestions, uniquePrefix, new HashSet<String>(), 0, 0);
+        subSection.put("subSection", true);
+        subSection.put("hidden", initHidden);
+        subSection.put("questions", subSectionQuestions);
+        subSection.put("queryName", tableInfo.getName().toLowerCase());
+        subSection.put("queryNameUniquifier", uniquifier);
+
+        JSONObject filter = new JSONObject();
+        filter.put("fieldName", filterColumnName);
+        filter.put("fieldValue", filterValue);
+        JSONArray filters = new JSONArray();
+        filters.put(filter);
+        subSection.put("filters", filters);
+
+        JSONObject changeObject = new JSONObject();
+        JSONArray questionNames = new JSONArray();
+        questionNames.put(checkboxName);
+        changeObject.put("question", questionNames);
+        String function = "function(me, cmp, newValue, oldValue, values) {me.setVisible(newValue);}";
+        changeObject.put("fn", function.toString());
+        JSONObject listener = new JSONObject();
+        listener.put("change", changeObject);
+        subSection.put("listeners", listener);
+        subSection.put("name", uniquePrefix + "-subsection");
+        _questions.put(subSection);
+    }
+
+    public void addSection(JSONObject section)
+    {
+        if (null != _questions)
+            section.put("questions", _questions);
         _surveyDesign.getJSONObject("survey").getJSONArray("sections").put(section);
     }
 
-    private void setType(JSONObject extConfig, ColumnInfo column)
+    private void setType(JSONObject extConfig, ColumnInfo column, Container container)
     {
         if (column.isLookup())
         {
-            extConfig.put("xtype", "lk-userscombo");
+            String lookupTableName = column.getFk().getLookupTableName();
+            String displayField = "Description";
+            if (lookupTableName.equalsIgnoreCase("location"))
+                displayField = "Label";
+            else if (column.getLegalName().toLowerCase().equalsIgnoreCase(StudyService.get().getSubjectColumnName(container)))
+                displayField = StudyService.get().getSubjectColumnName(container);
+
+            extConfig.put("xtype", "lk-genericcombo");
+            extConfig.put("queryName", lookupTableName);
+            extConfig.put("keyField", "RowId");
+            extConfig.put("displayField", displayField);
             extConfig.put("emptyText", "Select...");
         }
         else
@@ -182,7 +298,8 @@ public class SurveyMetadataBuilder
 
     private class SharedFieldBuilder
     {
-        public String independent;
+        public String independentQuestionName;
+        public String independentType;
         public List<JSONObject> dependentListeners = new ArrayList<>();
         public List<String> dependentNames = new ArrayList<>();
     }
@@ -199,7 +316,7 @@ public class SurveyMetadataBuilder
                 {
                     JSONObject changeObject = new JSONObject();
                     JSONArray questionNames = new JSONArray();
-                    questionNames.put(fieldBuilder.independent);
+                    questionNames.put(fieldBuilder.independentQuestionName);
                     changeObject.put("question", questionNames);
                     String function = "function(me, cmp, newValue, oldValue, values) {me.setValue(newValue);}";
                     changeObject.put("fn", function.toString());
@@ -212,7 +329,7 @@ public class SurveyMetadataBuilder
                 {
                     dependents.put(dependentName);
                 }
-                dependency.put(fieldBuilder.independent, dependents);
+                dependency.put(fieldBuilder.independentQuestionName, dependents);
             }
             _surveyDesign.getJSONObject("survey").put("fieldDependency", dependency);
         }
