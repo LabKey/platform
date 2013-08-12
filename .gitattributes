@@ -193,6 +193,7 @@ audit/src/org/labkey/audit/AuditController.java -text
 audit/src/org/labkey/audit/AuditLogImpl.java -text
 audit/src/org/labkey/audit/AuditModule.java -text
 audit/src/org/labkey/audit/AuditSchema.java -text
+audit/src/org/labkey/audit/AuditUpgradeCode.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditDetailsModel.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditProvider.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditViewFactory.java -text

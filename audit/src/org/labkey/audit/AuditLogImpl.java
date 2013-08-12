@@ -144,7 +144,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             // so can't be done in an deferred upgrade script.
             // UNDONE: Uncomment when we are ready to flip to the new audit providers
             //if (!isMigrateComplete())
-            //    migrateProviders();
+            //    AuditUpgradeCode.migrateProviders(this);
 
             while (!_eventTypeQueue.isEmpty())
             {
