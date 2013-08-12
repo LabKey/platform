@@ -475,26 +475,38 @@ Ext4.define('File.panel.Browser', {
             this.executeImportAction(action);
     },
 
-    initGridColumns : function() {
+    initGridColumns : function(grid) {
         var columns = [];
 
+        var iconTpl =  '<img height="16px" width="16px" src="{icon}" alt="{type}">';
+
+
         var nameTpl =
-            '<div height="16px" width="100%">' +
-                '<div style="float: left;">' +
-                    '<div style="float: left;">' +
-                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom; margin-right: 5px;">' +
-                    '</div>' +
-                '</div>' +
-                '<div style="padding-left: 20px; white-space:normal !important;">' +
-                    '<span style="display: inline-block;">{name:htmlEncode}</span>' +
-                '</div>' +
-            '</div>';
+                '<div height="16px" width="100%">' +
+                        '<div style="float: left;">' +
+                        '</div>' +
+                        '<div style="padding-left: 20px; white-space:normal !important;">' +
+                        '<span style="display: inline-block;">{name:htmlEncode}</span>' +
+                        '</div>' +
+                        '</div>';
+
+        columns.push({
+            xtype : 'templatecolumn',
+            text  : '',
+            dataIndex : 'icon',
+            sortable : true,
+            width : 25,
+            height : 20,
+            tpl : iconTpl,
+            scope : this
+        });
 
         columns.push({
             xtype : 'templatecolumn',
             text  : 'Name',
             dataIndex : 'name',
             sortable : true,
+            height : 20,
             minWidth : 200,
             flex : 3,
             tpl : nameTpl,
@@ -502,16 +514,33 @@ Ext4.define('File.panel.Browser', {
         });
 
         columns.push(
-            {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, renderer: this.dateRenderer},
-            {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, renderer:Ext4.util.Format.fileSize, align : 'right'},
-            {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
-            {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
-            {header: "Usages",         flex: 1, dataIndex: 'actionHref',   sortable: true,  hidden: false},// renderer:LABKEY.FileSystem.Util.renderUsage},
-            {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true},
-            {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true,  renderer:Ext4.util.Format.htmlEncode}
+                {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, height : 20, renderer: this.dateRenderer},
+                {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.fileSize, align : 'right'},
+                {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+                {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+                {header: "Usages",         flex: 1, dataIndex: 'actionHref',   sortable: true,  hidden: false, height : 20},// renderer:LABKEY.FileSystem.Util.renderUsage},
+                {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true, height : 20},
+                {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
         );
 
-        return columns;
+        var finalColumns = [];
+        Ext4.Ajax.request({
+            scope: this,
+            url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
+            success: function(response){
+                var json = Ext4.JSON.decode(response.responseText);
+                json = json.config.gridConfig.columns;
+                for(var i = 1; i < json.length; i++)
+                {
+                    columns[json[i].id-1].hidden = json[i].hidden;
+                    finalColumns[i-1] = columns[json[i].id-1];
+                }
+                this.getGrid().reconfigure(this.getGrid().getStore(), finalColumns);
+            },
+            failure: function(){}
+        });
+
+        return finalColumns;
     },
 
     getItems : function() {
@@ -989,7 +1018,7 @@ Ext4.define('File.panel.Browser', {
                     render : function(rg){
                         rg.setHeight(rg.getHeight()+10);
                         console.log(rg);
-                        !potential ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');;
+                        !potential ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');
                     },
                     scope : this
                 }
@@ -1848,7 +1877,12 @@ Ext4.define('File.panel.Browser', {
             isPipelineRoot : this.isPipelineRoot,
             containerPath : this.containerPath,
             listeners: {
-                success: this.getAdminActionsConfig,
+                success: function(gridUpdated)
+                {
+                    this.getAdminActionsConfig();
+                    if(gridUpdated)
+                        this.initGridColumns();
+                },
                 close: function() { this.adminWindow.close(); },
                 scope: this
             }

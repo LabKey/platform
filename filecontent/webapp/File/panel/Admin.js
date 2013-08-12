@@ -166,7 +166,7 @@ Ext4.define('File.panel.Admin', {
 
         if(!handler){
             handler = function(){
-                this.fireEvent('success');
+                this.fireEvent('success', this.toolBarPanel.gridConfigsChanged());
                 this.fireEvent('close');
             }
         }
@@ -209,7 +209,7 @@ Ext4.define('File.panel.Admin', {
             url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type:type}),
             method: 'POST',
             success: function(response){
-                this.fireEvent('success');
+                this.fireEvent('success', true);
                 this.fireEvent('close');
             },
             failure: function(response){
