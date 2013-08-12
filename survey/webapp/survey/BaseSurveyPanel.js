@@ -42,170 +42,181 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         // add each of the sections as a panel to the sections array
         if (surveyConfig.survey)
         {
-            Ext4.each(surveyConfig.survey.sections, function(section){
-                var sectionPanel = Ext4.create(panelType, {
-                    border: false,
-                    flex: 1,
-                    autoScroll: true,
-                    header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
-                    sectionPanel: true, // marker for looking for a components parent section
-                    completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
-                    origTitle: section.title || '',
-                    title: section.title || '',
-                    copyFromPrevious: section.copyFromPrevious || false,
-                    isDisabled: section.initDisabled || false,
-                    defaults: {
-                        labelWidth: section.defaultLabelWidth || 350,
-                        labelSeparator: '',
-                        padding: 10
-                    },
-                    items: []
-                });
-
-                // for card layout, add the section title as a displayfield instead of a panel header
-                if (this.surveyLayout == 'card' && section.title)
-                {
-                    sectionPanel.add(this.getCardSectionHeader(section.title));
-                }
-                else
-                {
-                    sectionPanel.collapsed = section.collapsed != undefined ? section.collapsed : false;
-                    sectionPanel.collapsible = section.collapsible != undefined ? section.collapsible : true;
-                    sectionPanel.titleCollapse = true;
-                }
-
-                // there is a section description, add it as the first item for that section
-                if (section.description)
-                {
-                    sectionPanel.add({
-                        xtype: 'displayfield',
-                        hideLabel: true,
-                        value: section.description
-                    })
-                }
-
-                // each section can have a set of questions to be added using the FormHelper
-                if (section.questions)
-                {
-                    for (var i = 0; i < section.questions.length; i++)
-                    {
-                        var question = section.questions[i];
-
-                        // not currently using helpPopups for the survey question field labels
-                        question.helpPopup = [];
-
-                        // we don't want to apply the hidden state until after the config is created
-                        var hidden = question.hidden;
-                        question.hidden = false;
-
-                        var config;
-                        if (question.extConfig)
-                        {
-                            // if the question is defined as an ext component, pass it through
-                            config = question.extConfig;
-                        }
-                        else
-                        {
-                            // the labkey formhelper doesn't support file upload fields, so we'll step in here and
-                            // add one manually
-                            if (question.inputType == 'file')
-                            {
-                                var attachment = undefined;
-                                var entry = this.rowMap[question.name];
-
-                                if (entry && entry.value)
-                                {
-                                    attachment = {};
-                                    attachment.icon = LABKEY.Utils.getFileIconUrl(entry.value);
-                                    attachment.name = entry.value;
-                                    attachment.downloadURL = entry.url;
-                                }
-
-                                config = {
-                                    fieldLabel : question.caption,
-                                    attachment : attachment,
-                                    name : question.name,
-                                    fieldWidth : 445,
-                                    xtype : 'attachmentfield'
-                                };
-                            }
-                            else
-                            {
-                                // if the question is not defined as ext, use the column metadata form helper
-                                config = LABKEY.ext.Ext4Helper.getFormEditorConfig(question);
-                            }
-                        }
-
-                        // survey specific question configurations (required field display, etc.)
-                        config = this.customizeQuestionConfig(question, config, hidden);
-
-                        // add a component id for retrieval
-                        if (config.name && !config.itemId)
-                            config.itemId = 'item-' + config.name;
-
-                        // add the section title to each config (to test for disabled sections)
-                        config.sectionTitle = section.title;
-
-                        // register any configured listeners
-                        // Note: we allow for an array of listeners OR an array of question names to apply a single listener to
-                        var listeners = question.listeners || {};
-                        if (listeners.change)
-                        {
-                            if (!(listeners.change instanceof Array))
-                                listeners.change = [listeners.change];
-
-                            for (var listenerIndex = 0; listenerIndex < listeners.change.length; listenerIndex++)
-                            {
-                                var listenerFn = listeners.change[listenerIndex].fn;
-                                var listenerNames;
-                                if (listeners.change[listenerIndex].question instanceof Array)
-                                    listenerNames = listeners.change[listenerIndex].question;
-                                else
-                                    listenerNames = [listeners.change[listenerIndex].question];
-
-                                for (var qnameIndex = 0; qnameIndex < listenerNames.length; qnameIndex++)
-                                {
-                                    var handlers = this.changeHandlers[listenerNames[qnameIndex]] || [];
-                                    var changeFn = new Function('', "return " + listenerFn);
-
-                                    handlers.push({name : config.name, fn : changeFn});
-                                    this.changeHandlers[listenerNames[qnameIndex]] = handlers;
-                                }
-                            }
-                        }
-
-                        // allow section panels to fire save events back to the parent
-                        config.listeners = {
-                            scope : this,
-                            saveSurvey : function(successUrl, idParamName) {
-                                this.saveSurvey(null, null, false, successUrl, idParamName);
-                            }
-                        };
-
-                        sectionPanel.add(config);
-                    }
-                }
-                // sections can be defined as an extAlias
-                // TODO: is there a way to not have to import the JS for each defined ext alias?
-                else if (section.extAlias)
-                {
-                    sectionPanel.add({
-                        xtype: section.extAlias,
-                        isSubmitted: this.isSubmitted,
-                        canEdit: this.canEdit,
-                        listeners: {
-                            // allow custom section panels to fire save events back to the parent
-                            saveSurvey: function(successUrl, idParamName) {
-                                this.saveSurvey(null, null, false, successUrl, idParamName);
-                            },
-                            scope: this
-                        }
-                    });
-                }
+            Ext4.each(surveyConfig.survey.sections, function(section) {
+                var sectionPanel = this.generateSectionPanel(section, panelType);
 
                 this.sections.push(sectionPanel);
             }, this);
         }
+    },
+
+    generateSectionPanel: function(section, panelType, layoutHorizontal) {
+        var sectionPanel = Ext4.create(panelType, {
+            border: false,
+            flex: 1,
+            autoScroll: true,
+            header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
+            sectionPanel: true, // marker for looking for a components parent section
+            completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
+            origTitle: section.title || '',
+            title: section.title || '',
+            copyFromPrevious: section.copyFromPrevious || false,
+            isDisabled: section.initDisabled || false,
+
+            items: []
+        });
+
+        var sectionPanelOuter;
+        if (layoutHorizontal)
+        {
+            sectionPanel.layout = {type: 'table', align: 'top', flex: 1};
+            sectionPanel.defaults = {
+                labelAlign: 'top',
+                height: 46,
+                labelSeparator: '',
+                padding: section.padding || 4
+            };
+            sectionPanel.border = 1;
+        }
+        else
+        {
+            sectionPanel.defaults = {
+                labelWidth: section.defaultLabelWidth || 350,
+                labelSeparator: '',
+                padding: section.padding || 10
+            };
+            sectionPanelOuter = sectionPanel;
+        }
+
+        // for card layout, add the section title as a displayfield instead of a panel header
+        if (this.surveyLayout == 'card' && section.title)
+        {
+            sectionPanel.add(this.getCardSectionHeader(section.title));
+        }
+        else
+        {
+            sectionPanel.collapsed = section.collapsed != undefined ? section.collapsed : false;
+            sectionPanel.collapsible = section.collapsible != undefined ? section.collapsible : true;
+            sectionPanel.titleCollapse = true;
+        }
+
+        if (section.hidden)
+            sectionPanel.hidden = true;
+
+        // there is a section description, add it as the first item for that section
+        if (section.description)
+        {
+            sectionPanel.add({
+                xtype: 'displayfield',
+                hideLabel: true,
+                value: section.description
+            })
+        }
+
+        // each section can have a set of questions to be added using the FormHelper
+        if (section.questions)
+        {
+            for (var i = 0; i < section.questions.length; i++)
+            {
+                var question = section.questions[i];
+
+                var config;
+                if (question.subSection)
+                {
+                    config = this.generateSectionPanel(question, 'Ext.panel.Panel', true);
+                    config.name = question.name;
+                    this.doSharedQuestion(question, config);        // SubSections may have listeners
+                }
+                else
+                {
+                    config = this.generateQuestion(question, section.title);
+                }
+                sectionPanel.add(config);
+            }
+            if (layoutHorizontal)
+                sectionPanel.layout.columns = section.questions.length;
+        }
+        // sections can be defined as an extAlias
+        // TODO: is there a way to not have to import the JS for each defined ext alias?
+        else if (section.extAlias)
+        {
+            sectionPanel.add({
+                xtype: section.extAlias,
+                isSubmitted: this.isSubmitted,
+                canEdit: this.canEdit,
+                listeners: {
+                    // allow custom section panels to fire save events back to the parent
+                    saveSurvey: function(successUrl, idParamName) {
+                        this.saveSurvey(null, null, false, successUrl, idParamName);
+                    },
+                    scope: this
+                }
+            });
+        }
+        return sectionPanel;
+    },
+
+    generateQuestion: function(question, title) {
+        // not currently using helpPopups for the survey question field labels
+        question.helpPopup = [];
+
+        // we don't want to apply the hidden state until after the config is created
+        var hidden = question.hidden;
+        question.hidden = false;
+
+        var config;
+        if (question.extConfig)
+        {
+            // if the question is defined as an ext component, pass it through
+            config = question.extConfig;
+        }
+        else
+        {
+            // the labkey formhelper doesn't support file upload fields, so we'll step in here and
+            // add one manually
+            if (question.inputType == 'file')
+            {
+                var attachment = undefined;
+                var entry = this.rowMap[question.name];
+
+                if (entry && entry.value)
+                {
+                    attachment = {};
+                    attachment.icon = LABKEY.Utils.getFileIconUrl(entry.value);
+                    attachment.name = entry.value;
+                    attachment.downloadURL = entry.url;
+                }
+
+                config = {
+                    fieldLabel : question.caption,
+                    attachment : attachment,
+                    name : question.name,
+                    fieldWidth : 445,
+                    xtype : 'attachmentfield'
+                };
+            }
+            else
+            {
+                // if the question is not defined as ext, use the column metadata form helper
+                config = LABKEY.ext.Ext4Helper.getFormEditorConfig(question);
+            }
+        }
+
+        // survey specific question configurations (required field display, etc.)
+        config = this.customizeQuestionConfig(question, config, hidden);
+
+        // add the section title to each config (to test for disabled sections)
+        config.sectionTitle = title;
+        this.doSharedQuestion(question, config);
+
+        // allow section panels to fire save events back to the parent
+        config.listeners = {
+            scope : this,
+            saveSurvey : function(successUrl, idParamName) {
+                this.saveSurvey(null, null, false, successUrl, idParamName);
+            }
+        };
+        return config;
     },
 
     customizeQuestionConfig : function(question, config, hidden) {
@@ -259,6 +270,41 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             config.store.filterArray = [LABKEY.Filter.create(question.lookup.filterColumn, null, LABKEY.Filter.Types.ISBLANK)];
 
         return config;
+    },
+
+    // Anything shared between actual questions and subSections
+    doSharedQuestion : function(question, config) {
+        // add a component id for retrieval
+        if (config.name && !config.itemId)
+            config.itemId = this.makeItemId(config.name);
+
+        // register any configured listeners
+        // Note: we allow for an array of listeners OR an array of question names to apply a single listener to
+        var listeners = question.listeners || {};
+        if (listeners.change)
+        {
+            if (!(listeners.change instanceof Array))
+                listeners.change = [listeners.change];
+
+            for (var listenerIndex = 0; listenerIndex < listeners.change.length; listenerIndex++)
+            {
+                var listenerFn = listeners.change[listenerIndex].fn;
+                var listenerNames;
+                if (listeners.change[listenerIndex].question instanceof Array)
+                    listenerNames = listeners.change[listenerIndex].question;
+                else
+                    listenerNames = [listeners.change[listenerIndex].question];
+
+                for (var qnameIndex = 0; qnameIndex < listenerNames.length; qnameIndex++)
+                {
+                    var handlers = this.changeHandlers[listenerNames[qnameIndex]] || [];
+                    var changeFn = new Function('', "return " + listenerFn);
+
+                    handlers.push({name : config.name, fn : changeFn});
+                    this.changeHandlers[listenerNames[qnameIndex]] = handlers;
+                }
+            }
+        }
     },
 
     getCardSectionHeader : function(title) {
@@ -894,7 +940,18 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return sectionName + '-' + key;
     },
 
-    findSurveyElement: function (name) {
-        return this.down('[itemId="item-' + name + '"]');
+    findSurveyElement: function(name) {
+        return this.down('[itemId="' + this.makeItemId(name) + '"]');
+    },
+
+    makeItemId: function(name) {
+        return 'item-' + name;
+    },
+
+    makeSectionQueryKey: function(section) {
+        var name = section.queryName;
+        if (name && section.queryNameUniquifier)
+            name += '-zz-' + section.queryNameUniquifier;
+        return name;
     }
 });

@@ -372,6 +372,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return new CommentDisplayColumn(colInfo);
             }
         });
+        commentsColumn.setUserEditable(false);
         addColumn(commentsColumn);
     }
 

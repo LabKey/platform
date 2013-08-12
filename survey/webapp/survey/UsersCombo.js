@@ -5,10 +5,9 @@
  */
 LABKEY.requiresScript("/study/DataViewUtil.js");
 
-Ext4.define('LABKEY.ext4.UsersCombo', {
+Ext4.define('LABKEY.ext4.GenericCombo', {
 
     extend  : 'Ext.form.field.ComboBox',
-    alias   : 'widget.lk-userscombo',
 
     dirty   : false,
     initialValue : null,
@@ -24,10 +23,7 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
 */
             editable    : false,
             forceSelection : true, // user must pick from list
-            store       : LABKEY.study.DataViewUtil.getUsersStore(),
-            queryMode   : 'local',
-            displayField : 'DisplayName',
-            valueField  : 'UserId'
+            queryMode   : 'local'
         });
 
         this.callParent([config]);
@@ -61,6 +57,82 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
     setValue : function(value, doSelect) {
         this.initialValue = value;
         this.callParent([value, doSelect]);
+    },
+
+    getStudyTypeStore : function(comboConfig) {
+
+        // define data models
+        var modelName = 'LABKEY.data.' + comboConfig.queryName;
+        if (!Ext4.ModelManager.isRegistered(modelName)) {
+            Ext4.define(modelName, {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : comboConfig.keyField,     type : 'int'},
+                    {name : comboConfig.displayField              }
+                ]
+            });
+        }
+
+        var config = {
+            model   : modelName,
+            autoLoad: true,
+            pageSize: 10000,
+            proxy   : {
+                type   : 'ajax',
+                url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
+                extraParams : {
+                    schemaName  : 'study',
+                    queryName   : comboConfig.queryName
+                },
+                reader : {
+                    type : 'json',
+                    root : 'rows'
+                }
+            },
+            listeners : {
+                load : function(s, recs, success, operation, ops) {
+                    s.sort(this.displayField, 'ASC');
+//                    s.insert(0, {UserId : -1, DisplayName : 'None'});
+                }
+            }
+        };
+
+        return Ext4.create('Ext.data.Store', config);
+    }
+
+});
+
+Ext4.define('LABKEY.ext4.UsersCombo', {
+
+    extend  : 'LABKEY.ext4.GenericCombo',
+    alias   : 'widget.lk-userscombo',
+
+    constructor : function(config){
+
+        Ext4.applyIf(config, {
+            store       : LABKEY.study.DataViewUtil.getUsersStore(),
+            valueField  : 'UserId',
+            displayField : 'DisplayName'
+        });
+
+        this.callParent([config]);
     }
 });
 
+Ext4.define('LABKEY.ext4.GenericStudyCombo', {
+
+    extend  : 'LABKEY.ext4.GenericCombo',
+    alias   : 'widget.lk-genericcombo',
+
+    // config must include keyField, displayField and queryName
+    constructor : function(config){
+
+        Ext4.applyIf(config, {
+            store       : this.getStudyTypeStore(config),
+            valueField  : config.keyField,
+            displayField : config.displayField
+        });
+
+        this.callParent([config]);
+    }
+});
