@@ -69,7 +69,6 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -564,7 +563,7 @@ public class ListController extends SpringActionController
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
 
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
                 {
                     UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                     if (schema != null)
@@ -716,7 +715,7 @@ public class ListController extends SpringActionController
             _list = form.getList();
             if (_list != null)
             {
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
                 {
                     UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                     if (schema != null)
@@ -769,7 +768,7 @@ public class ListController extends SpringActionController
             String newRecord = null;
             boolean isEncoded = false;
 
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
             {
                 ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
 

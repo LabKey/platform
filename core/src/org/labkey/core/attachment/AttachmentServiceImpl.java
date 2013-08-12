@@ -48,7 +48,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -250,7 +249,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public HttpView getHistoryView(ViewContext context, AttachmentParent parent)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(AttachmentService.ATTACHMENT_AUDIT_EVENT))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
             if (schema != null)
@@ -258,7 +257,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_CONTAINER), parent.getContainerId());
-                filter.addCondition(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_ENTITY_ID), parent.getEntityId());
+                filter.addCondition(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID), parent.getEntityId());
 
                 settings.setBaseFilter(filter);
                 settings.setQueryName(AttachmentService.ATTACHMENT_AUDIT_EVENT);

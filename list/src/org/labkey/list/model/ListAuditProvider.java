@@ -22,17 +22,12 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditViewFactory;
@@ -40,14 +35,8 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.view.ActionURL;
-import org.labkey.list.controllers.ListController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +125,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             }
         };
 
+        // XXX: entityId should be listItemEntityId, rowId should be removed?
         DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${entityId}&rowId=${rowId}");
         table.setDetailsURL(url);
 
@@ -284,7 +274,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         static {
             _fields.add(createFieldSpec(COLUMN_NAME_LIST_ID, JdbcType. INTEGER));
             _fields.add(createFieldSpec(COLUMN_NAME_LIST_DOMAIN_URI, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ITEM_ENTITY_ID, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ITEM_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
             _fields.add(createFieldSpec(COLUMN_NAME_LIST_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));

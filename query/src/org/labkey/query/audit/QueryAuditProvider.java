@@ -40,6 +40,8 @@ import java.util.Set;
 /**
  * User: klum
  * Date: 7/21/13
+ *
+ * UNDONE: Fancy QueryAuditViewFactory.QueryDetailsColumn
  */
 public class QueryAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {

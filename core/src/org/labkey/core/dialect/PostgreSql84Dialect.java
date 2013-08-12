@@ -1053,7 +1053,7 @@ class PostgreSql84Dialect extends SqlDialect
                     index.isUnique ? "UNIQUE" : "",
                     nameIndex(change.getTableName(), index.columnNames),
                     makeTableIdentifier(change),
-                    StringUtils.join(index.columnNames, ", ")));
+                    makePropertyIdentifiers(index.columnNames)));
         }
 
         return statements;
@@ -1113,6 +1113,19 @@ class PostgreSql84Dialect extends SqlDialect
         {
             return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
         }
+    }
+
+    // Create comma-separated list of property identifiers
+    private String makePropertyIdentifiers(String[] names)
+    {
+        String sep = "";
+        StringBuilder sb = new StringBuilder();
+        for (String name : names)
+        {
+            sb.append(sep).append(makePropertyIdentifier(name));
+            sep = ", ";
+        }
+        return sb.toString();
     }
 
     private String makePropertyIdentifier(String name)

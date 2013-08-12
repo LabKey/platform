@@ -30,7 +30,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -71,7 +70,28 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.actions.*;
+import org.labkey.api.study.actions.AssayBatchDetailsAction;
+import org.labkey.api.study.actions.AssayBatchesAction;
+import org.labkey.api.study.actions.AssayDetailRedirectAction;
+import org.labkey.api.study.actions.AssayHeaderView;
+import org.labkey.api.study.actions.AssayResultDetailsAction;
+import org.labkey.api.study.actions.AssayResultsAction;
+import org.labkey.api.study.actions.AssayRunDetailsAction;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.actions.AssayRunsAction;
+import org.labkey.api.study.actions.BaseAssayAction;
+import org.labkey.api.study.actions.DeleteAction;
+import org.labkey.api.study.actions.DesignerAction;
+import org.labkey.api.study.actions.ImportAction;
+import org.labkey.api.study.actions.PlateBasedUploadWizardAction;
+import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.study.actions.PublishConfirmAction;
+import org.labkey.api.study.actions.PublishStartAction;
+import org.labkey.api.study.actions.ReimportRedirectAction;
+import org.labkey.api.study.actions.ShowSelectedDataAction;
+import org.labkey.api.study.actions.ShowSelectedRunsAction;
+import org.labkey.api.study.actions.TemplateAction;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
@@ -612,7 +632,7 @@ public class AssayController extends SpringActionController
             VBox view = new VBox();
             view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
 
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT))
             {
                 UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
 

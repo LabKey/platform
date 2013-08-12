@@ -62,6 +62,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresLogin;
@@ -295,7 +296,7 @@ public class UserController extends SpringActionController
 
         ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
         showUsersURL.addParameter(DataRegion.LAST_FILTER_PARAM, true);
-        ActionButton showGrid = new ActionButton(showUsersURL, c.isRoot() ? "Show All Users" : "Show Project Users");
+        ActionButton showGrid = new ActionButton(showUsersURL, c.isRoot() ? "Show Users" : "Show Project Users");
         showGrid.setActionType(ActionButton.Action.LINK);
 
         ButtonBar detailsButtonBar = new ButtonBar();
@@ -801,7 +802,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(UserManager.USER_AUDIT_EVENT))
             {
                 UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                 if (schema != null)
@@ -1329,14 +1330,14 @@ public class UserController extends SpringActionController
 
             if (c.isRoot())
             {
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
                     view.addView(GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors));
                 else
                     view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
             }
             else
             {
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
                     view.addView(GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors));
                 else
                     view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId()));
@@ -1526,7 +1527,7 @@ public class UserController extends SpringActionController
 
             if (isProjectAdminOrBetter)
             {
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(UserManager.USER_AUDIT_EVENT))
                 {
                     UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                     if (auditLogSchema != null)

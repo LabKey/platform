@@ -1480,7 +1480,7 @@ public class FileContentController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(FileSystemAuditProvider.EVENT_TYPE))
             {
                 UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
 

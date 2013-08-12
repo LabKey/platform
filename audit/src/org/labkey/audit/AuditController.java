@@ -92,11 +92,11 @@ public class AuditController extends SpringActionController
         {
             String selected = form.getView();
 
-            if (AuditLogService.enableHardTableLogging())
-            {
-                if (selected == null)
-                    selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
+            if (selected == null)
+                selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
 
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(selected))
+            {
                 UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                 QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
                 settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
@@ -105,9 +105,6 @@ public class AuditController extends SpringActionController
             }
             else
             {
-                if (selected == null)
-                    selected = AuditLogService.get().getAuditViewFactories().get(0).getEventType();
-
                 AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
                 if (factory != null)
                     return factory.createDefaultQueryView(getViewContext());
@@ -171,7 +168,7 @@ public class AuditController extends SpringActionController
             User createdBy = null;
             Date created = null;
 
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(WriteableAppProps.AUDIT_EVENT_TYPE))
             {
                 SiteSettingsAuditProvider.SiteSettingsAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), WriteableAppProps.AUDIT_EVENT_TYPE, form.getId());
 

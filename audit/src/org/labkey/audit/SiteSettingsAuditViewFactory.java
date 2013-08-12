@@ -19,10 +19,14 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Sort;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -32,6 +36,7 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -90,6 +95,29 @@ public class SiteSettingsAuditViewFactory extends SimpleAuditViewFactory
 
         ActionURL url = new ActionURL(AuditController.ShowSiteSettingsAuditDetailsAction.class, table.getContainer());
         table.setDetailsURL(new DetailsURL(url, Collections.singletonMap("id", idCol.getFieldKey())));
+    }
+
+    @Override
+    public void initialize(ContainerUser context) throws Exception
+    {
+        AuditLogService.I svc = AuditLogService.get();
+        String domainUri = svc.getDomainURI(WriteableAppProps.AUDIT_EVENT_TYPE);
+        Container c = ContainerManager.getSharedContainer();
+
+        Domain domain = PropertyService.get().getDomain(c, domainUri);
+        if (domain == null)
+        {
+            domain = PropertyService.get().createDomain(c, domainUri, WriteableAppProps.AUDIT_EVENT_TYPE + "Domain");
+            domain.save(context.getUser());
+            domain = PropertyService.get().getDomain(c, domainUri);
+        }
+
+        if (domain != null)
+        {
+            ensureProperties(context.getUser(), domain, new PropertyInfo[] {
+                new PropertyInfo(WriteableAppProps.AUDIT_PROP_DIFF, null, PropertyType.STRING)
+            });
+        }
     }
 
     private class DetailsDisplayColumn extends DataColumn

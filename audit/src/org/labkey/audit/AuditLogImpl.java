@@ -48,9 +48,11 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -64,10 +66,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.audit.model.LogManager;
@@ -126,11 +130,21 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         {
             _logToDatabase.set(true);
 
+            // Ensure audit provider's domains have been initialized.  This must happen before flusing the temporary event queues.
+            initializeProviders();
+
             while (!_eventQueue.isEmpty())
             {
                 Pair<User, AuditLogEvent> event = _eventQueue.remove();
                 _addEvent(event.first, event.second);
             }
+
+            // Migrate audit providers if needed. We need to perform migration after the
+            // server is fully started to ensure all audit providers have been registered and
+            // so can't be done in an deferred upgrade script.
+            // UNDONE: Uncomment when we are ready to flip to the new audit providers
+            //if (!isMigrateComplete())
+            //    migrateProviders();
 
             while (!_eventTypeQueue.isEmpty())
             {
@@ -246,6 +260,15 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             _log.error("error serializing object properties to XML", e);
         }
         return null;
+    }
+
+    private void initializeProviders()
+    {
+        User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+        for (AuditTypeProvider provider : getAuditProviders())
+        {
+            provider.initializeProvider(auditUser);
+        }
     }
 
     private void initializeAuditFactory(User user, AuditLogEvent event) throws Exception
@@ -495,7 +518,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     @Override
     public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (isMigrateComplete() || hasEventTypeMigrated(eventType))
         {
             return LogManager.get().getAuditEvent(user, eventType, rowId);
         }
@@ -537,7 +560,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (isMigrateComplete() || hasEventTypeMigrated(event.getEventType()))
         {
             AuditTypeProvider provider = getAuditProvider(event.getEventType());
             if (provider != null)
@@ -620,24 +643,55 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     }
 
     private static final String AUDIT_MIGRATE_PROPSET = "audit-hardtable-migration-13.3";
+    private static final String AUDIT_MIGRATE_COMPLETE = "migration-complete";
 
     @Override
-    public boolean hasProviderMigrated(AuditTypeProvider provider)
+    public boolean hasEventTypeMigrated(String eventType)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, false);
-        if (props != null && "true".equalsIgnoreCase(props.get(provider.getEventName())))
+        Map<String, String> props = PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET);
+        if ("true".equalsIgnoreCase(props.get(eventType)))
             return true;
 
         return false;
     }
 
     @Override
-    public void migrateProvider(AuditTypeProvider provider)
+    public boolean isMigrateComplete()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET);
+        if ("true".equalsIgnoreCase(props.get(AUDIT_MIGRATE_COMPLETE)))
+            return true;
+
+        return false;
+    }
+
+    private void setMigrateComplete(boolean completed)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
+        props.put(AUDIT_MIGRATE_COMPLETE, completed ? "true" : "false");
+        PropertyManager.saveProperties(props);
+    }
+
+    public void migrateProviders()
     {
         if (ModuleLoader.getInstance().isNewInstall())
+        {
+            // Mark the migration as complete -- individual audit providers are not marked as migrated since new providers may be added after the migration.
+            setMigrateComplete(true);
             return;
+        }
 
-        if (hasProviderMigrated(provider))
+        for (AuditTypeProvider provider : getAuditProviders())
+        {
+            migrateProvider(provider);
+        }
+
+        postMigrate();
+    }
+
+    public void migrateProvider(AuditTypeProvider provider)
+    {
+        if (hasEventTypeMigrated(provider.getEventName()))
         {
             _log.info("Audit provider '" + provider.getEventName() + "' has already been migrated");
             return;
@@ -755,21 +809,51 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
         _log.info(insertInto);
 
+        // SQLServer will automatically reset the identity column sequence when IDENTITY_INSERT is on
+        if (dialect.isSqlServer())
+        {
+            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;\nGO\n")));
+        }
+
+        // perform the copy
         SqlExecutor exec = new SqlExecutor(dbSchema);
         int count = exec.execute(insertInto);
 
         _log.info(String.format("Migrated %d rows for audit type %s", count, provider.getEventName()));
 
-        postMigrate(provider);
-    }
+        // reset the sequence
+        if (dialect.isSqlServer())
+        {
+            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;\nGO\n")));
+        }
+        else if (dialect.isPostgreSQL())
+        {
+            String pkCol = targetTable.getPkColumnNames().get(0);
+            SQLFragment resetSeq = new SQLFragment();
+            resetSeq.append("SELECT setval(\n");
+            resetSeq.append("  pg_get_serial_sequence('").append(targetTable).append("', '").append(pkCol).append("'),\n");
+            resetSeq.append("  (SELECT MAX(").append(pkCol).append(") FROM ").append(targetTable).append(") + 1");
+            resetSeq.append(");\n");
+            new SqlExecutor(dbSchema).execute(resetSeq);
+        }
 
-
-    private void postMigrate(AuditTypeProvider provider)
-    {
         // mark this provider as migrated
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
         props.put(provider.getEventName(), "true");
         PropertyManager.saveProperties(props);
+    }
+
+    private void postMigrate()
+    {
+        if (isMigrateComplete())
+        {
+            _log.info("All audit event types have been previously migrated.");
+            return;
+        }
+
+        Map<String, String> props = PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET);
+        if (props.isEmpty())
+            throw new IllegalStateException("Expected audit propset to contain list of migrated audit event types");
 
         // Check if we've migrated all rows from the old audit table
         TableInfo auditLogTable = LogManager.get().getTinfoAuditLog();
@@ -781,23 +865,55 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         SqlSelector selector = new SqlSelector(auditLogTable.getSchema(), frag);
         if (!selector.exists())
         {
-            _log.info("All audit event types have been migrated.");
+            _log.info("All audit event types have now been migrated.");
             completeMigration();
         }
         else
         {
             String[] remainingEventTypes = selector.getArray(String.class);
+            // UNDONE: Check if remaining event types are from modules that are no longer installed
             _log.info("Remaining audit event types to migrate: " + StringUtils.join(Arrays.asList(remainingEventTypes), ", "));
         }
     }
 
     private void completeMigration()
     {
+        Container sharedContainer = ContainerManager.getSharedContainer();
+
+        // delete exp.objects and exp.objectproperty values
+        TableInfo auditLogTable = LogManager.get().getTinfoAuditLog();
+        SQLFragment lsids = new SQLFragment("SELECT a.lsid FROM ").append(auditLogTable, "a");
+        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, sharedContainer, false);
+
+        // delete old audit domains and property descriptors
+        // We use the list of AuditTypeProviders instead of AuditViewFactories because
+        // we'd like to not require the AuditViewFactories to be registered to run this cleanup code.
+        for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+        {
+            String eventName = provider.getEventName();
+            String domainURI = AuditLogService.get().getDomainURI(eventName);
+            Domain domain = PropertyService.get().getDomain(sharedContainer, domainURI);
+            if (domain != null)
+            {
+                try
+                {
+                    domain.delete(null);
+                }
+                catch (DomainNotFoundException e)
+                {
+                    throw new UnexpectedException(e, "Error deleting domain for audit event type '" + eventName + "'");
+                }
+            }
+
+            AuditLogService.removeAuditViewFactory(eventName);
+        }
+
         // delete old audit table
+        SQLFragment dropTable = new SQLFragment("DROP TABLE ").append(auditLogTable);
+        new SqlExecutor(auditLogTable.getSchema()).execute(dropTable);
 
-        // delete old audit domains and properties
-
-        // delete property values
+        // remember that we've migrated all audit types
+        setMigrateComplete(true);
     }
 
 }

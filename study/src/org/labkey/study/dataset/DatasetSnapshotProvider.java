@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -504,7 +503,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
-                if (AuditLogService.enableHardTableLogging())
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
                 {
                     UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
                     if (schema != null)

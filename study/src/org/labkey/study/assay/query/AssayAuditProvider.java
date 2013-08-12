@@ -30,22 +30,20 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.controllers.StudyController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -306,6 +304,12 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         protected Set<PropertyStorageSpec> getColumns()
         {
             return _fields;
+        }
+
+        @Override
+        public Set<Index> getPropertyIndices()
+        {
+            return PageFlowUtil.set(new Index(false, COLUMN_NAME_PROTOCOL));
         }
 
         @Override

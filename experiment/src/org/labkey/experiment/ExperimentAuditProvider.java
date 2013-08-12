@@ -33,9 +33,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
@@ -50,7 +48,7 @@ import java.util.Set;
  */
 public class ExperimentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String EXPERIMENT_AUDIT_EVENT = "ExperimentAuditEvent";
+    public static final String EVENT_TYPE = "ExperimentAuditEvent";
 
     public static final String COLUMN_NAME_PROTOCOL_LSID = "ProtocolLsid";
     public static final String COLUMN_NAME_RUN_LSID = "RunLsid";
@@ -80,7 +78,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public String getEventName()
     {
-        return EXPERIMENT_AUDIT_EVENT;
+        return EVENT_TYPE;
     }
 
     @Override
@@ -207,7 +205,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
 
         public ExperimentAuditEvent(String container, String comment)
         {
-            super(EXPERIMENT_AUDIT_EVENT, container, comment);
+            super(EVENT_TYPE, container, comment);
         }
 
         public String getProtocolLsid()

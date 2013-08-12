@@ -32,6 +32,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -147,6 +148,12 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         protected Set<PropertyStorageSpec> getColumns()
         {
             return _fields;
+        }
+
+        @Override
+        public Set<PropertyStorageSpec.Index> getPropertyIndices()
+        {
+            return PageFlowUtil.set(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
         }
 
         @Override

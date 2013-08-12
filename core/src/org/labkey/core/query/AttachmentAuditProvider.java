@@ -22,16 +22,16 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -45,6 +45,7 @@ import java.util.Set;
  */
 public class AttachmentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID = "AttachmentParentEntityId";
     public static final String COLUMN_NAME_ATTACHMENT = "Attachment";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -90,6 +91,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         AttachmentAuditEvent bean = new AttachmentAuditEvent();
         copyStandardFields(bean, event);
 
+        bean.setAttachmentParentEntityId(event.getEntityId());
         bean.setAttachment(event.getKey1());
 
         return (K)bean;
@@ -99,6 +101,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyMap =  super.legacyNameMap();
+        legacyMap.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
         legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
         return legacyMap;
     }
@@ -127,6 +130,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
 
     public static class AttachmentAuditEvent extends AuditTypeEvent
     {
+        private String _attachmentParentEntityId;
         private String _attachment;     // the attachment name
 
         public AttachmentAuditEvent()
@@ -137,6 +141,16 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         public AttachmentAuditEvent(String container, String comment)
         {
             super(AttachmentService.ATTACHMENT_AUDIT_EVENT, container, comment);
+        }
+
+        public String getAttachmentParentEntityId()
+        {
+            return _attachmentParentEntityId;
+        }
+
+        public void setAttachmentParentEntityId(String attachmentParentEntityId)
+        {
+            _attachmentParentEntityId = attachmentParentEntityId;
         }
 
         public String getAttachment()
@@ -158,13 +172,20 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
         static {
-            _fields.add(createFieldSpec(COLUMN_NAME_ATTACHMENT, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
+            _fields.add(createFieldSpec(COLUMN_NAME_ATTACHMENT, JdbcType.VARCHAR).setNullable(false));
         }
 
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {
             return _fields;
+        }
+
+        @Override
+        public Set<Index> getPropertyIndices()
+        {
+            return PageFlowUtil.set(new Index(false, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID));
         }
 
         @Override

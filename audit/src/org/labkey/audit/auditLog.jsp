@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.audit.AuditTypeProvider" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.audit.AuditLogService.AuditViewFactory" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String currentView = (String)HttpView.currentModel();
@@ -29,19 +30,19 @@
         currentView = providers.get(0).getEventName();
 */
 
-    List<AuditLogService.AuditViewFactory> factories = AuditLogService.get().getAuditViewFactories();
+    List<AuditTypeProvider> providers = AuditLogService.get().getAuditProviders();
 
     if (currentView == null)
-        currentView = factories.get(0).getEventType();
+        currentView = providers.get(0).getEventName();
 
 %>
 <form action="" method="get">
     <select name="view" onchange="this.form.submit()">
 <%
-    for (AuditLogService.AuditViewFactory factory : factories)
+    for (AuditTypeProvider provider : providers)
     {
 %>
-        <option value="<%=h(factory.getEventType())%>"<%=h(factory.getEventType().equals(currentView) ? " selected" : "")%>><%=h(factory.getName())%></option>
+        <option value="<%=h(provider.getEventName())%>"<%=h(provider.getEventName().equals(currentView) ? " selected" : "")%>><%=h(provider.getLabel())%></option>
 <%
     }
 %>

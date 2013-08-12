@@ -22,10 +22,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
 import org.labkey.audit.model.LogManager;
+import org.springframework.validation.BindException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -80,14 +84,14 @@ public class AuditQuerySchema extends UserSchema
     public TableInfo createTable(String name)
     {
         // event specific audit views are implemented as queries on the audit schema
-        if (AuditLogService.enableHardTableLogging())
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(name))
         {
-            if (AuditLogService.get().getAuditProvider(name) != null)
-            {
-                AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
+            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
+            if (provider != null)
                 return provider.createTableInfo(this);
-            }
         }
+
+        // UNDONE: Create union query table of completed event types plus remaining audit log table types
 
         if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
         {
@@ -95,6 +99,12 @@ public class AuditQuerySchema extends UserSchema
         }
 
         return null;
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        return super.createView(context, settings, errors);
     }
 
     @Override

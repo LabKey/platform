@@ -179,7 +179,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static QueryView createHistoryQueryView(ViewContext context, QueryForm form, BindException errors)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QUERY_UPDATE_AUDIT_EVENT))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
             if (schema != null)
@@ -206,7 +206,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static QueryView createDetailsQueryView(ViewContext context, String schemaName, String queryName, String keyValue, BindException errors)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QUERY_UPDATE_AUDIT_EVENT))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
             if (schema != null)

@@ -18,25 +18,15 @@ package org.labkey.audit;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SimpleAuditViewFactory;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 public class AuditModule extends DefaultModule
@@ -81,10 +71,6 @@ public class AuditModule extends DefaultModule
         AuditLogService.registerAuditType(new SiteSettingsAuditProvider());
 
         AuditController.registerAdminConsoleLinks();
-
-        // This schema conversion can't use the normal UpgradeCode process because it requires Ontology service to be started
-        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 8.24)
-            convertAuditDataMaps();
     }
 
     @Override
@@ -92,54 +78,6 @@ public class AuditModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
-    }
-
-    /**
-     * Audit used to use PageFlowUtil.encodeObject to store audit detail information, this was bad for a number of reasons. Need to convert
-     * those records to the newer, uncompressed format. Fortunately, there were only two event types at the time that used this encoding.
-     */
-    private void convertAuditDataMaps()
-    {
-        DbSchema schema = AuditSchema.getInstance().getSchema();
-
-        try
-        {
-            schema.getScope().ensureTransaction();
-
-            Container objectContainer = ContainerManager.getSharedContainer();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause("(Lsid IS NOT NULL) AND (EventType = ? OR EventType = ?)", new Object[]{"ListAuditEvent", "DatasetAuditEvent"});
-
-            for (AuditLogEvent event : LogManager.get().getEvents(filter, null))
-            {
-                Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer, event.getLsid());
-                if (dataMap != null)
-                {
-                    Map<String, Object> newDataMap = new HashMap<>();
-
-                    for (ObjectProperty prop : dataMap.values())
-                    {
-                        if (prop.value() == null)
-                            continue;
-                        Map<String, String> decodedMap = SimpleAuditViewFactory._safeDecodeFromDataMap(String.valueOf(prop.value()));
-                        if (!decodedMap.isEmpty())
-                        {
-                            // re-encode the data map and replace the previous object property
-                            OntologyManager.deleteProperty(event.getLsid(), prop.getPropertyURI(), objectContainer, objectContainer);
-                            newDataMap.put(prop.getName(), SimpleAuditViewFactory.encodeForDataMap(decodedMap, true));
-                        }
-                    }
-                    if (!newDataMap.isEmpty())
-                        AuditLogImpl.addEventProperties(event.getLsid(), AuditLogService.get().getDomainURI(event.getEventType()), newDataMap);
-                }
-            }
-
-            schema.getScope().commitTransaction();
-        }
-        finally
-        {
-            schema.getScope().closeConnection();
-        }
     }
 
     @NotNull

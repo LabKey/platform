@@ -30,6 +30,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -40,8 +41,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ import java.util.Set;
  */
 public class GroupAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-
+    public static final String COLUMN_NAME_RESOURCE_ENTITY_ID = "ResourceEntityId";
     public static final String COLUMN_NAME_USER = "User";
     public static final String COLUMN_NAME_GROUP = "Group";
 
@@ -110,6 +111,9 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         if (event.getIntKey2() != null)
             bean.setGroup(event.getIntKey2());
 
+        if (event.getEntityId() != null)
+            bean.setResourceEntityId(event.getEntityId());
+
         return (K)bean;
     }
 
@@ -117,6 +121,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
+        legacyNames.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_RESOURCE_ENTITY_ID);
         legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_USER);
         legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_GROUP);
         return legacyNames;
@@ -170,7 +175,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Nullable
     public static QueryView createSiteUserView(ViewContext context, int userId, BindException errors)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), userId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_USER), userId);
 
         List<FieldKey> columns = new ArrayList<>();
 
@@ -186,7 +191,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Nullable
     public static QueryView createProjectMemberView(ViewContext context, int userId, Container project, BindException errors)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), userId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_USER), userId);
         filter.addCondition(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_PROJECT_ID), project.getId());
 
         List<FieldKey> columns = new ArrayList<>();
@@ -202,7 +207,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Nullable
     private static QueryView createUserView(ViewContext context, SimpleFilter filter, String title, List<FieldKey> columns, BindException errors)
     {
-        if (AuditLogService.enableHardTableLogging())
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
             if (schema != null)
@@ -227,6 +232,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     {
         int _user;
         int _group;
+        String _resourceEntityId;
 
         public GroupAuditEvent()
         {
@@ -257,6 +263,17 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         {
             _group = group;
         }
+
+        public String getResourceEntityId()
+        {
+            return _resourceEntityId;
+        }
+
+        public void setResourceEntityId(String resourceEntityId)
+        {
+            _resourceEntityId = resourceEntityId;
+        }
+
     }
 
     public static class GroupAuditDomainKind extends AbstractAuditDomainKind
@@ -269,12 +286,22 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         static {
             _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
             _fields.add(createFieldSpec(COLUMN_NAME_GROUP, JdbcType.INTEGER));
+            _fields.add(createFieldSpec(COLUMN_NAME_RESOURCE_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
         }
 
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {
             return _fields;
+        }
+
+        @Override
+        public Set<Index> getPropertyIndices()
+        {
+            return PageFlowUtil.set(
+                    new Index(false, COLUMN_NAME_USER),
+                    new Index(false, COLUMN_NAME_GROUP)
+            );
         }
 
         @Override

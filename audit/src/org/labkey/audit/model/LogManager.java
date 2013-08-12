@@ -16,33 +16,30 @@
 
 package org.labkey.audit.model;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.survey.model.Survey;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
 
-import java.beans.PropertyDescriptor;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +77,7 @@ public class LogManager
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(event.getEventType());
 
-        if (provider != null && AuditLogService.enableHardTableLogging())
+        if (provider != null && (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(event.getEventType())))
         {
             K bean = provider.convertEvent(event);
             bean = _insertEvent(user, bean);

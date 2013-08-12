@@ -859,7 +859,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     index.isUnique ? "UNIQUE" : "",
                     nameIndex(change.getTableName(), index.columnNames),
                     makeTableIdentifier(change),
-                    StringUtils.join(index.columnNames, ", ")));
+                    makeLegalIdentifiers(index.columnNames)));
         }
 
         return statements;

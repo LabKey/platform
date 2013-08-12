@@ -1984,7 +1984,7 @@ public class QueryController extends SpringActionController
                 {
                     ActionURL auditURL = new ActionURL(url);
 
-                    if (AuditLogService.enableHardTableLogging())
+                    if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
                     {
                         QueryView historyView = QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(),
                                 auditURL.getParameter(QueryParam.schemaName),
@@ -5148,7 +5148,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
                 return QueryUpdateAuditProvider.createHistoryQueryView(getViewContext(), form, errors);
             else
                 return QueryUpdateAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
@@ -5167,7 +5167,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryDetailsForm form, BindException errors) throws Exception
         {
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
                 return QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(), form, errors);
             else
                 return QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(), form);
@@ -5206,7 +5206,7 @@ public class QueryController extends SpringActionController
             String oldRecord = null;
             String newRecord = null;
 
-            if (AuditLogService.enableHardTableLogging())
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
             {
                 QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
 
