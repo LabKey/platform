@@ -15,7 +15,6 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -23,11 +22,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -101,7 +95,6 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
         if (null != diff)
         {
-            String domainUri = ensureAuditLogDomainAndProps(user);
             AuditLogEvent event = new AuditLogEvent();
             event.setCreatedBy(user);
             event.setContainerId(ContainerManager.getRoot().getId());
@@ -111,6 +104,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
             Map<String,Object> map = new HashMap<>();
             map.put(AUDIT_PROP_DIFF, diff);
 
+            String domainUri = AuditLogService.get().getDomainURI(AUDIT_EVENT_TYPE);
             AuditLogService.get().addEvent(event, map, domainUri);
         }
     }
@@ -165,38 +159,4 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
             return "*******"; //used fixed number to obscure num characters
     }
 
-    protected String ensureAuditLogDomainAndProps(User user)
-    {
-        AuditLogService.I svc = AuditLogService.get();
-        String domainUri = svc.getDomainURI(AUDIT_EVENT_TYPE);
-        Container c = ContainerManager.getSharedContainer();
-
-        try
-        {
-            Domain domain = PropertyService.get().getDomain(c, domainUri);
-            //if domain has not yet been created, create it
-            if (domain == null)
-            {
-                domain = PropertyService.get().createDomain(c, domainUri, AUDIT_EVENT_TYPE + "Domain");
-                domain.save(user);
-                domain = PropertyService.get().getDomain(c, domainUri);
-            }
-
-            //if diff property has not yet been created, create it
-            if(null == domain.getPropertyByName(AUDIT_PROP_DIFF))
-            {
-                DomainProperty prop = domain.addProperty();
-                prop.setType(PropertyService.get().getType(c, PropertyType.STRING.getXmlName()));
-                prop.setName(AUDIT_PROP_DIFF);
-                prop.setPropertyURI(AuditLogService.get().getPropertyURI(AUDIT_EVENT_TYPE, AUDIT_PROP_DIFF));
-                domain.save(user);
-            }
-        }
-        catch (ChangePropertyDescriptorException e)
-        {
-            Logger.getLogger(WriteableAppProps.class).error(e);
-        }
-
-        return domainUri;
-    }
 }

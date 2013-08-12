@@ -24,7 +24,10 @@ import java.util.Date;
 /**
  * User: Karl Lum
  * Date: Sep 20, 2007
+ *
+ * @deprecated Replaced by AuditTypeEvent.
  */
+@Deprecated
 public class AuditLogEvent
 {
     private int _rowId;

@@ -48,6 +48,11 @@ public class PropertyCache
         BLOCKING_CACHE.remove(getCacheKey((Integer)params[0], (String)params[1], (String)params[2]));
     }
 
+    public static void remove(User user, Container container, String category)
+    {
+        BLOCKING_CACHE.remove(getCacheKey(user.getUserId(), container.getId(), category));
+    }
+
     private static String getCacheKey(User user, Container container, String category)
     {
         return getCacheKey(user.getUserId(), container.getId(), category);

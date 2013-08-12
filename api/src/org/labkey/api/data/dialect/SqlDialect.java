@@ -600,6 +600,19 @@ public abstract class SqlDialect
         return makeLegalIdentifier(metaDataName);
     }
 
+    // Create comma-separated list of legal identifiers
+    public String makeLegalIdentifiers(String[] names)
+    {
+        String sep = "";
+        StringBuilder sb = new StringBuilder();
+        for (String name : names)
+        {
+            sb.append(sep).append(makeLegalIdentifier(name));
+            sep = ", ";
+        }
+        return sb.toString();
+    }
+
 
     // If necessary, quote identifier
     public String makeLegalIdentifier(String id)

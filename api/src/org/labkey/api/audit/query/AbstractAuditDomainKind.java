@@ -30,7 +30,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -40,9 +39,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
@@ -79,16 +76,13 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
     static {
         _baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
-        _baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR));
+        _baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
         _baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
         _baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
         _baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
         _baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
-        _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR));
-        _baseFields.add(createFieldSpec("EntityId", JdbcType.VARCHAR));
-        // CONSIDER: remove for now, introduce later if needed
-        _baseFields.add(createFieldSpec("MessageId", JdbcType.INTEGER));
+        _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR).setEntityId(true));
     }
 
     protected abstract String getNamespacePrefix();
@@ -276,8 +270,8 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     protected static PropertyStorageSpec createFieldSpec(String name, JdbcType jdbcType, boolean isPrimaryKey, boolean isAutoIncrement)
     {
         PropertyStorageSpec spec = new PropertyStorageSpec(name, jdbcType);
-        spec.setAutoIncrement(isPrimaryKey);
-        spec.setPrimaryKey(isAutoIncrement);
+        spec.setAutoIncrement(isAutoIncrement);
+        spec.setPrimaryKey(isPrimaryKey);
 
         return spec;
     }

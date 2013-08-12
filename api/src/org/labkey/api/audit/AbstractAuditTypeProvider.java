@@ -49,23 +49,22 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_CREATED_BY = "CreatedBy";
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
-    public static final String COLUMN_NAME_ENTITY_ID = "EntityId";
-    public static final String COLUMN_NAME_MESSAGE_ID = "MessageId";
 
     protected abstract DomainKind getDomainKind();
 
     @Override
     public void initializeProvider(User user)
     {
-        Domain domain = getDomain();
+        // Register the DomainKind
+        DomainKind domainKind = getDomainKind();
+        PropertyService.get().registerDomainKind(domainKind);
 
         // if the domain doesn't exist, create it
+        Domain domain = getDomain();
         if (domain == null)
         {
-            try {
-                DomainKind domainKind = getDomainKind();
-                PropertyService.get().registerDomainKind(domainKind);
-
+            try
+            {
                 String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
                 domain = PropertyService.get().createDomain(getDomainContainer(), domainURI, domainKind.getKindName());
                 domain.save(user);
@@ -81,7 +80,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public final Domain getDomain()
     {
         DomainKind domainKind = getDomainKind();
-        PropertyService.get().registerDomainKind(domainKind);
 
         String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
 
@@ -114,7 +112,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     protected <K extends AuditTypeEvent> void copyStandardFields(K bean, AuditLogEvent event)
     {
         bean.setImpersonatedBy(event.getImpersonatedBy());
-        bean.setEntityId(event.getEntityId());
         bean.setComment(event.getComment());
         bean.setProjectId(event.getProjectId());
         bean.setContainer(event.getContainerId());

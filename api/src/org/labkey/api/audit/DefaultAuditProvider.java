@@ -159,12 +159,13 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     }
 
     @Override
-    public void migrateProvider(AuditTypeProvider provider)
+    public boolean hasEventTypeMigrated(String eventType)
     {
+        return false;
     }
 
     @Override
-    public boolean hasProviderMigrated(AuditTypeProvider provider)
+    public boolean isMigrateComplete()
     {
         return false;
     }

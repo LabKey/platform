@@ -35,7 +35,10 @@ import java.util.Map;
 /**
  * User: Karl Lum
  * Date: Sep 19, 2007
+ *
+ * @deprecated
  */
+@Deprecated
 public abstract class AuditLogQueryView extends QueryView
 {
     protected List<String> _columns = new ArrayList<>();

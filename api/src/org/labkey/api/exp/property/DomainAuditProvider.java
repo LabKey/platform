@@ -29,7 +29,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
@@ -44,6 +43,8 @@ import java.util.Set;
  */
 public class DomainAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String EVENT_TYPE = "DomainAuditEvent";
+
     public static final String COLUMN_NAME_DOMAIN_URI = "DomainUri";
     public static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
 
@@ -59,8 +60,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
-    public static final String DOMAIN_AUDIT_EVENT = "DomainAuditEvent";
-
     @Override
     protected DomainKind getDomainKind()
     {
@@ -70,7 +69,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     @Override
     public String getEventName()
     {
-        return DOMAIN_AUDIT_EVENT;
+        return EVENT_TYPE;
     }
 
     @Override
@@ -159,7 +158,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
         public DomainAuditEvent(String container, String comment)
         {
-            super(DOMAIN_AUDIT_EVENT, container, comment);
+            super(EVENT_TYPE, container, comment);
         }
 
         public String getDomainUri()

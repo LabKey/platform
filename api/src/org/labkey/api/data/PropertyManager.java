@@ -319,6 +319,53 @@ public class PropertyManager
         Table.delete(prop.getTableInfoPropertySets(), new SimpleFilter("ObjectId", objectId));
     }
 
+    public static void deletePropertySet(String category)
+    {
+        deletePropertySet(SHARED_USER, ContainerManager.getRoot(), category);
+    }
+
+    public static void deletePropertySet(Container container, String category)
+    {
+        deletePropertySet(SHARED_USER, container, category);
+    }
+
+    public static void deletePropertySet(User user, Container container, String category)
+    {
+        String containerId = container.getId().intern();
+        try
+        {
+            prop.getSchema().getScope().ensureTransaction();
+
+            synchronized (containerId)
+            {
+                String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+
+                SQLFragment deleteProps = new SQLFragment();
+                deleteProps.append("DELETE FROM ").append(prop.getTableInfoProperties(), "p");
+                deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
+                deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(prop.getTableInfoPropertySets(), "ps");
+                deleteProps.append(" WHERE userid=? AND objectid=? AND category=?)");
+                deleteProps.add(user.getUserId());
+                deleteProps.add(container.getId());
+                deleteProps.add(category);
+
+                SqlExecutor sqlx = new SqlExecutor(prop.getSchema());
+                sqlx.execute(deleteProps);
+
+                new SqlExecutor(prop.getSchema()).execute(
+                        "DELETE FROM " + prop.getTableInfoPropertySets() + " WHERE userid=? AND objectid=? AND category=?",
+                        user.getUserId(), container.getId(), category);
+
+                PropertyCache.remove(user, container, category);
+                prop.getSchema().getScope().commitTransaction();
+            }
+        }
+        finally
+        {
+            prop.getSchema().getScope().closeConnection();
+        }
+    }
+
 
     public static String getSchemaName()
     {

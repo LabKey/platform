@@ -16,14 +16,21 @@
 package org.labkey.api.audit;
 
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +49,24 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     public static final String COLUMN_NAME_INT1 = "Int1";
     public static final String COLUMN_NAME_INT2 = "Int2";
     public static final String COLUMN_NAME_INT3 = "Int3";
+
+    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static {
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SUBTYPE));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_STRING1));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_STRING2));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_STRING3));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_INT1));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_INT2));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_INT3));
+    }
+
 
     @Override
     protected DomainKind getDomainKind()
@@ -98,6 +123,25 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         legacyNames.put(FieldKey.fromParts("intKey3"), COLUMN_NAME_INT3);
         return legacyNames;
     }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema)
+    {
+        Domain domain = getDomain();
+        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
+
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        {
+            @Override
+            public List<FieldKey> getDefaultVisibleColumns()
+            {
+                return defaultVisibleColumns;
+            }
+        };
+
+        return table;
+    }
+
 
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
@@ -216,6 +260,12 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         protected Set<PropertyStorageSpec> getColumns()
         {
             return _fields;
+        }
+
+        @Override
+        public Set<Index> getPropertyIndices()
+        {
+            return PageFlowUtil.set(new Index(false, COLUMN_NAME_SUBTYPE));
         }
 
         @Override

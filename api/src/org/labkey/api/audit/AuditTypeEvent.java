@@ -27,7 +27,6 @@ public class AuditTypeEvent
 {
     private int _rowId;
     private Integer _impersonatedBy;
-    private String _entityId;
     private String _comment;
     private String _projectId;
     private String _container;
@@ -64,16 +63,6 @@ public class AuditTypeEvent
     public void setImpersonatedBy(Integer impersonatedBy)
     {
         _impersonatedBy = impersonatedBy;
-    }
-
-    public String getEntityId()
-    {
-        return _entityId;
-    }
-
-    public void setEntityId(String entityId)
-    {
-        _entityId = entityId;
     }
 
     public String getComment()

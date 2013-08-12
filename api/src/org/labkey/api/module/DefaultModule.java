@@ -52,6 +52,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
@@ -1193,14 +1194,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         while (!_deferredUpgradeTask.isEmpty())
         {
+            Method task = _deferredUpgradeTask.remove();
             try
             {
-                Method task = _deferredUpgradeTask.remove();
                 task.invoke(getUpgradeCode(), context);
             }
-            catch (Exception e)
+            catch (ReflectiveOperationException e)
             {
-                _log.error("Error executing a deferred java upgrade task: ", e);
+                throw new UnexpectedException(e);
             }
         }
     }

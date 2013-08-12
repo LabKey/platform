@@ -77,9 +77,10 @@ public class PropertyStorageSpec
         return name;
     }
 
-    public void setName(String name)
+    public PropertyStorageSpec setName(String name)
     {
         this.name = name;
+        return this;
     }
 
     public JdbcType getJdbcType()
@@ -87,9 +88,10 @@ public class PropertyStorageSpec
         return jdbcType;
     }
 
-    public void setJdbcType(JdbcType jdbcType)
+    public PropertyStorageSpec setJdbcType(JdbcType jdbcType)
     {
         this.jdbcType = jdbcType;
+        return this;
     }
 
     public boolean isPrimaryKey()
@@ -100,9 +102,10 @@ public class PropertyStorageSpec
     /**
      * cause this field to be provisioned as a primary key in the db
      */
-    public void setPrimaryKey(boolean primaryKey)
+    public PropertyStorageSpec setPrimaryKey(boolean primaryKey)
     {
         this.primaryKey = primaryKey;
+        return this;
     }
 
     public boolean isNullable()
@@ -113,9 +116,10 @@ public class PropertyStorageSpec
     /**
      * defaults true if not set
      */
-    public void setNullable(boolean nullable)
+    public PropertyStorageSpec setNullable(boolean nullable)
     {
         this.nullable = nullable;
+        return this;
     }
 
 
@@ -128,9 +132,10 @@ public class PropertyStorageSpec
      * defaults false if not set
      * Assumes that the JdbcType is JdbcType.INTEGER. Enforced in dialect.
      */
-    public void setAutoIncrement(boolean autoIncrement)
+    public PropertyStorageSpec setAutoIncrement(boolean autoIncrement)
     {
         this.autoIncrement = autoIncrement;
+        return this;
     }
 
 
@@ -143,9 +148,10 @@ public class PropertyStorageSpec
      * defaults false if not set
      * Assumes that the JdbcType is JdbcType.VARCHAR. Enforced in dialect.
      */
-    public void setEntityId(boolean entityId)
+    public PropertyStorageSpec setEntityId(boolean entityId)
     {
         this.entityId = entityId;
+        return this;
     }
 
 
@@ -158,9 +164,10 @@ public class PropertyStorageSpec
         return size;
     }
 
-    public void setSize(int size)
+    public PropertyStorageSpec setSize(int size)
     {
         this.size = size;
+        return this;
     }
 
     public boolean isMvEnabled()
@@ -168,9 +175,10 @@ public class PropertyStorageSpec
         return isMvEnabled;
     }
 
-    public void setMvEnabled(boolean isMvEnabled)
+    public PropertyStorageSpec setMvEnabled(boolean isMvEnabled)
     {
         this.isMvEnabled = isMvEnabled;
+        return this;
     }
 
     public String getMvIndicatorColumnName()

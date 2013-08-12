@@ -27,11 +27,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -54,26 +50,14 @@ public class AuditLogService
     private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<>();
     private static Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
 
-    // flip this switch when migration is complete and we want to start logging to the new tables
-    public static boolean enableHardTableLogging()
-    {
-        return false;
-    }
-
     public static void registerAuditType(AuditTypeProvider provider)
     {
-        if (enableHardTableLogging())
+        if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
         {
-            if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
-            {
-                User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-
-                provider.initializeProvider(auditUser);
-                _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
-            }
-            else
-                throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
+            _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
         }
+        else
+            throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
     }
 
     public static List<AuditTypeProvider> getAuditProviders()
@@ -98,11 +82,20 @@ public class AuditLogService
     @Deprecated
     public static void addAuditViewFactory(AuditViewFactory factory)
     {
-        AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
+        if (!(AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(factory.getEventType())))
+        {
+            AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
 
-        if (null != previous)
-            throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
-                    + previous.getClass().getName() + " vs. " + factory.getClass().getName());
+            if (null != previous)
+                throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
+                        + previous.getClass().getName() + " vs. " + factory.getClass().getName());
+        }
+    }
+
+    // AuditViewFactory will be removed during audit log migration upgrade
+    public static void removeAuditViewFactory(String eventType)
+    {
+        _auditViewFactories.remove(eventType);
     }
 
     @Deprecated
@@ -174,18 +167,28 @@ public class AuditLogService
          * specified domain. The domain and associated properties must have been created in advance, in order
          * for the query views to correctly display the additional properties, URI's for domains and properties
          * should be created using the methods on this service.
+         *
+         * @deprecated Replaced by {@link #addEvent(org.labkey.api.security.User, AuditTypeEvent)}.
          */
+        @Deprecated
         public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI);
 
         /**
          * Convenience methods to properly construct lsids with the correct audit namespace
+         * @deprecated Only used for old AuditViewFactory Domains.
          */
+        @Deprecated
         public String getDomainURI(String eventType);
+        @Deprecated
         public String getPropertyURI(String eventType, String propertyName);
 
+        @Deprecated
         public List<AuditLogEvent> getEvents(String eventType, String key);
+        @Deprecated
         public List<AuditLogEvent> getEvents(String eventType, int key);
+        @Deprecated
         public List<AuditLogEvent> getEvents(SimpleFilter filter);
+        @Deprecated
         public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort);
 
         @Deprecated // convert usages to getAuditEvent
@@ -222,15 +225,24 @@ public class AuditLogService
         public AuditTypeProvider getAuditProvider(String eventType);
 
         /**
-         * Called when registering a AuditTypeProvider to migrate
-         * data from the old audit log to the new provisioned audit log tables
-         * in version 13.3.
+         * Check if the event type has been migrated from using the old audit log table to the new provisioned audit log tables.
+         * For a new install, this flag won't be set -- check {@link #isMigrateComplete()} before checking if the event type has been migrated.
+         *
+         * @param eventType The event type name.
+         * @return true if the event type has been migrated.
          */
-        public void migrateProvider(AuditTypeProvider provider);
+        public boolean hasEventTypeMigrated(String eventType);
 
-        public boolean hasProviderMigrated(AuditTypeProvider provider);
+        /**
+         * @return true when all event types have been migrated.
+         */
+        public boolean isMigrateComplete();
     }
 
+    /**
+     * @deprecated Replaced by {@link AuditTypeProvider}.
+     */
+    @Deprecated
     public interface AuditViewFactory
     {
         public String getEventType();
