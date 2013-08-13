@@ -64,7 +64,9 @@ public class AuditQuerySchema extends UserSchema
     {
         if (_tables.isEmpty())
         {
-            _tables.add(AUDIT_TABLE_NAME);
+            // once migration is complete, we will not show the union query (although exsiting queries over it will continue to work)
+            if (!AuditLogService.get().isMigrateComplete())
+                _tables.add(AUDIT_TABLE_NAME);
 
             // old method of acquiring table names
             for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
@@ -92,11 +94,12 @@ public class AuditQuerySchema extends UserSchema
                 return provider.createTableInfo(this);
         }
 
-        // UNDONE: Create union query table of completed event types plus remaining audit log table types
-
         if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
         {
-            return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
+            if (AuditLogService.get().isMigrateComplete())
+                return new AuditLogUnionTable(this);
+            else
+                return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
         }
 
         return null;
