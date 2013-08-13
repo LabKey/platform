@@ -212,7 +212,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
-    <td class="labkey-form-label">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
     <td><input type="text" name="memoryUsageDumpInterval" size="4" value="<%= h(appProps.getMemoryUsageDumpInterval()) %>"></td>
 </tr>
 <tr>
