@@ -401,15 +401,17 @@ public class CoreController extends SpringActionController
 
                 Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
                 SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null);
-                if (results.getSize() != 1 || !results.next())
-                    throw new NotFoundException("Row not found for primary key");
+                try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                {
+                    if (results.getSize() != 1 || !results.next())
+                        throw new NotFoundException("Row not found for primary key");
 
-                String filename = results.getString(col.getFieldKey());
-                if (filename == null)
-                    throw new NotFoundException();
+                    String filename = results.getString(col.getFieldKey());
+                    if (filename == null)
+                        throw new NotFoundException();
 
-                file = new File(filename);
+                    file = new File(filename);
+                }
             }
             else
             {

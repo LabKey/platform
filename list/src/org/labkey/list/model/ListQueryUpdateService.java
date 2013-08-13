@@ -60,9 +60,11 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -484,12 +486,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Override
         public boolean next() throws BatchValidationException
         {
+            ArrayList<AttachmentFile> attachmentFiles = null;
             try
             {
                 boolean ret = super.next();
                 if (!ret)
                     return false;
-                ArrayList<AttachmentFile> attachmentFiles = null;
                 for (_AttachmentUploadHelper p : attachmentColumns)
                 {
                     Object attachmentValue = get(p.index);
@@ -507,6 +509,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         }
                         filename = (String) attachmentValue;
                         InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
+                        if (aIS == null)
+                        {
+                            throw new BatchValidationException(Collections.singletonList(new ValidationException("Could not find referenced file " + filename, p.domainProperty.getName())), null);
+                        }
                         attachmentFile = new InputStreamAttachmentFile(aIS, filename);
                         attachmentFile.setFilename(filename);
                     }
@@ -549,6 +555,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             catch (Exception x)
             {
                 throw UnexpectedException.wrap(x);
+            }
+            finally
+            {
+                if (attachmentFiles != null)
+                {
+                    for (AttachmentFile attachmentFile : attachmentFiles)
+                    {
+                        try { attachmentFile.closeInputStream(); } catch (IOException ignored) {}
+                    }
+                }
             }
         }
     }

@@ -346,7 +346,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     int maxSize = AppProps.getInstance().getMaxBLOBSize();
                     if (file.getSize() > maxSize)
                     {
-                        throw new AttachmentService.FileTooLargeException(file.getFilename(), maxSize);
+                        throw new AttachmentService.FileTooLargeException(file, maxSize);
                     }
 
                     hm.put("Document", file);

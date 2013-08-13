@@ -85,49 +85,50 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 Map<Wiki, String> parentsToBeSet = new HashMap<>();
 
                 // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
-                InputStream wikisIS = wikisDir.getInputStream(WikiWriterFactory.WIKIS_FILENAME);
-
-                if (null == wikisIS)
+                try (InputStream wikisIS = wikisDir.getInputStream(WikiWriterFactory.WIKIS_FILENAME))
                 {
-                    throw new ImportException("Could not find expected file: " + WikiWriterFactory.WIKIS_FILENAME);
-                }
-
-                WikisDocument document = WikisDocument.Factory.parse(wikisIS);
-                WikisType rootNode = document.getWikis();
-                int displayOrder = 0;
-                for (WikiType wikiXml : rootNode.getWikiArray())
-                {
-                    VirtualFile wikiSubDir = wikisDir.getDir(wikiXml.getName());
-                    if (null == wikiSubDir)
+                    if (null == wikisIS)
                     {
-                        ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
+                        throw new ImportException("Could not find expected file: " + WikiWriterFactory.WIKIS_FILENAME);
                     }
-                    // ensure that older versions of exported wikis that do not have the shouldIndex bit set
-                    // continue to be indexed by default
-                    boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
-                    Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
-                    if (wikiXml.getParent() != null)
+
+                    WikisDocument document = WikisDocument.Factory.parse(wikisIS);
+                    WikisType rootNode = document.getWikis();
+                    int displayOrder = 0;
+                    for (WikiType wikiXml : rootNode.getWikiArray())
                     {
-                        parentsToBeSet.put(wiki, wikiXml.getParent());
+                        VirtualFile wikiSubDir = wikisDir.getDir(wikiXml.getName());
+                        if (null == wikiSubDir)
+                        {
+                            ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
+                        }
+                        // ensure that older versions of exported wikis that do not have the shouldIndex bit set
+                        // continue to be indexed by default
+                        boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
+                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
+                        if (wikiXml.getParent() != null)
+                        {
+                            parentsToBeSet.put(wiki, wikiXml.getParent());
+                        }
+                        importedWikiNames.add(wikiXml.getName());
                     }
-                    importedWikiNames.add(wikiXml.getName());
-                }
 
-                // Import any wiki subdirectories that weren't present in the XML metadata using default metadata values
-                for (String wikiSubDirName : wikisDir.listDirs())
-                {
-                    VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
-                    if (null != wikiSubDir && !importedWikiNames.contains(wikiSubDirName))
+                    // Import any wiki subdirectories that weren't present in the XML metadata using default metadata values
+                    for (String wikiSubDirName : wikisDir.listDirs())
                     {
-                        importWiki(wikiSubDirName, null, true, true, wikiSubDir, ctx, displayOrder++);
-                        importedWikiNames.add(wikiSubDirName);
+                        VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
+                        if (null != wikiSubDir && !importedWikiNames.contains(wikiSubDirName))
+                        {
+                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, ctx, displayOrder++);
+                            importedWikiNames.add(wikiSubDirName);
+                        }
                     }
+
+                    setParents(ctx, parentsToBeSet);
+
+                    ctx.getLogger().info(importedWikiNames.size() + " wiki" + (1 == importedWikiNames.size() ? "" : "s") + " imported");
+                    ctx.getLogger().info("Done importing " + getDescription());
                 }
-
-                setParents(ctx, parentsToBeSet);
-
-                ctx.getLogger().info(importedWikiNames.size() + " wiki" + (1 == importedWikiNames.size() ? "" : "s") + " imported");
-                ctx.getLogger().info("Done importing " + getDescription());
             }
         }
 
