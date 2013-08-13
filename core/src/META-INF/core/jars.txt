@@ -57,6 +57,7 @@ sam-1.82.jar|Sam-JDK|1.82|{link:PicardTools|http://picard.sourceforge.net/index.
 spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-mock.jar dependency
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
+sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
 tika-app-1.3.jar|Tika|1.3|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search and POI for Excel import/export
 jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
