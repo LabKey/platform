@@ -144,20 +144,20 @@ public class AttachmentService
     {
         private List<String> _errors = new ArrayList<>();
 
-        public FileTooLargeException(Collection<String> filenames, int maxSize)
+        public FileTooLargeException(Collection<AttachmentFile> files, int maxSize) throws IOException
         {
-            for (String filename : filenames)
-                addError(filename, maxSize);
+            for (AttachmentFile file : files)
+                addError(file, maxSize);
         }
 
-        public FileTooLargeException(String filename, int maxSize)
+        public FileTooLargeException(AttachmentFile file, int maxSize) throws IOException
         {
-            addError(filename, maxSize);
+            addError(file, maxSize);
         }
 
-        private void addError(String filename, int maxSize)
+        private void addError(AttachmentFile file, int maxSize) throws IOException
         {
-            _errors.add("File " + filename + " is larger than the maximum allowed size, " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
+            _errors.add("File " + file.getFilename() + " is larger than the maximum allowed size. " + NumberFormat.getIntegerInstance().format(file.getSize()) + " vs " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
         }
 
         public List<String> getErrors()

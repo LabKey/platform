@@ -17,6 +17,8 @@ package org.labkey.api.query;
 
 import org.springframework.validation.Errors;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -90,5 +92,49 @@ public class BatchValidationException extends Exception
     {
         rowErrors.clear();
         extraContext = null;
+    }
+
+    @Override
+    public String getMessage()
+    {
+        // Combine our message with any nested messages
+        StringBuilder sb = new StringBuilder();
+        String message = super.getMessage();
+        if (message != null)
+        {
+            sb.append(message);
+        }
+        for (ValidationException rowError : rowErrors)
+        {
+            message = rowError.getMessage();
+            if (message != null)
+            {
+                sb.append("\n");
+                sb.append(rowError.getMessage());
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public void printStackTrace(PrintStream s)
+    {
+        // Combine our stack trace with that of any nested exception
+        super.printStackTrace(s);
+        for (ValidationException rowError : rowErrors)
+        {
+            rowError.printStackTrace(s);
+        }
+    }
+
+    @Override
+    public void printStackTrace(PrintWriter s)
+    {
+        // Combine our stack trace with that of any nested exception
+        super.printStackTrace(s);
+        for (ValidationException rowError : rowErrors)
+        {
+            rowError.printStackTrace(s);
+        }
     }
 }

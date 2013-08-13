@@ -55,6 +55,10 @@ public class InputStreamAttachmentFile implements AttachmentFile
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            try { is.close(); } catch (IOException ignored) {}
+        }
     }
     
     @Override
