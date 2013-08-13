@@ -279,26 +279,19 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         private void requeueAllPendingJobs()
         {
-            try
+            PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getQueuedStatusFiles();
+            for (PipelineStatusFileImpl sf : incompleteStatusFiles)
             {
-                PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getQueuedStatusFiles();
-                for (PipelineStatusFileImpl sf : incompleteStatusFiles)
+                try
                 {
-                    try
-                    {
-                        PipelineJobServiceImpl.get().getJobStore().retry(sf);
-                    }
-                    catch (IOException e)
-                    {
-                        _log.error("Unable to restart job", e);
-                        moveJobToError(sf);
-                    }
-                    catch (CancelledException ignored) { /* Job has already seen set to CANCELLED */ }
+                    PipelineJobServiceImpl.get().getJobStore().retry(sf);
                 }
-            }
-            catch (SQLException e)
-            {
-                _log.error("SQL problem trying to move jobs to error", e);
+                catch (IOException e)
+                {
+                    _log.error("Unable to restart job", e);
+                    moveJobToError(sf);
+                }
+                catch (CancelledException ignored) { /* Job has already seen set to CANCELLED */ }
             }
         }
 

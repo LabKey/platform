@@ -1037,7 +1037,7 @@ public class QueryServiceImpl extends QueryService
             }
         }
 
-        if (unresolvedColumns != null)
+        if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
             _log.warn("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns.toString());
 

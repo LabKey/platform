@@ -16,6 +16,7 @@
 
 package org.labkey.pipeline.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.RuntimeSQLException;
@@ -149,7 +150,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
     }
 
-    public void beforeUpdate(User user, Entity cur)
+    public void beforeUpdate(@Nullable User user, Entity cur)
     {
         super.beforeUpdate(user, cur);
 
