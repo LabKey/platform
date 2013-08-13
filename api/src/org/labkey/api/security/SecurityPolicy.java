@@ -317,7 +317,7 @@ public class SecurityPolicy implements HasPermission
 
         //role assignments are sorted by user id,
         //as are the principal ids,
-        //so iterrate over both of them in one pass
+        //so iterate over both of them in one pass
         Iterator<RoleAssignment> assignmentIter = getAssignments().iterator();
         RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
         int principalsIdx = 0;

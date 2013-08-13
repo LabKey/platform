@@ -22,6 +22,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.DataView;
 import org.springframework.validation.Errors;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -234,18 +236,25 @@ public class CrosstabView extends QueryView
         return view;
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws Exception
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
         configureForExcelExport(docType, view, rgn);
 
-        Results rs = rgn.getResultSet(view.getRenderContext());
+        try
+        {
+            Results rs = rgn.getResultSet(view.getRenderContext());
 
-        CrosstabTableInfo table = (CrosstabTableInfo)getTable();
-        List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
+            CrosstabTableInfo table = (CrosstabTableInfo)getTable();
+            List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-        return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, _numMeasures, _numMemberMeasures, docType);
+            return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, _numMeasures, _numMemberMeasures, docType);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }

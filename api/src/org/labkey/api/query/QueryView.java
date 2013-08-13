@@ -1798,7 +1798,7 @@ public class QueryView extends WebPartView<Object>
         return TSVGridWriter.ColumnHeaderType.propertyName;
     }
 
-    public TSVGridWriter getTsvWriter() throws SQLException, IOException
+    public TSVGridWriter getTsvWriter() throws IOException
     {
         _initializeButtonBar = false;
         DataView view = createDataView();
@@ -1808,11 +1808,18 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
-        Results rs = rgn.getResultSet(rc);
-        TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
-        tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
-        tsv.setColumnHeaderType(getColumnHeaderType());
-        return tsv;
+        try
+        {
+            Results rs = rgn.getResultSet(rc);
+            TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+            tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
+            tsv.setColumnHeaderType(getColumnHeaderType());
+            return tsv;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public Results getResults() throws SQLException, IOException
@@ -1871,22 +1878,29 @@ public class QueryView extends WebPartView<Object>
         return ret;
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws Exception
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
         RenderContext rc = configureForExcelExport(docType, view, rgn);
 
-        ResultSet rs = rgn.getResultSet(rc);
-        Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
-        ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
-        ew.setFilenamePrefix(getSettings().getQueryName());
-        return ew;
+        try
+        {
+            ResultSet rs = rgn.getResultSet(rc);
+            Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
+            ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
+            ew.setFilenamePrefix(getSettings().getQueryName());
+            return ew;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView) throws Exception
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView) throws IOException
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -1970,28 +1984,28 @@ public class QueryView extends WebPartView<Object>
         return rc;
     }
 
-    public void exportToExcel(HttpServletResponse response) throws Exception
+    public void exportToExcel(HttpServletResponse response) throws IOException
     {
         exportToExcel(response, ExcelWriter.ExcelDocumentType.xls);
     }
 
-    public void exportToExcel(HttpServletResponse response, ExcelWriter.ExcelDocumentType docType) throws Exception
+    public void exportToExcel(HttpServletResponse response, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
         exportToExcel(response, false, ExcelWriter.CaptionType.Label, false, docType, false, null);
     }
 
-    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
+    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws IOException
     {
         exportToExcelTemplate(response, captionType, insertColumnsOnly, false, null);
     }
 
     // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws Exception
+    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws IOException
     {
         exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
     }
 
-    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws Exception
+    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();

@@ -28,21 +28,28 @@ public class ResultSetCollapser extends ResultSetImpl
     private Table.TableResultSet _tableRS;
 
     // XXX: needs offset?
-    public ResultSetCollapser(Table.TableResultSet rs, String columnName, int maxRows) throws SQLException
+    public ResultSetCollapser(Table.TableResultSet rs, String columnName, int maxRows)
     {
         super(rs);
-        if (maxRows > 0)
+        try
         {
-            rs.last();
-            setComplete(rs.getRow() <= maxRows);
-            rs.beforeFirst();
+            if (maxRows > 0)
+            {
+                rs.last();
+                setComplete(rs.getRow() <= maxRows);
+                rs.beforeFirst();
+            }
+            else
+            {
+                setComplete(true);
+            }
+            _columnName = columnName;
+            _tableRS = rs;
         }
-        else
+        catch (SQLException e)
         {
-            setComplete(true);
+            throw new RuntimeSQLException(e);
         }
-        _columnName = columnName;
-        _tableRS = rs;
     }
 
     public boolean isComplete()

@@ -42,12 +42,19 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         this(ctx, tinfo, displayColumns, tinfo.getName());
     }
 
-    public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns, String name) throws SQLException, IOException
+    public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns, String name) throws IOException
     {
         List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, tinfo);
         LinkedHashMap<FieldKey, ColumnInfo> fieldMap = QueryService.get().getColumns(tinfo, Collections.<FieldKey>emptySet(), selectCols);
-        Results rs = ctx.getResultSet(fieldMap, tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
-        init(rs, displayColumns);
+        try
+        {
+            Results rs = ctx.getResultSet(fieldMap, tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
+            init(rs, displayColumns);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
