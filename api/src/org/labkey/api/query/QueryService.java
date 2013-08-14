@@ -31,6 +31,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
@@ -207,7 +208,12 @@ abstract public class QueryService
      */
     public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query);
 
-    public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path);
+    /*
+     * Normally we look at all active modules within a container for query file paths, however sometimes
+     * (i.e. in the Luminex module) the module is disabled but we still want to look in that directory for additional QueryDefs.
+     * In such cases, one may pass additional modules as 'extraModules'.
+     */
+    public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules);
 
     abstract public void addQueryListener(QueryChangeListener listener);
     abstract public void removeQueryListener(QueryChangeListener listener);
