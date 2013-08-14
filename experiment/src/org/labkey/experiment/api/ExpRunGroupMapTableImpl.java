@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -202,7 +203,8 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
             try
             {
                 Pair<ExpRunImpl, ExpExperimentImpl> objects = getObjects(row);
-                if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), InsertPermission.class))
+                // Users must have update permission for the run
+                if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), UpdatePermission.class))
                 {
                     throw new UnauthorizedException();
                 }
@@ -225,7 +227,8 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Pair<ExpRunImpl, ExpExperimentImpl> objects = getObjects(oldRow);
-            if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), DeletePermission.class))
+                // Users must have update permission for the run
+            if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), UpdatePermission.class))
             {
                 throw new UnauthorizedException();
             }

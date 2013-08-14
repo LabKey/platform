@@ -60,7 +60,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -124,9 +123,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -1150,8 +1147,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors) throws Exception
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
-            // Check if the user has permission to see this run
-            if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+            // Check if the user has permission to update this run
+            if (run == null || !run.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 throw new NotFoundException();
             }
@@ -1167,7 +1164,8 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException();
             }
-            if (!exp.getContainer().hasPermission(getUser(), UpdatePermission.class))
+            // Users must have permission to view, but not necessarily update, the container the holds the run group
+            if (!exp.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 throw new UnauthorizedException();
             }

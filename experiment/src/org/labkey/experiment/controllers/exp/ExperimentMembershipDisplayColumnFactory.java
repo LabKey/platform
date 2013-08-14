@@ -16,10 +16,16 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -116,8 +122,13 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
 
             out.write("<input type=\"checkbox\" name=\"experimentMembership\" ");
             int currentExpId = getExpId(ctx);
+            int currentExpRunId = getRunId(ctx);
             ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
-            if (exp != null && exp.getContainer().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class))
+            ExpRun run = ExperimentService.get().getExpRun(currentExpRunId);
+            // Users need to be able to read the run group, and update the run itself
+            if (run != null && exp != null &&
+                    exp.getContainer().hasPermission(ctx.getViewContext().getUser(), ReadPermission.class) &&
+                    run.getContainer().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class))
             {
                 out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + currentExpId + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
             }
