@@ -1,4 +1,4 @@
-/*
+    /*
  * Copyright (c) 2008-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,6 +70,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -2291,7 +2292,7 @@ public class DavController extends SpringActionController
             if (!resource.canCreate(getUser(),true))
                 return unauthorized(resource);
 
-            boolean result = resource.getFile() != null && resource.getFile().mkdirs();
+            boolean result = resource.createCollection(getUser());
 
             if (!result)
             {
@@ -2587,7 +2588,9 @@ public class DavController extends SpringActionController
         {
             LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
 
-            deleteCollection(resource, errorList);
+            if(!resource.delete(getUser()))
+                deleteCollection(resource, errorList);
+
             removeFromDataObject(resource);
             if (!resource.delete(getUser()))
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
