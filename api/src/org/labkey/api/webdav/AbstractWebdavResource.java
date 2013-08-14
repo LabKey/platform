@@ -85,6 +85,12 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return (WebdavResolver)super.getResolver();
     }
 
+    @Override
+    public boolean createCollection(User user)
+    {
+        return this.getFile() != null && this.getFile().mkdirs();
+    }
+
     public WebdavResource parent()
     {
         Path p = getPath();

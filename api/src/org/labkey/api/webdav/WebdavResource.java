@@ -162,6 +162,8 @@ public interface WebdavResource extends Resource
     // dav methods
     boolean delete(User user) throws IOException;
 
+    boolean createCollection(User user);
+
     //
     // for SearchService
     //
