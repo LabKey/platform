@@ -326,11 +326,14 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path)
+    public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules)
     {
         Collection<Module> modules = container.getActiveModules();
+        HashSet<Module> allModules = new HashSet<>(modules);
+        allModules.addAll(Arrays.asList(extraModules));
+
         List<QueryDefinition> ret = new ArrayList<>();
-        for (Module module : modules)
+        for (Module module : allModules)
         {
             Collection<? extends Resource> queries;
 
