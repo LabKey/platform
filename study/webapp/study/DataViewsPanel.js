@@ -31,53 +31,26 @@ Ext4.define('TreeFilter', {
         var me = this,
             tree = me.tree,
             matches = [],                         // array of nodes matching the search criteria
-            root = tree.getRootNode(),            // root node of the tree
             _propArray = propArray || ['text'],   // propArray is optional - will be set to the ['text'] property of the TreeStore record by default
             _re = re || new RegExp(value, "ig"),  // the regExp could be modified to allow for case-sensitive, starts  with, etc.
-            visibleNodes = [],                    // array of nodes matching the search criteria + each parent non-leaf  node up to root
+            visibleNodes = [],                    // array of nodes matching the search criteria + each parent non-leaf node up to root
             viewNode;
 
-        tree.expandAll();                       // expand all nodes for the the following iterative routines
+        tree.expandAll();                         // expand all nodes for the the following iterative routines
 
         // iterate over all nodes in the tree in order to evalute them against the search criteria
-        root.cascadeBy(function (node) {
-            for (var p=0; p < _propArray.length; p++) {
-                if (node.get(_propArray[p]) &&
-                    node.get(_propArray[p]).match &&
-                    node.get(_propArray[p]).match(_re)) {  // if the node matches the search criteria and is a leaf (could be  modified to searh non-leaf nodes)
-                        matches.push(node);                // add the node to the matches array
-                        return;
+        tree.getRootNode().cascadeBy(function(node) {
+            var p= 0, prop;
+            for (; p < _propArray.length; p++) {
+                prop = node.get(_propArray[p]);
+                if (prop && prop.match && prop.match(_re)) {  // if the node matches the search criteria and is a leaf (could be modified to searh non-leaf nodes)
+                    matches.push(node);                       // add the node to the matches array
+                    return;
                 }
             }
         });
 
-        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
-            Ext4.each(matches, function (match) {
-                if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
-            });
-        }
-
-        Ext4.each(matches, function (item, i, arr) {   // loop through all matching leaf nodes
-            root.cascadeBy(function (node) {           // find each parent node containing the node from the matches array
-                if (node.contains(item)) {
-                    visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
-                }
-            });
-            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
-                item.cascadeBy(function (node) {                     // iterate over its children and set them as visible
-                    visibleNodes.push(node)
-                });
-            }
-            visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
-        });
-
-        root.cascadeBy(function (node) {                             // finally loop to hide/show each node
-            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
-            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
-                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
-                viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
-            }
-        });
+        me._checkMatches(matches, tree, visibleNodes);
     },
 
     filterBy: function(fn, scope) {
@@ -87,44 +60,17 @@ Ext4.define('TreeFilter', {
 
         var me = this,
             tree = me.tree,
-            root = tree.getRootNode(),
             matches = [],
             viewNode,
             visibleNodes = [];
 
         tree.expandAll();                       // expand all nodes for the the following iterative routines
 
-        root.cascadeBy(function (node) {
+        tree.getRootNode().cascadeBy(function(node) {
             if (fn.call(scope || this, node) === true) { matches.push(node); }
         });
 
-        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
-            Ext4.each(matches, function (match) {
-                if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
-            });
-        }
-
-        Ext4.each(matches, function (item, i, arr) {   // loop through all matching leaf nodes
-            root.cascadeBy(function (node) {           // find each parent node containing the node from the matches array
-                if (node.contains(item)) {
-                    visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
-                }
-            });
-            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
-                item.cascadeBy(function (node) {                     // iterate over its children and set them as visible
-                    visibleNodes.push(node)
-                });
-            }
-            visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
-        });
-
-        root.cascadeBy(function (node) {                             // finally loop to hide/show each node
-            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
-            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
-                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
-                viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
-            }
-        });
+        me._checkMatches(matches, tree, visibleNodes);
     },
 
     clearFilter: function () {
@@ -139,108 +85,42 @@ Ext4.define('TreeFilter', {
                 viewNode.show();
             }
         });
-    }
-});
-
-Ext4.define('Ext.tree.DataViewsColumn', {
-    extend: 'Ext.grid.column.Column',
-    alias: 'widget.dataviewscolumn',
-
-    tdCls: Ext4.baseCSSPrefix + 'grid-cell-treecolumn',
-
-    initComponent: function() {
-        var origRenderer = this.renderer || this.defaultRenderer,
-            origScope    = this.scope || window;
-
-        this.renderer = function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var buf   = [],
-                format = Ext4.String.format,
-                depth = record.getDepth(),
-                treePrefix  = Ext4.baseCSSPrefix + 'tree-',
-                elbowPrefix = treePrefix + 'elbow-',
-                expanderCls = treePrefix + 'expander',
-                imgText     = '<img src="{1}" class="{0}" />',
-                checkboxText= '<input type="button" role="checkbox" class="{0}" {1} />',
-                formattedValue = origRenderer.apply(origScope, arguments),
-                href = record.get('href'),
-                target = record.get('hrefTarget'),
-                cls = record.get('cls');
-
-            while (record) {
-
-                // 18062 - Hidden row appear on expand/collapse
-                if (record.isExpandable() && record.data && record['_hasExpandEvent'] !== true) {
-                    record['_hasExpandEvent'] = true;
-                    record.on('expand', function() { Ext4.Function.defer(this.hiddenFilter, 10, this) }, this);
-                }
-
-                if (!record.isRoot() || (record.isRoot() && view.rootVisible)) {
-                    if (record.getDepth() === depth) {
-                        buf.unshift(format(imgText,
-                            treePrefix + 'icon ' +
-                            treePrefix + 'icon' + (record.get('icon') ? '-inline ' : (record.isLeaf() ? '-leaf ' : '-parent ')) +
-                            (record.get('iconCls') || ''),
-                            record.get('icon') || Ext4.BLANK_IMAGE_URL
-                        ));
-                        if (record.get('checked') !== null) {
-                            buf.unshift(format(
-                                checkboxText,
-                                (treePrefix + 'checkbox') + (record.get('checked') ? ' ' + treePrefix + 'checkbox-checked' : ''),
-                                record.get('checked') ? 'aria-checked="true"' : ''
-                            ));
-                            if (record.get('checked')) {
-                                metaData.tdCls += (' ' + treePrefix + 'checked');
-                            }
-                        }
-                        if (record.isLast()) {
-                            if (record.isExpandable()) {
-                                buf.unshift(format(imgText, (elbowPrefix + 'end-plus ' + expanderCls), Ext4.BLANK_IMAGE_URL));
-                            } else {
-                                buf.unshift(format(imgText, (elbowPrefix + 'end'), Ext4.BLANK_IMAGE_URL));
-                            }
-
-                        } else {
-                            if (record.isExpandable()) {
-                                buf.unshift(format(imgText, (elbowPrefix + 'plus ' + expanderCls), Ext4.BLANK_IMAGE_URL));
-                            } else {
-                                buf.unshift(format(imgText, (treePrefix + 'elbow'), Ext4.BLANK_IMAGE_URL));
-                            }
-                        }
-                    } else {
-                        if (record.isLast() || record.getDepth() === 0) {
-                            buf.unshift(format(imgText, (elbowPrefix + 'empty'), Ext4.BLANK_IMAGE_URL));
-                        } else if (record.getDepth() !== 0) {
-                            buf.unshift(format(imgText, (elbowPrefix + 'line'), Ext4.BLANK_IMAGE_URL));
-                        }
-                    }
-                }
-                record = record.parentNode;
-            }
-            if (href) {
-                buf.push('<a href="', href, '" target="', target, '">', Ext4.htmlEncode(formattedValue), '</a>');
-            } else {
-                buf.push('<span>',Ext4.htmlEncode(formattedValue),'</span>');
-            }
-            if (cls) {
-                metaData.tdCls += ' ' + cls;
-            }
-            return buf.join('');
-        };
-        this.callParent(arguments);
     },
 
-    defaultRenderer: function(value) {
-        return value;
-    }
-});
+    _checkMatches: function(matches, tree, visibleNodes) {
 
-/**
- * This is an extended model used to render the TreeStore. Due to performance
- * the afterCommit method has been disabled. It is not recommended you use this model.
-**/
-Ext4.define('Ext.data.FastModel', {
-    extend : 'Ext.data.Model',
-    afterCommit : function(){}
+        var me = this,
+            viewNode,
+            root = tree.getRootNode();
+
+        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
+            Ext4.each(matches, function(match) {
+                if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
+            });
+        }
+
+        Ext4.each(matches, function(item, i, arr) {   // loop through all matching leaf nodes
+            root.cascadeBy(function(node) {           // find each parent node containing the node from the matches array
+                if (node.contains(item)) {
+                    visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
+                }
+            });
+            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
+                item.cascadeBy(function(node) {                     // iterate over its children and set them as visible
+                    visibleNodes.push(node)
+                });
+            }
+            visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
+        });
+
+        root.cascadeBy(function(node) {                             // finally loop to hide/show each node
+            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
+                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
+                viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
+            }
+        });
+    }
 });
 
 Ext4.define('LABKEY.ext4.DataViewsPanel', {
@@ -320,7 +200,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // define Models
         Ext4.define('Dataset.Browser.View', {
-            extend : 'Ext.data.FastModel',
+            extend : 'Ext.data.Model',
             idProperty : 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
             fields : fields
         });
@@ -470,10 +350,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false,
             frame    : false,
-            layout   : 'fit'
+            layout   : 'fit',
+            listeners: { render: this.configureGrid, scope: this }
         });
-
-        this.centerPanel.on('render', this.configureGrid, this);
 
         return {
             xtype  : 'panel',
@@ -489,23 +368,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      * Invoked once when the grid is initially setup
      */
     configureGrid : function() {
-
-        var handler = function(json) {
-            this.centerPanel.getEl().unmask();
-
-            if (json.webpart) {
-                this._height = parseInt(json.webpart.height);
-                this.setHeight(this._height);
-            }
-            this.dateFormat = json.dateFormat;
-            this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
-            this.editInfo = json.editInfo;
-
-            this.initGrid(json.visibleColumns);
-        };
-
         this.centerPanel.getEl().mask('Initializing...');
-        this.getConfiguration(handler, this);
+        this.getConfiguration(this.onConfigure, this);
+    },
+
+    /**
+     * Handles the json response from study/browseData.api
+     * @param json
+     */
+    onConfigure : function(json) {
+        this.centerPanel.getEl().unmask();
+
+        if (json.webpart) {
+            this._height = parseInt(json.webpart.height);
+            this.setHeight(this._height);
+        }
+        this.dateFormat = json.dateFormat;
+        this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
+        this.editInfo = json.editInfo;
+
+        this.initGrid(json.visibleColumns);
     },
 
     /**
@@ -559,7 +441,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
          */
         var tipTpl = new Ext4.XTemplate('<tpl>' +
                 '<div class="data-views-tip-content">' +
-                '<table cellpadding="20" cellspacing="100">' +
+                '<table>' +
                 '<tpl if="data.category != undefined && (data.category.length || data.category.label)">' +
                 '<tr><td>Source:</td><td>{[this.renderCategory(values.data.category)]}</td></tr>' +
                 '</tpl>' +
@@ -615,10 +497,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 defaults : { border: false, frame: false },
                 items    : [{
                     xtype  : 'panel',
-                    layout : 'fit',
                     border : false, frame : false,
-                    height : '100%',
-                    cls    : 'tip-panel',
                     tpl    : tipTpl
                 }],
                 listeners: {
@@ -731,7 +610,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden   : true,
             scope    : this
         },{
-            xtype    : 'dataviewscolumn',
+            xtype    : 'treecolumn',
             text     : 'Name',
             flex     : 1,
             dataIndex: 'name',
@@ -980,7 +859,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
 
         this.gridPanel.clearFilter();
-        this.gridPanel.filterBy(filter, this);
+        Ext4.defer(this.gridPanel.filterBy, 200, this, [filter, this]);
+//        this.gridPanel.filterBy(filter, this);
     },
 
     isCustomizable : function() {
@@ -1255,6 +1135,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     form.submit({
                         url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
                         method : 'POST',
+                        submitEmptyText : false,
                         success : function() {
                             this.onEditSave();
                             editWindow.getEl().unmask();

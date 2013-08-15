@@ -191,7 +191,7 @@ Ext4.define('LABKEY.study.DataViewUtil', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {
@@ -411,7 +411,7 @@ Ext4.define('LABKEY.study.DataViewUtil', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {

@@ -512,7 +512,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     constructor : function(config) {
         Ext4.applyIf(config, {
             border : false, frame : false,
-            cls    : 'report-filter-panel',
+            cls    : 'rpf',
             scroll   : 'vertical'
         });
 

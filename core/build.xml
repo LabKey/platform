@@ -50,15 +50,15 @@
          <!--create a combined Ext.js usable by the core module's server-side scripts -->
         <concat destfile="${core-scripts.out}/Ext4.js" force="true">
             <header file="${core-scripts.src}/Ext4.header.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/Ext.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/Array.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/Date.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/Number.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/Object.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/String.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/lang/Error.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/Ext.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/Array.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/Date.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/Number.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/Object.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/String.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/lang/Error.js"/>
             <fileset file="${core-scripts.src}/Ext4.middle.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs41.dirname}/src/core/src/misc/JSON.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs42.dirname}/src/misc/JSON.js"/>
             <footer file="${core-scripts.src}/Ext4.footer.js"/>
         </concat>
 

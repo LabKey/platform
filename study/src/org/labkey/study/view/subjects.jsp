@@ -120,7 +120,7 @@ li.ptid a.unhighlight
     color: black;
 }
 
-.report-filter-panel div.x4-panel-body-default:hover {
+.rpf div.x4-panel-body-default:hover {
     overflow-y: auto;
 }
 

@@ -78,6 +78,11 @@ body, div, td, th, table, img, form,
     font-size: <%= fontSize %>;
 }
 
+.x4-tree-node-text
+{
+    font-size: <%= fontSize %>;
+}
+
 a, a:visited, .labkey-link, .labkey-link:visited
 {
     color: #<%= link %>;
@@ -279,11 +284,11 @@ table.labkey-data-region
     background-color: #<%= grid %>;
 }
 
-.x4-reset div.facet_header {
+div.facet_header {
     background-color: #<%= grid %>;
 }
 
-.x4-reset div.facet_header .x4-panel-header-text {
+div.facet_header .x4-panel-header-text {
     color: #<%= link %>;
 }
 
@@ -619,7 +624,7 @@ li.labkey-tab-inactive a
     -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= link %>, endColorstr=#b2<%= link %>)"; /* IE 8 */
 }
 
-.study-schedule-container .x4-reset .x4-grid-header-ct {
+.study-schedule-container .x4-grid-header-ct {
     background-color: #<%= grid %>;
 }
 

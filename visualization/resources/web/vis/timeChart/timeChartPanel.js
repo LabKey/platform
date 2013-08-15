@@ -13,6 +13,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     extend : 'Ext.panel.Panel',
 
+    alias : 'widget.timechartpanel',
+
     constructor : function(config){
         // properties for this panel
         Ext4.apply(config, {

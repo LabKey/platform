@@ -58,8 +58,11 @@
     User user = getViewContext().getUser();
 %>
 <style type="text/css">
-    td.x-tree-node-current a {
-        font-weight: bold;
+
+    h3 {
+        margin: 0;
+        padding: 0;
+        font-size: 100%;
     }
 
     div.rolepanel {
@@ -76,7 +79,7 @@
     }
 
     span.closeicon {
-        background-image: url(<%=request.getContextPath()%>/ext-4.1.0/resources/themes/images/default/tools/tool-sprites.gif);
+        background-image: url(<%=request.getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
     }
 </style>
 <%--

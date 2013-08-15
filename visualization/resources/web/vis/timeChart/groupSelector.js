@@ -11,7 +11,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         Ext4.apply(config, {
             title: 'Groups',
             border: false,
-            cls: 'report-filter-panel',
+            cls: 'rpf',
             autoScroll: true,
             maxInitSelection: 5
         });

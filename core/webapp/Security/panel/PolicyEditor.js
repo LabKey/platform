@@ -231,11 +231,13 @@ Ext4.define('Security.panel.PolicyEditor', {
             this.removeAll(true);
 
             toAdd.push({
-                xtype   : 'labkey-linkbutton',
-                text    : 'view permissions report',
-                href    : LABKEY.ActionURL.buildURL('security', 'folderAccess'),
-                style   : 'margin-left:5px;',
-                linkCls : 'labkey-text-link'
+                xtype: 'box',
+                autoEl: {
+                    tag: 'a',
+                    href: LABKEY.ActionURL.buildURL('security', 'folderAccess'),
+                    html: 'view permissions report',
+                    cls: 'labkey-text-link'
+                }
             });
 
             if (this.canInherit)
@@ -377,7 +379,6 @@ Ext4.define('Security.panel.PolicyEditor', {
                 if (sourceEl && sourceEl.dom) {
                     var dom = document.createElement('div');
                     var child = document.createElement('div');
-                    dom.setAttribute('class', 'x4-reset');
                     child.setAttribute('class', 'x4-btn-default-small');
                     dom.appendChild(child);
                     b.getRenderTemplate().append(child, {

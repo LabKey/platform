@@ -31,7 +31,6 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
         Ext4.QuickTips.init();
 
         Ext4.apply(this, config, {
-            cls: 'extContainer',
             title: 'Add Measure...',
             layout:'fit',
             width:800,
@@ -244,9 +243,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         // Show the mask after the component size has been determined, as long as the
         // data is still loading:
         this.on('afterlayout', function() {
-            if (!this.loaded)
-                this.getEl().mask("loading measures...", "x-mask-loading");
-        });
+            if (!this.loaded) {
+                this.getEl().mask("loading measures...");
+            }
+        }, this);
 
         this.callParent();
     },
@@ -274,7 +274,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                     success      : function(measures, response){
                         this.isLoading = false;
                         this.measuresStoreData = Ext4.JSON.decode(response.responseText);
-                        if(this.hideDemographicMeasures){
+                        if (this.hideDemographicMeasures) {
                             // Remove demographic measures in some cases (i.e. time charts).
                             for(var i = this.measuresStoreData.measures.length; i--;){
                                 if(this.measuresStoreData.measures[i].isDemographic === true){
@@ -337,9 +337,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                     this._lastFilterText = '';
                     this.filterMeasures(this.searchBox.getValue());
 
-                    if (this.rendered)
+                    if (this.rendered) {
                         this.getEl().unmask();
-
+                    }
                     this.fireEvent('measuresStoreLoaded', this);
 
                     this.reloadingStore = false;
@@ -743,7 +743,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         // Show the mask after the component size has been determined, as long as the data is still loading:
         this.on('afterlayout', function() {
             if (!this.loaded) 
-                this.getEl().mask("loading measures...", "x-mask-loading");
+                this.getEl().mask("loading measures...");
         });
 
         this.callParent();
@@ -819,8 +819,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
                     this.fireEvent('measuresStoreLoaded', this);
 
-                    if (this.rendered)
+                    if (this.rendered) {
                         this.getEl().unmask();
+                    }
                 },
                 exception : function(proxy, type, action, options, resp) {
                     LABKEY.Utils.displayAjaxErrorResponse(resp, options);
@@ -1069,13 +1070,13 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
 
         this.on('load', function(store) {
             store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
-            this.fireEvent("measureStoreSorted", this);
-        }, this);        
+            store.fireEvent("measureStoreSorted", store);
+        });
     },
 
-    initComponent : function() {
-
-        this.callParent();
+    loadRawData : function(data, append) {
+        this.callParent(arguments);
+        this.fireEvent('load', this, this.data.getRange(), true);
     }
 });
 

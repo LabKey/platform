@@ -1,30 +1,3 @@
-/*
-
-index:
-
-defaults
-general
-    -various
-    -data region
-home template
-    -main
-        -header-panel
-            -main-title
-        -site-nav-panel
-            -expandable-nav
-            -nav-tree
-        -proj
-            -proj-nav-panel
-            -body-panel
-            -side-panel
-module specific (alphabetical)
-GWT
-
-*/
-
-
-/* defaults, general attributes */
-
 html, body
 {
     height: 100%;
@@ -47,6 +20,14 @@ img
 {
     border: 0 none;
 }
+
+em {
+    font-style: normal;
+}
+
+/*a.x4-tab {*/
+    /*height: 24px;*/
+/*}*/
 
 .labkey-fullscreen-wizard-background
 {
@@ -167,7 +148,6 @@ legend
     text-decoration: none;
     vertical-align: top;
     padding: 1px;
-   /*  padding-right:4px; */
 }
 
 .labkey-header:hover
@@ -986,11 +966,8 @@ table.labkey-data-region {
     border-width: 0px;
 }
 
-.labkey-data-region-facet div.x4-panel-body {
-    border-color: #DDDDDD;
-}
-
-.x4-reset div.facet_header {
+div.facet_header
+{
     height: 34px;
     background-color: #E7EFF4;
     border-color: #DDDDDD;
@@ -999,23 +976,13 @@ table.labkey-data-region {
     border-bottom: 1px solid black;
 }
 
-.x4-reset div.facet_header .x4-panel-header-text-container {
-    margin-top: 2px !important;
-}
-
-.x4-reset div.facet_header .x4-panel-header-text {
-    color: #126495;
-    text-transform: uppercase;
-    font-size: 10px;
-}
-
-.facet-wrap,
-.facet-wrap div.x4-reset
+.facet-wrap
 {
     float: left;
 }
 
-.region-wrap {
+.region-wrap
+{
     float: right;
 }
 
@@ -1545,12 +1512,6 @@ a.labkey-main-title
     text-decoration: underline;
 }
 
-
-
-
-
-
-
 /* The right side links and username on the header panel */
 td.labkey-main-nav
 {
@@ -1626,8 +1587,6 @@ td.labkey-proj
     vertical-align: top;
     height: 100%;
 }
-
-
 
 /* search results page */
 .labkey-search-filter
@@ -3577,12 +3536,6 @@ div.note {
     -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff126495, endColorstr=#ff126495)"; /* IE 8 */
 }
 
-
-.study-schedule-container .x4-reset .x4-grid-header-ct {
-    background-image: none;
-    background-color: #E7EFF4;
-}
-
 /* this affects how _print=true looks in the browser (see also printStyle.css) */
 body.print, table.labkey-main.print
 {
@@ -3593,43 +3546,6 @@ body.print, table.labkey-main.print
 input[type="checkbox"], input[type="radio"] {
     margin: 0 4px 0 0;
     padding: 0;
-}
-
-/* Ext 4 styling */
-.x4-reset .x4-message-box .x4-window-body,
-.x4-reset .x4-toolbar-footer {
-    background-color: #ffffff;
-    margin-top: 0px;
-}
-
-.x4-reset .x4-tip {
-    background-color: white;
-    border-width: 2px;
-    padding-left: 0px !important;
-}
-
-.x4-reset .x4-tip-anchor {
-    border-width: 8px;
-}
-
-.x4-reset .x4-form-text
-{
-    height : 24px;
-}
-
-.x4-reset .x4-form-checkbox,
-.x4-reset .x4-form-radio
-{
-    float : left;
-}
-
-.x4-action-col-icon
-{
-    cursor: pointer;
-}
-
-.x4-item-disabled td.x4-trigger-cell {
-    opacity: 0.3;
 }
 
 /* Webkit Scrollbar */

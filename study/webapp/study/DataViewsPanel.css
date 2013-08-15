@@ -1,26 +1,36 @@
 /* Grid */
-.dvc .x4-reset .x4-grid-header-ct,
-.dvc .x4-reset .x4-toolbar-default,
-.dvc .x4-reset .x4-column-header,
-.dvc .x4-reset .x4-column-header-over,
-.dvc .x4-reset .x4-column-header-sort-ASC,
-.dvc .x4-reset .x4-column-header-sort-DESC {
+.dvc .x4-grid-header-ct,
+.dvc .x4-toolbar-default,
+.dvc .x4-column-header,
+.dvc .x4-column-header-over,
+.dvc .x4-column-header-sort-ASC,
+.dvc .x4-column-header-sort-DESC {
     background-image: none;
     background-color: transparent;
 }
 
+.dvc .x4-grid-cell-inner
+{
+    height: 25px;
+}
+
+.dvc .x4-tree-icon-leaf
+{
+    vertical-align: middle;
+}
+
 /* Specific to Data Views Panel */
 /* Border Layout */
-.dvc .x4-reset .x4-border-layout-ct {
+.dvc .x4-border-layout-ct {
     background-color: transparent;
 }
 
-.dvc .x4-reset .x4-region-collapsed-placeholder {
+.dvc .x4-region-collapsed-placeholder {
     display: none;
     height : 0px !important;
 }
 
-.dvc .x4-reset .x4-panel .x4-grid-body {
+.dvc .x4-panel .x4-grid-body {
     background-color: transparent;
 }
 
@@ -29,15 +39,15 @@
     border-left: 1px solid #C5C5C5 !important;
 }
 
-.dvc .x4-reset .x4-grid-row .x4-grid-cell {
+.dvc .x4-grid-row .x4-grid-cell {
     border-right: 1px solid #C5C5C5 !important;
 }
 
-.dvc .x4-reset .x4-grid-row .x4-grid-cell.x4-grid-cell-first {
+.dvc .x4-grid-row .x4-grid-cell.x4-grid-cell-first {
     border-right: none !important;
 }
 
-.dvc .x4-reset .x4-grid-view {
+.dvc .x4-grid-view {
     border-bottom: 1px solid #C5C5C5;
 }
 
@@ -46,13 +56,13 @@
 }
 
 /* Grid column title */
-.dvc .x4-reset .x4-column-header-inner .x4-column-header-text {
+.dvc .x4-column-header-inner .x4-column-header-text {
     font-weight: bold;
 }
 
 /* Tree Column */
 .dvc .dvcategory img.x4-tree-icon {
-    display: none !important;
+    display: none;
 }
 
 .dvc .dvcategory div.x4-grid-cell-inner {
@@ -68,7 +78,7 @@
     padding-left: 0px !important;
 }
 
-.x4-reset .dataset-search .x4-form-text {
+.dataset-search .x4-form-text {
     font-size: 17px;
     padding-left: 6px;
     border-color: #D9D9D9;
@@ -84,24 +94,24 @@
 }
 
 /* Ext4 Windows */
-.x4-reset .data-window,
-.x4-reset .data-window .x4-window-header-default-top
+.data-window,
+.data-window .x4-window-header-default-top
 {
     border-color: #A9A9A9;
     background-color: white;
 }
 
-.x4-reset .data-window .x4-window-body-default {
+.data-window .x4-window-body-default {
     border-color:  transparent !important;
 }
 
-.x4-reset .data-window span.x4-window-header-text-default
+.data-window span.x4-window-header-text-default
 {
     color: #333333;
 }
 
 /* Ext4 Forms */
-.x4-reset .data-window .x4-form-cb-label-after
+.data-window .x4-form-cb-label-after
 {
     position: absolute;
 }
@@ -114,11 +124,6 @@ div.data-views-tip-panel
 
 div.hide-tip {
     display: none !important;
-}
-
-div.data-views-tip-content table
-{
-    width: 100%;
 }
 
 /* Thumbnails -- seen in hover tooltip, edit prop panel, and some report save dialogs */
@@ -146,73 +151,73 @@ div.thumbnail svg
 
 /* Report Filter Panel */
 .normalwrap-gridcell {
-  white-space: normal !important;
-  word-wrap: break-word;
+    white-space: normal !important;
+    word-wrap: break-word;
 }
 
-.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell,
-.x4-reset .report-filter-panel .x4-grid-body,
-.x4-reset .report-filter-panel .x4-column-header {
+.rpf .x4-grid-row .x4-grid-cell,
+.rpf .x4-grid-body,
+.rpf .x4-column-header {
     border-color: transparent;
 }
 
-.x4-reset .report-filter-panel .x4-grid-row.x4-grid-row-over,
-.x4-reset .report-filter-panel .x4-column-header-over {
+.rpf .x4-grid-row.x4-grid-row-over,
+.rpf .x4-column-header-over {
     background-color: #F6F6F6;
     background-image: none;
 }
 
-.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell-special {
+.rpf .x4-grid-row .x4-grid-cell-special {
     background: transparent;
 }
 
-.x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-cell,
-.x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-rowwrap-div {
+.rpf .x4-grid-row-selected .x4-grid-cell,
+.rpf .x4-grid-row-selected .x4-grid-rowwrap-div {
     background-color: transparent !important;
 }
 
-.x4-reset .report-filter-panel .x4-column-header,
-.x4-reset .report-filter-panel .x4-grid-header-ct {
+.rpf .x4-column-header,
+.rpf .x4-grid-header-ct {
     background-color: transparent;
     background-image: none;
     border: none !important;
 }
 
-.x4-reset .report-filter-panel .x4-grid-header-row th
+.rpf .x4-grid-header-row th
 {
     border-color: transparent;
     padding: 0;
 }
 
-.x4-reset .report-filter-panel .x4-column-header-inner {
+.rpf .x4-column-header-inner {
     padding-top: 3px !important;
 }
 
-.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell-row-checker {
+.rpf .x4-grid-row .x4-grid-cell-row-checker {
     vertical-align: top;
 }
 
-.x4-reset .report-filter-panel .x4-grid-group-hd .x4-grid-cell-inner,
-.x4-reset .report-filter-panel .filter-description {
+.rpf .x4-grid-group-hd .x4-grid-cell-inner,
+.rpf .filter-description {
     font-size: 11px;
     border-bottom: 0px !important;
 }
 
-.x4-reset .report-filter-panel .x4-grid-group-title {
+.rpf .x4-grid-group-title {
     background-image: none !important;
     padding: 0px !important;
 }
 
-.x4-reset .report-filter-panel .category-label {
+.rpf .category-label {
     font-size: 11px;
     font-weight: bold;
 }
 
-.x4-reset .report-filter-panel .category-label-padding {
+.rpf .category-label-padding {
     padding-left: 6px;
 }
 
-.x4-reset .report-filter-panel .category-checked {
+.rpf .category-checked {
     background-position: 0 -13px;
 }
 

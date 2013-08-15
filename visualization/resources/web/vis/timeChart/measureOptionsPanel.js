@@ -852,7 +852,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 this.measures[index].dimensionSelectorPanel = Ext4.create('Ext.panel.Panel', {
                     title: dimension.label, // TODO: issue 17717
                     border: false,
-                    cls: 'report-filter-panel',
+                    cls: 'rpf',
                     autoScroll: true,
                     hidden: hidePanel,
                     items: [

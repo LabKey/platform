@@ -145,7 +145,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
             labelAlign : 'top',
             grow : true,
-            height : 50,
+//            height : 50,
             maxWidth: defaultWidth,
             valueField : 'RowId',
             displayField : 'Label',

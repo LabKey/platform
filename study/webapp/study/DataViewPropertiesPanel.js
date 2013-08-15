@@ -23,7 +23,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             dateFormat  : 'Y-m-d',
             fieldDefaults  : {
                 labelWidth : 120,
-                width      : 400,
+//                minWidth   : 500,
+//                maxWidth   : 450,
+//                width      : 400,
                 style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
             }
@@ -47,53 +49,62 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             xtype      : 'textfield',
             allowBlank : false,
             name       : 'viewName',
+            labelWidth : 120,
+            width      : 400,
             fieldLabel : 'Name',
             value      : this.data.name
         });
 
         if (this.visibleFields['author']) {
-            var authorField = Ext4.create('Ext.form.field.ComboBox', {
+
+            var authorStore = LABKEY.study.DataViewUtil.getUsersStore();
+
+            // since forceSelection is true  we must set the initial value
+            // after the store is loaded
+            authorStore.on('load', function() {
+                var af = this.getComponent('authorfield');
+                if (af) {
+                    af.setValue(af.initialConfig.value);
+                }
+            }, this, {single: true});
+
+            formItems.push({
+                xtype: 'combo',
+                itemId: 'authorfield',
                 fieldLabel: 'Author',
                 name: 'author',
                 typeAhead: true,
                 typeAheadDelay : 75,
                 editable: true, // required for typeAhead
                 forceSelection : true, // user must pick from list
-                store       : LABKEY.study.DataViewUtil.getUsersStore(),
+                store       : authorStore,
                 value       : this.data.authorUserId ? this.data.authorUserId : null,
                 queryMode : 'local',
                 displayField : 'DisplayName',
                 valueField : 'UserId',
-                emptyText: 'None'
+                emptyText: 'None',
+                labelWidth : 120,
+                width      : 400
             });
-
-            // since forceSelection is true  we must set the initial value
-            // after the store is loaded
-            authorField.store.on('load', function() {
-                authorField.setValue(authorField.initialConfig.value);
-            });
-
-            formItems.push(authorField);
         }
 
         if (this.visibleFields['status']) {
-
-            var statusStore = Ext4.create('Ext.data.Store', {
-                fields: ['value', 'label'],
-                data : [
-                    {value: 'None', label: 'None'},
-                    {value: 'Draft', label: 'Draft'},
-                    {value: 'Final', label: 'Final'},
-                    {value: 'Locked', label: 'Locked'},
-                    {value: 'Unlocked', label: 'Unlocked'}
-                ]
-            });
 
             formItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Status',
                 name        : 'status',
-                store       : statusStore,
+                store       : {
+                    xtype: 'store',
+                    fields: ['value', 'label'],
+                    data: [
+                        {value: 'None', label: 'None'},
+                        {value: 'Draft', label: 'Draft'},
+                        {value: 'Final', label: 'Final'},
+                        {value: 'Locked', label: 'Locked'},
+                        {value: 'Unlocked', label: 'Unlocked'}
+                    ]
+                },
                 editable    : true,
                 forceSelection : true,
                 typeAhead   : true,
@@ -102,7 +113,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 queryMode      : 'local',
                 displayField   : 'label',
                 valueField     : 'value',
-                emptyText      : 'Status'
+                emptyText      : 'Status',
+                labelWidth : 120,
+                width      : 400
             });
         }
 
@@ -115,6 +128,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 value       : this.data.modifiedDate != null && this.data.modifiedDate != '' ? new Date(this.data.modifiedDate) : '',
                 blankText   : 'Modified Date',
                 format      : this.dateFormat,
+                labelWidth : 120,
+                width      : 400,
                 editable    : false
             });
         }
@@ -129,6 +144,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 blankText   : 'Date of last refresh',
                 format      : this.dateFormat,
                 editable    : true,
+                labelWidth : 120,
+                width      : 400,
                 altFormats  : LABKEY.Utils.getDateAltFormats()
             });
         }
@@ -149,6 +166,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 valueField     : 'rowid',
                 emptyText      : 'Uncategorized',
                 forceSelection : true,
+                labelWidth : 120,
+                width      : 400,
                 listeners      : {
                     render : function(combo){
 
@@ -187,7 +206,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype      : 'textarea',
                 fieldLabel : 'Description',
                 name       : 'description',
-                value      : this.data.description
+                value      : this.data.description,
+                labelWidth : 120,
+                width      : 400
             });
         }
 
@@ -200,11 +221,13 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 formItems.push({
                     xtype : 'hidden',
                     name  : "shared",
-                    value : this.data.shared
+                    value : this.data.shared,
+                    labelWidth : 120,
+                    width      : 400
                 });
 
                 // rename the disabled checkbox
-                sharedName = "hiddenShared"
+                sharedName = "hiddenShared";
             }
 
             formItems.push({
@@ -216,6 +239,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 fieldLabel  : "Shared",
                 disabled    : this.disableShared,
                 uncheckedValue : false,
+                labelWidth : 120,
+                width      : 400,
                 listeners: {
                     change: function(cmp, newVal, oldVal){
                         cmp.inputValue = newVal;
@@ -230,7 +255,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype      : 'displayfield',
                 fieldLabel : 'Type',
                 value      : this.data.dataType,
-                readOnly   : true
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
             });
         }
 
@@ -239,10 +266,13 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             formItems.push({
                 xtype      : 'radiogroup',
                 fieldLabel : 'Visibility',
+                columns    : 2,
                 items      : [
                     {boxLabel : 'Visible',  name : 'visible', checked : this.data.visible, inputValue : true},
                     {boxLabel : 'Hidden',   name : 'visible', checked : !this.data.visible,  inputValue : false}
-                ]
+                ],
+                labelWidth : 120,
+                width      : 400
             });
         }
 
@@ -252,7 +282,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype      : 'displayfield',
                 fieldLabel : 'Created',
                 value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
-                readOnly   : true
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
             });
         }
 
@@ -262,7 +294,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype      : 'displayfield',
                 fieldLabel : 'Modified',
                 value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
-                readOnly   : true
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
             });
         }
                                                    
@@ -271,7 +305,9 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype      : 'displayfield',
                 fieldLabel : 'Thumbnail',
                 value      : '<div class="thumbnail"><img src="' + this.data.thumbnail + '"/></div>',
-                readOnly   : true
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
             });
 
             if (this.data.allowCustomThumbnail)
@@ -282,6 +318,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     name       : 'customThumbnail',
                     fieldLabel : 'Change Thumbnail',
                     msgTarget  : 'side',
+                    labelWidth : 120,
+                    width      : 400,
                     validator  : function(value) {
                         value = value.toLowerCase();
                         if (value != null && value.length > 0 && !(/\.png$/.test(value) || /\.jpg$/.test(value) || /\.jpeg$/.test(value) || /\.gif$/.test(value) || /\.svg$/.test(value)))
@@ -319,6 +357,6 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             this.items.push(item);
         }, this);
 
-        this.callParent([arguments]);
+        this.callParent();
     }
 });

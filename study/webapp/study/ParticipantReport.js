@@ -553,76 +553,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
             this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
 
-            // TODO: figure out infos
-
-/*
-            var pageGrid = Ext4.create('Ext.grid.Panel', {
-                title   : 'Page Fields',
-                store   : this.pageFieldStore,
-                //flex    : 1.2,
-                columns : [
-                    { header : 'Columns', dataIndex : 'name', flex : 1},
-                    {
-                        xtype : 'actioncolumn',
-                        width : 40,
-                        align : 'center',
-                        sortable : false,
-                        items : [{
-                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
-                            tooltip : 'Delete'
-                        }],
-                        listeners : {
-                            click : function(col, grid, idx) {
-                                this.pageFieldStore.removeAt(idx);
-                                this.generateTemplateConfig();
-                            },
-                            scope : this
-                        },
-                        scope : this
-                    }
-                ],
-                //height      : 200,
-                viewConfig  : {
-                    emptyText : 'Defaults to ' + this.subjectColumn,
-                    plugins   : [{
-                        ddGroup : 'ColumnSelection',
-                        ptype   : 'gridviewdragdrop',
-                        dragText: 'Drag and drop to reorder'
-                    }],
-                    listeners : {
-                        drop : function(node, data, model, pos) {
-                            this.generateTemplateConfig();
-                        },
-                        scope: this
-                    },
-                    scope : this
-                }
-            });
-
-            var pageFieldsPanel = Ext4.create('Ext.panel.Panel', {
-                height      : 200,
-                layout      : 'fit',
-                border      : false, frame : false,
-                flex        : 1.2,
-                items       : [pageGrid],
-                fbar        : [{
-                    type: 'button',
-                    text:'Add Field',
-                    handler: function() {
-                        var callback = function(recs){
-                            var rawData = []
-                            for (var i=0; i < recs.length; i++) {
-                                rawData.push(Ext4.clone(recs[i].data));
-                            }
-                            this.pageFieldStore.loadRawData({measures : rawData}, true);
-                            this.generateTemplateConfig();
-                        };
-                        this.selectMeasures(callback, this);
-                    }, scope: this}]
-
-            });
-*/
-
             var fieldGrid = Ext4.create('Ext.grid.Panel', {
                 store   : this.gridFieldStore,
                 cls     : 'selectedMeasures',
@@ -635,7 +565,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         align : 'center',
                         sortable : false,
                         items : [{
-                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
+                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
                             tooltip : 'Delete'
                         }],
                         listeners : {

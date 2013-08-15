@@ -7,8 +7,8 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
     extend: 'Ext.form.Panel',
     LABEL_WIDTH: 150,
     MAX_COMBO_ITEMS: 200,
-    HIDE_EXTRA_FIELDS_TEXT: 'Hide Additional Fields',
-    SHOW_EXTRA_FIELDS_TEXT: 'Show Additional Fields',
+    HIDE_TEXT: 'Hide Additional Fields',
+    SHOW_TEXT: 'Show Additional Fields',
     showExtraFields: false,
     initComponent: function(){
         Ext4.QuickTips.init();
@@ -19,7 +19,6 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 bodyStyle: 'background-color: transparent;',
                 border: false
             },
-            //width: 700,
             items: [{
                 xtype: 'radiogroup',
                 width: 420,
@@ -57,7 +56,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                         }
 
                         form.toggleExtraFields(false);
-                        form.down('#searchToggle').setText(form.SHOW_EXTRA_FIELDS_TEXT);
+                        form.down('#searchToggle').setText(form.SHOW_TEXT);
                     }
                 }
             },{
@@ -77,29 +76,15 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 xtype: 'container',
                 style: 'padding-top: 15px;',
                 items: [{
-                    layout: 'hbox',
-                    bodyStyle: 'background-color: transparent;',
-                    border: false,
-                    items: [{
-                        xtype: 'labkey-linkbutton',
-                        style: 'margin-right: 5px;',
-                        HIDE_EXTRA_FIELDS_TEXT: this.HIDE_EXTRA_FIELDS_TEXT,
-                        SHOW_EXTRA_FIELDS_TEXT: this.SHOW_EXTRA_FIELDS_TEXT,
-                        text: this.SHOW_EXTRA_FIELDS_TEXT,
-                        border: false,
-                        itemId: 'searchToggle',
-                        linkCls: 'labkey-text-link',
-                        scope: this,
-                        handler: function(btn){
-                            var form = btn.up('form')
-                            if(btn.getText() == form.HIDE_EXTRA_FIELDS_TEXT)
-                                btn.setText(form.SHOW_EXTRA_FIELDS_TEXT);
-                            else
-                                btn.setText(form.HIDE_EXTRA_FIELDS_TEXT);
-
-                            form.toggleExtraFields(btn.getText() == form.HIDE_EXTRA_FIELDS_TEXT);
-                        }
-                    }]
+                    xtype: 'button',
+                    itemId: 'searchToggle',
+                    text: this.SHOW_TEXT,
+                    handler: function(btn) {
+                        var form = btn.up('form');
+                        btn.setText(btn.getText() == form.HIDE_TEXT ? form.SHOW_TEXT : form.HIDE_TEXT);
+                        form.toggleExtraFields(btn.getText() == form.HIDE_TEXT);
+                    },
+                    scope: this
                 },{
                     xtype: 'container',
                     bodyStyle: 'background-color: transparent;',

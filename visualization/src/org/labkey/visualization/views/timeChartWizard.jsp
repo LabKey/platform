@@ -76,7 +76,7 @@
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 <labkey:scriptDependency/>
-<div id="<%=h(elementId)%>" class="extContainer"></div>
+<div id="<%=h(elementId)%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
         // if the URL is requesting a report by Id, but it does not exist, display an error message
@@ -152,7 +152,7 @@
 
     function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {
         // create a new chart panel and insert into the wizard
-        var panel = Ext4.create('Ext.panel.Panel', {
+        Ext4.create('Ext.panel.Panel', {
             renderTo: config.elementId,
             height: 650,
             minWidth: 875,
@@ -160,21 +160,20 @@
             layout: 'border',
             frame: false,
             border: false,
-            items: [
-                Ext4.create('LABKEY.vis.TimeChartPanel', {
-                    border: false,
-                    region: 'center',
-                    viewInfo: viewTypes['line'],
-                    chartInfo: chartInfo,
-                    saveReportInfo: saveReportInfo,
-                    canEdit: <%=canEdit%>,
-                    canShare: <%=canShare%>,
-                    isDeveloper: <%=isDeveloper%>,
-                    defaultNumberFormat: eval("<%=numberFormatFn%>"),
-                    allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
-                    editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
-                })
-            ]
+            items: [{
+                xtype: 'timechartpanel',
+                border: false,
+                region: 'center',
+                viewInfo: viewTypes['line'],
+                chartInfo: chartInfo,
+                saveReportInfo: saveReportInfo,
+                canEdit: <%=canEdit%>,
+                canShare: <%=canShare%>,
+                isDeveloper: <%=isDeveloper%>,
+                defaultNumberFormat: eval("<%=numberFormatFn%>"),
+                allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+                editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
+            }]
         });
     }
 </script>

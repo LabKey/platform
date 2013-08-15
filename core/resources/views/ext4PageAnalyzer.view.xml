@@ -1,7 +1,0 @@
-<view xmlns="http://labkey.org/data/xml/view">
-    <dependencies>
-        <dependency path="Ext4"/>
-        <dependency path="ext-4.1.0/page-analyzer/resources/page-analyzer.css"/>
-        <dependency path="ext-4.1.0/page-analyzer/PageAnalyzer.js"/>
-    </dependencies>
-</view>

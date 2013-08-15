@@ -44,11 +44,11 @@
     String renderTarget = "labkey-specimen-search-"+ webPartId;
 %>
 
+<div id="<%=text(renderTarget)%>"></div>
 <script type="text/javascript">
 
 Ext4.onReady(function(){
     var multi = new LABKEY.MultiRequest();
-    var requestFailed = false;
     var errorMessages = [];
     var studyMetadata = null;
 
@@ -85,10 +85,9 @@ Ext4.onReady(function(){
 
     multi.send(function() {
         if (errorMessages.length > 0)
-            Ext4.get('<%=renderTarget%>').update(errorMessages.join("<br>"));
+            Ext4.get('<%=text(renderTarget)%>').update(errorMessages.join("<br>"));
         else
-            Ext4.create('LABKEY.ext.SampleSearchPanel', {}).render('<%=renderTarget%>');
+            Ext4.create('LABKEY.ext.SampleSearchPanel', { renderTo: '<%=text(renderTarget)%>'});
     });
 });
 </script>
-<div id="<%=renderTarget%>"></div>

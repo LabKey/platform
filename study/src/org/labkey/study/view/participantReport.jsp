@@ -79,8 +79,8 @@
     td.lk-report-cell {font-size: 11pt;}
     td.lk-report-column-header, th.lk-report-column-header {font-size: 12pt;}
 
-    table.labkey-wp {border: none !important;}
-    .x4-reset .x4-panel-body-default {border:none !important;}
+    table.labkey-wp { border: none !important; }
+    .x4-panel-body-default { border:none !important; }
 
 </style>
 
