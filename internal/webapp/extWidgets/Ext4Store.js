@@ -137,7 +137,7 @@ Ext4.define('LABKEY.ext4.Store', {
         //NOTE: if the config object contains a load lister it will be executed prior to this one...not sure if that's a problem or not
         this.on('beforeload', this.onBeforeLoad, this);
         this.on('load', this.onLoad, this);
-        this.on('update', this.onUpdate, this);
+        this.on('update', this.onStoreUpdate, this);
         this.on('add', this.onAdd, this);
 
         this.proxy.reader.on('datachange', this.onReaderLoad, this);
@@ -648,7 +648,7 @@ Ext4.define('LABKEY.ext4.Store', {
     // They provide the display value and information used in Missing value indicators
     // They are used by the Ext grid when rendering or creating a tooltip.  They are deleted here prsumably b/c if the value
     // is changed then we cannot count on them being accurate
-    onUpdate : function(store, record, operation) {
+    onStoreUpdate : function(store, record, operation) {
         for(var field  in record.getChanges()){
             if(record.raw && record.raw[field]){
                 delete record.raw[field].displayValue;

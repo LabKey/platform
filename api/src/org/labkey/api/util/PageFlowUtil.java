@@ -1662,7 +1662,8 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
+        /* Stylesheets for Ext 3.x -- order matters as overriddes are in stylesheet.css and themeStylesheet.view */
+        F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot() + "/resources/css/ext-all.css");
         F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
         F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
 
@@ -1747,24 +1748,19 @@ public class PageFlowUtil
         }
     }
 
-    static final String extJsRoot = "ext-3.4.1";
-    static final String ext4ThemeRoot = "labkey-ext-theme";
-
-    public static String extJsRoot()
+    public static final String extJsRoot()
     {
-        return extJsRoot;
+        return "ext-3.4.1";
     }
 
-    public static String ext4ThemeRoot()
+    public static final String ext4ThemeRoot()
     {
-        return ext4ThemeRoot;
+        return "ext-4.2.1/packages/";
     }
 
     public static String resolveExtThemePath(Container container)
     {
-        String path = "/" + ext4ThemeRoot() + "/resources/css/ext";
         String themeName = WebTheme.DEFAULT.getFriendlyName();
-
         WebTheme theme = WebThemeManager.getTheme(container);
 
         // Custom Theme -- TODO: Should have a better way to lookup built-in themes
@@ -1773,9 +1769,7 @@ public class PageFlowUtil
             themeName = theme.getFriendlyName();
         }
 
-        // Each built-in theme must have a corresponging labkey-ext-theme-<theme name>.scss
-        path += "-" + themeName.toLowerCase() + ".css";
-        return path;
+        return "/" + ext4ThemeRoot() + themeName.toLowerCase() + "/build/resources/" + themeName.toLowerCase() + "-all.css";
     }
 
     private static void explodedExtPaths(Map<String, JSONObject> packages, String pkgDep, Set<String> scripts)
@@ -1796,7 +1790,7 @@ public class PageFlowUtil
 
         for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
         {
-            scripts.add(extJsRoot + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
+            scripts.add(extJsRoot() + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
         }
     }
 
@@ -2002,7 +1996,7 @@ public class PageFlowUtil
         json.put("experimentalContainerRelativeURL", AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
-        json.put("extJsRoot", extJsRoot);
+        json.put("extJsRoot", extJsRoot());
         json.put("devMode", AppProps.getInstance().isDevMode());
         json.put("homeContainer", ContainerManager.getHomeContainer().getName());
         Container shared = ContainerManager.getSharedContainer();

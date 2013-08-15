@@ -1,10 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="false">
-        <!--NOTE: included using our SASS stylesheet-->
-        <!--<script path="ext-4.1.0/resources/css/ext-all-debug.css" mode="dev" />-->
-        <!--<script path="ext-4.1.0/resources/css/ext-all.css" mode="production" />-->
-        <script path="ext-4.1.0/ext-all-sandbox-debug.js" mode="dev"/>
-        <script path="ext-4.1.0/ext-all-sandbox.js" mode="production"/>
-        <script path="ext-4.1.0/ext-patches.js" mode="both"/>
+        <script path="ext-4.2.1/ext-all-sandbox-debug.js" mode="dev"/>
+        <script path="ext-4.2.1/ext-all-sandbox.js" mode="production"/>
+        <script path="ext-4.2.1/ext-patches.js" mode="both"/>
     </library>
 </libraries>

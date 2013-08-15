@@ -35,14 +35,6 @@
       return resources;
   }
 %>
-
-<style type="text/css">
-    .x-layout-mini
-    {
-        display: none;
-    }
-</style>
-
 <%
     ViewContext context = HttpView.currentContext();
     FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
@@ -67,7 +59,7 @@
 <%  } %>
 
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
-<div class="extContainer" style="height: <%= height %>px" id="<%=bean.getContentId()%>"></div>
+<div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
 
@@ -100,8 +92,6 @@
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot : <%=bean.isPipelineRoot()%>,
             adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
-            <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
-            <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
             tbarItems: buttonActions
         });

@@ -85,48 +85,51 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
 Ext4.define('LABKEY.ext.LinkButton', {
     extend: 'Ext.button.Button',
     alias: 'widget.labkey-linkbutton',
-    initComponent: function(){
+
+    initComponent: function() {
+
+        console.warn('LABKEY.ext.LinkButton (labkey-linkbutton) no longer works with ExtJS 4.2+. Recommend replacing with link or normal button. Button has text: "' + this.text + '"');
         this.callParent(arguments);
-
-        this.renderData = this.renderData || {};
-        Ext4.apply(this.renderData, {
-            linkPrefix: this.linkPrefix,
-            linkSuffix: this.linkSuffix,
-            linkCls: this.linkCls,
-            linkTarget: this.linkTarget,
-            tooltip: this.tooltip
-        });
-
-        //prevent double clicks.  this listener breaks links in IE
-        if (!Ext4.isIE){
-            this.on('click', function(btn){
-                btn.setDisabled(true);
-                btn.setDisabled.defer(100, this, [false]);
-            })
-        }
-    },
-    showBrackets: true,
-    renderSelectors: {
-        btnEl: 'a'
-    },
-    baseCls: 'linkbutton',
-    renderTpl:
-        '<div id="{id}-btnWrap">' +
-            '{linkPrefix}' +
-            '<a id="{id}-btnEl" ' +
-                '<tpl if="linkCls">class="{linkCls}"</tpl>' +
-                '<tpl if="href">href="{href}" </tpl>' +
-                '<tpl if="linkTarget">target="{linkTarget}" </tpl>' +
-                '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
-                '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
-                '>' +
-                '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
-                '{text}' +
-                '</span>' +
-                '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
-            '</a>' +
-            '{linkSuffix}' +
-        '</div>'
+//
+//        this.renderData = this.renderData || {};
+//        Ext4.apply(this.renderData, {
+//            linkPrefix: this.linkPrefix,
+//            linkSuffix: this.linkSuffix,
+//            linkCls: this.linkCls,
+//            linkTarget: this.linkTarget,
+//            tooltip: this.tooltip
+//        });
+//
+//        //prevent double clicks.  this listener breaks links in IE
+//        if (!Ext4.isIE){
+//            this.on('click', function(btn){
+//                btn.setDisabled(true);
+//                btn.setDisabled.defer(100, this, [false]);
+//            })
+//        }
+    }
+//    showBrackets: true,
+//    renderSelectors: {
+//        btnEl: 'a'
+//    },
+//    baseCls: 'linkbutton',
+//    renderTpl:
+//        '<div id="{id}-btnWrap">' +
+//            '{linkPrefix}' +
+//            '<a id="{id}-btnEl" ' +
+//                '<tpl if="linkCls">class="{linkCls}"</tpl>' +
+//                '<tpl if="href">href="{href}" </tpl>' +
+//                '<tpl if="linkTarget">target="{linkTarget}" </tpl>' +
+//                '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
+//                '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
+//                '>' +
+//                '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
+//                '{text}' +
+//                '</span>' +
+//                '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
+//            '</a>' +
+//            '{linkSuffix}' +
+//        '</div>'
 });
 
 /**

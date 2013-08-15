@@ -20,7 +20,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.1";
-    LABKEY.extJsRoot_41 = "ext-4.1.0";
+    LABKEY.extJsRoot_42 = "ext-4.2.1";
     LABKEY.extThemeRoot = "labkey-ext-theme";
     LABKEY.verbose = false;
     LABKEY.widget = {};
@@ -331,26 +331,15 @@ LABKEY.requiresExt4Sandbox = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-patches.js", immediate);
-};
-
-// adds the compatibility layer to be used on the Ext4 sandbox components
-LABKEY.requiresExtSandboxCompat = function(immediate)
-{
-    if (arguments.length < 1) immediate = true;
-
-    // compatibility layer
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext3-sb-core-compat.js", immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext3-sb-compat.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_42 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_42 + "/ext-patches.js", immediate);
 };
 
 LABKEY.requiresClientAPI = function(immediate)
 {
-    if (arguments.length < 1) immediate = true;
     LABKEY.requiresCoreClientAPI();
     LABKEY.requiresExt3ClientAPI();
-}
+};
 
 LABKEY.requiresCoreClientAPI = function(immediate)
 {
@@ -384,7 +373,7 @@ LABKEY.requiresCoreClientAPI = function(immediate)
     {
         LABKEY.requiresScript('clientapi/core.min.js', immediate);
     }
-}
+};
 
 LABKEY.requiresExt3ClientAPI = function(immediate)
 {
