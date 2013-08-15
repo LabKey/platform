@@ -2930,10 +2930,6 @@ api/webapp/ext-4.2.1/packages/blue/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/blue/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/blue/Readme.md -text
 api/webapp/ext-4.2.1/packages/blue/build.xml -text
-api/webapp/ext-4.2.1/packages/blue/build/resources/Readme.md -text
-api/webapp/ext-4.2.1/packages/blue/build/resources/blue-all-debug.css -text
-api/webapp/ext-4.2.1/packages/blue/build/resources/blue-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/blue/build/resources/blue-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/blue/build/resources/blue-all.css -text
 api/webapp/ext-4.2.1/packages/blue/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/blue/build/resources/images/box/corners-blue.gif -text
@@ -3183,10 +3179,6 @@ api/webapp/ext-4.2.1/packages/brown/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/brown/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/brown/Readme.md -text
 api/webapp/ext-4.2.1/packages/brown/build.xml -text
-api/webapp/ext-4.2.1/packages/brown/build/resources/Readme.md -text
-api/webapp/ext-4.2.1/packages/brown/build/resources/brown-all-debug.css -text
-api/webapp/ext-4.2.1/packages/brown/build/resources/brown-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/brown/build/resources/brown-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/brown/build/resources/brown-all.css -text
 api/webapp/ext-4.2.1/packages/brown/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/brown/build/resources/images/box/corners-blue.gif -text
@@ -5916,10 +5908,6 @@ api/webapp/ext-4.2.1/packages/harvest/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/harvest/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/harvest/Readme.md -text
 api/webapp/ext-4.2.1/packages/harvest/build.xml -text
-api/webapp/ext-4.2.1/packages/harvest/build/resources/Readme.md -text
-api/webapp/ext-4.2.1/packages/harvest/build/resources/harvest-all-debug.css -text
-api/webapp/ext-4.2.1/packages/harvest/build/resources/harvest-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/harvest/build/resources/harvest-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/harvest/build/resources/harvest-all.css -text
 api/webapp/ext-4.2.1/packages/harvest/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/harvest/build/resources/images/box/corners-blue.gif -text
@@ -6194,7 +6182,6 @@ api/webapp/ext-4.2.1/packages/madison/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/madison/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/madison/Readme.md -text
 api/webapp/ext-4.2.1/packages/madison/build.xml -text
-api/webapp/ext-4.2.1/packages/madison/build/resources/Readme.md -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/box/corners-blue.gif -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/box/corners.gif -text
@@ -6418,9 +6405,6 @@ api/webapp/ext-4.2.1/packages/madison/build/resources/images/util/splitter/mini-
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/util/splitter/mini-left.gif -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/util/splitter/mini-right.gif -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/images/util/splitter/mini-top.gif -text
-api/webapp/ext-4.2.1/packages/madison/build/resources/madison-all-debug.css -text
-api/webapp/ext-4.2.1/packages/madison/build/resources/madison-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/madison/build/resources/madison-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/madison/build/resources/madison-all.css -text
 api/webapp/ext-4.2.1/packages/madison/docs/package.png -text
 api/webapp/ext-4.2.1/packages/madison/docs/screenshots/screenshot-1.png -text
@@ -6447,7 +6431,6 @@ api/webapp/ext-4.2.1/packages/sage/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/sage/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/sage/Readme.md -text
 api/webapp/ext-4.2.1/packages/sage/build.xml -text
-api/webapp/ext-4.2.1/packages/sage/build/resources/Readme.md -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/box/corners-blue.gif -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/box/corners.gif -text
@@ -6671,9 +6654,6 @@ api/webapp/ext-4.2.1/packages/sage/build/resources/images/util/splitter/mini-bot
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/util/splitter/mini-left.gif -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/util/splitter/mini-right.gif -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/images/util/splitter/mini-top.gif -text
-api/webapp/ext-4.2.1/packages/sage/build/resources/sage-all-debug.css -text
-api/webapp/ext-4.2.1/packages/sage/build/resources/sage-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/sage/build/resources/sage-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/sage/build/resources/sage-all.css -text
 api/webapp/ext-4.2.1/packages/sage/docs/package.png -text
 api/webapp/ext-4.2.1/packages/sage/docs/screenshots/screenshot-1.png -text
@@ -6700,7 +6680,6 @@ api/webapp/ext-4.2.1/packages/seattle/.sencha/package/sencha.cfg -text
 api/webapp/ext-4.2.1/packages/seattle/.sencha/package/testing.properties -text
 api/webapp/ext-4.2.1/packages/seattle/Readme.md -text
 api/webapp/ext-4.2.1/packages/seattle/build.xml -text
-api/webapp/ext-4.2.1/packages/seattle/build/resources/Readme.md -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/boundlist/trigger-arrow.png -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/box/corners-blue.gif -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/box/corners.gif -text
@@ -6924,9 +6903,6 @@ api/webapp/ext-4.2.1/packages/seattle/build/resources/images/util/splitter/mini-
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/util/splitter/mini-left.gif -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/util/splitter/mini-right.gif -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/images/util/splitter/mini-top.gif -text
-api/webapp/ext-4.2.1/packages/seattle/build/resources/seattle-all-debug.css -text
-api/webapp/ext-4.2.1/packages/seattle/build/resources/seattle-all-rtl-debug.css -text
-api/webapp/ext-4.2.1/packages/seattle/build/resources/seattle-all-rtl.css -text
 api/webapp/ext-4.2.1/packages/seattle/build/resources/seattle-all.css -text
 api/webapp/ext-4.2.1/packages/seattle/docs/package.png -text
 api/webapp/ext-4.2.1/packages/seattle/docs/screenshots/screenshot-1.png -text
