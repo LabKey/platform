@@ -25,10 +25,6 @@ em {
     font-style: normal;
 }
 
-/*a.x4-tab {*/
-    /*height: 24px;*/
-/*}*/
-
 .labkey-fullscreen-wizard-background
 {
     background-color: #E7EFF4;
@@ -4087,4 +4083,139 @@ div.headermenu a.labkey-menu-text-link img {
 .lk-input input.hdr-search-input {
     padding-left: 22px;
     background: #FFFFFF url(./_images/search.png) 2% center no-repeat;
+}
+
+#headerSearchInput-inputEl {
+    line-height: 16px;
+    border-color: #B5B8C8;
+    font-size: 8pt;
+}
+
+/* Ext 4 */
+.x4-btn-inner {
+    text-transform: uppercase;
+}
+
+.x4-boundlist-list-ct ul
+{
+    margin: 0;
+    padding: 0;
+}
+
+.x4-boundlist-list-ct li
+{
+    list-style: none;
+}
+
+.x4-menu-item-text
+{
+    zoom: normal;
+    font-family: arial, tahoma, sans-serif;
+}
+
+.x4-menu-item-arrow
+{
+    top: 4px;
+    right: 3px;
+    height: 14px;
+    background-image: url(./_images/arrow_right.png) !important;
+}
+
+/* account for adding of highlight border */
+.x4-menu-item-active .x4-menu-item-arrow
+{
+    top: 3px;
+    right: 2px;
+}
+
+.x4-column-header
+{
+    border-bottom: 1px solid #AAAAAA !important;
+    border-right: 1px solid #DDDDDD !important;
+}
+
+.x4-column-header-over
+{
+    background-image: none !important;
+    cursor: pointer !important;
+}
+
+.x4-grid-checkheader
+{
+    height: 14px;
+    background-image: url('./ext-4.2.1/resources/ext-theme-classic-sandbox/images/menu/unchecked.gif');
+    background-position: 50% -2px;
+    background-repeat: no-repeat;
+    background-color: transparent;
+}
+
+.x4-grid-checkheader-checked
+{
+    background-image: url('./ext-4.2.1/resources/ext-theme-classic-sandbox/images/menu/unchecked.gif');
+}
+
+.x4-grid-checkheader-editor .x4-form-cb-wrap
+{
+    text-align: center;
+}
+
+.labkey-data-region-facet div.x4-panel-body
+{
+    border-color: #DDDDDD;
+}
+
+div.facet_header .x4-panel-header-text-container
+{
+    margin-top: 2px !important;
+}
+
+div.facet_header .x4-panel-header-text
+{
+    color: #126495;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.study-schedule-container .x4-grid-header-ct
+{
+    background-image: none;
+    background-color: #E7EFF4;
+}
+
+.x4-message-box .x4-window-body,
+.x4-toolbar-footer {
+    background-color: #ffffff;
+    margin-top: 0px;
+}
+
+.x4-form-text
+{
+    height : 24px;
+}
+
+.x4-form-checkbox,
+.x4-form-radio
+{
+    float : left;
+}
+
+.x4-action-col-icon
+{
+    cursor: pointer;
+}
+
+.x4-item-disabled td.x4-trigger-cell
+{
+    opacity: 0.3;
+}
+
+.x4-mask-msg
+{
+    padding: 0 !important;
+}
+
+.x4-mask-msg-inner
+{
+    background-color: #ffffff !important;
+    border-width: 0 !important;
 }
