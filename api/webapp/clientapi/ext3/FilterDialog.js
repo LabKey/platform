@@ -1177,7 +1177,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
 
-                        if (formattedValue == null || (!Ext.isString(formattedValue) && isNaN(formattedValue)))
+                        if (formattedValue == null || formattedValue == '' || (!Ext.isString(formattedValue) && isNaN(formattedValue)))
                             hasBlank = true;
                         else
                             recs.push([v, v.toString(), v.toString()]);
