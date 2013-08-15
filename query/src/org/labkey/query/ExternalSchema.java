@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExternalSchemaCustomizer;
 import org.labkey.api.data.UserSchemaCustomizer;
@@ -154,7 +155,7 @@ public class ExternalSchema extends SimpleUserSchema
         String sourceSchemaName = def.getSourceSchemaName();
         if (sourceSchemaName == null && template != null)
             sourceSchemaName = template.getSourceSchemaName();
-        return scope.getSchema(sourceSchemaName);
+        return scope.getSchema(sourceSchemaName, DbSchemaType.Bare);
     }
 
     @Nullable

@@ -3815,9 +3815,8 @@ public class QueryController extends SpringActionController
                 DbScope scope = DbScope.getDbScope(form.getDataSource());
                 if (null != scope)
                 {
-                    DbSchema schema = scope.getSchema(form.getSchemaName());
-                    if (null != schema)
-                        tableNames.addAll(schema.getTableNames());
+                    DbSchema schema = scope.getSchema(form.getSchemaName(), DbSchemaType.Bare);
+                    tableNames.addAll(schema.getTableNames());
                 }
                 else
                 {

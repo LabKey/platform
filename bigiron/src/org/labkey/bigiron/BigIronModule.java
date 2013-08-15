@@ -32,6 +32,15 @@ import java.util.Collections;
 
 public class BigIronModule extends DefaultModule
 {
+    // Register these dialects extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
+    static
+    {
+        SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
+        SqlDialectManager.register(new MySqlDialectFactory());
+        SqlDialectManager.register(new SasDialectFactory());
+        SqlDialectManager.register(new OracleDialectFactory());
+    }
+
     public String getName()
     {
         return "BigIron";
@@ -54,11 +63,6 @@ public class BigIronModule extends DefaultModule
 
     protected void init()
     {
-        SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
-        SqlDialectManager.register(new MySqlDialectFactory());
-        SqlDialectManager.register(new SasDialectFactory());
-        SqlDialectManager.register(new OracleDialectFactory());
-
         QueryView.register(new SasExportScriptFactory());
     }
 

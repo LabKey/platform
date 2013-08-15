@@ -146,6 +146,7 @@ public class DomainImpl implements Domain
     }
 
 
+    @Nullable   // null if not provisioned
     public String getStorageTableName()
     {
         return _dd.getStorageTableName();

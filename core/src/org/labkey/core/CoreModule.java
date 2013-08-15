@@ -196,6 +196,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     public static final String EXPERIMENTAL_JSDOC = "experimental-jsdoc";
 
+    // Register this dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
+    static
+    {
+        SqlDialectManager.register(new PostgreSqlDialectFactory());
+    }
+
     @Override
     public String getName()
     {
@@ -226,7 +232,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
         ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
-        SqlDialectManager.register(new PostgreSqlDialectFactory());
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
