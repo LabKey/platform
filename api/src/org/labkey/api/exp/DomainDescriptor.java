@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
@@ -140,6 +141,7 @@ public class DomainDescriptor implements Cloneable
     }
 
 
+    @Nullable   // null if not provisioned
     public String getStorageTableName()
     {
         return storageTableName;

@@ -24,7 +24,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -44,7 +43,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -298,10 +296,6 @@ public class MockModule implements Module
         return Collections.emptyList();
     }
 
-    public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
-    {
-    }
-
     public @Nullable Collection<String> getJarFilenames()
     {
         return null;
@@ -364,6 +358,6 @@ public class MockModule implements Module
     @Override
     public Set<SupportedDatabase> getSupportedDatabasesSet()
     {
-        return DefaultModule.supportAllDatabases;
+        return DefaultModule.ALL_DATABASES;
     }
 }

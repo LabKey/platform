@@ -28,6 +28,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptRunner;
@@ -169,11 +170,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     final public void initialize()
     {
+        SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
+        if (!getSupportedDatabasesSet().contains(coreType))
+            throw new RuntimeException("The " + getName() + " module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+
         synchronized (INSTANTIATED_MODULES)
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class,String> reg = new Pair<Class,String>(getClass(), getName());
+            Pair<Class, String> reg = new Pair<Class,String>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
@@ -538,13 +543,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
+    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
 
-    public final static Set<SupportedDatabase> supportAllDatabases = new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql));
-    public final static Set<SupportedDatabase> supportPostgresDatabase = new HashSet<>(Arrays.asList(SupportedDatabase.pgsql));
-    public final static Set<SupportedDatabase> supportSqlServerDatabase = new HashSet<>(Arrays.asList(SupportedDatabase.mssql));
-
-    Set<SupportedDatabase> _supportedDatabases = supportAllDatabases;
-
+    private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
 
     @Override
     public Set<SupportedDatabase> getSupportedDatabasesSet()
@@ -553,26 +554,30 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    // Used by Spring configuration reflection
+    @SuppressWarnings("UnusedDeclaration")
     public String getSupportedDatabases()
     {
         Set<SupportedDatabase> set = getSupportedDatabasesSet();
-        return StringUtils.join(set,",");
+        return StringUtils.join(set, ",");
     }
 
 
+    // Used by Spring configuration reflection
+    @SuppressWarnings("UnusedDeclaration")
     public void setSupportedDatabases(String list)
     {
         Set<SupportedDatabase> supported = new HashSet<>();
-        String[] dbs = StringUtils.split(list,',');
+        String[] dbs = StringUtils.split(list, ',');
+
         for (String db : dbs)
         {
             if (StringUtils.isEmpty(db))
                 continue;
             supported.add(SupportedDatabase.valueOf(db));
         }
-        if (supported.isEmpty())
-            _supportedDatabases = supportAllDatabases;
-        else
+
+        if (!supported.isEmpty())
             _supportedDatabases = supported;
     }
 
@@ -645,14 +650,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         _moduleDependenciesString = dependencies;
 
-        if(null == dependencies || dependencies.length() == 0)
+        if (null == dependencies || dependencies.isEmpty())
             return;
 
         String[] depArray = dependencies.split(",");
         for (String dependency : depArray)
         {
             dependency = dependency.trim();
-            if (dependency.length() > 0)
+            if (!dependency.isEmpty())
                 _moduleDependencies.add(dependency.toLowerCase());
         }
     }

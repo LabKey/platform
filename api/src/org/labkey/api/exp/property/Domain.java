@@ -69,6 +69,7 @@ public interface Domain extends IPropertyType
     Map<String, DomainProperty> createImportMap(boolean includeMVIndicators);
 
     /** only used by storage provisioner */
+    @Nullable   // null if not provisioned
     String getStorageTableName();
     void setEnforceStorageProperties(boolean enforceStorageProperties);
 }

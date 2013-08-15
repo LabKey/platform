@@ -284,9 +284,16 @@ public class ModuleLoader implements Filter
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
 
+        // Initial data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
+        initializeDataSources();
+
+        ListIterator<Module> iterator = _modules.listIterator();
+
         //initialize each module in turn
-        for (Module module : _modules)
+        while (iterator.hasNext())
         {
+            Module module = iterator.next();
+
             try
             {
                 module.initialize();
@@ -297,6 +304,7 @@ public class ModuleLoader implements Filter
             {
                 _log.error("Unable to initialize module " + module.getName(), t);
                 _moduleFailures.put(module.getName(), t);
+                iterator.remove();
             }
         }
 
@@ -306,8 +314,6 @@ public class ModuleLoader implements Filter
         File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
         new BreakpointThread(modulesDir).start();
-
-        initializeDataSources();
 
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;

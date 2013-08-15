@@ -63,7 +63,18 @@ public interface Module extends Comparable<Module>
 
     public enum SupportedDatabase
     {
-        mssql, pgsql
+        mssql, pgsql;
+
+        public static SupportedDatabase get(SqlDialect dialect)
+        {
+            if (dialect.isSqlServer())
+                return mssql;
+
+            if (dialect.isPostgreSQL())
+                return pgsql;
+
+            throw new IllegalStateException("Dialect not supported");
+        }
     }
 
 

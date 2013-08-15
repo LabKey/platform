@@ -35,6 +35,7 @@ import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -63,17 +64,48 @@ public class DbSchema
     private static final Logger _log = Logger.getLogger(DbSchema.class);
 
     private final String _name;
+    private final DbSchemaType _type;
     private final DbScope _scope;
-    private final boolean _moduleSchema;
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
 
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
 
     private ResourceRef _resourceRef = null;
 
+    private DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+    {
+        _name = name;
+        _type = type;
+        _scope = scope;
+        _metaDataTableNames = metaDataTableNames;
+    }
+
+
     public static @NotNull DbSchema get(String schemaName)
     {
-        return DbScope.getLabkeyScope().getSchema(schemaName);
+        int dot = schemaName.indexOf('.');
+
+        if (-1 == dot)
+        {
+            return DbScope.getLabkeyScope().getSchema(schemaName);
+        }
+        else
+        {
+            String dsName = schemaName.substring(0, dot);
+            DbScope scope = DbScope.getDbScope(dsName);
+
+            if (null == scope)
+            {
+                scope = DbScope.getDbScope(dsName + "DataSource");
+
+                if (null == scope)
+                {
+                    throw new NotFoundException("Data source \"" + dsName + "\" has not been configured");
+                }
+            }
+
+            return scope.getSchema(schemaName.substring(dot + 1));
+        }
     }
 
     public static Resource getSchemaResource(String schemaName) throws IOException
@@ -89,17 +121,17 @@ public class DbSchema
     }
 
 
-    public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
+    public static DbSchema createFromMetaData(String dbSchemaName, DbSchemaType type) throws SQLException, NamingException, ServletException
     {
-        return createFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
+        return createFromMetaData(dbSchemaName, type, DbScope.getLabkeyScope());
     }
 
 
-    public static @NotNull DbSchema createFromMetaData(String requestedSchemaName, DbScope scope) throws SQLException
+    public static @NotNull DbSchema createFromMetaData(String requestedSchemaName, DbSchemaType type, DbScope scope) throws SQLException
     {
         Map<String, String> metaDataTableNames = new CaseInsensitiveHashMap<>();
 
-        String metaDataName = loadMetaData(scope, requestedSchemaName, metaDataTableNames);
+        String metaDataName = loadTableNames(scope, requestedSchemaName, metaDataTableNames);
 
         // If we found no tables and this is a case-sensitive database (e.g., PostgreSQL), then the caller
         // may be using the wrong casing; query all schemas and try to find a match. See #12210.
@@ -115,7 +147,7 @@ public class DbSchema
                 if (name.equalsIgnoreCase(requestedSchemaName))
                 {
                     _log.warn("Could not find requested schema \"" + requestedSchemaName + "\"; resolving to schema \"" + name + "\"");
-                    metaDataName = loadMetaData(scope, name, metaDataTableNames);
+                    metaDataName = loadTableNames(scope, name, metaDataTableNames);
                     break;  // Stop at the first one... we don't support multiple schemas with the same name but different casing
                 }
             }
@@ -123,21 +155,12 @@ public class DbSchema
 
         scope.invalidateAllTables(metaDataName); // Need to invalidate the table cache
 
-        return new DbSchema(metaDataName, scope, metaDataTableNames);
-    }
-
-
-    private DbSchema(String name, DbScope scope, Map<String, String> metaDataTableNames)
-    {
-        _name = name;
-        _scope = scope;
-        _metaDataTableNames = metaDataTableNames;
-        _moduleSchema = scope.isModuleSchema(name);
+        return new DbSchema(metaDataName, type, scope, metaDataTableNames);
     }
 
 
     // Populates metaDataTableNames map with a list of table names from the requested schema. Returns the canonical name of this schema, according to the database.
-    private static String loadMetaData(DbScope scope, String schemaName, final Map<String, String> metaDataTableNames) throws SQLException
+    private static String loadTableNames(DbScope scope, String schemaName, final Map<String, String> metaDataTableNames) throws SQLException
     {
         TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%") {
             @Override
@@ -353,13 +376,17 @@ public class DbSchema
 
     boolean isStale()
     {
-        assert _resourceRef != null;
-        return _resourceRef.isStale() && _resourceRef.getResource().exists();
+        return isModuleSchema() && _resourceRef.isStale() && _resourceRef.getResource().exists();
+    }
+
+    public DbSchemaType getType()
+    {
+        return _type;
     }
 
     public boolean isModuleSchema()
     {
-        return _moduleSchema;
+        return getType() == DbSchemaType.Module;
     }
 
     Resource getResource()
@@ -675,7 +702,7 @@ public class DbSchema
             executor.execute("CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
             executor.execute("CREATE INDEX T_c1 ON testdrop2.T(c1)");
 
-            testSchema = DbSchema.createFromMetaData("testdrop");
+            testSchema = DbSchema.createFromMetaData("testdrop", DbSchemaType.Bare);
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");

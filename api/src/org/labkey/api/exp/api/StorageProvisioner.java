@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
@@ -659,7 +660,6 @@ public class StorageProvisioner
             sql.append(" WHERE domainuri=?");
             sql.add(domainuri);
         }
-        ResultSet rs = null;
 
         TreeSet<Path> schemaNames = new TreeSet<>();
         Map<Path, Set<String>> nonProvisionedTableMap = new TreeMap<>();
@@ -689,9 +689,8 @@ public class StorageProvisioner
             }
         }
 
-        try
+        try (ResultSet rs = Table.executeQuery(OntologyManager.getExpSchema(), sql))
         {
-            rs = Table.executeQuery(OntologyManager.getExpSchema(), sql);
             while (rs.next())
             {
                 ProvisioningReport.DomainReport domain = new ProvisioningReport.DomainReport();
@@ -707,13 +706,9 @@ public class StorageProvisioner
                     domain.setTableName(rs.getString("storagetablename"));
                     report.addProvisioned(domain);
                     // table is accounted for
-                    provisionedTables.remove(new Path(domain.getSchemaName(),domain.getTableName()));
+                    provisionedTables.remove(new Path(domain.getSchemaName(), domain.getTableName()));
                 }
             }
-        }
-        finally
-        {
-            rs.close();
         }
         
         // TODO: Switch to normal schema/table cache (now that we actually use a cache for them)
@@ -726,7 +721,7 @@ public class StorageProvisioner
             {
                 try
                 {
-                    schema = DbSchema.createFromMetaData(domainReport.getSchemaName());
+                    schema = DbSchema.createFromMetaData(domainReport.getSchemaName(), DbSchemaType.Bare);
                     schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)

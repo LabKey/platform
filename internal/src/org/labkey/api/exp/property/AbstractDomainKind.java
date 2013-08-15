@@ -126,8 +126,10 @@ public abstract class AbstractDomainKind extends DomainKind
         if (null == schemaName)
             return;
         DbSchema schema = DbSchema.get(schemaName);
-        if (null != schema)
-            schema.getScope().invalidateTable(schema, domain.getStorageTableName());
+        String storageTableName = domain.getStorageTableName();
+
+        if (null != storageTableName)
+            schema.getScope().invalidateTable(schema, storageTableName);
     }
 
 

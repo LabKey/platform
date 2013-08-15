@@ -82,7 +82,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
+    public V get(K key, @Nullable Object argument, CacheLoader<K, V> loader)
     {
         Wrapper<V> w;
 
@@ -94,9 +94,8 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 w = createWrapper();
                 Long ttl;
 
-
                 // Override the default TTL if a CacheTimeChooser is present and provides a custom value
-                if (null == _cacheTimeChooser || null == (ttl = _cacheTimeChooser.getTimeToLive(key, arg)))
+                if (null == _cacheTimeChooser || null == (ttl = _cacheTimeChooser.getTimeToLive(key, argument)))
                     _cache.put(key, w);
                 else
                     _cache.put(key, w, ttl);
@@ -110,13 +109,13 @@ public class BlockingCache<K, V> implements Cache<K, V>
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (w)
         {
-            if (isValid(w, key, arg, loader))
+            if (isValid(w, key, argument, loader))
                 return w.getValue();
 
             if (w.isLoading())
             {
                 try {w.wait(TimeUnit.MINUTES.toMillis(1));}catch (InterruptedException x) {/* */}
-                if (isValid(w, key, arg, loader))
+                if (isValid(w, key, argument, loader))
                     return w.getValue();
             }
 
@@ -125,7 +124,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
         if (null == loader)
             loader = _loader;
-        V value = loader.load(key, arg);
+        V value = loader.load(key, argument);
         w.setValue(value);
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (w)

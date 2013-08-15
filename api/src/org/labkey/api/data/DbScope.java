@@ -18,22 +18,28 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.AbstractResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Path;
+import org.labkey.data.xml.TablesDocument;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -86,7 +92,7 @@ import java.util.concurrent.locks.Lock;
  */
 public class DbScope
 {
-    private static final Logger _log = Logger.getLogger(DbScope.class);
+    private static final Logger LOG = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static DbScope _labkeyScope = null;
@@ -104,6 +110,17 @@ public class DbScope
     private final Map<Thread, TransactionImpl> _transaction = new WeakHashMap<>();
 
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
+
+    private static final Set<String> _moduleSchemaNames;
+
+    static
+    {
+        _moduleSchemaNames = new LinkedHashSet<>();
+
+        for (Module module : ModuleLoader.getInstance().getModules())
+            for (String schemaName : module.getSchemaNames())
+                _moduleSchemaNames.add(schemaName);
+    }
 
     private SqlDialect _dialect;
 
@@ -139,7 +156,7 @@ public class DbScope
             finally
             {
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
-                _log.info("Initializing DbScope with the following configuration:" +
+                LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + dsName +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
@@ -462,7 +479,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                _log.info("Could not find class DelegatingConnection", x);
+                LOG.info("Could not find class DelegatingConnection", x);
             }
             finally
             {
@@ -485,7 +502,7 @@ public class DbScope
             }
             catch (SQLException e)
             {
-                _log.error("Attempt to retrieve underlying connection failed", e);
+                LOG.error("Attempt to retrieve underlying connection failed", e);
             }
         }
 
@@ -500,7 +517,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                _log.error("Unexpected error", x);
+                LOG.error("Unexpected error", x);
             }
         }
         if (null == delegate)
@@ -579,7 +596,7 @@ public class DbScope
             }
             catch (SQLException e)
             {
-                _log.warn("error releasing connection: " + e.getMessage(), e);
+                LOG.warn("error releasing connection: " + e.getMessage(), e);
             }
         }
     }
@@ -622,28 +639,111 @@ public class DbScope
     }
 
 
-    // Default value of HOUR allows regular updates to external schemas; LabKey scope overrides this with a much longer expiration
-    protected long getCacheDefaultTimeToLive()
+    @NotNull
+    // Load meta data from database
+    protected DbSchema loadBareSchema(String schemaName, DbSchemaType type) throws SQLException
     {
-        return CacheManager.HOUR;
+        LOG.info("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
+
+        // Load from database meta data
+        return DbSchema.createFromMetaData(schemaName, type, this);
     }
 
 
-    protected @Nullable CacheTimeChooser<String> getTableCacheTimeChooser()
+    @NotNull
+    // Load meta data from database and overlay schema.xml
+    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException, XmlException
     {
-        return null;
+        DbSchema schema = loadBareSchema(schemaName, type);
+
+        // Use the canonical schema name, not the requested name (which could differ in casing)
+        Resource resource = DbSchema.getSchemaResource(schema.getName());
+
+        if (null == resource)
+        {
+            String lowerName = schemaName.toLowerCase();
+
+            if (!lowerName.equals(schema.getName()))
+                resource = DbSchema.getSchemaResource(lowerName);
+
+            if (null == resource)
+            {
+                LOG.info("no schema metadata xml found for schema '" + schemaName + "'");
+                resource = new DbSchemaResource(schema);
+            }
+        }
+
+        schema.setResource(resource);
+
+        InputStream xmlStream = null;
+
+        try
+        {
+            xmlStream = resource.getInputStream();
+
+            if (null != xmlStream)
+            {
+                TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
+                schema.setTablesDocument(tablesDoc);
+            }
+        }
+        finally
+        {
+            try
+            {
+                if (null != xmlStream) xmlStream.close();
+            }
+            catch (Exception x)
+            {
+                LOG.error("DbScope", x);
+            }
+        }
+
+        return schema;
     }
 
 
-    protected @Nullable CacheTimeChooser<String> getSchemaCacheTimeChooser()
+    private static class DbSchemaResource extends AbstractResource
     {
-        return null;
+        protected DbSchemaResource(DbSchema schema)
+        {
+            // CONSIDER: create a ResourceResolver based on DbScope
+            super(new Path(schema.getName()), null);
+        }
+
+        @Override
+        public Resource parent()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            // UNDONE: The DbSchemaResource could check if the schema exists
+            // in the source database.  For now the DbSchemaResource always exists.
+            return true;
+        }
+
+        @Override
+        public long getVersionStamp()
+        {
+            // UNDONE: The DbSchemaResource could check if the schema is modified
+            // in the source database.  For now the DbSchemaResource is always up to date.
+            return 0L;
+        }
+    }
+
+
+    public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)
+    {
+        return _schemaCache.get(schemaName, type);
     }
 
 
     public @NotNull DbSchema getSchema(String schemaName)
     {
-        return _schemaCache.get(schemaName);
+        return getSchema(schemaName, DbSchemaType.Module);
     }
 
 
@@ -696,13 +796,6 @@ public class DbScope
     }
 
 
-    // External data source case: no schema.xml file to check, no isStale() check (for now)
-    protected @NotNull DbSchema loadSchema(String schemaName) throws Exception
-    {
-        return DbSchema.createFromMetaData(schemaName, this);
-    }
-
-
     // Invalidates schema and all its tables
     public void invalidateSchema(String schemaName)
     {
@@ -718,7 +811,7 @@ public class DbScope
     }
 
     // Invalidates a single table in this schema
-    public void invalidateTable(DbSchema schema, String table)
+    public void invalidateTable(DbSchema schema, @NotNull String table)
     {
         _tableCache.remove(schema, table);
     }
@@ -772,7 +865,7 @@ public class DbScope
             {
                 try
                 {
-                    DbScope scope = dsName.equals(labkeyDsName) ? new LabKeyScope(dsName, dataSources.get(dsName)) : new DbScope(dsName, dataSources.get(dsName));
+                    DbScope scope = new DbScope(dsName, dataSources.get(dsName));
                     scope.getSqlDialect().prepareNewDbScope(scope);
                     _scopes.put(dsName, scope);
                 }
@@ -789,7 +882,7 @@ public class DbScope
                     }
 
                     // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
-                    _log.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
+                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
                 }
             }
 
@@ -824,7 +917,7 @@ public class DbScope
         {
             if (i > 0)
             {
-                _log.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
+                LOG.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
 
                 try
                 {
@@ -832,7 +925,7 @@ public class DbScope
                 }
                 catch (InterruptedException e)
                 {
-                    _log.error("ensureDataBase", e);
+                    LOG.error("ensureDataBase", e);
                 }
             }
 
@@ -842,7 +935,7 @@ public class DbScope
                 Class.forName(props.getDriverClassName());
                 // Create non-pooled connection... don't want to pool a failed connection
                 conn = DriverManager.getConnection(props.getUrl(), props.getUsername(), props.getPassword());
-                _log.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
+                LOG.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
                 return true;        // Database already exists
             }
             catch (SQLException e)
@@ -854,14 +947,14 @@ public class DbScope
                 }
                 else
                 {
-                    _log.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
-                    _log.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
+                    LOG.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
+                    LOG.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
                     lastException = e;
                 }
             }
             catch (Exception e)
             {
-                _log.error("ensureDataBase", e);
+                LOG.error("ensureDataBase", e);
                 throw new ServletException("Internal error", e);
             }
             finally
@@ -872,12 +965,12 @@ public class DbScope
                 }
                 catch (Exception x)
                 {
-                    _log.error("Error closing connection", x);
+                    LOG.error("Error closing connection", x);
                 }
             }
         }
 
-        _log.error("Attempted to connect three times... giving up.", lastException);
+        LOG.error("Attempted to connect three times... giving up.", lastException);
         throw new ConfigurationException("Can't connect to data source \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
@@ -889,7 +982,7 @@ public class DbScope
 
         String dbName = dialect.getDatabaseName(url);
 
-        _log.info("Attempting to create database \"" + dbName + "\"");
+        LOG.info("Attempting to create database \"" + dbName + "\"");
 
         String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
         String createSql = "(undefined)";
@@ -905,7 +998,7 @@ public class DbScope
         }
         catch (SQLException e)
         {
-            _log.error("Create database failed, SQL: " + createSql, e);
+            LOG.error("Create database failed, SQL: " + createSql, e);
             dialect.handleCreateDatabaseException(e);
         }
         finally
@@ -916,7 +1009,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                _log.error("", x);
+                LOG.error("", x);
             }
             try
             {
@@ -924,11 +1017,11 @@ public class DbScope
             }
             catch (Exception x)
             {
-                _log.error("", x);
+                LOG.error("", x);
             }
         }
 
-        _log.info("Database \"" + dbName + "\" created");
+        LOG.info("Database \"" + dbName + "\" created");
     }
 
 
@@ -949,7 +1042,7 @@ public class DbScope
 
     public boolean isModuleSchema(String name)
     {
-        return false;
+        return _moduleSchemaNames.contains(name);
     }
 
 
@@ -980,12 +1073,12 @@ public class DbScope
                 {
                     try
                     {
-                        _log.warn("Forcing close of transaction started at ", t._creation);
+                        LOG.warn("Forcing close of transaction started at ", t._creation);
                         t.closeConnection();
                     }
                     catch (Exception x)
                     {
-                        _log.error("Failure forcing connection close on " + scope, x);
+                        LOG.error("Failure forcing connection close on " + scope, x);
                     }
                 }
             }
@@ -1171,7 +1264,7 @@ public class DbScope
             boolean added = _commitTasks.add(task);
 
             if (!added)
-                _log.debug("Skipping duplicate runnable: " + task.toString());
+                LOG.debug("Skipping duplicate runnable: " + task.toString());
         }
 
         public Connection getConnection()
@@ -1244,7 +1337,7 @@ public class DbScope
             }
             catch (SQLException e)
             {
-                _log.error("Failed to close connection", e);
+                LOG.error("Failed to close connection", e);
             }
 
             closeCaches();
@@ -1353,7 +1446,7 @@ public class DbScope
                     TableInfo table = schema.getTable(name);
 
                     if (null == table)
-                        _log.error("Table is null: " + schema.getName() + "." + name);
+                        LOG.error("Table is null: " + schema.getName() + "." + name);
                     else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
                         tables.add(table);
                 }

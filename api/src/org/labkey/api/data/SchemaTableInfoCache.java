@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -38,29 +39,29 @@ public class SchemaTableInfoCache
         _blockingCache = new SchemaTableInfoBlockingCache(scope);
     }
 
-    SchemaTableInfo get(DbSchema schema, String tableName)
+    SchemaTableInfo get(@NotNull DbSchema schema, @NotNull String tableName)
     {
         String key = getCacheKey(schema, tableName);
         return _blockingCache.get(key, new Pair<>(schema, tableName));
     }
 
-    void remove(DbSchema schema, String tableName)
+    void remove(@NotNull DbSchema schema, @NotNull String tableName)
     {
         String key = getCacheKey(schema, tableName);
         _blockingCache.remove(key);
     }
 
-    void removeAllTables(String schemaName)
+    void removeAllTables(@NotNull String schemaName)
     {
-        final String prefix = (schemaName + "/").toLowerCase();
+        final String prefix = DbSchemaType.All.getCacheKey(schemaName);
 
         _blockingCache.removeUsingPrefix(prefix);
     }
 
 
-    private String getCacheKey(DbSchema schema, String tableName)
+    private String getCacheKey(@NotNull DbSchema schema, @NotNull String tableName)
     {
-        return (schema.getName() + "/" + tableName).toLowerCase();
+        return schema.getType().getCacheKey(schema.getName()) + "|" + tableName.toLowerCase();
     }
 
 
@@ -86,21 +87,31 @@ public class SchemaTableInfoCache
     }
 
 
+    // Ask the DbSchemaType how long to cache each table
+    private static final CacheTimeChooser<String> TABLE_CACHE_TIME_CHOOSER = new CacheTimeChooser<String>()
+        {
+            @Override
+            public Long getTimeToLive(String key, Object argument)
+            {
+                @SuppressWarnings({"unchecked"})
+                DbSchema schema = ((Pair<DbSchema, String>)argument).first;
+
+                return schema.getType().getCacheTimeToLive();
+            }
+        };
+
     private static class SchemaTableInfoBlockingCache extends BlockingStringKeyCache<SchemaTableInfo>
     {
         private SchemaTableInfoBlockingCache(DbScope scope)
         {
             super(createCache(scope), new SchemaTableLoader());
-
-            CacheTimeChooser<String> cacheTimeChooser = scope.getTableCacheTimeChooser();
-
-            if (null != cacheTimeChooser)
-                setCacheTimeChooser(cacheTimeChooser);
+            setCacheTimeChooser(TABLE_CACHE_TIME_CHOOSER);
         }
     }
 
+
     private static StringKeyCache<Wrapper<SchemaTableInfo>> createCache(DbScope scope)
     {
-        return CacheManager.getStringKeyCache(10000, scope.getCacheDefaultTimeToLive(), "SchemaTableInfos for " + scope.getDisplayName());
+        return CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, "SchemaTableInfos for " + scope.getDisplayName());
     }
 }

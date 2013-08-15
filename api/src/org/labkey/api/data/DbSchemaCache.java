@@ -36,36 +36,72 @@ public class DbSchemaCache
     private final DbScope _scope;
     private final BlockingStringKeyCache<DbSchema> _cache;
 
+    // Ask the DbSchemaType how long to cache each schema
+    private final CacheTimeChooser<String> SCHEMA_CACHE_TIME_CHOOSER = new CacheTimeChooser<String>()
+        {
+            @Override
+            public Long getTimeToLive(String key, Object argument)
+            {
+                @SuppressWarnings({"unchecked"})
+                DbSchemaCache.SchemaDetails details = (DbSchemaCache.SchemaDetails)argument;
+                return details.getType().getCacheTimeToLive();
+            }
+        };
+
     public DbSchemaCache(DbScope scope)
     {
         _scope = scope;
-        _cache = new DbSchemaBlockingCache(_scope.getDisplayName(), _scope.getCacheDefaultTimeToLive());
-
-        CacheTimeChooser<String> cacheTimeChooser = scope.getSchemaCacheTimeChooser();
-
-        if (null != cacheTimeChooser)
-            _cache.setCacheTimeChooser(cacheTimeChooser);
+        _cache = new DbSchemaBlockingCache(_scope.getDisplayName());
     }
 
-    @NotNull DbSchema get(String schemaName)
+    @NotNull DbSchema get(String schemaName, DbSchemaType type)
     {
-        return _cache.get(schemaName.toLowerCase(), schemaName);
+        return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
     }
 
     void remove(String schemaName)
     {
-        _cache.remove(schemaName.toLowerCase());
+        _cache.removeUsingPrefix(getKey(schemaName, DbSchemaType.All));
+    }
+
+    private String getKey(String schemaName, DbSchemaType type)
+    {
+        return type.getCacheKey(schemaName);
+    }
+
+
+    private class SchemaDetails
+    {
+        private final String _schemaName;
+        private final DbSchemaType _type;
+
+        private SchemaDetails(String requestedSchemaName, DbSchemaType type)
+        {
+            _schemaName = requestedSchemaName;
+            _type = type;
+        }
+
+        private String getRequestedSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public DbSchemaType getType()
+        {
+            return _type;
+        }
     }
 
 
     private class DbSchemaLoader implements CacheLoader<String, DbSchema>
     {
         @Override
-        public DbSchema load(String key, Object requestedSchemaName)
+        public DbSchema load(String key, Object schemaDetails)
         {
             try
             {
-                return _scope.loadSchema((String)requestedSchemaName);
+                SchemaDetails details = (SchemaDetails)schemaDetails;
+                return details.getType().loadSchema(_scope, details.getRequestedSchemaName());
             }
             catch (Exception e)
             {
@@ -77,9 +113,10 @@ public class DbSchemaCache
 
     private class DbSchemaBlockingCache extends BlockingStringKeyCache<DbSchema>
     {
-        public DbSchemaBlockingCache(String name, long defaultTimeToLive)
+        public DbSchemaBlockingCache(String dsName)
         {
-            super(CacheManager.<String, Wrapper<DbSchema>>getCache(10000, defaultTimeToLive, "DbSchemas for " + name), new DbSchemaLoader());
+            super(CacheManager.<String, Wrapper<DbSchema>>getCache(1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
+            setCacheTimeChooser(SCHEMA_CACHE_TIME_CHOOSER);
         }
 
         @Override
@@ -91,9 +128,7 @@ public class DbSchemaCache
             {
                 DbSchema schema = w.getValue();
 
-                if (AppProps.getInstance().isDevMode() &&
-                    // TODO: Remove isLabKeyScope() hack that works around DbSchema.isStale() assert
-                    schema.getScope().isLabKeyScope() && schema.isStale())
+                if (AppProps.getInstance().isDevMode() && schema.isStale())
                 {
                     isValid = false;
                 }
