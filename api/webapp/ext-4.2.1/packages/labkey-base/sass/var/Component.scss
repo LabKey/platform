@@ -1,19 +1,15 @@
-// BEGIN VARIABLES
 $font-family: Verdana, Arial, Helvetica, sans serif;
-
-// Unless you want to include all components, you must set $include-default to false
-// IF you set this to true, you can also remove lines 10 to 38 of this file
-$include-default: true;
 
 //layout
 $accordion-header-background-color: $webpart-color;
 
+
 //panel
-$panel-base-color: $panel-base-color; // #d3d3d3; //#DFE8F6;
+$panel-base-color: $panel-base-color;
 $panel-header-background-color: $base-color;
 $panel-header-color: #ffffff;
 $panel-body-background-color: #ffffff;
-$panel-border-color: #B4B4B4 !default; //adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: 2.627%) !default;
+$panel-border-color: #B4B4B4 !default;
 $panel-header-inner-border: false;
 $panel-header-background-gradient: color-stops($base-color, $base-color);
 
@@ -25,14 +21,14 @@ $button-default-color-focus: #000;
 $button-default-color-pressed: #000;
 $button-default-color-disabled: #808080;
 
-$button-small-font-weight: bold; // defaults is 'normal !default'
-$button-small-border-radius: 3px; // default is '3px !default';
+$button-small-font-weight: bold;
+$button-small-border-radius: 3px;
 
 $button-default-base-color: #fff;
 $button-default-base-color-over: #fff;
 $button-default-base-color-focus: $button-default-base-color-over;
 $button-default-base-color-pressed: #fff;
-$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default; //F7F7F7
+$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
 
 $button-default-border-color: #b4b4b4;
 $button-default-border-color-over: #676767;
@@ -51,7 +47,6 @@ $button-default-background-gradient-color-stops-over: null;
 $button-default-background-gradient-color-stops-focus: null;
 $button-default-background-gradient-color-stops-pressed: null;
 $button-default-background-gradient-color-stops-disabled: null;
-
 
 $button-toolbar-base-color: $button-default-base-color;
 
@@ -79,69 +74,55 @@ $button-toolbar-background-gradient-color-stops-focus: null;
 $button-toolbar-background-gradient-color-stops-pressed: null;
 $button-toolbar-background-gradient-color-stops-disabled: null;
 
-.x4-btn-inner {
-  text-transform: uppercase;
-}
 
 //menus
 $menu-background-color: #fff !default;
 $menu-item-active-background-color: #EAEAEA !default;
 $menu-padding: 0;
 
+
 //menu borders
 $menu-item-active-border-color: #B4B4B4 !default;
 $menu-item-active-border-radius: 0;
 
-.x4-menu-item-arrow {
-  height: 14px !important;
-  background-image: url(../../../../../_images/arrow_right.png) !important;
-}
-
-#headerSearchInput-inputEl {
-  line-height: 16px !important;
-  border-color: #B5B8C8 !important;
-  font-size: 8pt;
-}
 
 //window
 $window-background-color: $base-color;
-$window-header-color: #fff;
-$window-body-background-color: #fff;
+$window-header-color: #ffffff;
+$window-body-background-color: #ffffff;
+
 
 //grids
-$grid-header-background-color: #FFFFFF;
+$grid-header-background-color: #ffffff;
 $grid-header-over-background-color: $grid-color;
 $grid-row-cell-selected-background-color: #C5C5C5 !default;
 
+
 //toolbars
 $toolbar-background-color: #eeeeee;
+
 
 //qtips
 $tip-base-color: #eeeeee;
 $tip-background-color: #ffffff;
 
+
 // combo box drop down
-$boundlist-item-over-background-color: #e0e0e0; //adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 60%) !default;
+$boundlist-item-over-background-color: #e0e0e0;
 
-.x4-boundlist-list-ct ul {
-  margin: 0;
-  padding: 0;
-}
-
-.x4-boundlist-list-ct li {
-  list-style: none;
-}
 
 // date picker
 $datepicker-base-color: #C0D4ED;
+
 
 // darken load mask
 $loadmask-opacity: 0.25 !default;
 $loadmask-backgorund: #000 !default;
 
+
 // ext tabpanel
 
-//the tabs themselves
+// the tabs themselves
 $tab-base-color: $primary-bg-color;
 $tab-base-color-active: $primary-bg-color;
 $tab-base-color-over: $primary-bg-color;
@@ -150,93 +131,12 @@ $tab-background-gradient-over: color-stops($primary-bg-color, $primary-bg-color)
 $tab-background-gradient-active: color-stops($primary-bg-color, $primary-bg-color);
 $tab-background-gradient: color-stops($webpart-color, $webpart-color);
 
-//1x borders around the tabs
+// 1x borders around the tabs
 $tab-border-color-active: #B4B4B4;  //grey
 $tab-border-color: #B4B4B4;  //grey
 
-//text
+// text
 $tab-color: $text-color;
 
 $tabbar-base-color: transparent;  //no background behind tabs
 $tabbar-border-color: transparent; //no background around tabbar
-
-.x4-column-header {
-  border-bottom: 1px solid #AAAAAA !important;
-  border-right: 1px solid #DDDDDD !important;
-}
-
-.x4-column-header-over {
-  background-image: none !important;
-  cursor: pointer !important;
-}
-
-.x4-grid-checkheader {
-  height: 14px;
-  background-image: url('../../../ext-4.1.0/resources/themes/images/default/grid/unchecked.gif');
-  background-position: 50% -2px;
-  background-repeat: no-repeat;
-  background-color: transparent;
-}
-
-.x4-grid-checkheader-checked {
-  background-image: url('../../../ext-4.1.0/resources/themes/images/default/grid/checked.gif');
-}
-
-.x4-grid-checkheader-editor .x4-form-cb-wrap {
-  text-align: center;
-}
-
-// Taken from stylesheet.css in 4.2.1 upgrade
-.labkey-data-region-facet div.x4-panel-body {
-  border-color: #DDDDDD;
-}
-
-div.facet_header .x4-panel-header-text-container {
-  margin-top: 2px !important;
-}
-
-div.facet_header .x4-panel-header-text {
-  color: #126495;
-  text-transform: uppercase;
-  font-size: 10px;
-}
-
-.study-schedule-container .x4-grid-header-ct {
-  background-image: none;
-  background-color: #E7EFF4;
-}
-
-.x4-message-box .x4-window-body,
-.x4-toolbar-footer {
-  background-color: #ffffff;
-  margin-top: 0px;
-}
-
-.x4-form-text
-{
-  height : 24px;
-}
-
-.x4-form-checkbox,
-.x4-form-radio
-{
-  float : left;
-}
-
-.x4-action-col-icon
-{
-  cursor: pointer;
-}
-
-.x4-item-disabled td.x4-trigger-cell {
-  opacity: 0.3;
-}
-
-.x4-mask-msg {
-  padding: 0 !important;
-}
-
-.x4-mask-msg-inner {
-  background-color: #ffffff !important;
-  border-width: 0 !important;
-}
