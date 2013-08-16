@@ -59,9 +59,9 @@ public class DbSchemaCache
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
     }
 
-    void remove(String schemaName)
+    void remove(String schemaName, DbSchemaType type)
     {
-        _cache.removeUsingPrefix(getKey(schemaName, DbSchemaType.All));
+        _cache.removeUsingPrefix(getKey(schemaName, type));
     }
 
     private String getKey(String schemaName, DbSchemaType type)

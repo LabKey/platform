@@ -74,8 +74,6 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
     {
         // Module may be disabled so we need to create the UserSchema directly instead of using QueryService.get().getUserSchema().
         DbSchema dbSchema = DbSchema.get(schemaName);
-        if (dbSchema == null)
-            return;
 
         UserSchema userSchema = QueryService.get().createSimpleUserSchema(schemaName, null, user, c, dbSchema);
         if (userSchema == null)

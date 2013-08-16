@@ -23,6 +23,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -307,6 +308,9 @@ public class ModuleLoader implements Filter
                 iterator.remove();
             }
         }
+
+        // Clear the map to remove schemas associated with modules that failed to load
+        _schemaNameToModule.clear();
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if
         // all the real working threads are hung. This lets us invoke methods in the debugger,
@@ -1195,7 +1199,8 @@ public class ModuleLoader implements Filter
     }
 
 
-    public Module getModuleForSchemaName(String schemaName)
+    // Use data source qualified name (e.g., core or external.myschema)
+    public @Nullable Module getModuleForSchemaName(String schemaName)
     {
         synchronized(_schemaNameToModule)
         {

@@ -721,7 +721,8 @@ public class StorageProvisioner
             {
                 try
                 {
-                    schema = DbSchema.createFromMetaData(domainReport.getSchemaName(), DbSchemaType.Bare);
+                    // Provisioned tables are always in the labkey database (for now)
+                    schema = DbSchema.createFromMetaData(DbScope.getLabkeyScope(), domainReport.getSchemaName(), DbSchemaType.Bare);
                     schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)

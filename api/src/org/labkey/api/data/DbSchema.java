@@ -15,10 +15,10 @@
  */
 package org.labkey.api.data;
 
-import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -33,14 +33,13 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
-import javax.naming.NamingException;
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -81,17 +80,37 @@ public class DbSchema
     }
 
 
-    public static @NotNull DbSchema get(String schemaName)
+    public static @NotNull DbSchema get(String fullyQualifiedSchemaName)
     {
-        int dot = schemaName.indexOf('.');
+        // Quick check to avoid creating Pair object in most common case
+        int dot = fullyQualifiedSchemaName.indexOf('.');
 
         if (-1 == dot)
         {
-            return DbScope.getLabkeyScope().getSchema(schemaName);
+            return DbScope.getLabkeyScope().getSchema(fullyQualifiedSchemaName);
         }
         else
         {
-            String dsName = schemaName.substring(0, dot);
+            Pair<DbScope, String> scopeAndSchemaName = getDbScopeAndSchemaName(fullyQualifiedSchemaName);
+
+            return scopeAndSchemaName.first.getSchema(scopeAndSchemaName.second);
+        }
+    }
+
+
+    // "core" returns <<labkey scope>, "core">
+    // "external.myschema" returns <<external scope>, "myschema">
+    public static Pair<DbScope, String> getDbScopeAndSchemaName(String fullyQualifiedSchemaName)
+    {
+        int dot = fullyQualifiedSchemaName.indexOf('.');
+
+        if (-1 == dot)
+        {
+            return new Pair<>(DbScope.getLabkeyScope(), fullyQualifiedSchemaName);
+        }
+        else
+        {
+            String dsName = fullyQualifiedSchemaName.substring(0, dot);
             DbScope scope = DbScope.getDbScope(dsName);
 
             if (null == scope)
@@ -104,30 +123,25 @@ public class DbSchema
                 }
             }
 
-            return scope.getSchema(schemaName.substring(dot + 1));
+            return new Pair<>(scope, fullyQualifiedSchemaName.substring(dot + 1));
         }
     }
 
-    public static Resource getSchemaResource(String schemaName) throws IOException
+
+    public static Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
     {
-        Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
+        Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
         if (null == module)
         {
-            _log.debug("no module for schema '" + schemaName + "'");
+            _log.debug("no module for schema '" + fullyQualifiedSchemaName + "'");
             return null;
         }
-        Resource r = module.getModuleResource("/schemas/" + schemaName + ".xml");
+        Resource r = module.getModuleResource("/schemas/" + fullyQualifiedSchemaName + ".xml");
         return null != r && r.isFile() ? r : null;
     }
 
 
-    public static DbSchema createFromMetaData(String dbSchemaName, DbSchemaType type) throws SQLException, NamingException, ServletException
-    {
-        return createFromMetaData(dbSchemaName, type, DbScope.getLabkeyScope());
-    }
-
-
-    public static @NotNull DbSchema createFromMetaData(String requestedSchemaName, DbSchemaType type, DbScope scope) throws SQLException
+    public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
         Map<String, String> metaDataTableNames = new CaseInsensitiveHashMap<>();
 
@@ -153,7 +167,7 @@ public class DbSchema
             }
         }
 
-        scope.invalidateAllTables(metaDataName); // Need to invalidate the table cache
+        scope.invalidateAllTables(metaDataName, type); // Need to invalidate the table cache
 
         return new DbSchema(metaDataName, type, scope, metaDataTableNames);
     }
@@ -364,9 +378,24 @@ public class DbSchema
     }
 
 
+    // Unqualified schema name
     public String getName()
     {
         return _name;
+    }
+
+    // Schema name qualified with data source display name (e.g., external.myschema). Resources like schema.xml files
+    // and sql scripts are found using this name.
+    public String getDisplayName()
+    {
+        return getDisplayName(_scope, getName());
+    }
+
+    // Schema name qualified with data source display name (e.g., external.myschema). Resources like schema.xml files
+    // and sql scripts are found using this name.
+    public static String getDisplayName(DbScope scope, String name)
+    {
+        return (scope.isLabKeyScope() ? "" : scope.getDisplayName() + ".") + name;
     }
 
     public SqlDialect getSqlDialect()
@@ -462,7 +491,7 @@ public class DbSchema
     @Override
     public String toString()
     {
-        return "DbSchema " + getName();
+        return "DbSchema " + getDisplayName();
     }
 
 
@@ -516,13 +545,15 @@ public class DbSchema
 
         private void testSchemaXml(DbSchema schema) throws Exception
         {
-            String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
+            String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false);
 
-            assertNull("<div>Errors in schema " + schema.getName()
+            // Not using assertNotNull, because it appends non-legal HTML text to our message
+            if (null != sOut)
+                fail("<div>Errors in schema " + schema.getName()
                      + ".xml.  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
                      + schema.getName() + "\">Click here for an XML doc with fixes</a>."
                      + "<br>"
-                     + sOut + "</div>", sOut);
+                     + sOut + "</div>");
 
 /* TODO: Uncomment once we change to all generic type names in schema .xml files
 
@@ -702,7 +733,7 @@ public class DbSchema
             executor.execute("CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
             executor.execute("CREATE INDEX T_c1 ON testdrop2.T(c1)");
 
-            testSchema = DbSchema.createFromMetaData("testdrop", DbSchemaType.Bare);
+            testSchema = DbSchema.createFromMetaData(DbScope.getLabkeyScope(), "testdrop", DbSchemaType.Bare);
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");
@@ -733,7 +764,7 @@ public class DbSchema
         public void testSchemaCasing() throws Exception
         {
             // If schema cache is case-sensitive then this should clear all capitalizations
-            DbScope.getLabkeyScope().invalidateSchema("core");
+            DbScope.getLabkeyScope().invalidateSchema("core", DbSchemaType.Module);
 
             DbSchema core1 = DbSchema.get("Core");
             DbSchema core2 = DbSchema.get("CORE");

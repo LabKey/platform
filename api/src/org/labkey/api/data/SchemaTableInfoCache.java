@@ -51,9 +51,9 @@ public class SchemaTableInfoCache
         _blockingCache.remove(key);
     }
 
-    void removeAllTables(@NotNull String schemaName)
+    void removeAllTables(@NotNull String schemaName, DbSchemaType type)
     {
-        final String prefix = DbSchemaType.All.getCacheKey(schemaName);
+        final String prefix = type.getCacheKey(schemaName);
 
         _blockingCache.removeUsingPrefix(prefix);
     }

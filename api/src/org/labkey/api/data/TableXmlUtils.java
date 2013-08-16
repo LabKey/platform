@@ -38,9 +38,9 @@ public class TableXmlUtils
 
     // Careful: don't use DbSchema.get(), schema.getTable(), or schema.getTables() -- we don't want schema.xml applied
     // and we don't want to cache these TableInfos (because schema.xml hasn't been applied).
-    public static TablesDocument createXmlDocumentFromDatabaseMetaData(String dbSchemaName, boolean bFull) throws Exception
+    public static TablesDocument createXmlDocumentFromDatabaseMetaData(DbScope scope, String schemaName, boolean bFull) throws Exception
     {
-        DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName, DbSchemaType.Bare);
+        DbSchema dbSchema = DbSchema.createFromMetaData(scope, schemaName, DbSchemaType.Bare);
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
         TablesType xmlTables = xmlTablesDoc.addNewTables();
 
@@ -54,7 +54,7 @@ public class TableXmlUtils
         return xmlTablesDoc;
     }
 
-    public static String compareXmlToMetaData(String dbSchemaName, boolean bFull, boolean bCaseSensitive)
+    public static String compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive)
     {
         StringBuilder sbOut = new StringBuilder();
 
@@ -64,8 +64,8 @@ public class TableXmlUtils
             TablesDocument tablesDocFromDatabaseMetaData;
             TablesDocument tablesDocFromXml = null;
 
-            tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(dbSchemaName, false);
-            Resource r = DbSchema.getSchemaResource(dbSchemaName);
+            tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
+            Resource r = DbSchema.getSchemaResource(schema.getDisplayName());
             if (null != r)
                 xmlStream = r.getInputStream();
             if (null != xmlStream)
@@ -78,7 +78,7 @@ public class TableXmlUtils
         }
         catch (Exception e)
         {
-            _log.error("Exception loading schema " + dbSchemaName, e);
+            _log.error("Exception loading schema " + schema.getDisplayName(), e);
             return "+++ ERROR: Exception " + e.getMessage();
         }
         finally
@@ -134,14 +134,14 @@ public class TableXmlUtils
                 if (mXmlTableOrdinals.containsKey(xmlTableName.toLowerCase()))
                     sbOut.append("ERROR: TableName \"").append(xmlTableName).append("\" duplicated in XML.<br>");
                 else
-                    mXmlTableOrdinals.put(xmlTableName.toLowerCase(), new Integer(i));
+                    mXmlTableOrdinals.put(xmlTableName.toLowerCase(), i);
             }
 
             mDbTableOrdinals = new TreeMap<>();
             for (int i = 0; i < dbTables.length; i++)
             {
                 dbTableName = dbTables[i].getTableName();
-                mDbTableOrdinals.put(dbTableName.toLowerCase(), new Integer(i));
+                mDbTableOrdinals.put(dbTableName.toLowerCase(), i);
             }
 
             for (TableType xmlTable : xmlTables)
@@ -167,7 +167,7 @@ public class TableXmlUtils
                     continue;
                 }
 
-                idt = mDbTableOrdinals.get(xmlTableName.toLowerCase()).intValue();
+                idt = mDbTableOrdinals.get(xmlTableName.toLowerCase());
 
                 if (merge)
                 {
@@ -238,13 +238,13 @@ public class TableXmlUtils
                     if (mXmlColOrdinals.containsKey(xmlColName.toLowerCase()))
                         sbOut.append("ERROR: Table \"").append(xmlTable.getTableName()).append("\" column \"").append(xmlColName).append("\" duplicated in XML.<br>");
                     else
-                        mXmlColOrdinals.put(xmlColName.toLowerCase(), new Integer(m));
+                        mXmlColOrdinals.put(xmlColName.toLowerCase(), m);
                 }
 
                 for (int m = 0; m < dbCols.length; m++)
                 {
                     dbColName = dbCols[m].getColumnName();
-                    mDbColOrdinals.put(dbColName.toLowerCase(), new Integer(m));
+                    mDbColOrdinals.put(dbColName.toLowerCase(), m);
                 }
 
                 for (ColumnType xmlCol : xmlCols)
@@ -270,7 +270,7 @@ public class TableXmlUtils
                         continue;   // Skip further checks for wrapped columns... they aren't in the database
                     }
 
-                    idc = mDbColOrdinals.get(xmlColName.toLowerCase()).intValue();
+                    idc = mDbColOrdinals.get(xmlColName.toLowerCase());
                     ColumnType columnType = dbCols[idc];
 
                     compareStringProperty(columnType.getColumnName(), xmlCol.getColumnName(), "ColumnName", sbOut, bCaseSensitive, true);
@@ -466,7 +466,7 @@ public class TableXmlUtils
                 // now check any extra columns in the db
                 for (String dbCol : mDbColOrdinals.keySet())
                 {
-                    idc = mDbColOrdinals.get(dbCol).intValue();
+                    idc = mDbColOrdinals.get(dbCol);
                     sbOut.append("ERROR: Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.<br>");
 
                     if (merge)
@@ -483,7 +483,7 @@ public class TableXmlUtils
             {
                 if (dbTab.startsWith("_"))
                     continue;
-                idt = mDbTableOrdinals.get(dbTab).intValue();
+                idt = mDbTableOrdinals.get(dbTab);
                 TableType tt = dbTables[idt];
                 sbOut.append("ERROR: Table \"").append(dbTab).append("\" missing from XML.<br>");
                 if (merge)

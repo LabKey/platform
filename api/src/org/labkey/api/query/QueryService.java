@@ -103,6 +103,8 @@ abstract public class QueryService
     /** Generate a generic query URL for the QueryAction with a parameter for each primary key column. */
     abstract public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
 
+    // TODO: These probably need to change to support data source qualified schema names
+
     /** Get schema for SchemaKey encoded path. */
     abstract public UserSchema getUserSchema(User user, Container container, String schemaPath);
     /** Get schema for SchemaKey path. */

@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ConfigurationException;
@@ -95,6 +93,8 @@ public class DbScope
     private static final Logger LOG = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
+    private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
+
     private static DbScope _labkeyScope = null;
 
     private final String _dsName;
@@ -108,19 +108,6 @@ public class DbScope
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, TransactionImpl> _transaction = new WeakHashMap<>();
-
-    private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
-
-    private static final Set<String> _moduleSchemaNames;
-
-    static
-    {
-        _moduleSchemaNames = new LinkedHashSet<>();
-
-        for (Module module : ModuleLoader.getInstance().getModules())
-            for (String schemaName : module.getSchemaNames())
-                _moduleSchemaNames.add(schemaName);
-    }
 
     private SqlDialect _dialect;
 
@@ -646,7 +633,7 @@ public class DbScope
         LOG.info("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
 
         // Load from database meta data
-        return DbSchema.createFromMetaData(schemaName, type, this);
+        return DbSchema.createFromMetaData(this, schemaName, type);
     }
 
 
@@ -657,7 +644,7 @@ public class DbScope
         DbSchema schema = loadBareSchema(schemaName, type);
 
         // Use the canonical schema name, not the requested name (which could differ in casing)
-        Resource resource = DbSchema.getSchemaResource(schema.getName());
+        Resource resource = DbSchema.getSchemaResource(schema.getDisplayName());
 
         if (null == resource)
         {
@@ -796,18 +783,18 @@ public class DbScope
     }
 
 
-    // Invalidates schema and all its tables
-    public void invalidateSchema(String schemaName)
+    // Invalidates "Bare" schema with this name and all associated tables
+    public void invalidateSchema(String schemaName, DbSchemaType type)
     {
-        _schemaCache.remove(schemaName);
-        invalidateAllTables(schemaName);
+        _schemaCache.remove(schemaName, type);
+        invalidateAllTables(schemaName, type);
     }
 
 
     // Invalidates all tables in this schema
-    void invalidateAllTables(String schemaName)
+    void invalidateAllTables(String schemaName, DbSchemaType type)
     {
-        _tableCache.removeAllTables(schemaName);
+        _tableCache.removeAllTables(schemaName, type);
     }
 
     // Invalidates a single table in this schema
@@ -1037,12 +1024,6 @@ public class DbScope
     public boolean isLabKeyScope()
     {
         return this == getLabkeyScope();
-    }
-
-
-    public boolean isModuleSchema(String name)
-    {
-        return _moduleSchemaNames.contains(name);
     }
 
 
