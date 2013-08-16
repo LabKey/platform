@@ -943,7 +943,6 @@ public class Portal
                 NavTree navTree = view.getPortalLinks();
                 if (canCustomize)
                 {
-
                     if (desc.isEditable() && view.getCustomize() == null)
                         view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
 
