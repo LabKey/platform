@@ -51,7 +51,7 @@
                         for (String sn : schemaNames)
                         {
                         %>
-                        <option value="<%= sn %>"><%= m.getName() + " : " + sn %></option >
+                        <option value="<%=h(sn)%>"><%=h(m.getName() + " : " + sn)%></option >
                         <%
                         }
                    }

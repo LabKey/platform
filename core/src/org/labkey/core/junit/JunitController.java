@@ -578,7 +578,7 @@ public class JunitController extends SpringActionController
 
                 for (Failure failure : _failures)
                 {
-                    out.println("<b>" + failure.getDescription() + "</b><br>");
+                    out.println("<b>" + h(failure.getDescription().toString()) + "</b><br>");
                     Throwable t = failure.getException();
                     String message = t.getMessage();
 

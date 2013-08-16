@@ -3463,7 +3463,7 @@ public class AdminController extends SpringActionController
 
                 for (DbSchema schema : schemas)
                 {
-                    String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
+                    String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false);
                     if (null!=sOut)
                     {
                         contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
@@ -3480,12 +3480,12 @@ public class AdminController extends SpringActionController
                 {
                     for (String error : dr.getErrors())
                     {
-                        contentBuilder.append("<div class=\"warning\">"+error+"</div>");
+                        contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
                     }
                 }
                 for (String error : pr.getGlobalErrors())
                 {
-                    contentBuilder.append("<div class=\"warning\">"+error+"</div>");
+                    contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
                 }
 
                 contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
@@ -3522,15 +3522,16 @@ public class AdminController extends SpringActionController
     {
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            String dbSchemaName = form.getDbSchema();
-            if (null == dbSchemaName || dbSchemaName.length() == 0)
+            String fullyQualifiedSchemaName = form.getDbSchema();
+            if (null == fullyQualifiedSchemaName || fullyQualifiedSchemaName.length() == 0)
             {
                 throw new NotFoundException("Must specify dbSchema parameter");
             }
 
             boolean bFull = form.getFull();
 
-            TablesDocument tdoc = TableXmlUtils.createXmlDocumentFromDatabaseMetaData(dbSchemaName, bFull);
+            Pair<DbScope, String> scopeAndSchemaName = DbSchema.getDbScopeAndSchemaName(fullyQualifiedSchemaName);
+            TablesDocument tdoc = TableXmlUtils.createXmlDocumentFromDatabaseMetaData(scopeAndSchemaName.first, scopeAndSchemaName.second, bFull);
             StringWriter sw = new StringWriter();
 
             XmlOptions xOpt = new XmlOptions();
@@ -3539,7 +3540,7 @@ public class AdminController extends SpringActionController
             tdoc.save(sw, xOpt);
 
             sw.flush();
-            PageFlowUtil.streamFileBytes(response, dbSchemaName + ".xml", sw.toString().getBytes(), true);
+            PageFlowUtil.streamFileBytes(response, fullyQualifiedSchemaName + ".xml", sw.toString().getBytes(), true);
         }
     }
 

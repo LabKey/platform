@@ -43,6 +43,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
@@ -3729,6 +3730,8 @@ public class QueryController extends SpringActionController
 
         protected void initSources()
         {
+            ModuleLoader moduleLoader = ModuleLoader.getInstance();
+
             for (DbScope scope : DbScope.getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
@@ -3745,7 +3748,7 @@ public class QueryController extends SpringActionController
                         if (dialect.isSystemSchema(schemaName))
                             continue;
 
-                        if (scope.isModuleSchema(schemaName))
+                        if (null != moduleLoader.getModuleForSchemaName(DbSchema.getDisplayName(scope, schemaName)))
                             continue;
 
                         schemaNames.add(schemaName);

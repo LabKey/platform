@@ -117,9 +117,7 @@ public class ExternalSchema extends SimpleUserSchema
         Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
         Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-
-        ExternalSchema ret = new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables);
-        return ret;
+        return new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables);
     }
 
 
@@ -324,12 +322,8 @@ public class ExternalSchema extends SimpleUserSchema
 
         if (null != scope)
         {
-            String schemaName = def.getSourceSchemaName();
-
-            // Don't uncache module schemas, even those pointed at by external schemas.  Reloading these schemas is
-            // unnecessary (they don't change) and causes us to leak DbCaches.  See #10508.
-            if (!scope.isModuleSchema(schemaName))
-                scope.invalidateSchema(def.getSourceSchemaName());
+            // Uncache only the Bare schemas. Some (older) background is here #10508.
+            scope.invalidateSchema(def.getSourceSchemaName(), DbSchemaType.Bare);
         }
     }
 
