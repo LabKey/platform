@@ -28,8 +28,11 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ActionURL;
+import org.labkey.query.controllers.QueryController.QueryExportAuditRedirectAction;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -154,6 +157,11 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
                 return defaultVisibleColumns;
             }
         };
+
+        // Query details redirect action
+        DetailsURL url = new DetailsURL(new ActionURL(QueryExportAuditRedirectAction.class, null), "rowId", FieldKey.fromParts(COLUMN_NAME_ROW_ID));
+        url.setStrictContainerContextEval(true);
+        table.setDetailsURL(url);
 
         return table;
     }
