@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ConfigurationException;
@@ -94,6 +95,7 @@ public class DbScope
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
+    private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
 
     private static DbScope _labkeyScope = null;
 
@@ -826,21 +828,20 @@ public class DbScope
     }
 
 
-    public static void initializeScopes(Map<String, DataSource> dataSources) throws ServletException
+    public static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources) throws ServletException
     {
         synchronized (_scopes)
         {
             if (!_scopes.isEmpty())
                 throw new IllegalStateException("DbScopes are already initialized");
 
-            String labkeyDsName = null;
+            if (!dataSources.containsKey(labkeyDsName))
+                throw new IllegalStateException(labkeyDsName + " DataSource not found");
 
-            if (dataSources.containsKey("labkeyDataSource"))
-                labkeyDsName = "labkeyDataSource";
-            else if (dataSources.containsKey("cpasDataSource"))
-                labkeyDsName = "cpasDataSource";
+            // Find all the external data sources required by module schemas; we attempt to create these databases
+            Set<String> moduleDataSources = ModuleLoader.getInstance().getAllModuleDataSources();
 
-            // Put labkey data source first, followed by all others in alphabetical order
+            // Make sorted collection of data sources names, but with labkey data source first
             Set<String> dsNames = new LinkedHashSet<>();
             dsNames.add(labkeyDsName);
 
@@ -852,6 +853,22 @@ public class DbScope
             {
                 try
                 {
+                    // Attempt to create databases in data sources required by modules
+                    if (moduleDataSources.contains(dsName))
+                    {
+                        try
+                        {
+                            ModuleLoader.getInstance().ensureDatabase(new String[]{dsName});
+                        }
+                        catch (Throwable t)
+                        {
+                            // Database creation failed, but the data source may still be useable for external schemas
+                            // (e.g., a MySQL data source), so continue on and attempt to initialize the scope
+                            LOG.info("Failed to create database", t);
+                            addDataSourceFailure(dsName, t);
+                        }
+                    }
+
                     DbScope scope = new DbScope(dsName, dataSources.get(dsName));
                     scope.getSqlDialect().prepareNewDbScope(scope);
                     _scopes.put(dsName, scope);
@@ -870,10 +887,11 @@ public class DbScope
 
                     // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
                     LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
+                    addDataSourceFailure(dsName, e);
                 }
             }
 
-            _labkeyScope = _scopes.get(labkeyDsName);
+           _labkeyScope = _scopes.get(labkeyDsName);
 
             if (null == _labkeyScope)
                 throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.");
@@ -883,8 +901,8 @@ public class DbScope
 
     // Ensure we can connect to the specified datasource.  If the connection fails with a "database doesn't exist" exception
     // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
-    // other exception occurs (connection fails repeatedly with something other than "database doesn't exist" or database can't
-    // be created.
+    // other exception occurs (e.g., connection fails repeatedly with something other than "database doesn't exist" or database
+    // can't be created.)
     public static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
     {
         Connection conn = null;
@@ -896,6 +914,9 @@ public class DbScope
         //
         // Only way to get the right dialect is to look up based on the driver class name.
         SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, props.getDriverClassName());
+
+        if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
+            throw new ConfigurationException("Can't use data source \"" + dsName + "\" for module schemas; " + dialect.getProductName() + " does not support module schemas");
 
         SQLException lastException = null;
 
@@ -1009,6 +1030,21 @@ public class DbScope
         }
 
         LOG.info("Database \"" + dbName + "\" created");
+    }
+
+
+    // Store the initial failure message for each data source
+    private static void addDataSourceFailure(String dsName, Throwable t)
+    {
+        if (!_dataSourceFailures.containsKey(dsName))
+            //noinspection ThrowableResultOfMethodCallIgnored
+            _dataSourceFailures.put(dsName, t);
+    }
+
+
+    public static @Nullable Throwable getDataSourceFailure(String dsName)
+    {
+        return _dataSourceFailures.get(dsName);
     }
 
 

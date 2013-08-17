@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
@@ -49,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -172,7 +174,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
         if (!getSupportedDatabasesSet().contains(coreType))
-            throw new RuntimeException("The " + getName() + " module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+            throw new ConfigurationException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+
+        for (String dsName : ModuleLoader.getInstance().getModuleDataSources(this))
+        {
+            Throwable t = DbScope.getDataSourceFailure(dsName);
+
+            if (null != t)
+                throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"", t);
+
+            if (null == DbScope.getDbScope(dsName))
+                throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"");
+        }
 
         synchronized (INSTANTIATED_MODULES)
         {

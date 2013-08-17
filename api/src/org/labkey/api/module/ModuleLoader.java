@@ -614,9 +614,13 @@ public class ModuleLoader implements Filter
             }
         });
 
+        String labkeyDsName;
+
         try
         {
-            ensureLabKeyDatabase();
+            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
+            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
+            labkeyDsName = ensureDatabase(new String[]{"labkeyDataSource", "cpasDataSource"});
 
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
@@ -642,34 +646,33 @@ public class ModuleLoader implements Filter
             throw new ConfigurationException("DataSources are not properly configured in labkey.xml.", e);
         }
 
-        DbScope.initializeScopes(dataSources);
+        DbScope.initializeScopes(labkeyDsName, dataSources);
     }
 
-
-    // Ensures that a labkeyDataSource (or cpasDataSource, for old installations) exists in labkey.xml / cpas.xml and
-    // creates the labkey database if it doesn't already exist.
-    private void ensureLabKeyDatabase() throws NamingException, ServletException
+    // For each name in dsNames, look for a matching data source in labkey.xml. If found, attempt a connection and
+    // create the database if it doesn't already exist, report any errors and return the name.
+    public String ensureDatabase(String[] dsNames) throws NamingException, ServletException
     {
         InitialContext ctx = new InitialContext();
         Context envCtx = (Context) ctx.lookup("java:comp/env");
 
-        DataSource labkeyDataSource = null;
+        DataSource dataSource = null;
         String dsName = null;
 
-        for (String name : new String[]{"labkeyDataSource", "cpasDataSource"})
+        for (String name : dsNames)
         {
             dsName = name;
 
             try
             {
-                labkeyDataSource = (DataSource)envCtx.lookup("jdbc/" + name);
+                dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
                 break;
             }
             catch (NamingException e)
             {
                 String message = e.getMessage();
 
-                // labkeyDataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
+                // dataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
                 // connection pool, which attempts a connection on bind. In this case, we need to use some horrible
                 // reflection to get the properties we need to create the database.
                 if ((message.contains("FATAL: database") && message.contains("does not exist")) ||
@@ -681,7 +684,7 @@ public class ModuleLoader implements Filter
                         Field bindingsField = namingContext.getClass().getDeclaredField("bindings");
                         bindingsField.setAccessible(true);
                         Map bindings = (Map)bindingsField.get(namingContext);
-                        Object namingEntry = bindings.get(name);
+                        Object namingEntry = bindings.get(dsName);
                         Field valueField = namingEntry.getClass().getDeclaredField("value");
                         Reference reference = (Reference)valueField.get(namingEntry);
 
@@ -695,11 +698,11 @@ public class ModuleLoader implements Filter
                     }
                     catch (Exception e2)
                     {
-                        throw new ConfigurationException("Failed to retrieve \"" + name + "\" properties from labkey.xml. Try creating the database manually and restarting the server.", e2);
+                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from labkey.xml. Try creating the database manually and restarting the server.", e2);
                     }
 
                     // Try it again
-                    labkeyDataSource = (DataSource)envCtx.lookup("jdbc/" + name);
+                    dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
                     break;
                 }
 
@@ -707,10 +710,12 @@ public class ModuleLoader implements Filter
             }
         }
 
-        if (null == labkeyDataSource)
-            throw new ConfigurationException("You must have a DataSource named \"labkeyDataSource\" defined in labkey.xml.");
+        if (null == dataSource)
+            throw new ConfigurationException("You must have a DataSource named \"" + dsNames[0] + "\" defined in labkey.xml.");
 
-        DbScope.ensureDataBase(dsName, labkeyDataSource);
+        DbScope.ensureDataBase(dsName, dataSource);
+
+        return dsName;
     }
 
 
@@ -1113,6 +1118,33 @@ public class ModuleLoader implements Filter
     public List<Module> getModules()
     {
         return _modules;
+    }
+
+    // Return a set of data source names representing all external data sources that are required for module schemas
+    public Set<String> getAllModuleDataSources()
+    {
+        // Find all the external data sources that modules require
+        Set<String> allModuleDataSources = new HashSet<>();
+
+        for (Module module : _modules)
+            allModuleDataSources.addAll(getModuleDataSources(module));
+
+        return allModuleDataSources;
+    }
+
+    public Set<String> getModuleDataSources(Module module)
+    {
+        Set<String> moduleDataSources = new HashSet<>();
+
+        for (String schemaName : module.getSchemaNames())
+        {
+            int idx = schemaName.indexOf('.');
+
+            if (-1 != idx)
+                moduleDataSources.add(schemaName.substring(0, idx) + "DataSource");
+        }
+
+        return moduleDataSources;
     }
 
     // TODO: Move to LoginController, only place that uses this now
