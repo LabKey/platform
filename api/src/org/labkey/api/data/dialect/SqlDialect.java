@@ -523,6 +523,8 @@ public abstract class SqlDialect
 
     public abstract String getCreateDatabaseSql(String dbName);
 
+    public abstract String getTruncateSql(String tableName);
+
     public abstract String getCreateSchemaSql(String schemaName);
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */

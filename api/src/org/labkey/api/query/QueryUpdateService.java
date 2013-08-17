@@ -173,6 +173,19 @@ public interface QueryUpdateService
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
+     * Deletes all rows from the source table for this query.  This operation is comparable to a delete without a
+     * where clause.  Note that this function will fire batch triggers but not row-level triggers.
+     * @param user The current user.
+     * @param container The container in which the row should exist.
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
+     * @throws BatchValidationException Thrown if the data fails one of the validation checks
+     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
+     * @throws SQLException Thrown if there was an error communicating with the database.
+     */
+    public void truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+            throws BatchValidationException, QueryUpdateServiceException, SQLException;
+
+    /**
      * If true, disables expensive optional activity for this updater.
      * @param bulkLoad whether to write audit log, and do per insert housekeeping
      */

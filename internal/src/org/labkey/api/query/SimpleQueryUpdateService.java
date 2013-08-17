@@ -17,7 +17,10 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -28,8 +31,11 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -80,6 +86,43 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return (SimpleTable)super.getQueryTable();
     }
 
+    // classes should override this method if they need to do more work to truncate the table
+    protected void truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+    {
+        // if we have a domain helper then delete all the properties associated with all the rows
+        if (null != getObjectUriColumn())
+        {
+            TableSelector ts = new TableSelector(getDbTable(), Collections.singleton(getObjectUriColumn()), null, null);
+            try (Results results = ts.getResults())
+            {
+                while(results.next())
+                {
+                    _deleteOntologyObject(container, results.getRowMap());
+                }
+            }
+        }
+
+        // now truncate all the rows
+        Table.truncate(getDbTable());
+    }
+
+    @Override
+    public void truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+            throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, DeletePermission.class))
+            throw new UnauthorizedException("You do not have permission to truncate this table.");
+
+        BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, true, errors, extraScriptContext);
+
+        truncateRows(user, container);
+
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
+    }
 
     public DataIteratorBuilder createImportETL(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
     {

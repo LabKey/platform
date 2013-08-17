@@ -466,6 +466,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected void _delete(Container c, Map<String, Object> row) throws SQLException, InvalidKeyException
     {
+        _deleteOntologyObject(c, row);
+        Table.delete(getDbTable(), getKeys(row));
+    }
+
+    protected void _deleteOntologyObject(Container c, Map<String, Object> row)
+    {
         ColumnInfo objectUriCol = getObjectUriColumn();
         if (objectUriCol != null)
         {
@@ -477,8 +483,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     OntologyManager.deleteProperties(c, oo.getObjectId());
             }
         }
-
-        Table.delete(getDbTable(), getKeys(row));
     }
 
     protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException

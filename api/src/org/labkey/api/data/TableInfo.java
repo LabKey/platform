@@ -301,7 +301,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public enum TriggerType
     {
-        INSERT, UPDATE, DELETE, SELECT;
+        INSERT, UPDATE, DELETE, SELECT, TRUNCATE;
 
         public String getMethodName()
         {

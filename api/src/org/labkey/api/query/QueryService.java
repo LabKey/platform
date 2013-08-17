@@ -306,7 +306,9 @@ abstract public class QueryService
         UPDATE("Row was updated.",
                 "%s row(s) were updated."),
         DELETE("Row was deleted.",
-                "%s row(s) were deleted.");
+                "%s row(s) were deleted."),
+        TRUNCATE("Table was truncated.",
+                "All rows were deleted.");
 
         String _commentDetailed;
         String _commentSummary;

@@ -1093,6 +1093,14 @@ public class Table
         return result;
     }
 
+    public static void truncate(TableInfo table) throws SQLException
+    {
+        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
+        sqlExecutor.execute(table.getSqlDialect().getTruncateSql(table.getSelectName()));
+        notifyTableUpdate(table);
+    }
+
 
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {

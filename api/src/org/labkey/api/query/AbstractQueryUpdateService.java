@@ -233,6 +233,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }
 
+    @Override
+    public void truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+            throws BatchValidationException,  QueryUpdateServiceException, SQLException
+    {
+        throw new UnsupportedOperationException("truncate is not supported for all tables");
+    }
 
     private boolean hasTableScript(Container container)
     {

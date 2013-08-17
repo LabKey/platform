@@ -452,6 +452,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public String getTruncateSql(String tableName)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
