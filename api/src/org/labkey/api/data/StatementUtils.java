@@ -449,7 +449,7 @@ public class StatementUtils
             }
         }
 
-        ColumnInfo colModifiedBy = table.getColumn("Modified");
+        ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
 
         if (autoFillDefaultColumns && null != colModifiedBy && null != user)
         {
