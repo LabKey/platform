@@ -618,6 +618,14 @@ class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
+    public String getTruncateSql(String tableName)
+    {
+        // To be consistent with MS SQL server, always restart the sequence.  Note that the default for postgres
+        // is to continue the sequence but we don't have this option with MS SQL Server
+        return "TRUNCATE TABLE " + tableName + " RESTART IDENTITY";
+    }
+
+    @Override
     public String getDateDiff(int part, String value1, String value2)
     {
         int divideBy;

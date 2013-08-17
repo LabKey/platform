@@ -177,6 +177,20 @@ public class TransformManager implements DataIntegrationService
         try
         {
             ContainerUser context = descriptor.getJobContext(container, user);
+
+            // see if we have work to do before directly scheduling the pipeline job
+            Callable c = descriptor.getChecker(context);
+            try
+            {
+                boolean hasWork = Boolean.TRUE == c.call();
+                if (!hasWork)
+                    return null;
+            }
+            catch (Exception e)
+            {
+                throw new UnexpectedException(e);
+            }
+
             PipelineJob job = descriptor.getPipelineJob(context);
             if (null == job)
                 throw new PipelineJobException("Could not create job: " + descriptor.toString());

@@ -608,6 +608,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
+    public String getTruncateSql(String tableName)
+    {
+        return "TRUNCATE TABLE " + tableName;
+    }
+
+    @Override
     public String getDatePart(int part, String value)
     {
         String partName = getDatePartName(part);

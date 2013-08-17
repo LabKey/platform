@@ -29,10 +29,12 @@ import org.labkey.api.etl.QueryDataIteratorBuilder;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -247,13 +249,31 @@ public class SimpleQueryTransformStep extends TransformTask
                 return -1;
             }
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
+            {
                 return qus.mergeRows(u, c, source, context.getErrors(), null);
+            }
             else
+            if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
+            {
+                qus.truncateRows(u, c, null /*extra script context */);
                 return qus.importRows(u, c, source, context.getErrors(), null);
+            }
+            else
+            {
+                return qus.importRows(u, c, source, context.getErrors(), null);
+            }
+        }
+        catch (BatchValidationException batchx)
+        {
+            throw new RuntimeException(batchx);
         }
         catch (SQLException sqlx)
         {
             throw new RuntimeException(sqlx);
+        }
+        catch (QueryUpdateServiceException qusx)
+        {
+            throw new RuntimeException(qusx);
         }
     }
 
