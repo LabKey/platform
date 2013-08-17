@@ -39,7 +39,7 @@ public class SasDialectFactory extends SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return null;    // Only used to create a new database, which we never do on SAS
+        return "com.sas.net.sharenet.ShareNetDriver".equals(driverClassName) ? new Sas91Dialect() : null;
     }
 
     // SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so use the jdbcDriverVersion to determine dialect version

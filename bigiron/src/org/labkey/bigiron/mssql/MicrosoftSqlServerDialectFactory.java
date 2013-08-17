@@ -52,12 +52,14 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
-            return new MicrosoftSqlServer2008R2Dialect();
-        else if ("com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName))
-            return new MicrosoftSqlServer2008R2Dialect();
-        else
-            return null;
+        switch (driverClassName)
+        {
+            case "net.sourceforge.jtds.jdbc.Driver":
+            case "com.microsoft.sqlserver.jdbc.SQLServerDriver":
+                return new MicrosoftSqlServer2008R2Dialect();
+            default:
+                return null;
+        }
     }
 
     private final String _recommended = getProductName() + " 2012 is the recommended version.";

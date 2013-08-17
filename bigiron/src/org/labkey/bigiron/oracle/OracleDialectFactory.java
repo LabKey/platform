@@ -16,7 +16,6 @@
 
 package org.labkey.bigiron.oracle;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,8 +37,6 @@ import java.util.Set;
  */
 public class OracleDialectFactory extends SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(OracleDialectFactory.class);
-
     private String getProductName()
     {
         return "Oracle";
@@ -48,7 +45,7 @@ public class OracleDialectFactory extends SqlDialectFactory
     @Override
     public SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return null;   // Only used to create a new database, which we never do on Oracle
+        return "oracle.jdbc.driver.OracleDriver".equals(driverClassName) ? new Oracle11gR1Dialect() : null;
     }
 
     private final static String PRE_VERSION_CLAUSE = "Release ";

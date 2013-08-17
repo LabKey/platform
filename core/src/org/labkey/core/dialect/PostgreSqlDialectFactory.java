@@ -47,10 +47,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        if ("org.postgresql.Driver".equals(driverClassName))
-            return new PostgreSql84Dialect();
-        else
-            return null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql84Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";

@@ -43,7 +43,7 @@ public class MySqlDialectFactory extends SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return null;    // Only used to create a new database, which we never do on MySQL
+        return "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
     }
 
     @Override
