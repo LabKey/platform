@@ -14,18 +14,13 @@
  * limitations under the License.
  */
  
-/* core-0.00-10.30.sql */
-
-/* core-0.00-10.10.sql */
-
--- Create "core" schema, tables, etc.
-
 CREATE DOMAIN public.UNIQUEIDENTIFIER AS VARCHAR(36);
 CREATE DOMAIN public.ENTITYID AS VARCHAR(36);
 CREATE DOMAIN public.USERID AS INT;
 
 CREATE SCHEMA core;
 CREATE SCHEMA temp;
+CREATE SCHEMA portal;
 
 -- for JDBC Login support, validates email/password,
 -- UserId is stored in the Principals table
@@ -111,6 +106,7 @@ CREATE TABLE core.Containers
     Name VARCHAR(255),
     SortOrder INTEGER NOT NULL DEFAULT 0,
     CaBIGPublished BOOLEAN NOT NULL DEFAULT '0',
+    Searchable BOOLEAN NOT NULL DEFAULT TRUE,
 
     Description VARCHAR(4000),
     Workbook BOOLEAN NOT NULL DEFAULT false,
@@ -258,6 +254,20 @@ CREATE TABLE core.MvIndicators
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
 );
 
+CREATE TABLE portal.PortalWebParts
+(
+    RowId SERIAL NOT NULL,
+    Container ENTITYID NOT NULL,
+    PageId ENTITYID NOT NULL,
+    Index INT NOT NULL,
+    Name VARCHAR(64),
+    Location VARCHAR(16),    -- 'body', 'left', 'right'
+    Properties TEXT,    -- url encoded properties
+    Permanent BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId)
+);
+
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
 -- UpgradeCode interface for more details.
@@ -355,35 +365,6 @@ DECLARE
     END;
 $$ LANGUAGE plpgsql;
 
-/* core-10.10-10.20.sql */
-
--- Should this container's content be searched during multi-container searches?
-ALTER TABLE core.Containers
-    ADD Searchable BOOLEAN NOT NULL DEFAULT TRUE;
-
-CREATE SCHEMA portal;
-
-CREATE TABLE portal.PortalWebParts
-(
-    PageId ENTITYID NOT NULL,
-    Index INT NOT NULL,
-    Name VARCHAR(64),
-    Location VARCHAR(16),    -- 'body', 'left', 'right'
-    Properties TEXT,    -- url encoded properties
-    Permanent Boolean NOT NULL DEFAULT FALSE,
-
-    CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
-);
-
-/* portal-10.10-10.20.sql */
-
-ALTER TABLE portal.PortalWebParts
-    ADD COLUMN RowId SERIAL NOT NULL,
-    DROP CONSTRAINT PK_PortalWebParts,
-    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);
-
-/* core-10.20-10.30.sql */
-
 CREATE AGGREGATE core.array_accum (anyelement)
 (
     sfunc = array_append,
@@ -396,17 +377,3 @@ RETURNS anyarray AS $$
 SELECT ARRAY(SELECT $1[i] from generate_series(array_lower($1,1),
 array_upper($1,1)) g(i) ORDER BY 1)
 $$ LANGUAGE SQL STRICT IMMUTABLE;
-
-/* core-11.10-11.20.sql */
-
--- Delete "workbook" module and schema
-DELETE FROM core.Modules WHERE Name = 'Workbook';
-DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook';
-SELECT core.fn_dropifexists('*', 'workbook', 'SCHEMA', NULL);
-
-ALTER TABLE portal.PortalWebParts ADD COLUMN Container ENTITYID;
-
-UPDATE portal.PortalWebParts SET Container = PageId;
-
-ALTER TABLE portal.PortalWebParts
-   ALTER COLUMN Container SET NOT NULL;

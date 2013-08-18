@@ -18,6 +18,8 @@
 
 CREATE SCHEMA core;
 GO
+CREATE SCHEMA portal;
+GO
 
 EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER';
 EXEC sp_addtype 'USERID', 'INT';
@@ -105,6 +107,8 @@ CREATE TABLE core.Containers
     Name VARCHAR(255),
     SortOrder INTEGER NOT NULL DEFAULT 0,
     CaBIGPublished BIT NOT NULL DEFAULT 0,
+    Searchable BIT NOT NULL DEFAULT 1,     -- Should this container's content be searched during multi-container searches?
+
     Description NVARCHAR(4000),
     Workbook BIT NOT NULL DEFAULT 0,
     Title NVARCHAR(1000),
@@ -252,9 +256,19 @@ CREATE TABLE core.MvIndicators
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
 );
 
--- Should this container's content be searched during multi-container searches?
-ALTER TABLE core.Containers
-    ADD Searchable BIT NOT NULL DEFAULT 1;
+CREATE TABLE portal.PortalWebParts
+(
+    RowId INT IDENTITY(1, 1) NOT NULL,
+    Container ENTITYID NOT NULL,
+    PageId ENTITYID NOT NULL,
+    [Index] INT NOT NULL,
+    Name VARCHAR(64),
+    Location VARCHAR(16),    -- 'body', 'left', 'right'
+    Properties TEXT,    -- url encoded properties
+    Permanent BIT NOT NULL DEFAULT 0,
+
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId)
+);
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
@@ -403,45 +417,3 @@ ELSE
 RETURN @ret_code;
 
 GO
-
-CREATE SCHEMA portal;
-GO
-
-CREATE TABLE portal.PortalWebParts
-(
-    PageId ENTITYID NOT NULL,
-    [Index] INT NOT NULL,
-    Name VARCHAR(64),
-    Location VARCHAR(16),    -- 'body', 'left', 'right'
-    Properties TEXT,    -- url encoded properties
-    Permanent BIT NOT NULL DEFAULT 0,
-
-    CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, [Index])
-);
-
-/* portal-10.10-10.20.sql */
-
-ALTER TABLE Portal.PortalWebParts
-    ADD RowId INT IDENTITY(1, 1) NOT NULL;
-
-ALTER TABLE Portal.PortalWebParts
-    DROP CONSTRAINT PK_PortalWebParts;
-
-ALTER TABLE Portal.PortalWebParts
-    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);
-
-/* core-11.10-11.20.sql */
-
--- Delete "workbook" module
-DELETE FROM core.Modules WHERE Name = 'Workbook';
-DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook';
-EXEC core.fn_dropifexists '*', 'workbook', 'SCHEMA';
-
-ALTER TABLE Portal.PortalWebParts
-    ADD Container ENTITYID NULL;
-GO
-
-UPDATE Portal.PortalWebParts SET Container = PageId;
-
-ALTER TABLE Portal.PortalWebParts
-    ALTER COLUMN Container ENTITYID NOT NULL;
