@@ -860,7 +860,8 @@ public class SqlScriptController extends SpringActionController
                 }
             });
 
-            double[] fromVersions = new double[]{0.00, 9.30, 10.1, 10.2, 10.3, 11.1, 11.2, 11.3, 12.1};
+            // Update this array after each release and each bump of ModuleLoader.EARLIEST_UPGRADE_VERSION
+            double[] fromVersions = new double[]{0.00, 11.2, 11.3, 12.1, 12.2, 12.3, 13.1, 13.2};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)
