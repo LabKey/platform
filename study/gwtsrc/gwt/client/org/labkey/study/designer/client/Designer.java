@@ -243,7 +243,7 @@ public class Designer implements EntryPoint
         {
             if (!isReadOnly())
             {
-                buttonPanel.add(new ImageButton("Configure Lookup Values", new ClickListener()
+                buttonPanel.add(new ImageButton("Configure Dropdown Options", new ClickListener()
                 {
                     public void onClick(Widget sender)
                     {

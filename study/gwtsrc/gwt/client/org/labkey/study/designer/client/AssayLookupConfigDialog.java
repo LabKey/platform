@@ -33,14 +33,14 @@ public class AssayLookupConfigDialog extends DialogBox
     // NOTE: this is temparary UI until we convert to using Ext4 for the study designer
     public AssayLookupConfigDialog()
     {
-        this.setText("Configure Lookup Values");
+        this.setText("Configure Dropdown Options");
         VerticalPanel vp = new VerticalPanel();
 
         String containerPath = PropertyUtil.getContainerPath();
         String baseFolderURL = PropertyUtil.getContextPath() + "/query" + containerPath + "/executeQuery.view?schemaName=study&query.queryName=";
         String projectPath = containerPath.indexOf("/", 1) == -1 ? containerPath : containerPath.substring(0, containerPath.indexOf("/", 1));
         String baseProjectURL = PropertyUtil.getContextPath() + "/query" + projectPath + "/executeQuery.view?schemaName=study&query.queryName=";
-        String html = "Configure lookup values at the project level to be shared across<br/>study designs or within this folder for study specific properties.<br/><br/><table>";
+        String html = "Configure dropdown options at the project level to be shared across<br/>study designs or within this folder for study specific properties.<br/><br/><table>";
 
         String projectLink = baseProjectURL + "StudyDesignAssays";
         String folderLink = baseFolderURL + "StudyDesignAssays";
