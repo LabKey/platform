@@ -48,6 +48,8 @@ public interface ProteinService
     /** @return a web part with all of the annotations and identifiers we know for a given protein */
     public WebPartView getAnnotationsView(int seqId);
 
+    public String getProteinSequence(int seqId);
+
     public interface QueryViewProvider<FormType>
     {
         public String getDataRegionName();
