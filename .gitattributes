@@ -4297,7 +4297,6 @@ wiki/src/org/labkey/wiki/model/WikiWebPart.java -text
 wiki/src/org/labkey/wiki/permissions/IncludeScriptPermission.java -text
 wiki/src/org/labkey/wiki/query/WikiSchema.java -text
 wiki/src/org/labkey/wiki/renderer/HtmlRenderer.java -text
-wiki/src/org/labkey/wiki/renderer/PlainTextRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/WebPartSubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/supportWiki.txt -text
 wiki/src/org/labkey/wiki/view/customizeWiki.jsp -text

@@ -1015,7 +1015,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
             }
 
-            assert(job.isDone());
+            assert(job.isDone()) : "Job did not finish";
         }
 
 
