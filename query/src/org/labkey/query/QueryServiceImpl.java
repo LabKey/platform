@@ -1300,11 +1300,15 @@ public class QueryServiceImpl extends QueryService
                         }
                         catch (XmlException e)
                         {
-                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            _log.error("Skipping '" + name + "' schema template file: " + XmlBeansUtil.getErrorMessage(e));
                         }
                         catch (XmlValidationException e)
                         {
-                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("Skipping '" + name + "' schema template file:\n");
+                            for (XmlError err : e.getErrorList())
+                                sb.append("  ").append(XmlBeansUtil.getErrorMessage(err)).append("\n");
+                            _log.error(sb.toString());
                         }
                         catch (IOException e)
                         {

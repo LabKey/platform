@@ -155,12 +155,12 @@
             <%--helpPopup: <%=qh(bean.getHelpHTML("DataSource"))%>--%>
         }));
 
-        sourceContainerCombo.on('change', function (field, newValue, oldValue) {
-            var record = field.store.getById(newValue);
+        sourceContainerCombo.on('select', function (field, records) {
+            var record = records[0];
             if (record) {
                 sourceSchemaField.setDisabled(false);
                 metadataField.setDisabled(false);
-                schemaTemplateCombo.loadTemplateField(newValue);
+                schemaTemplateCombo.loadTemplateField(field.getValue());
             } else {
                 sourceSchemaField.setDisabled(true);
                 metadataField.setDisabled(true);
