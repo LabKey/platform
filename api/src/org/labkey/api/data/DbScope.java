@@ -785,7 +785,7 @@ public class DbScope
     }
 
 
-    // Invalidates "Bare" schema with this name and all associated tables
+    // Invalidates schema of this name/type and all its associated tables
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
         _schemaCache.remove(schemaName, type);
@@ -793,7 +793,7 @@ public class DbScope
     }
 
 
-    // Invalidates all tables in this schema
+    // Invalidates all tables in the table cache. Careful: callers probably need to invalidate the schema as well (it holds a list of table names)
     void invalidateAllTables(String schemaName, DbSchemaType type)
     {
         _tableCache.removeAllTables(schemaName, type);
@@ -803,6 +803,12 @@ public class DbScope
     public void invalidateTable(DbSchema schema, @NotNull String table)
     {
         _tableCache.remove(schema, table);
+
+        // DbSchema holds a hard-coded list of table names; we also need to invalidate the DbSchema to update this list.
+        // Note that all other TableInfos remain cached; this is simply invalidating the schema info and reloading the
+        // meta data XML. If this is too heavyweight, we could instead cache and invalidate the list of table names separate
+        // from the DbSchema.
+        _schemaCache.remove(schema.getName(), schema.getType());
     }
 
 
