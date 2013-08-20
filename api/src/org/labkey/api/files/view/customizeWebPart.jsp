@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.CustomizeFilesWebPartView" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>

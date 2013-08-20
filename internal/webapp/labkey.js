@@ -106,7 +106,7 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
 
         if (inOrder)
         {
-            function chain()
+            var chain = function()
             {
                 loaded++;
                 if (loaded == requestedLength && typeof callback == 'function')
@@ -115,25 +115,23 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
                 }
                 else if (loaded < requestedLength)
                     LABKEY.requiresScript(file[loaded], immediate, chain, true);
-            }
+            };
             LABKEY.requiresScript(file[loaded], immediate, chain, true);
         }
         else
         {
-            function allDone()
+            var allDone = function()
             {
                 loaded++;
                 if (loaded == requestedLength && typeof callback == 'function')
                     callback.call(scope);
-            }
+            };
 
             for (var i = 0; i < file.length; i++)
                 LABKEY.requiresScript(file[i], immediate, allDone);
         }
         return;
     }
-
-//    console.log("requiresScript( " + file + " , " + immediate + " )");
 
     if (file.indexOf('/') == 0)
     {
@@ -158,7 +156,6 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
     else
     {
         this._loadedScriptFiles[file] = true;
-//        console.log("<script href=" + file + ">");
 
         //although FireFox and Safari allow scripts to use the DOM
         //during parse time, IE does not. So if the document is
