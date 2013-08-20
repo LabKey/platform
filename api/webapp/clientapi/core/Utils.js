@@ -789,7 +789,7 @@ LABKEY.Utils.convertToTable(
         LABKEY.Query.selectRows({
             schemaName: 'core',
             queryName: 'users',
-            success: function(){}
+            success: function(){},
             failure: LABKEY.Utils.onError
         });
 
@@ -797,7 +797,7 @@ LABKEY.Utils.convertToTable(
         LABKEY.Query.selectRows({
             schemaName: 'core',
             queryName: 'users',
-            success: function(){}
+            success: function(){},
             failure: function(error){
                  error.containerPath = 'myContainer';
                  error.noAuditLog = true;
@@ -940,7 +940,7 @@ LABKEY.Utils.convertToTable(
             //
             LABKEY.Utils.onReady({
                 scope: this,
-                scripts: ['/myModule/myScript.js', 'AnotherScript.js]
+                scripts: ['/myModule/myScript.js', 'AnotherScript.js],
                 callback: function(){
                     //your code here.  will be executed once scripts have loaded
                 });
