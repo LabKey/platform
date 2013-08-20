@@ -121,6 +121,11 @@ legend
 	margin-top: 8px;
 }
 
+table#header
+{
+    width: 100%;
+}
+
 /* Quick options (admin, help, my account, signout) table */
 #headerDiv
 {

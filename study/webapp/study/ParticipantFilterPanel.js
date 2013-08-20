@@ -59,10 +59,11 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     },
 
     //the purpose of this method is to support config to filter on either participants or groups only, or provide a toggle between them
-    getItems: function(){
-        if(this.displayMode == 'BOTH'){
+    getItems: function() {
+        var items;
+        if (this.displayMode == 'BOTH') {
             this.filterType = this.filterType || 'group';
-            return [{
+            items = [{
                 xtype: 'radiogroup',
                 itemId: 'filterType',
                 columns: 1,
@@ -99,31 +100,24 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 items: [this.getParticipantPanelCfg(), this.getGroupPanelCfg()]
             }];
         }
-        else if (this.displayMode == 'PARTICIPANT'){
+        else if (this.displayMode == 'PARTICIPANT') {
             this.filterType = 'participant';
-            return [this.getParticipantPanelCfg()];
+            items = [this.getParticipantPanelCfg()];
         }
         //for legacy reasons, default to group only
         else {
             this.filterType = 'group';
-            return [this.getGroupPanelCfg()];
+            items = [this.getGroupPanelCfg()];
         }
+        return items;
     },
 
-    onFilterTypeChange: function(radioGroup, val, oldVal, event){
+    onFilterTypeChange : function(radioGroup, val, oldVal, event) {
         var filterArea = this.down('#filterArea');
-        var activeItem;
+        var activeItem = (val.filterType == 'participant' ? 0 : 1);
         this.filterType = val.filterType;
 
-        if(val.filterType == 'participant'){
-            activeItem = 0;
-        }
-        else {
-            activeItem = 1;
-        }
-
-        if(oldVal && oldVal.filterType != val.filterType)
-        {
+        if (oldVal && oldVal.filterType != val.filterType) {
             var selections = this.getSelection(true, false);
             filterArea.getLayout().setActiveItem(activeItem);
 
@@ -205,7 +199,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         this.participantSelectionChanged = dirty;
     },
 
-    getGroupPanelCfg: function(){
+    getGroupPanelCfg : function() {
 
         var groupPanel = Ext4.create('Ext.panel.Panel', {
             layout      : 'fit',
@@ -216,7 +210,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         // need to get the categories for the panel sections
         Ext4.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-            success : function(response){
+            success : function(response) {
 
                 var o = Ext4.decode(response.responseText);
                 var groups = o.groups || [];
@@ -253,6 +247,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     groupers: [{
                         property: 'categoryName',
                         sorterFn: function(o1, o2) {
+
                             // within a category, sort alphabetically by label (expect put the "Not in any group" at the end)
                             if (o1.get("categoryName") == o2.get("categoryName"))
                             {
@@ -260,12 +255,11 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                                     return 1;
                                 else if (o2.get("id") == -1) // -1 = "Not in any group"
                                     return -1;
-                                else
-                                    return o1.get("label") > o2.get("label") ? 1 : -1;
+                                return o1.get("label") > o2.get("label") ? 1 : -1;
                             }
+
                             // sort the categories, by category ID (effectively equal to the order they were created in)
-                            else
-                                return o1.get("categoryId") > o2.get("categoryId") ? 1 : -1;
+                            return o1.get("categoryId") > o2.get("categoryId") ? 1 : -1;
                         }
                     }]
                 };
@@ -372,20 +366,17 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 displayField: this.subjectNoun.columnName,
                 displayFieldSqlType: 'string',
                 facetingBehaviorType: 'AUTOMATIC',
-                lookup: {
-
-                },
+                lookup: {},
                 dimension: true
             },
             listeners : {
-                selectionchange : function(){
-                    this.setParticipantSelectionDirty(true);},
+                selectionchange : function() { this.setParticipantSelectionDirty(true); },
                 scope : this
             }
         }
     },
 
-    initSelection: function(){
+    initSelection: function() {
         var panel = this.getFilterPanel();
         if(!panel){
             this.initSelection.defer(20, this);
@@ -394,13 +385,13 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         panel.initSelection();
     },
 
-    getSelection: function(collapsed, skipIfAllSelected){
+    getSelection: function(collapsed, skipIfAllSelected) {
         var panel = this.getFilterPanel();
 
         return panel ? panel.getSelection(collapsed, skipIfAllSelected) : [];
     },
 
-    getInitialSelection: function(type){
+    getInitialSelection: function(type) {
         if(this.selection){
             var selections = [];
             Ext4.each(this.selection, function(rec){

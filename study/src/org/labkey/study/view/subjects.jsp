@@ -63,7 +63,6 @@
 
     String singularNoun  = StudyService.get().getSubjectNounSingular(container);
     String pluralNoun    = StudyService.get().getSubjectNounPlural(container);
-    String colName       = StudyService.get().getSubjectColumnName(container);
 
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
     String urlTemplate   = subjectUrl.getEncodedLocalURIString();
@@ -120,10 +119,6 @@ li.ptid a.unhighlight
     color: black;
 }
 
-.rpf div.x4-panel-body-default:hover {
-    overflow-y: auto;
-}
-
 .themed-panel .x4-grid-row-over div:hover {
     cursor: pointer;
 }
@@ -142,7 +137,6 @@ li.ptid a.unhighlight
     var first = true;
 
     var _urlTemplate = '<%= urlTemplate %>';
-    var _subjectColName = '<%= colName %>';
     var _singularNoun = '<%= singularNoun %>';
     var _pluralNoun = '<%= pluralNoun %>';
     var _divId = '<%= divId %>';
@@ -152,9 +146,6 @@ li.ptid a.unhighlight
     var _filterSubstringMap;
     var _filterGroupMap;
 
-
-
-    var _initialRenderComplete = false;
     var _isWide = <%= bean.getWide()%>;
     var _ptids = [<%
         final String[] commas = new String[]{"\n"};
@@ -416,7 +407,6 @@ li.ptid a.unhighlight
             title     : 'Show',
             border    : true,
             width     : 260,
-            height    : 350,
             overCls   : 'iScroll',
             layout    : 'fit',
             bodyStyle : 'padding: 8px',

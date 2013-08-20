@@ -181,6 +181,8 @@ Ext4.define('File.panel.Upload', {
             return this.singleUpload;
         }
 
+        var uploadId = Ext4.id();
+
         this.fileField = Ext4.create('Ext.form.field.File', {
             name  : 'file',
             fieldLabel : 'Choose a File',
@@ -191,25 +193,11 @@ Ext4.define('File.panel.Upload', {
                 change: function() {
                     descriptionField.setDisabled(false);
                     descriptionField.focus();
-                    uploadBtn.setDisabled(false);
+                    Ext4.getCmp(uploadId).setDisabled(false);
                 },
                 scope : this
             }
         });
-
-        var uploadBtn = Ext4.create('Ext.button.Button', {
-            text: 'Upload',
-            margins: '3 0 0 3',
-            disabled: true,
-            handler: this.submitFileUploadForm,
-            scope : this
-        });
-
-        var uploadContainer = {
-            xtype: 'container',
-            layout: 'hbox',
-            items: [this.fileField, uploadBtn]
-        };
 
         var descriptionField = Ext4.create('Ext.form.field.Text', {
             name  : 'description',
@@ -222,8 +210,23 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.singleUpload = Ext4.create('Ext.form.Panel', {
-            border : false, frame : false,
-            items  : [uploadContainer, descriptionField]
+            border : false,
+            frame : false,
+            items  : [{
+                xtype: 'container',
+                width: 800,
+                layout: 'hbox',
+                items: [this.fileField, {
+                    xtype: 'button',
+                    id: uploadId,
+                    text: 'Upload',
+                    cls: 'dendi',
+
+                    disabled: true,
+                    handler: this.submitFileUploadForm,
+                    scope : this
+                }]
+            }, descriptionField]
         });
 
         return this.singleUpload;

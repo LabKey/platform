@@ -149,6 +149,20 @@ div.thumbnail svg
     display: block;
 }
 
+/* Part of Browser.js -- migrate if necessary */
+table.fb-details {
+    margin: 5px 40px;
+}
+
+table.fb-details th {
+    text-align: right;
+    color: #404040;
+}
+
+table.fb-details td {
+    padding-left: 5px;
+}
+
 /* Report Filter Panel */
 .normalwrap-gridcell {
     white-space: normal !important;
@@ -159,6 +173,11 @@ div.thumbnail svg
 .rpf .x4-grid-body,
 .rpf .x4-column-header {
     border-color: transparent;
+}
+
+.rpf .x4-grid-body .x4-grid-table-focused-first
+{
+    border: none !important;
 }
 
 .rpf .x4-grid-row.x4-grid-row-over,
@@ -186,51 +205,43 @@ div.thumbnail svg
 .rpf .x4-grid-header-row th
 {
     border-color: transparent;
+}
+
+/* Grid */
+.rpf .x4-grid-group-hd
+{
     padding: 0;
 }
 
-.rpf .x4-column-header-inner {
-    padding-top: 3px !important;
+.rpf table
+{
+    margin: 0; padding: 0;
 }
 
-.rpf .x4-grid-row .x4-grid-cell-row-checker {
-    vertical-align: top;
+.rpf .x4-grid-row-checker, .x4-column-header-checkbox .x4-column-header-text
+{
+    float: right;
 }
 
-.rpf .x4-grid-group-hd .x4-grid-cell-inner,
-.rpf .filter-description {
+/* Group Headers */
+.rpf .x4-grid-group-hd-collapsible .x4-grid-group-title
+{
+    background: none;
+    padding: 0;
+}
+
+.rpf .category-label
+{
     font-size: 11px;
-    border-bottom: 0px !important;
 }
 
-.rpf .x4-grid-group-title {
-    background-image: none !important;
-    padding: 0px !important;
+.rpf input.category-header
+{
+    padding: 6px;
 }
 
-.rpf .category-label {
-    font-size: 11px;
-    font-weight: bold;
-}
-
-.rpf .category-label-padding {
-    padding-left: 6px;
-}
-
-.rpf .category-checked {
+/* Added/Removed for checkbox on group headers */
+.rpf .category-checked
+{
     background-position: 0 -13px;
-}
-
-/* Part of Browser.js -- migrate if necessary */
-table.fb-details {
-    margin: 5px 40px;
-}
-
-table.fb-details th {
-    text-align: right;
-    color: #404040;
-}
-
-table.fb-details td {
-    padding-left: 5px;
 }

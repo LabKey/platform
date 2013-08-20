@@ -67,7 +67,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             selection: this.selection,
             listeners : {
                 selectionchange : function(){
-                    this.fireChangeTask.delay(1000); 
+                    this.fireChangeTask.delay(1000);
                 },
                 beforerender : function(){
                     this.fireEvent('measureMetadataRequestPending');
@@ -77,7 +77,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
                     if (!this.subject.values && numSelected == this.maxInitSelection)
                     {
                         this.hideDefaultDisplayField = new Ext4.util.DelayedTask(function(){
-                            this.defaultDisplayField.hide();                            
+                            this.defaultDisplayField.hide();
                         }, this);
 
                         // show the display for 5 seconds before hiding it again
@@ -93,13 +93,16 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
         this.add(this.ptidFilterPanel);
     },
 
-    getSubject: function(){
+    getSubject: function() {
         var participants = [];
-        var selected = this.ptidFilterPanel.getSelection(true, false);
-        for (var i = 0; i < selected.length; i++)
-        {
-            if (selected[i].get('type') == 'participant')
-                participants.push(selected[i].get('id'));
+
+        if (this.ptidFilterPanel) {
+            var selected = this.ptidFilterPanel.getSelection(true, false);
+            for (var i = 0; i < selected.length; i++)
+            {
+                if (selected[i].get('type') == 'participant')
+                    participants.push(selected[i].get('id'));
+            }
         }
 
         return {values: participants};
