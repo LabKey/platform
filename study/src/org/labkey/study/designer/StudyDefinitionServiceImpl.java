@@ -16,6 +16,7 @@
 
 package org.labkey.study.designer;
 
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -38,12 +39,15 @@ import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
 import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.StudyDesignDocument;
 
+import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -73,6 +77,8 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
         try
         {
+            syncStudyCohorts(def);
+
             StudyDesignDocument design = XMLSerializer.toXML(def);
             StudyDesignVersion version = new StudyDesignVersion();
             version.setXML(design.toString());
@@ -262,5 +268,69 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
 
         return  studyDefinition;
+    }
+
+    public GWTStudyDefinition createCohorts(GWTStudyDefinition studyDefinition)
+    {
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+            throw new UnauthorizedException("Only admins can create timepoints.");
+
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+        if (study == null || studyDefinition.getGroups().size() == 0)
+            return studyDefinition;
+
+        try
+        {
+            // create any cohorts that don't exist or get the cohort RowId if one does exist in the study
+            for (GWTCohort defGroup : studyDefinition.getGroups())
+            {
+                CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, getUser(), defGroup.getName(), true);
+                defGroup.setCohortId(cohort.getRowId());
+            }
+        }
+        catch(SQLException|ServletException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        return studyDefinition;
+    }
+
+    private void syncStudyCohorts(GWTStudyDefinition studyDefinition) throws SQLException
+    {
+        // first we create study cohorts for any "new" groups/cohorts
+        createCohorts(studyDefinition);
+
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+        if (study != null && studyDefinition.getGroupsToDelete() != null && !studyDefinition.getGroupsToDelete().isEmpty())
+        {
+            // then we reconcile the list of groups to delete with the full list of study designer groups
+            for (GWTCohort defGroup : studyDefinition.getGroups())
+            {
+                if (defGroup.getCohortId() != null && studyDefinition.getGroupsToDelete().contains(defGroup.getCohortId()))
+                    studyDefinition.getGroupsToDelete().remove(defGroup.getCohortId());
+            }
+
+            // finally we delete any groups that were removed from the study design and have a corresponding cohort Id
+            for (Integer cohortId : studyDefinition.getGroupsToDelete())
+            {
+                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohortId);
+                // don't delete any in-use cohorts from the study
+                if (cohort != null && !cohort.isInUse())
+                    StudyManager.getInstance().deleteCohort(cohort);
+            }
+
+            studyDefinition.clearGroupsToDelete();
+        }
+    }
+
+    public Boolean hasNewCohorts(GWTStudyDefinition studyDefinition)
+    {
+        for (GWTCohort defGroup : studyDefinition.getGroups())
+        {
+            if (StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), defGroup.getName()) == null)
+                return true;
+        }
+        return false;
     }
 }

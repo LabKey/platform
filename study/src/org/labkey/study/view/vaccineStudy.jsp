@@ -56,8 +56,9 @@
     params.put("canCreateRepository", Boolean.FALSE.toString());
 
     StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-    params.put("canAdmin", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study));
-    params.put("canCreateTimepoints", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study && (study.getVisits(Visit.Order.CHRONOLOGICAL).size() < 1)));
+    boolean canAdmin = getViewContext().hasPermission(AdminPermission.class) && null != study;
+    params.put("canAdmin", Boolean.toString(canAdmin));
+    params.put("canCreateTimepoints", Boolean.toString(canAdmin && (study.getVisits(Visit.Order.CHRONOLOGICAL).size() < 1)));
 
     params.put("panel", bean.getPanel());  //bean.getPanel());
     if (null != bean.getFinishURL())

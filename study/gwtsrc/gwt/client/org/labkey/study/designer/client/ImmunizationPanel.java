@@ -63,7 +63,7 @@ public class ImmunizationPanel extends Composite
         else
         {
             String html = "Enter the immunization schedule below." +
-                    "<ul><li>Enter each cohort name on a line" +
+                    "<ul><li>Enter each group/cohort on a line by clicking the 'Add New' link" +
                     "<li>Enter the number of subjects in the cohort in the count column" +
                     "<li>Use the 'Add Timepoint' link to add new timepoints" +
                     "<li>Click on the cells underneath a timepoint to define adjuvants and immunogens used at that timepoint" +
@@ -87,8 +87,6 @@ public class ImmunizationPanel extends Composite
 
     private class ImmunizationGrid extends ScheduleGrid
     {
-        GWTCohort ghostCohort = new GWTCohort();
-
         protected ImmunizationGrid(Designer designer)
         {
             super(immunizationSchedule, "Immunization Schedule", designer);
@@ -109,7 +107,7 @@ public class ImmunizationPanel extends Composite
         Widget getCategoryHeader(int col)
         {
             if (col == 0)
-                return new Label("Group");
+                return new Label("Group / Cohort");
             else
                 return new Label("Count");
         }
@@ -146,7 +144,10 @@ public class ImmunizationPanel extends Composite
 
         Widget getGhostCategoryWidget(int col)
         {
-            return getCategoryWidget(ghostCohort, col);
+            if (col == 0)
+                return new GroupWidget();
+            else
+                return null;
         }
 
         private Widget getCategoryWidget(final GWTCohort group, int col)
@@ -157,6 +158,13 @@ public class ImmunizationPanel extends Composite
                 tb.setText(StringUtils.trimToEmpty(group.getName()));
                 tb.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender) {
+                        // in the event of a group rename, add the old cohortId to the list of groups to be deleted (if they exist)
+                        if (group.getCohortId() != null)
+                        {
+                            studyDef.addGroupToDelete(group.getCohortId());
+                            group.setCohortId(null);
+                        }
+
                         group.setName(tb.getText());
                         designer.setDirty(true);
                     }
@@ -190,15 +198,18 @@ public class ImmunizationPanel extends Composite
 
         void makeGhostCategoryReal()
         {
-            studyDef.getGroups().add(ghostCohort);
-            ghostCohort = new GWTCohort();
+            // noop
         }
 
 
-        void deleteCategory(int index)
+        void deleteCategory(final int index)
         {
+            GWTCohort cohort = studyDef.getGroups().get(index);
+            if (cohort.getCohortId() != null)
+                studyDef.addGroupToDelete(cohort.getCohortId());
+
             studyDef.getGroups().remove(index);
-            designer.setDirty(true);            
+            designer.setDirty(true);
         }
 
         Widget getEventWidget(int categoryIndex, GWTTimepoint tp)

@@ -42,6 +42,7 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     private GWTImmunizationSchedule immunizationSchedule = new GWTImmunizationSchedule();
     private GWTAssaySchedule assaySchedule = new GWTAssaySchedule();
     private List<GWTCohort> groups = new ArrayList<GWTCohort>();
+    private List<Integer> groupsToDelete = new ArrayList<Integer>();
     private List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
     private List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
 
@@ -53,6 +54,7 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     private List<String> genes = new ArrayList<String>();
     private List<String> routes = new ArrayList<String>();
     private List<String> subTypes = new ArrayList<String>();
+    private List<String> cohorts = new ArrayList<String>();
 
     private String description;
 
@@ -111,8 +113,8 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         sampleTypes.add("Nasal Mucosal");
         study.setSampleTypes(sampleTypes);
 
-        study.getGroups().add(new GWTCohort("Vaccine", "First Group", 30));
-        study.getGroups().add(new GWTCohort("Placebo", "Second Group", 30));
+        study.getGroups().add(new GWTCohort("Vaccine", "First Group", 30, null));
+        study.getGroups().add(new GWTCohort("Placebo", "Second Group", 30, null));
 
         study.getAdjuvants().add(new GWTAdjuvant("Adjuvant1", null, null));
         study.getAdjuvants().add(new GWTAdjuvant("Adjuvant2", null, null));
@@ -372,5 +374,30 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     public void setUnits(List<String> units)
     {
         this.units = units;
+    }
+
+    public List<Integer> getGroupsToDelete()
+    {
+        return groupsToDelete;
+    }
+
+    public void clearGroupsToDelete()
+    {
+        this.groupsToDelete = new ArrayList<Integer>();
+    }
+
+    public void addGroupToDelete(Integer groupId)
+    {
+        this.groupsToDelete.add(groupId);
+    }
+
+    public List<String> getCohorts()
+    {
+        return cohorts;
+    }
+
+    public void setCohorts(List<String> cohorts)
+    {
+        this.cohorts = cohorts;
     }
 }

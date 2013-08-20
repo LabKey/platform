@@ -24,6 +24,8 @@ import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.*;
 
 import java.util.ArrayList;
@@ -71,6 +73,9 @@ public class XMLSerializer
         def.setAssays(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignAssays()));
         def.setLabs(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignLabs()));
 
+        // Set the cohort choices based on the current study configuration
+        def.setCohorts(StudyDesignManager.get().getStudyCohorts(user, c));
+
         // set the study top level properties based on the saved info
         def.setStudyName(xdesign.getName());
         def.setGrant(xdesign.getGrantName());
@@ -98,7 +103,10 @@ public class XMLSerializer
 
         //TODO: XML for cohort descriptions
         for (Cohort cohort : xdesign.getCohorts().getCohortArray())
-            def.getGroups().add(new GWTCohort(cohort.getName(), null, cohort.getCount()));
+        {
+            CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(c, user, cohort.getName());
+            def.getGroups().add(new GWTCohort(cohort.getName(), null, cohort.getCount(), existingCohort != null ? existingCohort.getRowId() : null));
+        }
 
         GWTAssaySchedule gAssaySchedule = new GWTAssaySchedule();
         AssaySchedule xAssaySchedule = xdesign.getAssaySchedule();

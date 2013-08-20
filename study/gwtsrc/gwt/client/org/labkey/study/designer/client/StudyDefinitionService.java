@@ -34,4 +34,6 @@ public interface StudyDefinitionService extends RemoteService
     public GWTStudyDefinition getTemplate();
     public GWTStudyDefinition ensureDatasetPlaceholders(GWTStudyDefinition def);
     public GWTStudyDefinition createTimepoints(GWTStudyDefinition def);
+    public GWTStudyDefinition createCohorts(GWTStudyDefinition def);
+    public Boolean hasNewCohorts(GWTStudyDefinition def);
 }

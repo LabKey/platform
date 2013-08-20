@@ -17,6 +17,7 @@
 package gwt.client.org.labkey.study.designer.client;
 
 import gwt.client.org.labkey.study.designer.client.EditableGrid;
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import gwt.client.org.labkey.study.designer.client.model.Schedule;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -68,6 +69,10 @@ public abstract class ScheduleGrid extends EditableGrid
             for (int row = getHeaderRows(); row < getRowCount(); row++)
                 for (int col = 1 + getCategoryColumnCount(); col < getCellCount(getHeaderRows()); col++)
                     getFlexCellFormatter().setStyleName(row, col, "labkey-row-active");
+
+            // and the "add new" cell for the immunization schedule
+            getFlexCellFormatter().setStyleName(getRowCount() - 1, 1, "labkey-col-header-active");
+            getFlexCellFormatter().setStyleName(getRowCount() - 1, 2, "labkey-col-header-active");
         }
     }
 
@@ -339,6 +344,125 @@ public abstract class ScheduleGrid extends EditableGrid
 
     }
 
+    class GroupWidget extends Label
+    {
+        GWTCohort cohort;
+
+        GroupWidget()
+        {
+            cohort = new GWTCohort();
+            setText("Add New");
+            setTitle("Click to add a new group / cohort.");
+            setWidth("100%");
+
+            addClickListener(new ClickListener() {
+                public void onClick(Widget sender)
+                {
+                    if (designer.isReadOnly())
+                        return;
+
+                    DefineGroupDialog dialog = new DefineGroupDialog();
+                    dialog.setPopupPosition(getAbsoluteLeft(), getAbsoluteTop() + getOffsetHeight());
+                    dialog.show();
+                }
+            });
+        }
+
+        void update()
+        {
+            designer.setDirty(true);
+            designer.getDefinition().getGroups().add(cohort);
+            updateAll();
+        }
+
+        public class DefineGroupDialog extends DialogBox
+        {
+            private RadioButton existRadio = new RadioButton("cohortType", "Select and existing group/cohort");
+            private ListBox existList = new ListBox();
+            private RadioButton newRadio = new RadioButton("cohortType", "Create a new group/cohort");
+            private TextBox newNameTextBox = new TextBox();
+
+
+            public DefineGroupDialog()
+            {
+                setText("Define Group / Cohort");
+                DOM.setAttribute(getElement(), "id", "DefineGroupDialog");
+
+                newRadio.setChecked(true);
+                newNameTextBox.setName("newName");
+                existList.setName("existName");
+                for (String existCohortName : designer.getDefinition().getCohorts())
+                {
+                    existList.addItem(existCohortName);
+                }
+                existRadio.setEnabled(existList.getItemCount() > 0);
+                existList.setEnabled(existList.getItemCount() > 0);
+
+                Grid formGrid = new Grid();
+                formGrid.resize(3, 2);
+                formGrid.setWidget(0, 0, newRadio);
+                formGrid.setWidget(0, 1, newNameTextBox);
+                formGrid.setWidget(1, 0, existRadio);
+                formGrid.setWidget(1, 1, existList);
+
+                HorizontalPanel hp = new HorizontalPanel();
+                hp.setSpacing(3);
+                hp.add(new Button("Cancel", new ClickListener() {
+                    public void onClick(Widget sender)
+                    {
+                        hide();
+                    }
+                }));
+                hp.add(new Button("OK", new ClickListener(){
+
+                    public void onClick(Widget sender)
+                    {
+                        doOk();
+                    }
+                }
+                ));
+
+                VerticalPanel vp = new VerticalPanel();
+                vp.add(formGrid);
+                vp.add(hp);
+                setWidget(vp);
+            }
+
+            private void doOk()
+            {
+                String selectedCohortName = null;
+                if (newRadio.isChecked())
+                {
+                    selectedCohortName = StringUtils.trimToNull(newNameTextBox.getText());
+                }
+                else if (existRadio.isChecked())
+                {
+                    selectedCohortName = existList.getItemText(existList.getSelectedIndex());
+                }
+
+                if (selectedCohortName == null || selectedCohortName.length() == 0)
+                {
+                    Window.alert("Please specify a group/cohort name.");
+                    return;
+                }
+
+                for (GWTCohort existingGroup : designer.getDefinition().getGroups())
+                {
+                    if (existingGroup.getName().equalsIgnoreCase(selectedCohortName))
+                    {
+                        Window.alert("A group/cohort already exists with the following name: " + selectedCohortName);
+                        return;
+                    }
+                }
+
+                cohort.setName(selectedCohortName);
+
+                hide();
+                update();
+            }
+        }
+
+    }
 
     void deleteRow(int dataRow)
     {

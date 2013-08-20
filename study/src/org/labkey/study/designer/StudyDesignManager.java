@@ -56,6 +56,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -635,5 +636,22 @@ public class StudyDesignManager
         }
         else
             return Collections.emptyList();
+    }
+
+    public List<String> getStudyCohorts(User user, Container c)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
+        if (study != null)
+        {
+            List<String> cohortNames = new ArrayList<>();
+            for (CohortImpl cohort : study.getCohorts(user))
+                cohortNames.add(cohort.getLabel());
+
+            return cohortNames;
+        }
+        else
+        {
+            return Collections.emptyList();
+        }
     }
 }

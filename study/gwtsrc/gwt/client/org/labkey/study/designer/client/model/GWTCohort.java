@@ -20,6 +20,7 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class GWTCohort implements IsSerializable
 {
+    private Integer cohortId;
     private String name;
     private String description;
     private int count;
@@ -28,26 +29,13 @@ public class GWTCohort implements IsSerializable
     {
     }
 
-    public GWTCohort(String name, String description, int count)
+    public GWTCohort(String name, String description, int count, Integer cohortId)
     {
+        this.cohortId = cohortId;
         this.name = name;
         this.description = description;
         this.count = count;
     }
-
-//    public Element toElement(Document doc)
-//    {
-//        Element el = createTag(doc, "name", name, "count", new Integer(count));
-//        XMLUtils.addTextTag(el, "description", description);
-//        return el;
-//    }
-//
-//    public GWTCohort(Element el)
-//    {
-//        name = el.getAttribute("name");
-//        count = Integer.parseInt(el.getAttribute("count"));
-//        description = XMLUtils.getTextTag(el, "description");
-//    }
 
     public String getName()
     {
@@ -77,5 +65,15 @@ public class GWTCohort implements IsSerializable
     public void setCount(int count)
     {
         this.count = count;
+    }
+
+    public Integer getCohortId()
+    {
+        return cohortId;
+    }
+
+    public void setCohortId(Integer cohortId)
+    {
+        this.cohortId = cohortId;
     }
 }

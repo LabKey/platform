@@ -298,6 +298,44 @@ public class Designer implements EntryPoint
             });
             buttonPanel.add(createTimepointButton);
         }
+        else if (null != panelName && "immunizations".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
+        {
+            final ImageButton createCohortButton = new ImageButton("Create Study Cohorts");
+            createCohortButton.setTitle("Create study cohorts for the specified groups.");
+
+            // visible if the user has Admin permissions and if the study definition has a group/cohort that
+            // does not exist in the study folder
+            createCohortButton.setVisible("true".equals(PropertyUtil.getServerProperty("canAdmin")));
+            getService().hasNewCohorts(definition, new ErrorDialogAsyncCallback<Boolean>()
+            {
+                public void onSuccess(Boolean hasNewCohort)
+                {
+                    createCohortButton.setVisible(hasNewCohort);
+                }
+            });
+
+            createCohortButton.addClickHandler(new ClickHandler()
+            {
+                public void onClick(ClickEvent event)
+                {
+                    if (definition.getGroups().size() == 0)
+                    {
+                        Window.alert("No groups are defined in the immunization schedule.");
+                        return;
+                    }
+
+                    getService().createCohorts(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
+                    {
+                        public void onSuccess(GWTStudyDefinition def)
+                        {
+                            Window.alert("New cohorts created.");
+                            createCohortButton.setVisible(false);
+                        }
+                    });
+                }
+            });
+            buttonPanel.add(createCohortButton);
+        }
 
         StudyApplication.getRootPanel().clear();
         StudyApplication.getRootPanel().add(mainPanel);

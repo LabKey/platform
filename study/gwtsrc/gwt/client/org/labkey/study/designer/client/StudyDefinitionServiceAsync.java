@@ -42,4 +42,8 @@ public interface StudyDefinitionServiceAsync
 
     void createTimepoints(GWTStudyDefinition def, AsyncCallback<GWTStudyDefinition> callback);
 
+    void createCohorts(GWTStudyDefinition def, AsyncCallback<GWTStudyDefinition> callback);
+
+    void hasNewCohorts(GWTStudyDefinition def, AsyncCallback<Boolean> callback);
+
 }
