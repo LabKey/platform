@@ -50,7 +50,7 @@
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">New folders should inherit permissions by default</td>
-    <td><input type="checkbox" name="shouldInherit" size="50" <%= SecurityManager.shouldNewSubfoldersInheritPermissions(c) ? "checked" : "" %>></td>
+    <td><input type="checkbox" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
 
 <tr>
@@ -120,14 +120,14 @@
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
-        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ALWAYS.toString()%>" <%=currentMode == FolderDisplayMode.ALWAYS ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
-        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ALWAYS.toString()%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
 
 <tr>
     <td class="labkey-form-label">Show LabKey Help menu item</td>
-    <td><input type="checkbox" name="enableHelpMenu" size="50"<%=laf.isHelpMenuEnabled() ? " checked" : "" %>></td>
+    <td><input type="checkbox" name="enableHelpMenu" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
 </tr>
 
 <tr>

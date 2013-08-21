@@ -72,7 +72,7 @@
             <td>
                 <textarea rows="30" cols="150" name="customScript" id="customScript" onChange="LABKEY.setDirty(true); return true;"
                         style="width:100%"
-                        <%= useCustomView ? "" : "DISABLED"%>><%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%></textarea><br>
+                        <%=disabled(!useCustomView)%>><%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%></textarea><br>
             </td>
         </tr>
         <tr>

@@ -118,7 +118,7 @@
             <td colspan="10">
                 <table>
                     <tr>
-                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="<%= h(SetupForm.SITE_DEFAULT) %>" <%= text(hasInheritedOverride ? "disabled" : "") %>
+                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="<%= h(SetupForm.SITE_DEFAULT) %>"<%=disabled(hasInheritedOverride)%>
                             <%= text("siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : "") %>
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>

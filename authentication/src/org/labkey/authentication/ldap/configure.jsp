@@ -43,7 +43,7 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Use SASL authentication</td>
-        <td><input type="checkbox" name="SASL" <%=bean.getSASL() ? "checked" : ""%>></td>
+        <td><input type="checkbox" name="SASL"<%=checked(bean.getSASL())%>></td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>

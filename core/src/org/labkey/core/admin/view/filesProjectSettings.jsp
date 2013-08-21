@@ -82,19 +82,19 @@
             <td>
                 <table>
                     <tr><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
-                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
+                                   <%=checked(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
                         Disable file sharing for this <%=h(getViewContext().getContainer().getContainerNoun())%></td></tr>
                     <tr>
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
-                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
+                                   <%=checked(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
                             Use a default based on the site-level root</td>
                         <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr>
                         <td><input <%=h(canChangeFileSettings && canSetCustomFileRoot ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
-                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
+                                   <%=checked(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
                             Use a <%=text(getViewContext().getContainer().getContainerNoun())%>-level file root</td>
                         <td><input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>

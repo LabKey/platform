@@ -73,8 +73,8 @@
             underlying data has changed.</i></td></tr>
         <tr><td>&nbsp;</td></tr>
 
-        <tr><td>Manual&nbsp;Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> <%=bean.getUpdateDelay() == 0 ? "checked" : ""%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();"></td></tr>
-        <tr><td>Automatic&nbsp;Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> <%=bean.getUpdateDelay() != 0 ? "checked" : ""%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
+        <tr><td>Manual&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();"></td></tr>
+        <tr><td>Automatic&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>

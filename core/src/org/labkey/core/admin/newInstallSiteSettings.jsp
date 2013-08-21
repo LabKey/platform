@@ -57,8 +57,8 @@
         helps the development team fix bugs and provides insight into LabKey Server usage.
         No confidential data is submitted.
         <br/>
-        <input type="checkbox" id="allowReporting" name="allowReporting" <%= bean.isAllowReporting() ? "checked" : "" %>> Allow reporting
-        <span style="font-size: smaller; font-style: italic;">we strongly encourage to you to allow this basic level of reporting</span>
+        <input type="checkbox" id="allowReporting" name="allowReporting"<%=checked(bean.isAllowReporting())%>> Allow reporting
+        <span style="font-size: smaller; font-style: italic;">we strongly encourage you to allow this basic level of reporting</span>
     </div>
     <%=generateSubmitButton("Next")%>
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">

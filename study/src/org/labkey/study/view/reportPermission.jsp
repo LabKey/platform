@@ -138,7 +138,7 @@
             //if (g.isAdministrators()) continue;
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
-            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
+            %><tr><td><font color=<%=disabled ? "gray" : "black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
         }
 
         if (projectGroups.length > 0)
@@ -149,7 +149,7 @@
         {
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
-            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
+            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
         }
         %>
     </table>

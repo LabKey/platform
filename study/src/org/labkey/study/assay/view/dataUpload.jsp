@@ -56,7 +56,7 @@
         <tr>
             <% if (visibleCollectors.size() > 1)
             { %>
-                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="radio" name="dataCollectorName" <% if (first) { %>checked="true" <% } %> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="radio" name="dataCollectorName"<%=checked(first)%> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
             <% }
             else
             { %>

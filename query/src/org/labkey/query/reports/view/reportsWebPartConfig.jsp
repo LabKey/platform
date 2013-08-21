@@ -98,7 +98,7 @@
         <tr>
             <td class="labkey-form-label">Show View Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
                     "Some views may be rendered with multiple tabs showing. Select this option to only show the primary view.")%></td>
-            <td><input id='showTabs' type="checkbox" name="<%=Report.renderParam.showTabs.name()%>" <%=BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())) ? "checked" : ""%> onclick="onShowTabs(this.checked);"></td>
+            <td><input id='showTabs' type="checkbox" name="<%=Report.renderParam.showTabs.name()%>"<%=checked(BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())))%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",

@@ -31,7 +31,7 @@
 <form name="frmCustomize" method="post">
 <table>
   <tr>
-    <td><input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=includeSubfolders ? " checked" : ""%>></td>
+    <td><input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=checked(includeSubfolders)%>></td>
     <td>Search subfolders</td>
   </tr>
   <tr>

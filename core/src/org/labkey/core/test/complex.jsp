@@ -64,7 +64,7 @@
     {%>
         <table class="labkey-bordered labkey-alternate-row">
             <%errorRow(out,"form.beans["+i+"].a");%>
-            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=text(form.getBeans().get(i).getA()?"checked":"")%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
+            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=checked(form.getBeans().get(i).getA())%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
             <%errorRow(out,"form.beans["+i+"].b");%>
             <tr><td>b</td><td><input name="beans[<%=i%>].b" value="<%=h(form.getBeans().get(i).getB())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].c");%>

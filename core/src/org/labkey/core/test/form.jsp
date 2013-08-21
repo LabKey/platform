@@ -47,7 +47,7 @@
 <form enctype="<%=text(enctype)%>" method="POST">
     <table>
         <%errorRow(out,"form.a");%>
-        <tr><td>a</td><td><input type=checkbox name="a" <%=text(form.getA()?"checked":"")%>><input type=hidden name="<%=h(SpringActionController.FIELD_MARKER)%>a"></td></tr>
+        <tr><td>a</td><td><input type=checkbox name="a" <%=checked(form.getA())%>><input type=hidden name="<%=h(SpringActionController.FIELD_MARKER)%>a"></td></tr>
         <%errorRow(out,"form.b");%>
         <tr><td>b</td><td><input name="b" value="<%=h(form.getB())%>"></td></tr>
         <%errorRow(out,"form.c");%>

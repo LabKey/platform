@@ -120,7 +120,7 @@
     </tr>
     <tr>
       <td class='labkey-form-label'>Index</td>
-      <td><input type="checkbox" name="shouldIndex" id="shouldIndex"<%=text(wiki.isShouldIndex() ? " checked" : "")%>></td>
+      <td><input type="checkbox" name="shouldIndex" id="shouldIndex"<%=checked(wiki.isShouldIndex())%>></td>
     </tr>
     <tr>
       <td class='labkey-form-label'>Parent</td>

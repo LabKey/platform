@@ -72,7 +72,7 @@
                     {
                         // Only show the link to an enclosing container if there is one.
                 %>
-                <input type="checkbox" id="inherit" name="inheritMvIndicators" <%=inherited ? "checked='true'" : ""%>
+                <input type="checkbox" id="inherit" name="inheritMvIndicators"<%=checked(inherited)%>
                        onclick="toggleInherited(this);">
                 Inherit settings (from
                 <%

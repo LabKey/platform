@@ -22,7 +22,7 @@
 %>
 
 <%--<form method=POST>
-logging: <input name=logging type="checkbox" <%=loggingEnabled?"checked":""%> value="true"><%= PageFlowUtil.generateSubmitButton("submit")%>
+logging: <input name=logging type="checkbox"<%=checked(loggingEnabled%> value="true"><%= PageFlowUtil.generateSubmitButton("submit")%>
 </form>
 
 <div class="extContainer" id="logDiv">

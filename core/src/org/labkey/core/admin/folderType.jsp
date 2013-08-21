@@ -256,7 +256,7 @@ function validate()
     %>
                 <tr>
                     <td valign="top">
-                        <input type="radio" name="folderType" value="<%=h(ft.getName())%>" <%=folderType.equals(ft) ? "checked" : "" %> onclick="changeFolderType();">
+                        <input type="radio" name="folderType" value="<%=h(ft.getName())%>"<%=checked(folderType.equals(ft))%> onclick="changeFolderType();">
                      </td>
                     <td valign="top">
                        <span style="cursor:pointer;font-weight:bold" onclick="document.folderModules.folderType[<%=radioIndex%>].checked = true;"><%=h(ft.getLabel())%></span><br>
@@ -307,7 +307,7 @@ for (Module module : allModules)
         {
         %>
         <input type="checkbox" name="activeModules[<%= i++ %>]" title="<%= module.getTabName(HttpView.currentContext())%>" value="<%= module.getName()%>"
-        <%= enabled ? "" : "disabled" %> <%= active ? "checked" : "" %> onClick="return updateDefaultOptions(this);"><%= module.getTabName(HttpView.currentContext()) %><br>
+        <%=disabled(!enabled)%><%=checked(active)%> onClick="return updateDefaultOptions(this);"><%= module.getTabName(HttpView.currentContext()) %><br>
         <%
         }
     }

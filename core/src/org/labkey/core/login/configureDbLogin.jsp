@@ -35,8 +35,8 @@
             for (PasswordRule rule : PasswordRule.values())
             { %>
             <tr valign="center">
-                <td><input type="radio" name="strength" value="<%=rule.name()%>"<%=rule.equals(bean.currentRule) ? " checked" : ""%>><b><%=h(rule.name())%></b></td>
-                <td><%=rule.getFullRuleHTML()%></td>
+                <td><input type="radio" name="strength" value="<%=h(rule.name())%>"<%=checked(rule.equals(bean.currentRule))%>><b><%=h(rule.name())%></b></td>
+                <td><%=text(rule.getFullRuleHTML())%></td>
             </tr>
                 <%
             }

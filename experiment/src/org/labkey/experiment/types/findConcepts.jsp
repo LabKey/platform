@@ -54,7 +54,7 @@ for (found in foundSemanticTypes)
 <form action="<%=h(buildURL(TypesController.FindConceptsAction.class))%>" method=GET>
 <table >
 	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=h(form.getQuery())%>"></td></tr>
-	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch <%=form.isPrefixMatch()?"checked":""%>></td></tr>
+	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch<%=checked(form.isPrefixMatch())%>></td></tr>
 	<tr><td colspan=2><hr></td></tr>
 	<tr><td class="labkey-form-label">Semantic Type</td><td><select name="semanticType"  style="width:320;">
 	<option value=""<%=form.getSemanticType() == null?" selected":""%>>- any -</option><%

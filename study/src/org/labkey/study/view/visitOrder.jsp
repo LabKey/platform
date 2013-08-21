@@ -115,7 +115,7 @@ function orderModule(listName, hiddenElName, down)
         </tr>
         <tr>
             <td>
-                <select multiple name="displayOrderItems" size="<%= Math.min(visits.size(), 25) %>" <%= text(displayEnabled ? "" : "DISABLED") %>>
+                <select multiple name="displayOrderItems" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!displayEnabled)%>>
                 <%
                     boolean first = true;
                     StringBuilder orderedList = new StringBuilder();
@@ -146,7 +146,7 @@ function orderModule(listName, hiddenElName, down)
             </td>
 
             <td>
-                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.size(), 25) %>" <%= text(chronologicalEnabled ? "" : "DISABLED") %>>
+                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!chronologicalEnabled)%>>
                 <%
                     visits = getVisits(Visit.Order.CHRONOLOGICAL);
                     first = true;

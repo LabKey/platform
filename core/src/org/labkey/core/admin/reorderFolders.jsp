@@ -119,14 +119,14 @@ function toggleItemSelector()
 </script>
 <form action="<%=h(buildURL(AdminController.ReorderFoldersAction.class))%>" name="reorder" method="POST" onSubmit="saveList()">
 <p>
-    <input type="radio" name="resetToAlphabetical" value="true" <%= isCustomOrder ? "" : "checked" %> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically<br>
-    <input type="radio" name="resetToAlphabetical" value="false" <%= isCustomOrder ? "checked" : "" %> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
+    <input type="radio" name="resetToAlphabetical" value="true"<%=checked(!isCustomOrder)%> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically<br>
+    <input type="radio" name="resetToAlphabetical" value="false"<%=checked(isCustomOrder)%> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
 </p>
 <p>
     <table>
         <tr>
             <td>
-                <select name="items" size="<%= containers.size() %>"  <%= isCustomOrder ? "" : "DISABLED" %>>
+                <select name="items" size="<%=containers.size()%>"<%=disabled(!isCustomOrder)%>>
                 <%
                 for (Container container : containers)
                 {

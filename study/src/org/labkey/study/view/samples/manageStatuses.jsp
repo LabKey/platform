@@ -104,15 +104,15 @@ function showSystemRows(value)
                             %>
                             <input type="text" name="labels" size="40"
                                    value="<%= h(status.getLabel() != null ? status.getLabel() : "") %>"
-                                    <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
+                                    <%=disabled(status.isSystemStatus()) %>>
                         </td>
                         <td align="center"><input type="checkbox" name="finalStateIds"
-                                      value="<%= status.getRowId() %>" <%= text(status.isFinalState() ? "CHECKED" : "")
-                                      %> <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
+                                      value="<%= status.getRowId() %>"<%=checked(status.isFinalState())
+                                      %><%=disabled(status.isSystemStatus()) %>>
                         </td>
                         <td align="center"><input type="checkbox" name="specimensLockedIds"
-                                      value="<%= status.getRowId() %>" <%= text(status.isSpecimensLocked() ? "CHECKED" : "")%>
-                                <%= text(status.isSystemStatus() ? "DISABLED" : "") %>>
+                                      value="<%= status.getRowId() %>"<%=checked(status.isSpecimensLocked())%>
+                                <%=disabled(status.isSystemStatus()) %>>
                         </td>
                     </tr>
                     <%

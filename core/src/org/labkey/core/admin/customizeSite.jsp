@@ -143,15 +143,15 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
     <table>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="NONE" <%="NONE".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="NONE"<%=checked("NONE".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><b>OFF</b> - Do not report any usage or check for updates</td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="LOW" <%="LOW".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="LOW"<%=checked("LOW".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><b>ON, low</b> - Check for updates and report system information</td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="MEDIUM" <%="MEDIUM".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><b>ON, medium</b> - Check for updates, report system information, organization, and administrator information from this page</td>
         </tr>
     </table>
@@ -180,19 +180,19 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <table>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="NONE" <%="NONE".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="NONE"<%=checked("NONE".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><b>OFF</b> - Do not report exceptions</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="LOW" <%="LOW".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="LOW"<%=checked("LOW".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><b>ON, low</b> - Include anonymous system and exception information</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="MEDIUM" <%="MEDIUM".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><b>ON, medium</b> - Include anonymous system and exception information, as well as the URL that triggered the exception</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="HIGH" <%="HIGH".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="HIGH"<%=checked("HIGH".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><b>ON, high</b> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary</td>
             </tr>
         </table>
@@ -220,7 +220,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>
-    <td><input type="checkbox" name="ext3Required" <%=(appProps.isExt3Required() ? "checked=\"true\"" : "")%>></td>
+    <td><input type="checkbox" name="ext3Required"<%=checked(appProps.isExt3Required())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -232,7 +232,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
-    <td><input type="checkbox" name="sslRequired" <%=(appProps.isSSLRequired() ? "checked=\"true\"" : "")%>></td>
+    <td><input type="checkbox" name="sslRequired"<%=checked(appProps.isSSLRequired())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
@@ -316,11 +316,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Display Message</td>
-    <td><input type="checkbox" name="showRibbonMessage" <%=text(appProps.isShowRibbonMessage() ? "checked=\"true\"" : "")%>></td>
+    <td><input type="checkbox" name="showRibbonMessage"<%=checked(appProps.isShowRibbonMessage())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Message HTML</td>
-    <td><textarea id="ribbonMessageHtml" name="ribbonMessageHtml" cols="60" rows="3"><%= h(appProps.getRibbonMessageHtml()) %></textarea></td>
+    <td><textarea id="ribbonMessageHtml" name="ribbonMessageHtml" cols="60" rows="3"><%=h(appProps.getRibbonMessageHtml())%></textarea></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -331,7 +331,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
-    <td><input type="checkbox" name="adminOnlyMode" <%=(appProps.isUserRequestedAdminOnlyMode() ? "checked=\"true\"" : "")%>></td>
+    <td><input type="checkbox" name="adminOnlyMode"<%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>

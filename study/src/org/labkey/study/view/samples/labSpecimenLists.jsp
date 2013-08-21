@@ -114,7 +114,7 @@
                     <td valign="middle">
                         <input type="checkbox"
                                name="notify"
-                               value="<%= location.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
+                               value="<%= location.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>"<%=disabled(!hasEmailAddresses)%>>
                     </td>
                     <td valign="middle">
                         <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %>
