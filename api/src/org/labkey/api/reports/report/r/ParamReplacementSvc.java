@@ -43,7 +43,9 @@ public class ParamReplacementSvc
 
     // the default param replacement pattern : ${}
     public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
-    public static final String REPLACEMENT_PARAM_ESC = "\\$%7[bB](.*?)%7[dD]";
+    // Enable ${} or equivalent escape sequences for {}.  Note that this
+    // makes the match group 2 for the token name instead of 1
+    public static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(\\}|%7[dD])";
     public static final Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
 
     private ParamReplacementSvc(){}
@@ -251,14 +253,14 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param pattern - the remote reference to this path if specified; may be null
      */
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory, Pattern pattern) throws Exception
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory, Pattern pattern, int captureGroup) throws Exception
     {
         Matcher m = pattern.matcher(script);
         StringBuffer sb = new StringBuffer();
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(m.group(1));
+            ParamReplacement param = fromToken(m.group(captureGroup));
             if (param != null && HrefOutput.class.isInstance(param))
             {
                 HrefOutput href = (HrefOutput) param;

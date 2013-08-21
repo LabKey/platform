@@ -113,17 +113,22 @@ public class KnitrOutput extends HtmlOutput
             if (null != htmlIn)
             {
                 StringBuilder htmlOut = new StringBuilder();
-                String pattern = ParamReplacementSvc.REPLACEMENT_PARAM;
+                String pattern = ParamReplacementSvc.REPLACEMENT_PARAM_ESC;
+                String knitrCssClass = "labkey-knitr";
 
-                if (_report.getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
-                    pattern = ParamReplacementSvc.REPLACEMENT_PARAM_ESC;
+                // put margins around the design view of knitr reports; report web parts
+                // already have a nice margin around the rendered html
+                if ("viewScriptReport".equalsIgnoreCase(_viewContext.getActionURL().getAction()))
+                {
+                    knitrCssClass += " labkey-knitr-design";
+                }
 
-                // wrap with the labkey-wiki class to get consistent styling
-                htmlOut.append("<div class=\"labkey-knitr\">");
+                // wrap with the labkey-knitr class to get consistent styling
+                htmlOut.append("<div class=\"" + knitrCssClass + "\">");
 
                 // replace all ${hrefout:<filename>} with the appropriate url
                 htmlOut.append( ParamReplacementSvc.get().processHrefParamReplacement(_report,
-                        htmlIn, _report.getReportDir(), Pattern.compile(pattern)));
+                        htmlIn, _report.getReportDir(), Pattern.compile(pattern), 2));
 
                 htmlOut.append("</div>");
                 return htmlOut.toString();
