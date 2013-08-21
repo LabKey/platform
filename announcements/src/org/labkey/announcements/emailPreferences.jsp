@@ -18,20 +18,20 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
-<b><%=message == null ? "" : message%></b>
+<b><%=h(message)%></b>
 <form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
-    <br>Send email notifications for these <%=conversationName%>s<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE ? " checked" : ""%>>
+    <br>Send email notifications for these <%=h(conversationName)%>s<br>
+    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE)%>>
     <b>None</b> - Don't send me any email for this message board<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_MINE%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_MINE ? " checked" : ""%>>
-    <b>Mine</b> - Send me email for posts to my <%=conversationName%>s (I've posted to the <%=conversationName%><% if (hasMemberList) { %> or I'm on its member list<% } %>)<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_ALL ? " checked" : ""%>>
+    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_MINE%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_MINE)%>>
+    <b>Mine</b> - Send me email for posts to my <%=h(conversationName)%>s (I've posted to the <%=h(conversationName)%><% if (hasMemberList) { %> or I'm on its member list<% } %>)<br>
+    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_ALL)%>>
     <b>All</b> - Send me email for all posts<br>
 
     <br>Notification type<br>
-    <input type="radio" value="0" name="notificationType" <%= notificationType == 0 ? " checked" : ""%>>
+    <input type="radio" value="0" name="notificationType"<%=checked(notificationType == 0)%>>
     <b>Individual</b> - send a separate email after each post<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST%>" name="notificationType" <%=notificationType == AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST ? " checked" : "" %>>
+    <input type="radio" value="<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST%>" name="notificationType"<%=checked(notificationType == AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST)%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>

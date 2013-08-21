@@ -2190,6 +2190,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
+    // Requires HTML encoding for display
     private static String getFilterText(DiscussionService.Settings settings, boolean displayAll, boolean isFiltered, int rowLimit)
     {
         StringBuilder sb = new StringBuilder();

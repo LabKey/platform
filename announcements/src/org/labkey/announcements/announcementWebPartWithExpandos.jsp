@@ -175,20 +175,20 @@ Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
 <!--ANNOUNCEMENTS-->
 <table style="table-layout: fixed; width: 100%;" id="<%=tableId%>">
     <tr>
-        <td>
+        <td colspan="3">
             <div style="text-align: left"><%
             if (null != bean.insertURL)
             {
         %><%= generateButton("New", bean.insertURL)%><%
             }
 %></div>
-            <div style="padding-top: 5px;">Showing: <%=bean.filterText.replace(" ", "&nbsp;")%></div>
+            <div style="padding-top: 5px;">Showing: <%=h(bean.filterText)%></div>
         </td>
     </tr><%
 
 if (0 == bean.announcementModels.length)
 {
-    %><tr><td colspan=3 style="padding-top:4px;">No <%=bean.filterText.replace("all ", "")%></td></tr><%
+    %><tr><td colspan=3 style="padding-top:4px;">No <%=h(bean.filterText.replace("all ", ""))%></td></tr><%
 }
 
 for (AnnouncementModel a : bean.announcementModels)
