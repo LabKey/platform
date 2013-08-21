@@ -46,19 +46,21 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         });
 
         // define Models
-        Ext4.define('FolderManagement.Folder', {
-            extend : 'Ext.data.Model',
-            proxy : {
-                type        : 'ajax',
-                url         : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api')
-            },
-            fields : [
-                {name : 'containerPath'                  },
-                {name : 'id',           type : 'int'     },
-                {name : 'isProject',    type : 'boolean' },
-                {name : 'text'                           }
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('FolderManagement.Folder')) {
+            Ext4.define('FolderManagement.Folder', {
+                extend : 'Ext.data.Model',
+                proxy : {
+                    type        : 'ajax',
+                    url         : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api')
+                },
+                fields : [
+                    {name : 'containerPath'                  },
+                    {name : 'id',           type : 'int'     },
+                    {name : 'isProject',    type : 'boolean' },
+                    {name : 'text'                           }
+                ]
+            });
+        }
 
         this.callParent([config]);
     },
@@ -154,6 +156,12 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 selectionchange : function(model, records, eOpts) {
                     this._validateFolders(records);
                 },
+                load : {
+                    fn : function(grid, root, success) {
+                        Ext4.defer(function() { this.ensureVisible(this.selected); }, 250, this);
+                    },
+                    single: true
+                },
                 scope  : this
             },
             scope : this
@@ -172,11 +180,6 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         };
 
         this.treepanel = Ext4.create('Ext.tree.Panel', treeConfig);
-
-        // select the
-        this.treepanel.on('load', function(grid, root, success){
-            this.ensureVisible(this.selected);
-        }, this, {single: true});
 
         return [this.treepanel];
     },
