@@ -191,7 +191,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public String getShortLabel()
     {
-        return shortLabel == null ? label : shortLabel;
+        return shortLabel == null ? getLabel() : shortLabel;
     }
 
     public void setShortLabel(String shortLabel)
