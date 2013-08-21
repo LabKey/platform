@@ -3,129 +3,14 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-Ext4.define('Ext.ux.CheckColumn', {
-    extend: 'Ext.grid.column.Column',
-    alias: 'widget.checkcolumn',
-
-    /**
-     * @cfg {Boolean} [stopSelection=true]
-     * Prevent grid selection upon mousedown.
-     */
-    stopSelection: true,
-
-    tdCls: Ext4.baseCSSPrefix + 'grid-cell-checkcolumn',
-
-    constructor: function(config) {
-        this.addEvents(
-                /**
-                 * @event beforecheckchange
-                 * Fires when before checked state of a row changes.
-                 * The change may be vetoed by returning `false` from a listener.
-                 * @param {Ext.ux.CheckColumn} this CheckColumn
-                 * @param {Number} rowIndex The row index
-                 * @param {Boolean} checked True if the box is to be checked
-                 */
-                'beforecheckchange',
-                /**
-                 * @event checkchange
-                 * Fires when the checked state of a row changes
-                 * @param {Ext.ux.CheckColumn} this CheckColumn
-                 * @param {Number} rowIndex The row index
-                 * @param {Boolean} checked True if the box is now checked
-                 */
-                'checkchange'
-        );
-        this.callParent(arguments);
-    },
-
-    /**
-     * @private
-     * Process and refire events routed from the GridView's processEvent method.
-     */
-    processEvent: function(type, view, cell, recordIndex, cellIndex, e, record, row) {
-        var me = this,
-                key = type === 'keydown' && e.getKey(),
-                mousedown = type == 'mousedown';
-
-        if (mousedown || (key == e.ENTER || key == e.SPACE)) {
-            var dataIndex = me.dataIndex,
-                    checked = !record.get(dataIndex);
-
-            // Allow apps to hook beforecheckchange
-            if (me.fireEvent('beforecheckchange', me, recordIndex, checked) !== false) {
-                record.set(dataIndex, checked);
-                me.fireEvent('checkchange', me, recordIndex, checked);
-
-                // Mousedown on the now nonexistent cell causes the view to blur, so stop it continuing.
-                if (mousedown) {
-                    e.stopEvent();
-                }
-
-                // Selection will not proceed after this because of the DOM update caused by the record modification
-                // Invoke the SelectionModel unless configured not to do so
-                if (!me.stopSelection) {
-                    view.selModel.selectByPosition({
-                        row: recordIndex,
-                        column: cellIndex
-                    });
-                }
-
-                // Prevent the view from propagating the event to the selection model - we have done that job.
-                return false;
-            } else {
-                // Prevent the view from propagating the event to the selection model if configured to do so.
-                return !me.stopSelection;
-            }
-        } else {
-            return me.callParent(arguments);
-        }
-    },
-
-    // Note: class names are not placed on the prototype bc renderer scope
-    // is not in the header.
-    renderer : function(value, metadata){
-        var cssPrefix = Ext4.baseCSSPrefix,
-                cls = [cssPrefix + 'grid-checkheader'];
-
-        if (value) {
-            cls.push(cssPrefix + 'grid-checkheader-checked');
-        }
-
-        if(metadata && metadata.disabled){
-            return '<div style="opacity : .5" class="' + cls.join(' ') + '">&#160;</div>';
-        }
-        else return '<div class="' + cls.join(' ') + '">&#160;</div>';
-    }
-});
-
-
-Ext4.define('File.panel.ActionsPanel',  {
+Ext4.define('File.panel.Actions', {
     extend : 'Ext.panel.Panel',
-    id : 'actionsPanel',
-    items : [
-        {
-            xtype : 'checkbox',
-            id : 'showImportCheckbox',
-            checked: this.importDataEnabled,
-            labelSeparator: '',
-            boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
-            width : 500,
-            height : 75
-        },
-        this.actionGrid],
-    listeners : {
-        gridloaded : function(grid){
-            this.add(grid);
-            this.doLayout();
-        }
-    },
 
-    getImportEnabled : function() {
-        return Ext4.getCmp('showImportCheckBox').getValue();
-    },
+    border: false,
 
-    constructor : function(config){
+    frame: false,
+
+    constructor : function(config) {
 
         this.actionConfig = {};
 
@@ -144,15 +29,30 @@ Ext4.define('File.panel.ActionsPanel',  {
             failure: LABKEY.Utils.displayAjaxErrorResponse,
             scope: this
         });
-        //this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', LABKEY.container.path, {allActions:true});
 
         this.callParent([config]);
     },
 
+    initComponent : function() {
+
+        this.items = [{
+            xtype : 'checkbox',
+            itemId: 'showImportCheckbox',
+            checked: this.importDataEnabled,
+            border: false, frame: false,
+            labelSeparator: '',
+            boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
+            width : 500,
+            height : 75
+        }];
+
+        this.callParent(arguments);
+    },
+
     // parse the configuration information
-    getActionConfiguration : function(response)
-    {
-        var o = eval('var $=' + response.responseText + ';$;');
+    getActionConfiguration : function(response) {
+
+        var o = Ext4.decode(response.responseText);
         var config = o.success ? o.config : {};
 
         // check whether the import data button is enabled
@@ -162,8 +62,7 @@ Ext4.define('File.panel.ActionsPanel',  {
         this.showFolderTree = config.showFolderTree;
         this.inheritedTbarConfig = config.inheritedTbarConfig;
 
-
-        if ('object' == typeof config.actions)
+        if (Ext4.isObject(config.actions))
         {
             for (var i=0; i < config.actions.length; i++)
             {
@@ -172,12 +71,8 @@ Ext4.define('File.panel.ActionsPanel',  {
             }
         }
 
-
-
-        if (this.isPipelineRoot)
-        {
+        if (this.isPipelineRoot) {
             Ext4.Ajax.request({
-                autoAbort:true,
                 url:this.actionsURL,
                 method:'GET',
                 disableCaching:false,
@@ -188,11 +83,10 @@ Ext4.define('File.panel.ActionsPanel',  {
         }
     },
 
-    getPipelineActions : function(response)
-    {
+    getPipelineActions : function(response) {
          if (!this.isPipelineRoot) return;
 
-        var o = eval('var $=' + response.responseText + ';$;');
+        var o = Ext4.decode(response.responseText);
         var actions = o.success ? o.actions : [];
 
         // parse the reponse and create the data object
@@ -237,66 +131,75 @@ Ext4.define('File.panel.ActionsPanel',  {
                 }
             }
         }
-        this.createActionsPropertiesPanel(data);
-
+        this.getActionGrid(data);
     },
 
-    createActionsPropertiesPanel : function(data)
-    {
-        Ext4.define('ActionModel', {
-           extend : 'Ext.data.Model',
-            fields:[
-                {name : 'type', type : 'string'},
-                {name : 'action', type : 'string'},
-                {name : 'enabled', type : 'boolean'},
-                {name : 'showOnToolbar', type : 'boolean'},
-                {name : 'actionId', type : 'string'},
-                {name : 'id', type : 'string'}
-            ]
-        });
-        var store = Ext4.create('Ext.data.Store', {
-            storeId:'actionStore',
-            model : 'ActionModel',
-            groupField: 'type',
-            data: data.actions
-        });
+    getActionGrid : function(data) {
+        if (!Ext4.ModelManager.isRegistered('File.Model.ActionModel')) {
+            Ext4.define('File.Model.ActionModel', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name : 'action'},
+                    {name : 'actionId'},
+                    {name : 'enabled', type : 'boolean'},
+                    {name : 'id'},
+                    {name : 'showOnToolbar', type : 'boolean'},
+                    {name : 'type'}
+                ]
+            });
+        }
 
-        var groupingFeature = Ext4.create('Ext.grid.feature.Grouping', {
-            groupHeaderTpl: '{name}', //print the number of items in the group
-            startCollapsed: false // start all groups collapsed
-        });
+        if (!this.actionGrid) {
+            this.actionGrid = Ext4.create('Ext.grid.Panel', {
+                store: {
+                    xtype: 'store',
+                    storeId: 'actionStore',
+                    model: 'File.Model.ActionModel',
+                    groupField: 'type',
+                    data: data.actions
+                },
+                columns: [
+                    { text: 'Action',     dataIndex: 'action', flex : 1 },
+                    { text: 'Enabled', dataIndex: 'enabled', xtype : 'checkcolumn', width : 100 },
+                    { text: 'Show on Toolbar', dataIndex: 'showOnToolbar', xtype : 'checkcolumn', width : 150 }
+                ],
+                features: [{
+                    ftype: 'grouping',
+                    groupHeaderTpl: '{name}', //print the number of items in the group
+                    startCollapsed: false // start all groups collapsed
+                }],
+                algin : 'bottom',
+                height : 400
+            });
 
-        this.actionGrid = Ext4.create('Ext.grid.Panel', {
-            store: store,
-            columns: [
-                { text: 'Action',     dataIndex: 'action', flex : 1 },
-                { text: 'Enabled', dataIndex: 'enabled', xtype : 'checkcolumn', width : 100 },
-                { text: 'Show on Toolbar', dataIndex: 'showOnToolbar', xtype : 'checkcolumn', width : 150 }
-            ],
-            features: [groupingFeature],
-            algin : 'bottom',
-            height : 400
-        });
+            this.add(this.actionGrid);
+            this.doLayout();
 
-        this.fireEvent('gridloaded', this.actionGrid);
-        Ext4.getCmp('showImportCheckbox').setValue(this.importDataEnabled);
+            var showImport = this.getComponent('showImportCheckbox');
+            if (showImport) {
+                showImport.setValue(this.importDataEnabled);
+            }
+        }
 
+        return this.actionGrid;
     },
 
-    getActionsForSubmission : function()
-    {
+    getActionsForSubmission : function() {
         var adminOptions = [];
         var records = this.actionGrid.getStore() ? this.actionGrid.getStore().getModifiedRecords() : undefined;
 
         // pipeline action configuration
         if (records && records.length)
         {
-            var actionConfig = {};
+            var actionConfig = {},
+                config,
+                display,
+                i = 0,
+                record;
 
-            for (var i=0; i <records.length; i++)
+            for (; i < records.length; i++)
             {
-                var record = records[i];
-                var display;
+                record = records[i];
 
                 if (record.data.showOnToolbar)
                     display = 'toolbar';
@@ -305,27 +208,27 @@ Ext4.define('File.panel.ActionsPanel',  {
                 else
                     display = 'disabled';
 
-                var config = actionConfig[record.data.actionId];
+                config = actionConfig[record.data.actionId];
                 if (!config)
                 {
                     config = {id: record.data.actionId, display: 'enabled', label: record.data.type};
                     actionConfig[record.data.actionId] = config;
                 }
-                if(!config.links)
+                if (!config.links)
                     config.links = [];
                 config.links.push({id: record.data.id, display: display, label: record.data.action});
             }
 
             for (config in actionConfig)
             {
-                var a = actionConfig[config];
-                if ('object' == typeof a )
+                i = actionConfig[config];
+                if (Ext4.isObject(i))
                 {
                     adminOptions.push({
-                        id: a.id,
-                        display: a.display,
-                        label: a.label,
-                        links: a.links
+                        id: i.id,
+                        display: i.display,
+                        label: i.label,
+                        links: i.links
                     });
                 }
             }

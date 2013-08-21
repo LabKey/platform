@@ -109,12 +109,85 @@ Ext4.define('File.panel.Browser', {
 
     actionsConfig : [],
 
+    actionGroups: {},
+
     adminUser : false,
 
     actionsUpToDate : false,
 
     // provides a default color for backgrounds if they are shown
     bodyStyle : 'background-color: lightgray;',
+
+    statics : {
+        /**
+         * Requests the set of actions available for the given containerPath
+         * @private
+         */
+        _getActions : function(cb, containerPath, scope)
+        {
+            Ext4.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', containerPath, { allActions:true }),
+                method: 'GET',
+                disableCaching: false,
+                success : Ext4.isFunction(cb) ? cb : undefined,
+                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                scope: scope
+            });
+        },
+
+        /**
+         * This requests the pipeline action configuration from pipeline/getPipelineActionConfig.
+         * NOTE: The shape of the returned configuration is as follows:
+         * {
+         *      expandFileUpload: {boolean}
+         *      fileConfig: {string}
+         *      gridConfig: {Object}
+         *      importDataEnabled: {boolean}
+         *      inheritedFileConfig: {boolean/object}
+         *      inheritedTbarConfig: {boolean/object}
+         *      tbarActions: {Array} - An Array of objects specifying tbar actions currently
+         *                              available via the users configuration. NOTE: This is
+         *                              not the permissions to show these actions.
+         * }
+         */
+        _getPipelineConfiguration : function(cb, containerPath, scope)
+        {
+            var cacheResult = File.panel.Browser._pipelineConfigurationCache[containerPath];
+
+            if (Ext4.isObject(cacheResult)) {
+                // cache hit
+                Ext4.isFunction(cb) ? cb.call(scope, cacheResult) : undefined
+            }
+            else if (Ext4.isArray(cacheResult)) {
+                // cache miss -- inflight
+                File.panel.Browser._pipelineConfigurationCache[containerPath].push({fn: cb, scope: scope});
+            }
+            else {
+                // prep cache
+                File.panel.Browser._pipelineConfigurationCache[containerPath] = [{fn: cb, scope: scope}];
+
+                // cache miss
+                Ext4.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', containerPath),
+                    method: 'GET',
+                    disableCaching: false,
+                    success : function(response) {
+
+                        var callbacks = File.panel.Browser._pipelineConfigurationCache[containerPath];
+                        File.panel.Browser._pipelineConfigurationCache[containerPath] = response;
+
+                        for (var c=0; c < callbacks.length; c++) {
+                            Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined
+                        }
+                    },
+                    failure: LABKEY.Utils.displayAjaxErrorResponse,
+                    scope: scope
+                });
+            }
+        },
+
+        _pipelineConfigurationCache : {}
+    },
 
     constructor : function(config) {
 
@@ -137,13 +210,7 @@ Ext4.define('File.panel.Browser', {
         this.createActions();
         this.items = this.getItems();
         this.importDataEnabled = true;
-
-        // Configure Toolbar
-        if (this.isWebDav) {
-            this.tbar = this.getWebDavToolbarItems();
-        } else {
-            this.getAdminActionsConfig();
-        }
+        this.initializeToolbar();
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
@@ -151,7 +218,7 @@ Ext4.define('File.panel.Browser', {
         this.callParent();
     },
 
-    createActions: function() {
+    createActions : function() {
         this.actions = {};
 
         this.actions.parentFolder = new Ext4.Action({
@@ -307,7 +374,7 @@ Ext4.define('File.panel.Browser', {
         this.actions.importData = new Ext4.Action({
             text: 'Import Data',
             itemId: 'importData',
-            listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
+            handler: this.onImportData,
             iconCls: 'iconDBCommit',
             disabledClass:'x-button-disabled',
             tooltip: 'Import data from files into the database, or analyze data files',
@@ -319,7 +386,6 @@ Ext4.define('File.panel.Browser', {
             itemId: 'customize',
             iconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
-//            disabled : true,
             tooltip: 'Configure the buttons shown on the toolbar',
             handler: this.showAdminWindow,
             scope: this
@@ -359,11 +425,9 @@ Ext4.define('File.panel.Browser', {
             },
             scope: this
         });
-
-        this.initializeActions();
     },
 
-    initializeActions: function() {
+    initializeActions : function() {
         var action, a;
         for (a in this.actions) {
             if (this.actions.hasOwnProperty(a)) {
@@ -384,74 +448,76 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    getAdminActionsConfig : function(){
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
-            method:'GET',
-            disableCaching:false,
-            success : this.configureFileBrowser,
-            failure: LABKEY.Utils.displayAjaxErrorResponse,
-            scope: this
-//            updatePipelineActions: updatePipelineActions,
-//            updateSelection: updateSelection
-        });
-    },
-
-    configureFileBrowser : function(response) {
-        var json = Ext4.JSON.decode(response.responseText);
-        if (json.config) {
-            var update = new Ext4.util.DelayedTask(this.updateActions);
-            update.delay(250);
-            this.addTbarActions(json.config);
+    initializeToolbar : function() {
+        if (this.isWebDav) {
+            this.tbar = this.getWebDavToolbarItems();
+        }
+        else {
+            this.configureActions();
         }
     },
 
-    addTbarActions : function(config){
+    configureActions : function() {
+        var configure = function(response) {
+            var json = Ext4.JSON.decode(response.responseText);
+            if (json.config) {
+                Ext4.defer(this.updateActions, 250, this);
+
+                // First intialize all the actions prepping them to be shown
+                this.initializeActions();
+
+                // Configure the actions on the toolbar based on whether they should be shown
+                this.configureTbarActions({tbarActions: json.config.tbarActions, actions: json.config.actions});
+            }
+        };
+        File.panel.Browser._getPipelineConfiguration(configure, this.containerPath, this);
+    },
+
+    configureTbarActions : function(config) {
         var tbarConfig = config.tbarActions;
         var actionButtons = config.actions;
         var toolbar = this.getDockedItems()[0];
-        var buttons = [];
+        var buttons = [], i;
 
-        if(toolbar){
-            // Remove the current toolbar incase we just custmized it.
+        if (toolbar) {
+            // Remove the current toolbar incase we just customized it.
             this.removeDocked(toolbar);
         }
 
-        if(tbarConfig){
+        // Use as a lookup
+        var mapTbarItems = {};
 
-
-            for(var i = 0; i < tbarConfig.length; i++){
-                var actionConfig = tbarConfig[i];
-                var action = this.actions[actionConfig.id];
-                if(actionConfig.hideText){
-                    action.setText(undefined);
-                } else {
-                    action.setText(action.initialConfig.prevText);
-                }
-
-                if(actionConfig.hideIcon){
-                    action.setIconCls(undefined);
-                } else {
-                    action.setIconCls(action.initialConfig.prevIconCls);
-                }
-
-                if(actionConfig.id == 'customize'){
-                    action.setDisabled(this.disableGeneralAdminSettings);
-                }
-
-                buttons.push(action);
+        if (this.tbarItems) {
+            for (i=0; i < this.tbarItems.length; i++) {
+                mapTbarItems[this.tbarItems[i]] = true;
             }
-        } else {
-            buttons = this.getDefaultWebPartToolbarItems(this.tbarItems);
         }
-        if(actionButtons)
-        {
-            for(var i = 0; i < actionButtons.length; i++)
-            {
 
-                if(actionButtons[i].links[0].display === 'toolbar')
-                {
-                    var action = Ext4.create('Ext.Action', {
+        if (tbarConfig) {
+            var action, actionConfig;
+
+            // Iterate across tbarConfig as button ordering is determined by array order
+            for (i=0; i < tbarConfig.length; i++) {
+
+                // check map to ensure that we should process this action
+                if (mapTbarItems[tbarConfig[i].id]) {
+                    actionConfig = tbarConfig[i];
+                    action = this.actions[actionConfig.id];
+
+                    // TODO: Why special processing?
+                    if (actionConfig.id == 'customize') {
+                        action.setDisabled(this.disableGeneralAdminSettings);
+                    }
+
+                    buttons.push(action);
+                }
+            }
+        }
+
+        if (actionButtons) {
+            for (i=0; i < actionButtons.length; i++) {
+                if (actionButtons[i].links[0].display === 'toolbar') {
+                    var action = new Ext4.Action({
                         id : actionButtons[i].links[0].id,
                         itemId : actionButtons[i].links[0].id,
                         text : actionButtons[i].links[0].label,
@@ -475,33 +541,18 @@ Ext4.define('File.panel.Browser', {
             this.executeImportAction(action);
     },
 
-    initGridColumns : function(grid) {
-        var columns = [];
+    initGridColumns : function() {
 
-        var iconTpl =  '<img height="16px" width="16px" src="{icon}" alt="{type}">';
-
-
-        var nameTpl =
-                '<div height="16px" width="100%">' +
-                        '<div style="float: left;">' +
-                        '</div>' +
-                        '<div style="padding-left: 20px; white-space:normal !important;">' +
-                        '<span style="display: inline-block;">{name:htmlEncode}</span>' +
-                        '</div>' +
-                        '</div>';
-
-        columns.push({
+        var columns = [{
             xtype : 'templatecolumn',
             text  : '',
             dataIndex : 'icon',
             sortable : true,
             width : 25,
             height : 20,
-            tpl : iconTpl,
+            tpl : '<img height="16px" width="16px" src="{icon}" alt="{type}">',
             scope : this
-        });
-
-        columns.push({
+        },{
             xtype : 'templatecolumn',
             text  : 'Name',
             dataIndex : 'name',
@@ -509,38 +560,39 @@ Ext4.define('File.panel.Browser', {
             height : 20,
             minWidth : 200,
             flex : 3,
-            tpl : nameTpl,
+            tpl : '<div height="16px" width="100%">' +
+                        '<div style="float: left;"></div>' +
+                        '<div style="padding-left: 20px; white-space:normal !important;">' +
+                            '<span style="display: inline-block;">{name:htmlEncode}</span>' +
+                        '</div>' +
+                   '</div>',
             scope : this
-        });
+        },
+        {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, height : 20, renderer: this.dateRenderer},
+        {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.fileSize, align : 'right'},
+        {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+        {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+        {header: "Usages",         flex: 1, dataIndex: 'actionHref',   sortable: true,  hidden: false, height : 20},// renderer:LABKEY.FileSystem.Util.renderUsage},
+        {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true, height : 20},
+        {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
+        ];
 
-        columns.push(
-                {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, height : 20, renderer: this.dateRenderer},
-                {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.fileSize, align : 'right'},
-                {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
-                {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
-                {header: "Usages",         flex: 1, dataIndex: 'actionHref',   sortable: true,  hidden: false, height : 20},// renderer:LABKEY.FileSystem.Util.renderUsage},
-                {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true, height : 20},
-                {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
-        );
-
-        var finalColumns = [];
-        Ext4.Ajax.request({
-            scope: this,
-            url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
-            success: function(response){
-                var json = Ext4.JSON.decode(response.responseText);
+        var success = function(response) {
+            var json = Ext4.JSON.decode(response.responseText);
+            if (json && json.config && json.config.gridConfig) {
                 json = json.config.gridConfig.columns;
-                for(var i = 1; i < json.length; i++)
-                {
+                var finalColumns = [], i= 1, g = this.getGrid();
+                for (; i < json.length; i++) {
                     columns[json[i].id-1].hidden = json[i].hidden;
                     finalColumns[i-1] = columns[json[i].id-1];
                 }
-                this.getGrid().reconfigure(this.getGrid().getStore(), finalColumns);
-            },
-            failure: function(){}
-        });
+                g.reconfigure(g.getStore(), finalColumns);
+            }
+        };
 
-        return finalColumns;
+        File.panel.Browser._getPipelineConfiguration(success, this.containerPath, this);
+
+        return columns;
     },
 
     getItems : function() {
@@ -593,12 +645,11 @@ Ext4.define('File.panel.Browser', {
         this.on('treechange', this.updateGridProxy, this);
 
         // 'load' only works on non-buffered stores
-        this.fileStore.on(this.bufferFiles ? 'prefetch' : 'load', function(){
+        this.fileStore.on(this.bufferFiles ? 'prefetch' : 'load', function() {
             this.gridMask.cancel();
             if (this.grid) {
                 this.getGrid().getEl().unmask();
             }
-            this.updateActions();
         }, this);
 
         return this.fileStore;
@@ -690,9 +741,9 @@ Ext4.define('File.panel.Browser', {
         }
 
         store.on('load', function() {
-            var p = this.getFolderOffset();
-            if (p && p[p.length-1] != '/')
-                p += '/';
+//            var p = this.getFolderOffset();
+//            if (p && p[p.length-1] != '/')
+//                p += '/';
             this.ensureVisible(this.fileSystem.getOffsetURL());
             this.onRefresh();
         }, this, {single: true});
@@ -766,7 +817,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     onTreeSelect : function(selModel, rec) {
-        if (rec.isRoot())  {
+        if (rec.isRoot()) {
             this.setFolderOffset(rec.data.id, rec);
             this.fireEvent('treechange', this.getFolderURL());
         }
@@ -786,73 +837,58 @@ Ext4.define('File.panel.Browser', {
         return this.getGridCfg();
     },
 
-    onImportData : function()
-    {
-        this.updateActions();
-        this.processImportData();
-    },
-
+    /**
+     * updateActions will request the set of actions available from both the server and the pipeline
+     */
     updateActions : function()
     {
-        var actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, {allActions:true});
         if (this.isPipelineRoot)
         {
-            Ext4.Ajax.request({
-                autoAbort:true,
-                url: actionsURL,
-                method:'GET',
-                disableCaching:false,
-                success : this.updateWithConfigs,
-                failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
-                scope: this
-            });
-        }
+            var actionsReady = false;
+            var pipelineReady = false;
 
+            var actions;
+            var me = this;
+
+            var check = function() {
+                if (actionsReady && pipelineReady)
+                    me.updatePipelineActions(actions);
+            };
+
+            var actionCb = function(response) {
+                var o = Ext4.decode(response.responseText);
+                actions = o.success ? o.actions : [];
+                actionsReady = true;
+                check();
+            };
+
+            var pipeCb = function(response) {
+                me.configureActionConfigs(response);
+                pipelineReady = true;
+                check();
+            };
+
+            File.panel.Browser._getActions(actionCb, this.containerPath, this);
+            File.panel.Browser._getPipelineConfiguration(pipeCb, this.containerPath, this);
+        }
     },
 
-    updateWithConfigs : function(response){
-        var actionsConfigURL = LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath);
+    // worst named method ever
+    configureActionConfigs : function(response) {
+        var resp = Ext4.decode(response.responseText);
 
-        var o = Ext4.decode(response.responseText);
-        var actions = o.success ? o.actions : [];
+        if (resp.config.actions)
+        {
+            this.importDataEnabled = resp.config.importDataEnabled ? resp.config.importDataEnabled : false;
+            var actionConfigs = resp.config.actions;
 
-        Ext4.Ajax.request({
-            autoAbort:true,
-            url: actionsConfigURL,
-            method:'GET',
-            disableCaching:false,
-            success : function(response){
-                var actionConfigs = Ext4.decode(response.responseText);
+            for (var i=0; i < actionConfigs.length; i++)
+            {
+                this.actionsConfig[actionConfigs[i].id] = actionConfigs[i];
+            }
+        }
 
-                if(actionConfigs.config.actions)
-                {
-                    this.importDataEnabled = actionConfigs.config.importDataEnabled ? actionConfigs.config.importDataEnabled : false;
-                    actionConfigs = actionConfigs.config.actions;
-                }
-                else
-                {
-                    actionConfigs = [];
-                }
-
-                if(!this.importDataEnabled && !this.adminUser)
-                {
-                    this.actions.importData.hide();
-                }
-                else
-                {
-                    this.actions.importData.show();
-                }
-
-                for(var i = 0; i < actionConfigs.length; i++)
-                {
-                    this.actionsConfig[actionConfigs[i].id] = actionConfigs[i];
-                }
-                this.updatePipelineActions(actions);
-            },
-            failure: LABKEY.Utils.displayAjaxErrorResponse,
-            scope: this
-        });
-
+        this.actions.importData[(!this.importDataEnabled && !this.adminUser ? 'hide' : 'show')]();
     },
 
     updatePipelineActions : function(actions)
@@ -860,45 +896,41 @@ Ext4.define('File.panel.Browser', {
         this.pipelineActions = [];
         this.actionMap = {};
         this.actionGroups = {};
+        this.fileMap = {};
 
         if (actions && actions.length && (this.importDataEnabled || this.adminUser))
         {
-            var pipelineActions = this.parseActions(actions);
+            var pipelineActions = this.parseActions(actions), pa;
             for (var i=0; i < pipelineActions.length; i++)
             {
-                var pa = pipelineActions[i];
-                var isEnabled = false;
+                if (!pipelineActions[i].link)
+                    continue;
 
-                if (!pa.link) continue;
+                pa = pipelineActions[i];
 
                 var config = this.actionsConfig[pa.groupId];
                 if (pa.link.href)
                 {
-                    if(config)
-                    {
-                        pa.enabled = (config.links[0].display === 'enabled');
-                    }
-                    else
-                    {
-                        pa.enabled = true;
-                    }
+                    pa.enabled = config ? (config.links[0].display === 'enabled') : true;
                 }
 
-//                if (this.adminUser || isEnabled)
-//                {
-                    this.pipelineActions.push(pa);
-                    this.actionMap[pa.id] = pa;
+                this.pipelineActions.push(pa);
+                this.actionMap[pa.id] = pa;
 
-                    if (pa.groupId in this.actionGroups)
-                        this.actionGroups[pa.groupId].actions.push(pa);
-                    else
-                        this.actionGroups[pa.groupId] = {label: pa.groupLabel, actions: [pa]};
-//                }
+                if (pa.groupId in this.actionGroups)
+                    this.actionGroups[pa.groupId].actions.push(pa);
+                else
+                    this.actionGroups[pa.groupId] = {label: pa.groupLabel, actions: [pa]};
+
+                // Populate this.fileMap
+                for (var f=0; f < pa.files.length; f++)
+                {
+                    if (!this.fileMap[pa.files[f]])
+                        this.fileMap[pa.files[f]] = {};
+                    this.fileMap[pa.files[f]][pa.groupId] = 1;
+                }
             }
         }
-
-//        if (this.pipelineActions && this.pipelineActions.length)
-//            this.enableImportData(true);
 
         this.updateActionButtons();
 
@@ -942,8 +974,24 @@ Ext4.define('File.panel.Browser', {
         return false;
     },
 
-    processImportData : function()
+    onImportData : function()
     {
+//        if (this.importDataEnabled) {
+//
+//            if (!this.importDataWindow) {
+//                this.importDataWindow = Ext4.create('File.panel.Import', {
+//                    actionGroups: this.actionGroups,
+//                    selection: this.getSelection(),
+//                    autoRequestImport: true
+//                });
+//            }
+//            else {
+//                this.importDataWindow.requestImport({
+//                    actionGroups: this.actionGroups,
+//                    selection: this.getSelection()
+//                });
+//            }
+//        }
         var actionMap = [],
                 actions = [],
                 items   = [],
@@ -953,8 +1001,11 @@ Ext4.define('File.panel.Browser', {
         //TODO make this work for multiple file selection (MFS)
         for (var ag in this.actionGroups)
         {
-            if(!this.selectedRecord)
+            if (!this.selectedRecord)
+            {
+                console.warning('No record selected for data import');
                 break;
+            }
 
             var group = this.actionGroups[ag];
             pa = group.actions[0];
@@ -1003,8 +1054,6 @@ Ext4.define('File.panel.Browser', {
                 }
             }
 
-
-
             var radioGroup = Ext4.create('Ext.form.RadioGroup', {
                 fieldLabel : shortMessage,
                 labelWidth : 250,
@@ -1017,14 +1066,13 @@ Ext4.define('File.panel.Browser', {
                 listeners : {
                     render : function(rg){
                         rg.setHeight(rg.getHeight()+10);
-                        console.log(rg);
                         !potential ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');
                     },
                     scope : this
                 }
             });
 
-
+            var radios = [];
 
             for (var i=0; i < group.actions.length; i++)
             {
@@ -1041,7 +1089,7 @@ Ext4.define('File.panel.Browser', {
                     }
 
                     actionMap[action.id] = action;
-                    radioGroup.add({
+                    radios.push({
                         xtype: 'radio',
                         checked: action.enabled && !alreadyChecked,
                         labelSeparator: '',
@@ -1050,13 +1098,33 @@ Ext4.define('File.panel.Browser', {
                         inputValue: action.id,
                         disabled : potential
                     });
+
                     if (action.enabled)
                     {
                         alreadyChecked = true;
                     }
                 }
             }
-            actions.push(radioGroup);
+            actions.push({
+                xtype: 'radiogroup',
+                fieldLabel : shortMessage,
+                labelWidth : 275,
+                showAsWarning: potential,
+                border: '0 0 1 0',
+                style: 'border-bottom: 1px dashed lightgray',
+                columns    : 1,
+                labelSeparator: '',
+                items: radios,
+                scope : this,
+                tooltip : longMessage,
+                listeners : {
+                    render : function(rg) {
+                        rg.setHeight(rg.getHeight()+10);
+                        this.setFormFieldTooltip(rg, (rg.showAsWarning ? 'warning-icon-alt.png' : 'info.png'));
+                    },
+                    scope : this
+                }
+            });
         }
 
         var actionPanel = Ext4.create('Ext.form.FormPanel', {
@@ -1085,7 +1153,7 @@ Ext4.define('File.panel.Browser', {
             });
             shrink = true;
         }
-        else if(!this.selectedRecord)
+        else if (!this.selectedRecord)
         {
             items.push({
                 html      : 'No files selected to process.',
@@ -1094,7 +1162,7 @@ Ext4.define('File.panel.Browser', {
             });
             shrink = true;
         }
-        else if(!radioGroup)
+        else if (!radioGroup)
         {
             items.push({
                 html      : 'There are no actions capable of processing ' + this.selectedRecord.data.name,
@@ -1133,13 +1201,12 @@ Ext4.define('File.panel.Browser', {
             title: 'Import Data',
             width: shrink ? 300 : 725,
             height: shrink ? 150 : undefined,
-            cls: 'extContainer',
+            autoShow: true,
             autoScroll: true,
             modal: true,
             items: items,
             buttons: buttons
         });
-        win.show();
     },
 
     parseActions : function(actions) {
@@ -1247,29 +1314,48 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    onItemClick : function(g, rec) {
+    onSelection : function(g, selectedRecords) {
         this.changeTestFlag(false, false);
+
         if (this.showDetails) {
-            this.getDetailPanel().update(rec.data);
+            if (selectedRecords.length == 1)
+                this.getDetailPanel().update(selectedRecords[0].data);
+            else
+                this.getDetailPanel().update('');
         }
 
-        var tb = this.getDockedComponent(0);
+        var tb = this.getDockedComponent(0); // button toolbar
         if (tb) {
             if (this.actions.download) {
-                this.actions.download.setDisabled(!this.fileSystem.canRead(rec));
+                this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords));
             }
             if (this.actions.renamePath) {
-                this.actions.renamePath.setDisabled(false);
+                if (selectedRecords.length > 1)
+                    this.actions.renamePath.setDisabled(true);
+                else if (selectedRecords.length == 1)
+                    this.actions.renamePath.setDisabled(false);
+                else
+                    this.actions.renamePath.setDisabled(true);
             }
             if (this.actions.movePath) {
-                this.actions.movePath.setDisabled(false);
+                if (selectedRecords.length > 1)
+                    this.actions.movePath.setDisabled(true);
+                else if (selectedRecords.length == 1)
+                    this.actions.movePath.setDisabled(false);
+                else
+                    this.actions.movePath.setDisabled(true);
             }
             if (this.actions.deletePath) {
-                this.actions.deletePath.setDisabled(false);
+                if (selectedRecords.length > 1)
+                    this.actions.deletePath.setDisabled(true);
+                else if (selectedRecords.length == 1)
+                    this.actions.deletePath.setDisabled(false);
+                else
+                    this.actions.deletePath.setDisabled(true);
             }
         }
 
-        this.selectedRecord = rec;
+        this.selectedRecord = selectedRecords[0]; // TODO: Fix multi-select
         this.changeTestFlag(true, false);
         this.updateActionButtons();
         this.changeTestFlag(true, true);
@@ -1290,49 +1376,39 @@ Ext4.define('File.panel.Browser', {
         });
 
         if (!config.selModel && !config.selType) {
-            config.selModel = Ext4.create('Ext.selection.CheckboxModel', {
-                mode : 'SINGLE'
-            });
+            config.selModel = {
+                selType: 'checkboxmodel',
+                mode: 'MULTI',
+                pruneRemoved: false // designated 'private' on Ext.selection.Model in Ext 4.1.0
+            };
         }
 
         Ext4.apply(config, {
             xtype   : 'grid',
             store   : this.getFileStore(),
-            columns : {
-                items : this.initGridColumns()
-            },
+            columns : this.initGridColumns(),
             listeners : {
                 beforerender : function(g) { this.grid = g; },
-                itemclick    : this.onItemClick,
+                selectionchange : this.onSelection,
                 itemdblclick : function(g, rec) {
-                    if (rec.data.collection) {
+                    if (rec && rec.data && rec.data.collection) {
                         this.setFolderOffset(rec.data.id, rec);
                         this.fireEvent('gridchange', this.getFolderURL());
                     }
-                    else {
-                        // Download the file
-                        this.onDownload({recs : [rec]});
-                    }
+//                    else {
+//                        // Download the file
+//                        this.onDownload({recs : [rec]});
+//                    }
                 },
                 scope : this
             }
         });
 
-        this.gridMask = new Ext4.util.DelayedTask(function(){
+        this.gridMask = new Ext4.util.DelayedTask(function() {
             this.getGrid().getEl().mask('Loading...');
         }, this);
 
         return config;
-    },
-
-    getDefaultWebPartToolbarItems : function(tbarItems){
-        var tbarButtons = [];
-
-        for(var i = 0; i < tbarItems.length; i++){
-            tbarButtons.push(this.actions[tbarItems[i]]);
-        }
-
-        return tbarButtons;
     },
 
     getWebDavToolbarItems : function(){
@@ -1373,12 +1449,23 @@ Ext4.define('File.panel.Browser', {
     },
 
     onFolderChange : function(path, model) {
-        var tb = this.getDockedComponent(0);
+        var tb = this.getDockedComponent(0), action;
         if (tb) {
-            tb.getComponent('deletePath').setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
-            this.actions.download.setDisabled(!this.fileSystem.canRead(model));
-            tb.getComponent('createDirectory').setDisabled(!this.fileSystem.canMkdir(model));
-            tb.getComponent('upload').setDisabled(!this.fileSystem.canWrite(model));
+            action = tb.getComponent('deletePath');
+            if (action)
+                action.setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
+
+            action = tb.getComponent('createDirectory');
+            if (action)
+                action.setDisabled(!this.fileSystem.canMkdir(model));
+
+            action = tb.getComponent('upload');
+            if (action)
+                action.setDisabled(!this.fileSystem.canWrite(model));
+
+            if (this.actions.download) {
+                this.actions.download.setDisabled(!this.fileSystem.canRead(model));
+            }
             if (this.actions.renamePath) {
                 this.actions.renamePath.setDisabled(true);
             }
@@ -1457,7 +1544,7 @@ Ext4.define('File.panel.Browser', {
 
     onCreateDirectory : function() {
 
-        var onCreateDir = function() {
+        var onCreateDir = function(panel) {
 
             var path = this.getFolderURL();
             if (panel.getForm().isValid()) {
@@ -1486,56 +1573,59 @@ Ext4.define('File.panel.Browser', {
 
         };
 
-        var panel = Ext4.create('Ext.form.Panel', {
-            border: false, frame : false,
-            items : [{
-                xtype : 'textfield',
-                name : 'folderName',
-                itemId : 'foldernamefield',
-                flex : 1,
-                allowBlank : false,
-                emptyText : 'Folder Name',
-                width : 250,
-                margin : '32 10 0 10',
-                validateOnBlur : false,
-                validateOnChange : false,
-                validator : function(folder) {
-                    if (folder && folder.length) {
-                        console.log('would validate if folder is already present.');
-                    }
-                    return true;
-                },
-                listeners : {
-                    afterrender : function(f) {
-                        var km = new Ext4.util.KeyMap(f.el, [
-                            {
-                                key   : Ext4.EventObject.ENTER,
-                                fn    : onCreateDir,
-                                scope : this
-                            },{
-                                key   : Ext4.EventObject.ESC,
-                                fn    : function() { win.close(); },
-                                scope : this
-                            }
-                        ]);
-                    },
-                    scope : this
-                },
-                scope : this
-            }]
-        });
-
         var win = Ext4.create('Ext.Window', {
             title : 'Create Folder',
             width : 300,
             height: 150,
             modal : true,
             autoShow : true,
-            items : [panel],
+            items : [{
+                xtype: 'form',
+                itemId: 'foldernameform',
+                border: false, frame : false,
+                items : [{
+                    xtype : 'textfield',
+                    name : 'folderName',
+                    itemId : 'foldernamefield',
+                    flex : 1,
+                    allowBlank : false,
+                    emptyText : 'Folder Name',
+                    width : 250,
+                    margin : '32 10 0 10',
+                    validateOnBlur : false,
+                    validateOnChange : false,
+                    validator : function(folder) {
+                        if (folder && folder.length) {
+                            console.log('would validate if folder is already present.');
+                        }
+                        return true;
+                    },
+                    listeners : {
+                        afterrender : function(field) {
+                            var map = new Ext4.util.KeyMap({
+                                target: field.el,
+                                binding: [{
+                                    key   : Ext4.EventObject.ENTER,
+                                    fn    : function() { onCreateDir.call(this, field.up('form')); },
+                                    scope : this
+                                },{
+                                    key   : Ext4.EventObject.ESC,
+                                    fn    : function() { win.close(); },
+                                    scope : this
+                                }]
+                            });
+                        },
+                        scope : this
+                    },
+                    scope : this
+                }]
+            }],
             cls : 'data-window',
             defaultFocus : 'foldernamefield',
             buttons : [
-                {text : 'Submit', handler : onCreateDir, scope: this},
+                {text : 'Submit', handler : function(b) {
+                    onCreateDir.call(this, b.up('window').getComponent('foldernameform'));
+                }, scope: this},
                 {text : 'Cancel', handler : function() { win.close(); }, scope: this}
             ]
         });
@@ -1600,10 +1690,8 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    onEmailPreferences : function(btn) {
-        var prefDlg = Ext4.create('LABKEY.EmailFolderPreferences',{containerPath: this.containerPath});
-
-        prefDlg.show();
+    onEmailPreferences : function() {
+        Ext4.create('File.panel.EmailProps', { containerPath: this.containerPath }).show();
     },
 
     _moveOnCallback : function(fs, src, dest, rec) {
@@ -1879,9 +1967,10 @@ Ext4.define('File.panel.Browser', {
             listeners: {
                 success: function(gridUpdated)
                 {
-                    this.getAdminActionsConfig();
-                    if(gridUpdated)
+                    this.configureActions();
+                    if (gridUpdated) {
                         this.initGridColumns();
+                    }
                 },
                 close: function() { this.adminWindow.close(); },
                 scope: this

@@ -24,8 +24,6 @@ Ext4.define('File.panel.Admin', {
         });
 
         this.callParent([config]);
-
-//        this.addEvents();
     },
 
     initComponent : function() {
@@ -95,16 +93,15 @@ Ext4.define('File.panel.Admin', {
         return this.toolBarPanel;
     },
 
-    getActionsPanel : function(){
-        this.actionsPanel = Ext4.create('File.panel.ActionsPanel', {
-            title : 'Actions',
-            containerPath : this.containerPath,
-            isPipelineRoot : this.isPipelineRoot,
-            importDataEnabled: this.pipelineFileProperties.importDataEnabled
-        });
-//        this.actionsPanel.on('activate', function(){
-//            this.resetDefaultsButton.show();
-//        },  this);
+    getActionsPanel : function() {
+        if (!this.actionsPanel) {
+            this.actionsPanel = Ext4.create('File.panel.Actions', {
+                title : 'Actions',
+                containerPath : this.containerPath,
+                isPipelineRoot : this.isPipelineRoot,
+                importDataEnabled: this.pipelineFileProperties.importDataEnabled
+            });
+        }
         return this.actionsPanel;
     },
 
@@ -149,7 +146,7 @@ Ext4.define('File.panel.Admin', {
     onSubmit: function(button, event, handler){
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
-            importDataEnabled : Ext4.getCmp('showImportCheckbox').getValue(),
+            importDataEnabled : this.actionsPanel.getComponent('showImportCheckbox').getValue(), // terrible
             expandFileUpload: this.showUploadCheckBox.getValue(),
             fileConfig: this.filePropertiesPanel.getFileConfig(),
             actions: this.actionsPanel.getActionsForSubmission()

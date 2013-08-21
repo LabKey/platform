@@ -183,22 +183,6 @@ Ext4.define('File.panel.Upload', {
 
         var uploadId = Ext4.id();
 
-        this.fileField = Ext4.create('Ext.form.field.File', {
-            name  : 'file',
-            fieldLabel : 'Choose a File',
-            labelSeparator : '',
-            labelAlign : 'right',
-            buttonText : 'Browse',
-            listeners: {
-                change: function() {
-                    descriptionField.setDisabled(false);
-                    descriptionField.focus();
-                    Ext4.getCmp(uploadId).setDisabled(false);
-                },
-                scope : this
-            }
-        });
-
         var descriptionField = Ext4.create('Ext.form.field.Text', {
             name  : 'description',
             fieldLabel : 'Description',
@@ -216,12 +200,28 @@ Ext4.define('File.panel.Upload', {
                 xtype: 'container',
                 width: 800,
                 layout: 'hbox',
-                items: [this.fileField, {
+                items: [{
+                    xtype: 'filefield',
+                    name : 'file',
+                    width: 452,
+                    fieldLabel: 'Choose a File',
+                    labelAlign: 'right',
+                    buttonText: 'Browse',
+                    labelSeparator: '',
+                    listeners: {
+                        render: function(f) { this.fileField = f; },
+                        change: function() {
+                            descriptionField.setDisabled(false);
+                            descriptionField.focus();
+                            Ext4.getCmp(uploadId).setDisabled(false);
+                        },
+                        scope : this
+                    }
+                },{
                     xtype: 'button',
                     id: uploadId,
                     text: 'Upload',
-                    cls: 'dendi',
-
+                    cls: 'upload-button',
                     disabled: true,
                     handler: this.submitFileUploadForm,
                     scope : this

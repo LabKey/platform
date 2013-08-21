@@ -2702,9 +2702,15 @@ td a.x-grid3-hd-btn:hover {
 }
 
 /* File browser applet buttons */
-table.applet-button {
+table.applet-button
+{
     padding: 2px 0;
     *margin: 4px 0;
+}
+
+a.upload-button
+{
+    left: 455px !important;
 }
 
 div.single-upload-panel div.x-box-inner
