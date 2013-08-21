@@ -72,7 +72,7 @@
 <%      if (HttpView.BODY.equals(form.getLocation())) { %>
             <tr>
                 <td class="labkey-form-label">Folder Tree visible&nbsp;<%=PageFlowUtil.helpPopup("Folder Tree", "Checking this selection will display the folder tree by default. The user can toggle the show or hide state of the folder tree using a button on the toolbar.")%></td>
-                <td><input type="checkbox" name="folderTreeVisible" <%=form.isFolderTreeVisible() ? "checked" : ""%>></td>
+                <td><input type="checkbox" name="folderTreeVisible"<%=checked(form.isFolderTreeVisible())%>></td>
             </tr>
 <%      } %>
         <tr>

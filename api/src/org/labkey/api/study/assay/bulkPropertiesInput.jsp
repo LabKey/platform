@@ -43,7 +43,7 @@
 <table>
     <tr>
         <td>
-            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>Off" <%= !useBulk ? "checked" : "" %> value="off"
+            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>Off"<%=checked(!useBulk)%> value="off"
             onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
         </td>
         <td>
@@ -52,7 +52,7 @@
     </tr>
     <tr>
         <td>
-            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>On" <%= useBulk ? "checked" : "" %> value="on"
+            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>On"<%=checked(useBulk)%> value="on"
             onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
         </td>
         <td>

@@ -634,12 +634,12 @@ function setDisabled(checkbox, label, disabled)
             %>
             <tr>
                 <td>
-                    <input type="checkbox" <%=text(inherited ? "disabled" : "")%> name="shareReport"<%=text(bean.isShareReport() ? " checked" : "")%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
+                    <input type="checkbox" <%=text(inherited ? "disabled" : "")%> name="shareReport"<%=checked(bean.isShareReport())%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
                 </td>
             </tr>
             <tr >
                 <td style="padding-left:19px;">
-                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=text(bean.isSourceTabVisible() ? " checked" : "")%><%=text(bean.isShareReport() && !inherited ? "" : " disabled")%> onchange="LABKEY.setDirty(true);return true;"><span <%=text(bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\"")%> id="sourceTabLabel"> Show source tab to all users</span>
+                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=checked(bean.isSourceTabVisible())%><%=text(bean.isShareReport() && !inherited ? "" : " disabled")%> onchange="LABKEY.setDirty(true);return true;"><span <%=text(bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\"")%> id="sourceTabLabel"> Show source tab to all users</span>
                 </td>
             </tr> <%
                 // must be project admin (or above to to share a report to child folders            
@@ -647,7 +647,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" <%=text(inherited || isSharedFolder ? "disabled" : "")%> name="inheritable"<%=text(bean.isInheritable() || isSharedFolder ? " checked" : "")%> onchange="LABKEY.setDirty(true);return true;"> Make this view
+                <input type="checkbox" <%=text(inherited || isSharedFolder ? "disabled" : "")%> name="inheritable"<%=checked(bean.isInheritable() || isSharedFolder)%> onchange="LABKEY.setDirty(true);return true;"> Make this view
                 available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
@@ -657,7 +657,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" id="runInBackground" <%=text(inherited ? "disabled" : "")%> name="<%=text(ScriptReportDescriptor.Prop.runInBackground.name())%>"<%=text(bean.isRunInBackground() ? " checked" : "")
+                <input type="checkbox" id="runInBackground" <%=text(inherited ? "disabled" : "")%> name="<%=text(ScriptReportDescriptor.Prop.runInBackground.name())%>"<%=checked(bean.isRunInBackground())
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 } %>
@@ -667,11 +667,11 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Knitr Options</th></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="None" <%=text(knitrFormat.equals("None") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="None"<%=checked(knitrFormat.equals("None"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 None<%=helpPopup("No preprocessing", "The source is run without going through knitr.")%></td></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Html" <%=text(knitrFormat.equals("Html") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Html"<%=checked(knitrFormat.equals("Html"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 Html<%=helpPopup("Html", "Use knitr to process html source")%></td></tr>
-            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown" <%=text(knitrFormat.equals("Markdown") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="<%=ScriptReportDescriptor.Prop.knitrFormat%>" value="Markdown"<%=checked(knitrFormat.equals("Markdown"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 Markdown<%=helpPopup("Markdown", "Use knitr to process markdown source")%></td></tr>
             <tr><td>&nbsp;</td></tr>
             <%
@@ -682,7 +682,7 @@ function setDisabled(checkbox, label, disabled)
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">JavaScript Options</th></tr>
             <tr><td>
-                <input type="checkbox" id="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" name="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" value="true" <%=text(useGetDataApi ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+                <input type="checkbox" id="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" name="<%=ScriptReportDescriptor.Prop.useGetDataApi%>" value="true"<%=checked(useGetDataApi)%> onchange="LABKEY.setDirty(true);return true;"/>
                 Use GetData API?
                 <%=helpPopup(
                         "Use GetData API",
@@ -698,14 +698,14 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Report Thumbnail</th></tr>
-            <tr><td><input type="radio" name="thumbnailType" value="AUTO" <%=text(bean.getThumbnailType().equals("AUTO") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="AUTO"<%=checked(bean.getThumbnailType().equals("AUTO"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 Auto-generate<%=helpPopup("Auto-generate thumbnail", "Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)")%></td></tr>
-            <tr><td><input type="radio" name="thumbnailType" value="NONE" <%=text(bean.getThumbnailType().equals("NONE") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="NONE"<%=checked(bean.getThumbnailType().equals("NONE"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 None<%=helpPopup("No thumbnail", "Use the default static image for this report")%></td></tr>
              <%     if (bean.getThumbnailType().equals("CUSTOM"))
                     {
             %>
-            <tr><td><input type="radio" name="thumbnailType" value="CUSTOM" <%=text(bean.getThumbnailType().equals("CUSTOM") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="CUSTOM"<%=checked(bean.getThumbnailType().equals("CUSTOM"))%> onchange="LABKEY.setDirty(true);return true;"/>
                 Keep existing<%=helpPopup("Keep custom thumbnail", "Keep the existing custom thumbnail that has been provided for this report type")%></td></tr>
             <%
                     }
@@ -722,7 +722,7 @@ function setDisabled(checkbox, label, disabled)
                     for (Report sharedReport : sharedReports)
                     { %>
             <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>" value="<%=sharedReport.getDescriptor().getReportId()
-                %>"<%=text(isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? " checked" : "")
+                %>"<%=checked(isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports))
                 %> onchange="LABKEY.setDirty(true);return true;"> <%=text(sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName))%></td></tr><%
                     } %>
             <tr><td>&nbsp;</td></tr><%

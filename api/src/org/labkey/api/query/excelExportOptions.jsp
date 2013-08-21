@@ -30,7 +30,7 @@
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" value="<%=h(model.getXlsxURL()) %>" checked="true" /></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" value="<%=h(model.getXlsxURL()) %>" checked/></td>
         <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel 2007 File (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
     </tr>
     <tr>
