@@ -225,7 +225,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             config.allowBlank = false;
             config.origFieldLabel = config.fieldLabel;
-            config.reqFieldLabel = "<span style='font-weight: bold;'>" + config.fieldLabel + "*</span>";
+            // only append * if there is some text in the field label
+            config.reqFieldLabel = (config.fieldLabel && Ext4.util.Format.trim(config.fieldLabel).length > 0) ? "<span style='font-weight: bold;'>" + config.fieldLabel + "*</span>" : config.fieldLabel;
             config.fieldLabel = config.reqFieldLabel;
 
             if (config.name)
@@ -558,7 +559,15 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 handler: function(cmp){
                     this.updateStep(this.nextEnabledStepIndex());
             }});
-            bbar = ['->', this.prevBtn, this.nextBtn];
+
+            this.progressBar = Ext4.create('Ext.ProgressBar', {
+                value: (this.currentStep+1)/this.sections.length,
+                text: "Page " + (this.currentStep+1) + " of " + this.sections.length,
+                hidden: this.showProgressBar != undefined ? !this.showProgressBar : true,
+                width: this.progressBarWidth || 300
+            });
+
+            bbar = [this.progressBar, '->', this.prevBtn, this.nextBtn];
         }
 
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
@@ -641,6 +650,15 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         this.prevBtn.setDisabled(this.currentStep == 0);
         this.nextBtn.setDisabled(this.currentStep == this.sections.length-1);
+
+        if (this.progressBar)
+        {
+            this.updateProgressBar(
+                    (this.currentStep+1)/this.sections.length,
+                    "Page " + (this.currentStep+1) + " of " + this.sections.length,
+                    true // animate
+            );
+        }
     },
 
     setSubmittedByInfo : function(responseConfig) {
@@ -953,5 +971,10 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (name && section.queryNameUniquifier)
             name += '-zz-' + section.queryNameUniquifier;
         return name;
+    },
+
+    updateProgressBar: function(value, text, animate) {
+        if (this.progressBar)
+            this.progressBar.updateProgress(value, text, animate);
     }
 });
