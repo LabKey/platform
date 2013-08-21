@@ -119,8 +119,8 @@ public class StatementUtils
 
     boolean useVariables = false;
     final SqlDialect dialect;
-    final Map<String,Object> constants = new CaseInsensitiveHashMap<>();
-    final Map<String,ParameterHolder> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<>());
+    final Map<String, Object> constants = new CaseInsensitiveHashMap<>();
+    final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterHolder>());
 
 
     private static class ParameterHolder
@@ -247,10 +247,10 @@ public class StatementUtils
         {
             f.append("CASE CAST(");
             appendParameterOrVariable(f, p);
-            f.append(" AS "+ dialect.getBooleanDataType() + ")" +
-                    " WHEN " + dialect.getBooleanTRUE() + " THEN 1.0 " +
-                    " WHEN " + dialect.getBooleanFALSE() + " THEN 0.0" +
-                    " ELSE NULL END");
+            f.append(" AS ").append(dialect.getBooleanDataType()).append(")")
+                    .append(" WHEN ").append(dialect.getBooleanTRUE()).append(" THEN 1.0 ")
+                    .append(" WHEN ").append(dialect.getBooleanFALSE()).append(" THEN 0.0 ")
+                    .append(" ELSE NULL END");
             return f;
         }
         else

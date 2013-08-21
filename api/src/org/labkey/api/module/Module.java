@@ -144,9 +144,9 @@ public interface Module extends Comparable<Module>
      * NOTE: This may be called before startup, but will never be called
      * before upgrade is complete.
      *
-     * @return null if no web parts, otherwise Collection of WebPartFactory
+     * @return Collection of WebPartFactory (empty collection if none)
      */
-    public Collection<WebPartFactory> getWebPartFactories();
+    public @NotNull Collection<WebPartFactory> getWebPartFactories();
 
     /**
      * Return true if the set of web part factories is now stale and needs to be reloaded
@@ -158,7 +158,7 @@ public interface Module extends Comparable<Module>
      * @param c container in which the items would be stored
      * @return description of the objects that this module has stored in the container
      */
-    public Collection<String> getSummary(Container c);
+    public @NotNull Collection<String> getSummary(Container c);
 
     /**
      * Returns a map of pageflow to controller class (for example, "wiki" -> WikiController) whose

@@ -1111,10 +1111,7 @@ public class Portal
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
         {
-            Collection<WebPartFactory> factories = module.getWebPartFactories();
-            if (null == factories)
-                continue;
-            for (WebPartFactory webpart : factories)
+            for (WebPartFactory webpart : module.getWebPartFactories())
             {
                 _viewMap.put(webpart.getName(), webpart);
                 for (String legacyName : webpart.getLegacyNames())
@@ -1140,15 +1137,10 @@ public class Portal
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            Collection<WebPartFactory> factories = module.getWebPartFactories();
-
-            if (null != factories)
+            for (WebPartFactory factory : module.getWebPartFactories())
             {
-                for (WebPartFactory factory : factories)
-                {
-                    if (factory.isAvailable(c, location))
-                        webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
-                }
+                if (factory.isAvailable(c, location))
+                    webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
             }
         }
 

@@ -103,6 +103,7 @@ public class SimpleModule extends SpringModule
         return new SimpleController(getName().toLowerCase());
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> factories = new ArrayList<>();
@@ -226,6 +227,7 @@ public class SimpleModule extends SpringModule
         return SimpleController.getBeginViewUrl(this, c);
     }
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

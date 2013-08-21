@@ -212,12 +212,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 dis.registerDescriptors(this, jobs);
         }
 
-        Collection<WebPartFactory> wpFactories = getWebPartFactories();
-        if (null != wpFactories)
-        {
-            for (WebPartFactory part : wpFactories)
-                part.setModule(this);
-        }
+        for (WebPartFactory part : getWebPartFactories())
+            part.setModule(this);
+
         preloadReports();
     }
 
@@ -279,7 +276,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     protected abstract void init();
-    protected abstract Collection<WebPartFactory> createWebPartFactories();
+    protected abstract @NotNull Collection<WebPartFactory> createWebPartFactories();
     public boolean isWebPartFactorySetStale() {return false;}
     public abstract boolean hasScripts();
 
@@ -395,7 +392,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final Collection<WebPartFactory> getWebPartFactories()
+    public final @NotNull Collection<WebPartFactory> getWebPartFactories()
     {
         if (null == _webPartFactories || isWebPartFactorySetStale())
         {
@@ -433,6 +430,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
 
     @Override
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
@@ -969,7 +967,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    public UpgradeCode getUpgradeCode()
+    public @Nullable UpgradeCode getUpgradeCode()
     {
         return null;
     }

@@ -132,9 +132,10 @@ public class MockModule implements Module
     {
     }
 
+    @NotNull
     public Collection<WebPartFactory> getWebPartFactories()
     {
-        return null;
+        return Collections.emptyList();
     }
 
     public boolean isWebPartFactorySetStale()
@@ -142,9 +143,10 @@ public class MockModule implements Module
         return false;
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
-        return null;
+        return Collections.emptyList();
     }
 
     public Map<String, Class<? extends Controller>> getControllerNameToClass()
