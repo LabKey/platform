@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.WizardTemplate" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WizardTemplate me = (WizardTemplate) HttpView.currentView();
@@ -31,6 +32,8 @@
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
+
+    String userAgent = StringUtils.defaultString(request.getHeader("User-Agent"), "Mozilla");
 %>
 <!DOCTYPE html>
 <html>
@@ -39,7 +42,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(c, u, userAgent, pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
