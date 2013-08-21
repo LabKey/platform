@@ -77,6 +77,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         ArrayList<WebPartFactory> result = new ArrayList<>();
@@ -122,6 +123,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     }
 
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

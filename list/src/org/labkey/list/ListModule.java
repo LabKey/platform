@@ -73,6 +73,7 @@ public class ListModule extends DefaultModule
         return true;
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<>();
@@ -120,6 +121,7 @@ public class ListModule extends DefaultModule
         }
     }
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

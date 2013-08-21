@@ -34,6 +34,7 @@ public class AuditModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(AuditModule.class);
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();

@@ -16,6 +16,7 @@
 
 package org.labkey.visualization;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -50,6 +51,7 @@ public class VisualizationModule extends DefaultModule
         return true;
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();

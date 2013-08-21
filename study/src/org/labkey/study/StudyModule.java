@@ -293,6 +293,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return true;
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
@@ -305,6 +306,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 specimenReportWebPartFactory, studyScheduleWebPartFactory));
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         Study study = StudyManager.getInstance().getStudy(c);

@@ -57,6 +57,7 @@ public class DemoModule extends DefaultModule
         addController("demo", DemoController.class);
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary") {
@@ -82,6 +83,7 @@ public class DemoModule extends DefaultModule
         return true;
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         Person[] people = DemoManager.getInstance().getPeople(c);

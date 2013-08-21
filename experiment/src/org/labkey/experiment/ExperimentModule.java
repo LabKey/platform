@@ -127,6 +127,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<>();
@@ -294,6 +295,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new LookupValidator());
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<>();

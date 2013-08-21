@@ -34,7 +34,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
@@ -103,6 +102,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         DiscussionService.register(new DiscussionServiceImpl());
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory(WEB_PART_NAME)
@@ -220,6 +220,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return PageFlowUtil.set(CommSchema.getInstance().getSchemaName());
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         List<String> list = new ArrayList<>(1);

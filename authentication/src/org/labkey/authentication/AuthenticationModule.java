@@ -17,6 +17,7 @@
 package org.labkey.authentication;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
@@ -44,6 +45,7 @@ public class AuthenticationModule extends DefaultModule
         return 13.20;
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();

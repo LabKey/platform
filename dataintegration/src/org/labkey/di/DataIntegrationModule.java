@@ -130,6 +130,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     /** web parts **/
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Arrays.asList(

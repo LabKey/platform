@@ -84,6 +84,7 @@ public class SurveyModule extends DefaultModule
         return true;
     }
 
+    @NotNull
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -120,6 +121,7 @@ public class SurveyModule extends DefaultModule
         ContainerManager.addContainerListener(new SurveyContainerListener());
     }
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

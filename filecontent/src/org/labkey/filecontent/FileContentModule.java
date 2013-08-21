@@ -62,6 +62,7 @@ public class FileContentModule extends DefaultModule
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
@@ -76,6 +77,7 @@ public class FileContentModule extends DefaultModule
         return true;
     }
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

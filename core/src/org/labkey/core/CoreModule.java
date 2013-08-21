@@ -196,7 +196,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     public static final String EXPERIMENTAL_JSDOC = "experimental-jsdoc";
 
-    // Register this dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
+    // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
         SqlDialectManager.register(new PostgreSqlDialectFactory());
@@ -285,6 +285,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return Collections.<ModuleResourceLoader>singleton(new FolderTypeResourceLoader());
     }
 
+    @NotNull
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {

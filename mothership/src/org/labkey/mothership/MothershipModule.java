@@ -69,6 +69,7 @@ public class MothershipModule extends DefaultModule
         MothershipSchema.register();
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();

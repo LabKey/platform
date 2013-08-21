@@ -144,6 +144,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
@@ -192,6 +193,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
     }
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

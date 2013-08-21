@@ -22,9 +22,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleContext;
@@ -34,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
@@ -92,6 +89,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new WikiWebPartFactory(),
@@ -159,6 +157,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
     }
 
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<>();

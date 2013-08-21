@@ -96,6 +96,8 @@ public class SearchModule extends DefaultModule
     }
 
 
+    @Override
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new SearchWebPartFactory("Search", null),
@@ -161,6 +163,7 @@ public class SearchModule extends DefaultModule
     }
 
 
+    @NotNull
     @Override
     public Collection<String> getSummary(Container c)
     {

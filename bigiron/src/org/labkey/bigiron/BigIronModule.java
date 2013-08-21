@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -51,6 +52,7 @@ public class BigIronModule extends DefaultModule
         return 13.20;
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();

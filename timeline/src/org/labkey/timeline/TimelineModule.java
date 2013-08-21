@@ -17,9 +17,16 @@
 package org.labkey.timeline;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.timeline.view.TimelineView;
 
 import java.util.ArrayList;
@@ -49,6 +56,7 @@ public class TimelineModule extends DefaultModule
     {
     }
 
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, null, true, true){
