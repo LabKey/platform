@@ -15,6 +15,7 @@
  */
 package org.labkey.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,6 +133,7 @@ public class ModulePropertiesTestCase extends Assert
             addModuleProperty(mp2);
         }
 
+        @NotNull
         @Override
         protected Collection<WebPartFactory> createWebPartFactories()
         {
