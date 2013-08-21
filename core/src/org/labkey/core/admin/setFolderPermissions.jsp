@@ -16,27 +16,30 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("createFolder.css"));
+        resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<AdminController.SetFolderPermissionsForm> me = (JspView<AdminController.SetFolderPermissionsForm>) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
-    ViewContext ctx = me.getViewContext();
-    User user = ctx.getUser();
 %>
+<%=formatMissedErrors("form")%>
+<div id="folderPermissionsDiv"></div>
 <script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI(true);
-    LABKEY.requiresCss('/createFolder.css');
-</script>
-<script type="text/javascript">
-    Ext4.onReady(function(){
+    Ext4.onReady(function() {
         var isProject = <%=h(c.isProject())%>;
         var hasNext = isProject || <%= h(!c.getFolderType().getExtraSetupSteps(c).isEmpty()) %>;
         var containerNoun = isProject ? 'Project' : 'Folder';
@@ -44,7 +47,20 @@
         Ext4.FocusManager.enable(false);
         Ext4.tip.QuickTipManager.init();
 
+        var checkSubmit = function(src, getFromSrc) {
+            var f = getFromSrc ? src : src.up('form');
+            if (f) {
+                f = f.getForm();
+                if (f) {
+                    if(!f.submitInProgress)
+                        f.submit();
+                    f.submitInProgress = true;
+                }
+            }
+        };
+
         var panel = Ext4.create('Ext.form.Panel', {
+            renderTo: 'folderPermissionsDiv',
             border: false,
             autoHeight: true,
             defaults: {
@@ -63,12 +79,7 @@
                     width: 400,
                     listeners: {
                         specialkey: function(field, e){
-                            if(e.getKey() == e.ENTER){
-                                var f = field.up('form').getForm();
-                                if(!f.submitInProgress)
-                                    f.submit();
-                                f.submitInProgress = true;
-                            }
+                            if (e.getKey() == e.ENTER) { checkSubmit(field); }
                         }
                     }
                 },
@@ -169,12 +180,7 @@
                 xtype: 'button',
                 cls: 'labkey-button',
                 text: (hasNext ? 'Next' : 'Finish'),
-                handler: function(btn){
-                    var f = btn.up('form').getForm();
-                    if(!f.submitInProgress)
-                        f.submit();
-                    f.submitInProgress = true;
-                }
+                handler: function(b) { checkSubmit(b); }
             }],
             renderAdvanced: function(target){
                 //nothing needed
@@ -185,50 +191,42 @@
             renderInherit: function(target){
                 //nothing needed
             },
-            renderCopyExistingProject: function(target){
+            renderCopyExistingProject: function(target) {
+
+                var store = Ext4.create('LABKEY.ext4.data.Store', {
+                    containerPath: '/home',
+                    schemaName: 'core',
+                    queryName: 'containers',
+                    columns: 'entityId,name',
+                    sort: 'name',
+                    autoLoad: true,
+                    filterArray: [
+                        LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
+                    ],
+                    containerFilter: 'CurrentAndSiblings'
+                });
+
                 target.add({
                     xtype: 'combo',
                     id: 'targetProject',
                     name: 'targetProject',
                     style: 'padding-left: 20px;padding-top:3px;',
-                    //fieldLabel: 'Choose Project',
                     labelAlign: 'top',
                     editable: false,
                     displayField: 'Name',
                     valueField: 'EntityId',
-                    store: Ext4.create('LABKEY.ext4.Store', {
-                        containerPath: '/home',
-                        schemaName: 'core',
-                        queryName: 'containers',
-                        columns: 'entityId,name',
-                        sort: 'name',
-                        autoLoad: true,
-                        filterArray: [
-                            LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
-                        ],
-                        containerFilter: 'CurrentAndSiblings'
-                    })
+                    store: store
                 });
             }
-        }).render('folderPermissionsDiv');
+        });
 
-        Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
-            scope: this,
-            enter: function(){
-                var f = panel.getForm();
-                if(!f.submitInProgress)
-                    f.submit();
-                f.submitInProgress = true;
-            }
+        var nav = new Ext4.util.KeyNav({
+            target: Ext4.getBody(),
+            enter: function() { checkSubmit(panel, true); }
         });
     });
 
 
 </script>
-
-
-<%=formatMissedErrors("form")%>
-
-<div id="folderPermissionsDiv"></div>
 
 
