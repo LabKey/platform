@@ -293,7 +293,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getJdbcType());
         ret.copyAttributesFrom(underlyingColumn);
         ret.copyURLFrom(underlyingColumn, null, null);
-        ret.setLabel(ColumnInfo.labelFromName(alias));
+        ret.setLabel(null);  // The alias should be used to generate the default label, not whatever was in underlyingColumn; name might be set later (e.g., meta data override)
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {
             ret.setKeyField(false);

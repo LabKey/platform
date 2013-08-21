@@ -490,11 +490,19 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return parentTable.getSqlDialect();
     }
 
+
+    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
+    public String getLabelValue()
+    {
+        return label;
+    }
+
+
     @Override
     public String getLabel()
     {
         if (null == label && getFieldKey() != null)
-            label = labelFromName(getName());
+            return labelFromName(getName());
         return label;
     }
 

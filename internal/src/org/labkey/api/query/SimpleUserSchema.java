@@ -249,8 +249,9 @@ public class SimpleUserSchema extends UserSchema
         {
             ColumnInfo wrap = super.wrapColumn(col);
 
-            // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label.
-            wrap.setLabel(col.getLabel());
+            // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label. TODO: This seems incorrect... wrapColumn() does copy it!
+            // Copy the underlying value, so auto-generated labels remain auto-generated.
+            wrap.setLabel(col.getLabelValue());
 
             // ColumnInfo doesn't copy these attributes by default
             wrap.setHidden(col.isHidden());
