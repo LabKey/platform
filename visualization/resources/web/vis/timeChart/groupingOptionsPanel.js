@@ -137,7 +137,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             name      : 'Show Mean',
             checked   : this.displayAggregate,
             value     : this.displayAggregate,
-            width     : 125,
+            width     : 105,
             style     : {marginLeft: '20px'}, // show indented
             disabled  : this.chartSubjectSelection != 'groups',
             listeners : {

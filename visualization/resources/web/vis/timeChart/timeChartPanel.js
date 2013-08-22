@@ -487,7 +487,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             autoScroll: true,
             frame: false,
             minWidth: 650,
-            tbar: toolbarButtons,
+            dockedItems : [{
+                xtype: 'toolbar',
+                dock: 'top',
+                style: 'border-color: #b4b4b4;',
+                items: toolbarButtons
+            }],
             items: []
         });
         items.push(this.chart);
@@ -2337,19 +2342,19 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getPointClickFnHelp: function() {
         return 'Your code should define a single function to be called when a data point in the chart is clicked. '
-            + 'The function will be called with the following parameters:<br/><br/>'
-            + '<ul style="margin-left:20px;">'
+            + 'The function will be called with the following parameters:<br/>'
+            + '<ul>'
             + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
             + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 50px;">Days: {value: 10},<br/>study_Dataset1_Measure1: {value: 250}<br/>study_Dataset1_ParticipantId: {value: "123456789"}</div>'
+            + '<div style="margin-left: 60px;">Days: {value: 10},<br/>study_Dataset1_Measure1: {value: 250}<br/>study_Dataset1_ParticipantId: {value: "123456789"}</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>columnMap:</b> a mapping from participant, interval, and measure to use when looking up values in the data object</li>'
             + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 50px;">participant: "study_Dataset1_ParticipantId",<br/>measure: "study_Dataset1_Measure1"<br/>interval: "Days"</div>'
+            + '<div style="margin-left: 60px;">participant: "study_Dataset1_ParticipantId",<br/>measure: "study_Dataset1_Measure1"<br/>interval: "Days"</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>measureInfo:</b> the schema name, query name, and measure name for the selected series</li>'
             + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 50px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
+            + '<div style="margin-left: 60px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
     },

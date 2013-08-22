@@ -208,7 +208,12 @@
                 {header:'Created By',  dataIndex:'createdBy'},
                 {header:'Modified By', dataIndex:'modifiedBy'}
             ],
-            tbar : [createButton, editButton, deleteButton],
+            dockedItems : [{
+                xtype: 'toolbar',
+                dock: 'top',
+                style: 'border-color: #b4b4b4;',
+                items: [createButton, editButton, deleteButton]
+            }],
             renderTo: 'participantCategoriesGrid'
         });
 

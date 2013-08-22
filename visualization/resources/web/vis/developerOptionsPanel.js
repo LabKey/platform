@@ -31,12 +31,9 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         this.fnErrorDiv = 'error-' + Ext4.id();
         this.pointClickFnDesc = Ext4.create('Ext.container.Container', {
             width: 675,
-            autoEl: {
-                tag: 'span',
-                html: 'A developer can provide a JavaScript function that will be called when a data point in the chart is clicked. '
+            html: 'A developer can provide a JavaScript function that will be called when a data point in the chart is clicked. '
                     + 'See the "Help" tab for more information on the parameters available to the function.'
                     + '<br/><div id="' + this.fnErrorDiv + '">&nbsp;</div>'
-            }
         });
 
         this.pointClickFnBtn = Ext4.create('Ext.Button', {
@@ -92,6 +89,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                     title: 'Help',
                     width: 600,
                     padding: 5,
+                    autoScroll: true,
                     html: this.getPointClickFnHelp()
                 })
             ]
