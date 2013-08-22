@@ -128,7 +128,7 @@ public class FilterClauseBuilder
         @Test
         public void testStartsWithToSQL()
         {
-            assertEquals("(\"Field1\" LIKE 'value%')", toLabKeySQL(CompareType.STARTS_WITH, "value", JdbcType.VARCHAR));
+            assertEquals("(STARTSWITH(\"Field1\", 'value'))", toLabKeySQL(CompareType.STARTS_WITH, "value", JdbcType.VARCHAR));
         }
 
         @Test
