@@ -41,6 +41,7 @@ import org.labkey.study.model.StudyManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -320,6 +321,13 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         _potentiallyDeletedParticipants.add(participant);
         _participantVisitResyncRequired = true;
         return oldRow;
+    }
+
+    @Override
+    protected int truncateRows(User user, Container container)
+        throws QueryUpdateServiceException, SQLException
+    {
+       return _dataset.deleteRows(user, (Date) null);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

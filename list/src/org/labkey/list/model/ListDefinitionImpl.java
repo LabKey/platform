@@ -494,67 +494,12 @@ public class ListDefinitionImpl implements ListDefinition
         TableInfo table = getTable(user);
         QueryUpdateService qus = table.getUpdateService();
 
-        if (null != qus)
+        if (qus != null && (qus instanceof ListQueryUpdateService))
         {
-            boolean supportsDiscussions = true; // getDiscussionSetting().getValue() != 0; // DiscussionSetting.None
-            boolean supportsAttachments = true;
-
-//            for (DomainProperty prop : getDomain().getProperties())
-//            {
-//                if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-//                    supportsAttachments = true;
-//            }
-
             try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
             {
-                if (supportsAttachments || supportsDiscussions)
-                {
-                    Container c = getContainer();
-                    int increment = 1000;
-                    int index = 0;
-                    int offset = increment;
-
-                    // Delete all the rows
-                    Map<String, Object>[] rows = new TableSelector(table, new CaseInsensitiveHashSet("entityId"), null, null).getMapArray();
-                    int size = rows.length;
-
-                    Set<String> entityIds;
-                    List<AttachmentParent> attachmentParents;
-                    String eid;
-
-                    while (index < size)
-                    {
-                        // Build up set of entityIds and AttachmentParents
-                        entityIds = new HashSet<>();
-                        attachmentParents = new ArrayList<>();
-
-                        int start = index;
-                        int end = Math.min(offset, size);
-                        for (int i = start; i < end; i++)
-                        {
-                            eid = (String) rows[i].get("entityId"); // LQUS.ID property
-                            if (null != eid)
-                            {
-                                entityIds.add(eid);
-                                attachmentParents.add(new ListItemAttachmentParent(eid, c));
-                            }
-                        }
-
-                        // Delete Discussions
-                        if (supportsDiscussions)
-                            DiscussionService.get().deleteDiscussions(c, table.getUserSchema().getUser(), entityIds);
-
-                        // Delete Attachments
-                        if (supportsAttachments)
-                            AttachmentService.get().deleteAttachments(attachmentParents);
-
-                        index = end;
-                        offset += increment;
-                    }
-                }
-
-                // Unindex all item docs and the entire list doc
-                ListManager.get().deleteIndexedList(this);
+                // remove related attachments, discussions, and indices
+                ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
 
                 // then delete the list itself
                 Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});

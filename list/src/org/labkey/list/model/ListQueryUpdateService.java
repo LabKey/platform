@@ -20,10 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -66,8 +68,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Nick Arnold
@@ -353,6 +357,69 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 if (result.size() > 0)
                     mgr.deleteItemIndex(_list, entityId);
             }
+        }
+
+        return result;
+    }
+
+    // Deletes attachments and discussions associated with a list.
+    // Removes list from indices.
+    public void deleteRelatedListData(User user, Container container)
+    {
+        int increment = 1000;
+        int index = 0;
+        int offset = increment;
+
+        // Delete all the rows
+        Map<String, Object>[] rows = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"), null, null).getMapArray();
+        int size = rows.length;
+
+        Set<String> entityIds;
+        List<AttachmentParent> attachmentParents;
+        String eid;
+
+        while (index < size)
+        {
+            // Build up set of entityIds and AttachmentParents
+            entityIds = new HashSet<>();
+            attachmentParents = new ArrayList<>();
+
+            int start = index;
+            int end = Math.min(offset, size);
+            for (int i = start; i < end; i++)
+            {
+                eid = (String) rows[i].get("entityId"); // LQUS.ID property
+                if (null != eid)
+                {
+                    entityIds.add(eid);
+                    attachmentParents.add(new ListItemAttachmentParent(eid, container));
+                }
+            }
+
+            // Delete Discussions
+            DiscussionService.get().deleteDiscussions(container, user, entityIds);
+
+            // Delete Attachments
+            AttachmentService.get().deleteAttachments(attachmentParents);
+
+            index = end;
+            offset += increment;
+        }
+
+        // Unindex all item docs and the entire list doc
+        ListManager.get().deleteIndexedList(_list);
+    }
+
+    @Override
+    protected int truncateRows(User user, Container container)
+            throws QueryUpdateServiceException, SQLException
+    {
+        int result;
+        try (DbScope.Transaction transaction = getDbTable().getSchema().getScope().ensureTransaction())
+        {
+            deleteRelatedListData(user, container);
+            result = super.truncateRows(user, container);
+            transaction.commit();
         }
 
         return result;
