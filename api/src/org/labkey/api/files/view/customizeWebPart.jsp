@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
+<%@ page import="org.labkey.api.cloud.CloudStoreService" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.CustomizeFilesWebPartView" %>
@@ -24,6 +25,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
@@ -32,6 +35,14 @@
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
+
+    Collection<String> cloudStoreNames = Collections.emptyList();
+    CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
+    if (cloud != null)
+    {
+        cloudStoreNames = cloud.getCloudStores(ctx.getContainer());
+    }
+
     String small = "";
     String medium = "";
     String large = "";
@@ -54,11 +65,16 @@
         <tr>
             <td class="labkey-form-label">File Root</td>
             <td><select name="fileSet">
-                <option value="" <%=null == form.getFileSet() ? "SELECTED" : ""%>>&lt;Default&gt;</option>
-                <option value="<%=h(FileContentService.PIPELINE_LINK)%>" <%=FileContentService.PIPELINE_LINK.equals(form.getFileSet()) ? "SELECTED" : ""%>>Pipeline files</option>
+                <option value="" <%=selected(null == form.getFileSet())%>>&lt;Default&gt;</option>
+                <option value="<%=h(FileContentService.PIPELINE_LINK)%>" <%=selected(FileContentService.PIPELINE_LINK.equals(form.getFileSet()))%>>Pipeline files</option>
 
 <%          for (AttachmentDirectory attDir : attDirs) { %>
-                <option value="<%=h(attDir.getLabel())%>" <%=attDir.getLabel().equals(form.getFileSet()) ? "SELECTED" : ""%>><%=h(attDir.getLabel())%></option>
+                <option value="<%=h(attDir.getLabel())%>" <%=selected(attDir.getLabel().equals(form.getFileSet()))%>><%=h(attDir.getLabel())%></option>
+<%          } %>
+<%          for (String storeName : cloudStoreNames) {
+                String value = CloudStoreService.CLOUD_NAME + "/" + storeName;
+%>
+                <option value="<%=h(value)%>" <%=selected(value.equals(form.getFileSet()))%>><%=h("Cloud storage: " + storeName)%></option>
 <%          } %>
             </select>
 <%          if (ctx.getUser().isSiteAdmin())
@@ -78,9 +94,9 @@
         <tr>
             <td class="labkey-form-label">Webpart Size</td>
             <td>
-                <input type="radio" name="size" value="350" <%=small%>/>Small<br>
-                <input type="radio" name="size" value="650" <%=medium%>/>Medium<br>
-                <input type="radio" name="size" value="1000" <%=large%>/>Large<br>
+                <input type="radio" name="size" value="350" <%=text(small)%>/>Small<br>
+                <input type="radio" name="size" value="650" <%=text(medium)%>/>Medium<br>
+                <input type="radio" name="size" value="1000" <%=text(large)%>/>Large<br>
             </td>
         </tr>
 

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
@@ -114,6 +115,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                     getModelBean().setRootDirectory(root.getRootPath());
                 }
                 setTitle("Pipeline Files");
+            }
+            else if (fileSet.startsWith(CloudStoreService.CLOUD_NAME))
+            {
+                // UNDONE: Configure filebrowser to not expand by default since even listing store contents costs money.
+                String storeName = fileSet.substring((CloudStoreService.CLOUD_NAME + "/").length());
+                getModelBean().setRootPath(getRootPath(c, CloudStoreService.CLOUD_NAME, storeName));
+                setTitle(storeName);
+                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
             }
             else
             {

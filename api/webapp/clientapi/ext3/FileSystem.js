@@ -26,7 +26,7 @@ LABKEY.URI = Ext.extend(Object,
     {
         this.toString = function()
         {
-            return this.protocol + "://" + this.host + this.pathname + this.search;
+            return this.protocol + "://" + this.host + this.pathname + (this.search ? "?" + this.search : "");
         };
         if (typeof u == "string")
             this.parse(u);
@@ -61,7 +61,7 @@ LABKEY.URI = Ext.extend(Object,
         {
             if ($1) uri[o.q.name][$1] = $2;
         });
-        uri.href = this.protocol + "://" + this.host + this.pathname + this.search;
+        uri.href = this.toString();
         return uri;
     },
     options:
