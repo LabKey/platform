@@ -1,4 +1,4 @@
-    /*
+/*
  * Copyright (c) 2008-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -122,7 +121,26 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
@@ -2588,7 +2606,8 @@ public class DavController extends SpringActionController
         {
             LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
 
-            if(!resource.delete(getUser()))
+            // XXX: looks no good
+            if (!resource.delete(getUser()))
                 deleteCollection(resource, errorList);
 
             removeFromDataObject(resource);

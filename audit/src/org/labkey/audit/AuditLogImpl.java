@@ -677,10 +677,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         if (ModuleLoader.getInstance().isNewInstall())
         {
             // Mark the migration as complete -- individual audit providers are not marked as migrated since new providers may be added after the migration.
+            _log.info("New installation, marking audit log migration as complete.");
             setMigrateComplete(true);
             return;
         }
 
+        _log.info("Attempting to migrate all registered audit providers");
         for (AuditTypeProvider provider : getAuditProviders())
         {
             migrateProvider(provider);
@@ -697,6 +699,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             return;
         }
 
+        _log.info("Migrating audit type " + provider.getEventName());
+
         Domain domain = provider.getDomain();
         if (domain == null)
             throw new RuntimeException("Audit provider '" + provider.getEventName() + "' domain not found");
@@ -708,9 +712,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         AuditLogTable sourceTable = new AuditLogTable(schema, LogManager.get().getTinfoAuditLog(), provider.getEventName());
         sourceTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
-        // UNDONE: Don't perform migration if audit.auditlog table has already been deleted from the database
-
-        _log.info("Migrating audit type " + provider.getEventName());
 
         // Get the new audit provisioned table
         DbSchema dbSchema = DbSchema.get(AuditSchema.SCHEMA_NAME);
@@ -813,7 +814,10 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         if (dialect.isSqlServer())
         {
             new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;\nGO\n")));
+            _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s ON", targetTable));
         }
+
+        _log.info(String.format("Migrating audit log for audit type %s... please be patient", provider.getEventName()));
 
         // perform the copy
         SqlExecutor exec = new SqlExecutor(dbSchema);
@@ -825,22 +829,28 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         if (dialect.isSqlServer())
         {
             new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;\nGO\n")));
+            _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s OFF", targetTable));
         }
         else if (dialect.isPostgreSQL())
         {
             String pkCol = targetTable.getPkColumnNames().get(0);
+            _log.info(String.format("Updating sequence for %s.%s", targetTable, pkCol));
+
             SQLFragment resetSeq = new SQLFragment();
             resetSeq.append("SELECT setval(\n");
             resetSeq.append("  pg_get_serial_sequence('").append(targetTable).append("', '").append(pkCol).append("'),\n");
             resetSeq.append("  (SELECT MAX(").append(pkCol).append(") FROM ").append(targetTable).append(") + 1");
             resetSeq.append(");\n");
             new SqlExecutor(dbSchema).execute(resetSeq);
+            _log.info(String.format("Updated sequence for %s.%s", targetTable, pkCol));
         }
 
         // mark this provider as migrated
+        _log.info(String.format("Marking provider %s as migrated.", provider.getEventName()));
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
         props.put(provider.getEventName(), "true");
         PropertyManager.saveProperties(props);
+        _log.info(String.format("Marked provider %s as migrated.", provider.getEventName()));
     }
 
     private void postMigrate()
@@ -881,6 +891,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         Container sharedContainer = ContainerManager.getSharedContainer();
 
         // delete exp.objects and exp.objectproperty values
+        _log.info("Deleting ontology objects referenced by the audit log...");
         TableInfo auditLogTable = LogManager.get().getTinfoAuditLog();
         SQLFragment lsids = new SQLFragment("SELECT a.lsid FROM ").append(auditLogTable, "a");
         OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, sharedContainer, false);
@@ -897,6 +908,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             {
                 try
                 {
+                    _log.info(String.format("Deleting domain for audit type %s...", eventName));
                     domain.delete(null);
                 }
                 catch (DomainNotFoundException e)
@@ -905,14 +917,17 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 }
             }
 
+            _log.info(String.format("Unregistering the old audit view factory %s", eventName));
             AuditLogService.removeAuditViewFactory(eventName);
         }
 
         // delete old audit table
+        _log.info("Dropping the audit log table...");
         SQLFragment dropTable = new SQLFragment("DROP TABLE ").append(auditLogTable);
         new SqlExecutor(auditLogTable.getSchema()).execute(dropTable);
 
         // remember that we've migrated all audit types
+        _log.info("Marking audit log migration as complete");
         setMigrateComplete(true);
     }
 
