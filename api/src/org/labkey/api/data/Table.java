@@ -1079,6 +1079,14 @@ public class Table
         }
     }
 
+    public static int delete(TableInfo table)
+    {
+        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
+        int result = sqlExecutor.execute("DELETE FROM " + table.getSelectName());
+        notifyTableUpdate(table);
+        return result;
+    }
 
     public static int delete(TableInfo table, Filter filter) throws SQLException
     {

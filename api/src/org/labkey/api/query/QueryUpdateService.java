@@ -178,11 +178,12 @@ public interface QueryUpdateService
      * @param user The current user.
      * @param container The container in which the row should exist.
      * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
+     * @return the number of rows deleted
      * @throws BatchValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public void truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**

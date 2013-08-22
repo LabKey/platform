@@ -233,13 +233,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }
 
-    @Override
-    public void truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
-            throws BatchValidationException,  QueryUpdateServiceException, SQLException
-    {
-        throw new UnsupportedOperationException("truncate is not supported for all tables");
-    }
-
     private boolean hasTableScript(Container container)
     {
         return getQueryTable().hasTriggers(container);
@@ -536,6 +529,32 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
+
+        return result;
+    }
+
+    protected int truncateRows(User user, Container container)
+            throws QueryUpdateServiceException, SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+            throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, DeletePermission.class))
+            throw new UnauthorizedException("You do not have permission to truncate this table.");
+
+        BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, true, errors, extraScriptContext);
+
+        int result = truncateRows(user, container);
+
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
 
         return result;
     }

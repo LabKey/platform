@@ -25,6 +25,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
@@ -466,12 +467,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected void _delete(Container c, Map<String, Object> row) throws SQLException, InvalidKeyException
     {
-        _deleteOntologyObject(c, row);
-        Table.delete(getDbTable(), getKeys(row));
-    }
-
-    protected void _deleteOntologyObject(Container c, Map<String, Object> row)
-    {
         ColumnInfo objectUriCol = getObjectUriColumn();
         if (objectUriCol != null)
         {
@@ -483,6 +478,28 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     OntologyManager.deleteProperties(c, oo.getObjectId());
             }
         }
+        Table.delete(getDbTable(), getKeys(row));
+    }
+
+    // classes should override this method if they need to do more work than delete all the rows from the table
+    // this implementation will delete all rows from the table for the given container as well as delete
+    // any properties associated with the table
+    @Override
+    protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+    {
+        // get rid of the properties for this table
+        if (null != getObjectUriColumn())
+        {
+            SQLFragment lsids = new SQLFragment("SELECT t." + getObjectUriColumn().getColumnName() + " FROM ").append(getDbTable(), "t");
+            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, container, false);
+        }
+
+        // delete all the rows in this table, scoping to the container if the column
+        // is available
+        if (null != getDbTable().getColumn("container"))
+            return Table.delete(getDbTable(), SimpleFilter.createContainerFilter(container));
+
+       return Table.delete(getDbTable());
     }
 
     protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException
