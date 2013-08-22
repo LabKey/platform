@@ -549,7 +549,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }
                 },
                 afterlayout : function(p) {
-                    /* Apply selector for tests */
+                    /* Apply selector for tests */     // TODO: is this used? I believe the class names have changed in Ext4.2.1
                     var el = Ext4.query("*[class=x4-grid-table x4-grid-table-resizer]");
                     if (el && el.length == 1) {
                         el = el[0];

@@ -50,11 +50,22 @@
                 index       : <%= me.getModelBean().getIndex() %>,
                 webpartId   : <%= webPartId %>,
                 returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
-                allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>
+                allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
+                listeners   : {
+                    render: function(panel) {
+                        // Issue 18337: hold onto the initial width diff for the panel, to be used in resizing
+                        panel.panelWidthDiff = Ext4.getBody().getViewSize().width - panel.getWidth();
+                    }
+                }
             });
 
             var resize = function() {
-                if (dvp && dvp.doLayout) { dvp.doLayout(); }
+                if (dvp && dvp.doLayout && dvp.panelWidthDiff)
+                {
+                    var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
+                    dvp.setWidth(width);
+                    dvp.doLayout();
+                }
             };
 
             Ext4.EventManager.onWindowResize(resize);

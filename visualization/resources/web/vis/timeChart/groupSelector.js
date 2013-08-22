@@ -85,6 +85,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             itemId   : 'filterPanel',
             flex     : 1,
             allowAll : true,
+            normalWrap : true,
             includeParticipantIds : true,
             includeUnassigned : false,
             maxInitSelection: this.maxInitSelection,

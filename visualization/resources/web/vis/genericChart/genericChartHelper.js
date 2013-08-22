@@ -316,7 +316,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 dataIsNull = false;
             }
 
-            if (value < 0 || value === null || value === undefined) {
+            if (value && value < 0) {
                 invalidLogValues = true;
             }
 
@@ -369,7 +369,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 dataIsNull = false;
             }
 
-            if (value < 0 || value === null || value === undefined) {
+            if (value && value < 0) {
                 invalidLogValues = true;
             }
 
