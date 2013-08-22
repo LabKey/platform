@@ -202,6 +202,7 @@ Ext4.define('File.panel.Browser', {
 
     initComponent : function() {
 
+        fb = this;
         var testFlag = document.createElement("div");
         testFlag.id = 'testFlag';
 
@@ -513,6 +514,19 @@ Ext4.define('File.panel.Browser', {
                 }
             }
         }
+        else if (this.tbarItems) {
+
+            for (i=0; i < this.tbarItems.length; i++) {
+                action = this.actions[this.tbarItems[i]];
+
+                // TODO: Why special processing?
+                if (this.tbarItems[i] == 'customize') {
+                    action.setDisabled(this.disableGeneralAdminSettings);
+                }
+
+                buttons.push(action);
+            }
+        }
 
         if (actionButtons) {
             for (i=0; i < actionButtons.length; i++) {
@@ -530,7 +544,7 @@ Ext4.define('File.panel.Browser', {
             }
         }
 
-        this.addDocked({xtype:'toolbar', dock: 'top', items: buttons, enableOverflow : true});
+        this.addDocked({xtype: 'toolbar', dock: 'top', items: buttons, enableOverflow : true});
     },
 
     executeToolbarAction : function(item, e)
@@ -681,16 +695,18 @@ Ext4.define('File.panel.Browser', {
 
     setFolderOffset : function(offsetPath, model) {
 
+        var path = offsetPath;
+
         if (model && Ext4.isString(offsetPath)) {
             var splitUrl = offsetPath.split(this.getRootURL());
             if (splitUrl && splitUrl.length > 1) {
-                offsetPath = splitUrl[1];
+                path = splitUrl[1];
             }
         }
 
-        this.rootOffset = offsetPath;
+        this.rootOffset = path;
         this.currentFolder = model;
-        this.fireEvent('folderchange', offsetPath, model);
+        this.fireEvent('folderchange', path, model);
     },
 
     getFolderTreeCfg : function() {
@@ -1728,7 +1744,6 @@ Ext4.define('File.panel.Browser', {
 
         var treePanel = Ext4.create('Ext.tree.Panel', {
             itemId          : 'treepanel',
-            id              : 'treePanel',
             height          : 200,
             root            : this.tree.getRootNode(),
             rootVisible     : true,
@@ -1747,7 +1762,7 @@ Ext4.define('File.panel.Browser', {
         treePanel.getRootNode().expand();
 
         var okHandler = function(win) {
-            var panel = Ext4.getCmp('treePanel');
+            var panel = treePanel;
             var node = panel.getSelectionModel().getLastSelected();
             if (!node) {
                 Ext4.Msg.alert('Move Error', 'Must pick a destination folder');

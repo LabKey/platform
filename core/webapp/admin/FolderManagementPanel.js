@@ -158,7 +158,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 },
                 load : {
                     fn : function(grid, root, success) {
-                        Ext4.defer(function() { this.ensureVisible(this.selected); }, 250, this);
+                        Ext4.defer(function() { this.ensureVisible(this.selected); }, 100, this);
                     },
                     single: true
                 },
