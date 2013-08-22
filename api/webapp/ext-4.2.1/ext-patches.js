@@ -216,3 +216,15 @@ Ext4.override(Ext4.data.NodeStore, {
     }
 });
 
+Ext4.override(Ext4.data.Store, {
+    loadRawData : function(data, append) {
+        var me = this;
+
+        // the load method stores the last set of options (action, filters, sorters) which are not provided in loadRawData
+        me.lastOptions = {};
+
+        me.callParent(arguments);
+        me.fireEvent('load', me, me.data.getRange(), true);
+    }
+});
+
