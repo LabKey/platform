@@ -1072,11 +1072,6 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
             store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
             store.fireEvent("measureStoreSorted", store);
         });
-    },
-
-    loadRawData : function(data, append) {
-        this.callParent(arguments);
-        this.fireEvent('load', this, this.data.getRange(), true);
     }
 });
 

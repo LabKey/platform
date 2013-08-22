@@ -108,18 +108,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return record.data.type;
         };
 
-        Ext4.define('MeasureModel',{
-            extend: 'Ext.data.Model',
-            fields: [
-                {name: 'label', mapping: 'shortCaption', type: 'string'},
-                {name: 'name', type: 'string'},
-                {name: 'hidden', type: 'boolean'},
-                {name: 'measure', type: 'boolean'},
-                {name: 'type'},
-                {name: 'displayFieldJsonType'},
-                {name: 'normalizedType', convert: typeConvert}
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('MeasureModel')) {
+            Ext4.define('MeasureModel',{
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'label', mapping: 'shortCaption', type: 'string'},
+                    {name: 'name', type: 'string'},
+                    {name: 'hidden', type: 'boolean'},
+                    {name: 'measure', type: 'boolean'},
+                    {name: 'type'},
+                    {name: 'displayFieldJsonType'},
+                    {name: 'normalizedType', convert: typeConvert}
+                ]
+            });
+        }
 
         this.chartDefinitionChanged = new Ext4.util.DelayedTask(function(){
             this.markDirty(true);
@@ -127,17 +129,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }, this);
 
         // Push the windows into the items list so the modal part only covers the generic chart panel.
-        this.items = [];
-        this.items.push(this.initXMeasureWindow());
-        this.items.push(this.initYMeasureWindow());
-        this.items.push(this.initMainTitleWindow());
-        this.items.push(this.initHelpWindow());
-        this.items.push(this.initSavePanel());
-        this.items.push(this.initOptionsWindow());
-        this.items.push(this.initGroupingWindow());
-        this.items.push(this.initDeveloperWindow());
-        this.items.push(this.initExportScriptWindow());
-        this.items.push(this.initCenterPanel());
+        this.items = [
+            this.initXMeasureWindow(),
+            this.initYMeasureWindow(),
+            this.initMainTitleWindow(),
+            this.initHelpWindow(),
+            this.initSavePanel(),
+            this.initOptionsWindow(),
+            this.initGroupingWindow(),
+            this.initDeveloperWindow(),
+            this.initExportScriptWindow(),
+            this.initCenterPanel()
+        ];
 
         this.callParent();
 
@@ -150,12 +153,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.markDirty(false);
             this.on('render', this.ensureQuerySettings, this);
         }
-
-        this.centerPanel.on('resize', function(){
-            if(!this.optionsWindow.hidden){
-                this.optionsWindow.alignTo(this.showOptionsBtn, 'tl-tr', [-175, 30]);
-            }
-        }, this);
 
         this.on('dataRequested', this.requestData, this);
 
@@ -175,16 +172,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 ui          : 'custom',
                 listeners   : {
                     activate  : this.viewPanelActivate,
+                    resize    : function(p) { if (this.chartData) { this.requestRender(); }}, // only re-render after the initial chart rendering
                     scope: this
                 }
             });
         }
-
-        this.viewPanel.on('resize', function(cmp) {
-            // only re-render after the initial chart rendering
-            if (this.chartData)
-                this.requestRender();
-        }, this);
 
         return this.viewPanel;
     },
@@ -373,19 +365,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             },
             listeners: {
-                load: function(store){
-                    this.xMeasureStore.filterBy(function(record, id){
+                load: function(store) {
+                    store.filterBy(function(record, id){
                         var hidden = record.get('hidden');
-                        return !hidden
+                        return !hidden;
                     });
-                    if(this.measures.x){
-                        var measure = this.xMeasureStore.findRecord('name', this.measures.x.name, 0, false, true, true);
-                        if(measure){
-                            this.xMeasureGrid.getSelectionModel().select(measure, false, true);
-                            this.xMeasureChoice = this.xMeasureGrid.getSelectionModel().getSelection()[0].data;
-                            this.xMeasurePanel.selectionChange(true);
-                        }
-                    }
                 },
                 scope: this
             }
@@ -401,6 +385,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
+                viewready: function(grid) {
+                    if(this.measures.x){
+                        var measure = grid.getStore().findRecord('name', this.measures.x.name, 0, false, true, true);
+                        if (measure) {
+                            grid.getSelectionModel().select(measure, false, true);
+                            this.xMeasureChoice = grid.getSelectionModel().getSelection()[0].data;
+                            this.xMeasurePanel.selectionChange(true);
+                        }
+                    }
+                },
                 select: function(selModel, record, index){
                     this.xMeasureChoice = selModel.getSelection()[0].data;
                     this.xOkBtn.setDisabled(false);
@@ -505,19 +499,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             listeners: {
                 load: function(store){
-                    this.yMeasureStore.filterBy(function(record, id){
+                    store.filterBy(function(record, id){
                         var type = record.get('normalizedType');
                         var hidden = record.get('hidden');
-                        return (!hidden && (type == 'int' || type == 'float' || type == 'double'))
+                        return (!hidden && (type == 'int' || type == 'float' || type == 'double'));
                     });
-                    if(this.measures.y){
-                        var measure = this.yMeasureStore.findRecord('name', this.measures.y.name, 0, false, true, true);
-                        if(measure){
-                            this.yMeasureGrid.getSelectionModel().select(measure, false, true);
-                            this.yMeasureChoice = this.yMeasureGrid.getSelectionModel().getSelection()[0].data;
-                            this.yMeasurePanel.selectionChange(true);
-                        }
-                    }
                 },
                 scope: this
             }
@@ -533,6 +519,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
+                viewready: function(grid) {
+                    if (this.measures.y) {
+                        var measure = grid.getStore().findRecord('name', this.measures.y.name, 0, false, true, true);
+                        if(measure){
+                            grid.getSelectionModel().select(measure, false, true);
+                            this.yMeasureChoice = grid.getSelectionModel().getSelection()[0].data;
+                            this.yMeasurePanel.selectionChange(true);
+                        }
+                    }
+                },
                 select: function(selModel, record, index){
                     this.yMeasureChoice = selModel.getSelection()[0].data;
                     this.yOkBtn.setDisabled(false);
@@ -689,7 +685,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             activeItem: 0,
             items    : [this.getViewPanel(), this.getDataPanel()],
-            tbar: this.initTbarItems()
+            tbar: this.initTbarItems(),
+            listeners : {
+                resize: function() {
+                    if (!this.optionsWindow.hidden) {
+                        this.optionsWindow.alignTo(this.showOptionsBtn, 'tl-tr', [-175, 30]);
+                    }
+                },
+                scope: this
+            }
         });
 
         return this.centerPanel;
@@ -757,29 +761,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             },
             listeners: {
-                load: function(store){
-                    this.groupingMeasureStore.filterBy(function(record, id){
+                load: function(store) {
+                    store.filterBy(function(record, id){
                         var normalizedType = record.get('normalizedType');
                         return (!record.get('hidden') && normalizedType !== 'float' && normalizedType !== 'int' && normalizedType !== 'double');
                     });
 
-                    var firstVal = this.groupingMeasureStore.getAt(0);
+                    var firstVal = store.getAt(0);
 
-                    this.groupingPanel.supressEvents = true;
+                    if (firstVal) {
 
-                    if(this.groupingPanel.getColorMeasure().name == null){
-                        if(firstVal){
+                        this.groupingPanel.supressEvents = true;
+
+                        if (this.groupingPanel.getColorMeasure().name == null) {
                             this.groupingPanel.setColorMeasure(firstVal.data);
                         }
-                    }
-
-                    if(this.groupingPanel.getPointMeasure().name == null){
-                        if(firstVal){
+                        if (this.groupingPanel.getPointMeasure().name == null) {
                             this.groupingPanel.setPointMeasure(firstVal.data);
                         }
-                    }
 
-                    this.groupingPanel.supressEvents = false;
+                        this.groupingPanel.supressEvents = false;
+                    }
                 },
                 scope: this
             }
