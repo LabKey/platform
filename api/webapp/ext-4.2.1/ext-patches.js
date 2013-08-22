@@ -196,3 +196,23 @@ Ext4.override(Ext4.selection.Model, {
     }
 });
 
+/**
+ * @Override
+ * Cannot find issue related to this override, however node.removeContext is being accessed when it is not available
+ * Ext 4.2.1
+ */
+Ext4.override(Ext4.data.NodeStore, {
+    onNodeRemove: function(parent, node, isMove) {
+        var me = this;
+        if (me.indexOf(node) != -1) {
+            if (!node.isLeaf() && node.isExpanded() && node.removeContext) {
+                node.parentNode = node.removeContext.parentNode;
+                node.nextSibling = node.removeContext.nextSibling;
+                me.onNodeCollapse(node, node.childNodes, true);
+                node.parentNode = node.nextSibling = null;
+            }
+            me.remove(node);
+        }
+    }
+});
+
