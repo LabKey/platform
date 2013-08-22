@@ -618,6 +618,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             menuDisabled : true,
             sortable : false,
             tdCls    : 'x4-name-column-cell',
+            renderer : Ext4.util.Format.htmlEncode,
             scope    : this
         },{
             id       : 'category-column-' + this.webpartId,
