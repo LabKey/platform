@@ -51,7 +51,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 9.2 is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 9.3 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
@@ -100,7 +100,10 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             if (92 == version)
                 return new PostgreSql92Dialect();
 
-            if (version > 92)
+            if (93 == version)
+                return new PostgreSql93Dialect();
+
+            if (version > 93)
             {
                 if (logWarnings)
                     _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
@@ -133,9 +136,9 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 9.3, "");
-            badProductName("Postgres", 8.0, 9.3, "");
-            badProductName("postgresql", 8.0, 9.3, "");
+            badProductName("Gobbledygood", 8.0, 9.5, "");
+            badProductName("Postgres", 8.0, 9.5, "");
+            badProductName("postgresql", 8.0, 9.5, "");
 
             // 8.3 or lower should result in bad version number exception
             badVersion("PostgreSQL", 0.0, 8.3, null);
