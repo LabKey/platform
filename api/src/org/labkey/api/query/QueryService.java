@@ -207,8 +207,9 @@ abstract public class QueryService
      * @param container Container to use to figure out the set of active modules
      * @param qd the query for which views should be fetched
      * @param path the relative path within the module to check for custom views
+     * @param extraModules any extra modules that may need to be searched for Custom Views but are not explicitly enabled
      */
-    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query);
+    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules);
 
     /*
      * Normally we look at all active modules within a container for query file paths, however sometimes

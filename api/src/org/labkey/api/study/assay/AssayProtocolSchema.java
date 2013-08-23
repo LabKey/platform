@@ -533,7 +533,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
         // where TABLE_TYPE is Runs, Batches, Data, etc
         Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
-        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName()));
+        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName(), getProvider().getDeclaringModule()));
 
         // Also look using label, if different
         if (!qd.getName().equals(qd.getTitle()))
