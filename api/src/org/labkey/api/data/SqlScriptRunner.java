@@ -16,9 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
@@ -27,7 +26,6 @@ import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,12 +40,11 @@ import java.util.Set;
  */
 public class SqlScriptRunner
 {
-    private static Logger _log = Logger.getLogger(SqlScriptRunner.class);
-
+    private static final Logger _log = Logger.getLogger(SqlScriptRunner.class);
     private static final List<SqlScript> _remainingScripts = new ArrayList<>();
-    private static String _currentModuleName = null;
     private static final Object SCRIPT_LOCK = new Object();
 
+    private static String _currentModuleName = null;
 
     public static List<SqlScript> getRunningScripts(@Nullable String moduleName)
     {
@@ -105,13 +102,13 @@ public class SqlScriptRunner
 
 
     // Returns all the existing scripts matching schemaName that have not been run
-    public static List<SqlScript> getNewScripts(SqlScriptProvider provider, @Nullable String schemaName) throws SQLException
+    public static List<SqlScript> getNewScripts(SqlScriptProvider provider, @Nullable DbSchema schema) throws SQLException
     {
         List<SqlScript> allScripts;
 
         try
         {
-            allScripts = provider.getScripts(schemaName);
+            allScripts = provider.getScripts(schema);
         }
         catch(SqlScriptException e)
         {
@@ -129,19 +126,15 @@ public class SqlScriptRunner
     }
 
 
-    public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, @Nullable String schemaName, double from, double to) throws SQLException
+    public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, double from, double to) throws SQLException, SqlScriptException
     {
-        List<SqlScript> newScripts = getNewScripts(provider, schemaName);
-        MultiMap<String, SqlScript> mm = new MultiHashMap<>();
-
-        for (SqlScript script : newScripts)
-            mm.put(script.getSchemaName(), script);
-
         List<SqlScript> scripts = new ArrayList<>();
-        String[] schemaNames = mm.keySet().toArray(new String[mm.keySet().size()]);
-        Arrays.sort(schemaNames, String.CASE_INSENSITIVE_ORDER);
-        for (String name : schemaNames)
-            scripts.addAll(getRecommendedScripts(mm.get(name), from, to));
+
+        for (DbSchema schema : provider.getSchemas())
+        {
+            List<SqlScript> newScripts = getNewScripts(provider, schema);
+            scripts.addAll(getRecommendedScripts(newScripts, from, to));
+        }
 
         return scripts;
     }
@@ -253,12 +246,12 @@ public class SqlScriptRunner
 
     public interface SqlScriptProvider
     {
-        public Set<String> getSchemaNames() throws SqlScriptException;
-        public List<SqlScript> getScripts(@Nullable String schemaName) throws SqlScriptException;
+        public @NotNull Collection<DbSchema> getSchemas() throws SqlScriptException;
+        public @NotNull List<SqlScript> getScripts(@Nullable DbSchema schema) throws SqlScriptException;
         public SqlScript getScript(String description);
         public String getProviderName();
-        public List<SqlScript> getDropScripts() throws SqlScriptException;
-        public List<SqlScript> getCreateScripts() throws SqlScriptException;
+        public @NotNull List<SqlScript> getDropScripts() throws SqlScriptException;
+        public @NotNull List<SqlScript> getCreateScripts() throws SqlScriptException;
         public UpgradeCode getUpgradeCode();
     }
 }

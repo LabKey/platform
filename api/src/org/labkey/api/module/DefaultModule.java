@@ -111,20 +111,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
-    private Queue<Method> _deferredUpgradeTask = new LinkedList<>();
+    private static final String XML_FILENAME = "module.xml";
+    private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
+    private final Queue<Method> _deferredUpgradeTasks = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
-    private static final String XML_FILENAME = "module.xml";
+    private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
+    private final Map<String, ModuleProperty> _moduleProperties = new HashMap<>();
+    private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     private Collection<WebPartFactory> _webPartFactories;
-
     private ModuleResourceResolver _resolver;
     private String _name = null;
     private String _description = null;
     private double _version = 0.0;
     private double _requiredServerVersion = 0.0;
-    private Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
     private String _moduleDependenciesString = null;
     private String _svnRevision = null;
     private String _svnUrl = null;
@@ -134,15 +136,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-    private Map<String, ModuleProperty> _moduleProperties = new HashMap<>();
-    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
-
-    private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {
         Before
         {
+            @NotNull
             List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
             {
                 return provider.getDropScripts();
@@ -151,13 +150,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         After
         {
+            @NotNull
             List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
             {
                 return provider.getCreateScripts();
             }
         };
 
-        abstract List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
+        abstract @NotNull List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
     }
 
     protected DefaultModule()
@@ -353,7 +353,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (hasScripts())
         {
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
-            List<SqlScript> scripts = SqlScriptRunner.getRecommendedScripts(provider, null, moduleContext.getInstalledVersion(), getVersion());
+            List<SqlScript> scripts = SqlScriptRunner.getRecommendedScripts(provider, moduleContext.getInstalledVersion(), getVersion());
 
             if (!scripts.isEmpty())
                 SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
@@ -549,7 +549,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public Set<String> getSchemaNames()
+    public Collection<String> getSchemaNames()
     {
         return Collections.emptySet();
     }
@@ -789,19 +789,21 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _explodedPath = path.getAbsoluteFile();
     }
 
-    public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
+    public Set<String> getSqlScripts(@Nullable DbSchema schema)
     {
-        Set<String> fileNames = new HashSet<>();
+        SqlDialect dialect = null == schema ? CoreSchema.getInstance().getSqlDialect() : schema.getSqlDialect();
 
         String sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);
         if (dir == null || !dir.isCollection())
             return Collections.emptySet();
 
+        Set<String> fileNames = new HashSet<>();
+
         for (String script : dir.listNames())
         {
             // TODO: Ignore case to work around EHR case inconsistencies
-            if (StringUtils.endsWithIgnoreCase(script, ".sql") && (null == schemaName || StringUtils.startsWithIgnoreCase(script, schemaName + "-")))
+            if (StringUtils.endsWithIgnoreCase(script, ".sql") && (null == schema || StringUtils.startsWithIgnoreCase(script, schema.getDisplayName() + "-")))
                 fileNames.add(script);
         }
 
@@ -1202,15 +1204,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public void addDeferredUpgradeTask(Method task)
     {
-        _deferredUpgradeTask.add(task);
+        _deferredUpgradeTasks.add(task);
     }
 
     @Override
     public void runDeferredUpgradeTasks(ModuleContext context)
     {
-        while (!_deferredUpgradeTask.isEmpty())
+        while (!_deferredUpgradeTasks.isEmpty())
         {
-            Method task = _deferredUpgradeTask.remove();
+            Method task = _deferredUpgradeTasks.remove();
             try
             {
                 task.invoke(getUpgradeCode(), context);

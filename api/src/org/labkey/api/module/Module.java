@@ -214,7 +214,7 @@ public interface Module extends Comparable<Module>
      * @return the schema names owned by this module
      */
     @NotNull
-    public Set<String> getSchemaNames();
+    public Collection<String> getSchemaNames();
 
     public Set<SupportedDatabase> getSupportedDatabasesSet();
 
@@ -249,12 +249,13 @@ public interface Module extends Comparable<Module>
 
     /**
      * Returns a list of sql script file names for a given schema name,
-     * or all sql script names if the schema name is null.
-     * @param schemaName The schema name, or null
-     * @param dialect The desired sql dialect
+     * or all sql script names from the labkey dialect if the schema name is null.
+     *
+     *
+     * @param schema The schema name, or null
      * @return The list of sql script names
      */
-    public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect);
+    public Set<String> getSqlScripts(@Nullable DbSchema schema);
 
     /**
      * Returns the file path for this modules sql scripts

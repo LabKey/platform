@@ -253,7 +253,7 @@ public class MockModule implements Module
     {
     }
 
-    public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
+    public Set<String> getSqlScripts(@Nullable DbSchema schema)
     {
         return null;
     }

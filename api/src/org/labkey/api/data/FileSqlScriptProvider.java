@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
@@ -47,24 +48,26 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     }
 
 
-    public Set<String> getSchemaNames() throws SqlScriptException
+    @NotNull
+    @Override
+    public Collection<DbSchema> getSchemas() throws SqlScriptException
     {
-        List<SqlScript> allScripts = getScripts(null);
-        Set<String> schemaNames = new HashSet<>();
+        List<DbSchema> schemas = new LinkedList<>();
 
-        for (SqlScript script : allScripts)
-            if (!schemaNames.contains(script.getSchemaName()))
-                schemaNames.add(script.getSchemaName());
+        for (String schemaName : _module.getSchemaNames())
+            schemas.add(DbSchema.get(schemaName));
 
-        return schemaNames;
+        return schemas;
     }
 
 
     // Returns a sorted list of all valid scripts in the specified schema
-    // schemaName = null returns all scripts
-    public List<SqlScript> getScripts(@Nullable String schemaName) throws SqlScriptException
+    // schema = null returns all scripts
+    @NotNull
+    @Override
+    public List<SqlScript> getScripts(@Nullable DbSchema schema) throws SqlScriptException
     {
-        Set<String> filenames = getScriptFilenames(schemaName);
+        Set<String> filenames = getScriptFilenames(schema);
 
         List<SqlScript> scripts = new ArrayList<>(filenames.size());
 
@@ -80,6 +83,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     }
 
 
+    @Override
     public SqlScript getScript(String description)
     {
         FileSqlScript script = new FileSqlScript(this, description);
@@ -92,37 +96,38 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
 
     /*
-        Returns filenames in the specified directory matching one of the following patterns:
+        Returns set of filenames in the specified directory matching one of the following patterns:
 
-            schemaName == null          *.sql
-            schemaName == <schema>      <schema>*.sql
+            schema == null          *.sql
+            schema == <schema>      <schema display name>-*.sql
+
+        Returned set can be empty (i.e., schemas that have no scripts)
     */
-    private Set<String> getScriptFilenames(@Nullable String schemaName) throws SqlScriptException
+    private @NotNull Set<String> getScriptFilenames(@Nullable DbSchema schema) throws SqlScriptException
     {
-        Set<String> filenames = _module.getSqlScripts(schemaName, CoreSchema.getInstance().getSqlDialect());
-
-        // Every script directory should have at least one script... but don't fail in production mode.
-        assert !filenames.isEmpty() : "No SQL scripts found " + (null != schemaName ? "for schema \"" + schemaName + "\" " : "") + "in module \"" + _module.getName() + "\"";
-
-        return filenames;
+        return _module.getSqlScripts(schema);
     }
 
+    @NotNull
     public List<SqlScript> getDropScripts() throws SqlScriptException
     {
         return getOneOffScripts("drop.sql");
     }
 
+    @NotNull
     public List<SqlScript> getCreateScripts() throws SqlScriptException
     {
         return getOneOffScripts("create.sql");
     }
 
+    @NotNull
     private List<SqlScript> getOneOffScripts(String suffix) throws SqlScriptException
     {
         List<SqlScript> scripts = new ArrayList<>();
 
-        for (String schemaName : getSchemaNames())
+        for (DbSchema schema : getSchemas())
         {
+            String schemaName = schema.getDisplayName();
             SqlScript script = new FileSqlScript(this, schemaName + "-" + suffix, schemaName);
             if (0 != script.getContents().length())
                 scripts.add(script);
@@ -152,15 +157,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 contents.append('\n');
             }
         }
-        catch (NullPointerException e)
-        {
-            throw new SqlScriptException(e, filename);
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new SqlScriptException(e, filename);
-        }
-        catch (IOException e)
+        catch (NullPointerException | IOException e)
         {
             throw new SqlScriptException(e, filename);
         }
@@ -243,7 +240,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final int SCHEMA_INDEX = 0;
         private static final int FROM_INDEX = 1;
         private static final int TO_INDEX = 2;
-        private static final Pattern _scriptFileNamePattern = Pattern.compile("\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.sql");
+        private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.sql");
 
         private final FileSqlScriptProvider _provider;
         private final String _fileName;

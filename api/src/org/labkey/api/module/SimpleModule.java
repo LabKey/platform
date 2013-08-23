@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -134,12 +133,12 @@ public class SimpleModule extends SpringModule
 
     public boolean hasScripts()
     {
-        return getSqlScripts(null, CoreSchema.getInstance().getSqlDialect()).size() > 0;
+        return getSqlScripts(null).size() > 0;
     }
 
     @Override
     @NotNull
-    public Set<String> getSchemaNames()
+    public Collection<String> getSchemaNames()
     {
         return getSchemaNames(false);
     }
