@@ -49,8 +49,25 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.*;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.MemberType;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -186,19 +203,6 @@ public class SecurityController extends SpringActionController
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
             url.addParameter("email", email.getEmailAddress());
             url.addParameter("mailPrefix", mailPrefix);
-
-            return url;
-        }
-
-        public ActionURL getUpdateMembersURL(Container container, String groupPath, String deleteEmail, boolean quickUI)
-        {
-            ActionURL url = new ActionURL(UpdateMembersAction.class, container);
-
-            if (quickUI)
-                url.addParameter("quickUI", "1");
-
-            url.addParameter("group", groupPath);
-            url.addParameter("delete", deleteEmail);
 
             return url;
         }
@@ -422,23 +426,8 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class GroupsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return getGroupsView(getContainer(), null, errors, Collections.<String>emptyList());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Groups");
-        }
-    }
-
     public static class GroupsBean
     {
-        ViewContext _context;
         Container _container;
         Group[] _groups;
         String _expandedGroupPath;
@@ -482,17 +471,6 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private HttpView getGroupsView(Container container, Group expandedGroup, BindException errors, List<String> messages)
-    {
-        JspView<GroupsBean> groupsView = new JspView<>("/org/labkey/core/security/groups.jsp", new GroupsBean(getViewContext(), expandedGroup, messages), errors);
-        if (null == container || container.isRoot())
-            groupsView.setTitle("Site Groups");
-        else
-            groupsView.setTitle("Groups for project " + container.getProject().getName());
-        return groupsView;
-    }
-    
-
     private ModelAndView renderContainerPermissions(Group expandedGroup, BindException errors, List<String> messages, boolean wizard) throws Exception
     {
         Container c = getContainer();
@@ -514,8 +492,6 @@ public class SecurityController extends SpringActionController
         // Display groups only if user has permissions in this project (or the root)
         if (project.hasPermission(getUser(), AdminPermission.class))
         {
-            projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
-
             UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, getUser(), false);
 
             if (impersonateView.hasUsers())
@@ -582,63 +558,6 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class NewGroupAction extends FormViewAction<NewGroupForm>
-    {
-        public ModelAndView getView(NewGroupForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return renderContainerPermissions(null, errors, null, false);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Permissions");
-        }
-        
-        public boolean handlePost(NewGroupForm form, BindException errors) throws Exception
-        {
-            // UNDONE: use form validation
-            String name = form.getName();
-            String error;
-            if (name == null || name.length() == 0)
-            {
-                error = "Group name cannot be empty.";
-            }
-            else
-            {
-                error  = UserManager.validGroupName(name, PrincipalType.GROUP);
-            }
-
-            if (null == error)
-            {
-                try
-                {
-                    Group group = SecurityManager.createGroup(getContainer().getProject(), name);
-                    addGroupAuditEvent(getViewContext(), group, "The group: " + name + " was created.");
-                }
-                catch (IllegalArgumentException e)
-                {
-                    error = e.getMessage();
-                }
-            }
-            if (error != null)
-            {
-                errors.addError(new LabkeyError(error));
-                return false;
-            }
-            return true;
-        }
-
-        public void validateCommand(NewGroupForm target, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(NewGroupForm newGroupForm)
-        {
-            return new ActionURL(ProjectAction.class, getContainer());
-        }
-    }
-
     private void addGroupAuditEvent(ContainerUser context, Group group, String message)
     {
         AuditLogEvent event = new AuditLogEvent();
@@ -657,20 +576,6 @@ public class SecurityController extends SpringActionController
         AuditLogService.get().addEvent(event);
     }
 
-    public static class NewGroupForm
-    {
-        private String _name;
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-    }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class UpdateMembersAction extends SimpleViewAction<UpdateMembersForm>
@@ -731,7 +636,7 @@ public class SecurityController extends SpringActionController
 
             String[] removeNames = form.getDelete();
             invalidEmails.clear();
-            
+
             // delete group members by ID (can be both groups and users)
             List<UserPrincipal> removeIds = new ArrayList<>();
             if (removeNames != null && removeNames.length > 0)
@@ -2038,12 +1943,6 @@ public class SecurityController extends SpringActionController
             assertPermission(user, BeginAction.class);
             assertPermission(admin, BeginAction.class);
             assertPermission(site, BeginAction.class);
-
-            // @RequiresPermissionClass(AdminPermission.class)
-            assertNoPermission(guest, GroupsAction.class);
-            assertNoPermission(user, GroupsAction.class);
-            assertPermission(admin, GroupsAction.class);
-            assertPermission(site, GroupsAction.class);
 
             // @RequiresSiteAdmin
             assertNoPermission(guest, AddUsersAction.class);

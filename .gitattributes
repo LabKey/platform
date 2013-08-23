@@ -756,7 +756,6 @@ core/src/org/labkey/core/security/addUsers.jsp -text
 core/src/org/labkey/core/security/deleteUser.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
-core/src/org/labkey/core/security/groups.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
 core/src/org/labkey/core/styling.jsp -text
 core/src/org/labkey/core/test/TestController.java -text
