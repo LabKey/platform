@@ -390,13 +390,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var measure = grid.getStore().findRecord('name', this.measures.x.name, 0, false, true, true);
                         if (measure) {
                             grid.getSelectionModel().select(measure, false, true);
-                            this.xMeasureChoice = grid.getSelectionModel().getSelection()[0].data;
+                            this.xMeasurePanel.measure = measure.data;
                             this.xMeasurePanel.selectionChange(true);
                         }
                     }
                 },
                 select: function(selModel, record, index){
-                    this.xMeasureChoice = selModel.getSelection()[0].data;
+                    this.measures.x = selModel.getSelection()[0].data;
+                    this.xMeasurePanel.measure = selModel.getSelection()[0].data;
                     this.xOkBtn.setDisabled(false);
                     this.xMeasurePanel.selectionChange();
                 },
@@ -434,7 +435,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.centerPanel.getEl().mask('Rendering Chart...');
-                    this.measures.x = this.xMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
                 scope: this
@@ -524,13 +524,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var measure = grid.getStore().findRecord('name', this.measures.y.name, 0, false, true, true);
                         if(measure){
                             grid.getSelectionModel().select(measure, false, true);
-                            this.yMeasureChoice = grid.getSelectionModel().getSelection()[0].data;
+                            this.yMeasurePanel.measure = measure.data;
                             this.yMeasurePanel.selectionChange(true);
                         }
                     }
                 },
                 select: function(selModel, record, index){
-                    this.yMeasureChoice = selModel.getSelection()[0].data;
+                    this.measures.y = selModel.getSelection()[0].data;
+                    this.yMeasurePanel.measure = selModel.getSelection()[0].data;
                     this.yOkBtn.setDisabled(false);
                     this.yMeasurePanel.selectionChange();
                 },
@@ -568,7 +569,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.centerPanel.getEl().mask('Rendering Chart...');
-                    this.measures.y = this.yMeasureChoice;
                     this.chartDefinitionChanged.delay(250);
                 },
                 scope: this
@@ -1584,6 +1584,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         label: json.chartConfig.labels.x,
                         scaleTrans: json.chartConfig.scales.x ? json.chartConfig.scales.x.trans : null
                     });
+                    this.xMeasurePanel.measure = this.measures.x;
                     if(this.measures.x && this.xMeasurePanel.getAxisLabel() != this.getDefaultXAxisLabel()){
                         this.xMeasurePanel.userEditedLabel = true;
                     }
@@ -1594,6 +1595,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         label: json.chartConfig.labels.y,
                         scaleTrans: json.chartConfig.scales.y ? json.chartConfig.scales.y.trans : null
                     });
+                    this.yMeasurePanel.measure = this.measures.y;
                     if(this.measures.y && this.yMeasurePanel.getAxisLabel() != this.getDefaultYAxisLabel()){
                         this.yMeasurePanel.userEditedLabel = true;
                     }
@@ -1762,9 +1764,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 measure = this.yMeasureStore.findRecord('name', this.autoColumnYName, 0, false, true, true);
                 if (measure){
+                    this.measures.y = measure.data;
+                    this.yMeasurePanel.measure = measure.data;
                     this.yMeasureGrid.getSelectionModel().select(measure, false, true);
                     this.yMeasurePanel.selectionChange(true);
-                    this.measures.y = measure.data;
                 }
             }
 
@@ -1782,9 +1785,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {
                     measure = this.xMeasureStore.findRecord('name', this.autoColumnXName, 0, false, true, true);
                     if (measure) {
+                        this.measures.x = measure.data;
+                        this.xMeasurePanel.measure = measure.data;
                         this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                         this.xMeasurePanel.selectionChange(true);
-                        this.measures.x = measure.data;
                     }
                 }
 
@@ -1797,9 +1801,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             } else {
                 measure = this.xMeasureStore.findRecord('label', 'Cohort', 0, false, true, true);
                 if (measure) {
+                    this.measures.x = measure.data;
+                    this.xMeasurePanel.measure = measure.data;
                     this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                     this.xMeasurePanel.selectionChange(true);
-                    this.measures.x = measure.data;
                 }
             }
         }

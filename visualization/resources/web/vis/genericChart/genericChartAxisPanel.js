@@ -116,10 +116,11 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     },
 
     getDefaultLabel: function(){
-        var measure = this.measureGrid.getSelectionModel().getSelection();
-        var label = this.queryName;
-        if(measure.length > 0){
-            label = measure[0].data.label;
+        var label;
+        if(this.measure) {
+            label = this.measure.label;
+        } else {
+            label = this.queryName;
         }
         return label;
     },
