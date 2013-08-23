@@ -504,13 +504,17 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
     }
 
-    public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query)
+    public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
+        Collection<Module> modules = container.getActiveModules();
+        HashSet<Module> allModules = new HashSet<>(modules);
+        allModules.addAll(Arrays.asList(extraModules));
+
         List<CustomView> customViews = new ArrayList<>();
 
         String schema = qd.getSchema().getSchemaName();
 
-        for (Module module : container.getActiveModules())
+        for (Module module : allModules)
         {
             Collection<? extends Resource> views;
 
