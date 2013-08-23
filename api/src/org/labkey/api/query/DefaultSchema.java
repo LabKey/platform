@@ -22,7 +22,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -143,7 +142,7 @@ final public class DefaultSchema extends AbstractSchema
 
     private DefaultSchema(User user, Container container)
     {
-        super(CoreSchema.getInstance().getSchema(), user, container);
+        super(null, user, container);
     }
 
     public TableInfo getTable(String name)
