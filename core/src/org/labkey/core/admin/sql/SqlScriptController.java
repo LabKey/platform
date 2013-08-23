@@ -28,6 +28,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -55,6 +56,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -318,11 +320,11 @@ public class SqlScriptController extends SpringActionController
                     if (defModule.hasScripts())
                     {
                         FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Set<String> schemaNames = provider.getSchemaNames();
+                        Collection<DbSchema> schemas = provider.getSchemas();
 
-                        for (String schemaName : schemaNames)
+                        for (DbSchema schema : schemas)
                         {
-                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schema, fromVersion, toVersion);
                             List<SqlScript> scripts = consolidator.getScripts();
 
                             if (!scripts.isEmpty() && (includeSingleScripts || scripts.size() > 1))
@@ -392,7 +394,7 @@ public class SqlScriptController extends SpringActionController
     private static class ScriptConsolidator
     {
         private final FileSqlScriptProvider _provider;
-        private final String _schemaName;
+        private final DbSchema _schema;
         private final List<SqlScript> _scripts;
         private final double _targetFrom;
         private final double _targetTo;
@@ -400,13 +402,13 @@ public class SqlScriptController extends SpringActionController
 
         protected boolean _includeOriginatingScriptComments = true;
 
-        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double targetFrom, double targetTo) throws SqlScriptException
+        private ScriptConsolidator(FileSqlScriptProvider provider, DbSchema schema, double targetFrom, double targetTo) throws SqlScriptException
         {
             _provider = provider;
-            _schemaName = schemaName;
+            _schema = schema;
             _targetFrom = targetFrom;
             _targetTo = targetTo;
-            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), targetFrom, targetTo);
+            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schema), targetFrom, targetTo);
             _actualTo = _scripts.isEmpty() ? -1 : _scripts.get(_scripts.size() - 1).getToVersion();
         }
 
@@ -417,7 +419,7 @@ public class SqlScriptController extends SpringActionController
 
         private String getSchemaName()
         {
-            return _schemaName;
+            return _schema.getDisplayName();
         }
 
         private String getFilename()
@@ -608,12 +610,12 @@ public class SqlScriptController extends SpringActionController
         {
             DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            return getConsolidator(provider, form.getSchema(), form.getFromVersion(), form.getToVersion());
+            return getConsolidator(provider, DbSchema.get(form.getSchema()), form.getFromVersion(), form.getToVersion());
         }
 
-        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion)  throws SqlScriptException
+        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)  throws SqlScriptException
         {
-            return new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+            return new ScriptConsolidator(provider, schema, fromVersion, toVersion);
         }
     }
 
@@ -637,11 +639,11 @@ public class SqlScriptController extends SpringActionController
                     {
                         defModule.clearResourceCache();
                         FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Set<String> schemaNames = provider.getSchemaNames();
+                        Collection<DbSchema> schemas = provider.getSchemas();
 
-                        for (String schemaName : schemaNames)
+                        for (DbSchema schema : schemas)
                         {
-                            Set<SqlScript> scripts = new TreeSet<>(provider.getScripts(schemaName));
+                            Set<SqlScript> scripts = new TreeSet<>(provider.getScripts(schema));
                             SqlScript previous = null;
 
                             for (SqlScript script : scripts)
@@ -873,16 +875,16 @@ public class SqlScriptController extends SpringActionController
                     if (defModule.hasScripts())
                     {
                         FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Set<String> schemaNames = provider.getSchemaNames();
+                        Collection<DbSchema> schemas = provider.getSchemas();
 
-                        for (String schemaName : schemaNames)
+                        for (DbSchema schema : schemas)
                         {
-                            Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schemaName));
+                            Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
                             Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
 
                             for (double fromVersion : fromVersions)
                             {
-                                List<SqlScript> recommendedScripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), fromVersion, toVersion);
+                                List<SqlScript> recommendedScripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
                                 reachableScripts.addAll(recommendedScripts);
                             }
 

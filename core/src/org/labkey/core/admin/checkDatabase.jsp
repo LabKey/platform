@@ -47,8 +47,7 @@
                 <select id="dbSchema" name="dbSchema" style="width:250px"><%
                     for (Module m : bean.getModules())
                     {
-                        Set<String> schemaNames = m.getSchemaNames();
-                        for (String sn : schemaNames)
+                        for (String sn : m.getSchemaNames())
                         {
                         %>
                         <option value="<%=h(sn)%>"><%=h(m.getName() + " : " + sn)%></option >
