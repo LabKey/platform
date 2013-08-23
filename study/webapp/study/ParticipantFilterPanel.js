@@ -3,6 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+LABKEY.requiresScript([
+    "clientapi/ext4/Util.js",
+    "clientapi/ext4/data/Reader.js",
+    "clientapi/ext4/data/Proxy.js",
+    "clientapi/ext4/data/Store.js"
+]);
 LABKEY.requiresScript("study/ReportFilterPanel.js"); // needed for xtype:'labkey-filterselectpanel'
 
 /**
@@ -331,7 +337,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
     getParticipantPanelCfg: function(){
         if(!this.participantSectionCfg){
-            var store = Ext4.create('LABKEY.ext4.Store', {
+            var store = Ext4.create('LABKEY.ext4.data.Store', {
                 schemaName: 'study',
                 sql: 'select "' + this.subjectNoun.columnName + '" as id, "' + this.subjectNoun.columnName + '" as label, \'participant\' as type FROM study."' + this.subjectNoun.singular + '"',
                 queryName: this.subjectNoun.singular,

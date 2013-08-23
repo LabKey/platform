@@ -34,6 +34,7 @@
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("clientapi"));
         resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("TemplateHelper.js"));
         resources.add(ClientDependency.fromFilePath("/study/ParticipantReport.js"));
         resources.add(ClientDependency.fromFilePath("/study/MeasurePicker.js"));
         return resources;
@@ -95,16 +96,11 @@
 </style>
 
 <div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
-<div id="<%= renderId%>" class="dvc" style="width:100%"></div>
-
-<script type="text/javascript">
-    LABKEY.requiresScript("TemplateHelper.js");
-</script>
-
+<div id="<%=renderId%>"></div>
 <script type="text/javascript">
 
     Ext4.onReady(function(){
-        var panel = Ext4.create('LABKEY.ext4.ParticipantReport', {
+        var pr = Ext4.create('LABKEY.ext4.ParticipantReport', {
             height          : 600,
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
@@ -119,17 +115,30 @@
             hideSave        : <%=user.isGuest()%>,
             fitted          : <%=bean.isExpanded()%>,
             openCustomize   : true,
-            allowOverflow   : <%=bean.isAllowOverflow()%>
+            allowOverflow   : <%=bean.isAllowOverflow()%>,
+            listeners : {
+                render: function(p) {
+                    p.panelWidthDiff = Ext4.getBody().getViewSize().width - p.getWidth();
+                }
+            }
         });
 
-        var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+        var _resize = function(w, h) {
+            if (pr && pr.doLayout && pr.panelWidthDiff) {
+                var width = Ext4.getBody().getViewSize().width - pr.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - pr.panelWidthDiff;
+                pr.setWidth(width);
+                pr.doLayout();
+            }
         };
 
-        if (<%=!bean.isAllowOverflow()%>)
-            Ext4.EventManager.onWindowResize(_resize);
+        Ext4.EventManager.onWindowResize(_resize);
     });
 
+    /**
+     * Global, Public
+     * Provided for extenral calls to customize the participant report (e.g. from a webpart control)
+     * @param elementId - The elementId of that the participant report is currently rendered to.
+     */
     var customizeParticipantReport = function(elementId) {
 
         function initPanel() {
@@ -138,7 +147,7 @@
             if (panel) { panel.customize(); }
         }
         Ext4.onReady(initPanel);
-    }
+    };
 
 </script>
 

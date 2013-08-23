@@ -14,8 +14,8 @@ Ext4.define('LABKEY.study.DataViewUtil', {
             Ext4.define('LABKEY.data.User', {
                 extend : 'Ext.data.Model',
                 fields : [
-                    {name : 'userId',       type : 'int'},
-                    {name : 'displayName'               }
+                    {name : 'userId', type : 'int'},
+                    {name : 'displayName'}
                 ]
             });
         }
@@ -37,7 +37,7 @@ Ext4.define('LABKEY.study.DataViewUtil', {
                 }
             },
             listeners : {
-                load : function(s, recs, success, operation, ops) {
+                load : function(s) {
                     s.sort('DisplayName', 'ASC');
                     s.insert(0, {UserId : -1, DisplayName : 'None'});
                 }

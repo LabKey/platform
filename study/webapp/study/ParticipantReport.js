@@ -3,17 +3,35 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI(true);
 LABKEY.requiresScript("study/ParticipantFilterPanel.js");
-
-Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     extend : 'Ext.panel.Panel',
 
-    REPORT_PAGE_TEMPLATE :
-    {
+    minWidth: 625,
+
+    frame     : false,
+
+    border    : false,
+
+    editable  : false,
+
+    fitted    : false,
+
+    transposed : false,
+
+    allowOverflow: true,
+
+    layout: 'border',
+
+    allowCustomize : false,
+
+    allowFilter: true,
+
+    shrinkWrap: 0, // both width & height depend on content
+
+    REPORT_PAGE_TEMPLATE: {
         headerTemplate : [
             '<table class="report" cellspacing=0>',
             '<tpl for="pages">',
@@ -118,11 +136,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             }
         },
-        on :
-        {
-            dataload : function(rpt, data)
-            {
-            },
+        on : {
             afterdatatransform : function(rpt, data)
             {
                 // set headerValue field for each page
@@ -179,31 +193,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         Ext4.QuickTips.init();
 
         Ext4.applyIf(config, {
-            frame     : false,
-            border    : false,
-            editable  : false,
             printMode : LABKEY.ActionURL.getParameter('_print') != undefined,
-            fitted    : false,
-            transposed : false,
-            allowCustomize : false,
-            subjectNoun    : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
+            subjectNoun: {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
-        if (config.allowOverflow)
-        {
-            config.shrinkWrap = true;
-            config.layout = 'auto';
-        }
-        else
-            config.layout = 'border';
-        
         this.callParent([config]);
     },
 
     initComponent : function() {
 
         this.customMode = false;
-        this.initialRender = true;
         this.items = [];
         this.pendingRequests = 0;
         this.maxRowCount = 10000;
@@ -214,7 +213,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             height : 400,
             region : 'center',
             border : false, frame : false,
-            html   : '<span style="width: 400px; display: block; margin-left: auto; margin-right: auto">' +
+            html   : '<span style="width: 400px; display: block; margin-left: auto; margin-right: auto; text-align: center;">' +
                     ((!this.reportId && !this.allowCustomize) ? 'Unable to initialize report. Please provide a Report Identifier.' : 'Preview Area') +
                     '</span>'
         });
@@ -229,78 +228,164 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             ]
         });
 
-        this.lengthReportField = Ext4.create('Ext.form.field.Display', {
-            value : '<i>Showing 0 Results</i>'
-        });
+        if (this.allowCustomize) {
+            this.items.push(this.initNorthPanel());
+        }
+        this.items.push(this.initCenterPanel());
 
-        if (!this.printMode) {
-            this.centerPanel = Ext4.create('Ext.panel.Panel', {
-                border   : false, frame : false,
-                layout   : 'fit',
-                disabled : this.isNew(),
-                region   : 'center',
-                dockedItems : [{
-                    xtype : 'toolbar',
-                    dock  : 'top',
-                    cls   : 'report-toolbar',
-                    items : [{
-                        text    : 'Export',
-                        menu    : [{
-                            text    : 'To Excel',
-                            handler : function(){this.exportToXls();},
-                            scope   : this}]
-/*
-                    },{
-                        text    : 'Print',
-                        handler : function(b) {
-                            this.fitToReport();
-                            if (this.filterWindow)
-                                this.filterWindow.hide();
-                            window.print();
+        this.configureTasks();
+        this.callParent();
+
+        // customization
+        this.on('enableCustomMode',  this.onEnableCustomMode,  this);
+        this.on('disableCustomMode', this.onDisableCustomMode, this);
+        this.on('afterrender', function(p) {
+            if (this.reportId) {
+                this.onDisableCustomMode();
+                this.loadReport(this.reportId);
+            }
+            else if (this.allowCustomize) {
+                this.customize();
+            }
+        }, this, {single: true});
+
+        this.markDirty(false);
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
+    },
+
+    configureTasks : function() {
+        if (!this.filterTask)
+            this.filterTask = new Ext4.util.DelayedTask(this.runFilters, this);
+
+        if (!this.generateTask) {
+            // call generateTemplateConfig() to use this task
+            this.generateTask = new Ext4.util.DelayedTask(function() {
+
+                var measures = this.getMeasures();
+                var sorts = this.getSorts();
+
+                if (measures.length > 0) {
+                    this.queryLimited = this._inCustomMode();
+                    var limit = this.queryLimited ? 50 : this.maxRowCount;
+
+                    this.mask();
+                    this.pendingRequests++;
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
+                        method  : 'POST',
+                        jsonData: {
+                            measures : measures,
+                            sorts    : sorts,
+                            limit    : limit
                         },
-                        scope   : this
-*/
-                    },{
-                        text    : 'Transpose',
-                        tooltip : 'Tranpose the data grids so that the rows become columns (i.e. visits vs. measures as columns)',
-                        handler : function(btn) {
-                            if (this.transposed)   // transposed refers to changing the grid render so that visits are accross the top (as columns)
-                                this.transposed = false;
+                        success : function(response) {
+                            this.response = Ext4.decode(response.responseText);
+
+                            if (this.response.rowCount == this.maxRowCount) {
+
+                                var el = this.previewEl || this.previewPanel.getEl().id + '-body';
+                                Ext4.get(el).update('<span class="labkey-error" style="width: 600px; height: 400px; display: block; margin-left: 250px;"><i>' +
+                                        'The number of results returned has exceeded an internal limit. Please select fewer measures and/or select fewer participants ' +
+                                        'to reduce the number of rows returned.' +
+                                        '</i></span>');
+                                if (!this._inCustomMode()) {
+                                    this.updateStatus('');
+                                }
+
+                                this.unmask();
+                                this.pendingRequests--;
+                                if (this.allowFilter) {
+                                    this.showFilter(this.filterSet ? this.filterSet : []);
+                                }
+                            }
                             else
-                                this.transposed = true;
-
-                            this.renderData();
+                                onLoad.call(this);
                         },
+                        failure : this.onFailure,
                         scope   : this
-                    },'->',this.lengthReportField]
-                }],
-                items    : [this.previewPanel, this.exportForm],
-                listeners: {
-                    scope: this,
-                    delay: 50,
-                    afterrender: function(panel){
-                        // Issue 14452: with IE8/Win7 the disabled mask doesnt render correctly on initial load
-                        // this might have something to do w/ creating the panel prior to adding to the outer panel.
-                        // this is a dirty fix, but does render the right mask
-                        if(Ext4.isIE && panel.disabled){
-                            panel.setDisabled(false);
-                            panel.setDisabled(true);
+                    });
+
+                    this.subjectGroupMap = {};
+                    this.pendingRequests++;
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api', null, {type: ['participantGroup', 'cohort'], includeParticipantIds: true}),
+                        method  : 'GET',
+                        success : function(response){
+                            var response = Ext4.decode(response.responseText);
+                            for (var i=0;i<response.groups.length;i++){
+                                var row = response.groups[i];
+                                if(row.participantIds){
+                                    for (var j=0;j<row.participantIds.length;j++){
+                                        var id = row.participantIds[j];
+
+                                        if(!this.subjectGroupMap[id]){
+                                            this.subjectGroupMap[id] = {
+                                                cohort: null,
+                                                groups: []
+                                            }
+                                        }
+                                        if (row.type == 'cohort')
+                                            this.subjectGroupMap[id].cohort = row.label;
+                                        else if (row.type == 'participantGroup')
+                                            this.subjectGroupMap[id].groups.push(row.label);
+                                    }
+                                }
+                            }
+                            onLoad.call(this);
+                        },
+                        failure : this.onFailure,
+                        scope   : this
+                    });
+
+                    var onLoad = function() {
+                        this.pendingRequests--;
+                        if (this.pendingRequests == 0) {
+                            this.unmask();
+                            this.renderData();
                         }
-                        if (this.shrinkWrap) {
-                            // hack to set the initial nortpanel width to match the center panel's
-                            this.northPanel.setWidth(panel.getWidth());
-                            if (this.customMode)
-                                this.northPanel.show();
+                    };
+                }
+                else {
+                    this.previewPanel.update('');
+                }
+
+            }, this);
+        }
+    },
+
+    initNorthPanel : function() {
+
+        if (!this.northPanel) {
+
+            // Define custom models
+            if (!Ext4.ModelManager.isRegistered('LABKEY.query.Measures')) {
+                Ext4.define('LABKEY.query.Measures', {
+                    extend : 'Ext.data.Model',
+                    fields : [
+                        {name : 'id'},
+                        {name : 'name'},
+                        {name : 'label'},
+                        {name : 'description'},
+                        {name : 'isUserDefined', type : 'boolean'},
+                        {name : 'isDemographic', type : 'boolean'},
+                        {name : 'queryName'},
+                        {name : 'schemaName'},
+                        {name : 'type'},
+                        {name : 'alias'}
+                    ],
+                    proxy : {
+                        type : 'memory',
+                        reader : {
+                            type : 'json',
+                            root : 'measures'
                         }
                     }
-                }
-            });
-        }
-        else {
-            this.centerPanel = this.previewPanel;
-        }
+                });
+            }
 
-        if (this.allowCustomize) {
+            this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
+            this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
+
             this.saveButton = Ext4.create('Ext.button.Button', {
                 text    : 'Save',
                 disabled: this.isNew(),
@@ -319,10 +404,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             msg = 'Report name must be specified.';
                         }
                         Ext4.Msg.show({
-                             title: "Error",
-                             msg: msg,
-                             buttons: Ext4.MessageBox.OK,
-                             icon: Ext4.MessageBox.ERROR
+                            title: "Error",
+                            msg: msg,
+                            buttons: Ext4.MessageBox.OK,
+                            icon: Ext4.MessageBox.ERROR
                         });
                     }
                 },
@@ -332,9 +417,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.saveAsButton = Ext4.create('Ext.button.Button', {
                 text    : 'Save As',
                 hidden  : this.isNew() || this.hideSave,
-                handler : function() {
-                    this.onSaveAs();
-                },
+                handler : function() { this.onSaveAs(); },
                 scope   : this
             });
 
@@ -358,130 +441,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }, this.saveButton, this.saveAsButton
                 ]
             });
-            this.items.push(this.northPanel);
-            this.items.push(this.centerPanel);
-        }
-        this.initNorthPanel();
-
-        // customization
-        this.on('enableCustomMode',  this.onEnableCustomMode,  this);
-        this.on('disableCustomMode', this.onDisableCustomMode, this);
-
-        this.filterTask = new Ext4.util.DelayedTask(this.runFilters, this);
-
-        // call generateTemplateConfig() to use this task
-        this.generateTask = new Ext4.util.DelayedTask(function(){
-
-            var measures = this.getMeasures();
-            var sorts = this.getSorts();
-
-            if (measures.length > 0) {
-                var limit = this.maxRowCount;
-                if (this._inCustomMode()) {
-                    limit = 50;
-                    this.queryLimited = true;
-                }
-                else
-                    this.queryLimited = false;
-
-                this.mask();
-                this.pendingRequests++;
-                Ext4.Ajax.request({
-                    url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
-                    method  : 'POST',
-                    jsonData: {
-                        measures : measures,
-                        sorts    : sorts,
-                        limit    : limit
-                    },
-                    success : function(response){
-                        this.response = Ext4.decode(response.responseText);
-
-                        if (this.response.rowCount == this.maxRowCount) {
-
-                            var el = this.previewEl || this.previewPanel.getEl().id + '-body';
-                            Ext4.get(el).update('<span class="labkey-error" style="width: 600px; height: 400px; display: block; margin-left: 250px;"><i>' +
-                                    'The number of results returned has exceeded an internal limit. Please select fewer measures and/or select fewer participants ' +
-                                    'to reduce the number of rows returned.' +
-                                    '</i></span>');
-                            if (!this._inCustomMode())
-                                this.lengthReportField.setValue('');
-
-                            this.unmask();
-                            this.pendingRequests--;
-                            this.showFilter(this.filterSet ? this.filterSet : []);
-                        }
-                        else
-                            onLoad.call(this);
-                    },
-                    failure : this.onFailure,
-                    scope   : this
-                });
-
-                this.subjectGroupMap = {};
-                this.pendingRequests++;
-                Ext4.Ajax.request({
-                    url     : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api', null, {type: ['participantGroup', 'cohort'], includeParticipantIds: true}),
-                    method  : 'GET',
-                    success : function(response){
-                        var response = Ext4.decode(response.responseText);
-                        for (var i=0;i<response.groups.length;i++){
-                            var row = response.groups[i];
-                            if(row.participantIds){
-                                for (var j=0;j<row.participantIds.length;j++){
-                                    var id = row.participantIds[j];
-
-                                    if(!this.subjectGroupMap[id]){
-                                        this.subjectGroupMap[id] = {
-                                            cohort: null,
-                                            groups: []
-                                        }
-                                    }
-                                    if (row.type == 'cohort')
-                                        this.subjectGroupMap[id].cohort = row.label;
-                                    else if (row.type == 'participantGroup')
-                                        this.subjectGroupMap[id].groups.push(row.label);
-                                }
-                            }
-                        }
-                        onLoad.call(this);
-                    },
-                    failure : this.onFailure,
-                    scope   : this
-                });
-
-                function onLoad(){
-                    this.pendingRequests--;
-                    if(this.pendingRequests == 0){
-                        this.unmask();
-                        this.renderData();
-                    }
-                }
-            }
-            else {
-                this.previewPanel.update('');
-            }
-
-        }, this);
-
-        if (this.reportId) {
-            this.onDisableCustomMode();            
-            this.loadReport(this.reportId);
-        }
-        else if (this.allowCustomize) {
-            this.customize();
-        }
-
-        this.markDirty(false);
-        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
-
-        this.callParent([arguments]);
-    },
-
-    initNorthPanel : function() {
-
-        if (this.allowCustomize) {
-            var formItems = [];
 
             this.reportName = Ext4.create('Ext.form.field.Text', {
                 fieldLabel : 'Report Name',
@@ -510,14 +469,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
                     {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
             });
-            formItems.push(this.reportName, this.reportDescription, this.reportPermission);
 
             this.formPanel = Ext4.create('Ext.form.Panel', {
                 bodyPadding : 20,
                 itemId      : 'selectionForm',
                 hidden      : this.hideSave,
                 flex        : 1,
-                items       : formItems,
+                items       : [this.reportName, this.reportDescription, this.reportPermission],
                 border      : false, frame : false,
                 fieldDefaults : {
                     anchor  : '100%',
@@ -527,78 +485,67 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
 
-            Ext4.define('LABKEY.query.Measures', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'id'},
-                    {name : 'name'},
-                    {name : 'label'},
-                    {name : 'description'},
-                    {name : 'isUserDefined',    type : 'boolean'},
-                    {name : 'isDemographic',    type : 'boolean'},
-                    {name : 'queryName'},
-                    {name : 'schemaName'},
-                    {name : 'type'},
-                    {name : 'alias'}
-                ],
-                proxy : {
-                    type : 'memory',
-                    reader : {
-                        type : 'json',
-                        root : 'measures'
-                    }
-                }
-            });
-
-            this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
-            this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
-
-            var fieldGrid = Ext4.create('Ext.grid.Panel', {
-                store   : this.gridFieldStore,
-                cls     : 'selectedMeasures',
-                border  : false, frame : false,
-                columns : [
-                    { header : 'Report Measures', dataIndex : 'label', flex : 1},
-                    {
-                        xtype : 'actioncolumn',
-                        width : 40,
-                        align : 'center',
-                        sortable : false,
-                        items : [{
-                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
-                            tooltip : 'Delete'
-                        }],
-                        listeners : {
-                            click : function(col, grid, idx) {
-                                this.gridFieldStore.removeAt(idx);
-                                this.generateTemplateConfig();
+            this.designerPanel = Ext4.create('Ext.panel.Panel', {
+                height      : 200,
+                layout      : 'fit',
+                border      : false, frame : false,
+                flex        : 0.8,
+                minButtonWidth : 150,
+                buttonAlign : 'left',
+                items       : [{
+                    xtype   : 'grid',
+                    store   : this.gridFieldStore,
+                    cls     : 'selectedMeasures',
+                    border  : false, frame : false,
+                    columns : [
+                        { header : 'Report Measures', dataIndex : 'label', flex : 1},
+                        {
+                            xtype : 'actioncolumn',
+                            width : 40,
+                            align : 'center',
+                            sortable : false,
+                            items : [{
+                                icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
+                                tooltip : 'Delete'
+                            }],
+                            listeners : {
+                                click : function(col, grid, idx) {
+                                    this.gridFieldStore.removeAt(idx);
+                                    this.generateTemplateConfig();
+                                },
+                                scope : this
                             },
                             scope : this
+                        }
+                    ],
+                    viewConfig  : {
+                        plugins   : [{
+                            ddGroup  : 'ColumnSelection',
+                            ptype    : 'gridviewdragdrop',
+                            dragText : 'Drag and drop to reorder',
+                            copy : true
+                        }],
+                        listeners : {
+                            drop : this.generateTemplateConfig,
+                            scope: this
                         },
                         scope : this
                     }
-                ],
-                viewConfig  : {
-                    plugins   : [{
-                        ddGroup  : 'ColumnSelection',
-                        ptype    : 'gridviewdragdrop',
-                        dragText : 'Drag and drop to reorder',
-                        copy : true
-                    }],
-                    listeners : {
-                        drop : this.generateTemplateConfig,
-                        scope: this
-                    },
-                    scope : this
-                }
+                }],
+                fbar        : [{
+                    xtype: 'button',
+                    text:'Choose Measures',
+                    handler: this.onShowMeasures,
+                    scope: this
+                }]
             });
 
-            this.measuresHandler = function(doShow) {
+            this.onShowMeasures = function(doShow) {
                 if (doShow !== false)
                     doShow = true;
                 var fn;
                 if (doShow) {
-                    fn = function(recs){
+                    fn = function(recs) {
                         var rawData = [];
                         for (var i=0; i < recs.length; i++) {
                             rawData.push(Ext4.clone(recs[i].data));
@@ -610,39 +557,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
                 this.selectMeasures(fn, doShow, this);
             };
-
-            this.designerPanel = Ext4.create('Ext.panel.Panel', {
-                height      : 200,
-                layout      : 'fit',
-                border      : false, frame : false,
-                flex        : 0.8,
-                minButtonWidth : 150,
-                buttonAlign : 'left',
-                items       : [fieldGrid],
-                fbar        : [{
-                    xtype: 'button',
-                    text:'Choose Measures',
-                    handler: this.measuresHandler,
-                    scope: this
-                }]
-            });
-
-/*
-            this.designerPanel = Ext4.create('Ext.panel.Panel', {
-                //height : 250,
-                width  : 500,
-                layout: 'fit',
-                border : false, frame : false,
-                //region : 'center',
-                //layout : 'vbox',
-                defaults : {
-                    style : 'padding-right: 20px'
-                },
-                //flex   : 4,
-                items  : [gridFieldsPanel],
-                scope : this
-            });
-*/
 
             if (this.isNew()) {
                 this.northPanel.add({
@@ -666,17 +580,92 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         },{
                             xtype   : 'button',
                             text    :'Choose Measures',
-                            handler : this.measuresHandler,
+                            handler : this.onShowMeasures,
                             scope   : this
                         }
                     ]
                 });
-                this.measuresHandler(false);
+                this.onShowMeasures(false);
             }
-            else
+            else {
                 this.northPanel.add(this.formPanel, this.designerPanel);
+            }
+        }
 
-            //this.northPanel.show(); // might be hidden
+        return this.northPanel;
+    },
+
+    initCenterPanel : function() {
+        if (!this.centerPanel) {
+            if (!this.printMode) {
+                this.centerPanel = Ext4.create('Ext.panel.Panel', {
+                    itemId   : 'reportcenter',
+                    border   : false, frame : false,
+                    layout   : 'fit',
+                    disabled : this.isNew(),
+                    region   : 'center',
+                    dockedItems : [{
+                        xtype : 'toolbar',
+                        dock  : 'top',
+                        cls   : 'report-toolbar',
+                        items : [{
+                            text    : 'Export',
+                            menu    : [{
+                                text    : 'To Excel',
+                                handler : function(){this.exportToXls();},
+                                scope   : this
+                            }]
+                        },{
+                            text    : 'Transpose',
+                            tooltip : 'Tranpose the data grids so that the rows become columns (i.e. visits vs. measures as columns)',
+                            handler : function(btn) {
+                                this.transposed = !this.transposed; // transposed refers to changing the grid render so that visits are accross the top (as columns)
+                                this.renderData();
+                            },
+                            scope   : this
+                        },'->',{
+                            xtype: 'displayfield',
+                            itemId: 'lengthreport',
+                            value : '<i>Showing 0 Results</i>'
+                        }]
+                    }],
+                    items    : [this.previewPanel, this.exportForm],
+                    listeners: {
+                        scope: this,
+                        delay: 50,
+                        afterrender: function(panel){
+                            // Issue 14452: with IE8/Win7 the disabled mask doesnt render correctly on initial load
+                            // this might have something to do w/ creating the panel prior to adding to the outer panel.
+                            // this is a dirty fix, but does render the right mask
+                            if(Ext4.isIE && panel.disabled){
+                                panel.setDisabled(false);
+                                panel.setDisabled(true);
+                            }
+                            if (this.shrinkWrap) {
+                                // hack to set the initial nortpanel width to match the center panel's
+                                this.northPanel.setWidth(panel.getWidth());
+                                if (this.customMode)
+                                    this.northPanel.show();
+                            }
+                        }
+                    }
+                });
+            }
+            else {
+                this.centerPanel = this.previewPanel;
+            }
+        }
+
+        return this.centerPanel;
+    },
+
+    updateStatus : function(msg) {
+        var tb = this.centerPanel.getDockedItems()[0];
+        if (tb) {
+            var status = tb.getComponent('lengthreport');
+            if (status) {
+                status.update('<i>' + (Ext4.isNumber(msg) ? 'Showing ' + msg + ' Results' : msg) + '</i>');
+            }
         }
     },
 
@@ -686,7 +675,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             url     : LABKEY.ActionURL.buildURL('study-reports', 'getParticipantReport.api'),
             method  : 'GET',
             params  : {reportId : reportId},
-            success : function(response){
+            success : function(response) {
                 this.reportName.setReadOnly(true);
                 this.saveAsButton.setVisible(true);
                 this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
@@ -724,7 +713,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.runFilterSet(this.filterSet);
             else
                 this.generateTemplateConfig();
-            this.initialRender = false;
         }
 
         this.markDirty(false);
@@ -741,7 +729,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.REPORT_PAGE_TEMPLATE.footerTemplate
             );
 
-        this.REPORT_PAGE_TEMPLATE.subjectGroupMap = this.subjectGroupMap
+        this.REPORT_PAGE_TEMPLATE.subjectGroupMap = this.subjectGroupMap;
 
         var config = {
             pageFields : [],
@@ -753,7 +741,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             transposed : this.transposed      
         };
 
-        this.lengthReportField.setValue('<i>Showing ' + this.response.rows.length + ' Results</i>');
+        this.updateStatus(this.response.rows.length);
 
         if (this.pageFieldStore.getCount() > 0) {
 
@@ -825,11 +813,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             Ext4.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.on('afterdatatransform', function(th, reportData) {
-
-                if (this._inCustomMode())
-                    this.lengthReportField.setValue('<i>Showing partial results while in edit mode. Close the edit panel above to see all results.</i>');
-                else
-                    this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
+                this.updateStatus(this._inCustomMode() ? 'Showing partial results while in edit mode. Close the edit panel above to see all results.' : reportData.pages.length);
             }, this);
 
             if (this.printMode) {
@@ -841,7 +825,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             this.templateReport.loadData(this.response);
 
-            if (!this.printMode) {
+            if (this.allowFilter && !this.printMode) {
                 this.on('resize', this.showFilter, this);
                 this.showFilter(this.filterSet ? this.filterSet : []);
             }
@@ -895,11 +879,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     customize : function() {
-
-        if (!this.isCustomizable())
-            return false;
-
-        this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
+        if (this.isCustomizable())
+            this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
     },
 
     onEnableCustomMode : function() {
@@ -943,178 +924,100 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     showFilter : function(selection) {
 
-        var me = this, panel;
+        if (this.allowFilter) {
+            if (!this.filterPanel) {
+                var pConfig = {
+                    filterType: selection.length && selection[0].type == 'participant' ? 'participant' : 'group',
+                    subjectNoun: this.subjectNoun,
+                    displayMode: 'BOTH',
+                    listeners : {
+                        selectionchange : function(){
+                            this.filterTask.delay(1500);
+                            if (this.allowCustomize)
+                                this.markDirty(true);
+                        },
+                        scope : this
+                    }
+                };
 
-        if (!this.filterPanel) {
-            var filterType = selection.length && selection[0].type == 'participant' ? 'participant' : 'group';
+                if (!this.isNew()) {
+                    pConfig.selection = selection;
+                }
 
-            var pConfig = {
-                filterType: filterType,
-                subjectNoun: this.subjectNoun,
-                displayMode: 'BOTH',
-                listeners : {
-                    selectionchange : function(){
-                        this.filterTask.delay(1500);
-                        if (this.allowCustomize)
-                            this.markDirty(true);
+                this.filterPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
+            }
+
+            //Issue 15668: In IE7 the floating filter window does not render properly
+            if (Ext4.isIE7) {
+                var filterDivEl = Ext4.get(this.filterDiv);
+                filterDivEl.position('absolute', 11001);
+            }
+
+            if (this.filterWindow) {
+                this.filterWindow.calculatePosition();
+            }
+            else {
+                var fb = Ext4.create('Ext.Button', {
+                    text    : 'Filter Report',
+                    hidden  : this.fitted,
+                    handler : function(b) {
+                        this.filterWindow.show();
+                        b.hide();
                     },
-                    scope : this
-                }
-            };
+                    scope: this
+                });
 
-            if (!this.isNew())
-            {
-                pConfig.selection = selection;
-            }
+                this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
+                    renderTo: this.filterDiv,
+                    title    : 'Filter Report',
+                    layout   : 'form',              // strange workaround to make sure content renders after expand
+                    items    : [this.filterPanel],
+                    shadow: Ext4.isIE7 ? false : "sides",
+                    bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
+                    relative : this.centerPanel,
+                    alignConfig : {
+                        position : 'tl-tl',
+                        offsets  : [-9, 27]
+                    },
+                    collapseDirection : 'left',
+                    collapsed: true,
+                    closeable: true,
+                    closeAction : 'hide',
+                    listeners: {
+                        close: function() { fb.show(); }
+                    },
+                    scope    : this
+                });
 
-            panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
-            this.filterPanel = panel;
+                this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-2), fb);
 
-        }
-
-        // This is an example of using it in the toolbar
-//        this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-1),
-//                Ext4.create('Ext.Button', {
-//                    text : 'Filter Report',
-//                    menu : Ext4.create('Ext.menu.Menu', {
-//                        height : 400,
-//                        layout : 'fit',
-//                        items  : [panel],
-//                        scope  : this
-//                    }),
-//                    scope : this
-//                })
-//        );
-
-        //Issue 15668: In IE7 the floating filter window does not render properly
-        if (Ext4.isIE7){
-            var filterDivEl = Ext4.get(this.filterDiv);
-            filterDivEl.position('absolute', 11001);
-        }
-
-        if (this.filterWindow)
-            this.filterWindow.calculatePosition();
-        else {
-            this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
-                title    : 'Filter Report',
-                layout   : 'form',              // strange workaround to make sure content renders after expand
-                items    : [panel],
-                shadow: Ext4.isIE7 ? false : "sides",
-                bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
-                relative : this.centerPanel,
-                alignConfig : {
-                    position : 'tl-tl',
-                    offsets  : [-9, 27]
-                },
-                collapseDirection : 'left',
-                collapsed: true,
-                closeable: true,
-                closeAction : 'hide',
-                renderTo: this.filterDiv,
-                scope    : this
-            });
-
-            this.filterButton = Ext4.create('Ext.Button', {
-                text    : 'Filter Report',
-                hidden  : this.fitted,
-                handler : function(b) {
+                if (this.fitted) {
                     this.filterWindow.show();
-                    b.hide();
-                },
-                scope: this
-            });
-
-            this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-2), this.filterButton);
-
-            if (this.fitted) {
-                this.filterWindow.show();
-                this.filterWindow.collapse();
+                    this.filterWindow.collapse();
+                }
             }
-
-/*
-            this.filterWindow.on('show', function(cmp){
-
-                var e = cmp.getEl();
-                if ((e.getBottom() - 7) > window.outerHeight) {
-
-                    var el = Ext.get(this.filterDiv);
-                    var pos = el.getPositioning();
-                    pos.position = 'absolute';
-
-                    el.setPositioning(pos);
-                    this.filterWindow.alignTo(this.centerPanel, 'tl-tl', [-9, 27]);
-                }
-                else {
-
-                    var el = Ext.get(this.filterDiv);
-                    var pos = el.getPositioning();
-                    pos.position = 'fixed';
-
-                    el.setPositioning(pos);
-                    this.filterWindow.alignTo(this.centerPanel, 'tl-tl', [-9, 27]);
-                }
-            }, this);
-*/
-
-            this.filterWindow.on('close', function(cmp){this.filterButton.show();}, this);
         }
     },
 
     empty : function() {
-        if (this.templateReport)
-        {
+        if (this.templateReport) {
             var el = this.previewEl || this.previewPanel.getEl().id + '-body';
             Ext4.get(el).update('<span style="width: 400px; display: block; margin-left: auto; margin-right: auto"><i>No matching results</i></span>');
         }
-        this.lengthReportField.setValue('Showing 0 Results');
+        this.updateStatus(0);
     },
 
     runFilterSet : function(filterSet) {
-        var json = [];
-        var participants = [];
-        if (filterSet) {
-            for (var i=0; i < filterSet.length; i++){
-                if(filterSet[i].type != 'participant')
-                    json.push(filterSet[i]);
-                else
-                    participants.push(filterSet[i].id)
-            }
-        }
-
-        this.resolveSubjects(json, participants, function(subjects){
-            this.filteredSubjects = subjects;
-
-            // in this case the query resulted in no matching subjects
-            if (this.filteredSubjects.length > 0)
-                this.generateTemplateConfig(0);
-            else
-            {
-                this.empty();
-                this.showFilter(this.filterSet ? this.filterSet : []);
-            }
-        });
-    },
-
-    runFilters : function() {
-        var all = this.filterPanel.getFilterPanel().allSelected();
-        if (all) {
-            if (this.filteredSubjects)
-                this.filteredSubjects = undefined;
-            this.generateTemplateConfig(0);
-        }
-        else {
+        if (this.allowFilter) {
             var json = [];
             var participants = [];
-            var filters = this.filterPanel.getSelection(true, false);
-
-            if (filters.length == 0)
-                return this.empty();
-
-            for (var f=0; f < filters.length; f++) {
-                if(filters[f].get('type') != 'participant')
-                    json.push(filters[f].data);
-                else
-                    participants.push(filters[f].get('id'))
+            if (filterSet) {
+                for (var i=0; i < filterSet.length; i++){
+                    if (filterSet[i].type != 'participant')
+                        json.push(filterSet[i]);
+                    else
+                        participants.push(filterSet[i].id)
+                }
             }
 
             this.resolveSubjects(json, participants, function(subjects){
@@ -1124,8 +1027,49 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 if (this.filteredSubjects.length > 0)
                     this.generateTemplateConfig(0);
                 else
+                {
                     this.empty();
+                    if (this.allowFilter) {
+                        this.showFilter(this.filterSet ? this.filterSet : []);
+                    }
+                }
             });
+        }
+    },
+
+    runFilters : function() {
+        if (this.allowFilter) {
+            var all = this.filterPanel.getFilterPanel().allSelected();
+            if (all) {
+                if (this.filteredSubjects)
+                    this.filteredSubjects = undefined;
+                this.generateTemplateConfig(0);
+            }
+            else {
+                var json = [];
+                var participants = [];
+                var filters = this.filterPanel.getSelection(true, false);
+
+                if (filters.length == 0)
+                    this.empty();
+
+                for (var f=0; f < filters.length; f++) {
+                    if(filters[f].get('type') != 'participant')
+                        json.push(filters[f].data);
+                    else
+                        participants.push(filters[f].get('id'))
+                }
+
+                this.resolveSubjects(json, participants, function(subjects) {
+                    this.filteredSubjects = subjects;
+
+                    // in this case the query resulted in no matching subjects
+                    if (this.filteredSubjects.length > 0)
+                        this.generateTemplateConfig(0);
+                    else
+                        this.empty();
+                });
+            }
         }
     },
 
@@ -1164,10 +1108,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
 
         var msg = "";
-        if(resp.status == 401){
+        if (resp.status == 401) {
             msg = resp.statusText || "Unauthorized";
         }
-        else if(o != undefined && o.exception){
+        else if (o != undefined && o.exception) {
             msg = o.exception;
         }
         else {
@@ -1302,6 +1246,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var markup = this.templateReport.getMarkup();
         if (markup)
         {
+            // flip the dirty but so form POST does not cause page navigation warning when exporting
             var dirty = this.dirty;
             this.dirty = false;
 
@@ -1312,9 +1257,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 failure : this.onFailure,
                 scope   : this
             });
-
-            var task = new Ext4.util.DelayedTask(function(){this.dirty = dirty;}, this);
-            task.delay(1500);
         }
     },
 
@@ -1382,38 +1324,25 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             );
                 }, this));
             }, this);
-            
-            if (mp.getSelectionModel()) // might not be initialized yet
+
+            var selModel = mp.getSelectionModel();
+            if (selModel) // might not be initialized yet
             {
-                mp.getSelectionModel().deselectAll();
+                if (selModel.getSelection().length > 0)
+                    selModel.deselectAll();
 
                 Ext4.each(idArray, function(id) {
-                    mp.getSelectionModel().select(id, true);    
+                    selModel.select(id, true);
                 });
             }
         }
     },
 
     onSaveAs : function() {
-        var formItems = [];
-
-        formItems.push(Ext4.create('Ext.form.field.Text', {name : 'name', fieldLabel : 'Report Name', allowBlank : false}));
-        formItems.push(Ext4.create('Ext.form.field.TextArea', {name : 'description', fieldLabel : 'Report Description'}));
-
-        var permissions = Ext4.create('Ext.form.RadioGroup', {
-            xtype      : 'radiogroup',
-            width      : 300,
-            hidden     : !this.allowShare,
-            fieldLabel : 'Viewable By',
-            items      : [
-                {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
-                {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
-        });
-        formItems.push(permissions);
-
-        var saveAsWindow = Ext4.create('Ext.window.Window', {
+        Ext4.create('Ext.window.Window', {
             width  : 500,
             height : 300,
+            autoShow: true,
             layout : 'fit',
             draggable : false,
             modal  : true,
@@ -1430,7 +1359,20 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     labelWidth : 150,
                     labelSeparator : ''
                 },
-                items       : formItems,
+                items       : [
+                    {xtype: 'textfield', name : 'name', fieldLabel : 'Report Name', allowBlank : false},
+                    {xtype: 'textarea', name : 'description', fieldLabel : 'Report Description'},
+                    {
+                        xtype      : 'radiogroup',
+                        width      : 300,
+                        hidden     : !this.allowShare,
+                        fieldLabel : 'Viewable By',
+                        items      : [
+                            {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
+                            {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}
+                        ]
+                    }
+                ],
                 buttonAlign : 'left',
                 buttons     : [{
                     text : 'Save',
@@ -1464,8 +1406,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             }],
             scope : this
         });
-
-        saveAsWindow.show();
     },
 
     markDirty : function(dirty) {
