@@ -97,6 +97,9 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         return Collections.singleton(DataIntegrationDbSchema.SCHEMA_NAME);
     }
 
+
+    // TODO: Remove this dangerous override... or comment about why it's here.
+
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {

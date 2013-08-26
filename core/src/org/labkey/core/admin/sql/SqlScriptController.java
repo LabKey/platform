@@ -191,7 +191,9 @@ public class SqlScriptController extends SpringActionController
                     if (defModule.hasScripts())
                     {
                         FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        allRun.addAll(SqlScriptManager.getRunScripts(provider));
+
+                        for (DbSchema schema : provider.getSchemas())
+                            allRun.addAll(SqlScriptManager.get(provider, schema).getPreviouslyRunScripts());
                     }
                 }
             }
@@ -408,7 +410,7 @@ public class SqlScriptController extends SpringActionController
             _schema = schema;
             _targetFrom = targetFrom;
             _targetTo = targetTo;
-            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schema), targetFrom, targetTo);
+            _scripts = SqlScriptManager.get(provider, schema).getRecommendedScripts(provider.getScripts(schema), targetFrom, targetTo);
             _actualTo = _scripts.isEmpty() ? -1 : _scripts.get(_scripts.size() - 1).getToVersion();
         }
 
@@ -711,7 +713,7 @@ public class SqlScriptController extends SpringActionController
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
             _filename = form.getFilename();
 
-            return getScriptView(provider.getScript(_filename));
+            return getScriptView(provider.getScript(null, _filename));
         }
 
         protected ModelAndView getScriptView(SqlScript script) throws ServletException, IOException
@@ -881,10 +883,11 @@ public class SqlScriptController extends SpringActionController
                         {
                             Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
                             Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
+                            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
 
                             for (double fromVersion : fromVersions)
                             {
-                                List<SqlScript> recommendedScripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
+                                List<SqlScript> recommendedScripts = manager.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
                                 reachableScripts.addAll(recommendedScripts);
                             }
 

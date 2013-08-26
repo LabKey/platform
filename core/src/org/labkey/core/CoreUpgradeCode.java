@@ -90,11 +90,11 @@ public class CoreUpgradeCode implements UpgradeCode
                 }
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
-                SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
+                SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), "group_concat_install.sql", "core");
 
                 try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())
                 {
-                    SqlScriptManager.runScript(context.getUpgradeUser(), script, context, conn);
+                    SqlScriptManager.get(provider, script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
                 }
             }
         }
