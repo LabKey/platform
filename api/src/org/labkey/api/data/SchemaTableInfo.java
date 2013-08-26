@@ -638,7 +638,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
+        // First null check is critcal for server startup... can't initialize LINK_DISABLER until first request
+        if (null == _detailsURL || _detailsURL == AbstractTableInfo.LINK_DISABLER)
         {
             return null;
         }
@@ -646,7 +647,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         if (containerContext == null)
             containerContext = container;
 
-        if (_detailsURL != null && (columns == null || _detailsURL.validateFieldKeys(columns)))
+        if (columns == null || _detailsURL.validateFieldKeys(columns))
         {
             return _detailsURL.copy(containerContext);
         }

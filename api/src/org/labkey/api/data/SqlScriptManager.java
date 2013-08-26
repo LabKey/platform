@@ -227,7 +227,10 @@ public abstract class SqlScriptManager
 
     public boolean hasBeenRun(SqlScript script)
     {
-        return null != new TableSelector(getTableInfoSqlScripts()).getObject(new String[]{_provider.getProviderName(), script.getDescription()}, SqlScriptBean.class);
+        TableInfo tinfo = getTableInfoSqlScripts();
+        PkFilter filter = new PkFilter(tinfo, new String[]{_provider.getProviderName(), script.getDescription()});
+
+        return new TableSelector(getTableInfoSqlScripts(), filter, null).exists();
     }
 
 
