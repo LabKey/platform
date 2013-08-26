@@ -215,8 +215,13 @@ public abstract class SqlScriptManager
     @NotNull
     public Collection<String> getPreviouslyRunSqlScriptNames()
     {
-        SqlSelector selector = new SqlSelector(getTableInfoSqlScripts().getSchema(), "SELECT FileName FROM " + getTableInfoSqlScripts() + " WHERE ModuleName = ?", _provider.getProviderName());
-        return selector.getCollection(String.class);
+        TableInfo tinfo = getTableInfoSqlScripts();
+        SimpleFilter filter = new SimpleFilter();
+        ColumnInfo fileNameColumn = tinfo.getColumn("FileName");
+        filter.addCondition(tinfo.getColumn("ModuleName"), _provider.getProviderName());
+        filter.addCondition(tinfo.getColumn("FileName"), _schema.getDisplayName(), CompareType.STARTS_WITH);
+
+        return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
     }
 
 
