@@ -813,7 +813,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         // SQLServer will automatically reset the identity column sequence when IDENTITY_INSERT is on
         if (dialect.isSqlServer())
         {
-            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;\nGO\n")));
+            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;")));
             _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s ON", targetTable));
         }
 
@@ -828,7 +828,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         // reset the sequence
         if (dialect.isSqlServer())
         {
-            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;\nGO\n")));
+            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;")));
             _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s OFF", targetTable));
         }
         else if (dialect.isPostgreSQL())
