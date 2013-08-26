@@ -58,7 +58,7 @@ public class ModuleUpgrader
             ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
             module.versionUpdate(ctx);
             module.afterUpdate(ctx);
-            ctx.upgradeComplete(module.getVersion());
+            ctx.upgradeComplete(module);
         }
     }
 

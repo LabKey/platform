@@ -248,14 +248,12 @@ public interface Module extends Comparable<Module>
     public void setExplodedPath(File path);
 
     /**
-     * Returns a list of sql script file names for a given schema name,
-     * or all sql script names from the labkey dialect if the schema name is null.
+     * Returns a list of sql script file names for a given schema
      *
-     *
-     * @param schema The schema name, or null
+     * @param schema The schema
      * @return The list of sql script names
      */
-    public Set<String> getSqlScripts(@Nullable DbSchema schema);
+    public Set<String> getSqlScripts(@NotNull DbSchema schema);
 
     /**
      * Returns the file path for this modules sql scripts

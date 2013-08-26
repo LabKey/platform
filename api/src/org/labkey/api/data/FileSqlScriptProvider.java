@@ -22,9 +22,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.resource.Resource;
 
@@ -39,8 +41,9 @@ import java.util.regex.Pattern;
  */
 public class FileSqlScriptProvider implements SqlScriptProvider
 {
-    private DefaultModule _module;
     private static Logger _log = Logger.getLogger(FileSqlScriptProvider.class);
+
+    private final DefaultModule _module;
 
     public FileSqlScriptProvider(DefaultModule module)
     {
@@ -50,7 +53,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     @NotNull
     @Override
-    public Collection<DbSchema> getSchemas() throws SqlScriptException
+    public Collection<DbSchema> getSchemas()
     {
         List<DbSchema> schemas = new LinkedList<>();
 
@@ -65,7 +68,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // schema = null returns all scripts
     @NotNull
     @Override
-    public List<SqlScript> getScripts(@Nullable DbSchema schema) throws SqlScriptException
+    public List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException
     {
         Set<String> filenames = getScriptFilenames(schema);
 
@@ -73,7 +76,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         for (String filename : filenames)
         {
-            SqlScript script = getScript(filename);
+            SqlScript script = getScript(schema, filename);
 
             if (null != script)
                 scripts.add(script);
@@ -84,9 +87,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
 
     @Override
-    public SqlScript getScript(String description)
+    public SqlScript getScript(@Nullable DbSchema schema, String description)
     {
-        FileSqlScript script = new FileSqlScript(this, description);
+        FileSqlScript script = new FileSqlScript(this, schema, description);
 
         if (script.isValidName())
             return script;
@@ -103,77 +106,52 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         Returned set can be empty (i.e., schemas that have no scripts)
     */
-    private @NotNull Set<String> getScriptFilenames(@Nullable DbSchema schema) throws SqlScriptException
+    protected @NotNull Set<String> getScriptFilenames(@NotNull DbSchema schema) throws SqlScriptException
     {
         return _module.getSqlScripts(schema);
     }
 
-    @NotNull
-    public List<SqlScript> getDropScripts() throws SqlScriptException
+    @Nullable
+    @Override
+    public SqlScript getDropScript(DbSchema schema)
     {
-        return getOneOffScripts("drop.sql");
+        return getOneOffScript(schema, "drop.sql");
     }
 
-    @NotNull
-    public List<SqlScript> getCreateScripts() throws SqlScriptException
+    @Nullable
+    @Override
+    public SqlScript getCreateScript(DbSchema schema)
     {
-        return getOneOffScripts("create.sql");
+        return getOneOffScript(schema, "create.sql");
     }
 
-    @NotNull
-    private List<SqlScript> getOneOffScripts(String suffix) throws SqlScriptException
+    @Nullable
+    private SqlScript getOneOffScript(DbSchema schema, String suffix)
     {
-        List<SqlScript> scripts = new ArrayList<>();
+        String schemaName = schema.getDisplayName();
+        SqlScript script = new FileSqlScript(this, schema, schemaName + "-" + suffix, schemaName);
 
-        for (DbSchema schema : getSchemas())
-        {
-            String schemaName = schema.getDisplayName();
-            SqlScript script = new FileSqlScript(this, schemaName + "-" + suffix, schemaName);
-            if (0 != script.getContents().length())
-                scripts.add(script);
-        }
-
-        return scripts;
+        if (script.getContents().isEmpty())
+            return null;
+        else
+            return script;
     }
 
-    private String getContents(String filename) throws SqlScriptException
+    private String getContents(SqlDialect dialect, String filename) throws SqlScriptException
     {
-        StringBuilder contents = new StringBuilder();
-        BufferedReader br = null;
-
         try
         {
-            Path path = Path.parse(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect())).append(filename);
+            Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append(filename);
             Resource r = _module.getModuleResource(path);
             if (null == r || !r.isFile())
                 throw new SqlScriptException("File not found: " + path, filename);
 
-            // TODO: use PageFlowUtil.getStreamContentsAsString()?
-            br = new BufferedReader(new InputStreamReader(r.getInputStream()));
-            String line;
-            while ((line = br.readLine()) != null)
-            {
-                contents.append(line);
-                contents.append('\n');
-            }
+            return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
         }
         catch (NullPointerException | IOException e)
         {
             throw new SqlScriptException(e, filename);
         }
-        finally
-        {
-            try
-            {
-                if (br != null) br.close();
-            }
-            catch (IOException e)
-            {
-                //
-            }
-        }
-
-        return contents.toString();
     }
 
     public String getProviderName()
@@ -243,20 +221,23 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.sql");
 
         private final FileSqlScriptProvider _provider;
+        private final DbSchema _schema;
         private final String _fileName;
+
         private String _schemaName = null;
         private double _fromVersion = 0;
         private double _toVersion = 0;
         private boolean _validName = false;
         private String _errorMessage = null;
 
-        public FileSqlScript(FileSqlScriptProvider provider, String fileName)
+        public FileSqlScript(FileSqlScriptProvider provider, @Nullable DbSchema schema, String fileName)
         {
             _provider = provider;
             _fileName = fileName;
 
             if (!_scriptFileNamePattern.matcher(fileName).matches())
             {
+                _schema = null;
                 _log.debug(provider.getProviderName() + ", ignoring file " + fileName + ": wrong format");
                 return;
             }
@@ -264,9 +245,13 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             String[] parts = _fileName.substring(0, _fileName.length() - 4).split("-");
 
             if (parts.length != 3)
+            {
+                _schema = null;
                 return;
+            }
 
             _schemaName = parts[SCHEMA_INDEX];
+            _schema = null != schema ? schema : DbSchema.get(_schemaName);
 
             try
             {
@@ -285,9 +270,10 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         // Used for DROP and CREATE scripts... so we don't bother verifying filename or parsing info from it
         // Also, leave _validName = false so we don't record these scripts in the SqlScript table
-        public FileSqlScript(FileSqlScriptProvider provider, String fileName, String schemaName)
+        public FileSqlScript(FileSqlScriptProvider provider, DbSchema schema, String fileName, String schemaName)
         {
             _provider = provider;
+            _schema = schema;
             _fileName = fileName;
             _schemaName = schemaName;
         }
@@ -304,6 +290,12 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             double endVersion = _toVersion * 10;
 
             return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
+        }
+
+        @Override
+        public DbSchema getSchema()
+        {
+            return _schema;
         }
 
         public String getSchemaName()
@@ -332,7 +324,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             try
             {
-                return _provider.getContents(_fileName);
+                return _provider.getContents(_schema.getSqlDialect(), _fileName);
             }
             catch (SqlScriptException e)
             {

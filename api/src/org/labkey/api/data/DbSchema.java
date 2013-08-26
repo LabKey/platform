@@ -71,7 +71,7 @@ public class DbSchema
 
     private ResourceRef _resourceRef = null;
 
-    private DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+    protected DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
     {
         _name = name;
         _type = type;

@@ -17,6 +17,10 @@ package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SqlScriptManager;
+import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -137,11 +141,22 @@ public class ModuleContext implements Cloneable
         _moduleState = moduleState;
     }
 
-    public void upgradeComplete(double version)
+    public void upgradeComplete(Module module)
     {
-        _installedVersion = version;
+        _installedVersion = module.getVersion();
         setModuleState(ModuleLoader.ModuleState.ReadyToRun);
         ModuleLoader.getInstance().saveModuleContext(this);
+
+        if (module instanceof DefaultModule)
+        {
+            SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)module);
+
+            for (DbSchema schema : provider.getSchemas())
+            {
+                SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+                manager.updateSchemaVersion(_installedVersion);
+            }
+        }
     }
 
     public String getName()
@@ -169,7 +184,7 @@ public class ModuleContext implements Cloneable
     {
         if (autoUninstall != null)
         {
-            _autoUninstall = autoUninstall.booleanValue();
+            _autoUninstall = autoUninstall;
         }
     }
 

@@ -24,8 +24,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlScriptRunner.*;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.DefaultSchema;
@@ -36,6 +38,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
@@ -133,7 +136,22 @@ public class SimpleModule extends SpringModule
 
     public boolean hasScripts()
     {
-        return getSqlScripts(null).size() > 0;
+        SqlScriptProvider provider = new FileSqlScriptProvider(this);
+
+        for (DbSchema schema : provider.getSchemas())
+        {
+            try
+            {
+                if (!provider.getScripts(schema).isEmpty())
+                    return true;
+            }
+            catch (SqlScriptException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+
+        return false;
     }
 
     @Override

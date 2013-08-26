@@ -32,6 +32,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -141,23 +142,25 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         Before
         {
-            @NotNull
-            List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
+            @Nullable
+            @Override
+            SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
             {
-                return provider.getDropScripts();
+                return provider.getDropScript(schema);
             }
         },
 
         After
         {
-            @NotNull
-            List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
+            @Nullable
+            @Override
+            SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
             {
-                return provider.getCreateScripts();
+                return provider.getCreateScript(schema);
             }
         };
 
-        abstract @NotNull List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
+        abstract @Nullable SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException;
     }
 
     protected DefaultModule()
@@ -353,10 +356,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (hasScripts())
         {
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
-            List<SqlScript> scripts = SqlScriptRunner.getRecommendedScripts(provider, moduleContext.getInstalledVersion(), getVersion());
 
-            if (!scripts.isEmpty())
-                SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
+            for (DbSchema schema : provider.getSchemas())
+            {
+                SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+                List<SqlScript> scripts = manager.getRecommendedScripts(moduleContext.getInstalledVersion(), getVersion());
+
+                if (!scripts.isEmpty())
+                    SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
+            }
         }
     }
 
@@ -372,10 +380,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (hasScripts())
             {
                 SqlScriptProvider provider = new FileSqlScriptProvider(this);
-                List<SqlScript> scripts = type.getScripts(provider);
 
-                if (!scripts.isEmpty())
-                    SqlScriptRunner.runScripts(this, null, scripts);
+                for (DbSchema schema : provider.getSchemas())
+                {
+                    SqlScript script = type.getScript(provider, schema);
+
+                    if (null != script)
+                        SqlScriptRunner.runScripts(this, null, Arrays.asList(script));
+                }
             }
         }
         catch (Exception e)
@@ -789,9 +801,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _explodedPath = path.getAbsoluteFile();
     }
 
-    public Set<String> getSqlScripts(@Nullable DbSchema schema)
+    public Set<String> getSqlScripts(@NotNull DbSchema schema)
     {
-        SqlDialect dialect = null == schema ? CoreSchema.getInstance().getSqlDialect() : schema.getSqlDialect();
+        SqlDialect dialect = schema.getSqlDialect();
 
         String sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);

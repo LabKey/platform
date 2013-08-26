@@ -28,10 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * User: arauch
@@ -81,7 +78,8 @@ public class SqlScriptRunner
 
         for (SqlScript script : scripts)
         {
-            SqlScriptManager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module), null);
+            SqlScriptManager manager = SqlScriptManager.get(script.getProvider(), script.getSchema());
+            manager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module), null);
 
             synchronized(SCRIPT_LOCK)
             {
@@ -98,100 +96,6 @@ public class SqlScriptRunner
         {
             _currentModuleName = null;
         }
-    }
-
-
-    // Returns all the existing scripts matching schemaName that have not been run
-    public static List<SqlScript> getNewScripts(SqlScriptProvider provider, @Nullable DbSchema schema) throws SQLException
-    {
-        List<SqlScript> allScripts;
-
-        try
-        {
-            allScripts = provider.getScripts(schema);
-        }
-        catch(SqlScriptException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        List<SqlScript> newScripts = new ArrayList<>();
-        Set<SqlScript> runScripts = SqlScriptManager.getRunScripts(provider);
-
-        for (SqlScript script : allScripts)
-            if (!runScripts.contains(script))
-                newScripts.add(script);
-
-        return newScripts;
-    }
-
-
-    public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, double from, double to) throws SQLException, SqlScriptException
-    {
-        List<SqlScript> scripts = new ArrayList<>();
-
-        for (DbSchema schema : provider.getSchemas())
-        {
-            List<SqlScript> newScripts = getNewScripts(provider, schema);
-            scripts.addAll(getRecommendedScripts(newScripts, from, to));
-        }
-
-        return scripts;
-    }
-
-
-    // Get the recommended scripts from a given collection of scripts
-    public static List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
-    {
-        // Create a map of SqlScript objects.  For each fromVersion, store only the script with the highest toVersion
-        Map<Double, SqlScript> m = new HashMap<>();
-
-        for (SqlScript script : schemaScripts)
-        {
-            if (script.getFromVersion() >= from && script.getToVersion() <= to)
-            {
-                SqlScript current = m.get(script.getFromVersion());
-
-                if (null == current || script.getToVersion() > current.getToVersion())
-                    m.put(script.getFromVersion(), script);
-            }
-        }
-
-        List<SqlScript> scripts = new ArrayList<>();
-
-        while (true)
-        {
-            SqlScript nextScript = getNearestFrom(m, from);
-
-            if (null == nextScript)
-                break;
-
-            from = nextScript.getToVersion();
-            scripts.add(nextScript);
-        }
-
-        return scripts;
-    }
-
-
-    private static SqlScript getNearestFrom(Map<Double, SqlScript> m, double targetFrom)
-    {
-        SqlScript nearest = m.get(targetFrom);
-
-        if (null == nearest)
-        {
-            double lowest = Double.MAX_VALUE;
-
-            for (double from : m.keySet())
-            {
-                if (from >= targetFrom && from < lowest)
-                    lowest = from;
-            }
-
-            nearest = m.get(lowest);
-        }
-
-        return nearest;
     }
 
 
@@ -232,7 +136,10 @@ public class SqlScriptRunner
 
     public interface SqlScript extends Comparable<SqlScript>
     {
+        @Deprecated
         public String getSchemaName();
+
+        public DbSchema getSchema();
         public double getFromVersion();
         public double getToVersion();
         public String getContents();
@@ -246,12 +153,12 @@ public class SqlScriptRunner
 
     public interface SqlScriptProvider
     {
-        public @NotNull Collection<DbSchema> getSchemas() throws SqlScriptException;
-        public @NotNull List<SqlScript> getScripts(@Nullable DbSchema schema) throws SqlScriptException;
-        public SqlScript getScript(String description);
+        public @NotNull Collection<DbSchema> getSchemas();
+        public @NotNull List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException;
+        public SqlScript getScript(DbSchema schema, String description);
         public String getProviderName();
-        public @NotNull List<SqlScript> getDropScripts() throws SqlScriptException;
-        public @NotNull List<SqlScript> getCreateScripts() throws SqlScriptException;
+        public @Nullable SqlScript getDropScript(DbSchema schema);
+        public @Nullable SqlScript getCreateScript(DbSchema schema);
         public UpgradeCode getUpgradeCode();
     }
 }

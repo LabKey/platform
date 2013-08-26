@@ -82,13 +82,13 @@ import java.util.TreeSet;
 public abstract class SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(SqlDialect.class);
+    protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
+    public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
+    public static final String GUID_TYPE = "ENTITYID";
+
     private int _databaseVersion = 0;
     private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
-
-    public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
-    protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
-    public static final String GUID_TYPE = "ENTITYID";
 
     private final Set<String> _reservedWordSet;
     private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<>();

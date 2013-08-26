@@ -32,8 +32,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlScriptManager;
+import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -88,6 +93,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -323,6 +329,11 @@ public class ModuleLoader implements Filter
             _newInstall = true;
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
+
+        // Now that the core module is upgrade, upgrade the "labkey" schema in all module-required external data sources
+        // to match the core module version. Each external data source records their upgrade scripts and versions their
+        // module schemas via the tables in its own "labkey" schema.
+        upgradeLabKeySchemaInExternalDataSources();
 
         for (ModuleContext context : getAllModuleContexts())
             contextMap.put(context.getName(), context);
@@ -774,6 +785,62 @@ public class ModuleLoader implements Filter
     }
 
 
+    // TODO: Move this code into SqlScriptManager
+    private void upgradeLabKeySchemaInExternalDataSources()
+    {
+        DefaultModule coreModule = (DefaultModule) ModuleLoader.getInstance().getCoreModule();
+
+        for (String name : getAllModuleDataSources())
+        {
+            try
+            {
+                DbScope scope = DbScope.getDbScope(name);
+
+                // Careful... the "labkey" scripts are sourced from and versioned based on the core module, but are run
+                // and tracked within the external data source's "labkey" schema.
+
+                // Look for "labkey" scripts in the "core" module...
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(coreModule);
+
+                // Same as scope.getSchema("labkey"), except eliminates data source prefix from display name, so labkey-*-*.sql scripts will be found
+                DbSchema labkeySchema = new DbSchema("labkey", DbSchemaType.Module, scope, null)
+                {
+                    @Override
+                    public String getDisplayName()
+                    {
+                        return super.getName();
+                    }
+                };
+
+                SqlScriptManager labkeyManager = SqlScriptManager.get(provider, labkeySchema);
+                SqlScriptManager.SchemaBean schemaBean = labkeyManager.ensureSchemaBean();
+                double from = schemaBean.getInstalledVersion();
+                double to = coreModule.getVersion();
+
+                if (from < to)
+                {
+                    if (0 == from)
+                        _log.info("Installing the \"labkey\" schema in \"" + scope.getDisplayName() + "\", upgrading it to " + to);
+                    else
+                        _log.info("Upgrading the \"labkey\" schema in \"" + scope.getDisplayName() + "\" from " + from + " to " + to);
+
+                    List<SqlScriptRunner.SqlScript> allLabKeyScripts = provider.getScripts(labkeySchema);
+                    List<SqlScriptRunner.SqlScript> scripts = labkeyManager.getRecommendedScripts(allLabKeyScripts, from, to);
+
+                    if (!scripts.isEmpty())
+                        SqlScriptRunner.runScripts(coreModule, ModuleLoader.getInstance().getUpgradeUser(), scripts);
+
+                    labkeyManager.updateSchemaVersion(to);
+                }
+            }
+            catch (SqlScriptRunner.SqlScriptException | SQLException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+
     public Throwable getStartupFailure()
     {
         return _startupFailure;
@@ -854,6 +921,7 @@ public class ModuleLoader implements Filter
         }
     }
 
+    // TODO: Should probably not call afterUpdate(), since it executes more than just the create.sql scripts
     public void runAfterUpdates()
     {
         synchronized (UPGRADE_LOCK)
@@ -1124,7 +1192,7 @@ public class ModuleLoader implements Filter
     public Set<String> getAllModuleDataSources()
     {
         // Find all the external data sources that modules require
-        Set<String> allModuleDataSources = new HashSet<>();
+        Set<String> allModuleDataSources = new LinkedHashSet<>();
 
         for (Module module : _modules)
             allModuleDataSources.addAll(getModuleDataSources(module));
@@ -1134,7 +1202,7 @@ public class ModuleLoader implements Filter
 
     public Set<String> getModuleDataSources(Module module)
     {
-        Set<String> moduleDataSources = new HashSet<>();
+        Set<String> moduleDataSources = new LinkedHashSet<>();
 
         for (String schemaName : module.getSchemaNames())
         {
