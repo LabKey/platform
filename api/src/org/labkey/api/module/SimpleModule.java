@@ -27,7 +27,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlScriptRunner.*;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.DefaultSchema;
@@ -52,10 +53,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /*
 * User: Dave
@@ -78,7 +77,7 @@ public class SimpleModule extends SpringModule
     public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
     int _factorySetHash = 0;
-    private Set<String> _schemaNames;
+    private Collection<String> _schemaNames;
 
     public SimpleModule()
     {
@@ -161,14 +160,14 @@ public class SimpleModule extends SpringModule
         return getSchemaNames(false);
     }
 
-    private Set<String> getSchemaNames(final boolean throwOnError)
+    private Collection<String> getSchemaNames(final boolean throwOnError)
     {
         if (_schemaNames == null)
         {
             Resource schemasDir = getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
             if (schemasDir != null && schemasDir.isCollection())
             {
-                final Set<String> schemaNames = new LinkedHashSet<>();
+                final List<String> schemaNames = new ArrayList<>();
                 CollectionUtils.forAllDo(schemasDir.list(), new Closure<Resource>() {
                     @Override
                     public void execute(Resource resource)
@@ -192,7 +191,8 @@ public class SimpleModule extends SpringModule
                         }
                     }
                 });
-                _schemaNames = Collections.unmodifiableSet(schemaNames);
+                Collections.sort(schemaNames);  // Alphabetical is better than random
+                _schemaNames = Collections.unmodifiableList(schemaNames);
             }
             else
             {

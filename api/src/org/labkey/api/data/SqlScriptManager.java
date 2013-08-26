@@ -296,56 +296,6 @@ public abstract class SqlScriptManager
     }
 
 
-    public static class SchemaBean extends Entity
-    {
-        private String _name;
-        private String _moduleName;
-        private double _installedVersion;
-
-        @SuppressWarnings("UnusedDeclaration")  // Used by ObjectFactory reflection
-        public SchemaBean()
-        {
-        }
-
-        private SchemaBean(String name, String moduleName, double installedVersion)
-        {
-            setName(name);
-            setModuleName(moduleName);
-            setInstalledVersion(installedVersion);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public String getModuleName()
-        {
-            return _moduleName;
-        }
-
-        public void setModuleName(String moduleName)
-        {
-            _moduleName = moduleName;
-        }
-
-        public double getInstalledVersion()
-        {
-            return _installedVersion;
-        }
-
-        public void setInstalledVersion(double installedVersion)
-        {
-            _installedVersion = installedVersion;
-        }
-    }
-
-
     private static class CoreSqlScriptManager extends SqlScriptManager
     {
         private CoreSqlScriptManager(SqlScriptProvider provider, DbSchema schema)
@@ -425,6 +375,95 @@ public abstract class SqlScriptManager
         protected TableInfo getTableInfoSchemas()
         {
             return getLabKeySchema().getTable("Schemas");
+        }
+    }
+
+
+    public static class SchemaBean extends Entity
+    {
+        private String _name;
+        private String _moduleName;
+        private double _installedVersion;
+
+        @SuppressWarnings("UnusedDeclaration")  // Used by ObjectFactory reflection
+        public SchemaBean()
+        {
+        }
+
+        private SchemaBean(String name, String moduleName, double installedVersion)
+        {
+            setName(name);
+            setModuleName(moduleName);
+            setInstalledVersion(installedVersion);
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
+        }
+
+        public double getInstalledVersion()
+        {
+            return _installedVersion;
+        }
+
+        public void setInstalledVersion(double installedVersion)
+        {
+            _installedVersion = installedVersion;
+        }
+    }
+
+
+    // TODO: Combine with SqlScript?
+    public static class SqlScriptBean extends Entity
+    {
+        private String _moduleName;
+        private String _fileName;
+
+        @SuppressWarnings("UnusedDeclaration")  // Used by ObjectFactory reflection
+        public SqlScriptBean()
+        {
+        }
+
+        public SqlScriptBean(String moduleName, String fileName)
+        {
+            _moduleName = moduleName;
+            _fileName = fileName;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
+        }
+
+        public String getFileName()
+        {
+            return _fileName;
+        }
+
+        public void setFileName(String fileName)
+        {
+            _fileName = fileName;
         }
     }
 }
