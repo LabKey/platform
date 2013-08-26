@@ -627,16 +627,11 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
                 {
                     if (this.selectedRecord.data.uri)
                     {
-                        // TODO: Assumes WebdavFileSystem parameters
-                        var uri = new LABKEY.URI(this.selectedRecord.data.uri);
-                        uri.search += (uri.search ? "&" : "") + "contentDisposition=attachment";
-                        window.location = uri.toString();
+                        window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
                     }
                 }
                 else if (this.currentDirectory.data.uri)
                 {
-                    // TODO: Assumes WebdavFileSystem parameters
-                    // TODO: use LABKEY.URI to append serach properly
                     var url = this.currentDirectory.data.uri + "?method=zip&depth=-1";
                     for (var i = 0; i < selections.length; i++)
                     {
@@ -759,7 +754,6 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
             disabledClass:'x-button-disabled',
             scope: this,
             handler: function() {
-                // TODO: Assumes WebdavFileSystem parameters
                 var uri = this.currentDirectory.data.uri;
                 window.location = uri + "?method=zip";
             }});
