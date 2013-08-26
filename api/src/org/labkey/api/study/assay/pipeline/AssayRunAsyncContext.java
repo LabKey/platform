@@ -172,16 +172,36 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void logProperties(Logger logger)
     {
         logger.info("----- Start Batch Properties -----");
+        String valueText;
+
         for (Map.Entry<DomainProperty, String> entry : this._batchProperties.entrySet())
         {
-            logger.info("\t"+entry.getKey().getLabel()+": " + entry.getValue());
+            if(entry.getValue() == null)
+                valueText = "[Blank]";
+            else if(entry.getKey().getName().equals("TargetStudy"))
+                valueText = ContainerManager.getForId(getTargetStudy()).getName();
+            else
+                valueText = entry.getValue();
+
+            if(entry.getKey().getLabel() != null)
+                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+            else
+                logger.info("\t"+entry.getKey().getName()+": " + valueText);
         }
         logger.info("----- End Batch Properties -----");
 
         logger.info("----- Start Run Properties -----");
         for (Map.Entry<DomainProperty, String> entry : this._runProperties.entrySet())
         {
-            logger.info("\t"+entry.getKey().getLabel()+": " + entry.getValue());
+            if(entry.getValue() == null)
+                valueText = "[Blank]";
+            else
+                valueText = entry.getValue();
+
+            if(entry.getKey().getLabel() != null)
+                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+            else
+                logger.info("\t"+entry.getKey().getName()+": " + valueText);
         }
         logger.info("----- End Run Properties -----");
     }
