@@ -191,6 +191,17 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- End Batch Properties -----");
 
         logger.info("----- Start Run Properties -----");
+        try{
+            logger.info("\tUploaded Files:");
+            for(Map.Entry<String, File> entry : getUploadedData().entrySet())
+            {
+                logger.info("\t\t* " + entry.getValue().getName());
+            }
+        }
+        catch(ExperimentException e)
+        {
+            logger.info("ERROR:  Experiment Exception getting file names.");
+        }
         for (Map.Entry<DomainProperty, String> entry : this._runProperties.entrySet())
         {
             if(entry.getValue() == null)
