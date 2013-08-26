@@ -220,11 +220,15 @@ public class SqlScriptController extends SpringActionController
                     if (defModule.hasScripts())
                     {
                         SqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        List<SqlScript> scripts = provider.getScripts(null);
 
-                        for (SqlScript script : scripts)
-                            if (!allRun.contains(script))
-                                allNotRun.add(script);
+                        for (DbSchema schema : provider.getSchemas())
+                        {
+                            List<SqlScript> scripts = provider.getScripts(schema);
+
+                            for (SqlScript script : scripts)
+                                if (!allRun.contains(script))
+                                    allNotRun.add(script);
+                        }
                     }
                 }
             }
