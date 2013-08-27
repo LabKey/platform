@@ -1259,6 +1259,9 @@ public class AdminController extends SpringActionController
 
         public boolean hasSiteDefaultRoot();
 
+        public String[] getEnabledCloudStore();
+
+        public void setEnabledCloudStore(String[] enabledCloudStore);
     }
 
     public static class ProjectSettingsForm extends SetupForm implements FileManagementForm
@@ -1280,6 +1283,7 @@ public class AdminController extends SpringActionController
         private String _folderRootPath;
         private String _fileRootOption;
         private String _supportEmail;
+        private String[] _enabledCloudStore;
 
         public enum FileRootProp
         {
@@ -1496,6 +1500,18 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
+        }
+
+        @Override
+        public String[] getEnabledCloudStore()
+        {
+            return _enabledCloudStore;
+        }
+
+        @Override
+        public void setEnabledCloudStore(String[] enabledCloudStore)
+        {
+            _enabledCloudStore = enabledCloudStore;
         }
     }
 

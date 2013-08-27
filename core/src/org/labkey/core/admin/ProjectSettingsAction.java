@@ -276,7 +276,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     private boolean handleFilesPost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-
         if (service != null)
         {
             if (form.isPipelineRootForm())
@@ -286,6 +285,10 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 FolderManagementAction.setFileRootFromForm(getViewContext(), form);
             }
         }
+
+        // Cloud settings
+        FolderManagementAction.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
+
         return true;
     }
 

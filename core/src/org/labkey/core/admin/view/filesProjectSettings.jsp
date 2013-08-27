@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.files.FileContentService"%>
+<%@ page import="org.labkey.api.cloud.CloudStoreService"%>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
@@ -25,6 +26,11 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.cloud.CloudUrls" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -54,6 +60,13 @@
         canChangeFileSettings = false;
     }
     boolean canSetCustomFileRoot = getViewContext().getUser().isSiteAdmin();
+
+    CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
+    Collection<String> storeNames = Collections.emptyList();
+    if (cloud != null)
+    {
+        storeNames = cloud.getCloudStores();
+    }
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -102,11 +115,62 @@
                 </table>
             </td>
         </tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr>
-            <td><%=generateSubmitButton("Save")%></td>
-        </tr>
     </table>
+
+
+    <%
+        if (cloud != null)
+        {
+            WebPartView.startTitleFrame(out, "Enable Cloud Stores ");
+    %>
+
+    <table>
+        <tr><td></td></tr>
+        <tr><td colspan="10">
+            LabKey Server can store files in a cloud storage provider's blob store.
+            Enable or disable the available cloud stores within this folder using the checkboxes below.
+            The cloud module must be enabled within this folder and
+            cloud accounts and stores must be first configured in the
+            <a href="<%=PageFlowUtil.urlProvider(CloudUrls.class).adminURL()%>">site admin preferences</a>
+            prior to enabling them within a folder.
+            <br>
+            <em>Cloud stores disabled at the site-level cannot be enabled within a folder.</em>
+        </td></tr>
+        <tr><td></td></tr>
+
+        <%
+            if (!cloud.isEnabled(getViewContext().getContainer()))
+            {
+                %><tr><td><em>Cloud module is not enabled in this folder.</em></td></tr><%
+            }
+            else if (storeNames.isEmpty())
+            {
+                %><tr><td><em>No cloud stores have been created in the site admin preferences.</em></td></tr><%
+            }
+            else
+            {
+                for (String storeName : storeNames)
+                {
+                    boolean siteEnabled = cloud.isEnabled(storeName);
+                    boolean containerEnabled = cloud.isEnabled(storeName, getViewContext().getContainer());
+                    String id = "cloudStore_" + UniqueID.getRequestScopedUID(getViewContext().getRequest());
+        %>
+        <tr>
+            <td <%=text(siteEnabled ? "" : "class='labkey-disabled'")%>>
+                <input type="checkbox" id="<%=h(id)%>" name="enabledCloudStore" value="<%=h(storeName)%>" <%=checked(containerEnabled)%> <%=disabled(!siteEnabled)%>>
+                <label for="<%=h(id)%>"><%=h(storeName)%></label>
+            </td>
+        </tr>
+        <%
+                }
+            }
+        %>
+
+    </table>
+    <% } %>
+
+    <tr><td><%=generateSubmitButton("Save")%></td></tr>
+
     <%
         WebPartView.endTitleFrame(out);
     %>

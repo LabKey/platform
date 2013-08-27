@@ -24,6 +24,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.admin.StaticLoggerGetter;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -91,6 +92,8 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -231,8 +234,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleFilesPost(FolderManagementForm form, BindException errors) throws Exception
     {
+        // File root settings
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-
         if (service != null)
         {
             if (form.isPipelineRootForm())
@@ -242,6 +245,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 setFileRootFromForm(getViewContext(), form);
             }
         }
+
+        // Cloud settings
+        setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
 
         _successURL = getViewContext().getActionURL();
 
@@ -276,6 +282,18 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
             else
                 service.setFileRoot(ctx.getContainer(), null);
+        }
+    }
+
+    public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores)
+    {
+        CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
+        if (cloud != null)
+        {
+            Set<String> enabled = Collections.emptySet();
+            if (enabledCloudStores != null)
+                enabled = new HashSet(Arrays.asList(enabledCloudStores));
+            cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
         }
     }
 
@@ -611,6 +629,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private String _folderRootPath;
         private String _fileRootOption;
 
+        // cloud settings
+        private String[] _enabledCloudStore;
+
         public String[] getActiveModules()
         {
             return activeModules;
@@ -866,6 +887,18 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setFileRootOption(String fileRootOption)
         {
             _fileRootOption = fileRootOption;
+        }
+
+        @Override
+        public String[] getEnabledCloudStore()
+        {
+            return _enabledCloudStore;
+        }
+
+        @Override
+        public void setEnabledCloudStore(String[] enabledCloudStore)
+        {
+            _enabledCloudStore = enabledCloudStore;
         }
 
         public boolean isDisableFileSharing()
