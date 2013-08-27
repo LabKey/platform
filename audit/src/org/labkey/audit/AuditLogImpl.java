@@ -805,7 +805,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         insertInto.append(")\n");
         insertInto.append(insertSelect);
         insertInto.append("\n FROM (\n");
-        insertInto.append(QueryService.get().getSelectSQL(sourceTable, sourceColumns.values(), null, null, Table.ALL_ROWS, 0, true));
+        insertInto.append(QueryService.get().getSelectSQL(sourceTable, sourceColumns.values(), null, null, Table.ALL_ROWS, 0, false));
         insertInto.append(") x\n");
 
         _log.info(insertInto);
