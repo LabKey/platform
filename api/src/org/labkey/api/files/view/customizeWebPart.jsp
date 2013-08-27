@@ -40,7 +40,7 @@
     CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
     if (cloud != null)
     {
-        cloudStoreNames = cloud.getCloudStores(ctx.getContainer());
+        cloudStoreNames = cloud.getEnabledCloudStores(ctx.getContainer());
     }
 
     String small = "";
