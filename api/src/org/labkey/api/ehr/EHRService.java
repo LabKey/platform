@@ -122,6 +122,8 @@ abstract public class EHRService
 
     abstract public void registerFormType(DataEntryForm form);
 
+    abstract public DataEntryForm getDataEntryForm(String name, Container c, User u);
+
     abstract public void registerSimpleFormType(FORM_TYPE type, Module m, String category, String label, String schema, String query);
 
     abstract public void registerFormType(FORM_TYPE type, Module m, String category, String name, String label, List<FormSection> sections);

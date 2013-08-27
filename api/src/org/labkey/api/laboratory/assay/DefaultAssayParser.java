@@ -78,8 +78,8 @@ public class DefaultAssayParser implements AssayParser
     protected AssayImportMethod _method;
     private String HAS_RESULT = "__hasResult__";
 
-    private String RESULT_FIELD = "result";
-    private String RESULT_OOR_FIELD = "resultOORIndicator";
+    protected String RESULT_FIELD = "result";
+    protected String RESULT_OOR_FIELD = "resultOORIndicator";
 
     private static final Logger _log = Logger.getLogger(AssayParser.class);
 

@@ -456,4 +456,17 @@ public class SecurityPolicy implements HasPermission
     {
         return principal.getContextualRoles(this);
     }
+
+    @NotNull
+    public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
+    {
+        for (Role role : getRoles(new int[]{principal.getUserId()}))
+        {
+            if (role.getPermissions().contains(perm))
+                return true;
+        }
+
+        return false;
+    }
+
 }

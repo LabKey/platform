@@ -35,7 +35,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
             this.nullCaption = this.lookupNullCaption;
 
         this.listConfig = this.listConfig || {};
-        Ext4.apply(this.listConfig, {
+        Ext4.applyIf(this.listConfig, {
             innerTpl: [
                 //allow a custom null caption, defaults to '[none]'
                 '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.nullCaption) ? '"' + this.nullCaption + '"' : '"[none]"')+'))]}' +

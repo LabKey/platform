@@ -34,4 +34,8 @@ public interface DemographicsProvider
     public boolean isAvailable(Container c);
 
     public Map<String, Map<String, Object>> getProperties(Container c, User u, Collection<String> ids);
+
+    // report whether this provider requires calculation of cached data when a row in this passed table has changed
+    // this is a somewhat blunt approach, but it errs on the side of re-calculating
+    public boolean requiresRecalc(String schema, String query);
 }

@@ -25,6 +25,7 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -48,16 +49,27 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 {
     protected static final Logger _log = Logger.getLogger(AbstractDemographicsProvider.class);
 
-    protected String _schemaName = "study";
-    protected String _queryName;
+    private Module _owner = null;
+    private String _schemaName;
+    private String _queryName;
 
-    public AbstractDemographicsProvider(String queryName)
+    public AbstractDemographicsProvider(Module owner, String schemaName, String queryName)
     {
+        this(schemaName, queryName);
+        _owner = owner;
+    }
+
+    public AbstractDemographicsProvider(String schemaName, String queryName)
+    {
+        _schemaName = schemaName;
         _queryName = queryName;
     }
 
     public boolean isAvailable(Container c)
     {
+        if (_owner != null && !c.getActiveModules().contains(_owner))
+            return false;
+
         return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("ehr"));
     }
 
@@ -133,4 +145,9 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
     }
 
     abstract protected Collection<FieldKey> getFieldKeys();
+
+    public boolean requiresRecalc(String schema, String query)
+    {
+        return _schemaName.equalsIgnoreCase(schema) && _queryName.equalsIgnoreCase(query);
+    }
 }

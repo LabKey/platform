@@ -15,8 +15,10 @@
  */
 package org.labkey.api.ehr.demographics;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Results;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 
 import java.sql.SQLException;
@@ -34,9 +36,14 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
 {
     protected String _propName;
 
-    public AbstractListDemographicsProvider(String queryName, String propName)
+    public AbstractListDemographicsProvider(String schemaName, String queryName, String propName)
     {
-        super(queryName);
+        this(schemaName, queryName, propName, null);
+    }
+
+    public AbstractListDemographicsProvider(String schemaName, String queryName, String propName, @Nullable Module module)
+    {
+        super(module, schemaName, queryName);
         _propName = propName;
     }
 

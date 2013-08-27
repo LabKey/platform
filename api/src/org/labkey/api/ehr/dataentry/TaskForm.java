@@ -15,9 +15,13 @@
  */
 package org.labkey.api.ehr.dataentry;
 
+import org.labkey.api.ehr.security.EHRInProgressInsertPermission;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,5 +51,11 @@ public class TaskForm extends AbstractDataEntryForm
         sections.addAll(formSections);
 
         return new TaskForm(owner, name, label, category, sections);
+    }
+
+    @Override
+    protected List<Class<? extends Permission>> getAvailabilityPermissions()
+    {
+        return Collections.<Class<? extends Permission>>singletonList(EHRInProgressInsertPermission.class);
     }
 }

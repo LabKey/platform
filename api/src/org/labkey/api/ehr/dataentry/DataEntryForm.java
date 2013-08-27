@@ -18,6 +18,7 @@ package org.labkey.api.ehr.dataentry;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.LinkedHashSet;
@@ -36,7 +37,7 @@ public interface DataEntryForm
 
     abstract public String getCategory();
 
-    abstract public boolean hasPermission(Container c, User u);
+    abstract public boolean hasPermission(Container c, User u, Class<? extends Permission> clazz);
 
     /**
      * Intended for checks like testing whether an owning module is active

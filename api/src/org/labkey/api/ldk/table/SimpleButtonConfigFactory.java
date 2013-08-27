@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -92,5 +93,10 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     {
         for (ClientDependency cd : clientDependencies)
             _clientDependencies.add(cd);
+    }
+
+    public void setClientDependencies(Collection<ClientDependency> clientDependencies)
+    {
+        _clientDependencies.addAll(clientDependencies);
     }
 }

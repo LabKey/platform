@@ -200,6 +200,7 @@ abstract public class AbstractFormSection implements FormSection
         defaultButtons.add("DELETERECORD");
         defaultButtons.add("ADDANIMALS");
         defaultButtons.add("SELECTALL");
+        defaultButtons.add("TEMPLATE");
 
         return defaultButtons;
     }
@@ -210,8 +211,6 @@ abstract public class AbstractFormSection implements FormSection
 
         defaultButtons.add("DUPLICATE");
         defaultButtons.add("BULKEDIT");
-        defaultButtons.add("APPLYTEMPLATE");
-        defaultButtons.add("SAVEASTEMPLATE");
 
         return defaultButtons;
     }

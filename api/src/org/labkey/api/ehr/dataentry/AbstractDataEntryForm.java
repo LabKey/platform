@@ -19,10 +19,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.ehr.security.EHRDataEntryPermission;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -87,11 +89,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _category;
     }
 
-    public boolean hasPermission(Container c, User u)
+    public boolean hasPermission(Container c, User u, Class<? extends Permission> clazz)
     {
         for (FormSection section : getFormSections())
         {
-            if (!section.hasPermission(c, u, UpdatePermission.class))
+            if (!section.hasPermission(c, u, clazz))
                 return false;
         }
 
@@ -118,6 +120,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         _storeCollectionClass = storeCollectionClass;
     }
 
+    protected List<Class<? extends Permission>> getAvailabilityPermissions()
+    {
+        return Collections.<Class<? extends Permission>>singletonList(InsertPermission.class);
+    }
+
     public boolean isAvailable(Container c, User u)
     {
         if (!c.getActiveModules().contains(_owner))
@@ -125,8 +132,11 @@ public class AbstractDataEntryForm implements DataEntryForm
 
         for (FormSection section : getFormSections())
         {
-            if (!section.hasPermission(c, u, UpdatePermission.class))
-                return false;
+            for (Class<? extends Permission> clazz : getAvailabilityPermissions())
+            {
+                if (!section.hasPermission(c, u, clazz))
+                    return false;
+            }
         }
 
         return true;
