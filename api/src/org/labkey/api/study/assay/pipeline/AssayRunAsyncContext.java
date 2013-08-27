@@ -202,6 +202,17 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         {
             logger.info("ERROR:  Experiment Exception getting file names.");
         }
+
+        if(_runName == null)
+            logger.info("\tAssay ID: [Blank]");
+        else
+            logger.info("\tAssay ID: " + _runName);
+
+        if(_runComments == null)
+            logger.info("\tRun Comments: [Blank]");
+        else
+            logger.info("\tRun Comments: " + _runComments);
+
         for (Map.Entry<DomainProperty, String> entry : this._runProperties.entrySet())
         {
             if(entry.getValue() == null)
