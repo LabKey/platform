@@ -504,7 +504,7 @@ public class QueryTable extends QueryRelation
     // we are currently because of the getColumn() call
     // NOTE: Every type of suggested column should have a corresponding fixup in ColumnInfo.remapFieldKeys().
     @Override
-    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         if (_query._strictColumnList)
             return Collections.emptySet();
@@ -512,18 +512,7 @@ public class QueryTable extends QueryRelation
         Set<RelationColumn> suggested = new LinkedHashSet<>();
         Set<FieldKey> suggestedContainerColumns = new HashSet<>();
 
-        // sort columns so any suggested columns will be appended in a consistent order
-        List<RelationColumn> sorted = new ArrayList<>(selected);
-        Collections.sort(sorted, new Comparator<RelationColumn>()
-        {
-            @Override
-            public int compare(RelationColumn o1, RelationColumn o2)
-            {
-                return o1.getFieldKey().compareTo(o2.getFieldKey());
-            }
-        });
-
-        for (RelationColumn rc : sorted)
+        for (RelationColumn rc : selected)
         {
             TableColumn tc = (TableColumn)rc;
             FieldKey fk = tc._col.getFieldKey();

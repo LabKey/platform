@@ -32,9 +32,11 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: matthewb
@@ -190,8 +192,26 @@ public abstract class QueryRelation
 
     public abstract void setContainerFilter(ContainerFilter containerFilter);
 
-    public abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
+    //NOTE: column order is important when generating the suggested column list
+    //subclasses should implement _getSuggestedColumns() instead of overriding this
+    public final Set<RelationColumn> getOrderedSuggestedColumns(Set<RelationColumn> selected)
+    {
+        Set<RelationColumn> suggested = getSuggestedColumns(selected);
+        TreeSet ret = new TreeSet(new Comparator<RelationColumn>()
+        {
+            @Override
+            public int compare(RelationColumn o1, RelationColumn o2)
+            {
+                return o1.getAlias().compareTo(o2.getAlias());
+            }
+        });
 
+        ret.addAll(suggested);
+
+        return ret;
+    }
+
+    protected abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
 
     public FieldKey getContainerFieldKey()
     {

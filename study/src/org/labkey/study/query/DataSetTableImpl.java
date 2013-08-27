@@ -806,7 +806,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             return def.canRead(user);
         if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
             return def.canWrite(user);
-        return false;
+        return def.getPolicy().hasPermission(user, perm);
     }
 
     @Override

@@ -56,9 +56,9 @@
     {
         if (g.getUserId() == Group.groupAdministrators)
             continue;
-        if (studyPolicy.hasPermission(g, ReadPermission.class))
+        if (studyPolicy.hasNonInheritedPermission(g, ReadPermission.class))
             readGroups.add(g);
-        else if (studyPolicy.hasPermission(g, ReadSomePermission.class))
+        else if (studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))
             restrictedGroups.add(g);
         else
             noReadGroups.add(g);
@@ -202,7 +202,7 @@ else
             Role assignedRole = roles.isEmpty() ? null : roles.get(0);
 
             boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
-            boolean readPerm = !writePerm && dsPolicy.hasPermission(g, ReadPermission.class);
+            boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);
 
             if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
                 readPerm = true;

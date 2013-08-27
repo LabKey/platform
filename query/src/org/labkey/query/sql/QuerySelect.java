@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1063,9 +1064,9 @@ groupByLoop:
      */
     public QueryTableInfo getTableInfo()
     {
-        Set<RelationColumn> set = new HashSet<RelationColumn>(_columns.values());
+        Set<RelationColumn> set = new LinkedHashSet<RelationColumn>(_columns.values());
 
-        getSuggestedColumns(set);
+        getOrderedSuggestedColumns(set);
         if (!getParseErrors().isEmpty())
             return null;
 
@@ -1627,7 +1628,7 @@ groupByLoop:
 
 
     @Override
-    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         resolveFields();
 
@@ -1660,7 +1661,7 @@ groupByLoop:
             IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<>();
             for (RelationColumn rc : e.getValue())
                 h.put(rc, rc);
-            Set<RelationColumn> suggestedColumns = e.getKey().getSuggestedColumns(h.keySet());
+            Set<RelationColumn> suggestedColumns = e.getKey().getOrderedSuggestedColumns(h.keySet());
             if (null == suggestedColumns) suggestedColumns = Collections.emptySet();
             for (RelationColumn s : suggestedColumns)
             {

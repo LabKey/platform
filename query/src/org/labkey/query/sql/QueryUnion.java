@@ -391,7 +391,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         return Collections.emptySet();
     }

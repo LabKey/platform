@@ -290,7 +290,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         // TODO handle lookup columns
         HashSet<RelationColumn> unwrapped = new HashSet<>();
@@ -299,7 +299,7 @@ public class QueryLookupWrapper extends QueryRelation
             if (rc instanceof PassThroughColumn)
                 unwrapped.add(((PassThroughColumn)rc)._wrapped);
         }
-        return _source.getSuggestedColumns(unwrapped);
+        return _source.getOrderedSuggestedColumns(unwrapped);
     }
 
 

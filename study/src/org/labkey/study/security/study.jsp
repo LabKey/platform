@@ -65,8 +65,9 @@ Any user with READ access to this folder may view some summary data.  However, a
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";
         boolean hasFolderRead = folderPolicy.hasPermission(group, ReadPermission.class);
-        boolean hasUpdatePerm = studyPolicy.hasPermission(group, UpdatePermission.class);
-        boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasPermission(group, ReadPermission.class);
+        boolean hasUpdatePerm = studyPolicy.hasNonInheritedPermission(group, UpdatePermission.class);
+        boolean hasReadSomePerm = studyPolicy.hasNonInheritedPermission(group, ReadSomePermission.class);
+        boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasNonInheritedPermission(group, ReadPermission.class);
         if (!includeEditOption && hasUpdatePerm)
             hasReadAllPerm = true;
         String inputName = "group." + group.getUserId();
@@ -79,9 +80,9 @@ Any user with READ access to this folder may view some summary data.  However, a
         }
         %>
         <th><input <%=warning%> type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th>
-        <th><input <%=warning%> type=radio name="<%=inputName%>" value="READOWN" <%=!hasReadAllPerm && !hasUpdatePerm && studyPolicy.hasPermission(group, ReadSomePermission.class)?"checked":""%>></th>
-        <th><input <%=clear%> type=radio name="<%=inputName%>" value="NONE" <%=!hasReadAllPerm && !studyPolicy.hasPermission(group, ReadSomePermission.class)?"checked":""%>></th><%
-        %><td id="<%=inputName%>$WARN" style="display:<%=!hasFolderRead && (hasReadAllPerm || studyPolicy.hasPermission(group, ReadSomePermission.class))?"inline":"none"%>;"><img src="<%=contextPath%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
+        <th><input <%=warning%> type=radio name="<%=inputName%>" value="READOWN" <%=!hasReadAllPerm && !hasUpdatePerm && hasReadSomePerm?"checked":""%>></th>
+        <th><input <%=clear%> type=radio name="<%=inputName%>" value="NONE" <%=!hasReadAllPerm && !hasReadSomePerm?"checked":""%>></th><%
+        %><td id="<%=inputName%>$WARN" style="display:<%=!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none"%>;"><img src="<%=contextPath%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }
     %></table>
