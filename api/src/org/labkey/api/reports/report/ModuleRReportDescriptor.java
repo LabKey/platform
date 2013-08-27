@@ -76,9 +76,10 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
     public static boolean accept(String name)
     {
-        return (name.endsWith(FILE_EXTENSION) ||
-                name.endsWith(KNITR_MD_EXTENSION) ||
-                name.endsWith(KNITR_HTML_EXTENSION));
+        String lower = name.toLowerCase();
+        return (lower.endsWith(FILE_EXTENSION) ||
+                lower.endsWith(KNITR_MD_EXTENSION) ||
+                lower.endsWith(KNITR_HTML_EXTENSION));
     }
 
     public String makeReportName(Resource sourceFile)
