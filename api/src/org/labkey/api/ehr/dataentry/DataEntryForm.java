@@ -17,12 +17,14 @@ package org.labkey.api.ehr.dataentry;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: bimber
@@ -51,4 +53,6 @@ public interface DataEntryForm
     abstract public List<FormSection> getFormSections();
 
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
+
+    abstract public Set<TableInfo> getTables(Container c, User u);
 }

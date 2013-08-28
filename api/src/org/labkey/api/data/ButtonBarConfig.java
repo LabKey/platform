@@ -49,6 +49,7 @@ public class ButtonBarConfig
     private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
     private List<ButtonConfig> _items = new ArrayList<>();
     private boolean _includeStandardButtons = false;
+    private boolean _alwaysShowRecordSelectors = false;
     private String[] _scriptIncludes;
     private String _onRenderScript;
     private Set<String> _hiddenStandardButtons = new HashSet<>();
@@ -406,5 +407,15 @@ public class ButtonBarConfig
     public String getOnRenderScript()
     {
         return _onRenderScript;
+    }
+
+    public boolean isAlwaysShowRecordSelectors()
+    {
+        return _alwaysShowRecordSelectors;
+    }
+
+    public void setAlwaysShowRecordSelectors(boolean alwaysShowRecordSelectors)
+    {
+        _alwaysShowRecordSelectors = alwaysShowRecordSelectors;
     }
 }

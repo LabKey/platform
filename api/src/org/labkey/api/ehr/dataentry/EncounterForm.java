@@ -30,6 +30,7 @@ public class EncounterForm extends TaskForm
     {
         List<FormSection> sections = new ArrayList<FormSection>();
         sections.add(new TaskFormSection());
+        sections.add(new EncounterFormSection());
         sections.add(new AnimalDetailsFormSection());
         sections.addAll(formSections);
 

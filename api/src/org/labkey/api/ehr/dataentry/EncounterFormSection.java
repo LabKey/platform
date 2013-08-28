@@ -33,7 +33,7 @@ public class EncounterFormSection extends SimpleFormSection
 {
     public EncounterFormSection()
     {
-        super("ehr", "tasks", "Task", "ehr-formpanel");
+        super("study", "encounters", "Overview", "ehr-formpanel");
         List<String> sources = new ArrayList<>(getConfigSources());
         sources.add("Encounter");
         setConfigSources(sources);

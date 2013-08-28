@@ -17,6 +17,7 @@ package org.labkey.api.ldk.table;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UserDefinedButtonConfig;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
@@ -60,6 +61,20 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _text = text;
         _jsHandler = handler;
         _clientDependencies = clientDependencies;
+    }
+
+    public UserDefinedButtonConfig createBtn(TableInfo ti)
+    {
+        Container c = ti.getUserSchema().getContainer();
+        UserDefinedButtonConfig btn = new UserDefinedButtonConfig();
+        btn.setText(_text);
+        if (_url != null)
+            btn.setUrl(_url.copy(c).getActionURL().toString());
+        String onClick = getJsHandler(ti);
+        if (onClick != null)
+            btn.setOnClick(onClick);
+
+        return btn;
     }
 
     public NavTree create(TableInfo ti)

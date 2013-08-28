@@ -55,4 +55,6 @@ public interface FormSection
     abstract public void setConfigSources(List<String> configSources);
 
     abstract public void addConfigSource(String source);
+
+    abstract public void addClientDependency(ClientDependency cd);
 }

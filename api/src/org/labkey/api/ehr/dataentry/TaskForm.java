@@ -19,6 +19,7 @@ import org.labkey.api.ehr.security.EHRInProgressInsertPermission;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
 import java.util.Collections;

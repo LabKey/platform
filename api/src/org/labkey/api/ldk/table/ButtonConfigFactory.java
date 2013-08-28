@@ -19,6 +19,7 @@ import org.labkey.api.data.ButtonConfig;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UserDefinedButtonConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
@@ -32,6 +33,8 @@ import java.util.Set;
  */
 public interface ButtonConfigFactory
 {
+    public UserDefinedButtonConfig createBtn(TableInfo ti);
+
     public NavTree create(TableInfo ti);
 
     public boolean isAvailable(TableInfo ti);

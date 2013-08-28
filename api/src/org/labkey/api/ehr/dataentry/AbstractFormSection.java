@@ -197,8 +197,8 @@ abstract public class AbstractFormSection implements FormSection
     {
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("ADDRECORD");
-        defaultButtons.add("DELETERECORD");
         defaultButtons.add("ADDANIMALS");
+        defaultButtons.add("DELETERECORD");
         defaultButtons.add("SELECTALL");
         defaultButtons.add("TEMPLATE");
 
@@ -233,7 +233,7 @@ abstract public class AbstractFormSection implements FormSection
         return _clientDependencies;
     }
 
-    protected void addClientDependency(ClientDependency cd)
+    public void addClientDependency(ClientDependency cd)
     {
         _clientDependencies.add(cd);
     }

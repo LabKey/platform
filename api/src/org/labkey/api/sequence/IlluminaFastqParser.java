@@ -124,7 +124,7 @@ public class IlluminaFastqParser
 
                     reader = new FastqReader(f);
                     FastqWriter writer;
-                    while(reader.hasNext())
+                    while (reader.hasNext())
                     {
                         FastqRecord fq = reader.next();
                         String header = fq.getReadHeader();

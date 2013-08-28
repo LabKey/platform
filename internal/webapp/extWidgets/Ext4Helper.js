@@ -579,10 +579,13 @@ LABKEY.ext.Ext4Helper = new function(){
 
             //NOTE: this is substantially changed over LABKEY.ext.FormHelper
             if(meta.lookup && meta.lookup['public'] !== false && meta.lookups!==false){
-                displayValue = LABKEY.ext.Ext4Helper.getLookupDisplayValue(meta, displayValue, record, store);
-                meta.usingLookup = true;
-                shouldCache = false;
-                displayType = 'string';
+                //dont both w/ special renderer if the raw value is the same as the displayColumn
+                if (meta.lookup.keyColumn != meta.lookup.displayColumn){
+                    displayValue = LABKEY.ext.Ext4Helper.getLookupDisplayValue(meta, displayValue, record, store);
+                    meta.usingLookup = true;
+                    shouldCache = false;
+                    displayType = 'string';
+                }
             }
 
             if(meta.extFormatFn && Ext4.isFunction(meta.extFormatFn)){

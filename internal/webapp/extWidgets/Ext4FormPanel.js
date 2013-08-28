@@ -329,6 +329,11 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     doSubmit: function(btn){
         btn.setDisabled(true);
 
+        // force record to refresh based on most recent form values.  this happens reliably in modern browsers,
+        // but IE8 sometimes wont apply changes when the cursor is still on a field
+        var plugin = this.getPlugin('labkey-databind');
+        plugin.updateRecordFromForm();
+
         if(!this.store.getNewRecords().length && !this.store.getUpdatedRecords().length && !this.store.getRemovedRecords().length){
             Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
             window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})

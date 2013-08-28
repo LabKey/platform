@@ -38,6 +38,7 @@ public class ButtonBar extends DisplayElement
     // that's partially overridden by a
     private List<ButtonBarConfig> _configs = null;
     private boolean _renderedIncludes = false;
+    private boolean _alwaysShowRecordSelectors = false;
 
     /**
      * These button bars are unlikely to be useful for new code. They assume that a specific action name
@@ -232,6 +233,9 @@ public class ButtonBar extends DisplayElement
                 _elementList.add(elem);
         }
 
+        if (config.isAlwaysShowRecordSelectors())
+            _alwaysShowRecordSelectors = true;
+
         if (config.isIncludeStandardButtons())
         {
             //include all buttons in the originalButtons List that
@@ -292,5 +296,10 @@ public class ButtonBar extends DisplayElement
                 _elementList.add(elem);
         }
 
+    }
+
+    public boolean isAlwaysShowRecordSelectors()
+    {
+        return _alwaysShowRecordSelectors;
     }
 }

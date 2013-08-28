@@ -21,6 +21,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,7 +72,13 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
             if ("Id".equalsIgnoreCase(key.toString()))
                 continue;
 
-            record.put(key.toString(), rs.getObject(key));
+            Object val = rs.getObject(key);
+            if (val instanceof Clob)
+            {
+                val = ((Clob)val).toString();
+            }
+
+            record.put(key.toString(), val);
         }
         records.add(record);
 

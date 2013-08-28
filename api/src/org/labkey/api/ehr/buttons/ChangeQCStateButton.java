@@ -29,7 +29,12 @@ public class ChangeQCStateButton extends SimpleButtonConfigFactory
 {
     public ChangeQCStateButton(Module owner, @Nullable String jsClass, @Nullable Set<ClientDependency> clientDependencies)
     {
-        super(owner, "Change Request Status", "EHR.DatasetButtons.changeQCStateHandler(dataRegionName, '" + jsClass + "');");
+        this(owner, "Change Request Status", jsClass, clientDependencies);
+    }
+
+    public ChangeQCStateButton(Module owner, String text, @Nullable String jsClass, @Nullable Set<ClientDependency> clientDependencies)
+    {
+        super(owner, text, "EHR.DatasetButtons.changeQCStateHandler(dataRegionName, '" + jsClass + "');");
 
         if (clientDependencies != null)
         {

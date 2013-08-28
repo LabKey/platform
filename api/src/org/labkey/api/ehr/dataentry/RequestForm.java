@@ -59,7 +59,7 @@ public class RequestForm extends AbstractDataEntryForm
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("DISCARD");
         defaultButtons.add("REQUEST");
-        defaultButtons.add("APPROVE");
+        //defaultButtons.add("APPROVE");
 
         return defaultButtons;
     }
