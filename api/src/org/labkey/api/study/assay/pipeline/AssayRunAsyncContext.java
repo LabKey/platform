@@ -86,12 +86,14 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _userId = _user.getUserId();
         _protocol = originalContext.getProtocol();
         _protocolId = _protocol.getRowId();
-        _provider = (ProviderType) AssayService.get().getProvider(_protocol);
+        if(!_protocol.getName().equals("LABKEYTESTINGPROTOCOL"))
+            _provider = (ProviderType) AssayService.get().getProvider(_protocol);
         _targetStudy = originalContext.getTargetStudy();
         _runName = originalContext.getName();
         _runComments = originalContext.getComments();
         _container = originalContext.getContainer();
-        _containerId = _container.getId();
+        if(_container != null)
+            _containerId = _container.getId();
         _actionURL = originalContext.getActionURL();
         _uploadedData = originalContext.getUploadedData();
         _reRunId = originalContext.getReRunId();
