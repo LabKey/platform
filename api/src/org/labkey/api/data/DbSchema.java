@@ -391,6 +391,12 @@ public class DbSchema
         return getDisplayName(_scope, getName());
     }
 
+    // TODO: Provide mechanism to override this in schema.xml
+    public String getQuerySchemaName()
+    {
+        return (_scope.isLabKeyScope() ? "" : _scope.getDisplayName() + "_") + getName();
+    }
+
     // Schema name qualified with data source display name (e.g., external.myschema). Resources like schema.xml files
     // and sql scripts are found using this name.
     public static String getDisplayName(DbScope scope, String name)
