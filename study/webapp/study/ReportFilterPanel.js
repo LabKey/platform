@@ -95,6 +95,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             store       : this.store,
             border      : false, frame : false,
             bodyStyle   : 'border: none;',
+            padding     : '0 0 0 2px',
             hideHeaders : true,
             multiSelect : true,
             columns     : this.getColumnCfg(isHeader),
@@ -341,14 +342,15 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     },
 
-    select : function(record, stopEvents) {
+    select : function(record, stopEvents, fieldNameForFind) {
+
         if (stopEvents)
             this.suspendEvents();
 
         var target = this.getGrid(), rec;
 
         if (Ext4.isPrimitive(record))
-            rec = target.getStore().findRecord('id', id);
+            rec = target.getStore().findRecord(fieldNameForFind || 'id', record);
         else
             rec = record; // assume it is a model instance
 
@@ -359,7 +361,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             this.resumeEvents();
     },
 
-    deselect : function(record, stopEvents) {
+    deselect : function(record, stopEvents, fieldNameForFind) {
 
         if (stopEvents)
             this.suspendEvents();
@@ -367,7 +369,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         var target = this.getGrid(), rec;
 
         if (Ext4.isPrimitive(record))
-            rec = target.getStore().findRecord('id', id);
+            rec = target.getStore().findRecord(fieldNameForFind || 'id', record);
         else
             rec = record; // assume it is a model instance
 

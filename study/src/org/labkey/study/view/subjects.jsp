@@ -401,12 +401,11 @@
         <% if (bean.getWide()) { %>
         var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
         {
-            renderTo  : X.get(<%=q(groupsDivId)%>),
             id        : <%=q(groupsPanelId)%>,
-            title     : 'Show',
-            border    : true,
-            width     : 260,
-            bodyStyle : 'padding: 8px',
+            border    : false,
+            cls : 'iScroll',
+            bodyStyle : 'overflow-x: hidden !important;',
+            autoScroll : true,
             normalWrap : true,
             allowAll  : true,
             listeners : {
@@ -435,7 +434,7 @@
                 {
                     // setup our initial selection list to only
                     // included enrolled cohorts.  If all cohorts
-                    // are enrolled, then let let the list engage
+                    // are enrolled, then let the list engage
                     // in default behavior
 
                     var hasUnenrolled = false;
@@ -469,7 +468,7 @@
                             filterPanels[i].deselectAll();
 
                             for (var k = 0; k < select.length; k++)
-                                filterPanels[i].select(select[k].id, true)
+                                filterPanels[i].select(select[k].id, true);
                         }
                     }
 
@@ -485,9 +484,20 @@
             }
         });
 
+        var outerPanel = X.create('Ext.panel.Panel', {
+            renderTo : X.get(<%=q(groupsDivId)%>),
+            cls : 'themed-panel',
+            title : 'Show',
+            width : 260,
+            height : 350,
+            bodyStyle : 'padding: 8px;',
+            layout : 'fit',
+            items : ptidPanel
+        });
+
         X.create('Ext.resizer.Resizer', {
             // default handles are east, south, and souteast
-            target: ptidPanel,
+            target: outerPanel,
             dynamic: false,
             minWidth: 260,
             minHeight: 350,

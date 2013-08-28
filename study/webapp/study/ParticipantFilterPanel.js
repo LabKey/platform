@@ -41,6 +41,10 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         if (!Ext4.ModelManager.isRegistered('LABKEY.study.GroupCohort')) {
             Ext4.define('LABKEY.study.GroupCohort', {
                 extend : 'Ext.data.Model',
+                idProperty : {name : 'genId', type : 'int', convert : function(v, rec) {
+                    // need unique IDs for ptid groups "Not in any group" records per category
+                    return rec.get('id') == -1 && rec.get('type') != 'cohort' ? rec.get('id') * rec.get('categoryId') : rec.get('id');
+                }},
                 fields : [
                     {name : 'id'},
                     {name : 'categoryId'},
