@@ -40,7 +40,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     /** The text that will appear in the button to start this pipeline. */
     private String _description = "Analyze Data";
     private String _protocolFactoryName;
-    private StringExpression _analyzeURL;
+    private String _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
     private Map<FileType, FileType[]> _typeHierarchy;
@@ -69,7 +69,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             _protocolFactoryName = settings.getProtocolFactoryName();
 
         if (settings.getAnalyzeURL() != null)
-            _analyzeURL = StringExpressionFactory.createURL(settings.getAnalyzeURL());
+            _analyzeURL = settings.getAnalyzeURL();
 
         // Convert any input filter extensions to array of file types.
         List<FileType> inputFilterExts = settings.getInitialInputExts();
@@ -149,7 +149,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             try
             {
                 ViewContext context = HttpView.currentContext();
-                StringExpression expressionCopy = _analyzeURL.clone();
+                StringExpression expressionCopy = StringExpressionFactory.createURL(_analyzeURL);
                 if (expressionCopy instanceof HasViewContext)
                     ((HasViewContext)expressionCopy).setViewContext(context);
                 URLHelper result = new URLHelper(expressionCopy.eval(context.getExtendedProperties()));
