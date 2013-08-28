@@ -79,7 +79,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private Map<FileType, List<FileType>> _fileExtHierarchy;
 
     /** URL at which this job should be configured and launched */
-    private StringExpression _analyzeURL;
+    private String _analyzeURL;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
 
@@ -151,12 +151,12 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     public String getAnalyzeURL()
     {
-        return _analyzeURL == null ? null : _analyzeURL.getSource();
+        return _analyzeURL;
     }
 
     public void setAnalyzeURL(String url)
     {
-        _analyzeURL = StringExpressionFactory.createURL(url);
+        _analyzeURL = url;
     }
 
     public PipelineActionConfig.displayState getDefaultDisplayState()
