@@ -78,55 +78,54 @@
     WebTheme theme    = WebThemeManager.getTheme(container);
 %>
 <style type="text/css">
-ul.subjectlist li
-{
-    list-style-type: none;
-}
+    ul.subjectlist li
+    {
+        list-style-type: none;
+    }
 
-ul.subjectlist
-{
-    padding-left: 0em;
-    padding-right: 1em;
-}
+    ul.subjectlist
+    {
+        padding-left: 0em;
+        padding-right: 1em;
+    }
 
-li.ptid a.highlight
-{
-}
+    li.ptid a.highlight
+    {
+    }
 
-li.ptid a.unhighlight
-{
-    color:#dddddd;
-}
+    li.ptid a.unhighlight
+    {
+        color:#dddddd;
+    }
 
-.themed-panel .filter-description {
-    font-size: 11px;
-}
+    .themed-panel .filter-description {
+        font-size: 11px;
+    }
 
-.themed-panel div.x4-panel-header {
-    background-color: #E0E6EA;
-    background-image: none;
-    color: black;
-}
+    .themed-panel div.x4-panel-header {
+        background-color: #E0E6EA;
+        background-image: none;
+        color: black;
+    }
 
-.themed-panel div.x4-panel-default,
-.themed-panel div.x4-panel-header-default,
-.themed-panel div.x4-panel-body-default {
-    border-color: #d3d3d3;
-    box-shadow: none;
-}
+    .themed-panel div.x4-panel-default,
+    .themed-panel div.x4-panel-header-default,
+    .themed-panel div.x4-panel-body-default {
+        border-color: #d3d3d3;
+        box-shadow: none;
+    }
 
-.themed-panel span.x4-panel-header-text-default {
-    color: black;
-}
+    .themed-panel span.x4-panel-header-text-default {
+        color: black;
+    }
 
-.themed-panel .x4-grid-row-over div:hover {
-    cursor: pointer;
-}
+    .themed-panel .x4-grid-row-over div:hover {
+        cursor: pointer;
+    }
 
-.themed-panel .x4-grid-cell-inner {
-    padding: 3px 3px;
-}
-
+    .themed-panel .x4-grid-cell-inner {
+        padding: 3px 3px;
+    }
 
 </style>
 <script type="text/javascript">
@@ -407,8 +406,6 @@ li.ptid a.unhighlight
             title     : 'Show',
             border    : true,
             width     : 260,
-            overCls   : 'iScroll',
-            layout    : 'fit',
             bodyStyle : 'padding: 8px',
             normalWrap : true,
             allowAll  : true,
