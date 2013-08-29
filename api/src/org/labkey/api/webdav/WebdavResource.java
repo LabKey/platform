@@ -103,10 +103,34 @@ public interface WebdavResource extends Resource
     @Nullable
     String getIconHref();
 
+    /**
+     * Get the request used for sending a direct GET request for this resource which
+     * may include additional http headers.
+     *
+     * If null, the {@link #getLocalHref(ViewContext)} is sufficient for getting this resource.
+     */
+    @Nullable
+    DirectRequest getDirectGetRequest(ViewContext context, String contentDisposition);
+
+    /**
+     * Get the request used for sending a direct PUT request for this resource which
+     * may include additional http headers.
+     *
+     * If null, the {@link #getLocalHref(ViewContext)} is sufficient for putting this resource.
+     */
+    @Nullable
+    DirectRequest getDirectPutRequest(ViewContext context);
+
     // static resources may cache the etag, force to check file system
     String getETag(boolean force);
 
     String getETag();
+
+    /**
+     * Calculate MD5sum of this resource.  The default implementation will calculate
+     * the MD5sum by reading the reasource InputStream.
+     */
+    String getMD5(User user) throws IOException;
 
     @NotNull
     Collection<WebdavResolver.History> getHistory();

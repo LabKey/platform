@@ -46,7 +46,6 @@ import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityPolicy;
@@ -835,46 +834,7 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public void notify(ContainerUser context, String message)
     {
-        String dir;
-        String name;
-        File f = getFile();
-        if (f != null)
-        {
-            dir = f.getParent();
-            name = f.getName();
-        }
-        else
-        {
-            Resource parent = parent();
-            dir = parent == null ? "" : parent.getPath().toString();
-            name = getName();
-        }
-
-        // translate the actions into a more meaningful message
-        if ("created".equalsIgnoreCase(message))
-        {
-            message = "File uploaded to " + getContainer().getContainerNoun() + ": " + getContainer().getPath();
-        }
-        else if ("deleted".equalsIgnoreCase(message))
-        {
-            message = "File deleted from " + getContainer().getContainerNoun() + ": " + getContainer().getPath();
-        }
-        else if ("replaced".equalsIgnoreCase(message))
-            message = "File replaced in " + getContainer().getContainerNoun() + ": " + getContainer().getPath();
-
-//        String subject = "File Management Tool notification: " + message;
-
-        AuditLogEvent event = new AuditLogEvent();
-
-        event.setCreatedBy(context.getUser());
-        event.setContainerId(getContainer().getId());
-        event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
-        event.setKey1(dir);
-        event.setKey2(name);
-        event.setKey3(getPath().toString());
-        event.setComment(message);
-
-        AuditLogService.get().addEvent(event);
+        addAuditEvent(context, message);
 
         //AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
 /*

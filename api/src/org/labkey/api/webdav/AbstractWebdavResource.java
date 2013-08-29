@@ -18,17 +18,26 @@ package org.labkey.api.webdav;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.Container;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -39,7 +48,11 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -183,6 +196,19 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
     }
 
+    @Nullable
+    @Override
+    public DirectRequest getDirectGetRequest(ViewContext context, String contentDisposition)
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public DirectRequest getDirectPutRequest(ViewContext context)
+    {
+        return null;
+    }
 
     public String getETag(boolean force)
     {
@@ -206,6 +232,12 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public String getETag()
     {
         return getETag(false);
+    }
+
+    @Override
+    public String getMD5(User user) throws IOException
+    {
+        return FileUtil.md5sum(getInputStream(user));
     }
 
 
@@ -446,6 +478,54 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public void notify(ContainerUser context, String message)
     {
+    }
+
+    protected void addAuditEvent(ContainerUser context, String message)
+    {
+        String dir;
+        String name;
+        File f = getFile();
+        if (f != null)
+        {
+            dir = f.getParent();
+            name = f.getName();
+        }
+        else
+        {
+            Resource parent = parent();
+            dir = parent == null ? "" : parent.getPath().toString();
+            name = getName();
+        }
+
+        Container c = context.getContainer();
+
+        // translate the actions into a more meaningful message
+        if ("created".equalsIgnoreCase(message))
+        {
+            message = "File uploaded to " + c.getContainerNoun() + ": " + c.getPath();
+        }
+        else if ("deleted".equalsIgnoreCase(message))
+        {
+            message = "File deleted from " + c.getContainerNoun() + ": " + c.getPath();
+        }
+        else if ("replaced".equalsIgnoreCase(message))
+        {
+            message = "File replaced in " + c.getContainerNoun() + ": " + c.getPath();
+        }
+
+//        String subject = "File Management Tool notification: " + message;
+
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(context.getUser());
+        event.setContainerId(c.getId());
+        event.setEventType("FileSystem" /*FileSystemAuditViewFactory.EVENT_TYPE*/);
+        event.setKey1(dir);
+        event.setKey2(name);
+        event.setKey3(getPath().toString());
+        event.setComment(message);
+
+        AuditLogService.get().addEvent(event);
     }
 
     protected void setProperty(String key, String value)
