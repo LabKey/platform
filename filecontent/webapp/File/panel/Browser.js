@@ -1343,7 +1343,7 @@ Ext4.define('File.panel.Browser', {
         var tb = this.getDockedComponent(0); // button toolbar
         if (tb) {
             if (this.actions.download) {
-                this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords));
+                this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords[0])); // TODO: multi-select
             }
             if (this.actions.renamePath) {
                 if (selectedRecords.length > 1)
@@ -1685,17 +1685,7 @@ Ext4.define('File.panel.Browser', {
         var recs = (config && config.recs) ? config.recs : this.getGrid().getSelectionModel().getSelection();
 
         if (recs.length == 1) {
-
-            var url;
-            if (!recs[0].data.collection) {
-                url = recs[0].data.href + "?contentDisposition=attachment";
-            }
-            else {
-                url = recs[0].data.href + "?method=zip&depth=-1";
-                url += "&file=" + encodeURIComponent(recs[0].data.name);
-            }
-
-            window.location = url;
+            this.fileSystem.downloadResource({record: recs[0]});
         }
         else {
             Ext4.Msg.show({
@@ -1776,6 +1766,7 @@ Ext4.define('File.panel.Browser', {
 
             var destination = node.data.id;
             if (destination != '/') {
+                // TODO: Doesn't handle @cloud ?
                 destination = destination.split('@files')[1]; // Worrisome
             }
 
@@ -1837,6 +1828,7 @@ Ext4.define('File.panel.Browser', {
 
             this.fileSystem.movePath({
                 fileRecord : selected,
+                // TODO: Doesn't handle @cloud.  Shouldn't the fileSystem know this?
                 source: selected.record.data.id.split('@files')[1],
                 destination: newPath,
                 isFile: !this.selectedRecord.data.collection,
@@ -1871,6 +1863,7 @@ Ext4.define('File.panel.Browser', {
 
             var destination = me.currentDirectory.data.id;
             if (destination != '/') {
+                // TODO: Doesn't handle @cloud
                 destination = destination.split('@files')[1];
             }
 

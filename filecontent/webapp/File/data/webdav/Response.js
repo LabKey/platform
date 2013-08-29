@@ -83,7 +83,9 @@ Ext4.define('File.data.webdav.XMLResponse', {
         {name: 'size',        mapping: 'propstat/prop/getcontentlength', type: 'int'},
         {name: 'iconHref'},
         {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
-        {name: 'options',     mapping: 'propstat/prop/options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
+        {name: 'options',     mapping: 'propstat/prop/options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }},
+        {name: 'directget',   mapping: 'propstat/prop/directget'},
+        {name: 'directput',   mapping: 'propstat/prop/directput'}
     ]
 });
 
@@ -106,6 +108,8 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'size', type : 'int'},
         {name : 'name', mapping : 'text'},
         {name : 'icon', mapping : 'iconHref'},
-        {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
+        {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }},
+        {name : 'directget'},
+        {name : 'directput'}
     ]
 });

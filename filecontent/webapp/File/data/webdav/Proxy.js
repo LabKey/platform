@@ -11,7 +11,8 @@ Ext4.define('File.data.webdav.Proxy', {
     requestFiles : false,
 
     propNames : ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
-        "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref", "options"],
+        "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref", "options",
+        "directget", "directput"],
 
     doRequest : function(operation, callback, scope) {
         var writer = this.getWriter(),

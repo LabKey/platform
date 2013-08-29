@@ -441,5 +441,66 @@ Ext4.define('File.system.Webdav', {
             scope: config.scope,
             overwrite: config.overwrite
         });
+    },
+
+    /**
+     * Download the resource.
+     * @param config
+     * @param config.record Resource record which may have 'directget' request information.
+     */
+    downloadResource : function (config)
+    {
+        var record = config.record;
+        var directget = record.data.directget;
+        if (directget)
+        {
+            // TODO: downloading files using directget doesn't currently work
+            throw new Error("not yet implemented");
+
+            config.scope = config.scope || this;
+
+            // make direct request
+            Ext4.Ajax.request({
+                method: directget.method,
+                url: directget.endpoint,
+                headers: directget.headers,
+                disableCaching: false,
+                success: function () {
+                    var success = false;
+                    if (200 == response.status || 201 == response.status) { // OK, CREATED
+                        success = true;
+                    }
+                    else if (405 == response.status) { // METHOD NOT ALLOWED
+                        success = false;
+                    }
+
+                    if (success) {
+                        if (Ext4.isFunction(config.success)) {
+                            config.success.call(this, config.path);
+                        }
+                    }
+                    else if (Ext4.isFunction(config.failure)) {
+                        config.failure.call(this, response, options);
+                    }
+                },
+                failure: config.failure,
+                scope: config.scope
+            });
+        }
+        else
+        {
+            // use href property
+            var url;
+            if (!record.data.collection) {
+                url = record.data.href + "?contentDisposition=attachment";
+            }
+            else {
+                url = record.data.href + "?method=zip&depth=-1";
+                url += "&file=" + encodeURIComponent(record.data.name);
+            }
+
+            window.location = url;
+        }
     }
+
 });

@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONWriter;
@@ -70,6 +71,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.webdav.DirectRequest;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -201,6 +203,12 @@ public class DavController extends SpringActionController
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
+    }
+
+    // clients that support following redirects when getting a resource
+    boolean supportsGetRedirect()
+    {
+        return isBrowser();
     }
 
 
@@ -450,6 +458,11 @@ public class DavController extends SpringActionController
             response.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
         }
 
+        void setLocation(String value)
+        {
+            response.setHeader("Location", value);
+        }
+
         ServletOutputStream getOutputStream() throws IOException
         {
             return response.getOutputStream();
@@ -568,7 +581,7 @@ public class DavController extends SpringActionController
                 else if ("GET".equals(method) && isBrowser() && null != resource && resource.isCollection())
                 {
                     getResponse().setStatus(WebdavStatus.SC_MOVED_PERMANENTLY);
-                    response.setHeader("Location", getLoginURL().getEncodedLocalURIString());
+                    getResponse().setLocation(getLoginURL().getEncodedLocalURIString());
                 }
                 else
                 {
@@ -1663,7 +1676,9 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
+                        //xml.writeElement(null, "directget", XMLWriter.NO_CONTENT);
                     }
+                    //xml.writeElement(null, "directput", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
@@ -1871,11 +1886,7 @@ public class DavController extends SpringActionController
                             String md5sum = null;
                             try
                             {
-                                md5sum = FileUtil.md5sum(getResourceInputStream(resource,getUser()));
-                            }
-                            catch (DavException x)
-                            {
-                                /* */
+                                md5sum = resource.getMD5(getUser());
                             }
                             catch (IOException x)
                             {
@@ -1932,6 +1943,18 @@ public class DavController extends SpringActionController
                             }
                             xml.writeElement(null, "custom", XMLWriter.CLOSING);
                         }
+                        // UNDONE: Direct get/put properties are not currently used by client
+//                        else if (property.equals("directget"))
+//                        {
+//                            if (!exists)
+//                                propertiesNotFound.add(property);
+//                            else
+//                                writeDirectRequest("directget", resource.getDirectGetRequest(getViewContext(), null));
+//                        }
+//                        else if (property.equals("directput"))
+//                        {
+//                            writeDirectRequest("directput", resource.getDirectPutRequest(getViewContext()));
+//                        }
                         else
                         {
                             propertiesNotFound.add(property);
@@ -1962,6 +1985,47 @@ public class DavController extends SpringActionController
             }
 
             xml.writeElement(null, "response", XMLWriter.CLOSING);
+        }
+
+        /**
+         * Writes direct request xml as:
+         * <pre>
+         *     <directget>
+         *         <method>GET</method>
+         *         <endpoint>url</endpoint>
+         *         <headers>
+         *             <header>
+         *                 <name>Authorization</name>
+         *                 <value>AWS ...</value>
+         *             </header>
+         *         </headers>
+         *     </directget>
+         * </pre>
+         */
+        private void writeDirectRequest(@NotNull String nodeName, @Nullable DirectRequest request)
+        {
+            if (request == null)
+            {
+                xml.writeElement(null, nodeName, XMLWriter.NO_CONTENT);
+                return;
+            }
+
+            xml.writeElement(null, nodeName, XMLWriter.OPENING);
+            xml.writeProperty(null, "method", h(request.getMethod()));
+            xml.writeProperty(null, "endpoint", h(request.getEndpoint().toASCIIString()));
+            xml.writeElement(null, "headers", XMLWriter.OPENING);
+            for (String header : request.getHeaders().keySet())
+            {
+                xml.writeElement(null, "header", XMLWriter.OPENING);
+                xml.writeProperty(null, "name", h(header));
+
+                Collection<String> col = request.getHeaders().get(header);
+                String firstValue = col.iterator().next();
+                xml.writeProperty(null, "value", h(firstValue));
+                xml.writeElement(null, "header", XMLWriter.CLOSING);
+            }
+            xml.writeElement(null, "headers", XMLWriter.CLOSING);
+            xml.writeElement(null, nodeName, XMLWriter.CLOSING);
         }
 
 
@@ -2199,6 +2263,14 @@ public class DavController extends SpringActionController
                 if (contentType != null)
                     json.key("contenttype").value(contentType);
                 json.key("etag").value(resource.getETag());
+
+                // UNDONE: Don't calculate directget URL for every item -- it may be expensive to generate.
+                // UNDONE: Client doesn't support handling directget yet
+                //if (propertiesVector.contains("directget"))
+                    //json.key("directget").value(writeDirectRequest(resource.getDirectGetRequest(getViewContext())));
+                //if (propertiesVector.contains("directput"))
+                    //json.key("directput").value(writeDirectRequest(resource.getDirectPutRequest(getViewContext())));
+
                 json.key("leaf").value(true);
             }
             else
@@ -2208,6 +2280,39 @@ public class DavController extends SpringActionController
 
             json.endObject();
             out.newLine();
+        }
+
+        /**
+         * Creates JSONObject of the form:
+         * <pre>
+         * {
+         *   "method": "[http verb]",
+         *   "endpoint": "[url]",
+         *   "headers": {
+         *       "header1": value,
+         *       "header2": value,
+         *   }
+         * }
+         * </pre>
+         */
+        private JSONObject writeDirectRequest(@Nullable DirectRequest request)
+        {
+            if (request == null)
+                return null;
+
+            JSONObject obj = new JSONObject();
+            obj.put("method", request.getMethod());
+            obj.put("endpoint", request.getEndpoint());
+
+            JSONObject headers = new JSONObject();
+            for (String header : request.getHeaders().keySet())
+            {
+                Collection<String> col = request.getHeaders().get(header);
+                String firstValue = col.iterator().next();
+                headers.put(header, firstValue);
+            }
+            obj.put("headers", headers);
+            return obj;
         }
 
         public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception
@@ -2606,9 +2711,7 @@ public class DavController extends SpringActionController
         {
             LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
 
-            // XXX: looks no good
-            if (!resource.delete(getUser()))
-                deleteCollection(resource, errorList);
+            deleteCollection(resource, errorList);
 
             removeFromDataObject(resource);
             if (!resource.delete(getUser()))
@@ -3284,6 +3387,19 @@ public class DavController extends SpringActionController
 
             if (content)
             {
+                if (supportsGetRedirect())
+                {
+                    // Use redirect to the alternate get location
+                    DirectRequest req = resource.getDirectGetRequest(getViewContext(), contentDisposition);
+                    if (req != null)
+                    {
+                        String uri = req.getEndpoint().toASCIIString();
+                        getResponse().setStatus(WebdavStatus.SC_MOVED_TEMPORARILY);
+                        getResponse().setLocation(uri);
+                        return null;
+                    }
+                }
+
                 File file = null==gz ? resource.getFile() : gz.getFile();
                 HttpServletRequest request = getRequest();
                 if (true && null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
@@ -3343,11 +3459,13 @@ public class DavController extends SpringActionController
                 if (contentType != null)
                     getResponse().setContentType(contentType);
 
+                // UNDONE: allow resource subclass to handle ranges.  See org.jclouds.blobstore.options.GetOptions
                 if (content)
                     copy(getResourceInputStream(resource, getUser()), ostream, range.start, range.end);
             }
             else
             {
+                // UNDONE: allow resource subclass to handle ranges.  See org.jclouds.blobstore.options.GetOptions
                 getResponse().setContentType("multipart/byteranges; boundary=" + mimeSeparation);
                 if (content)
                     copy(resource, ostream, ranges.iterator(), contentType);
@@ -4696,10 +4814,10 @@ public class DavController extends SpringActionController
         //300=Multiple Choices
         SC_MOVED_PERMANENTLY(HttpServletResponse.SC_MOVED_PERMANENTLY, "Moved Permanently"),
         SC_MOVED_TEMPORARILY(HttpServletResponse.SC_MOVED_TEMPORARILY, "Moved Temporarily"),    // Found
-        //303=See Other
+        SC_SEE_OTHER(HttpServletResponse.SC_SEE_OTHER, "See Other"),    // Found
         SC_NOT_MODIFIED(HttpServletResponse.SC_NOT_MODIFIED, "Not Modified"),
         //305=Use Proxy
-        //307=Temporary Redirect
+        SC_TEMPORARY_REDIRECT(HttpServletResponse.SC_TEMPORARY_REDIRECT, "Temporary Redirect"),
         SC_BAD_REQUEST(HttpServletResponse.SC_BAD_REQUEST, "Bad Request"),
         SC_UNAUTHORIZED(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"),
         //402=Payment Required

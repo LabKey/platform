@@ -215,6 +215,10 @@ Ext4.define('File.system.Abstract', {
     {
     },
 
+    downloadResource : function (config)
+    {
+    },
+
     /**
      * A utility method to extract the parent path from a file or folder path
      * @param {String} p The path to the file or directory
