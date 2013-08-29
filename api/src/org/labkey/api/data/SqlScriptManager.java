@@ -52,7 +52,7 @@ public abstract class SqlScriptManager
     protected final DbSchema _schema;
 
     protected abstract TableInfo getTableInfoSqlScripts();
-    protected abstract @Nullable TableInfo getTableInfoSchemas();
+    protected abstract TableInfo getTableInfoSchemas();
     protected abstract double getFrom();
     public abstract boolean requiresUpgrade();
 
@@ -221,7 +221,8 @@ public abstract class SqlScriptManager
     {
         TableInfo tinfo = getTableInfoSqlScripts();
 
-        if (null == tinfo)
+        // Skip if the table hasn't been created yet (bootstrap case)
+        if (getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
             return Collections.emptySet();
 
         SimpleFilter filter = new SimpleFilter();
@@ -236,6 +237,15 @@ public abstract class SqlScriptManager
     public boolean hasBeenRun(SqlScript script)
     {
         TableInfo tinfo = getTableInfoSqlScripts();
+
+        // Make sure DbSchema thinks SqlScript table is in the database.  If not, we're bootstrapping and it's either just before or just after the first
+        // script is run.  In either case, invalidate to force reloading schema from database meta data.
+        if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
+        {
+            CacheManager.clearAllKnownCaches();
+            return false;
+        }
+
         PkFilter filter = new PkFilter(tinfo, new String[]{_provider.getProviderName(), script.getDescription()});
 
         return new TableSelector(getTableInfoSqlScripts(), filter, null).exists();
@@ -275,8 +285,11 @@ public abstract class SqlScriptManager
                 }
                 else
                 {
-                    bean.setInstalledVersion(version);
-                    Table.update(ModuleLoader.getInstance().getUpgradeUser(), tinfo, bean, bean.getName());
+                    if (version != bean.getInstalledVersion())
+                    {
+                        bean.setInstalledVersion(version);
+                        Table.update(ModuleLoader.getInstance().getUpgradeUser(), tinfo, bean, bean.getName());
+                    }
                 }
             }
             catch (SQLException e)
@@ -297,7 +310,9 @@ public abstract class SqlScriptManager
 
     protected @Nullable SchemaBean getSchemaBean()
     {
-        if (null == getTableInfoSchemas())
+        TableInfo tinfo = getTableInfoSchemas();
+
+        if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
             return null;
 
         return new TableSelector(getTableInfoSchemas()).getObject(_schema.getDisplayName(), SchemaBean.class);
@@ -317,11 +332,10 @@ public abstract class SqlScriptManager
             return CoreSchema.getInstance().getTableInfoSqlScripts();
         }
 
-        @Nullable
         @Override
         protected TableInfo getTableInfoSchemas()
         {
-            // We don't version core schemas (only modules). We could: just add the table and return its TableInfo here.
+            // We don't version core schemas (only modules). We could... just add the table and return its TableInfo here.
             return null;
         }
 
@@ -335,31 +349,6 @@ public abstract class SqlScriptManager
         public boolean requiresUpgrade()
         {
             return false;
-        }
-
-        @NotNull
-        @Override
-        public Collection<String> getPreviouslyRunSqlScriptNames()
-        {
-            // Skip if the table hasn't been created yet (bootstrap case)
-            if (getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
-                return Collections.emptySet();
-
-            return super.getPreviouslyRunSqlScriptNames();
-        }
-
-        @Override
-        public boolean hasBeenRun(SqlScript script)
-        {
-            // Make sure DbSchema thinks SqlScript table is in the database.  If not, we're bootstrapping and it's either just before or just after the first
-            // script is run.  In either case, invalidate to force reloading schema from database meta data.
-            if (getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
-            {
-                CacheManager.clearAllKnownCaches();
-                return false;
-            }
-
-            return super.hasBeenRun(script);
         }
     }
 
@@ -378,19 +367,9 @@ public abstract class SqlScriptManager
 
         protected TableInfo getTableInfoSqlScripts()
         {
-            TableInfo scripts = getLabKeySchema().getTable("SqlScripts");
-
-            // New data source bootstrap case
-            if (null == scripts)
-            {
-                CacheManager.clearAllKnownCaches();
-                scripts = getLabKeySchema().getTable("SqlScripts");
-            }
-
-            return scripts;
+            return getLabKeySchema().getTable("SqlScripts");
         }
 
-        @Nullable
         @Override
         protected TableInfo getTableInfoSchemas()
         {

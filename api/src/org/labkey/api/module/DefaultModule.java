@@ -529,7 +529,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
      */
     public Set<DbSchema> getSchemasToTest()
     {
-        Set<DbSchema> result = new HashSet<>();
+        Set<DbSchema> result = new LinkedHashSet<>();
         for (String schemaName : getSchemaNames())
         {
             DbSchema schema = DbSchema.get(schemaName);

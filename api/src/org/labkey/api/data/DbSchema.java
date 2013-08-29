@@ -66,7 +66,6 @@ public class DbSchema
     private final DbSchemaType _type;
     private final DbScope _scope;
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
-
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
 
     private ResourceRef _resourceRef = null;
@@ -137,12 +136,20 @@ public class DbSchema
     public Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
     {
         Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
+
         if (null == module)
         {
             _log.debug("no module for schema '" + fullyQualifiedSchemaName + "'");
             return null;
         }
-        Resource r = module.getModuleResource("/schemas/" + fullyQualifiedSchemaName + ".xml");
+
+        return getSchemaResource(module, fullyQualifiedSchemaName);
+    }
+
+
+    protected Resource getSchemaResource(Module module, String xmlFilePrefix) throws IOException
+    {
+        Resource r = module.getModuleResource("/schemas/" + xmlFilePrefix + ".xml");
         return null != r && r.isFile() ? r : null;
     }
 
@@ -176,23 +183,41 @@ public class DbSchema
         scope.invalidateAllTables(metaDataName, type); // Need to invalidate the table cache
 
         if ("labkey".equals(metaDataName))
-            return new DbSchema(metaDataName, type, scope, metaDataTableNames)
-            {
-                @Override
-                public String getDisplayName()
-                {
-                    return "labkey";
-                }
-
-                @Override
-                public Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
-                {
-                    return new DbScope.DbSchemaResource(this);
-                }
-            };
+            return new LabKeyDbSchema(type, scope, metaDataTableNames);
         else
-        {
             return new DbSchema(metaDataName, type, scope, metaDataTableNames);
+    }
+
+
+    // Special subclass to handle the peculiarities of the "labkey" schema that gets created in all module-required
+    // extenernal data sources. Key changes:
+    // 1. Override getDisplayName() to eliminate the standard datasource prefix, so labkey-*-*.sql scripts are found
+    // 2. Override getSchemaResource() to resolve labkey.xml
+    public static class LabKeyDbSchema extends DbSchema
+    {
+        public LabKeyDbSchema(DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+        {
+            super("labkey", type, scope, metaDataTableNames);
+        }
+
+        @Override
+        public String getDisplayName()
+        {
+            return "labkey";
+        }
+
+        @Override
+        public Resource getSchemaResource(String schemaName) throws IOException
+        {
+            // CoreModule does not claim the "labkey" schema because we don't want to install this schema in the labkey
+            // datasource. Override here so we find labkey.xml; this eliminates warnings and supports junit tests.
+            return getSchemaResource(ModuleLoader.getInstance().getCoreModule(), schemaName);
+        }
+
+        @Override
+        public String toString()
+        {
+            return "LabKeyDbSchema in \"" + getScope().getDisplayName() + "\"";
         }
     }
 

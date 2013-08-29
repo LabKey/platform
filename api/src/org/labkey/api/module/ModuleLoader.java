@@ -33,7 +33,6 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SimpleFilter;
@@ -819,7 +818,14 @@ public class ModuleLoader implements Filter
     // TODO: Move this code into SqlScriptManager
     private void upgradeLabKeySchemaInExternalDataSources()
     {
+        // Careful... the "labkey" scripts are sourced from and versioned based on the core module, but are run and
+        // tracked within the external data source's "labkey" schema. This odd situation is orchestrated by the special
+        // LabKeyDbSchema subclass, working with ExternalDataSourceSqlScriptManager.
+
+        // Look for "labkey" script files in the "core" module. Version the labkey schema in all scopes to current version of core.
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
+        FileSqlScriptProvider provider = new FileSqlScriptProvider(coreModule);
+        double to = coreModule.getVersion();
 
         for (String name : getAllModuleDataSources())
         {
@@ -827,24 +833,10 @@ public class ModuleLoader implements Filter
             {
                 DbScope scope = DbScope.getDbScope(name);
 
-                // Careful... the "labkey" scripts are sourced from and versioned based on the core module, but are run
-                // and tracked within the external data source's "labkey" schema.
-
-                // Look for "labkey" scripts in the "core" module...
-                FileSqlScriptProvider provider = new FileSqlScriptProvider(coreModule);
-
-                // Same as scope.getSchema("labkey"), except eliminates data source prefix from display name, so labkey-*-*.sql scripts will be found
-                DbSchema labkeySchema = new DbSchema("labkey", DbSchemaType.Module, scope, null)
-                {
-                    @Override
-                    public String getDisplayName()
-                    {
-                        return super.getName();
-                    }
-                };
-
+                // This should return a special DbSchema subclass (LabKeyDbSchema) that eliminates the data source prefix
+                // from display name, causing labkey-*-*.sql scripts to be found.
+                DbSchema labkeySchema = scope.getSchema("labkey");
                 SqlScriptManager manager = SqlScriptManager.get(provider, labkeySchema);
-                double to = coreModule.getVersion();
                 List<SqlScriptRunner.SqlScript> scripts = manager.getRecommendedScripts(to);
 
                 if (!scripts.isEmpty())
