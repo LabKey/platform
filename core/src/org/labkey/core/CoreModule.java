@@ -122,6 +122,7 @@ import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.webdav.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
+import org.labkey.api.webdav.FileSystemBatchAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -544,6 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().addAuditViewFactory(AttachmentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(FileSystemBatchAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ClientAPIAuditViewFactory.getInstance());
 
         AuditLogService.get().registerAuditType(new UserAuditProvider());

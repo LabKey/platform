@@ -40,6 +40,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,6 +184,24 @@ public class LogManager
             }
         }
         return null;
+    }
+
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(eventType);
+        if (provider != null)
+        {
+            UserSchema schema = AuditLogService.getAuditLogSchema(user, container);
+
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(provider.getEventName());
+                TableSelector selector = new TableSelector(table, filter, sort);
+
+                return (List<K>)selector.getArrayList(provider.getEventClass());
+            }
+        }
+        return Collections.emptyList();
     }
 
     public List<AuditLogEvent> getEvents(Filter filter, Sort sort)

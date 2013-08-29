@@ -17,23 +17,36 @@ package org.labkey.filecontent.message;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.JspView;
+import org.labkey.api.webdav.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -41,6 +54,8 @@ import org.labkey.api.webdav.WebdavService;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -66,31 +81,93 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     @Override
     public List<Container> getContainersWithNewMessages(Date start, Date end) throws Exception
     {
-        List<AuditLogEvent> events = getAuditEvents(null, start, end);
         Set<Container> containers = new HashSet<>();
 
-        for (AuditLogEvent event : events)
+        if (AuditLogService.get().isMigrateComplete())
         {
-            Container c = ContainerManager.getForId(event.getContainerId());
-            if (c != null)
-                containers.add(c);
+            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+            UserSchema userSchema = AuditLogService.getAuditLogSchema(user, ContainerManager.getSharedContainer());
+            FilteredTable table = (FilteredTable)userSchema.getTable(FileSystemAuditProvider.EVENT_TYPE);
+
+            if (table != null)
+            {
+                SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + table.getRealTable() + " WHERE Created >= ? and Created < ?", start, end);
+                Collection<String> containerIds = new SqlSelector(table.getSchema(), sql).getCollection(String.class);
+
+                for (String id : containerIds)
+                {
+                    Container c = ContainerManager.getForId(id);
+                    if (c != null)
+                        containers.add(c);
+                }
+            }
+        }
+        else
+        {
+            List<AuditLogEvent> events = getAuditEvents(null, start, end);
+            for (AuditLogEvent event : events)
+            {
+                Container c = ContainerManager.getForId(event.getContainerId());
+                if (c != null)
+                    containers.add(c);
+            }
         }
         return Arrays.asList(containers.toArray(new Container[containers.size()]));
     }
 
     private List<AuditLogEvent> getAuditEvents(Container container, Date start, Date end)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", FileSystemAuditViewFactory.EVENT_TYPE);
-        Sort sort = new Sort("Created");
+        if (AuditLogService.get().isMigrateComplete())
+        {
+            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
+            filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
 
-        filter.addCondition("Created", start, CompareType.GTE);
-        filter.addCondition("Created", end, CompareType.LT);
+            if (container != null)
+                filter.addCondition(FieldKey.fromParts("Container"), container.getId());
+
+            Sort sort = new Sort("Created");
+
+            List<AuditLogEvent> events = new ArrayList<>();
+            Container c = container != null ? container : ContainerManager.getSharedContainer();
+            List<FileSystemAuditProvider.FileSystemAuditEvent> newEvents = AuditLogService.get().getAuditEvents(container, user, FileSystemAuditProvider.EVENT_TYPE, filter, sort);
+
+            // have to convert back to the old format
+            for (FileSystemAuditProvider.FileSystemAuditEvent event : newEvents)
+            {
+                AuditLogEvent e = new AuditLogEvent();
+
+                e.setImpersonatedBy(event.getImpersonatedBy());
+                e.setComment(event.getComment());
+                e.setProjectId(event.getProjectId());
+                e.setContainerId(event.getContainer());
+                e.setEventType(event.getEventType());
+                e.setCreated(event.getCreated());
+                e.setCreatedBy(event.getCreatedBy());
+                e.setKey1(event.getDirectory());
+                e.setKey2(event.getFile());
+                e.setKey3(event.getResourcePath());
+
+                events.add(e);
+            }
+
+            return events;
+        }
+        else
+        {
+            SimpleFilter filter = new SimpleFilter("EventType", FileSystemAuditViewFactory.EVENT_TYPE);
+            Sort sort = new Sort("Created");
+
+            filter.addCondition("Created", start, CompareType.GTE);
+            filter.addCondition("Created", end, CompareType.LT);
 
 
-        if (container != null)
-            filter.addCondition("ContainerId", container.getId());
+            if (container != null)
+                filter.addCondition("ContainerId", container.getId());
 
-        return AuditLogService.get().getEvents(filter, sort);
+            return AuditLogService.get().getEvents(filter, sort);
+        }
     }
 
     @Override

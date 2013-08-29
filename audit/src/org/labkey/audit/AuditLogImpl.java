@@ -525,6 +525,16 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        if (isMigrateComplete() || hasEventTypeMigrated(eventType))
+        {
+            return LogManager.get().getAuditEvents(container, user, eventType, filter, sort);
+        }
+        return Collections.emptyList();
+    }
+
     public void addAuditViewFactory(AuditViewFactory factory)
     {
         AuditLogService.addAuditViewFactory(factory);
