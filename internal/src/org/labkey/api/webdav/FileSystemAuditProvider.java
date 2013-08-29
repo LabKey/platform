@@ -190,6 +190,11 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
             _fields.add(createFieldSpec(COLUMN_NAME_RESOURCE_PATH, JdbcType.VARCHAR));
         }
 
+        public FileSystemAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

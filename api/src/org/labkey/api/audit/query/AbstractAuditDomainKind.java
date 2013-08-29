@@ -69,7 +69,6 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
     private static final Set<PropertyStorageSpec> _baseFields = new LinkedHashSet<>();
     private static final Set<String> _reservedNames = new HashSet<>();
-    private Set<PropertyStorageSpec> _allColumns = new LinkedHashSet<>();
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
@@ -85,8 +84,21 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR).setEntityId(true));
     }
 
+    private final String _eventType;
+    private Set<PropertyStorageSpec> _allColumns = new LinkedHashSet<>();
+
+    public AbstractAuditDomainKind(String eventType)
+    {
+        _eventType = eventType;
+    }
+
     protected abstract String getNamespacePrefix();
     protected abstract Set<PropertyStorageSpec> getColumns();
+
+    protected String getEventType()
+    {
+        return _eventType;
+    }
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
@@ -172,7 +184,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        return QueryService.get().urlFor(containerUser.getUser(), containerUser.getContainer(), QueryAction.executeQuery, AbstractAuditTypeProvider.SCHEMA_NAME, domain.getName());
+        return QueryService.get().urlFor(containerUser.getUser(), containerUser.getContainer(), QueryAction.executeQuery, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME, getEventType());
     }
 
     @Override

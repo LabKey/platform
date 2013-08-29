@@ -20,13 +20,21 @@ import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -144,7 +152,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
                     {
                         DomainKind kind = PropertyService.get().getDomainKind(domain.getTypeURI());
                         if (kind != null)
-                            out.write("<a href=\"" + kind.urlShowData(domain, ctx.getViewContext()) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
+                            out.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
                         else
                             out.write(PageFlowUtil.filter(domain.getName()));
                         return;

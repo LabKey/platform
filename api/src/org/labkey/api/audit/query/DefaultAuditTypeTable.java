@@ -15,9 +15,9 @@
  */
 package org.labkey.api.audit.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
@@ -30,9 +30,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
@@ -48,6 +46,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 {
     protected AuditTypeProvider _provider;
     protected Map<FieldKey, String> _legacyNameMap;
+    protected Map<String, String> _dbSchemaToColumnMap;
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
     
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
@@ -55,7 +54,20 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         super(StorageProvisioner.createTableInfo(domain, dbSchema), schema);
 
         _provider = provider;
+
+        setName(_provider.getEventName());
+        if (_provider.getDescription() != null)
+            setDescription(_provider.getDescription());
+
         this._legacyNameMap = provider.legacyNameMap();
+
+        // Create a mapping from the real dbTable names to the legacy query table names for QueryUpdateService.
+        this._dbSchemaToColumnMap = new CaseInsensitiveHashMap<>();
+        for (FieldKey legacyName : _legacyNameMap.keySet())
+        {
+            String newName = _legacyNameMap.get(legacyName);
+            _dbSchemaToColumnMap.put(newName, legacyName.getName());
+        }
 
         setTitle(provider.getEventName());
 
@@ -174,29 +186,19 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new DefaultQueryUpdateService(this, this.getRealTable());
+        return new DefaultQueryUpdateService(this, this.getRealTable(), _dbSchemaToColumnMap);
     }
 
     @Override
     public String getDescription()
     {
-        if (_provider != null)
-        {
-            return StringUtils.defaultIfEmpty(_provider.getDescription(), super.getDescription());
-        }
         return super.getDescription();
-    }
-
-    private boolean isGuest(UserPrincipal user)
-    {
-        return user instanceof User && user.isGuest();
     }
 
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        // Don't allow deletes or updates for audit events, and don't let guests insert
-        return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&
-            getContainer().hasPermission(user, perm);
+        // Allow read, but not insert, update, or delete.
+        return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
     }
 }

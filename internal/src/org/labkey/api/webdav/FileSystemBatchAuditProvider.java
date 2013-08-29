@@ -20,12 +20,10 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.DomainKind;
 
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -79,6 +77,11 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
     {
         public static final String NAME = "FileSystemBatchAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+
+        public FileSystemBatchAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
 
         @Override
         protected Set<PropertyStorageSpec> getColumns()

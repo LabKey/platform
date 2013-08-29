@@ -193,6 +193,11 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             _fields.add(createFieldSpec(COLUMN_NAME_DOMAIN_NAME, JdbcType.VARCHAR));
         }
 
+        public DomainAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

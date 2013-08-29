@@ -26,6 +26,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -136,6 +141,21 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             public List<FieldKey> getDefaultVisibleColumns()
             {
                 return defaultVisibleColumns;
+            }
+
+            @Override
+            public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+            {
+                // Don't allow deletes or updates for audit events, and don't let guests insert.
+                // AuditQueryView disables the insert and import buttons in the html UI, but
+                // this permission check allows the LABKEY.Query.insertRows() api to still work.
+                return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&
+                        getContainer().hasPermission(user, perm);
+            }
+
+            private boolean isGuest(UserPrincipal user)
+            {
+                return user instanceof User && user.isGuest();
             }
         };
 
@@ -254,6 +274,11 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             _fields.add(createFieldSpec(COLUMN_NAME_INT1, JdbcType.INTEGER));
             _fields.add(createFieldSpec(COLUMN_NAME_INT2, JdbcType.INTEGER));
             _fields.add(createFieldSpec(COLUMN_NAME_INT3, JdbcType.INTEGER));
+        }
+
+        public ClientApiAuditDomainKind()
+        {
+            super(EVENT_TYPE);
         }
 
         @Override

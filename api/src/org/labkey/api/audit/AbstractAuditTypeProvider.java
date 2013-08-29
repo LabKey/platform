@@ -29,7 +29,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -98,7 +98,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public Map<FieldKey, String> legacyNameMap()
     {
-        Map<FieldKey, String> legacyNames = new HashMap<>();
+        Map<FieldKey, String> legacyNames = new LinkedHashMap<>();
         legacyNames.put(FieldKey.fromParts("ContainerId"), "Container");
         legacyNames.put(FieldKey.fromParts("Date"), "Created");
         return legacyNames;

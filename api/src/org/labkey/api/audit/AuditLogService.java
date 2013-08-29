@@ -194,10 +194,12 @@ public class AuditLogService
         @Deprecated // convert usages to getAuditEvent
         public AuditLogEvent getEvent(int rowId);
 
+        @Deprecated
         @Nullable
         public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
         public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
+        @Deprecated
         public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter);
 
         /**
@@ -205,6 +207,7 @@ public class AuditLogService
          * The audit view factory is able to customize the table info of the underlying query view.
          * @see org.labkey.api.audit.AuditLogService.AuditViewFactory
          */
+        @Deprecated
         public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String eventType);
 
         public String getTableName();

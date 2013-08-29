@@ -28,6 +28,7 @@ import java.io.PrintWriter;
  * User: Karl Lum
  * Date: Oct 5, 2007
  */
+@Deprecated
 public class DefaultAuditQueryView extends AuditLogQueryView
 {
     public DefaultAuditQueryView(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
