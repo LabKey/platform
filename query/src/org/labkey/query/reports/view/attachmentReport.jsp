@@ -213,8 +213,8 @@
             border          : false,
             buttonAlign     : "left",
             fieldDefaults: {
-                width : 500,
-                labelWidth : 125,
+                width : 400,
+                labelWidth : 120,
                 msgTarget : 'side'
             },
             visibleFields   : {

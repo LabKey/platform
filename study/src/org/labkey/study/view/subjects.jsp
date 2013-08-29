@@ -44,6 +44,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -60,6 +61,7 @@
 
     Container container  = bean.getViewContext().getContainer();
     User user            = bean.getViewContext().getUser();
+    Study study = StudyService.get().getStudy(container);
 
     String singularNoun  = StudyService.get().getSubjectNounSingular(container);
     String pluralNoun    = StudyService.get().getSubjectNounPlural(container);
@@ -183,10 +185,13 @@
                     hasUnenrolledCohorts = true;
                 }
             }
-            cohortMap.put(-1, index); // 'no cohort place holder
-            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:true}<%
+            // 'no cohort place holder
+            cohortMap.put(-1, index);
+            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:false}<%
             commas[0]=",\n";
             index++;
+            if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)
+                hasUnenrolledCohorts = true;
         }
 
         // groups/categories
@@ -617,7 +622,7 @@
     {
         for (var g = 0; g < _groups.length; g++)
         {
-            if (_groups[g].id != -1 && _groups[g].type == 'cohort' && testGroupPtid(g,subjectIndex))
+            if (_groups[g].type == 'cohort' && testGroupPtid(g,subjectIndex))
             {
                 if (!_groups[g].enrolled)
                 {

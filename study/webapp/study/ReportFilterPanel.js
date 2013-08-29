@@ -52,29 +52,22 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
             var renderTip = function(tip) {
                 if (_activeLabel) {
-                    tip.update('<b>' + Ext4.htmlEncode(_activeLabel) + '</b><br>Click the label to ' +
-                            'select only this item. Click the checkbox to toggle this item and preserve other selections.');
+                    tip.update('<div style="font-size:11px;"><b>' + Ext4.htmlEncode(_activeLabel) + '</b><br>Click the label to ' +
+                            'select only this item. Click the checkbox to toggle this item and preserve other selections.</div>');
                 }
             };
 
             var loadRecord = function(tip) {
-                var parentNode = tip.triggerElement.parentNode.parentNode;
-                if (parentNode.className.indexOf("x4-grid-group-hd") > -1)
-                {
+                var parentNode = tip.triggerElement;
+                if (parentNode)
                     _activeLabel = parentNode.innerText;
-                }
-                else
-                {
-                    var r = view.getRecord(parentNode);
-                    _activeLabel = (r != null ? r.data[labelField] : null);
-                }
 
                 return _activeLabel != null;
             };
 
             view.tip = Ext4.create('Ext.tip.ToolTip', {
                 target   : view.el,
-                delegate : '.x4-grid-cell-inner',
+                delegate : '.lk-filter-panel-label',
                 showDelay: 850,
                 listeners: {
                     beforeshow : function(tip) {
@@ -279,7 +272,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         var field = '{'+this.labelField+':htmlEncode}';
 
         var tpl = [
-            '<div><span ext:qtip="testing" class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
+            '<div><span ext:qtip=" " class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
             (isHeader) ? '<b class="filter-description">' + field + '</b>' : field,
             '</span></div>'
         ];

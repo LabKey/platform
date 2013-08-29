@@ -116,8 +116,8 @@
             buttonAlign     : "left",
             width           : 575,
             fieldDefaults: {
-                width : 500,
-                labelWidth : 125,
+                width : 400,
+                labelWidth : 120,
                 msgTarget : 'side'
             },
             disableShared   : <%=(form.getCanChangeSharing()==false)%>,

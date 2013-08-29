@@ -187,6 +187,10 @@
                     root: 'groups'
                 }
             },
+            sorters: [
+                { property: 'category', direction: 'ASC' },
+                { property: 'label', direction: 'ASC' }
+            ],
             autoLoad: true
         });
 
