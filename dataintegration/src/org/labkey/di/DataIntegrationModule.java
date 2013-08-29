@@ -98,14 +98,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
 
-    // TODO: Remove this dangerous override... or comment about why it's here.
-
-    @Override
-    public void afterUpdate(ModuleContext moduleContext)
-    {
-    }
-
-
     @Override
     protected void doStartup(ModuleContext moduleContext)
     {

@@ -191,8 +191,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        super.afterUpdate(moduleContext);
-
         if (moduleContext.isNewInstall())
             bootstrap();
     }

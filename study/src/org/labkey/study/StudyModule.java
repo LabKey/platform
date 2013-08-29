@@ -434,8 +434,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public void afterUpdate(final ModuleContext moduleContext)
     {
-        super.afterUpdate(moduleContext);
-
         if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11)
         {
             ContextListener.addStartupListener(new StartupListener()

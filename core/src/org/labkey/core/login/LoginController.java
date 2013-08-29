@@ -424,7 +424,7 @@ public class LoginController extends SpringActionController
                     "Only Site Administrators are permitted to log in during the upgrade process.");
             vBox.addView(updateMessageView);
         }
-        else if (ModuleLoader.getInstance().isAdminOnlyMode())
+        else if (isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
@@ -468,6 +468,13 @@ public class LoginController extends SpringActionController
             returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
         }
         return returnURL;
+    }
+
+
+    // TODO: Move to LoginController, only place that uses this now
+    public boolean isAdminOnlyMode()
+    {
+        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && !UserManager.hasNoUsers());
     }
 
 

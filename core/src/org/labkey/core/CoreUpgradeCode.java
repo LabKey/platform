@@ -21,7 +21,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -89,7 +88,7 @@ public class CoreUpgradeCode implements UpgradeCode
                     //
                 }
 
-                FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
                 SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), "group_concat_install.sql", "core");
 
                 try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())

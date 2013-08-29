@@ -36,7 +36,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -184,18 +183,10 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : ModuleLoader.getInstance().getModules())
             {
-                if (module instanceof DefaultModule)
-                {
-                    DefaultModule defModule = (DefaultModule) module;
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
 
-                    if (defModule.hasScripts())
-                    {
-                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-
-                        for (DbSchema schema : provider.getSchemas())
-                            allRun.addAll(SqlScriptManager.get(provider, schema).getPreviouslyRunScripts());
-                    }
-                }
+                for (DbSchema schema : provider.getSchemas())
+                    allRun.addAll(SqlScriptManager.get(provider, schema).getPreviouslyRunScripts());
             }
 
             List<SqlScript> incrementalRun = new ArrayList<>();
@@ -213,23 +204,15 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (module instanceof DefaultModule)
+                SqlScriptProvider provider = new FileSqlScriptProvider(module);
+
+                for (DbSchema schema : provider.getSchemas())
                 {
-                    DefaultModule defModule = (DefaultModule)module;
+                    List<SqlScript> scripts = provider.getScripts(schema);
 
-                    if (defModule.hasScripts())
-                    {
-                        SqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-
-                        for (DbSchema schema : provider.getSchemas())
-                        {
-                            List<SqlScript> scripts = provider.getScripts(schema);
-
-                            for (SqlScript script : scripts)
-                                if (!allRun.contains(script))
-                                    allNotRun.add(script);
-                        }
-                    }
+                    for (SqlScript script : scripts)
+                        if (!allRun.contains(script))
+                            allNotRun.add(script);
                 }
             }
 
@@ -319,24 +302,16 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (module instanceof DefaultModule)
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                Collection<DbSchema> schemas = provider.getSchemas();
+
+                for (DbSchema schema : schemas)
                 {
-                    DefaultModule defModule = (DefaultModule)module;
+                    ScriptConsolidator consolidator = new ScriptConsolidator(provider, schema, fromVersion, toVersion);
+                    List<SqlScript> scripts = consolidator.getScripts();
 
-                    if (defModule.hasScripts())
-                    {
-                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Collection<DbSchema> schemas = provider.getSchemas();
-
-                        for (DbSchema schema : schemas)
-                        {
-                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schema, fromVersion, toVersion);
-                            List<SqlScript> scripts = consolidator.getScripts();
-
-                            if (!scripts.isEmpty() && (includeSingleScripts || scripts.size() > 1))
-                                consolidators.add(consolidator);
-                        }
-                    }
+                    if (!scripts.isEmpty() && (includeSingleScripts || scripts.size() > 1))
+                        consolidators.add(consolidator);
                 }
             }
 
@@ -614,7 +589,7 @@ public class SqlScriptController extends SpringActionController
 
         private ScriptConsolidator getConsolidator(ConsolidateForm form) throws SqlScriptException
         {
-            DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
+            Module module = ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
             return getConsolidator(provider, DbSchema.get(form.getSchema()), form.getFromVersion(), form.getToVersion());
         }
@@ -637,34 +612,26 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (module instanceof DefaultModule)
+                module.clearResourceCache();
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                Collection<DbSchema> schemas = provider.getSchemas();
+
+                for (DbSchema schema : schemas)
                 {
-                    DefaultModule defModule = (DefaultModule)module;
+                    Set<SqlScript> scripts = new TreeSet<>(provider.getScripts(schema));
+                    SqlScript previous = null;
 
-                    if (defModule.hasScripts())
+                    for (SqlScript script : scripts)
                     {
-                        defModule.clearResourceCache();
-                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Collection<DbSchema> schemas = provider.getSchemas();
-
-                        for (DbSchema schema : schemas)
+                        if (null != previous && (previous.getSchemaName().equals(script.getSchemaName()) && previous.getFromVersion() == script.getFromVersion()))
                         {
-                            Set<SqlScript> scripts = new TreeSet<>(provider.getScripts(schema));
-                            SqlScript previous = null;
-
-                            for (SqlScript script : scripts)
-                            {
-                                if (null != previous && (previous.getSchemaName().equals(script.getSchemaName()) && previous.getFromVersion() == script.getFromVersion()))
-                                {
-                                    // Save the script so we can render them in order
-                                    orphanedScripts.add(previous);
-                                    // Save successor as well to render with the orphaned script name
-                                    successors.put(previous, script);
-                                }
-
-                                previous = script;
-                            }
+                            // Save the script so we can render them in order
+                            orphanedScripts.add(previous);
+                            // Save successor as well to render with the orphaned script name
+                            successors.put(previous, script);
                         }
+
+                        previous = script;
                     }
                 }
             }
@@ -713,7 +680,7 @@ public class SqlScriptController extends SpringActionController
 
         public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
         {
-            DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModuleName());
+            Module module = ModuleLoader.getInstance().getModule(form.getModuleName());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
             _filename = form.getFilename();
 
@@ -874,33 +841,25 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (module instanceof DefaultModule)
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                Collection<DbSchema> schemas = provider.getSchemas();
+
+                for (DbSchema schema : schemas)
                 {
-                    DefaultModule defModule = (DefaultModule)module;
+                    Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
+                    Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
+                    SqlScriptManager manager = SqlScriptManager.get(provider, schema);
 
-                    if (defModule.hasScripts())
+                    for (double fromVersion : fromVersions)
                     {
-                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Collection<DbSchema> schemas = provider.getSchemas();
+                        List<SqlScript> recommendedScripts = manager.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
+                        reachableScripts.addAll(recommendedScripts);
+                    }
 
-                        for (DbSchema schema : schemas)
-                        {
-                            Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
-                            Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
-                            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-
-                            for (double fromVersion : fromVersions)
-                            {
-                                List<SqlScript> recommendedScripts = manager.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
-                                reachableScripts.addAll(recommendedScripts);
-                            }
-
-                            if (allSchemaScripts.size() != reachableScripts.size())
-                            {
-                                allSchemaScripts.removeAll(reachableScripts);
-                                unreachableScripts.addAll(allSchemaScripts);
-                            }
-                        }
+                    if (allSchemaScripts.size() != reachableScripts.size())
+                    {
+                        allSchemaScripts.removeAll(reachableScripts);
+                        unreachableScripts.addAll(allSchemaScripts);
                     }
                 }
             }

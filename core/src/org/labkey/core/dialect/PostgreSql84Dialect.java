@@ -712,12 +712,12 @@ class PostgreSql84Dialect extends SqlDialect
     // once we require 8.1 we should consider using it here.
 
     @Override
-    public void prepareNewDatabase(DbSchema schema)
+    public void prepareNewLabKeyDatabase(DbScope scope)
     {
-        if (new SqlSelector(schema, "SELECT * FROM pg_language WHERE lanname = 'plpgsql'").exists())
+        if (new SqlSelector(scope, "SELECT * FROM pg_language WHERE lanname = 'plpgsql'").exists())
             return;
 
-        String dbName = schema.getScope().getDatabaseName();
+        String dbName = scope.getDatabaseName();
         String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.";
         String advice = "Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
 

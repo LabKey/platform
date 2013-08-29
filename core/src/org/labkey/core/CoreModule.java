@@ -455,24 +455,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public void beforeUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-        {
-            CoreSchema core = CoreSchema.getInstance();
-
-            core.getSqlDialect().prepareNewDatabase(core.getSchema());
-        }
-
-        super.beforeUpdate(moduleContext);
-    }
-
-
-    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        super.afterUpdate(moduleContext);
-
         if (moduleContext.isNewInstall())
             bootstrap();
 

@@ -174,8 +174,6 @@ public class SearchModule extends DefaultModule
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        super.afterUpdate(moduleContext);
-
         // we want to clear the last indexed time on all documents so that failed attempts can be tried again
         final StartupListener l = new StartupListener()
         {

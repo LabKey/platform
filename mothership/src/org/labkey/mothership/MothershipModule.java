@@ -83,8 +83,6 @@ public class MothershipModule extends DefaultModule
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        super.afterUpdate(moduleContext);
-
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
     }
