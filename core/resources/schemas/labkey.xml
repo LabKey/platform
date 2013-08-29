@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
 
- * Copyright (c) 2005-2013 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,26 @@
  * limitations under the License.
 
  -->
-<ns:tables xmlns:ns="http://labkey.org/data/xml">
-  <ns:table tableName="schemas" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="createdby"/>
-      <ns:column columnName="created"/>
-      <ns:column columnName="modifiedby"/>
-      <ns:column columnName="modified"/>
-      <ns:column columnName="name"/>
-      <ns:column columnName="modulename"/>
-      <ns:column columnName="installedversion"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="sqlscripts" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="createdby"/>
-      <ns:column columnName="created"/>
-      <ns:column columnName="modifiedby"/>
-      <ns:column columnName="modified"/>
-      <ns:column columnName="modulename"/>
-      <ns:column columnName="filename"/>
-    </ns:columns>
-  </ns:table>
-</ns:tables>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="schemas" tableDbType="TABLE">
+    <columns>
+      <column columnName="createdby"/>
+      <column columnName="created"/>
+      <column columnName="modifiedby"/>
+      <column columnName="modified"/>
+      <column columnName="name"/>
+      <column columnName="modulename"/>
+      <column columnName="installedversion"/>
+    </columns>
+  </table>
+  <table tableName="sqlscripts" tableDbType="TABLE">
+    <columns>
+      <column columnName="createdby"/>
+      <column columnName="created"/>
+      <column columnName="modifiedby"/>
+      <column columnName="modified"/>
+      <column columnName="modulename"/>
+      <column columnName="filename"/>
+    </columns>
+  </table>
+</tables>
