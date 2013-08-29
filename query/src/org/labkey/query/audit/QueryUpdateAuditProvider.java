@@ -310,6 +310,11 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }
 
+        public QueryUpdateAuditDomainKind()
+        {
+            super(QUERY_UPDATE_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

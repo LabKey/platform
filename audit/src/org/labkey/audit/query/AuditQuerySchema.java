@@ -108,6 +108,14 @@ public class AuditQuerySchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
+        String queryName = settings.getQueryName();
+        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(queryName))
+        {
+            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(queryName);
+            if (provider != null)
+                return new AuditQueryView(this, settings, errors);
+        }
+
         return super.createView(context, settings, errors);
     }
 

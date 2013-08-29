@@ -304,6 +304,11 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }
 
+        public DatasetAuditDomainKind()
+        {
+            super(DATASET_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

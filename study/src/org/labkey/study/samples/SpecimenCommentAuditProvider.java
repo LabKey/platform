@@ -226,6 +226,11 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
             _fields.add(createFieldSpec(COLUMN_NAME_VIAL_ID, JdbcType.VARCHAR));
         }
 
+        public SpecimenCommentAuditDomainKind()
+        {
+            super(SPECIMEN_COMMENT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

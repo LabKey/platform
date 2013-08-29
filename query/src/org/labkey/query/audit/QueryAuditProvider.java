@@ -237,6 +237,11 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
             _fields.add(createFieldSpec(COLUMN_NAME_DATA_ROW_COUNT, JdbcType.INTEGER));
         }
 
+        public QueryAuditDomainKind()
+        {
+            super(QUERY_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

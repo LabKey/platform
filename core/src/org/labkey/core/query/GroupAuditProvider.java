@@ -289,6 +289,11 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             _fields.add(createFieldSpec(COLUMN_NAME_RESOURCE_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
         }
 
+        public GroupAuditDomainKind()
+        {
+            super(GroupManager.GROUP_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

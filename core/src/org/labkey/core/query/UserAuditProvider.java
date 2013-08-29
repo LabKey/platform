@@ -144,6 +144,11 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
             _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
         }
 
+        public UserAuditDomainKind()
+        {
+            super(UserManager.USER_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

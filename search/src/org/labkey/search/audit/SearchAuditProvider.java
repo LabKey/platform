@@ -160,6 +160,11 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
             _fields.add(createFieldSpec(COLUMN_NAME_QUERY, JdbcType.VARCHAR));
         }
 
+        public SearchAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

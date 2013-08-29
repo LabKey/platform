@@ -55,6 +55,7 @@ import java.util.TreeMap;
  * User: Karl Lum
  * Date: Oct 19, 2007
  */
+@Deprecated
 public class AuditLogTable extends FilteredTable<UserSchema>
 {
     private AuditLogService.AuditViewFactory _viewFactory;

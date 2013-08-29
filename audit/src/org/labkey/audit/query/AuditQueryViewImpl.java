@@ -36,6 +36,7 @@ import java.util.Map;
  * User: Karl Lum
  * Date: Oct 5, 2007
  */
+@Deprecated
 public class AuditQueryViewImpl extends AuditLogQueryView
 {
     protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap<>();

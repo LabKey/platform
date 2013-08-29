@@ -262,6 +262,11 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             _fields.add(createFieldSpec(COLUMN_NAME_RUN_GROUP, JdbcType.INTEGER));
         }
 
+        public ExperimentAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

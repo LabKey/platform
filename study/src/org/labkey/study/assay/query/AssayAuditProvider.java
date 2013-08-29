@@ -300,6 +300,11 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
             _fields.add(createFieldSpec(COLUMN_NAME_RECORD_COUNT, JdbcType.INTEGER));
         }
 
+        public AssayAuditDomainKind()
+        {
+            super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

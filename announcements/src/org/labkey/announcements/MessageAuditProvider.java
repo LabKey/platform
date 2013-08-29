@@ -189,6 +189,11 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
             _fields.add(createFieldSpec("ContentType", JdbcType.VARCHAR));
         }
 
+        public MessageAuditDomainKind()
+        {
+            super(MailHelper.MESSAGE_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

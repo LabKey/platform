@@ -176,6 +176,11 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             _fields.add(createFieldSpec(COLUMN_NAME_ATTACHMENT, JdbcType.VARCHAR).setNullable(false));
         }
 
+        public AttachmentAuditDomainKind()
+        {
+            super(AttachmentService.ATTACHMENT_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

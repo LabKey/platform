@@ -15,7 +15,6 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -24,7 +23,6 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -34,7 +32,6 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -115,6 +112,11 @@ public class ContainerAuditProvider extends AbstractAuditTypeProvider implements
     {
         public static final String NAME = "ContainerAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+
+        public ContainerAuditDomainKind()
+        {
+            super(ContainerManager.CONTAINER_AUDIT_EVENT);
+        }
 
         @Override
         protected Set<PropertyStorageSpec> getColumns()

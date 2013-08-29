@@ -280,6 +280,11 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }
 
+        public ListAuditDomainKind()
+        {
+            super(ListManager.LIST_AUDIT_EVENT);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

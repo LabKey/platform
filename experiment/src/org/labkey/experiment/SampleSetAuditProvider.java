@@ -116,6 +116,11 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         public static final String NAME = "SampleSetAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
+        public SampleSetAuditDomainKind()
+        {
+            super(EVENT_TYPE);
+        }
+
         @Override
         protected Set<PropertyStorageSpec> getColumns()
         {

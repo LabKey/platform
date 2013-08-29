@@ -22,7 +22,6 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -31,14 +30,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.WriteableAppProps;
-import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +172,11 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
 
         static {
             _fields.add(createFieldSpec(COLUMN_NAME_CHANGES, JdbcType.VARCHAR));
+        }
+
+        public SiteSettingsAuditDomainKind()
+        {
+            super(WriteableAppProps.AUDIT_EVENT_TYPE);
         }
 
         @Override

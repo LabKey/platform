@@ -203,6 +203,7 @@ audit/src/org/labkey/audit/query/AuditLogTable.java -text
 audit/src/org/labkey/audit/query/AuditLogUnionTable.java -text
 audit/src/org/labkey/audit/query/AuditLogUpdateService.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
+audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
 authentication/Authentication.iml -text
