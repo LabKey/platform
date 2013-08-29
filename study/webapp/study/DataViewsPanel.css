@@ -235,9 +235,14 @@ table.fb-details td {
     font-size: 11px;
 }
 
-.rpf input.category-header
+/* Used by ReportFilterPanel to make the category label include a checkbox */
+.rpf div.category-header
 {
-    padding: 6px;
+    margin: 2px;
+    height: 13px;
+    width: 13px;
+    background-image: url(../gxt/images/default/form/checkbox.gif);
+    line-height: 13px;
 }
 
 /* Added/Removed for checkbox on group headers */

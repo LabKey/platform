@@ -212,7 +212,6 @@
             bodyPadding     : 10,
             border          : false,
             buttonAlign     : "left",
-            width           : 575,
             fieldDefaults: {
                 width : 500,
                 labelWidth : 125,

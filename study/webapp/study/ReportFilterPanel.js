@@ -95,7 +95,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             store       : this.store,
             border      : false, frame : false,
             bodyStyle   : 'border: none;',
-            padding     : '0 0 0 2px',
             hideHeaders : true,
             multiSelect : true,
             columns     : this.getColumnCfg(isHeader),
@@ -172,7 +171,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                         var classes = 'category-label lk-filter-panel-label' + (me.allowAll ? ' category-label-padding' : '') + (me.normalWrap ? ' normalwrap-gridcell' : '');
 
                         if (me.allowAll) {
-                            html += "<td><div class='category-header x4-grid-row-checker' category='" + v + "' />&nbsp;</div></td>";
+                            html += "<td><div class='category-header' category='" + v + "' />&nbsp;</div></td>";
                         }
 
                         if (rec) {
@@ -448,7 +447,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     checkGroupHeaderCheckbox : function(el, check) {
-        el.setAttribute('class', 'category-header x4-grid-row-checker' + (check ? ' category-checked' : ''));
+        el.setAttribute('class', 'category-header' + (check ? ' category-checked' : ''));
         this.doLayout();
     },
 

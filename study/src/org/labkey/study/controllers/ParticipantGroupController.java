@@ -532,10 +532,8 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         break;
                     case cohort:
-                        boolean hasCohorts = false;
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
-                            hasCohorts = true;
                             selectedParticipants.addAll(cohort.getParticipantSet());
                             JSONGroup jsonGroup = new JSONGroup(cohort);
                             if (form.includeParticipantIds())
@@ -544,10 +542,12 @@ public class ParticipantGroupController extends BaseStudyController
                             groups.add(jsonGroup.toJSON(getViewContext()));
                         }
 
-                        if (hasCohorts)
+                        if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
                         {
-                            if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
-                                groups.add(new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort, null).toJSON(getViewContext()));
+                            JSONGroup notInCohortGroup = new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort, null);
+                            // Issue 18435: treat "Not in any cohort" as an unenrolled cohort when selecting initial state for subjects webpart
+                            notInCohortGroup._enrolled = false;
+                            groups.add(notInCohortGroup.toJSON(getViewContext()));
                         }
                         break;
                 }
