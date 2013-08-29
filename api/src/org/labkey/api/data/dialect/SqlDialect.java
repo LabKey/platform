@@ -543,7 +543,7 @@ public abstract class SqlDialect
     public abstract boolean supportsRoundDouble();
 
     // Do nothing by default
-    public void prepareNewDatabase(DbSchema schema)
+    public void prepareNewLabKeyDatabase(DbScope scope)
     {
     }
 

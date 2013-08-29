@@ -723,6 +723,7 @@ api/src/org/labkey/api/module/ModuleUpgrader.java -text
 api/src/org/labkey/api/module/MultiPortalFolderType.java -text
 api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
+api/src/org/labkey/api/module/SchemaUpdateType.java -text
 api/src/org/labkey/api/module/SimpleAction.java -text
 api/src/org/labkey/api/module/SimpleController.java -text
 api/src/org/labkey/api/module/SimpleFolderType.java -text

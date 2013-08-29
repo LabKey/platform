@@ -23,15 +23,22 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.resource.Resource;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -43,9 +50,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 {
     private static Logger _log = Logger.getLogger(FileSqlScriptProvider.class);
 
-    private final DefaultModule _module;
+    private final Module _module;
 
-    public FileSqlScriptProvider(DefaultModule module)
+    public FileSqlScriptProvider(Module module)
     {
         _module = module;
     }
@@ -184,33 +191,26 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (file.exists() && !overwrite)
             throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
 
-        FileWriter fw = null;
-
-        try
+        try (FileWriter fw = new FileWriter(file))
         {
-            fw = new FileWriter(file);
             fw.write(contents);
             fw.flush();
         }
         finally
         {
-            if (null != fw)
-            {
-                try
-                {
-                    fw.close();
-                }
-                finally
-                {
-                    _module.clearResourceCache();
-                }
-            }
+            _module.clearResourceCache();
         }
     }
 
     public UpgradeCode getUpgradeCode()
     {
         return _module.getUpgradeCode();
+    }
+
+    @Override
+    public double getInstalledVersion()
+    {
+        return ModuleLoader.getInstance().getModuleContext(_module).getInstalledVersion();
     }
 
     public static class FileSqlScript implements SqlScript

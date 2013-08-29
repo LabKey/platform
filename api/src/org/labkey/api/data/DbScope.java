@@ -646,14 +646,14 @@ public class DbScope
         DbSchema schema = loadBareSchema(schemaName, type);
 
         // Use the canonical schema name, not the requested name (which could differ in casing)
-        Resource resource = DbSchema.getSchemaResource(schema.getDisplayName());
+        Resource resource = schema.getSchemaResource();
 
         if (null == resource)
         {
             String lowerName = schemaName.toLowerCase();
 
             if (!lowerName.equals(schema.getName()))
-                resource = DbSchema.getSchemaResource(lowerName);
+                resource = schema.getSchemaResource(lowerName);
 
             if (null == resource)
             {
@@ -664,27 +664,12 @@ public class DbScope
 
         schema.setResource(resource);
 
-        InputStream xmlStream = null;
-
-        try
+        try (InputStream xmlStream = resource.getInputStream())
         {
-            xmlStream = resource.getInputStream();
-
             if (null != xmlStream)
             {
                 TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
                 schema.setTablesDocument(tablesDoc);
-            }
-        }
-        finally
-        {
-            try
-            {
-                if (null != xmlStream) xmlStream.close();
-            }
-            catch (Exception x)
-            {
-                LOG.error("DbScope", x);
             }
         }
 
@@ -692,7 +677,7 @@ public class DbScope
     }
 
 
-    private static class DbSchemaResource extends AbstractResource
+    public static class DbSchemaResource extends AbstractResource
     {
         protected DbSchemaResource(DbSchema schema)
         {
@@ -897,10 +882,12 @@ public class DbScope
                 }
             }
 
-           _labkeyScope = _scopes.get(labkeyDsName);
+            _labkeyScope = _scopes.get(labkeyDsName);
 
             if (null == _labkeyScope)
                 throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.");
+
+            _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
     }
 

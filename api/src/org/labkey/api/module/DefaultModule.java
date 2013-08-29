@@ -138,31 +138,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _sourcePath = null;
     private File _explodedPath = null;
 
-    private enum SchemaUpdateType
-    {
-        Before
-        {
-            @Nullable
-            @Override
-            SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
-            {
-                return provider.getDropScript(schema);
-            }
-        },
-
-        After
-        {
-            @Nullable
-            @Override
-            SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
-            {
-                return provider.getCreateScript(schema);
-            }
-        };
-
-        abstract @Nullable SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException;
-    }
-
     protected DefaultModule()
     {
     }
@@ -349,7 +324,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     /**
-     * Upgrade this module to the latest version.
+     * Upgrade each schema in this module to the latest version.
      */
     public void versionUpdate(ModuleContext moduleContext) throws Exception
     {
@@ -360,17 +335,21 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             for (DbSchema schema : provider.getSchemas())
             {
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                List<SqlScript> scripts = manager.getRecommendedScripts(moduleContext.getInstalledVersion(), getVersion());
+                List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
 
                 if (!scripts.isEmpty())
                     SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
+
+                SqlScript script = SchemaUpdateType.After.getScript(provider, schema);
+
+                if (null != script)
+                    SqlScriptRunner.runScripts(this, null, Arrays.asList(script));
             }
         }
     }
 
     public void afterUpdate(ModuleContext moduleContext)
     {
-        runScripts(SchemaUpdateType.After);
     }
 
     private void runScripts(SchemaUpdateType type)

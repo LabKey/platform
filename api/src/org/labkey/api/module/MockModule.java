@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
@@ -361,5 +362,17 @@ public class MockModule implements Module
     public Set<SupportedDatabase> getSupportedDatabasesSet()
     {
         return DefaultModule.ALL_DATABASES;
+    }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return null;
+    }
+
+    @Override
+    public void clearResourceCache()
+    {
     }
 }

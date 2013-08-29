@@ -58,38 +58,33 @@ public class TableXmlUtils
     {
         StringBuilder sbOut = new StringBuilder();
 
-        InputStream xmlStream = null;
         try
         {
-            TablesDocument tablesDocFromDatabaseMetaData;
-            TablesDocument tablesDocFromXml = null;
+            TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
 
-            tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
-            Resource r = DbSchema.getSchemaResource(schema.getDisplayName());
-            if (null != r)
-                xmlStream = r.getInputStream();
-            if (null != xmlStream)
-                tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
-
-            if ((null != tablesDocFromDatabaseMetaData) && (null != tablesDocFromXml))
+            if (null != tablesDocFromDatabaseMetaData)
             {
-                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
+                Resource r = schema.getSchemaResource();
+
+                if (null != r)
+                {
+                    try (InputStream xmlStream = r.getInputStream())
+                    {
+                        if (null != xmlStream)
+                        {
+                            TablesDocument tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
+
+                            if (null != tablesDocFromXml)
+                                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
+                        }
+                    }
+                }
             }
         }
         catch (Exception e)
         {
             _log.error("Exception loading schema " + schema.getDisplayName(), e);
             return "+++ ERROR: Exception " + e.getMessage();
-        }
-        finally
-        {
-            try
-            {
-                if (null != xmlStream) xmlStream.close();
-            }
-            catch (Exception x)
-            {
-            }
         }
 
         return (0 == sbOut.length() ? null : sbOut.toString());

@@ -128,7 +128,13 @@ public class DbSchema
     }
 
 
-    public static Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
+    public Resource getSchemaResource() throws IOException
+    {
+        return getSchemaResource(getDisplayName());
+    }
+
+
+    public Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
     {
         Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
         if (null == module)
@@ -169,7 +175,25 @@ public class DbSchema
 
         scope.invalidateAllTables(metaDataName, type); // Need to invalidate the table cache
 
-        return new DbSchema(metaDataName, type, scope, metaDataTableNames);
+        if ("labkey".equals(metaDataName))
+            return new DbSchema(metaDataName, type, scope, metaDataTableNames)
+            {
+                @Override
+                public String getDisplayName()
+                {
+                    return "labkey";
+                }
+
+                @Override
+                public Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
+                {
+                    return new DbScope.DbSchemaResource(this);
+                }
+            };
+        else
+        {
+            return new DbSchema(metaDataName, type, scope, metaDataTableNames);
+        }
     }
 
 

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
@@ -120,8 +121,7 @@ public interface Module extends Comparable<Module>
      */
     public void versionUpdate(ModuleContext moduleContext) throws Exception;
 
-    // Called on each module in dependency order after versionUpdate(), as long as at least one module requires
-    // updating.  This is a fine place to create views and other dependent objects.
+    // Called on each module in dependency order after versionUpdate(), as long as at least one module requires updating.
     public void afterUpdate(ModuleContext moduleContext);
 
     //TODO: Spring ApplicationContext might be good here
@@ -322,4 +322,8 @@ public interface Module extends Comparable<Module>
     public JSONObject getPageContextJson(User u, Container c);
 
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
+
+    public @Nullable UpgradeCode getUpgradeCode();
+
+    void clearResourceCache();
 }

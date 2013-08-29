@@ -39,6 +39,7 @@ import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -87,6 +88,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -362,6 +364,7 @@ public class ModuleLoader implements Filter
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
 
         List<String> modulesRequiringUpgrade = new LinkedList<>();
+        List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
 
         for (Module m : _modules)
         {
@@ -370,19 +373,47 @@ public class ModuleLoader implements Filter
             {
                 modulesRequiringUpgrade.add(ctx.getName());
             }
+            else
+            {
+                // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
+                // The scenario is a schema in an external data source that needs to be installed or upgraded.
+                List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(m);
+                additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
+            }
         }
 
-        if (modulesRequiringUpgrade.isEmpty())
+        if (modulesRequiringUpgrade.isEmpty() && additionalSchemasRequiringUpgrade.isEmpty())
         {
             completeUpgrade(coreRequiredUpgrade);
         }
         else
         {
             setUpgradeState(UpgradeState.UpgradeRequired);
-            _log.info("Module upgrade is required: " + modulesRequiringUpgrade.toString());
+
+            if (!modulesRequiringUpgrade.isEmpty())
+                _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade.toString());
+
+            if (!additionalSchemasRequiringUpgrade.isEmpty())
+                _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas" ) + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
         }
 
-        _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+        _log.info("LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+    }
+
+    private List<String> additionalSchemasRequiringUpgrade(Module module)
+    {
+        SqlScriptProvider provider = new FileSqlScriptProvider(module);
+        List<String> schemaNames = new LinkedList<>();
+
+        for (DbSchema schema : provider.getSchemas())
+        {
+            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+
+            if (manager.requiresUpgrade())
+                schemaNames.add(schema.getDisplayName());
+        }
+
+        return schemaNames;
     }
 
     // Set the project source root based upon the core module's source path or the project.root system property.
@@ -788,7 +819,7 @@ public class ModuleLoader implements Filter
     // TODO: Move this code into SqlScriptManager
     private void upgradeLabKeySchemaInExternalDataSources()
     {
-        DefaultModule coreModule = (DefaultModule) ModuleLoader.getInstance().getCoreModule();
+        Module coreModule = ModuleLoader.getInstance().getCoreModule();
 
         for (String name : getAllModuleDataSources())
         {
@@ -812,26 +843,17 @@ public class ModuleLoader implements Filter
                     }
                 };
 
-                SqlScriptManager labkeyManager = SqlScriptManager.get(provider, labkeySchema);
-                SqlScriptManager.SchemaBean schemaBean = labkeyManager.ensureSchemaBean();
-                double from = schemaBean.getInstalledVersion();
+                SqlScriptManager manager = SqlScriptManager.get(provider, labkeySchema);
                 double to = coreModule.getVersion();
+                List<SqlScriptRunner.SqlScript> scripts = manager.getRecommendedScripts(to);
 
-                if (from < to)
+                if (!scripts.isEmpty())
                 {
-                    if (0 == from)
-                        _log.info("Installing the \"labkey\" schema in \"" + scope.getDisplayName() + "\", upgrading it to " + to);
-                    else
-                        _log.info("Upgrading the \"labkey\" schema in \"" + scope.getDisplayName() + "\" from " + from + " to " + to);
-
-                    List<SqlScriptRunner.SqlScript> allLabKeyScripts = provider.getScripts(labkeySchema);
-                    List<SqlScriptRunner.SqlScript> scripts = labkeyManager.getRecommendedScripts(allLabKeyScripts, from, to);
-
-                    if (!scripts.isEmpty())
-                        SqlScriptRunner.runScripts(coreModule, ModuleLoader.getInstance().getUpgradeUser(), scripts);
-
-                    labkeyManager.updateSchemaVersion(to);
+                    _log.info("Upgrading the \"labkey\" schema in \"" + scope.getDisplayName() + "\" to " + to);
+                    SqlScriptRunner.runScripts(coreModule, ModuleLoader.getInstance().getUpgradeUser(), scripts);
                 }
+
+                manager.updateSchemaVersion(to);
             }
             catch (SqlScriptRunner.SqlScriptException | SQLException e)
             {
@@ -906,7 +928,7 @@ public class ModuleLoader implements Filter
         _deferUsageReport = defer;
     }
 
-    public void runBeforeUpdates()
+    private void runDropScripts() throws SqlScriptRunner.SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -914,30 +936,39 @@ public class ModuleLoader implements Filter
             ListIterator<Module> iter = modules.listIterator(modules.size());
 
             while (iter.hasPrevious())
-            {
-                Module module = iter.previous();
-                module.beforeUpdate(getModuleContext(module));
-            }
+                runScripts(iter.previous(), SchemaUpdateType.Before);
         }
     }
 
-    // TODO: Should probably not call afterUpdate(), since it executes more than just the create.sql scripts
-    public void runAfterUpdates()
+    private void runCreateScripts() throws SqlScriptRunner.SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
             for (Module module : getModules())
-                module.afterUpdate(getModuleContext(module));
+                runScripts(module, SchemaUpdateType.After);
         }
     }
 
-    // Runs the drop view and create view scripts in every module
-    public void recreateViews()
+    private void runScripts(Module module, SchemaUpdateType type) throws SqlScriptRunner.SqlScriptException, SQLException
+    {
+        FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+
+        for (DbSchema schema : provider.getSchemas())
+        {
+            SqlScriptRunner.SqlScript script = type.getScript(provider, schema);
+
+            if (null != script)
+                SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
+        }
+    }
+
+    // Runs the drop and create scripts in every module
+    public void recreateViews() throws SqlScriptRunner.SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
-            runBeforeUpdates();
-            runAfterUpdates();
+            runDropScripts();
+            runCreateScripts();
         }
     }
 
@@ -1213,12 +1244,6 @@ public class ModuleLoader implements Filter
         }
 
         return moduleDataSources;
-    }
-
-    // TODO: Move to LoginController, only place that uses this now
-    public boolean isAdminOnlyMode()
-    {
-        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (isUpgradeRequired() && !UserManager.hasNoUsers());
     }
 
     public String getAdminOnlyMessage()

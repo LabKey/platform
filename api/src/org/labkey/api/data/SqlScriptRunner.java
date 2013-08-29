@@ -160,5 +160,6 @@ public class SqlScriptRunner
         public @Nullable SqlScript getDropScript(DbSchema schema);
         public @Nullable SqlScript getCreateScript(DbSchema schema);
         public UpgradeCode getUpgradeCode();
+        public double getInstalledVersion();
     }
 }

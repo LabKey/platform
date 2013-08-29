@@ -29,9 +29,9 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -50,12 +50,13 @@ final public class DefaultSchema extends AbstractSchema
         abstract public @NotNull Collection<String> getSchemaNames(User user, Container container);
     }
 
-    private static final Map<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<>();
+    private static final ConcurrentNavigableMap<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final List<DynamicSchemaProvider> _dynamicProviders = new CopyOnWriteArrayList<>();
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
-        _providers.put(name, provider);
+        if (null != _providers.putIfAbsent(name, provider))
+            throw new IllegalStateException("Query schema \"" + name + "\" already has a registered SchemaProvider");
     }
 
     static public void registerProvider(DynamicSchemaProvider provider)

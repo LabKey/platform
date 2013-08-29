@@ -24,6 +24,7 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -52,6 +53,8 @@ public abstract class SqlScriptManager
 
     protected abstract TableInfo getTableInfoSqlScripts();
     protected abstract @Nullable TableInfo getTableInfoSchemas();
+    protected abstract double getFrom();
+    public abstract boolean requiresUpgrade();
 
     public static SqlScriptManager get(SqlScriptProvider provider, DbSchema schema)   // TODO: User? Module? Module Context?
     {
@@ -94,10 +97,10 @@ public abstract class SqlScriptManager
     }
 
 
-    public List<SqlScript> getRecommendedScripts(double from, double to) throws SQLException, SqlScriptException
+    public List<SqlScript> getRecommendedScripts(double to) throws SQLException, SqlScriptException
     {
         List<SqlScript> newScripts = getNewScripts();
-        return getRecommendedScripts(newScripts, from, to);
+        return getRecommendedScripts(newScripts, getFrom(), to);
     }
 
 
@@ -204,6 +207,7 @@ public abstract class SqlScriptManager
 
         if (script.isValidName())
         {
+            // TODO: Seems like a pointless check... we never run scripts twice!
             if (hasBeenRun(script))
                 update(user, script);
             else
@@ -216,6 +220,10 @@ public abstract class SqlScriptManager
     public Collection<String> getPreviouslyRunSqlScriptNames()
     {
         TableInfo tinfo = getTableInfoSqlScripts();
+
+        if (null == tinfo)
+            return Collections.emptySet();
+
         SimpleFilter filter = new SimpleFilter();
         ColumnInfo fileNameColumn = tinfo.getColumn("FileName");
         filter.addCondition(tinfo.getColumn("ModuleName"), _provider.getProviderName());
@@ -317,6 +325,18 @@ public abstract class SqlScriptManager
             return null;
         }
 
+        @Override
+        protected double getFrom()
+        {
+            return _provider.getInstalledVersion();
+        }
+
+        @Override
+        public boolean requiresUpgrade()
+        {
+            return false;
+        }
+
         @NotNull
         @Override
         public Collection<String> getPreviouslyRunSqlScriptNames()
@@ -375,6 +395,21 @@ public abstract class SqlScriptManager
         protected TableInfo getTableInfoSchemas()
         {
             return getLabKeySchema().getTable("Schemas");
+        }
+
+        @Override
+        protected double getFrom()
+        {
+            return ensureSchemaBean().getInstalledVersion();
+        }
+
+        public boolean requiresUpgrade()
+        {
+            SchemaBean bean = ensureSchemaBean();
+            Module module = ModuleLoader.getInstance().getModule(_provider.getProviderName());
+            ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+
+            return bean.getInstalledVersion() < ctx.getInstalledVersion();
         }
     }
 

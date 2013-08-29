@@ -147,15 +147,12 @@ public class ModuleContext implements Cloneable
         setModuleState(ModuleLoader.ModuleState.ReadyToRun);
         ModuleLoader.getInstance().saveModuleContext(this);
 
-        if (module instanceof DefaultModule)
-        {
-            SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)module);
+        SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider(module);
 
-            for (DbSchema schema : provider.getSchemas())
-            {
-                SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                manager.updateSchemaVersion(_installedVersion);
-            }
+        for (DbSchema schema : provider.getSchemas())
+        {
+            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+            manager.updateSchemaVersion(_installedVersion);
         }
     }
 
