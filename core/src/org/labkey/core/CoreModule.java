@@ -184,6 +184,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -792,6 +793,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 PropertyManager.getSchemaName(),                // prop
                 TestSchema.getInstance().getSchemaName()        // test
             );
+    }
+
+    @NotNull
+    @Override
+    public Set<DbSchema> getSchemasToTest()
+    {
+        Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
+
+        // Add the "labkey" schema in all module data sources as well... should match labkey.xml
+        for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSources())
+        {
+            DbScope scope = DbScope.getDbScope(dataSourceName);
+            result.add(scope.getSchema("labkey"));
+        }
+
+        return result;
     }
 
     @Override
