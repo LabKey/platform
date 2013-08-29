@@ -57,6 +57,8 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         _provider = provider;
         this._legacyNameMap = provider.legacyNameMap();
 
+        setTitle(provider.getEventName());
+
         wrapAllColumns(true);
 
         _defaultVisibleColumns.add(FieldKey.fromParts("Created"));

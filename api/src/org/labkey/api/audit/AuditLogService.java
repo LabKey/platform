@@ -196,6 +196,7 @@ public class AuditLogService
 
         @Nullable
         public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
+        public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
         public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter);
 

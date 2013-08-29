@@ -46,6 +46,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
 
     public static final String COLUMN_NAME_DIRECTORY = "Directory";
     public static final String COLUMN_NAME_FILE = "File";
+    public static final String COLUMN_NAME_RESOURCE_PATH = "ResourcePath";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -91,6 +92,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
 
         bean.setDirectory(event.getKey1());
         bean.setFile(event.getKey2());
+        bean.setResourcePath(event.getKey3());
 
         return (K)bean;
     }
@@ -101,6 +103,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
         legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_DIRECTORY);
         legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_FILE);
+        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_RESOURCE_PATH);
         return legacyNames;
     }
 
@@ -132,6 +135,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
     {
         private String _directory;      // the directory name
         private String _file;           // the file name
+        private String _resourcePath;   // the webdav resource path
 
         public FileSystemAuditEvent()
         {
@@ -162,6 +166,16 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         {
             _file = file;
         }
+
+        public String getResourcePath()
+        {
+            return _resourcePath;
+        }
+
+        public void setResourcePath(String resourcePath)
+        {
+            _resourcePath = resourcePath;
+        }
     }
 
     public static class FileSystemAuditDomainKind extends AbstractAuditDomainKind
@@ -173,6 +187,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         static {
             _fields.add(createFieldSpec(COLUMN_NAME_DIRECTORY, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(COLUMN_NAME_FILE, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_RESOURCE_PATH, JdbcType.VARCHAR));
         }
 
         @Override

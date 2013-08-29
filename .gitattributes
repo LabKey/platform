@@ -9339,6 +9339,7 @@ internal/src/org/labkey/api/webdav/ActionResource.java -text
 internal/src/org/labkey/api/webdav/FileSystemAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemAuditViewFactory.java -text
 internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
+internal/src/org/labkey/api/webdav/FileSystemBatchAuditViewFactory.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
