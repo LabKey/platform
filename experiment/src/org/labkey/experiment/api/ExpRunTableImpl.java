@@ -716,7 +716,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 if (displayField.equalsIgnoreCase(exp.getName()))
                 {
-                    ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), new SQLFragment("~~PLACEHOLDER~~"), JdbcType.BOOLEAN, parent)
+                    ExprColumn result = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(exp.getName()), new SQLFragment("~~PLACEHOLDER~~"), JdbcType.BOOLEAN, parent)
                     {
                         @Override
                         public SQLFragment getValueSql(String tableAlias)
