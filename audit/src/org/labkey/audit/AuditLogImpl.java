@@ -57,7 +57,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -128,16 +127,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
-            _logToDatabase.set(true);
-
-            // Ensure audit provider's domains have been initialized.  This must happen before flusing the temporary event queues.
+            // Ensure audit provider's domains have been initialized.  This must happen before flushing the temporary event queues.
             initializeProviders();
-
-            while (!_eventQueue.isEmpty())
-            {
-                Pair<User, AuditLogEvent> event = _eventQueue.remove();
-                _addEvent(event.first, event.second);
-            }
 
             // Migrate audit providers if needed. We need to perform migration after the
             // server is fully started to ensure all audit providers have been registered and
@@ -145,6 +136,14 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             // UNDONE: Uncomment when we are ready to flip to the new audit providers
             //if (!isMigrateComplete())
             //    AuditUpgradeCode.migrateProviders(this);
+
+            _logToDatabase.set(true);
+
+            while (!_eventQueue.isEmpty())
+            {
+                Pair<User, AuditLogEvent> event = _eventQueue.remove();
+                _addEvent(event.first, event.second);
+            }
 
             while (!_eventTypeQueue.isEmpty())
             {
@@ -277,12 +276,19 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         {
             if (!_factoryInitialized.containsKey(event.getEventType()))
             {
-                _log.info("Initializing audit event factory for: " + event.getEventType());
-                AuditViewFactory factory = getAuditViewFactory(event.getEventType());
-                if (factory != null)
+                if (isMigrateComplete() || hasEventTypeMigrated(event.getEventType()))
                 {
-                    Container c = ContainerManager.getForId(event.getContainerId());
-                    factory.initialize(new DefaultContainerUser(c, user));
+                    _log.info("Skipping initialization of previously migrated audit event factory: " + event.getEventType());
+                }
+                else
+                {
+                    _log.info("Initializing audit event factory for: " + event.getEventType());
+                    AuditViewFactory factory = getAuditViewFactory(event.getEventType());
+                    if (factory != null)
+                    {
+                        Container c = ContainerManager.getForId(event.getContainerId());
+                        factory.initialize(new DefaultContainerUser(c, user));
+                    }
                 }
                 _factoryInitialized.put(event.getEventType(), true);
             }
@@ -684,14 +690,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public void migrateProviders()
     {
-        if (ModuleLoader.getInstance().isNewInstall())
-        {
-            // Mark the migration as complete -- individual audit providers are not marked as migrated since new providers may be added after the migration.
-            _log.info("New installation, marking audit log migration as complete.");
-            setMigrateComplete(true);
-            return;
-        }
-
         _log.info("Attempting to migrate all registered audit providers");
         for (AuditTypeProvider provider : getAuditProviders())
         {
@@ -818,7 +816,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         insertInto.append(QueryService.get().getSelectSQL(sourceTable, sourceColumns.values(), null, null, Table.ALL_ROWS, 0, false));
         insertInto.append(") x\n");
 
-        _log.info(insertInto);
+        _log.debug(insertInto);
 
         // SQLServer will automatically reset the identity column sequence when IDENTITY_INSERT is on
         if (dialect.isSqlServer())
