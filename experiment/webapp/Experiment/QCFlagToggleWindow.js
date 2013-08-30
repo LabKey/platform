@@ -14,8 +14,8 @@ var $h = Ext.util.Format.htmlEncode;
 function showQCFlagToggleWindow(assayName, runId)
 {
     var win = new LABKEY.QCFlagToggleWindow({
-        schemaName: "assay",
-        queryName: assayName + " QCFlags",
+        schemaName: "assay.Luminex." + assayName,
+        queryName: "QCFlags",
         runId: runId,
         listeners: {
             scope: this,
@@ -33,7 +33,8 @@ function showQCFlagToggleWindow(assayName, runId)
  * @param queryName
  * @param runId
  * @param analyte Optional, for Luminex Levey-Jennings report
- * @param titration Optional, for Luminex Levey-Jennings report 
+ * @param controlName Optional, for Luminex Levey-Jennings report
+ * @param controlType Optional, for Luminex Levey-Jennings report
  */
 LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
     constructor : function(config){
@@ -61,12 +62,12 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
     },
 
     initComponent : function() {
-        // setup the filter array (always filter by run, optionally filter by analyte and titration)
+        // setup the filter array (always filter by run, optionally filter by analyte and controlName)
         var filters = [LABKEY.Filter.create("Run/RowId", this.runId)];
-        if (this.analyte && this.titration)
+        if (this.analyte && this.controlName && this.controlType)
         {
             filters.push(LABKEY.Filter.create("Analyte/Name", this.analyte));
-            filters.push(LABKEY.Filter.create("Titration/Name", this.titration));
+            filters.push(LABKEY.Filter.create((this.controlType == 'Titration' ? 'Titration' : 'SinglePointControl') + "/Name", this.controlName));
         }
 
         // add a grid to the panel with the QC Flags for this run
