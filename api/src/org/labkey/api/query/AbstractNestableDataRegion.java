@@ -95,7 +95,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         return value == null ? "null" : value.toString();
     }
 
-    public void setGroupedResultSet(GroupedResultSet groupedRS) throws SQLException
+    public void setGroupedResultSet(GroupedResultSet groupedRS)
     {
         _groupedRS = groupedRS;
     }

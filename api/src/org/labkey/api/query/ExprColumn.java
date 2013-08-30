@@ -58,7 +58,7 @@ public class ExprColumn extends ColumnInfo
     
     public ExprColumn(TableInfo parent, String name, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
     {
-        this(parent, FieldKey.fromString(name), sql, type, dependentColumns);
+        this(parent, FieldKey.fromParts(name), sql, type, dependentColumns);
     }
 
     public SQLFragment getValueSql(String tableAlias)

@@ -502,7 +502,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getLabel()
     {
         if (null == label && getFieldKey() != null)
-            return labelFromName(getName());
+            return labelFromName(getFieldKey().getName());
         return label;
     }
 

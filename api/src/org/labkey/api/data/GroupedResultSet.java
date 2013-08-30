@@ -44,61 +44,68 @@ public class GroupedResultSet extends ResultSetImpl
 
     private boolean _ignoreNext;
 
-    public GroupedResultSet(ResultSet rs, String columnName, int maxRows, int maxGroups) throws SQLException
+    public GroupedResultSet(ResultSet rs, String columnName, int maxRows, int maxGroups)
     {
         this(rs, columnName);
-        setMaxRows(maxRows);
-
-        if (maxRows > 0)
+        try
         {
-            rs.last();
-            if (rs.getRow() > maxRows || (rs instanceof Table.TableResultSet && !((Table.TableResultSet)rs).isComplete()))
+            setMaxRows(maxRows);
+
+            if (maxRows > 0)
             {
-                setComplete(false);
-                Object value = getObject(_columnIndex);
-                while (rs.previous() && value.equals(getObject(_columnIndex)))
+                rs.last();
+                if (rs.getRow() > maxRows || (rs instanceof Table.TableResultSet && !((Table.TableResultSet)rs).isComplete()))
                 {
-                    // Don't need to do anything here
+                    setComplete(false);
+                    Object value = getObject(_columnIndex);
+                    while (rs.previous() && value.equals(getObject(_columnIndex)))
+                    {
+                        // Don't need to do anything here
+                    }
+                    _lastRow = rs.getRow();
+                    value = getObject(_columnIndex);
+                    int groupCount = 1;
+                    while (rs.previous())
+                    {
+                        if (!value.equals(getObject(_columnIndex)))
+                        {
+                            value = getObject(_columnIndex);
+                            groupCount++;
+                        }
+                    }
+                    _groupCount = groupCount;
                 }
-                _lastRow = rs.getRow();
-                value = getObject(_columnIndex);
-                int groupCount = 1;
-                while (rs.previous())
+                rs.beforeFirst();
+            }
+
+            Object value = null;
+
+            if (maxRows > 0 && maxGroups > 0)
+            {
+                int groupingCount = 0;
+                while (rs.next())
                 {
-                    if (!value.equals(getObject(_columnIndex)))
+                    if (!getObject(_columnIndex).equals(value))
                     {
                         value = getObject(_columnIndex);
-                        groupCount++;
+                        groupingCount++;
+                        if (groupingCount > maxGroups)
+                        {
+                            _groupCount = maxGroups;
+                            _lastRow = getRow() - 1;
+                            setComplete(false);
+                            break;
+                        }
                     }
                 }
-                _groupCount = groupCount;
+                rs.beforeFirst();
             }
-            rs.beforeFirst();
+            setComplete(_lastRow == 0);
         }
-
-        Object value = null;
-
-        if (maxRows > 0 && maxGroups > 0)
+        catch (SQLException e)
         {
-            int groupingCount = 0;
-            while (rs.next())
-            {
-                if (!getObject(_columnIndex).equals(value))
-                {
-                    value = getObject(_columnIndex);
-                    groupingCount++;
-                    if (groupingCount > maxGroups)
-                    {
-                        _groupCount = maxGroups;
-                        _lastRow = getRow() - 1;
-                        setComplete(false);
-                        break;
-                    }
-                }
-            }
-            rs.beforeFirst();
+            throw new RuntimeSQLException(e);
         }
-        setComplete(_lastRow == 0);
     }
 
     public GroupedResultSet(ResultSet rs, String columnName, int maxGroups) throws SQLException
