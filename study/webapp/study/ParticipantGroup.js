@@ -23,7 +23,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             hasButtons : true,
             canShare : true,
             dataRegionName : 'demoDataRegion',
-            width : 950,
+            width : window.innerWidth < 950 ? window.innerWidth : 950,
             height : config.hideDataRegion ? 325 : 500,
             type : config.type || 'manual',
             shared : config.shared || false
