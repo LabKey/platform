@@ -377,7 +377,7 @@ public abstract class ScheduleGrid extends EditableGrid
 
         public class DefineGroupDialog extends DialogBox
         {
-            private RadioButton existRadio = new RadioButton("cohortType", "Select and existing group/cohort");
+            private RadioButton existRadio = new RadioButton("cohortType", "Select an existing group/cohort");
             private ListBox existList = new ListBox();
             private RadioButton newRadio = new RadioButton("cohortType", "Create a new group/cohort");
             private TextBox newNameTextBox = new TextBox();
@@ -396,7 +396,22 @@ public abstract class ScheduleGrid extends EditableGrid
                     existList.addItem(existCohortName);
                 }
                 existRadio.setEnabled(existList.getItemCount() > 0);
-                existList.setEnabled(existList.getItemCount() > 0);
+                existList.setEnabled(false); // always initially disabled
+
+                newRadio.addClickListener(new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        existList.setEnabled(false);
+                    }
+                });
+                existRadio.addClickListener(new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        existList.setEnabled(existList.getItemCount() > 0);
+                    }
+                });
 
                 Grid formGrid = new Grid();
                 formGrid.resize(3, 2);

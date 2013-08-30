@@ -307,14 +307,14 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             // then we reconcile the list of groups to delete with the full list of study designer groups
             for (GWTCohort defGroup : studyDefinition.getGroups())
             {
-                if (defGroup.getCohortId() != null && studyDefinition.getGroupsToDelete().contains(defGroup.getCohortId()))
-                    studyDefinition.getGroupsToDelete().remove(defGroup.getCohortId());
+                if (studyDefinition.getGroupsToDelete().contains(defGroup.getName()))
+                    studyDefinition.getGroupsToDelete().remove(defGroup.getName());
             }
 
             // finally we delete any groups that were removed from the study design and have a corresponding cohort Id
-            for (Integer cohortId : studyDefinition.getGroupsToDelete())
+            for (String name : studyDefinition.getGroupsToDelete())
             {
-                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohortId);
+                CohortImpl cohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), name);
                 // don't delete any in-use cohorts from the study
                 if (cohort != null && !cohort.isInUse())
                     StudyManager.getInstance().deleteCohort(cohort);

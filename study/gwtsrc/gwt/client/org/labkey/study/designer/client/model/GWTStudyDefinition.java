@@ -42,7 +42,7 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     private GWTImmunizationSchedule immunizationSchedule = new GWTImmunizationSchedule();
     private GWTAssaySchedule assaySchedule = new GWTAssaySchedule();
     private List<GWTCohort> groups = new ArrayList<GWTCohort>();
-    private List<Integer> groupsToDelete = new ArrayList<Integer>();
+    private List<String> groupsToDelete = new ArrayList<String>();
     private List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
     private List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
 
@@ -376,19 +376,19 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         this.units = units;
     }
 
-    public List<Integer> getGroupsToDelete()
+    public List<String> getGroupsToDelete()
     {
         return groupsToDelete;
     }
 
     public void clearGroupsToDelete()
     {
-        this.groupsToDelete = new ArrayList<Integer>();
+        this.groupsToDelete = new ArrayList<String>();
     }
 
-    public void addGroupToDelete(Integer groupId)
+    public void addGroupToDelete(String groupName)
     {
-        this.groupsToDelete.add(groupId);
+        this.groupsToDelete.add(groupName);
     }
 
     public List<String> getCohorts()

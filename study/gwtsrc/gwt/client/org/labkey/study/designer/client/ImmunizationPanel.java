@@ -158,12 +158,9 @@ public class ImmunizationPanel extends Composite
                 tb.setText(StringUtils.trimToEmpty(group.getName()));
                 tb.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender) {
-                        // in the event of a group rename, add the old cohortId to the list of groups to be deleted (if they exist)
-                        if (group.getCohortId() != null)
-                        {
-                            studyDef.addGroupToDelete(group.getCohortId());
-                            group.setCohortId(null);
-                        }
+                        // in the event of a group rename, add the old cohort name to the list of groups to be deleted (if they exist)
+                        studyDef.addGroupToDelete(group.getName());
+                        group.setCohortId(null);
 
                         group.setName(tb.getText());
                         designer.setDirty(true);
@@ -205,8 +202,7 @@ public class ImmunizationPanel extends Composite
         void deleteCategory(final int index)
         {
             GWTCohort cohort = studyDef.getGroups().get(index);
-            if (cohort.getCohortId() != null)
-                studyDef.addGroupToDelete(cohort.getCohortId());
+            studyDef.addGroupToDelete(cohort.getName());
 
             studyDef.getGroups().remove(index);
             designer.setDirty(true);
