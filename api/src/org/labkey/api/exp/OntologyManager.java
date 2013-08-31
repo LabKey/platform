@@ -2534,8 +2534,8 @@ public class OntologyManager
      */
     public static void updateDomainPropertyFromDescriptor(DomainProperty p, PropertyDescriptor pd)
     {
-        // don't setPropertyURI
         // don't setName
+        p.setPropertyURI(pd.getPropertyURI());
         p.setLabel(pd.getLabel());
         p.setConceptURI(pd.getConceptURI());
         p.setRangeURI(pd.getRangeURI());
