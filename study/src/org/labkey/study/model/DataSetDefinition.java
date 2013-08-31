@@ -382,14 +382,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _typeURI;
     }
 
-    public void setTypeURI(String typeURI)
+    public void setTypeURI(String typeURI, boolean isUpgrade)
     {
         verifyMutability();
         if (StringUtils.equals(typeURI, _typeURI))
             return;
-        if (null != _typeURI)
+        if (null != _typeURI && !isUpgrade)
             throw new IllegalStateException("TypeURI is already set");
         _typeURI = typeURI;
+    }
+
+    public void setTypeURI(String typeURI)
+    {
+        setTypeURI(typeURI, false);
     }
 
 

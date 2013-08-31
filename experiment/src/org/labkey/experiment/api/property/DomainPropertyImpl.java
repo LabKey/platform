@@ -200,6 +200,8 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setPropertyURI(String uri)
     {
+        if (StringUtils.equalsIgnoreCase(uri, getPropertyURI()))
+            return;
         edit().setPropertyURI(uri);
     }
 

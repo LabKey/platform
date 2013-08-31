@@ -47,6 +47,7 @@ import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
@@ -3095,7 +3096,14 @@ public class StudyManager
                 def.setName(name);
                 def.setDescription(info.description);
                 if (null == def.getTypeURI())
+                {
                     def.setTypeURI(getDomainURI(c, user, def));
+                }
+                else
+                {
+                    upgradeDomainURI(c, user, def);
+                }
+
                 def.setVisitDatePropertyName(info.visitDatePropertyName);
                 def.setShowByDefault(!info.isHidden);
                 def.setKeyPropertyName(info.keyPropertyName);
@@ -3107,6 +3115,30 @@ public class StudyManager
         }
 
         return true;
+    }
+
+    // Detect if this dataset has an old-style URI without the entityid.  If so, assign a new type URI to this dataset
+    // and update the domain descriptor URI
+    // old:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM
+    // new:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM-cbffdfa1-f19b-1030-90dd-bf4ca488b2d0
+    private void upgradeDomainURI(Container c, User user, DataSetDefinition def)
+    {
+        String oldURI = def.getTypeURI();
+        String newURI = getDomainURI(c, user, def);
+
+        if (StringUtils.equals(oldURI, newURI))
+            return;
+
+        // This dataset has the old uri so upgrade it to use the new URI format
+        def.setTypeURI(newURI, true /*upgrade*/);
+
+        // fixup the domain
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(oldURI, c);
+        if (null != dd)
+        {
+            dd.setDomainURI(newURI);
+            OntologyManager.updateDomainDescriptor(dd);
+        }
     }
 
     private static String getDomainURI(Container c, User u, String name, String id)
