@@ -97,7 +97,6 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
                     pc.setLabel(category.getLabel());
                     pc.setType(category.getType());
-                    pc.setShared(category.isShared());
                     pc.setAutoUpdate(category.isAutoUpdate());
 
                     if (category.getQueryName() != null)

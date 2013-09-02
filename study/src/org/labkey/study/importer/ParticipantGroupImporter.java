@@ -104,7 +104,10 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     pc.setContainer(ctx.getContainer().getId());
                     pc.setLabel(category.getLabel());
                     pc.setType(category.getType());
-                    pc.setShared(category.getShared());
+
+                   if (category.getOwnerId() != null)
+                        pc.setOwnerId(category.getOwnerId().intValue());
+
                     pc.setAutoUpdate(category.getAutoUpdate());
 
                     pc.setSchemaName(category.getSchemaName());

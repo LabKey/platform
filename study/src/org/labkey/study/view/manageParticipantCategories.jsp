@@ -176,7 +176,7 @@
             model : 'ParticipantGroup',
             proxy: {
                 type: 'ajax',
-                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
+                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {distinctCategories : false}),
                 extraParams : {
                     type : 'participantGroup',
                     includeParticipantIds: true,

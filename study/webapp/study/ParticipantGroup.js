@@ -93,18 +93,18 @@ Ext4.define('Study.window.ParticipantGroup', {
         Ext4.define('categoryModel', {
             extend : 'Ext.data.Model',
             fields : [
-                {name : 'Label', type : 'string'},
-                {name : 'Type', type : 'string'},
-                {name : 'RowId', type : 'int'}
+                {name : 'label', type : 'string'},
+                {name : 'type',  type : 'string'},
+                {name : 'rowId', type : 'int'}
             ]
         });
 
         var categoryStore = Ext4.create('Ext.data.Store', {
             model : 'categoryModel',
-            sorters : {property : 'Label', direction : 'ASC'},
+            sorters : {property : 'label', direction : 'ASC'},
             listeners:{
                 load: function(me){
-                    if(this.category && me.findExact('RowId', this.category.rowId) > -1){
+                    if(this.category && me.findExact('rowId', this.category.rowId) > -1){
                         categoryCombo.setValue(this.category.rowId);
                     }
                 },
@@ -112,21 +112,28 @@ Ext4.define('Study.window.ParticipantGroup', {
             }
         });
 
-        LABKEY.Query.selectRows({
-            schemaName : 'study',
-            queryName : this.panelConfig.subject.nounSingular.replace(/\s/g, '') + 'Category',
-            success : function(details){
-                var manualCategories = [];
-                for(var i = 0; i < details.rows.length; i++){
-                    if(details.rows[i].Type === "manual"){
-                        manualCategories.push(details.rows[i]);
+        Ext4.Ajax.request({
+            url : (LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories.api")),
+            method : 'GET',
+            success : function(resp){
+                var o = Ext4.decode(resp.responseText);
+
+                if (o.success && o.categories.length)
+                {
+                    var manualCategories = [];
+                    for (var i=0; i < o.categories.length; i++)
+                    {
+                        if (o.categories[i].type === "manual")
+                            manualCategories.push(o.categories[i]);
                     }
+                    categoryStore.loadData(manualCategories);
+                    categoryStore.fireEvent('load', categoryStore);
                 }
-                categoryStore.loadData(manualCategories);
-                categoryStore.fireEvent('load', categoryStore);
+            },
+            failure : function(response, options){
+                LABKEY.Utils.displayAjaxErrorResponse(response, options, false);
             },
             scope : this
-
         });
 
         var defaultWidth = 880;
@@ -147,15 +154,15 @@ Ext4.define('Study.window.ParticipantGroup', {
             grow : true,
 //            height : 50,
             maxWidth: defaultWidth,
-            valueField : 'RowId',
-            displayField : 'Label',
-            listConfig: { itemTpl: "{Label:htmlEncode}" },
+            valueField : 'rowId',
+            displayField : 'label',
+            listConfig: { itemTpl: "{label:htmlEncode}" },
             triggerAction : 'all',
             listeners : {
                 scope:this,
                 change : function(combo, newValue, oldValue){
                     var shared = false;
-                    var index = categoryStore.findExact('RowId', newValue);
+                    var index = categoryStore.findExact('rowId', newValue);
                     if (index > -1) {
                         shared = categoryStore.getAt(index).data.shared;
                     }
@@ -266,8 +273,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryCombo = this.queryById('participantCategory'),
             categoryStore = categoryCombo.getStore();
 
-        if(categoryStore.findExact('Label', categoryCombo.getRawValue()) > -1){
-            categoryCombo.select(categoryStore.findRecord('Label', categoryCombo.getRawValue()));
+        if(categoryStore.findExact('label', categoryCombo.getRawValue()) > -1){
+            categoryCombo.select(categoryStore.findRecord('label', categoryCombo.getRawValue()));
         }
         if(!label){
             Ext4.Msg.alert("Error", this.subject.nounSingular + " Group Label Required");
@@ -321,7 +328,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         if (Ext4.isNumber(categoryValue)) {
             categoryId = categoryValue;
-            categoryLabel = categoryStore.getAt(categoryStore.findExact("RowId", categoryId)).data.label;
+            categoryLabel = categoryStore.getAt(categoryStore.findExact("rowId", categoryId)).data.label;
             categoryType = 'manual';
         }
         else {
@@ -349,9 +356,12 @@ Ext4.define('Study.window.ParticipantGroup', {
             label : fieldValues["groupLabel"],
             participantIds : ptids,
             categoryLabel : categoryLabel,
-            categoryType : categoryType,
-            categoryShared : Ext4.getCmp('sharedBox').getValue()
+            categoryType : categoryType
+            //categoryShared : Ext4.getCmp('sharedBox').getValue()
         };
+
+        if (!Ext4.getCmp('sharedBox').getValue())
+            groupData['categoryOwnerId'] = LABKEY.user.id;
 
         if (categoryId !== null && categoryId != undefined) {
             groupData.categoryId = categoryId;

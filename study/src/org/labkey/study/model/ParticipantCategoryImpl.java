@@ -39,7 +39,7 @@ import org.labkey.api.view.ViewContext;
 public class ParticipantCategoryImpl extends Entity implements ParticipantCategory
 {
     private int _rowId;
-    private boolean _shared;
+    private int _ownerId = OWNER_SHARED;
     private String _label;
     private String _type;
     private boolean _autoUpdate;
@@ -54,6 +54,15 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
     private String _groupProperty;
 
     private ParticipantGroup[] _groups = new ParticipantGroup[0];
+
+    public ParticipantCategoryImpl()
+    {
+    }
+
+    public ParticipantCategoryImpl(ParticipantCategoryImpl cat)
+    {
+        this.copy(cat);
+    }
 
     public boolean isNew()
     {
@@ -115,12 +124,17 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
 
     public boolean isShared()
     {
-        return _shared;
+        return _ownerId == OWNER_SHARED;
     }
 
-    public void setShared(boolean shared)
+    public int getOwnerId()
     {
-        _shared = shared;
+        return _ownerId;
+    }
+
+    public void setOwnerId(int owner)
+    {
+        _ownerId = owner;
     }
 
     public String getLabel()
@@ -241,14 +255,12 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
     {
         if (json.has("rowId"))
             setRowId(json.getInt("rowId"));
-        if (json.has("shared"))
-            setShared(json.getBoolean("shared"));
+        if (json.has("ownerId"))
+            setOwnerId(json.getInt("ownerId"));
         if (json.has("label"))
             setLabel(json.getString("label"));
         if (json.has("type"))
             setType(json.getString("type"));
-        if (json.has("autoUpdate"))
-            setShared(json.getBoolean("autoUpdate"));
 
         if (json.has("queryName"))
             setLabel(json.getString("queryName"));
@@ -283,6 +295,22 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
             setCreated(copy.getCreated());
         if (getContainerId() == null)
             setContainer(copy.getContainerId());
+    }
+
+    public void copy(ParticipantCategoryImpl copy)
+    {
+        copySpecialFields(copy);
+
+        _rowId = copy._rowId;
+        _ownerId = copy._ownerId;
+        _label = copy._label;
+        _type = copy._type;
+        _autoUpdate = copy._autoUpdate;
+        _queryName = copy._queryName;
+        _schemaName = copy._schemaName;
+        _viewName = copy._viewName;
+        _datasetId = copy._datasetId;
+        _groupProperty = copy._groupProperty;
     }
 
     @Override

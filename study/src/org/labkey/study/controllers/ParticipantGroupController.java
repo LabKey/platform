@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -519,12 +520,12 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         else
                         {
-                            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
+                            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), form.isDistinctCategories()))
                                 addCategory(form, category, groups);
                         }
                         break;
                     case participantCategory:
-                        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
+                        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), form.isDistinctCategories()))
                         {
                             // omit orphaned categories
                             if (category.getGroups().length > 0)
@@ -692,6 +693,7 @@ public class ParticipantGroupController extends BaseStudyController
         private boolean _includeParticipantIds = false;
         private boolean _includePrivateGroups = true;
         private boolean _includeUnassigned = true;
+        private boolean _distinctCategories = true;
         private int _categoryId = -1;
 
         public boolean isIncludePrivateGroups()
@@ -742,6 +744,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setIncludeUnassigned(boolean includeUnassigned)
         {
             _includeUnassigned = includeUnassigned;
+        }
+
+        public boolean isDistinctCategories()
+        {
+            return _distinctCategories;
+        }
+
+        public void setDistinctCategories(boolean distinctCategories)
+        {
+            _distinctCategories = distinctCategories;
         }
     }
 
@@ -929,88 +941,77 @@ public class ParticipantGroupController extends BaseStudyController
             if (!form.isNew())
                 form.copySpecialFields(_prevGroup);
 
-            if (form.getCategoryId() == 0)
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                if (form.getCategoryType().equals("list"))
+                if (form.getCategoryId() == 0)
                 {
-                    // No category selected, create new category with type 'list'.
-                    if (form.isNew())
+                    if (form.getCategoryType().equals("list"))
                     {
-                        category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification(), form.getParticipantIds(), form.getFilters(), form.getDescription());
-                        group = category.getGroups()[0];
+                        // No category selected, create new category with type 'list'.
+                        if (form.isNew())
+                        {
+                            category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification(), form.getParticipantIds(), form.getFilters(), form.getDescription());
+                            group = category.getGroups()[0];
+                        }
+                        else
+                        {
+                            category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                            form.setCategoryId(category.getRowId());
+                            group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+                        }
                     }
                     else
                     {
-                        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-                        scope.ensureTransaction();
+                        // New category specified. Create category with type 'manual' and create new participant group.
+                        Integer oldCategoryId = null;
+                        if (!form.isNew())
+                        {
+                            oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
+                        }
 
                         category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
                         form.setCategoryId(category.getRowId());
                         group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
 
-                        scope.commitTransaction();
+                        if (oldCategoryId != null)
+                        {
+                            oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
+                            if (oldCategory != null && oldCategory.getType().equals("list") && !category.getType().equals("list"))
+                            {
+                                ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    // New category specified. Create category with type 'manual' and create new participant group.
-                    DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-                    scope.ensureTransaction();
                     Integer oldCategoryId = null;
                     if (!form.isNew())
                     {
                         oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
                     }
 
-                    category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
-                    form.setCategoryId(category.getRowId());
                     group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+                    category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+
+                    if(form.getCategoryOwnerId() != category.getOwnerId())
+                    {
+                        category.setOwnerId(form.getCategoryOwnerId());
+                        ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
+                    }
 
                     if (oldCategoryId != null)
                     {
                         oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
-                        if (oldCategory != null && oldCategory.getType().equals("list") && !category.getType().equals("list"))
+                        if (oldCategory.getType().equals("list") && !category.getType().equals("list"))
                         {
                             ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
                         }
                     }
-
-                    scope.commitTransaction();
                 }
+                transaction.commit();
             }
-            else
-            {
-                DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-                scope.ensureTransaction();
-                Integer oldCategoryId = null;
-                if (!form.isNew())
-                {
-                    oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
-                }
-
-                group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
-                category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
-
-                if(form.getCategoryShared() != category.isShared()){
-                    category.setShared(form.getCategoryShared());
-                    ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
-                }
-
-                if (oldCategoryId != null)
-                {
-                    oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
-                    if (oldCategory.getType().equals("list") && !category.getType().equals("list"))
-                    {
-                        ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
-                    }
-                }
-                
-                scope.commitTransaction();
-            }
-            
             resp.put("success", true);
             resp.put("group", group.toJSON());
             resp.put("category", category.toJSON());
@@ -1092,16 +1093,16 @@ public class ParticipantGroupController extends BaseStudyController
         private int _categoryId;
         private String _categoryLabel;
         private String _categoryType;
-        private boolean _categoryShared;
+        private int _categoryOwnerId = ParticipantCategory.OWNER_SHARED;
 
-        public boolean getCategoryShared()
+        public int getCategoryOwnerId()
         {
-            return _categoryShared;
+            return _categoryOwnerId;
         }
 
-        public void setCategoryShared(boolean shared)
+        public void setCategoryOwnerId(int categoryOwner)
         {
-            _categoryShared = shared;
+            _categoryOwnerId = categoryOwner;
         }
 
         public String getCategoryType()
@@ -1179,7 +1180,7 @@ public class ParticipantGroupController extends BaseStudyController
                 category.setLabel(getCategoryLabel());
             }
             category.setType(getCategoryType());
-            category.setShared(getCategoryShared());
+            category.setOwnerId(getCategoryOwnerId());
             category.setDescription(getDescription());
             category.setContainerId(getContainerId());
 

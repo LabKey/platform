@@ -1920,7 +1920,7 @@
         <ns:column columnName="Container"/>
         <ns:column columnName="Label"/>
         <ns:column columnName="Type"/>
-        <ns:column columnName="Shared"/>
+        <ns:column columnName="OwnerId"/>
         <ns:column columnName="AutoUpdate"/>
         <ns:column columnName="SchemaName"/>
         <ns:column columnName="QueryName"/>

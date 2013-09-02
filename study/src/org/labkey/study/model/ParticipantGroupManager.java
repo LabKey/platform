@@ -118,10 +118,11 @@ public class ParticipantGroupManager
         return def;
     }
 
-    public boolean categoryExists(Container c, String label)
+    public boolean categoryExists(Container c, User user, String label, boolean shared)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Label"), label);
-        filter.addCondition(FieldKey.fromString("Container"), c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromString("Label"), label);
+        filter.addCondition(FieldKey.fromString("OwnerId"), shared ? ParticipantCategory.OWNER_SHARED : user.getUserId());
 
         TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), filter, null);
         return selector.exists();
@@ -173,7 +174,7 @@ public class ParticipantGroupManager
             colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
         }
 
-        ParticipantCategoryImpl[] allCategories = _getParticipantCategories(container, context.getUser());
+        ParticipantCategoryImpl[] allCategories = getParticipantCategories(container, context.getUser());
         for (ParticipantCategoryImpl category : allCategories)
         {
             ParticipantGroup[] allGroups = getParticipantGroups(container, context.getUser(), category);
@@ -199,7 +200,7 @@ public class ParticipantGroupManager
             StudyImpl study = StudyManager.getInstance().getStudy(container);
             MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
-            ParticipantCategoryImpl[] classes = _getParticipantCategories(container, context.getUser());
+            ParticipantCategoryImpl[] classes = getParticipantCategories(container, context.getUser());
 
             // TODO: Move all cohort menu generation into CohortFilterFactory
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
@@ -428,9 +429,37 @@ public class ParticipantGroupManager
         return sb.toString();
     }
 
+    /**
+     * Returns the list participant categories that the specified user is allowed to see
+     *
+     * @param distinctCategories if true returns the unique (by label) set of categories. A private category will
+     *                           supercede a public category.
+     */
+    public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user, boolean distinctCategories)
+    {
+        if (distinctCategories)
+        {
+            Map<String, ParticipantCategoryImpl> categoryMap = new HashMap<>();
+            for (ParticipantCategoryImpl category : _getParticipantCategories(c, user))
+            {
+                if (categoryMap.containsKey(category.getLabel()))
+                {
+                    if (!category.isShared())
+                        categoryMap.put(category.getLabel(), category);
+                }
+                else
+                    categoryMap.put(category.getLabel(), category);
+            }
+            return categoryMap.values().toArray(new ParticipantCategoryImpl[categoryMap.size()]);
+
+        }
+        else
+            return _getParticipantCategories(c, user);
+    }
+
     public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user)
     {
-        return _getParticipantCategories(c, user);
+        return getParticipantCategories(c, user, true);
     }
 
     private ParticipantCategoryImpl[] _getParticipantCategories(Container c, User user)
@@ -447,10 +476,12 @@ public class ParticipantGroupManager
         });
 
         List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
-        for (ParticipantCategoryImpl pc : categories)
+        for (ParticipantCategoryImpl category : categories)
         {
-            if (pc.canRead(user))
+            if (category.canRead(user))
             {
+                ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
+
                 pc.setGroups(getParticipantGroups(c, user, pc));
                 filtered.add(pc);
             }
@@ -465,26 +496,13 @@ public class ParticipantGroupManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try {
-            scope.ensureTransaction();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             ParticipantCategoryImpl ret;
             boolean isUpdate = !def.isNew();
             List<Throwable> errors;
 
-            if (!def.canEdit(c, user))
-                throw new ValidationException("You don't have permission to create or edit this participant category");
-            
-            if (def.isNew())
-            {
-                ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
-                if (!previous.isNew())
-                    throw new ValidationException("There is already a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
-                ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
-            }
-            else
-            {
-                ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
-            }
+            ret = _saveParticipantCategory(c, user, def);
 
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
@@ -499,7 +517,7 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: manual cannot be created using this API, you must use " +
                             "the API to create categories and groups separately.");
             }
-            scope.commitTransaction();
+            transaction.commit();
             CATEGORY_CACHE.remove(c);
 
             if (def.isNew())
@@ -521,36 +539,18 @@ public class ParticipantGroupManager
         {
             throw new RuntimeSQLException(x);
         }
-        finally
-        {
-            scope.closeConnection();
-        }
     }
 
     public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             ParticipantCategoryImpl ret;
             List<Throwable> errors;
 
-            if (!def.canEdit(c, user))
-                throw new ValidationException("You don't have permission to create or edit this participant category");
-
-            if (def.isNew())
-            {
-                ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
-                if (!previous.isNew())
-                    throw new ValidationException("There is already a category named: " + def.getLabel() + " within this study. Please choose a unique category name.");
-                ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
-            }
-            else
-            {
-                ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
-            }
+            ret = _saveParticipantCategory(c, user, def);
 
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
@@ -559,8 +559,7 @@ public class ParticipantGroupManager
                 case cohort:
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
-
-            scope.commitTransaction();
+            transaction.commit();
             CATEGORY_CACHE.remove(c);
 
             if (def.isNew())
@@ -582,10 +581,24 @@ public class ParticipantGroupManager
         {
             throw new RuntimeSQLException(x);
         }
-        finally
-        {
-            scope.closeConnection();
-        }
+    }
+
+    private ParticipantCategoryImpl _saveParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws SQLException, ValidationException
+    {
+        ParticipantCategoryImpl ret;
+
+        if (!def.canEdit(c, user))
+            throw new ValidationException("You don't have permission to create or edit this participant category");
+
+        if (categoryExists(c, user, def.getLabel(), def.isShared()))
+            throw new ValidationException("There is already a category named: " + def.getLabel() + " within this folder. Please choose a unique category name.");
+
+        if (def.isNew())
+            ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
+        else
+            ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
+
+        return ret;
     }
 
     private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group) throws ValidationException
@@ -800,7 +813,7 @@ public class ParticipantGroupManager
 
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
     {
-        for (ParticipantCategoryImpl category : getParticipantCategories(c, user))
+        for (ParticipantCategoryImpl category : getParticipantCategories(c, user, false))
         {
             if (category.getRowId() == rowId)
                 return category;
