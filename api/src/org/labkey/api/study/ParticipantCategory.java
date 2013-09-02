@@ -21,6 +21,8 @@ package org.labkey.api.study;
  */
 public interface ParticipantCategory
 {
+    public static int OWNER_SHARED = -1;
+
     public enum Type {
         manual,
         list,

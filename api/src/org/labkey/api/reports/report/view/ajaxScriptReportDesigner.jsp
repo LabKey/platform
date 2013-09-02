@@ -380,15 +380,28 @@ var f_scope<%=text(uid)%> = new (function() {
                 dataRegionName: dataTabRegionName,
                 removeableFilters: removeableFilters,
                 removeableSort: sort,
-                buttonBarPosition: 'none',
                 frame: 'none',
                 showDetailsColumn: false,
                 showUpdateColumn: false,
                 showRecordSelectors: false,
+                showPagination     : true,
                 renderTo: dataDivExtElement,
                 maskEl: tabsDivExtElement,
                 success: dataSuccess,
-                failure: dataFailure
+                failure: dataFailure,
+                buttonBar   : {
+                    includeStandardButton: false,
+                    items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.pageSize]
+                },
+                listeners : {
+                    render : function() {
+                        var dr = LABKEY.DataRegions[this.dataRegionName + '_report'];
+                        if (dr) {
+                            dr.disableHeaderLock();
+                        }
+                    },
+                    scope  : this
+                }
             });
         }
     }
