@@ -17,6 +17,10 @@ Ext4.define('Study.window.ParticipantGroup', {
             config.shared = config.category.shared;
         }
 
+        // issue 18500: alter the Define Ptid Group dialog for users that can't edit shared categories/groups
+        if (!config.canEdit)
+            config.hideDataRegion = true;
+
         Ext4.applyIf(config, {
             hideDataRegion : false,
             isAdmin : false,
@@ -30,7 +34,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         });
 
         Ext4.apply(config, {
-            title : 'Define ' + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
+            title : (config.canEdit ? 'Define ' : 'View ') + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
             layout : 'fit',
             autoScroll : true,
             modal : true,
@@ -78,9 +82,9 @@ Ext4.define('Study.window.ParticipantGroup', {
             valueField: 'Label',
             displayField: 'Label',
             fieldLabel: 'Select ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
+            grow: true,
             labelStyle: 'width: 150px;',
             labelSeparator : '',
-            disabled : !this.canEdit || this.hideDataRegion,
             hidden : this.hideDataRegion,
             listeners: {
                 select: this.onDemographicSelect,
@@ -152,7 +156,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
             labelAlign : 'top',
             grow : true,
-//            height : 50,
+            readOnly : !this.canEdit,
             maxWidth: defaultWidth,
             valueField : 'rowId',
             displayField : 'label',
@@ -185,6 +189,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     xtype : 'textfield',
                     name : 'groupLabel',
                     id : 'groupLabel',
+                    readOnly : !this.canEdit,
                     emptyText : Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
                     fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
                     labelAlign : 'top',
@@ -194,6 +199,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     xtype : 'textareafield',
                     name : 'participantIdentifiers',
                     id : 'participantIdentifiers',
+                    readOnly : !this.canEdit,
                     emptyText : 'Enter ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers Separated by Commas',
                     fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers',
                     labelAlign : 'top',
@@ -206,7 +212,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     id : 'sharedBox',
                     boxLabel : 'Share Category?',
                     checked : this.shared,
-                    disabled : !this.canEdit,
+                    readOnly : !this.canEdit,
                     listeners : {
                         scope : this,
                         afterrender : function(checkboxField){
@@ -224,11 +230,12 @@ Ext4.define('Study.window.ParticipantGroup', {
                     xtype : 'button',
                     text : "Save",
                     margin: '3 3 3 0',
+                    hidden : !this.canEdit,
                     handler : this.saveCategory
                 },
                 {
                     xtype : 'button',
-                    text : "Cancel",
+                    text : this.canEdit ? "Cancel" : "Close",
                     margin: 3,
                     handler : function(){this.fireEvent('closewindow');},
                     scope : this,
@@ -256,7 +263,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
         if(this.hideDataRegion){
-            this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight;});
+            this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight + 25;});
         }
     },
 

@@ -416,7 +416,7 @@ public class ParticipantGroupManager
         sb.append("                                 nounPlural:").append(PageFlowUtil.jsString(study.getSubjectNounPlural()));
         sb.append("                             },");
         sb.append("                             categoryParticipantIds: stringPtids,");
-        sb.append("                             canEdit: LABKEY.Security.currentUser.canUpdate,");
+        sb.append("                             canEdit: true,"); // all users, even Readers, are allowed to create private ptid groups
         sb.append("                             hideDataRegion:true,");
         sb.append("                             isAdmin:").append(isAdmin);
         sb.append("                     });");

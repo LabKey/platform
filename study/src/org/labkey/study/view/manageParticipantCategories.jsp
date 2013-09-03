@@ -223,15 +223,17 @@
 
         grid.on('itemclick', function(g, rec){
             var row = grid.getSelectionModel().getLastSelected();
+
             editButton.setDisabled(false);
-            if(row.get("canEdit"))   {
+            if (row.get("canEdit"))
                 editButton.setText("Edit Selected");
-            }
-            else editButton.setText("View Selected");
-            if(row.get("canDelete")) {
+            else
+                editButton.setText("View Selected");
+
+            if (row.get("canDelete"))
                 deleteButton.setDisabled(false);
-            }
-            else deleteButton.setDisabled(true);
+            else
+                deleteButton.setDisabled(true);
         }, this);
         grid.on('itemdblclick', function(g, idx, e){
             if (g.getSelectionModel().hasSelection()) {
