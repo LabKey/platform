@@ -46,6 +46,9 @@ public class GoToTaskButton extends SimpleButtonConfigFactory
 
     public boolean isAvailable(TableInfo ti)
     {
+        if (!super.isAvailable(ti))
+            return false;
+
         if (ti instanceof DataSetTable)
         {
             Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataSet().getPermissions(ti.getUserSchema().getUser());

@@ -51,6 +51,9 @@ public class CreateTaskFromIdsButton extends SimpleButtonConfigFactory
 
     public boolean isAvailable(TableInfo ti)
     {
+        if (!super.isAvailable(ti))
+            return false;
+
         Container c = ti.getUserSchema().getContainer();
         User u = ti.getUserSchema().getUser();
 
