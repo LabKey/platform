@@ -2972,7 +2972,7 @@ public class QueryController extends SpringActionController
             if (!table.hasPermission(user, commandType.getPermission()))
                 throw new UnauthorizedException();
 
-            if (table.getPkColumns().size() == 0)
+            if (commandType != CommandType.insert && table.getPkColumns().size() == 0)
                 throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." +
                         table.getPublicName() + "' cannot be updated because it has no primary key defined!");
 
