@@ -722,6 +722,8 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
 
         Ext4.applyIf(config, {
             width         : 250,
+            minWidth      : 250,
+            minHeight     : 150,
             maxHeight     : 500,
             collapsible   : true,
             collapsed     : true,

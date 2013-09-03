@@ -535,7 +535,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 fbar        : [{
                     xtype: 'button',
                     text:'Choose Measures',
-                    handler: this.onShowMeasures,
+                    handler: function () {
+                        this.onShowMeasures();
+                    },
                     scope: this
                 }]
             });
@@ -642,7 +644,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                                 panel.setDisabled(true);
                             }
                             if (this.shrinkWrap) {
-                                // hack to set the initial nortpanel width to match the center panel's
+                                // hack to set the initial northpanel width to match the center panel's
                                 this.northPanel.setWidth(panel.getWidth());
                                 if (this.customMode)
                                     this.northPanel.show();
@@ -930,11 +932,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     filterType: selection.length && selection[0].type == 'participant' ? 'participant' : 'group',
                     subjectNoun: this.subjectNoun,
                     displayMode: 'BOTH',
+                    normalWrap: true,
                     listeners : {
                         selectionchange : function(){
                             this.filterTask.delay(1500);
                             if (this.allowCustomize)
                                 this.markDirty(true);
+                        },
+                        beginInitSelection : function() {
+                            var panelHeight = this.filterPanel.getHeight();
+                            if (panelHeight > this.filterWindow.getHeight())
+                                this.filterWindow.setHeight(panelHeight > this.filterWindow.maxHeight ? this.filterWindow.maxHeight : panelHeight);
                         },
                         scope : this
                     }
@@ -1339,7 +1347,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     onSaveAs : function() {
-        Ext4.create('Ext.window.Window', {
+        var saveAsWindow = Ext4.create('Ext.window.Window', {
             width  : 500,
             height : 300,
             autoShow: true,

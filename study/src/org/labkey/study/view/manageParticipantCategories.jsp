@@ -191,7 +191,14 @@
                 { property: 'category', direction: 'ASC' },
                 { property: 'label', direction: 'ASC' }
             ],
-            autoLoad: true
+            autoLoad: true,
+            listeners: {
+                load: function ()
+                {
+                    // clear selection on load of the grid store
+                    grid.getSelectionModel().deselectAll();
+                }
+            }
         });
 
         var categoryRenderer = function(value){
