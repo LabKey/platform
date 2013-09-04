@@ -1017,11 +1017,21 @@ public class StudyManager
                     StudyManager.dataSetModified(def, user, true);
             }
 
-            Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
-                    "WHERE Container = ? and VisitRowId = ?", study.getContainer().getId(), visit.getRowId());
+            // Delete samples first because we may need ParticipantVisit to figure out which samples
+            SampleManager.getInstance().deleteSamplesForVisit(visit);
 
-            Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
-                    "WHERE Container=? AND VisitRowId=?", study.getContainer().getId(), visit.getRowId());
+            SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
+                    "WHERE Container = ? and VisitRowId = ?");
+            sqlFragParticipantVisit.add(study.getContainer().getId());
+            sqlFragParticipantVisit.add(visit.getRowId());
+            new SqlExecutor(schema.getSchema()).execute(sqlFragParticipantVisit);
+
+            SQLFragment sqlFragVisitMap = new SQLFragment("DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
+                    "WHERE Container=? AND VisitRowId=?");
+            sqlFragVisitMap.add(study.getContainer().getId());
+            sqlFragVisitMap.add(visit.getRowId());
+            new SqlExecutor(schema.getSchema()).execute(sqlFragVisitMap);
+
             // UNDONE broken _visitHelper.delete(visit);
             try
             {
@@ -1032,8 +1042,6 @@ public class StudyManager
                 /* ignore */
             }
             _visitHelper.clearCache(visit);
-
-            SampleManager.getInstance().deleteSamplesForVisit(visit);
 
             schema.getSchema().getScope().commitTransaction();
 

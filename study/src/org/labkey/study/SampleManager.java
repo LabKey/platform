@@ -44,6 +44,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -1766,29 +1767,26 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public int getSampleCountForVisit(VisitImpl visit) throws SQLException
     {
+        TableInfo tinfoSpec = StudySchema.getInstance().getTableInfoSpecimen();
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS NumVials FROM " +
                 StudySchema.getInstance().getTableInfoVial() +
                 " AS Vial\n" +
                 "LEFT OUTER JOIN " +
-                StudySchema.getInstance().getTableInfoSpecimen() +
-                " AS Specimen ON\n" +
-                "\tVial.SpecimenId = Specimen.RowId\n" +
-                " WHERE Specimen.VisitValue >= ? AND Specimen.VisitValue <= ? AND Specimen.Container = ?");
-        sql.add(visit.getSequenceNumMin());
-        sql.add(visit.getSequenceNumMax());
-        sql.add(visit.getContainer());
-        return Table.executeSingleton(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
+                tinfoSpec +
+                " ON\n" +
+                "\tVial.SpecimenId = " + tinfoSpec + ".RowId\n" +
+                " WHERE ").append(getVisitRangeSql(visit));
+        List<Integer> results = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Integer.class);
+        if (1 != results.size())
+            throw new IllegalStateException("Expected value from Select Count(*)");
+        return results.get(0);
     }
 
 
     public void deleteSamplesForVisit(VisitImpl visit)
     {
         TableInfo tinfoSpec = StudySchema.getInstance().getTableInfoSpecimen();
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tinfoSpec + " WHERE " + tinfoSpec +
-                ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
-        specimenRowIdSelectSql.add(visit.getSequenceNumMin());
-        specimenRowIdSelectSql.add(visit.getSequenceNumMax());
-        specimenRowIdSelectSql.add(visit.getContainer());
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tinfoSpec + " WHERE ").append(getVisitRangeSql(visit));
 
         SQLFragment deleteEventSql = new SQLFragment("DELETE FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenEvent() +
@@ -1830,6 +1828,40 @@ public class SampleManager implements ContainerManager.ContainerListener
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteSpecimenSql);
 
         clearCaches(visit.getContainer());
+    }
+
+    private SQLFragment getVisitRangeSql(VisitImpl visit)
+    {
+        SQLFragment sql = new SQLFragment();
+        TableInfo tinfoSpec = StudySchema.getInstance().getTableInfoSpecimen();
+        Study study = StudyService.get().getStudy(visit.getContainer());
+        if (null == study)
+            throw new IllegalStateException("No study found.");
+
+        if (TimepointType.VISIT == study.getTimepointType())
+        {
+            sql.append(tinfoSpec + ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
+            sql.add(visit.getSequenceNumMin());
+            sql.add(visit.getSequenceNumMax());
+            sql.add(visit.getContainer());
+        }
+        else
+        {
+            // For date-based we need to get the range from ParticipantVisit
+            ColumnInfo columnInfo = StudySchema.getInstance().getTableInfoParticipantVisit().getColumn("SequenceNum");
+            Filter filter = new SimpleFilter(FieldKey.fromString("VisitRowId"), visit.getRowId());
+            Sort sort = new Sort();
+            sort.insertSortColumn(FieldKey.fromString("SequenceNum"), Sort.SortDirection.ASC);
+            ArrayList<Double> visitValues = new TableSelector(columnInfo, filter, sort).getArrayList(Double.class);
+            if (0 == visitValues.size())
+                throw new IllegalStateException("Expected values from Select");
+
+            sql.append(tinfoSpec + ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
+            sql.add(visitValues.get(0));
+            sql.add(visitValues.get(visitValues.size() - 1));
+            sql.add(visit.getContainer());
+        }
+        return sql;
     }
 
     public void deleteSpecimen(@NotNull Specimen specimen) throws SQLException
