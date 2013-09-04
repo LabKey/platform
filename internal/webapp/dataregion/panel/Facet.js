@@ -56,7 +56,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.SUBJECT_PREFIX = studyCtx.subject.columnName + '/';
         this.COHORT_PREFIX  = studyCtx.subject.columnName + '/Cohort/Label';
 
-        this.filterTask = new Ext4.util.DelayedTask(this._filterTask, this);
         this.resizeTask = new Ext4.util.DelayedTask(this._resizeTask, this);
 
         this.callParent([config]);
@@ -197,6 +196,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 afterrender : this.onFilterRender,
                 selectionchange : this.onFilterChange,
                 beforeInitGroupConfig : this.applyFilters,
+                buffer : 1000,
                 scope : this
             },
 
@@ -233,9 +233,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this._beforeShow();
     },
 
-    // DO NOT CALL DIRECTLY. Use filterTask.delay
-    _filterTask : function() {
-
+    onFilterChange : function() {
         // Current all being selected === none being selected
         var filters = this.filterPanel.getSelection(true, true),
             filterMap = {},
@@ -262,10 +260,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
 
         this.onResolveFilter(filterMap);
-    },
-
-    onFilterChange : function() {
-        this.filterTask.delay(350);
     },
 
     onFilterRender : function(panel) {
