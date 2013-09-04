@@ -1114,7 +1114,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 //Don't mark dirty if the user can't edit the report or if this is the view mode, that's just mean.
                 if (this.canEdit && this.editMode)
                 {
-                    console.log("marking dirty in renderLineChart");
                     this.markDirty(true);
                 }
             }

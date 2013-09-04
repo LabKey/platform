@@ -934,15 +934,18 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     displayMode: 'BOTH',
                     normalWrap: true,
                     listeners : {
-                        selectionchange : function(){
+                        selectionchange: function (){
                             this.filterTask.delay(1500);
                             if (this.allowCustomize)
                                 this.markDirty(true);
                         },
-                        beginInitSelection : function() {
+                        beginInitSelection: function () {
                             var panelHeight = this.filterPanel.getHeight();
                             if (panelHeight > this.filterWindow.getHeight())
                                 this.filterWindow.setHeight(panelHeight > this.filterWindow.maxHeight ? this.filterWindow.maxHeight : panelHeight);
+                        },
+                        initSelectionComplete: function () {
+                            this.filterWindow.addCls('initSelectionComplete'); // for ParticipantReportTest
                         },
                         scope : this
                     }

@@ -149,10 +149,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             });
         }
 
-        // sort the selected groups array to match the selection list order
+        // sort the selected groups array to match the selection list order (cohort before ptid groups)
         function compareGroups(a, b) {
-            if (a.id < b.id) {return -1}
-            if (a.id > b.id) {return 1}
+            if (a.type == 'cohort' && b.type == 'participantGroup') { return -1; }
+            if (a.type == 'participantGroup' && b.type == 'cohort') { return 1; }
+            if (a.id < b.id) { return -1; }
+            if (a.id > b.id) { return 1; }
             return 0;
         }
         groups.sort(compareGroups);
