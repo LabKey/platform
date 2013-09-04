@@ -38,6 +38,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -478,7 +480,7 @@ public class ParticipantGroupManager
         List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
         for (ParticipantCategoryImpl category : categories)
         {
-            if (category.canRead(user))
+            if (category.canRead(c, user))
             {
                 ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
 
@@ -586,9 +588,10 @@ public class ParticipantGroupManager
     private ParticipantCategoryImpl _saveParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws SQLException, ValidationException
     {
         ParticipantCategoryImpl ret;
+        List<ValidationError> errors = new ArrayList<>();
 
-        if (!def.canEdit(c, user))
-            throw new ValidationException("You don't have permission to create or edit this participant category");
+        if (!def.canEdit(c, user, errors))
+            throw new ValidationException(errors);
 
         if (categoryExists(c, user, def.getLabel(), def.isShared()))
             throw new ValidationException("There is already a category named: " + def.getLabel() + " within this folder. Please choose a unique category name.");
@@ -601,13 +604,25 @@ public class ParticipantGroupManager
         return ret;
     }
 
-    private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group) throws ValidationException
+    private ParticipantGroup _setParticipantGroup(Container c, User user, ParticipantGroup group, boolean verifyCategory) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
+            if (verifyCategory)
+            {
+                ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
+
+                if (cat == null)
+                    throw new ValidationException("The specified category was not found.");
+
+                if (cat.isShared())
+                {
+                    if (!c.hasPermission(user, SharedParticipantGroupPermission.class) && !c.hasPermission(user, AdminPermission.class))
+                        throw new ValidationException("You must be in the Editor role or an Admin to assign a group to a shared participant category");
+                }
+            }
 
             ParticipantGroup ret;
             if (group.isNew())
@@ -633,33 +648,17 @@ public class ParticipantGroupManager
             }
             GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
 
-            scope.commitTransaction();
+            transaction.commit();
             return ret;
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-        finally
-        {
-            scope.closeConnection();
-        }
     }
 
     public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
     {
-        ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
-
-        if (cat == null)
-        {
-            throw new ValidationException("The specified category was not found.");
-        }
-
-        if (!cat.canEdit(c, user))
-        {
-            throw new ValidationException("You don't have permission to create or edit participant groups in this category");
-        }
-
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         ParticipantGroup ret;
 
@@ -671,7 +670,7 @@ public class ParticipantGroupManager
                 ParticipantGroup savedGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
                 deleteGroupParticipants(c, user, savedGroup);
             }
-            ret = setParticipantGroup(user, group);
+            ret = _setParticipantGroup(c, user, group, true);
             scope.commitTransaction();
         }
         finally
@@ -695,8 +694,10 @@ public class ParticipantGroupManager
     private enum Modification {ADD, REMOVE}
     private ParticipantCategoryImpl modifyParticipantCategory(Container c, User user, ParticipantCategoryImpl def, String[] participants, Modification modification) throws ValidationException
     {
-        if (!def.canEdit(c, user))
-            throw new ValidationException("You don't have permission to edit this participant category");
+        List<ValidationError> validationErrors = new ArrayList<>();
+
+        if (!def.canEdit(c, user, validationErrors))
+            throw new ValidationException(validationErrors);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -991,7 +992,7 @@ public class ParticipantGroupManager
                 group.setFilters(filters);
                 group.setDescription(description);
 
-                group = setParticipantGroup(user, group);
+                group = _setParticipantGroup(c, user, group, false);
                 def.setGroups(new ParticipantGroup[]{group});
 
                 scope.commitTransaction();
@@ -1005,11 +1006,12 @@ public class ParticipantGroupManager
 
     public void deleteParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
+        List<ValidationError> validationErrors = new ArrayList<>();
         if (def.isNew())
             throw new ValidationException("Participant category has not been saved to the database yet");
 
-        if (!def.canDelete(c, user))
-            throw new ValidationException("You must either be an administrator, editor or the owner to delete a participant group");
+        if (!def.canDelete(c, user, validationErrors))
+            throw new ValidationException(validationErrors);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -1055,9 +1057,10 @@ public class ParticipantGroupManager
     public void deleteParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
     {
         ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
+        List<ValidationError> errors = new ArrayList<>();
 
-        if (!cat.canDelete(c, user))
-            throw new ValidationException("You must either be an administrator, editor or the owner to delete a participant group");
+        if (!cat.canDelete(c, user, errors))
+            throw new ValidationException(errors);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 

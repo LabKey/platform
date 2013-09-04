@@ -131,7 +131,8 @@
                 {name : 'participantIds',   type : 'string',    convert : function(v, record){return v.join(', ');}},
                 {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
                 {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
-                {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'}
+                {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'},
+                {name : 'categoryOwner',    type : 'string',    mapping : 'category.createdBy', convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}}
             ]
         });
 
@@ -211,13 +212,14 @@
             store: participantStore,
             id : 'participantCategoriesGrid',
             cls: 'participantCategoriesGrid',
-            width : 855,
+            width : 975,
             columns: [
-                {header:'Label',       dataIndex:'label',    width: 275, renderer: Ext4.htmlEncode},
-                {header:'Category',    dataIndex:'category', width: 275, renderer: categoryRenderer},
+                {header:'Label',       dataIndex:'label',    width: 270, renderer: Ext4.htmlEncode},
+                {header:'Category',    dataIndex:'category', width: 270, renderer: categoryRenderer},
                 {header:'Shared',      dataIndex:'shared'},
                 {header:'Created By',  dataIndex:'createdBy'},
-                {header:'Modified By', dataIndex:'modifiedBy'}
+                {header:'Modified By', dataIndex:'modifiedBy'},
+                {header:'Category Owner', dataIndex:'categoryOwner', flex : 1}
             ],
             dockedItems : [{
                 xtype: 'toolbar',
@@ -244,7 +246,7 @@
         }, this);
         grid.on('itemdblclick', function(g, idx, e){
             if (g.getSelectionModel().hasSelection()) {
-                editParticipantGroup(g.getSelectionModel().getLastSelected());
+                editParticipantGroup(g.getSelectionModel().getSelection()[0]);
             }
         });
 

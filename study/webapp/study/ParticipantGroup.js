@@ -99,7 +99,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             fields : [
                 {name : 'label', type : 'string'},
                 {name : 'type',  type : 'string'},
-                {name : 'rowId', type : 'int'}
+                {name : 'rowId', type : 'int'},
+                {name : 'shared',type : 'boolean'}
             ]
         });
 
@@ -169,6 +170,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     var index = categoryStore.findExact('rowId', newValue);
                     if (index > -1) {
                         shared = categoryStore.getAt(index).data.shared;
+                        Ext4.getCmp('sharedBox').setValue(shared);
                     }
                 }
             }

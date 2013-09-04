@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -935,7 +936,6 @@ public class ParticipantGroupController extends BaseStudyController
             form.setContainer(getContainer().getId());
 
             ParticipantCategoryImpl category;
-            ParticipantCategoryImpl oldCategory;
             ParticipantGroup group;
 
             if (!form.isNew())
@@ -944,6 +944,7 @@ public class ParticipantGroupController extends BaseStudyController
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
+                // this is a new category being created
                 if (form.getCategoryId() == 0)
                 {
                     if (form.getCategoryType().equals("list"))
@@ -966,49 +967,32 @@ public class ParticipantGroupController extends BaseStudyController
                         // New category specified. Create category with type 'manual' and create new participant group.
                         Integer oldCategoryId = null;
                         if (!form.isNew())
-                        {
                             oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
-                        }
 
                         category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
                         form.setCategoryId(category.getRowId());
                         group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
 
-                        if (oldCategoryId != null)
-                        {
-                            oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
-                            if (oldCategory != null && oldCategory.getType().equals("list") && !category.getType().equals("list"))
-                            {
-                                ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
-                            }
-                        }
+                        deleteImplicitCategory(oldCategoryId, category);
                     }
                 }
                 else
                 {
                     Integer oldCategoryId = null;
                     if (!form.isNew())
-                    {
                         oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
-                    }
 
                     group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
                     category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
 
+                    // if the category shared bit has changed, resave the category
                     if(form.getCategoryOwnerId() != category.getOwnerId())
                     {
                         category.setOwnerId(form.getCategoryOwnerId());
                         ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
                     }
 
-                    if (oldCategoryId != null)
-                    {
-                        oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
-                        if (oldCategory.getType().equals("list") && !category.getType().equals("list"))
-                        {
-                            ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
-                        }
-                    }
+                    deleteImplicitCategory(oldCategoryId, category);
                 }
                 transaction.commit();
             }
@@ -1017,6 +1001,26 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("category", category.toJSON());
 
             return resp;
+        }
+
+        /**
+         * Code to check whether an implicitly created category needs to be deleted so we don't accumulate orpaned list type
+         * categories.
+         *
+         * @param prevCategoryId
+         * @param current
+         * @throws ValidationException
+         */
+        private void deleteImplicitCategory(Integer prevCategoryId, ParticipantCategoryImpl current) throws ValidationException
+        {
+            if (prevCategoryId != null)
+            {
+                ParticipantCategoryImpl oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), prevCategoryId);
+                if (oldCategory.getType().equals("list") && !current.getType().equals("list"))
+                {
+                    ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
+                }
+            }
         }
     }
 

@@ -19,6 +19,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -26,6 +28,9 @@ import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: klum
@@ -334,9 +339,16 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
 
     public boolean canEdit(Container container, User user)
     {
+        return canEdit(container, user, new ArrayList<ValidationError>());
+    }
+
+    public boolean canEdit(Container container, User user, List<ValidationError> errors)
+    {
         if (isShared())
-            return container.hasPermission(user, SharedParticipantGroupPermission.class) || 
-                    container.hasPermission(user, AdminPermission.class);
+        {
+            if (!container.hasPermission(user, SharedParticipantGroupPermission.class) && !container.hasPermission(user, AdminPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Editor role or an Admin to create a shared participant category"));
+        }
         else
         {
             if (isNew())
@@ -344,17 +356,49 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
             else
             {
                 User owner = UserManager.getUser(getCreatedBy());
-                return (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+
+                if (!allowed)
+                    errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));
             }
         }
+        return errors.isEmpty();
     }
 
     public boolean canDelete(Container container, User user)
     {
-        return canEdit(container, user);
+        return canDelete(container, user, new ArrayList<ValidationError>());
     }
     
-    public boolean canRead(User user)
+    public boolean canDelete(Container container, User user, List<ValidationError> errors)
+    {
+        if (isShared())
+        {
+            if (!container.hasPermission(user, SharedParticipantGroupPermission.class) && !container.hasPermission(user, AdminPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Editor role or an Admin to delete a shared participant category"));
+        }
+        else
+        {
+            if (isNew())
+                return true;
+            else
+            {
+                User owner = UserManager.getUser(getCreatedBy());
+                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+
+                if (!allowed)
+                    errors.add(new SimpleValidationError("You must be the owner to delete this participant category"));
+            }
+        }
+        return errors.isEmpty();
+    }
+
+    public boolean canRead(Container c, User user)
+    {
+        return canRead(c, user, new ArrayList<ValidationError>());
+    }
+
+    public boolean canRead(Container c, User user, List<ValidationError> errors)
     {
         if (!isShared())
         {
@@ -366,7 +410,13 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
                 // before this bug was fixed. When admins have the ability to update and delete private groups we can
                 // make guest created groups visible again.
                 User owner = UserManager.getUser(getCreatedBy());
-                return (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+
+                if (!allowed)
+                {
+                    errors.add(new SimpleValidationError("You don't have permission to read this private participant category"));
+                    return false;
+                }
             }
         }
         return true;
