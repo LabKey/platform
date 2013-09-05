@@ -437,7 +437,7 @@ function renderFormPanel(data, editable){
     var getConfig = function(searchString){
         var fields = data.metaData.fields;
         for(var i = 0; i < fields.length; i++){
-            if(fields[i].caption == searchString)
+            if(fields[i].caption == searchString && !fields[i].lookup)
                 return LABKEY.ext.Ext4Helper.getFormEditorConfig(data.metaData.fields[i]);
         }
         return undefined;
@@ -543,6 +543,8 @@ function renderFormPanel(data, editable){
 
     studyPropertiesFormPanel = Ext4.create('Ext.form.Panel', {
         padding : 10,
+        border : false,
+        bodyStyle : 'background-color: transparent;',
         defaults : {labelWidth: 150, width: 500, height : 30, padding : '5px', disabled : !editableFormPanel},
         items: items,
         buttons : buttons,
