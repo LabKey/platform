@@ -65,7 +65,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
     @Override
     public String getName()
     {
-        return "Query events";
+        return "Query export events";
     }
 
     @Override

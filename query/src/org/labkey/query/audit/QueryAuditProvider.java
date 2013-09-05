@@ -84,13 +84,13 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getLabel()
     {
-        return "Query events";
+        return "Query export events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Query events";
+        return "Query export events";
     }
 
     @Override
