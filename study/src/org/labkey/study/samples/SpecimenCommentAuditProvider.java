@@ -160,6 +160,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                 Container container = ContainerManager.getForId(containerId.toString());
                                 if (container == null)
                                 {
+                                    out.write(globalUniqueId);
                                     return;
                                 }
 

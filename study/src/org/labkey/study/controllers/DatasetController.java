@@ -443,7 +443,12 @@ public class DatasetController extends BaseStudyController
                     {
                         ActionURL history = new ActionURL("audit", "begin", eventContainer);
                         history.addParameter("view","DatasetAuditEvent");
-                        history.addParameter("audit.Key1~eq", oldLsid);
+
+                        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
+                            history.addParameter("query.lsid~eq", oldLsid);
+                        else
+                            history.addParameter("audit.Key1~eq", oldLsid);
+
                         view.addView(new HtmlView(
                             "Key values were modified.  <a href=\"" + history + "\">[previous history]</a>"
                         ));

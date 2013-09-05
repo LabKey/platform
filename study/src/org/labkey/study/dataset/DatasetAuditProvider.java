@@ -63,7 +63,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
 
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
     public static final String COLUMN_NAME_HAS_DETAILS = "HasDetails";
-    public static final String COLUMN_NAME_UPLOAD_LOG = "UploadLog";
+    public static final String COLUMN_NAME_LSID = "Lsid";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -181,7 +181,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         if (event.getIntKey2() != null)
             bean.setHasDetails(event.getIntKey2() == 1);
 
-        bean.setUploadLog(event.getKey1());
+        bean.setLsid(event.getKey1());
 
         return (K)bean;
     }
@@ -208,7 +208,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
         legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_DATASET_ID);
         legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_HAS_DETAILS);
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_UPLOAD_LOG);
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_LSID);
         legacyNames.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.OLD_RECORD_PROP_NAME), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
         legacyNames.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.NEW_RECORD_PROP_NAME), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
         return legacyNames;
@@ -224,7 +224,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     {
         private int _datasetId;
         private boolean _hasDetails;
-        private String _uploadLog;
+        private String _lsid;
         private String _oldRecordMap;
         private String _newRecordMap;
 
@@ -258,14 +258,14 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             _hasDetails = hasDetails;
         }
 
-        public String getUploadLog()
+        public String getLsid()
         {
-            return _uploadLog;
+            return _lsid;
         }
 
-        public void setUploadLog(String uploadLog)
+        public void setLsid(String lsid)
         {
-            _uploadLog = uploadLog;
+            _lsid = lsid;
         }
 
         public String getOldRecordMap()
@@ -299,7 +299,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         static {
             _fields.add(createFieldSpec(COLUMN_NAME_DATASET_ID, JdbcType.INTEGER));
             _fields.add(createFieldSpec(COLUMN_NAME_HAS_DETAILS, JdbcType.BOOLEAN));
-            _fields.add(createFieldSpec(COLUMN_NAME_UPLOAD_LOG, JdbcType.VARCHAR));
+            _fields.add(createFieldSpec(COLUMN_NAME_LSID, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
             _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
         }
