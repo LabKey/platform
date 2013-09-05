@@ -64,6 +64,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -834,7 +835,7 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public void notify(ContainerUser context, String message)
     {
-        addAuditEvent(context, message);
+        addAuditEvent(new DefaultContainerUser(getContainer(), context.getUser()), message);
 
         //AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
 /*
