@@ -167,8 +167,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.viewPanel)
         {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
-                flex        : 1,
-                layout      : 'fit',
+                autoScroll  : true,
                 ui          : 'custom',
                 listeners   : {
                     activate  : this.viewPanelActivate,
@@ -1658,16 +1657,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return;
         }
 
-        newChartDiv = Ext4.create('Ext.container.Container', {
+        var newChartDiv = Ext4.create('Ext.container.Container', {
             border: 1,
-            autoEl: {tag: 'div'},
-            autoScroll: true
+            autoEl: {tag: 'div'}
         });
         this.viewPanel.add(newChartDiv);
 
         var GCH = LABKEY.vis.GenericChartHelper;
         var chartConfig = this.getChartConfig();
-        var customRenderType, chartType, geom, aes, scales, labels, layerConfig, plotConfig, newChartDiv, width, height;
+        var customRenderType, chartType, geom, aes, scales, labels, layerConfig, plotConfig, width, height;
 
         chartConfig.measures.x = this.measures.x;
         chartConfig.measures.y = this.measures.y;
@@ -1681,8 +1679,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         scales = GCH.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         geom = GCH.generateGeom(chartType, chartConfig.geomOptions);
         labels = this.configureLabels(forExport, chartConfig);
-        width = chartConfig.width ? chartConfig.width : !forExport ? newChartDiv.getWidth() : 1200;
-        height = chartConfig.height ? chartConfig.height : !forExport ? newChartDiv.getHeight() - 25 : 600;
+        width = chartConfig.width ? chartConfig.width : !forExport ? this.viewPanel.getWidth() : 1200;
+        height = chartConfig.height ? chartConfig.height : !forExport ? this.viewPanel.getHeight() - 25 : 600;
 
         if (customRenderType) {
             if (customRenderType.generateAes) {
@@ -1745,8 +1743,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.editMode){
                 // Update thumbnail
                 var thumbnail = this.renderPlot(true);
-                this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
-                this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+                if (thumbnail)
+                {
+                    this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
+                    this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+                    // destroy the temp chart element
+                    Ext4.getCmp(thumbnail).destroy();
+                }
             }
         } else{
             return newChartDiv.id;
