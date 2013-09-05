@@ -43,7 +43,7 @@ public class SampleSetAuditViewFactory extends SimpleAuditViewFactory
     @Override
     public String getName()
     {
-        return getEventType();
+        return "Sample Set events";
     }
 
     @Override

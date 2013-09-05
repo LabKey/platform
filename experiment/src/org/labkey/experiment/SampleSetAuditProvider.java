@@ -69,7 +69,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     @Override
     public String getLabel()
     {
-        return EVENT_TYPE;
+        return "Sample Set events";
     }
 
     @Override
