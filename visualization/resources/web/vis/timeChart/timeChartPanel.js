@@ -1654,7 +1654,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
-            height: chartHeight,
             style: chartStyle ? chartStyle : 'border: none;',
             autoEl: {tag: 'div'}
         });
@@ -1914,7 +1913,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             },
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
-            height: newChartDiv.getHeight() - 20, // -20 prevents vertical scrollbars in cases with one chart.
+            height: chartHeight - 20, // -20 prevents vertical scrollbars in cases with one chart.
             data: individualData ? individualData : aggregateData
         };
 
