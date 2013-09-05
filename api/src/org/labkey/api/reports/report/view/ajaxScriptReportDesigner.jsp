@@ -186,21 +186,6 @@ var f_scope<%=text(uid)%> = new (function() {
                         if (dr) {
                             dr.addMessage(inheritedWarningMsg, 'info');
                         }
-                        else {
-                            var el = Ext.get(Ext.query('table.labkey-proj > tbody'));
-                            if (el)
-                            {
-                                var firstRow = el.query('tr');
-                                if (firstRow)
-                                {
-                                    el.createChild({tag : 'tr',
-                                        children : [{tag : 'td', cls: 'labkey-dataregion-msg', html: 'test message'}]
-
-                                    }, firstRow);
-
-                                }
-                            }
-                        }
                     }
                 }
             },
