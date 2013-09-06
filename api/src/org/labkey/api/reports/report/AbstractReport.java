@@ -259,6 +259,9 @@ public abstract class AbstractReport implements Report
 
     public boolean canEdit(User user, Container container)
     {
+        if (getDescriptor().isModuleBased())
+            return false;
+
         return canEdit(user, container, new ArrayList<ValidationError>());
     }
 

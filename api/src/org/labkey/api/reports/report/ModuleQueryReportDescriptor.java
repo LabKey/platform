@@ -38,7 +38,7 @@ import java.util.Map;
  * Date: 8/21/12
  * Time: 11:16 AM
  */
-public class ModuleQueryReportDescriptor extends QueryReportDescriptor
+public class ModuleQueryReportDescriptor extends QueryReportDescriptor implements ModuleReportDescriptor
 {
     public static final String TYPE = "moduleQueryReportDescriptor";
     public static final String FILE_EXTENSION = ".xml";
@@ -183,16 +183,19 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor
         }
     }
 
+    @Override
     public Module getModule()
     {
         return _module;
     }
 
+    @Override
     public Path getReportPath()
     {
         return _reportPath;
     }
 
+    @Override
     public Resource getSourceFile()
     {
         return _sourceFile;

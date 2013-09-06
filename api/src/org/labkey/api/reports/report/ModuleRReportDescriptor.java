@@ -40,7 +40,7 @@ import java.util.Map;
 /**
  * Represents an R report defined within a module. This will lazy-load the report script.
  */
-public class ModuleRReportDescriptor extends RReportDescriptor
+public class ModuleRReportDescriptor extends RReportDescriptor implements ModuleReportDescriptor
 {
     public static final String TYPE = "moduleRReportDescriptor";
     public static final String FILE_EXTENSION = ".r";
@@ -199,16 +199,19 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         }
     }
 
+    @Override
     public Module getModule()
     {
         return _module;
     }
 
+    @Override
     public Path getReportPath()
     {
         return _reportPath;
     }
 
+    @Override
     public Resource getSourceFile()
     {
         return _sourceFile;

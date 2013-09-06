@@ -221,7 +221,8 @@ public class DataViewService
 
         o.put("visible", info.isVisible());
         o.put("shared", info.isShared());
-        
+        o.put("readOnly", info.isReadOnly());
+
         if (info.getAccess() != null)
             o.put("access", info.getAccess());
 

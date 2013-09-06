@@ -54,6 +54,7 @@ public interface DataViewInfo
 
     boolean isVisible();                // specifies whether this view is hidden
     boolean isShared();
+    boolean isReadOnly();
     @Nullable
     String getAccess();                 // string description whether this view is public/private (or other)
 

@@ -56,6 +56,7 @@ public class DefaultViewInfo implements DataViewInfo
     private ViewCategory _category;
     private boolean _visible = true;
     private boolean _shared = true;
+    private boolean _readOnly;
     private String _access;
     private boolean _allowCustomThumbnail = false;
 
@@ -230,6 +231,16 @@ public class DefaultViewInfo implements DataViewInfo
     public void setVisible(boolean visible)
     {
         _visible = visible;
+    }
+
+    public boolean isReadOnly()
+    {
+        return _readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly)
+    {
+        _readOnly = readOnly;
     }
 
     public void setTags(List<Pair<DomainProperty, Object>> tags)

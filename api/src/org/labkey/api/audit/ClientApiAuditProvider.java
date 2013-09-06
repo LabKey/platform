@@ -107,9 +107,13 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         bean.setSubType(event.getKey1());
         bean.setString1(event.getKey2());
         bean.setString2(event.getKey3());
-        bean.setInt1(event.getIntKey1());
-        bean.setInt2(event.getIntKey2());
-        bean.setInt3(event.getIntKey3());
+
+        if (event.getIntKey1() != null)
+            bean.setInt1(event.getIntKey1());
+        if (event.getIntKey2() != null)
+            bean.setInt2(event.getIntKey2());
+        if (event.getIntKey3() != null)
+            bean.setInt3(event.getIntKey3());
 
         return (K)bean;
     }

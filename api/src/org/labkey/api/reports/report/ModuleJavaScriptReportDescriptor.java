@@ -35,7 +35,7 @@ import java.util.Map;
  * User: Nick
  * Date: August 17, 2012
  */
-public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
+public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor implements ModuleReportDescriptor
 {
     public static final String TYPE = "moduleJSReportDescriptor";
     public static final String FILE_EXTENSION = ".js";
@@ -167,14 +167,22 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         }
     }
 
+    @Override
     public Module getModule()
     {
         return _module;
     }
 
+    @Override
     public Path getReportPath()
     {
         return _reportPath;
+    }
+
+    @Override
+    public Resource getSourceFile()
+    {
+        return _sourceFile;
     }
 
     @NotNull
