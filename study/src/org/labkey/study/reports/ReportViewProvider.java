@@ -191,9 +191,15 @@ public class ReportViewProvider implements DataViewProvider
 
                     info.setType(r.getTypeDescription());
                     info.setDescription(descriptor.getReportDescription());
+                    info.setReadOnly(!r.canEdit(user, c));
 
                     String access;
-                    if (descriptor.getOwner() != null)
+                    if (descriptor.isModuleBased())
+                    {
+                        access = "public";
+                        info.setShared(true);
+                    }
+                    else if (descriptor.getOwner() != null)
                     {
                         access = "private";
                         info.setShared(false);

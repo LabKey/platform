@@ -30,6 +30,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -84,7 +85,21 @@
         </td>
     </tr>
 
+    <%
+        if (report.getDescriptor().isModuleBased() && (report.getDescriptor() instanceof ModuleReportDescriptor)) { %>
+
         <tr>
+            <td class="labkey-form-label">Module Report:</td>
+            <td>true</td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Report Path:</td>
+            <td><%=h(((ModuleReportDescriptor)report.getDescriptor()).getSourceFile().toString())%></td>
+        </tr>
+    <%
+        } %>
+
+    <tr>
         <td class="labkey-form-label">
             Author:
         </td>

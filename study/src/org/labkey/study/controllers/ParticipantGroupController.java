@@ -492,7 +492,7 @@ public class ParticipantGroupController extends BaseStudyController
         private String[] _allParticipants;
 
         @Override
-        public void validateForm(BrowseGroupsForm browseGroupsForm, Errors errors)
+        public void validateForm(BrowseGroupsForm form, Errors errors)
         {
             _study = getStudy(getContainer());
             if (_study == null)
@@ -690,7 +690,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     public static class BrowseGroupsForm
     {
-        private String[] _type;
+        private String[] _type = new String[0];
         private boolean _includeParticipantIds = false;
         private boolean _includePrivateGroups = true;
         private boolean _includeUnassigned = true;

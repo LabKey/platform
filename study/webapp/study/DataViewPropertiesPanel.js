@@ -49,6 +49,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             xtype      : 'textfield',
             allowBlank : false,
             name       : 'viewName',
+            readOnly   : !this.visibleFields['viewName'],
             labelWidth : 120,
             width      : 400,
             fieldLabel : 'Name',

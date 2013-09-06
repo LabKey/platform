@@ -290,6 +290,7 @@
                 msgTarget : 'side'
             },
             visibleFields   : {
+                viewName: true,
                 author  : true,
                 status  : true,
                 modifieddate: true,

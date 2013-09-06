@@ -1120,6 +1120,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             record          : record,
             extraItems      : formItems,
             visibleFields   : {
+                viewName: true,
                 author  : true,
                 status  : true,
                 datacutdate : true,

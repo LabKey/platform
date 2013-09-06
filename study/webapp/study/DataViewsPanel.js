@@ -181,6 +181,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'displayOrder',         type : 'int'},
             {name : 'shared',               type : 'boolean'},
             {name : 'visible',              type : 'boolean'},
+            {name : 'readOnly',             type : 'boolean'},
             {name : 'icon'},
             {name : 'modified',             type : 'date'},
             {name : 'modifiedBy'},
@@ -593,7 +594,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
 
                 // an item needs an edit info interface to be editable
-                if (!this.editInfo[rec.data.dataType]) {
+                if (rec.data.readOnly || !this.editInfo[rec.data.dataType]) {
                     return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>';
                 }
                 return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
@@ -1213,6 +1214,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 extraItems      : formItems,
                 dateFormat      : this.dateFormat,
                 visibleFields   : {
+                    viewName: editInfo['viewName'],
                     author  : editInfo['author'],
                     status  : editInfo['status'],
                     datacutdate : editInfo['refreshDate'],

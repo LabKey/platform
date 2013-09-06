@@ -2904,26 +2904,22 @@ public class ReportsController extends SpringActionController
             if (id != null)
             {
                 Report report = id.getReport(getViewContext());
-
-                try
+                if (report != null)
                 {
                     _reportName = report.getDescriptor().getReportName();
-                }
-                catch(NullPointerException e)
-                {
-                    _reportName = null;
-                }
-                VBox view = new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
 
-                if (!isPrint())
-                {
-                    DiscussionService.Service service = DiscussionService.get();
-                    String title = "Discuss report - " + _reportName;
-                    view.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                    VBox view = new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
+
+                    if (!isPrint())
+                    {
+                        DiscussionService.Service service = DiscussionService.get();
+                        String title = "Discuss report - " + _reportName;
+                        view.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                    }
+                    return view;
                 }
-                return view;
             }
-            return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
+            return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>");
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -143,6 +143,7 @@ public class DatasetViewProvider implements DataViewProvider
     public static class EditInfoImpl implements DataViewProvider.EditInfo
     {
         private static final String[] _editableProperties = {
+                Property.viewName.name(),
                 Property.description.name(),
                 Property.category.name(),
                 Property.visible.name(),
@@ -210,6 +211,13 @@ public class DatasetViewProvider implements DataViewProvider
                         {
                             dirty = dsDef.getCategoryId() != null;
                             dsDef.setCategoryId(null);
+                        }
+
+                        if (props.containsKey(Property.viewName.name()))
+                        {
+                            String newLabel = StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name())));
+                            dirty = dirty || !StringUtils.equals(dsDef.getLabel(), newLabel);
+                            dsDef.setLabel(newLabel);
                         }
 
                         if (props.containsKey(Property.description.name()))

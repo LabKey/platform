@@ -122,6 +122,7 @@
             },
             disableShared   : <%=(form.getCanChangeSharing()==false)%>,
             visibleFields   : {
+                viewName: true,
                 author  : true,
                 status  : true,
                 datacutdate : true,
