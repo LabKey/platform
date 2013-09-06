@@ -204,9 +204,11 @@ public class DataIntegrationController extends SpringActionController
                 throw new NotFoundException(form.getTransformId());
 
             ActionURL pipelineURL = TransformManager.get().runNowPipeline(etl, getContainer(), getUser());
+            String status = null==pipelineURL ? "No work" : "Queued";
 
             JSONObject ret = new JSONObject();
             ret.put("success",true);
+            ret.put("status", status);
             if (null != pipelineURL)
                 ret.put("pipelineURL",pipelineURL.toString());
             return new ApiSimpleResponse(ret);
