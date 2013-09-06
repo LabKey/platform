@@ -1295,14 +1295,19 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(Container container, int[] sampleRowIds)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        Set<Integer> uniqueRowIds = new HashSet<>(sampleRowIds.length);
+        Set<Long> uniqueRowIds = new HashSet<>(sampleRowIds.length);
         for (int sampleRowId : sampleRowIds)
-            uniqueRowIds.add(sampleRowId);
-        List<Integer> rowIds = new ArrayList<>(uniqueRowIds);
-        filter.addInClause("RowId", rowIds);
+            uniqueRowIds.add((long)sampleRowId);
+        List<Long> rowIds = new ArrayList<>(uniqueRowIds);
+        return getSpecimens(container, rowIds);
+    }
+
+    public List<Specimen> getSpecimens(Container container, List<Long> sampleRowIds)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause("RowId", sampleRowIds);
         List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
-        if (specimens.size() != rowIds.size())
+        if (specimens.size() != sampleRowIds.size())
             throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
         return specimens;
     }

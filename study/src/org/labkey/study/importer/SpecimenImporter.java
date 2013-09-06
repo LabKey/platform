@@ -29,10 +29,13 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -44,6 +47,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -634,6 +638,8 @@ public class SpecimenImporter
     private String _vialColsSql;
     private String _vialEventColsSql;
     private Logger _logger;
+
+    protected int _generateGlobalUniqueIds = 0;
 
     private static final int SQL_BATCH_SIZE = 100;
 
@@ -2037,7 +2043,7 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        replaceTable(schema, container, file, file.getTableType().getTableName(), entityIdCol);
+        replaceTable(schema, container, file, file.getTableType().getTableName(), false, entityIdCol);
     }
 
     /**
@@ -2047,13 +2053,14 @@ public class SpecimenImporter
      * @param container The container
      * @param file SpecimenImportFile
      * @param tableName Fully qualified table name, e.g., "study.Vials"
+     * @param generateGlobaluniqueIds Generate globalUniqueIds if any needed
      * @param computedColumns The computed column.
      * @return A pair of the columns actually found in the data values and a total row count.
      * @throws SQLException
      * @throws IOException
      */
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
-            DbSchema schema, Container container, SpecimenImportFile file, String tableName,
+            DbSchema schema, Container container, SpecimenImportFile file, String tableName, boolean generateGlobaluniqueIds,
             ComputedColumn... computedColumns)
         throws IOException, SQLException
     {
@@ -2082,12 +2089,21 @@ public class SpecimenImporter
 
         Collection<T> columns = (Collection<T>)file.getTableType().getColumns();
 
+        List<String> newUniqueIds = (generateGlobaluniqueIds && _generateGlobalUniqueIds > 0) ?
+                getValidGlobalUniqueIds(container, _generateGlobalUniqueIds) : null;
+
         try (CloseableIterator<Map<String, Object>> iter = loadTsv(file).iterator())
         {
+            int idCount = 0;
             while (iter.hasNext())
             {
                 Map<String, Object> row = iter.next();
                 rowCount++;
+
+                if (null != newUniqueIds && null == row.get(GLOBAL_UNIQUE_ID_TSV_COL))
+                {
+                    row.put(GLOBAL_UNIQUE_ID_TSV_COL, newUniqueIds.get(idCount++));
+                }
 
                 if (1 == rowCount)
                 {
@@ -2200,7 +2216,7 @@ public class SpecimenImporter
 
         info("Populating specimen temp table...");
         int rowCount;
-        List<SpecimenColumn> loadedColumns;
+        List<SpecimenColumn> loadedColumns = new ArrayList<>();
 
         ComputedColumn lsidCol = new ComputedColumn()
         {
@@ -2257,24 +2273,42 @@ public class SpecimenImporter
             }
         };
 
-        Pair<List<SpecimenColumn>, Integer> pair = replaceTable(schema, container, file, tempTable, lsidCol, sequencenumCol);
-
-        loadedColumns = pair.first;
-        rowCount = pair.second;
-
-        if (rowCount == 0)
+        Pair<List<SpecimenColumn>, Integer> pair = new Pair<>(null, 0);
+        boolean success = true;
+        final int MAX_TRYS = 3;
+        for (int tryCount = 0; tryCount < MAX_TRYS; tryCount += 1)
         {
-            info("Found no specimen columns to import. Temp table will not be loaded.");
-            return pair;
-        }
+            try
+            {
+                pair = replaceTable(schema, container, file, tempTable, true, lsidCol, sequencenumCol);
 
-        remapTempTableLookupIndexes(schema, container, tempTable, loadedColumns);
+                loadedColumns = pair.first;
+                rowCount = pair.second;
 
-        updateTempTableVisits(schema, container, tempTable);
+                if (rowCount == 0)
+                {
+                    info("Found no specimen columns to import. Temp table will not be loaded.");
+                    return pair;
+                }
 
-        if (merge)
-        {
-            checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
+                remapTempTableLookupIndexes(schema, container, tempTable, loadedColumns);
+
+                updateTempTableVisits(schema, container, tempTable);
+
+                if (merge)
+                {
+                    checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
+                }
+            }
+            catch (Table.OptimisticConflictException e)
+            {
+                if (tryCount + 1 < MAX_TRYS)
+                    success = false;        // Try again
+                else
+                    throw e;
+            }
+            if (success)
+                break;
         }
 
         updateTempTableSpecimenHash(schema, container, tempTable, loadedColumns);
@@ -2443,10 +2477,19 @@ public class SpecimenImporter
             sql.append(" WHERE Container = ?)").add(container);
             ArrayList<Integer> counts = new SqlSelector(schema, sql).getArrayList(Integer.class);
             if (1 != counts.size())
+            {
                 throw new IllegalStateException("Expected one and only one count of rows.");
+            }
+            else if (0 != counts.get(0) && _generateGlobalUniqueIds > 0)
+            {
+                // We were trying to generate globalUniqueIds
+                throw new Table.OptimisticConflictException("Attempt to generate global unique ids failed.", null, 0);
+            }
             else if (0 != counts.get(0))
+            {
                 throw new IllegalStateException("With an editable specimen repository, importing may not reference any existing specimen. " +
                         counts.get(0) + " imported specimen events refer to existing specimens.") ;
+            }
             info("No conflicting specimens found");
         }
     }
@@ -2610,6 +2653,35 @@ public class SpecimenImporter
         {
             assert cpuCreateTempTable.stop();
         }
+    }
+
+    private static final String SPECIMEN_SEQUENCE_NAME = "org.labkey.study.samples";
+    private static List<String> getValidGlobalUniqueIds(Container container, int count)
+    {
+        List<String> uniqueIds = new ArrayList<>();
+        DbSequence sequence = DbSequenceManager.get(container, SPECIMEN_SEQUENCE_NAME);
+        sequence.ensureMinimum(70000);
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), container);
+        Sort sort = new Sort();
+        sort.appendSortColumn(FieldKey.fromString("GlobalUniqueId"), Sort.SortDirection.DESC, false);
+        Set<String> columns = new HashSet<>();
+        columns.add("GlobalUniqueId");
+        List<String> currentIds = new TableSelector(StudySchema.getInstance().getTableInfoVial(), columns, filter, sort).getArrayList(String.class);
+
+        for (int i = 0; i < count; i += 1)
+        {
+            while (true)
+            {
+                String id = ((Integer)sequence.next()).toString();
+                if (!currentIds.contains(id))
+                {
+                    uniqueIds.add(id);
+                    break;
+                }
+            }
+        }
+        return uniqueIds;
     }
 
     public static class TestCase extends Assert

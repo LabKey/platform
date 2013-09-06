@@ -16,6 +16,7 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
 LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
     editor: null,
+    editWidth : null,
     oldText: null,
     multiLine: false,
     growFactor: 20,
@@ -198,6 +199,8 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         var bw = this.editor.getBorderWidth("tb") || 2;
         var height = this.sizingDiv.getHeight() + bw + this.growFactor;
         this.editor.setHeight(height);
+        if(this.editWidth)
+            this.editor.setWidth(this.editWidth);
     },
 
     getValue : function () {

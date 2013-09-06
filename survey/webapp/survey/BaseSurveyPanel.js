@@ -9,14 +9,6 @@ LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
 LABKEY.requiresScript("/survey/UsersCombo.js");
-LABKEY.requiresScript("/biotrust/AssociatedStudyQuestion.js");
-LABKEY.requiresScript("/biotrust/ContactCombo.js");
-LABKEY.requiresScript("/biotrust/ContactsPanel.js");
-LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
-LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
-LABKEY.requiresScript("/biotrust/DocumentUploadQuestion.js");
-LABKEY.requiresScript("/biotrust/StudySampleRequestPanel.js");
-LABKEY.requiresScript("/biotrust/TissueRecordPanel.js");
 LABKEY.requiresCss("/survey/Survey.css");
 
 Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
@@ -43,40 +35,61 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (surveyConfig.survey)
         {
             Ext4.each(surveyConfig.survey.sections, function(section) {
-                var sectionPanel = this.generateSectionPanel(section, panelType);
+                var sectionPanel = this.generateSectionPanel(section, panelType, false, section.layoutHorizontal ? section.layoutHorizontal : false);
 
                 this.sections.push(sectionPanel);
             }, this);
         }
     },
 
-    generateSectionPanel: function(section, panelType, layoutHorizontal) {
+    generateSectionPanel: function(section, panelType, isSubSection, layoutHorizontal) {
         var sectionPanel = Ext4.create(panelType, {
-            border: false,
             flex: 1,
             autoScroll: true,
-            header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
             sectionPanel: true, // marker for looking for a components parent section
             completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
             origTitle: section.title || '',
             title: section.title || '',
             copyFromPrevious: section.copyFromPrevious || false,
             isDisabled: section.initDisabled || false,
-
+            dockedItems: (!section.toolbarButton) ? null : [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                items: [{
+                    text: section.toolbarButton,
+                    scope: this,
+                    style: {
+                        'font-weight': 'bold'
+                    },
+                    name: section.toolbarButtonName,
+                    tooltip: section.toolbarButtonTooltip
+                }]
+            }],
+            margin: '1 0 2 0',
             items: []
         });
 
-        var sectionPanelOuter;
         if (layoutHorizontal)
         {
-            sectionPanel.layout = {type: 'table', align: 'top', flex: 1};
+            sectionPanel.layout = {
+                type: 'table',
+                align: 'top',
+                flex: 1,
+                manageOverflow: 1,
+                reserveScrollbar: true,
+                itemCls: 'survey-table-cell',
+                columns: (section.numColumns ? section.numColumns : section.questions.length) + (section.allowDelete ? 1 : 0),
+                tableattrs: {
+                    style: {}
+                }
+            };
             sectionPanel.defaults = {
                 labelAlign: 'top',
-                height: 46,
                 labelSeparator: '',
-                padding: section.padding || 4
+                padding: section.padding || 1
             };
-            sectionPanel.border = 1;
+            sectionPanel.border = section.border != undefined ? section.border : 1;
+            sectionPanel.hasHeadingRow = section.hasHeadingRow;
         }
         else
         {
@@ -85,23 +98,47 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 labelSeparator: '',
                 padding: section.padding || 10
             };
-            sectionPanelOuter = sectionPanel;
+            sectionPanel.border = section.border != undefined ? section.border : 0;
+        }
+
+        if (section.toolbarButtonHandlerKey)
+        {
+            var buttonConfig = sectionPanel.dockedItems.get(0).items.get(0);
+            buttonConfig.handler = function(btn, evt) {
+                if (this.buttonHandler) this.buttonHandler(section, btn);
+            };
         }
 
         // for card layout, add the section title as a displayfield instead of a panel header
-        if (this.surveyLayout == 'card' && section.title)
+        if (this.surveyLayout == 'card' && !isSubSection)
         {
-            sectionPanel.add(this.getCardSectionHeader(section.title));
+            sectionPanel.header = false;
+            if (section.title)
+                sectionPanel.add(this.getCardSectionHeader(section.title, section.subTitle));
+        }
+        else if (isSubSection)
+        {
+            sectionPanel.header = section.header != undefined ? section.header : false;
         }
         else
         {
+            sectionPanel.header = section.header != undefined ? section.header : true;
+        }
+
+        if (this.surveyLayout != 'card' || !section.title || isSubSection)
+        {
             sectionPanel.collapsed = section.collapsed != undefined ? section.collapsed : false;
-            sectionPanel.collapsible = section.collapsible != undefined ? section.collapsible : true;
+            if (section.collapsible == undefined)
+                sectionPanel.collapsible = true;
+            else
+                sectionPanel.collapsible = section.collapsible;
             sectionPanel.titleCollapse = true;
         }
 
         if (section.hidden)
             sectionPanel.hidden = true;
+        if (section.dontClearDirtyFieldWhenHiding)
+            sectionPanel.dontClearDirtyFieldWhenHiding = true;
 
         // there is a section description, add it as the first item for that section
         if (section.description)
@@ -118,12 +155,20 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             for (var i = 0; i < section.questions.length; i++)
             {
+                if (section.allowDelete && section.numColumns)
+                {
+                    // If there are columns and allowDelete is true, add a check box on the left of each row
+                    if (0 == i % section.numColumns)
+                    {
+                        sectionPanel.add(this.createDeleteCheckbox(section, i / section.numColumns));
+                    }
+                }
                 var question = section.questions[i];
 
                 var config;
                 if (question.subSection)
                 {
-                    config = this.generateSectionPanel(question, 'Ext.panel.Panel', true);
+                    config = this.generateSectionPanel(question, 'Ext.panel.Panel', true, question.layoutHorizontal ? question.layoutHorizontal : false);
                     config.name = question.name;
                     this.doSharedQuestion(question, config);        // SubSections may have listeners
                 }
@@ -133,8 +178,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 }
                 sectionPanel.add(config);
             }
-            if (layoutHorizontal)
-                sectionPanel.layout.columns = section.questions.length;
         }
         // sections can be defined as an extAlias
         // TODO: is there a way to not have to import the JS for each defined ext alias?
@@ -308,10 +351,41 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
     },
 
-    getCardSectionHeader : function(title) {
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: title}) +
+    getCardSectionHeader : function(title, subTitle) {
+        var txt;
+        txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: title}) +
+                (subTitle ? Ext.DomHelper.markup({tag:'div', html: subTitle}) : "") +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
         return {xtype:'displayfield', value: txt};
+    },
+
+    createDeleteCheckbox: function(section, index) {
+        if (0 == index && section.hasHeadingRow)
+        {
+            return {
+                xtype: 'displayfield',
+                name: section.name + '-delete-heading' + index,
+                submitValue: false,
+                value: 'Del',
+                tooltip: "Check samples to delete and click button at the bottom of the panel",
+                style: {
+                    'background-color': '#E0E0E0'
+                },
+                width: 24,
+                minWidth: 16
+            };
+        }
+        else
+        {
+            return {
+                xtype: 'checkbox',
+                name: section.name + '-delete-checkbox' + index,
+                submitValue: false,
+                width: 16,
+                minWidth: 16,
+                margin: '0 0 0 2'
+            };
+        }
     },
 
     addSurveyStartPanel : function() {
@@ -321,7 +395,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         var items = [];
 
         if (this.surveyLayout == 'card')
-            items.push(this.getCardSectionHeader(title));
+            items.push(this.getCardSectionHeader(title, null));
 
         items.push({
             xtype: 'textfield',
@@ -509,7 +583,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         var bbar = [];
         if (this.surveyLayout == 'card')
         {
-            this.width += 250;
+            var sidebarWidth = surveyConfig.survey.sidebarWidth ? surveyConfig.survey.sidebarWidth : 250;
+            var mainPanelWidth = surveyConfig.survey.mainPanelWidth ? surveyConfig.survey.mainPanelWidth : this.width;
+            this.width = mainPanelWidth + sidebarWidth;
 
             // define function to be called on click of a sidebar section title
             window.surveySidebarSectionClick = function(step, itemId){
@@ -523,7 +599,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
             this.sideBar = Ext4.create('Ext.panel.Panel', {
                 name: 'sidebar',
-                width: 250,
+                width: sidebarWidth,
                 border: false,
                 cls: 'extContainer',
                 tpl: [
@@ -764,7 +840,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             // the component can either be a form field itself or a container that has multiple fields
             if (cmp.isFormField)
                 this.clearFieldValue(cmp);
-            else
+            else if (cmp.query)
                 Ext4.each(cmp.query('field'), this.clearFieldValue, this);
         }
     },

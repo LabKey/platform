@@ -60,7 +60,10 @@ public class EditableSpecimenImporter extends SpecimenImporter
     private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         if (merge)
-            markEventsObsolete(container, rows);
+        {
+            int noGuidRowCount = markEventsObsolete(container, rows);
+            _generateGlobalUniqueIds = noGuidRowCount;            // Generate this many new ids (needed if not present)
+        }
 
         List<Map<String, Object>> specimenRows = new ArrayList<>();
         for (Map<String, Object> row : rows)
@@ -183,7 +186,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
             super.checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
     }
 
-    private void markEventsObsolete(Container container, List<Map<String, Object>> rows)
+    private int markEventsObsolete(Container container, List<Map<String, Object>> rows)
     {
         boolean seenAtLeastOneGuid = false;
         TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent();
@@ -192,6 +195,8 @@ public class EditableSpecimenImporter extends SpecimenImporter
         sql.add(container);
         sql.append("(SELECT RowId FROM " + StudySchema.getInstance().getTableInfoVial() + " WHERE Container = ? ").add(container);
         sql.append(" AND Obsolete = " + specimenEventTable.getSqlDialect().getBooleanFALSE() + " AND " + GUID_COLNAME + " IN (");
+
+        int noGuidRowCount = 0;
         for (Map<String, Object> row : rows)
         {
             String guid = (String)row.get(GLOBAL_UNIQUE_ID_TSV_COL);
@@ -202,6 +207,10 @@ public class EditableSpecimenImporter extends SpecimenImporter
                 sql.append("?").add(guid);
                 seenAtLeastOneGuid = true;
             }
+            else
+            {
+                noGuidRowCount += 1;
+            }
         }
         sql.append("))");
         if (seenAtLeastOneGuid)
@@ -209,5 +218,6 @@ public class EditableSpecimenImporter extends SpecimenImporter
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
             SampleManager.getInstance().clearCaches(container);
         }
+        return noGuidRowCount;
     }
 }

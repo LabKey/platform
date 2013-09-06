@@ -17,3 +17,7 @@ div.lk-survey-panel {
     margin-right: auto;
     margin-left: auto;
 }
+
+.survey-table-cell {
+    min-width: 20px;
+}

@@ -263,15 +263,30 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         // MVIndicators
         Map<String, Object> rowCopy = new CaseInsensitiveHashMap<>();
+        ArrayList<ColumnInfo> modifiedAttachmentColumns = new ArrayList<>();
+        ArrayList<AttachmentFile> attachmentFiles = new ArrayList<>();
 
         TableInfo qt = getQueryTable();
         for (Map.Entry<String, Object> r : row.entrySet())
         {
-            ColumnInfo mvColumn = qt.getColumn(FieldKey.fromParts(r.getKey()));
-            if (null != mvColumn && mvColumn.isMvIndicatorColumn())
-                rowCopy.put(mvColumn.getMetaDataName(), r.getValue());
+            ColumnInfo column = qt.getColumn(FieldKey.fromParts(r.getKey()));
+            if (null != column && column.isMvIndicatorColumn())
+                rowCopy.put(column.getMetaDataName(), r.getValue());
             else
                 rowCopy.put(r.getKey(), r.getValue());
+
+            // Attachments
+            if (r.getValue() instanceof AttachmentFile)
+            {
+                if (null != column)
+                {
+                    modifiedAttachmentColumns.add(column);
+
+                    AttachmentFile file = (AttachmentFile) r.getValue();
+                    if (null != file.getFilename())
+                        attachmentFiles.add(file);
+                }
+            }
         }
 
         // Attempt to include key from oldRow if not found in row (As stated in the QUS Interface)
@@ -291,6 +306,38 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 ListManager mgr = ListManager.get();
                 String entityId = (String) result.get(ID);
+
+                try
+                {
+                    // Remove prior attachment -- only includes columns which are modified in this update
+                    for (ColumnInfo col : modifiedAttachmentColumns)
+                    {
+                        Object value = oldRow.get(col.getPropertyName());
+                        if (null != value)
+                        {
+                            AttachmentService.get().deleteAttachment(new ListItemAttachmentParent(entityId, _list.getContainer()), value.toString(), user);
+                        }
+                    }
+
+                    // Update attachments
+                    if (!attachmentFiles.isEmpty())
+                        AttachmentService.get().addAttachments(new ListItemAttachmentParent(entityId, _list.getContainer()), attachmentFiles, user);
+                }
+                catch (IOException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+                finally
+                {
+                    if (attachmentFiles != null)
+                    {
+                        for (AttachmentFile attachmentFile : attachmentFiles)
+                        {
+                            try { attachmentFile.closeInputStream(); } catch (IOException ignored) {}
+                        }
+                    }
+                }
+
                 String oldRecord = mgr.formatAuditItem(_list, user, oldRow);
                 String newRecord = mgr.formatAuditItem(_list, user, result);
 

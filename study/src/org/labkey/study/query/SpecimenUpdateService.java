@@ -23,14 +23,18 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.EditableSpecimenImporter;
@@ -58,6 +62,60 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, DeletePermission.class))
+            throw new UnauthorizedException("You do not have permission to delete data from this table.");
+
+        BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
+
+        List<Long> rowIds = new ArrayList<>(keys.size());
+        for (int i = 0; i < keys.size(); i++)
+        {
+            Object rowId = keys.get(i).get("rowid");
+            if (null != rowId)
+                rowIds.add(Long.class == rowId.getClass() ? (Long)rowId : (Integer)rowId);
+            else
+                throw new IllegalArgumentException("RowId not found for a row.");
+        }
+        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, rowIds);
+        if (specimens.size() != keys.size())
+            throw new IllegalStateException("Specimens should be same size as rows.");
+
+        List<Map<String, Object>> rows = new ArrayList<>(1);
+        try
+        {
+            for (Specimen specimen : specimens)
+                checkDeletability(container, specimen);
+
+            for (Specimen specimen : specimens)
+                SampleManager.getInstance().deleteSpecimen(specimen);
+
+            // Force recalculation of requestability and specimen table
+            importSpecimens(user, container, rows, true, false);
+        }
+        catch (ValidationException e)
+        {
+            errors.addRowError(e);
+            throw errors;
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
+
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE);
+
+        return new ArrayList<>();
+    }
+
+    @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
@@ -67,19 +125,13 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         if (null == specimen)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
-        // Check deletability
-        SQLFragment sql = getAllRequestCountSql(container, specimen);
-        ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
-        if (counts.size() > 1)
-            throw new ValidationException("Expected one and only one count of rows.");
-        else if (counts.size() > 0 && counts.get(0) != 0)
-            throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
-
+        checkDeletability(container, specimen);
         SampleManager.getInstance().deleteSpecimen(specimen);
         List<Map<String, Object>> rows = new ArrayList<>(1);
 
         try
         {
+            // Force recalculation of requestability and specimen table
             importSpecimens(user, container, rows, true, false);
         }
         catch (IOException e)
@@ -100,6 +152,89 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            throw new IllegalStateException("No study found.");
+
+        boolean hasTableScript = getQueryTable().hasTriggers(container);
+
+        errors.setExtraContext(extraScriptContext);
+        try
+        {
+            if (hasTableScript)
+                getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+        }
+        catch (BatchValidationException e)
+        {
+            return null;
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(rows.size());
+        String subjectColumnName = study.getSubjectColumnName();
+
+        try
+        {
+            for (Map<String, Object> row : rows)
+            {
+                if (null == row.get(subjectColumnName) || null == row.get("SequenceNum"))
+                {
+                    throw new ValidationException(subjectColumnName + " and Sequence Num are required.");
+                }
+
+                if (!subjectColumnName.equalsIgnoreCase("participantid"))
+                {
+                    row.put("participantid", row.get(subjectColumnName));
+                    row.remove(subjectColumnName);
+                }
+
+                row.put("externalid", 1);
+            }
+
+            importSpecimens(user, container, rows, true, true);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
+        catch (IllegalStateException e)
+        {
+            errors.addRowError(new ValidationException(e.getMessage()));
+        }
+        catch (ValidationException e)
+        {
+            errors.addRowError(e);
+        }
+
+        if (!errors.hasErrors())
+        {
+/*            try
+            {
+                result = getRows(user, container, keys);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+*/
+        }
+
+        try
+        {
+            if (hasTableScript)
+                getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+        }
+        catch (BatchValidationException e)
+        {
+
+        }
+
+        return result;
+    }
+
+    @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
@@ -107,10 +242,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         if (null == study)
             throw new IllegalStateException("No study found.");
         String subjectColumnName = study.getSubjectColumnName();
-        String globalUniqueId = (String)row.get("GlobalUniqueId");
-        if (null == globalUniqueId || null == row.get(subjectColumnName) || null == row.get("SequenceNum"))
+
+        if (null == row.get(subjectColumnName) || null == row.get("SequenceNum"))
         {
-            throw new ValidationException("Global Unique Id, " + subjectColumnName + " and Sequence Num are required.");
+            throw new ValidationException(subjectColumnName + " and Sequence Num are required.");
         }
 
         if (!subjectColumnName.equalsIgnoreCase("participantid"))
@@ -136,21 +271,92 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new ValidationException(e.getMessage());
         }
 
-        Specimen specimen = SampleManager.getInstance().getSpecimen(container, globalUniqueId);
-        if (null == specimen)
-            throw new RuntimeException("Specimen did not get added.");
-
-        Map<String,Object> keys = new HashMap<>();
-        keys.put("rowId", specimen.getRowId());
-
+/*
         try
         {
-            return getRow(user, container, keys);
+            return getRow(user, container, keys.get(0));
         }
         catch (InvalidKeyException e)
         {
             throw UnexpectedException.wrap(e);
         }
+*/
+        return new HashMap<>();
+    }
+
+    @Override
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (oldKeys != null && rows.size() != oldKeys.size())
+            throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
+
+        BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
+
+        List<Long> rowIds = new ArrayList<>(rows.size());
+        for (int i = 0; i < rows.size(); i++)
+        {
+            Object rowId = rows.get(i).get("rowid");
+            Object oldRowId = oldKeys.get(i).get("rowid");
+            if (null != rowId)
+                rowIds.add((Long)rowId);
+            else if (null != oldRowId)
+                rowIds.add((Long)oldRowId);
+            else
+                throw new IllegalArgumentException("RowId not found for a row.");
+        }
+        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, rowIds);
+        if (specimens.size() != rows.size())
+            throw new IllegalStateException("Specimens should be same size as rows.");
+
+        try
+        {
+            for (Specimen specimen : specimens)
+                checkEditability(container, specimen);
+        }
+        catch (ValidationException e)
+        {
+            errors.addRowError(e);
+            throw errors;
+        }
+
+        List<Map<String, Object>> newKeys = new ArrayList<>(rows.size());
+        List<Map<String, Object>> newRows = new ArrayList<>(rows.size());
+        for (int i = 0; i < rows.size(); i++)
+        {
+            Map<String, Object> row = rows.get(i);
+            Specimen specimen = specimens.get(i);
+            Map<String, Object> rowMap = prepareRowMap(container, row, specimen);
+            newRows.add(rowMap);
+
+            Map<String,Object> keys = new HashMap<>();
+            keys.put("rowId", specimen.getRowId());
+            newKeys.add(keys);
+        }
+
+        try
+        {
+            importSpecimens(user, container, newRows, true, false);
+        }
+        catch (ValidationException e)
+        {
+            e.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), newRows.get(0), 0);
+            errors.addRowError(e);
+            throw errors;
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
+
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, rows);
+
+        return getRows(user, container, newKeys);
     }
 
     @Override
@@ -162,29 +368,11 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         if (specimen == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
-        // Check editablity
-        SQLFragment sql = getNonFinalRequestCountSql(container, specimen);
-        ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
-        if (counts.size() > 1)
-            throw new IllegalStateException("Expected one and only one count of rows.");
-        else if (counts.size() > 0 && counts.get(0) != 0)
-            throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
-
-        // Get last event so that our input considers all fields that were set;
-        // Then overwrite whatever is coming from the form
-        Map<String, Object> rowMap = getLastEventMap(container, specimen);
-        for (Map.Entry<String, Object> entry : row.entrySet())
-        {
-            rowMap.put(entry.getKey(), entry.getValue());
-        }
-
-        rowMap.put("globaluniqueid", oldRow.get("globaluniqueid"));         // Add this in
-        Long externalId = (Long)rowMap.get("ExternalId");
-        externalId += 1;
-        rowMap.put("ExternalId", externalId);
+        checkEditability(container, specimen);
+        Map<String, Object> rowMap = prepareRowMap(container, row, specimen);
 
         // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished
-        if (null == oldRow.get("requestable"))
+        if (null == oldRow || null == oldRow.get("requestable"))
         {
             Object obj = rowMap.get("requestable");
             if (null != obj && !(Boolean)obj)
@@ -234,6 +422,23 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         return rowInteger;
     }
 
+    private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Specimen specimen)
+    {
+        // Get last event so that our input considers all fields that were set;
+        // Then overwrite whatever is coming from the form
+        Map<String, Object> rowMap = getLastEventMap(container, specimen);
+        for (Map.Entry<String, Object> entry : row.entrySet())
+        {
+            rowMap.put(entry.getKey(), entry.getValue());
+        }
+
+        rowMap.put("globaluniqueid", specimen.getGlobalUniqueId());
+        Long externalId = (Long)rowMap.get("ExternalId");
+        externalId += 1;
+        rowMap.put("ExternalId", externalId);
+        return rowMap;
+    }
+
     private void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge, boolean insert) throws SQLException, IOException, ValidationException
     {
         EditableSpecimenImporter importer = new EditableSpecimenImporter(insert);
@@ -241,7 +446,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         importer.process(user, container, rows, merge);
     }
 
-    private static SQLFragment getNonFinalRequestCountSql(Container container, Specimen specimen)
+    private void checkEditability(Container container, Specimen specimen) throws ValidationException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(FinalState) FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
                 " WHERE FinalState = " + StudySchema.getInstance().getSqlDialect().getBooleanFALSE());
@@ -251,15 +456,25 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         sql.add(container.getId());
         sql.append(" AND SpecimenGlobalUniqueId = ?").add(specimen.getGlobalUniqueId());
         sql.append(")) GROUP BY FinalState");
-        return sql;
+
+        ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
+        if (counts.size() > 1)
+            throw new IllegalStateException("Expected one and only one count of rows.");
+        else if (counts.size() > 0 && counts.get(0) != 0)
+            throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
     }
 
-    private static SQLFragment getAllRequestCountSql(Container container, Specimen specimen)
+    private void checkDeletability(Container container, Specimen specimen) throws ValidationException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());
         sql.append(" AND SpecimenGlobalUniqueId = ?").add(specimen.getGlobalUniqueId());
-        return sql;
+
+        ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
+        if (counts.size() > 1)
+            throw new ValidationException("Expected one and only one count of rows.");
+        else if (counts.size() > 0 && counts.get(0) != 0)
+            throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
     }
 
     private static Map<String, Object> getLastEventMap(Container container, Specimen specimen)

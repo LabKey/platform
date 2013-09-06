@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
@@ -15,8 +16,6 @@ Ext4.define('LABKEY.ext4.GenericCombo', {
     constructor : function(config){
 
         Ext4.applyIf(config, {
-
-            fieldLabel  : 'Users',
 /*
             typeAhead   : true,
             typeAheadDelay : 75,
@@ -111,6 +110,7 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
 
         Ext4.applyIf(config, {
             store       : LABKEY.study.DataViewUtil.getUsersStore(),
+            fieldLabel  : 'Users',
             valueField  : 'UserId',
             displayField : 'DisplayName'
         });
