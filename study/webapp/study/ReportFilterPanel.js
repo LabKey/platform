@@ -132,7 +132,11 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 }
             },
             selType: 'checkboxmodel',
-            selModel: { checkOnly: true, injectCheckbox: 1 },  // add checkbox after the spacer column (used for category identity)}
+            selModel: {
+                checkOnly: true, // we handle the category/group label click elsewhere
+                injectCheckbox: 1, // add checkbox after the spacer column (used for category identity)
+                preventFocus: true // prevent jumping to selection
+            },
             bubbleEvents: ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave'],
             scope       : this
         };
@@ -545,6 +549,9 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                     tpl       : '<div><b class="lk-filter-panel-label filter-description">{label:htmlEncode}</b></div>'
                 }],
                 selType     : 'checkboxmodel',
+                selModel    : {
+                    preventFocus: true // prevent jumping to selection
+                },
                 bubbleEvents: [],
                 store  : {
                     xtype  : 'store',
