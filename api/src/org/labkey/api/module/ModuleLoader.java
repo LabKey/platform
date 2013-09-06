@@ -248,7 +248,7 @@ public class ModuleLoader implements Filter
 
         verifyJavaVersion();
 
-        verifyTomcatVersion();
+        Integer tomcatVersion = verifyTomcatVersion();
 
         rollErrorLogFile(_log);
 
@@ -264,10 +264,17 @@ public class ModuleLoader implements Filter
             ClassLoader webappClassLoader = getClass().getClassLoader();
             Method m = webappClassLoader.getClass().getMethod("getExplodedModuleDirectories");
             explodedModuleDirs = (List<File>)m.invoke(webappClassLoader);
+
+            // Tomcat6Hack
+            if (null != tomcatVersion)
+            {
+                m = webappClassLoader.getClass().getMethod("setTomcatVersion", new Class[]{int.class});
+                m.invoke(webappClassLoader, tomcatVersion);
+            }
         }
         catch (NoSuchMethodException e)
         {
-            throw new ConfigurationException("Could not find getExplodedModuleDirectories() method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+            throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
         }
         catch (InvocationTargetException e)
         {
@@ -593,7 +600,8 @@ public class ModuleLoader implements Filter
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
     }
 
-    private void verifyTomcatVersion()
+    // Returns null if servlet container name is not recognized
+    private @Nullable Integer verifyTomcatVersion()
     {
         String serverInfo = ModuleLoader.getServletContext().getServerInfo();
 
@@ -604,7 +612,12 @@ public class ModuleLoader implements Filter
 
             if (majorVersion < 6)
                 throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 6.");
+
+            return majorVersion;
         }
+
+        // Unknown version... good luck
+        return null;
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
