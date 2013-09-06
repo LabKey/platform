@@ -611,15 +611,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             handledException[0] = cause;
         }
-        catch (IOException e)
+        catch (
+            IOException |     // Permissions problem, network drive disappeared, file disappeared, etc.
+            SAXException e)   // Malformed XML/HTML
         {
-            // Permissions problem, network drive disappeared, file disappeared, etc.
-            logAsWarning(r, e);
-            handledException[0] = e;
-        }
-        catch (SAXException e)
-        {
-            // Malformed XML/HTML
             logAsWarning(r, e);
             handledException[0] = e;
         }

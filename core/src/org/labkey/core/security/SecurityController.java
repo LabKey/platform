@@ -646,9 +646,17 @@ public class SecurityController extends SpringActionController
                     // first check if the member name is a site group, otherwise get principal based on this container
                     Integer id = SecurityManager.getGroupId(null, removeName, false);
                     if (null != id)
+                    {
                         removeIds.add(SecurityManager.getGroup(id));
+                    }
                     else
-                        removeIds.add(SecurityManager.getPrincipal(removeName, container));
+                    {
+                        UserPrincipal principal = SecurityManager.getPrincipal(removeName, container);
+
+                        // Race condition... principal could have been deleted, #18560
+                        if (null != principal)
+                            removeIds.add(principal);
+                    }
                 }
             }
 
