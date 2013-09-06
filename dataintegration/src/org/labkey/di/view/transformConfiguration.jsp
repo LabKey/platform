@@ -106,6 +106,8 @@ boolean isAdmin = context.hasPermission(AdminPermission.class);
                 } catch (x) {}
                 if ("pipelineURL" in json && json.pipelineURL)
                     window.location = json.pipelineURL;
+                else
+                    Ext4.MessageBox.alert("Success", json.status || "No work to do.");
             },
             failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:transformId}), window, true)
         });
