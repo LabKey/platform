@@ -471,18 +471,34 @@ public class ExcelColumn extends RenderColumn
             Cell cell = getRow(sheet, row).getCell(column);
             if (cell != null)
             {
-                String formatted;
+                String formatted = null;
 
-                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell) && null != format)
-                    formatted = format.format(cell.getDateCellValue());
-                else if (Cell.CELL_TYPE_NUMERIC == cell.getCellType() && null != format)
-                    formatted = format.format(cell.getNumericCellValue());
-                else if (Cell.CELL_TYPE_ERROR == cell.getCellType())
-                    formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
-                else
-                    formatted = cell.getStringCellValue();
+                // Need to be careful here, checking _simpleType again and verifying legal values. See #18561 for an example
+                // of a problem that occurred because we assumed all date values could be formatted by FastDateFormat.
+                switch (cell.getCellType())
+                {
+                    case(Cell.CELL_TYPE_NUMERIC):
+                        switch (_simpleType)
+                        {
+                            case(TYPE_DATE):
+                                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
+                                    formatted = format.format(cell.getDateCellValue());
+                                break;
+                            case(TYPE_INT):
+                            case(TYPE_DOUBLE):
+                                formatted = format.format(cell.getNumericCellValue());
+                                break;
+                        }
+                        break;
+                    case(Cell.CELL_TYPE_ERROR):
+                        formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
+                        break;
+                    default:
+                        formatted = cell.getStringCellValue();
+                        break;
+                }
 
-                if (formatted.length() > _autoSizeWidth)
+                if (null != formatted && formatted.length() > _autoSizeWidth)
                     _autoSizeWidth = formatted.length();
             }
         }

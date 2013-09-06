@@ -16,10 +16,9 @@
 
 package org.labkey.api.settings;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
@@ -35,12 +34,10 @@ import java.util.Stack;
  */
 public class PreferenceService
 {
-    private static Logger _log = Logger.getLogger(PreferenceService.class);
-
     private static final String PREFERENCE_SERVICE_MAP_KEY = "PreferenceServiceMap";
-    private Map<String, Map<String, String>> _nullPreferenceMap = new HashMap<>();
-
     private static final PreferenceService _instance = new PreferenceService();
+
+    private final Map<String, Map<String, String>> _nullPreferenceMap = new HashMap<>();
 
     public static PreferenceService get()
     {
