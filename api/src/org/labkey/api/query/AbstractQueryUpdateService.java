@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -413,7 +414,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             ColumnInfo col = columnMap.get(entry.getKey());
 
             Object value = entry.getValue();
-            if (col != null && value != null && !col.getJavaObjectClass().isInstance(value))
+            if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) && !(value instanceof AttachmentFile))
             {
                 try
                 {
