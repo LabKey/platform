@@ -2008,7 +2008,7 @@ public class ContainerManager
         public void testFolderType()
         {
             // Test all folder types
-            List<FolderType> folderTypes = new ArrayList<>(ModuleLoader.getInstance().getFolderTypes());
+            List<FolderType> folderTypes = new ArrayList<>(ModuleLoader.getInstance().getAllFolderTypes());
             for (FolderType folderType : folderTypes)
             {
                 testOneFolderType(folderType);

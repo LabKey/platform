@@ -29,12 +29,14 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -126,6 +128,8 @@ public class ModuleLoader implements Filter
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
+    /** PropertyManager category name for folder type enabled state properties */
+    private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
 
     private boolean _deferUsageReport = false;
     private File _webappDir;
@@ -1488,13 +1492,50 @@ public class ModuleLoader implements Filter
         }
     }
 
-    /** @return an unmodifiable collection of all registered folder types */
-    public Collection<FolderType> getFolderTypes()
+    /** @return an unmodifiable collection of ALL registered folder types, even those that have been disabled on this
+     * server by an administrator */
+    public Collection<FolderType> getAllFolderTypes()
     {
         synchronized (_folderTypes)
         {
             return Collections.unmodifiableCollection(new ArrayList<>(_folderTypes.values()));
         }
+    }
+
+    /** @return all of the folder types that have not been explicitly disabled by an administrator. New folder types
+     * that lack specific enabled/disabled state will be considered enabled.
+     */
+    public Collection<FolderType> getEnabledFolderTypes()
+    {
+        ArrayList<FolderType> result = new ArrayList<>();
+        synchronized (_folderTypes)
+        {
+            Map<String, String> enabledStates = PropertyManager.getProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE);
+            for (FolderType folderType : _folderTypes.values())
+            {
+                // Unless we have specific saved config setting it to disabled, treat it as enabled
+                if (!enabledStates.containsKey(folderType.getName()) || !enabledStates.get(folderType.getName()).equalsIgnoreCase(Boolean.FALSE.toString()))
+                {
+                    result.add(folderType);
+                }
+            }
+        }
+        return Collections.unmodifiableCollection(result);
+    }
+
+    /**
+     * @param enabledFolderTypes the new set of enabled folder types. This overwrites any previous enabled/disabled state.
+     */
+    public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes)
+    {
+        Map<String, String> enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
+        // Reset completely based on the supplied config
+        enabledStates.clear();
+        for (FolderType folderType : getAllFolderTypes())
+        {
+            enabledStates.put(folderType.getName(), Boolean.toString(enabledFolderTypes.contains(folderType)));
+        }
+        PropertyManager.saveProperties(enabledStates);
     }
 
     public void registerResourceLoader(ModuleResourceLoader loader)
