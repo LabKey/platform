@@ -32,7 +32,7 @@
     Container container = me.getViewContext().getContainer();
 
     Set<FolderType> folderTypes = new LinkedHashSet<>();
-    for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
+    for (FolderType folderType : ModuleLoader.getInstance().getEnabledFolderTypes())
     {
         if (folderType.isWorkbookType())
         {

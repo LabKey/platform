@@ -1596,7 +1596,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             Map<String, Object> folderTypes = new HashMap<>();
-            for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
+            for (FolderType folderType : ModuleLoader.getInstance().getEnabledFolderTypes())
             {
                 Map<String, Object> folderTypeJSON = new HashMap<>();
                 folderTypeJSON.put("name", folderType.getName());

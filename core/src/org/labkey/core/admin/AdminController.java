@@ -248,6 +248,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -5301,6 +5302,71 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Experimental Features");
+        }
+    }
+
+    public static class FolderTypesBean
+    {
+        private final Collection<FolderType> _allFolderTypes;
+        private final Collection<FolderType> _enabledFolderTypes;
+
+        public FolderTypesBean(Collection<FolderType> allFolderTypes, Collection<FolderType> enabledFolderTypes)
+        {
+            _allFolderTypes = allFolderTypes;
+            _enabledFolderTypes = enabledFolderTypes;
+        }
+
+        public Collection<FolderType> getAllFolderTypes()
+        {
+            return _allFolderTypes;
+        }
+
+        public Collection<FolderType> getEnabledFolderTypes()
+        {
+            return _enabledFolderTypes;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class FolderTypesAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", new FolderTypesBean(ModuleLoader.getInstance().getAllFolderTypes(), ModuleLoader.getInstance().getEnabledFolderTypes()));
+        }
+
+        @Override
+        public boolean handlePost(Object form, BindException errors) throws Exception
+        {
+            List<FolderType> enabledFolderTypes = new ArrayList<>();
+            for (FolderType folderType : ModuleLoader.getInstance().getAllFolderTypes())
+            {
+                boolean enabled = Boolean.TRUE.toString().equalsIgnoreCase(getViewContext().getRequest().getParameter(folderType.getName()));
+                if (enabled)
+                {
+                    enabledFolderTypes.add(folderType);
+                }
+            }
+            ModuleLoader.getInstance().setEnabledFolderTypes(enabledFolderTypes);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object form)
+        {
+            return getShowAdminURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Folder Types");
         }
     }
 

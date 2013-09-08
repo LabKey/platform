@@ -43,7 +43,7 @@ var defaultModules = new Object();
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainerNoTab();
 FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
-Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
+Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getAllFolderTypes();
 List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
 {

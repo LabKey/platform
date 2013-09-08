@@ -654,6 +654,7 @@ core/src/org/labkey/core/admin/deleteFolder.jsp -text
 core/src/org/labkey/core/admin/editMenuBar.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
+core/src/org/labkey/core/admin/enabledFolderTypes.jsp -text
 core/src/org/labkey/core/admin/experimentalFeatures.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
