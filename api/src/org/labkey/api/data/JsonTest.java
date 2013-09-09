@@ -15,11 +15,14 @@
  */
 package org.labkey.api.data;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,7 +32,7 @@ import java.util.List;
  * Time: 11:08 AM
  */
 
-// Simple framework we can use to test libraries that map JSON <-> Java objects. First up is GSON (see below), but we could
+// Simple framework we can use to test libraries that map JSON <-> Java objects. First up is Jackson (see below), but we could
 // plug in others for quick comparisons.
 public class JsonTest extends Assert
 {
@@ -59,15 +62,23 @@ public class JsonTest extends Assert
 
 
     @Test
-    public void gsonTest()
+    public void jacksonTest()
     {
-        Gson gson = new Gson();
-        Customer roundTripC1 = gson.fromJson(gson.toJson(c1), Customer.class);
-        assertEquals(c1, roundTripC1);
-        Customer roundTripC2 = gson.fromJson(gson.toJson(c2), Customer.class);
-        assertEquals(c2, roundTripC2);
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            Customer roundTripC1 = mapper.readValue(mapper.writeValueAsString(c1), Customer.class);
+            assertEquals(c1, roundTripC1);
+            Customer roundTripC2 = mapper.readValue(mapper.writeValueAsString(c2), Customer.class);
+            assertEquals(c2, roundTripC2);
+        }
+        catch (IOException e)
+        {
+            // In previous usage of GSON, there was potential for unhandled exception from gson.toJson() and fromJson().
+            // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
+            throw new RuntimeException(e);
+        }
     }
-
 
     private static class Customer
     {
@@ -75,6 +86,8 @@ public class JsonTest extends Assert
         private String _last;
         private int _custId;
         private List<Order> _orders;
+
+        private Customer() {}    // default constructor needed for jackson deserialization
 
         private Customer(String first, String last, int custId)
         {
@@ -121,6 +134,8 @@ public class JsonTest extends Assert
         private int _custId;
         private List<Product> _products;
 
+        private Order() {}  // default constructor needed for jackson deserialization
+
         private Order(int orderId, Customer customer)
         {
             _orderId = orderId;
@@ -162,6 +177,8 @@ public class JsonTest extends Assert
         private int _productId;
         private String _description;
         private float _price;
+
+        private Product() {} // default constructor needed for jackson deserialization
 
         private Product(int productId, String description, float price)
         {
