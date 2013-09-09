@@ -16,8 +16,8 @@
 
 package org.labkey.survey;
 
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
@@ -344,14 +344,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                 if (metadata != null)
                 {
-                    JsonParser parser = new JsonParser();
-                    parser.parse(metadata);
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.readTree(metadata);
 
                     // if the json is valid, validate that it meets a minimal survey shape
                     errorInfo = validateSurveyMetadata(metadata);
                 }
             }
-            catch (JsonSyntaxException e)
+            catch (JsonProcessingException e)
             {
                 String msg = "The survey questions must be valid JSON. Validation failed with the error : (%s)";
                 String cause;

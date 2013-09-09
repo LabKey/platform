@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.google.gson.Gson" %>
 <%@ page import="org.labkey.api.reports.model.ViewCategory"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -29,6 +28,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -46,7 +46,7 @@
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 
     String storeId = "dataset-visibility-category-store";
-    Gson gson = new Gson();
+    ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> datasetInfo = new ArrayList<>();
     for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
@@ -181,7 +181,7 @@
 
     Ext4.onReady(function() {
 
-        var datasetInfo = <%=text(gson.toJson(datasetInfo))%>;
+        var datasetInfo = <%=text(jsonMapper.writeValueAsString(datasetInfo))%>;
         var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({storeId : '<%=h(storeId)%>'});
 
         for (var i=0; i < datasetInfo.length; i++)

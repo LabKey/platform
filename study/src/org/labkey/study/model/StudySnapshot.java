@@ -15,11 +15,13 @@
  */
 package org.labkey.study.model;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
 import org.labkey.study.writer.StudyExportContext;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -118,14 +120,32 @@ public class StudySnapshot
 
     public String getSettings()
     {
-        Gson gson = new Gson();
-        return gson.toJson(_settings);
+        ObjectMapper mapper = new ObjectMapper();
+        try
+        {
+            return mapper.writeValueAsString(_settings);
+        }
+        catch (JsonProcessingException e)
+        {
+            // In previous usage of GSON, there was potential for unhandled exception from gson.toJson().
+            // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
+            throw new RuntimeException(e);
+        }
     }
 
     public void setSettings(String settings)
     {
-        Gson gson = new Gson();
-        _settings = gson.fromJson(settings, SnapshotSettings.class);
+        ObjectMapper mapper = new ObjectMapper();
+        try
+        {
+            _settings = mapper.readValue(settings, SnapshotSettings.class);
+        }
+        catch (IOException e)
+        {
+            // In previous usage of GSON, there was potential for unhandled exception from gson.fromJson().
+            // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
+            throw new RuntimeException(e);
+        }
     }
 
     public SnapshotSettings getSnapshotSettings()
@@ -134,7 +154,7 @@ public class StudySnapshot
     }
 
     // Hold the actual snapshot settings that we care about... this is serialized to (and deserialized from) the
-    // database via Gson. To serialize/deserialize another property, create a new member (and optional getter)
+    // database via Jackson. To serialize/deserialize another property, create a new member (and optional getter)
     // and initialize it appropriately in the constructor below.
     public static class SnapshotSettings
     {
