@@ -67,7 +67,29 @@
 
     // a report is inherited if it has been shared from a parent (or shared) folder
     boolean inherited = report.getReportId() != null ? report.getDescriptor().isInherited(c) : false;
+    StringBuilder inheritedWarningMsg = new StringBuilder();
     boolean isSharedFolder = c.equals(ContainerManager.getSharedContainer());
+
+    if (inherited)
+    {
+        Container srcContainer = ContainerManager.getForId(report.getContainerId());
+        ActionURL url = null;
+        if (srcContainer != null)
+            url = ctx.cloneActionURL().setContainer(srcContainer);
+
+        inheritedWarningMsg.append("<div class='labkey-warning-messages'>This view has been made available from a different ");
+        if (url != null)
+            inheritedWarningMsg.append("<a href='").append(url.getLocalURIString()).append("'>folder</a>");
+        else
+            inheritedWarningMsg.append("folder");
+
+        inheritedWarningMsg.append(" and cannot be edited here. The view can only be edited from the ");
+        if (url != null)
+            inheritedWarningMsg.append("<a href='").append(url.getLocalURIString()).append("'>folder</a>");
+        else
+            inheritedWarningMsg.append("folder");
+        inheritedWarningMsg.append(" it was created in.</div>");
+    }
 
     // Mode determines whether we need unique IDs on all the HTML elements
     String uid = mode.getUniqueID();
@@ -138,9 +160,7 @@ var f_scope<%=text(uid)%> = new (function() {
     var dataTabRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName) + "_report")%>;
 
     // inherited warning message
-    var inheritedWarningMsg = <%=text(inherited ? "'<div class=\"labkey-warning-messages\">This view has been made available" +
-        " from a different folder and cannot be edited here. The view can only be edited from the folder it was " +
-        " created in.</div>'" : "undefined")%>;
+    var inheritedWarningMsg = <%=q(inherited ? inheritedWarningMsg.toString() : null)%>;
 
     Ext.onReady(function(){
         scriptText = document.getElementById(<%=q(scriptId)%>);
@@ -185,6 +205,20 @@ var f_scope<%=text(uid)%> = new (function() {
                         var dr = LABKEY.DataRegions[dataRegionName];
                         if (dr) {
                             dr.addMessage(inheritedWarningMsg, 'info');
+                        }
+                        else {
+                            // if we are rendering out the context of a dataregion (data views, manage views...), add the
+                            // warning to a div above the report
+                            if (Ext.query('div.labkey-warning-msg').length == 0) {
+                                var el = Ext.get(Ext.query('table.labkey-proj > tbody'));
+                                if (el) {
+                                    el.insertFirst({tag : 'tr',
+                                        children : [{tag : 'td',
+                                            children : [{tag : 'div', cls : 'labkey-warning-msg', html : inheritedWarningMsg}]
+                                        }]
+                                    });
+                                }
+                            }
                         }
                     }
                 }

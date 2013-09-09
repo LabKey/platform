@@ -20,8 +20,11 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
@@ -29,6 +32,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -73,6 +78,78 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             {
                 throw new RuntimeException(e);
             }
+        }
+        else
+        {
+            // ensure the domain fields are in sync with the domain kind specification
+            ensureProperties(user, domain, domainKind);
+        }
+    }
+
+    protected void ensureProperties(User user, Domain domain, DomainKind domainKind)
+    {
+        if (domain != null && domainKind != null)
+        {
+            DbScope scope = domainKind.getScope();
+
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
+                StorageProvisioner.ProvisioningReport preport = StorageProvisioner.getProvisioningReport(domain.getTypeURI());
+                if (preport.getProvisionedDomains().size() != 1)
+                {
+                    return;
+                }
+                StorageProvisioner.ProvisioningReport.DomainReport report = preport.getProvisionedDomains().iterator().next();
+
+                TableChange drops = new TableChange(domainKind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.DropColumns);
+                boolean hasDrops = false;
+                TableChange adds = new TableChange(domainKind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
+                boolean hasAdds = false;
+
+                for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
+                {
+                    if (!st.hasProblem)
+                        continue;
+                    if (st.spec == null && st.prop == null)
+                    {
+                        if (null != st.colName)
+                        {
+                            drops.dropColumnExactName(st.colName);
+                            hasDrops = true;
+                        }
+                    }
+                    else if (st.spec != null && st.prop == null)
+                    {
+                        if (st.colName == null)
+                        {
+                            adds.addColumn(st.spec);
+                            hasAdds = true;
+                        }
+                    }
+                }
+                Connection conn = scope.getConnection();
+                if (hasDrops)
+                    executeChange(scope, conn, drops);
+                if (hasAdds)
+                    executeChange(scope, conn, adds);
+
+                if (hasDrops || hasAdds)
+                    domainKind.invalidate(domain);
+
+                scope.commitTransaction();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void executeChange(DbScope scope, Connection conn, TableChange change) throws SQLException
+    {
+        for (String sql : scope.getSqlDialect().getChangeStatements(change))
+        {
+            conn.prepareStatement(sql).execute();
         }
     }
 
