@@ -872,6 +872,11 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
         this.fireEvent('datachange', meta);
 
         this.callParent(arguments);
+
+        //NOTE: Ext.data.Model.onFieldAddReplace() would normally reset the idField; however, we usually end up changing the idProperty since it was not known at time of store creation
+        if (this.model){
+            this.model.prototype.idField = this.model.prototype.fields.get(this.model.prototype.idProperty);
+        }
     },
 
     /*
