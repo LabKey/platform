@@ -1702,6 +1702,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return;
         }
 
+        if(this.warningText !== null) {
+            height = height - 15;
+        }
+
         if (customRenderType && customRenderType.generatePlotConfig) {
             plotConfig = customRenderType.generatePlotConfig(this, chartConfig, newChartDiv.id, width, height, this.chartData.rows, aes, scales, labels);
         } else {
@@ -1725,11 +1729,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
-        newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
-            autoEl: 'div',
-            style: 'color: red; text-align: center;',
-            html: this.warningText
-        }));
+        if(this.warningText !== null) {
+            var warningDiv = document.createElement('div');
+            warningDiv.setAttribute('class', 'labkey-error');
+            warningDiv.setAttribute('style', 'text-align: center');
+            warningDiv.innerHTML = this.warningText;
+            newChartDiv.getEl().insertFirst(warningDiv);
+        }
 
         if (!forExport){
             this.showOptionsBtn.setDisabled(false);
@@ -1978,7 +1984,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     clearWarningText: function(){
-        this.warningText = '';
+        this.warningText = null;
     },
 
     addWarningText: function(warning){
