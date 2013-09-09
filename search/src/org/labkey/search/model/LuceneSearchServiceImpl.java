@@ -605,6 +605,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 // Tika mistakenly thinks some files (e.g., .ggl files) are AutoCAD files, #13811. Don't even warn about these.
             }
+            else if (topMessage.equals("image/gif parse error") && StringUtils.endsWithIgnoreCase(r.getName(), ".mht"))
+            {
+                // Tika can't parse all .mht files
+                logAsWarning(r, "Can't parse this MHT file", rootMessage);
+            }
             else
             {
                 logAsPreProcessingException(r, e);
