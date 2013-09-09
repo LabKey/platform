@@ -534,17 +534,26 @@ public class NavTree implements Collapsible
             sb.append(",icon:").append(PageFlowUtil.qh(getImageSrc()));
         if (isDisabled())
             sb.append(",disabled:true");
-        sb.append(", showSeparator: false");
-        sb.append(",href:").append(null != getHref() && !isDisabled() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
-        if (null != getTarget())
-            sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
+        // issue 18548: workaround for Ext4.2.1
+        if (null != getHref())
+        {
+            if (null == getScript() && null == getTarget()) // Ext4.2.2 claims to have fixed this issue, so this shouldn't be needed after that
+                sb.append(",handler:function(){window.location=").append(PageFlowUtil.jsString(getHref())).append(";}");
+            else
+            {
+                sb.append(",href:").append(!isDisabled() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
+                if (null != getTarget())
+                    sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
+            }
+        }
         if (null != getScript())
             sb.append(",handler:function(){").append(getScript()).append("}");
         if (hasChildren())
         {
             sb.append(",hideOnClick:false");
-            sb.append(",\n").append(asMenu ? "menu:" : "children:");
+            sb.append(",\n").append(asMenu ? "menu:{showSeparator:false,items:" : "children:");
             toJS(_children, sb, asMenu);
+            sb.append(",\n").append(asMenu ? "}" : "");
         }
         else
         {
