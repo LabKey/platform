@@ -799,6 +799,7 @@ abstract public class AbstractTableInfo implements TableInfo
         if (xmlTable == null)
             return;
 
+        //See issue 18592
         if (!StringUtils.isEmpty(xmlTable.getTableName()))
         {
             if (xmlTable.getTableName().equalsIgnoreCase(getName()))
