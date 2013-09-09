@@ -912,6 +912,7 @@ LABKEY.ext.ComboPlugin = function () {
                 this.combo.doResize(w);
             }else{
                 this.combo.bufferSize = w;
+                this.combo.listWidth = w;
             }
         },
 
@@ -959,6 +960,14 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox, {
     constructor: function (config) {
         config.plugins = config.plugins || [];
         config.plugins.push(LABKEY.ext.ComboPlugin);
+
+        // Issue 18401: Customize view folder picker truncates long folder paths
+        // Add displayField as the qtip text for item that are likely to be truncated.
+        if (!config.tpl) {
+            var cls = 'x-combo-list';
+            config.tpl = '<tpl for="."><div ext:qtip="{[values[\'' + config.displayField + '\'] && values[\'' + config.displayField + '\'].length > 50 ? values[\'' + config.displayField + '\'] : \'\']}" class="'+cls+'-item">{' + config.displayField + ':htmlEncode}</div></tpl>';
+        }
+
         LABKEY.ext.ComboBox.superclass.constructor.call(this, config);
     }
 });
