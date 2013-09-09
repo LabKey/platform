@@ -44,6 +44,7 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.resource.Resource;
@@ -315,13 +316,29 @@ public class ModuleLoader implements Filter
 
             try
             {
-                module.initialize();
+                try
+                {
+                    module.initialize();
+                }
+                catch (DatabaseNotSupportedException dnse)
+                {
+                    // In production mode, treat module that doesn't support the current database as a module initialization error
+                    if (!AppProps.getInstance().isDevMode())
+                        throw dnse;
+
+                    // In dev mode, just log a one-line warning
+                    _log.warn("Unable to initialize module " + module.getName() + " due to: " + dnse.getMessage());
+                    iterator.remove();
+                    continue;
+                }
+
                 moduleMap.put(module.getName(), module);
                 moduleClassMap.put(module.getClass(), module);
             }
             catch(Throwable t)
             {
                 _log.error("Unable to initialize module " + module.getName(), t);
+                //noinspection ThrowableResultOfMethodCallIgnored
                 _moduleFailures.put(module.getName(), t);
                 iterator.remove();
             }

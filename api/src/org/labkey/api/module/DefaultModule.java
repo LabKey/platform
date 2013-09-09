@@ -37,6 +37,7 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -152,7 +153,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
         if (!getSupportedDatabasesSet().contains(coreType))
-            throw new ConfigurationException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+            throw new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
 
         for (String dsName : ModuleLoader.getInstance().getModuleDataSources(this))
         {

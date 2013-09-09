@@ -217,12 +217,17 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         }
         else
         {
-            if ("http".equals(scheme))
-                serverPort = 80;
-            else if ("https".equals(scheme))
-                serverPort = 443;
-            else
-                throw new URISyntaxException(baseServerUrl, "Invalid scheme");
+            switch (scheme)
+            {
+                case "http":
+                    serverPort = 80;
+                    break;
+                case "https":
+                    serverPort = 443;
+                    break;
+                default:
+                    throw new URISyntaxException(baseServerUrl, "Invalid scheme");
+            }
         }
 
         // New values have been validated -- now update global settings

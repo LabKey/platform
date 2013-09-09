@@ -686,8 +686,13 @@ public class QueryProfiler
             if (set.size() > 1)
             {
                 String commonPrefix = StringUtilsLabKey.findCommonPrefix(stackTraces);
-                commonLength = commonPrefix.lastIndexOf('\n');
-                formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
+                int idx = commonPrefix.lastIndexOf('\n');
+
+                if (-1 != idx)
+                {
+                    commonLength = idx;
+                    formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
+                }
             }
 
             sb.append("<tr><td>").append("<b>Count</b>").append("</td><td style=\"padding-left:10;\">").append("<b>Traces</b>").append("</td></tr>\n");
