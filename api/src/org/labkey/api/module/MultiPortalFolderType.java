@@ -307,33 +307,55 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             String defaultTabName = folderType.getDefaultTab().getName();
             List<Portal.WebPart> mergedParts = new ArrayList<>(Portal.getParts(container, defaultTabName));
             Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
-            boolean changed = false;
+            List<Portal.WebPart> required = getRequiredWebParts();
+            boolean changedLegacy = false;
+            boolean changedMerged = false;
             while (i.hasNext())
             {
                 Portal.WebPart defaultPortalPart = i.next();
                 String legacyPageAdded = defaultPortalPart.getPropertyMap().get(Portal.WEBPART_PROP_LegacyPageAdded);
-                if ((null == legacyPageAdded || !legacyPageAdded.equalsIgnoreCase("true")) &&
-                        !WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
+                if (!WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
                 {
-                    // Add it to the default tab if it's not already there
-                    if (!mergedParts.contains(defaultPortalPart))
+                    if ((null == legacyPageAdded || !legacyPageAdded.equalsIgnoreCase("true")))
                     {
-                        Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
-                        webPart.setPageId(defaultTabName);
-                        mergedParts.add(webPart);
+                        // Add it to the default tab if it's not already there
+                        if (null == findPart(mergedParts, defaultPortalPart))
+                        {
+                            Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
+                            webPart.setPageId(defaultTabName);
+                            mergedParts.add(webPart);
+                            changedMerged = true;
+                        }
+                        // Remember that legacy portal page has been added to default tab
+                        defaultPortalPart.setProperty(Portal.WEBPART_PROP_LegacyPageAdded, "true");
+                        changedLegacy = true;
                     }
-                    // Remember that legacy portal page has been added to default tab
-                    defaultPortalPart.setProperty(Portal.WEBPART_PROP_LegacyPageAdded, "true");
-                    changed = true;
+                    if (defaultPortalPart.isPermanent() && null != findPart(required, defaultPortalPart))
+                    {
+                        Portal.WebPart actualPart = findPart(mergedParts, defaultPortalPart);
+                        if (null == actualPart)
+                        {
+                            // It's required in this foldertype, but it's missing; add it
+                            Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
+                            webPart.setPageId(defaultTabName);
+                            mergedParts.add(webPart);
+                            changedMerged = true;
+                        }
+                        else if (!actualPart.isPermanent())
+                        {
+                            // A required part is not marked required (perhaps because of switching folder types) so mark it so
+                            actualPart.setPermanent(true);
+                            changedMerged = true;
+                        }
+                    }
                 }
             }
 
-            if (changed)
-            {
-                // Save the legacy page and the newly merged page
+            // Save the newly merged page and/or the legacy page
+            if (changedLegacy)
                 Portal.saveParts(container, legacyPortalParts);
+            if (changedMerged)
                 Portal.saveParts(container, defaultTabName, mergedParts);
-            }
         }
     }
 

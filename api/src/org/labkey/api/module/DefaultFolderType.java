@@ -213,26 +213,8 @@ public class DefaultFolderType implements FolderType
 
     public void unconfigureContainer(Container c, User user)
     {
-        List<WebPart> parts = Portal.getParts(c);
         List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
         CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(c, true));
-
-        if (null != parts)
-        {
-            boolean saveRequired = false;
-
-            for (WebPart part : parts)
-            {
-                if (part.isPermanent())
-                {
-                    part.setPermanent(false);
-                    saveRequired = true;
-                }
-            }
-
-            if (saveRequired)
-                Portal.saveParts(c, parts);
-        }
 
         for (FolderTab folderTab : folderTabs)
         {
@@ -241,7 +223,25 @@ public class DefaultFolderType implements FolderType
 
             if (null != portalPage)
             {
-               Portal.hidePage(c, portalPage.getPageId());
+                // Mark any actual permanent parts not permanent, since we're switching to another folder type
+                List<WebPart> parts = Portal.getParts(c, portalPage.getPageId());
+                if (null != parts)
+                {
+                    boolean saveRequired = false;
+
+                    for (WebPart part : parts)
+                    {
+                        if (part.isPermanent())
+                        {
+                            part.setPermanent(false);
+                            saveRequired = true;
+                        }
+                    }
+
+                    if (saveRequired)
+                        Portal.saveParts(c, portalPage.getPageId(), parts);
+                }
+                Portal.hidePage(c, portalPage.getPageId());
             }
         }
     }
@@ -261,7 +261,7 @@ public class DefaultFolderType implements FolderType
      * Find a web part. Don't use strict equality, just name and location
      * @return matchingPart
      */
-    private Portal.WebPart findPart(List<Portal.WebPart> parts, Portal.WebPart partToFind)
+    protected Portal.WebPart findPart(List<Portal.WebPart> parts, Portal.WebPart partToFind)
     {
         String location = partToFind.getLocation();
         String name = partToFind.getName();
