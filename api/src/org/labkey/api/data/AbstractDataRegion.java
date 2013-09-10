@@ -48,7 +48,8 @@ public abstract class AbstractDataRegion extends DisplayElement
         BOTTOM,
     }
 
-    public enum MessagePart {
+    public enum MessagePart
+    {
         view,
         filter,
         header,
@@ -131,7 +132,7 @@ public abstract class AbstractDataRegion extends DisplayElement
             {
                 out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
                         PageFlowUtil.jsString(entry.getValue()) + "," +
-                        PageFlowUtil.jsString(entry.getKey())+ ");\n");
+                        PageFlowUtil.jsString(entry.getKey()) + ");\n");
             }
             out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
         }
@@ -150,7 +151,8 @@ public abstract class AbstractDataRegion extends DisplayElement
         return urlFilter;
     }
 
-    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = { "RowId", "DisplayName", "Description", "Label", "Caption", "Value" };
+    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
+
     protected String getFilterDescription(RenderContext ctx) throws IOException
     {
         SimpleFilter urlFilter = getValidFilter(ctx);
@@ -166,7 +168,7 @@ public abstract class AbstractDataRegion extends DisplayElement
                     for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
                     {
                         if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
-                            formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
+                                formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
                         {
                             formatted = formatted.substring(0, formatted.length() - (hiddenFilter.length() + 1));
                         }
@@ -233,14 +235,15 @@ public abstract class AbstractDataRegion extends DisplayElement
         return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
     }
 
-    public Map<String,Object> getQueryParameters()
+    public Map<String, Object> getQueryParameters()
     {
-        return null== getSettings() ? Collections.<String, Object>emptyMap() : getSettings().getQueryParameters();
+        return null == getSettings() ? Collections.<String, Object>emptyMap() : getSettings().getQueryParameters();
     }
 
     /**
      * Adds any filter error messages and optionally the filter description that is applied to the current context.
-     * @param headerMessage The StringBuilder to append messages to
+     *
+     * @param headerMessage         The StringBuilder to append messages to
      * @param showFilterDescription Specifies whether the filter description should be added
      */
     protected void addFilterMessage(StringBuilder headerMessage, RenderContext ctx, boolean showFilterDescription) throws IOException
@@ -249,6 +252,8 @@ public abstract class AbstractDataRegion extends DisplayElement
         String filterDescription = showFilterDescription ? getFilterDescription(ctx) : null;
         if (filterErrorMsg != null && filterErrorMsg.length() > 0)
             headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
+
+        String sectionSeparator = "";
 
         Map<String, Object> parameters = getQueryParameters();
         if (!parameters.isEmpty())
@@ -265,11 +270,12 @@ public abstract class AbstractDataRegion extends DisplayElement
             }
             headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
                     PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;", null));
-            headerMessage.append("&nbsp;&nbsp;");
+            sectionSeparator = "<br/><br/>";
         }
 
         if (filterDescription != null)
         {
+            headerMessage.append(sectionSeparator);
             headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
             headerMessage.append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
@@ -278,7 +284,9 @@ public abstract class AbstractDataRegion extends DisplayElement
     }
 
     protected abstract boolean shouldRenderHeader(boolean renderButtons);
+
     protected abstract void renderButtons(RenderContext ctx, Writer out) throws IOException;
+
     protected abstract void renderPagination(RenderContext ctx, Writer out, PaginationLocation location) throws IOException;
 
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
