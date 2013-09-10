@@ -193,8 +193,16 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
             String sortFilter = ctx.get(_sortFilterCol.getFieldKey(), String.class);
             if (sortFilter != null)
             {
-                ActionURL sortFilterURL = new ActionURL(sortFilter);
-                url.setPropertyValues(sortFilterURL.getPropertyValues());
+                // Issue 18605: IllegalArgumentException thrown when parsing the query parameters
+                try
+                {
+                    ActionURL sortFilterURL = new ActionURL(sortFilter);
+                    url.setPropertyValues(sortFilterURL.getPropertyValues());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    return null;
+                }
             }
 
             if (url.getParameter(QueryParam.schemaName) == null)

@@ -65,6 +65,10 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
             for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
             {
+                // issue: 14463, exclude dataset audit events from the general query
+                if (provider.getEventName().equals("DatasetAuditEvent"))
+                    continue;
+
                 _query.append(union).append("\n");
 
                 TableInfo table = provider.createTableInfo(schema);

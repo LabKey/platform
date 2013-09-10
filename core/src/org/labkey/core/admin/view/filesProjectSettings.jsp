@@ -139,11 +139,7 @@
         <tr><td></td></tr>
 
         <%
-            if (!cloud.isEnabled(getViewContext().getContainer()))
-            {
-                %><tr><td><em>Cloud module is not enabled in this folder.</em></td></tr><%
-            }
-            else if (storeNames.isEmpty())
+            if (storeNames.isEmpty())
             {
                 %><tr><td><em>No cloud stores have been created in the site admin preferences.</em></td></tr><%
             }
