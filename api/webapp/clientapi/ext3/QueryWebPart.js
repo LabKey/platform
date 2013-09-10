@@ -742,15 +742,19 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         return false;
     },
 
-    beforeFilterChange : function(dataRegion, newFilterPairs) {
+    beforeFilterChange : function(dataRegion, newParamValPairs) {
         this.offset = 0;
 
-        // reset the user filters, the newFilterPairs should contain all non-repeating filters that
-        // the dataregion knows about
+        // reset the user filters
+        // newParamValPairs contains all URL parameters in addition to the new filters
         this.userFilters = {};
-        for (var idx = 0; idx < newFilterPairs.length; ++idx)
+        for (var idx = 0; idx < newParamValPairs.length; ++idx)
         {
-            this.userFilters[newFilterPairs[idx][0]] = newFilterPairs[idx][1];
+            // Issue 18448, 18303: Only include filter parameters (ignore .sort and others)
+            var paramName = newParamValPairs[idx][0];
+            var paramVal = newParamValPairs[idx][1];
+            if (paramName.indexOf(this.dataRegionName + ".") == 0 && paramName.indexOf("~") > -1)
+                this.userFilters[paramName] = paramVal;
         }
         this.render();
         return false;

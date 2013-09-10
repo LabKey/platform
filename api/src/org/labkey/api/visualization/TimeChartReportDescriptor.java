@@ -177,11 +177,12 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                     {
                         zeroDateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("zeroDateCol"), "queryName", changes);
                     }
-                    // update dimension queryName
-                    if (measures.getJSONObject(i).has("dimension"))
-                    {
-                        dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), "queryName", changes);
-                    }
+                }
+
+                // update dimension queryName
+                if (measures.getJSONObject(i).has("dimension"))
+                {
+                    dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), "queryName", changes);
                 }
 
                 // update measure queryName
