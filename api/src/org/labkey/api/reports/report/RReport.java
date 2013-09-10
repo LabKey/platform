@@ -408,19 +408,24 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
     /**
      * If this R Report is using knitr then put all the results into the cache directory instead of a temp
-     * directory.  This enables knitr to do its own caching.  If this is a non-Knitr report then just follow
-     * usual cache behavior.  Note that knitr caching is not the same as report caching.  Report caching saves off the
-     * output parameters of the report and then serves them up without executing the script again if the incoming URL
-     * is the same.  For Knitr caching, we always run the R script and let the knitr library manage the caching options.
+     * directory.  This enables knitr to do its own caching.  If this is a non-Knitr report or we don't have a cache
+     * directory because the report was not saved yet, then fall back to the non-cache case.  Note that knitr caching
+     * is not the same as report caching.  Report caching saves off the output parameters of the report and then serves
+     * them up without executing the script again if the incoming URL is the same.
+     * For Knitr caching, we always run the R script and let the knitr library manage the caching options.
      */
-
     @Override
     public File getReportDir()
     {
-        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
-            return super.getReportDir();
+        File reportDir = null;
 
-        return getCacheDir();
+        if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
+            reportDir = getCacheDir();
+
+        if (null == reportDir)
+            reportDir = super.getReportDir();
+
+         return reportDir;
     }
 
     @Override

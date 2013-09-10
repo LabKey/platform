@@ -70,28 +70,18 @@ public class KnitrOutput extends HtmlOutput
     public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
         KnitrOutputView view = new KnitrOutputView(this, getLabel());
-        String html = null;
-        URI baseURI = null;
+        Thumbnail thumb = null;
 
         try
         {
-            html = view.renderInternalAsString();
-            try
-            {
-                baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
-            }
-            catch(URISyntaxException e)
-            {
-            }
+            String html = view.renderInternalAsString();
+            URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
+            if (html != null && baseURI != null)
+                thumb = ImageUtil.webThumbnail(context, html, baseURI);
         }
-        catch(Exception e)
-        {
-        }
+        catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
 
-        if (html == null || baseURI == null)
-            return null;
-
-        return ImageUtil.webThumbnail(context, html, baseURI);
+        return thumb;
     }
 
     public static class KnitrOutputView extends HtmlOutputView
