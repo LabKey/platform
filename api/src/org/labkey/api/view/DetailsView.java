@@ -40,7 +40,7 @@ public class DetailsView extends DataView
 
     public DetailsView(DataRegion dataRegion, Object... pk)
     {
-        super(dataRegion, (BindException)null);
+        super(dataRegion, (BindException) null);
         _pk = pk;
     }
 
@@ -51,7 +51,7 @@ public class DetailsView extends DataView
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {
-        if (ctx.getResultSet() == null)
+        if (ctx.getResults() == null)
         {
             Filter filter = ctx.getBaseFilter();
             assert _pk != null || filter != null;

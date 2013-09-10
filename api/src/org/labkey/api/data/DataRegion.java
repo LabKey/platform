@@ -128,7 +128,7 @@ public class DataRegion extends AbstractDataRegion
 
     public void addDisplayColumn(DisplayColumn col)
     {
-        assert  null != col;
+        assert null != col;
         if (null == col)
             return;
         _displayColumns.add(col);
@@ -138,7 +138,7 @@ public class DataRegion extends AbstractDataRegion
 
     public void addDisplayColumn(int index, DisplayColumn col)
     {
-        assert  null != col;
+        assert null != col;
         if (null == col)
             return;
         _displayColumns.add(index, col);
@@ -310,9 +310,9 @@ public class DataRegion extends AbstractDataRegion
             if (name.equals(hiddenFormField.getKey()))
             {
                 if (hiddenFormField.getValue() instanceof HString)
-                    return ((HString)hiddenFormField.getValue()).getSource();
+                    return ((HString) hiddenFormField.getValue()).getSource();
                 else
-                    return (String)hiddenFormField.getValue();
+                    return (String) hiddenFormField.getValue();
             }
         }
         return null;
@@ -320,7 +320,9 @@ public class DataRegion extends AbstractDataRegion
 
 
     @SuppressWarnings({"AssertWithSideEffects"})
-    public @NotNull LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
+    public
+    @NotNull
+    LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
         TableInfo table = getTable();
         List<DisplayColumn> displayCols = getDisplayColumns();
@@ -349,7 +351,9 @@ public class DataRegion extends AbstractDataRegion
         _showRecordSelectors = show;
     }
 
-    /** Called after configuring the button bar, check if any buttons require selection (e.g., "Delete"). */
+    /**
+     * Called after configuring the button bar, check if any buttons require selection (e.g., "Delete").
+     */
     public boolean getShowRecordSelectors(RenderContext ctx)
     {
         // Issue 11569: QueryView.showRecordSelectors should take metadata override buttons into account
@@ -460,7 +464,9 @@ public class DataRegion extends AbstractDataRegion
         return getSettings() != null ? getSettings().getMaxRows() : _maxRows;
     }
 
-    /** Use {@link QuerySettings#setMaxRows(int)}. */
+    /**
+     * Use {@link QuerySettings#setMaxRows(int)}.
+     */
     @Deprecated
     public void setMaxRows(int maxRows)
     {
@@ -475,7 +481,9 @@ public class DataRegion extends AbstractDataRegion
         return getSettings() != null ? getSettings().getOffset() : _offset;
     }
 
-    /** Use {@link QuerySettings#setOffset(long)}. */
+    /**
+     * Use {@link QuerySettings#setOffset(long)}.
+     */
     @Deprecated
     public void setOffset(long offset)
     {
@@ -572,10 +580,11 @@ public class DataRegion extends AbstractDataRegion
      * on the RenderContext and selecting any aggregates
      * (including the row count aggregate, unless pagination or pagination count are false.)
      * Callers should check for ReadPermission before requesting a ResultSet.
+     *
      * @param ctx The RenderContext
      * @return A new ResultSet or the existing ResultSet in the RenderContext or null if no READ permission.
      * @throws SQLException SQLException
-     * @throws IOException IOException
+     * @throws IOException  IOException
      */
     final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
     {
@@ -661,12 +670,12 @@ public class DataRegion extends AbstractDataRegion
                 Aggregate.Result countStarResult = result.get(0);
                 _totalRows = 0L;
                 if (countStarResult.getValue() instanceof Number)
-                    _totalRows = ((Number)countStarResult.getValue()).longValue();
+                    _totalRows = ((Number) countStarResult.getValue()).longValue();
             }
         }
         else
         {
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
+            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?
@@ -698,8 +707,9 @@ public class DataRegion extends AbstractDataRegion
     {
         public String dataRegionName;
         public Collection<QueryService.ParameterDecl> params;
-        public Map<String,Object> values;
-        ParameterViewBean(String dataRegionName, Collection<QueryService.ParameterDecl> params, Map<String,Object> values)
+        public Map<String, Object> values;
+
+        ParameterViewBean(String dataRegionName, Collection<QueryService.ParameterDecl> params, Map<String, Object> values)
         {
             this.dataRegionName = dataRegionName;
             this.params = params;
@@ -709,7 +719,7 @@ public class DataRegion extends AbstractDataRegion
 
     public class ParameterView extends JspView<ParameterViewBean>
     {
-        ParameterView(Collection<QueryService.ParameterDecl> params, Map<String,Object> defaults)
+        ParameterView(Collection<QueryService.ParameterDecl> params, Map<String, Object> defaults)
         {
             super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getName(), params, defaults));
         }
@@ -808,8 +818,8 @@ public class DataRegion extends AbstractDataRegion
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
 
         List<DisplayColumn> renderers = getDisplayColumns();
-        Map<FieldKey,ColumnInfo> fieldMap = ctx.getFieldMap();
-        Set<FieldKey> fieldKeys = null==fieldMap ? null : fieldMap.keySet();
+        Map<FieldKey, ColumnInfo> fieldMap = ctx.getFieldMap();
+        Set<FieldKey> fieldKeys = null == fieldMap ? null : fieldMap.keySet();
 
         //determine number of HTML table columns...watch out for hidden display columns
         //and include one extra if showing record selectors
@@ -823,9 +833,9 @@ public class DataRegion extends AbstractDataRegion
             colCount++;
 
 
-        if (rs instanceof Table.TableResultSet && ((Table.TableResultSet)rs).getSize() != -1)
+        if (rs instanceof Table.TableResultSet && ((Table.TableResultSet) rs).getSize() != -1)
         {
-            _rowCount = ((Table.TableResultSet)rs).getSize();
+            _rowCount = ((Table.TableResultSet) rs).getSize();
             if (_complete && _totalRows == null)
                 _totalRows = getOffset() + _rowCount.intValue();
         }
@@ -899,13 +909,13 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
-        if(renderButtons)
+        if (renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
         out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
 
         if (isShowBorders())
-             out.write(" labkey-show-borders");
-        else if(isShowSurroundingBorder())
+            out.write(" labkey-show-borders");
+        else if (isShowSurroundingBorder())
             out.write(" labkey-show-surrounding-border");
 
         if (_aggregateResults != null && !_aggregateResults.isEmpty())
@@ -955,7 +965,7 @@ public class DataRegion extends AbstractDataRegion
     @Override
     protected void renderButtons(RenderContext ctx, Writer out) throws IOException
     {
-      //adjust position if bbar supplies a position value
+        //adjust position if bbar supplies a position value
         if (_gridButtonBar.getConfiguredPosition() != null)
             setButtonBarPosition(_gridButtonBar.getConfiguredPosition());
 
@@ -988,7 +998,7 @@ public class DataRegion extends AbstractDataRegion
         //permissions
         JSONObject permissionJSON = new JSONObject();
         TableInfo table = getTable();
-        if(table != null)
+        if (table != null)
         {
             permissionJSON.put("insert", table.hasPermission(ctx.getViewContext().getUser(), InsertPermission.class));
             permissionJSON.put("update", table.hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class));
@@ -1015,7 +1025,7 @@ public class DataRegion extends AbstractDataRegion
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
-        List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>)ctx.get("allowableContainerFilterTypes");
+        List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>) ctx.get("allowableContainerFilterTypes");
         if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
         {
             JSONArray containerFiltersJSON = new JSONArray();
@@ -1055,7 +1065,7 @@ public class DataRegion extends AbstractDataRegion
             out.write("</td></tr>\n");
 
             renderRibbon(ctx, out);
-            
+
             out.write("</table>");
 
             out.write("</td></tr>");
@@ -1079,19 +1089,19 @@ public class DataRegion extends AbstractDataRegion
                 //NOTE: because the onRender function could be part of a namespace not yet defined, we split the string and test
                 //whether each node exists
                 out.write("var tester = function() {  \n" +
-                "\tvar name = '" + buttonBarConfig.getOnRenderScript() + "'.split('.'); \n" +
-                "\tvar obj = this; \n" +
-                "\tfor(var i=0;i<name.length;i++){\n" +
-                "\tobj = obj[name[i]];\n" +
-                "\tif(undefined === obj) return false;\n" +
-                "\tif(!LABKEY || !LABKEY.DataRegions || !LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]) return false;\n" +
-                "\treturn true;\n" +
-                "\t}\n" +
-                "}\n" +
-                "var onTrue = function() { " +
-                "\t" + buttonBarConfig.getOnRenderScript() + "(LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]); \n" +
-                "}\n" +
-                "LABKEY.Utils.onTrue( { testCallback: tester, scope: this, success: onTrue, failure: function(e){console.log('Error calling dataregion onRender function');console.log(e);} });\n");
+                        "\tvar name = '" + buttonBarConfig.getOnRenderScript() + "'.split('.'); \n" +
+                        "\tvar obj = this; \n" +
+                        "\tfor(var i=0;i<name.length;i++){\n" +
+                        "\tobj = obj[name[i]];\n" +
+                        "\tif(undefined === obj) return false;\n" +
+                        "\tif(!LABKEY || !LABKEY.DataRegions || !LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]) return false;\n" +
+                        "\treturn true;\n" +
+                        "\t}\n" +
+                        "}\n" +
+                        "var onTrue = function() { " +
+                        "\t" + buttonBarConfig.getOnRenderScript() + "(LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]); \n" +
+                        "}\n" +
+                        "LABKEY.Utils.onTrue( { testCallback: tester, scope: this, success: onTrue, failure: function(e){console.log('Error calling dataregion onRender function');console.log(e);} });\n");
             }
         }
 
@@ -1122,7 +1132,7 @@ public class DataRegion extends AbstractDataRegion
         if (_showPagination)
         {
             if ((_buttonBarPosition.atTop() && location == PaginationLocation.TOP) ||
-                (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
+                    (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
             {
                 if (isSmallResultSet())
                     return;
@@ -1131,7 +1141,7 @@ public class DataRegion extends AbstractDataRegion
 
                 out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
 
-                if (getMaxRows() > 0 && getOffset() >= 2*getMaxRows())
+                if (getMaxRows() > 0 && getOffset() >= 2 * getMaxRows())
                     paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
 
                 if (getMaxRows() > 0 && getOffset() >= getMaxRows())
@@ -1143,7 +1153,7 @@ public class DataRegion extends AbstractDataRegion
                 if (_totalRows != null)
                 {
                     if (_rowCount != null)
-                        out.write("of <em>" + fmt.format( _totalRows) + "</em> ");
+                        out.write("of <em>" + fmt.format(_totalRows) + "</em> ");
 
                     if (getMaxRows() > 0)
                     {
@@ -1161,7 +1171,7 @@ public class DataRegion extends AbstractDataRegion
                             paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", nextOffset);
                         }
 
-                        if (remaining > 2*getMaxRows())
+                        if (remaining > 2 * getMaxRows())
                             paginateLink(out, "Last Page", "Last <b>&raquo;</b>", lastPageOffset);
                     }
                 }
@@ -1226,7 +1236,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (this.getAllowHeaderLock())
         {
-            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) +"\">");
+            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) + "\">");
 
             if (showRecordSelectors)
             {
@@ -1264,7 +1274,7 @@ public class DataRegion extends AbstractDataRegion
             while (it.hasNext())
             {
                 Map.Entry<String, List<Aggregate.Result>> result = it.next();
-                for(Aggregate.Result r : result.getValue())
+                for (Aggregate.Result r : result.getValue())
                 {
                     aggregateLabels.add(r.getAggregate().getDisplayString());
                 }
@@ -1338,8 +1348,8 @@ public class DataRegion extends AbstractDataRegion
                                     out.write("&lt;none&gt;");
                                 else if (formatter != null &&
                                         (inputType == returnType ||
-                                        (inputType.isInteger() && returnType.isInteger()) ||
-                                        (inputType.isReal() && returnType.isReal())))
+                                                (inputType.isInteger() && returnType.isInteger()) ||
+                                                (inputType.isReal() && returnType.isReal())))
                                     out.write(formatter.format(r.getValue()));
                                 else
                                     out.write(r.getValue().toString());
@@ -1370,6 +1380,7 @@ public class DataRegion extends AbstractDataRegion
     }
 
     // Allows subclasses to add table rows at the beginning or end of the table
+
     /**
      * @return number of rows rendered
      */
@@ -1470,9 +1481,9 @@ public class DataRegion extends AbstractDataRegion
         for (Pair<String, Object> field : _hiddenFormFields)
         {
             if (field.second instanceof HString)
-                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((HString)field.second) + "\">");
+                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((HString) field.second) + "\">");
             else
-                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String)field.second) + "\">");
+                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
         }
 
     }
@@ -1597,7 +1608,7 @@ public class DataRegion extends AbstractDataRegion
         try
         {
             initDetailsResultSet(ctx);
-            ResultSet rs = ctx.getResultSet();
+            ResultSet rs = ctx.getResults();
             List<DisplayColumn> renderers = getDisplayColumns();
 
             renderFormHeader(ctx, out, MODE_DETAILS);
@@ -1631,7 +1642,7 @@ public class DataRegion extends AbstractDataRegion
         }
         finally
         {
-            ResultSet rs = ctx.getResultSet();
+            ResultSet rs = ctx.getResults();
             if (null != rs)
                 rs.close();
         }
@@ -1653,7 +1664,7 @@ public class DataRegion extends AbstractDataRegion
         }
         else
         {
-            LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+            LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
             rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), getQueryParameters(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
             ctx.setResults(rs);
         }
@@ -1696,7 +1707,7 @@ public class DataRegion extends AbstractDataRegion
         {
             TableViewForm form = ctx.getForm();
             if (null != form)
-                ctx.setRow((Map)form.getStrings());
+                ctx.setRow((Map) form.getStrings());
         }
         renderForm(ctx, out);
     }
@@ -1715,7 +1726,7 @@ public class DataRegion extends AbstractDataRegion
     {
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
-        LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
         {
@@ -1726,7 +1737,7 @@ public class DataRegion extends AbstractDataRegion
                 //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
                 Object old = viewForm.getOldValues();
                 if (old instanceof Map)
-                    valueMap = (Map)old;
+                    valueMap = (Map) old;
                 else
                     valueMap = new BoundMap(old);
             }
@@ -1807,7 +1818,7 @@ public class DataRegion extends AbstractDataRegion
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
-                    " data in this container.");                       
+                    " data in this container.");
             return true;
         }
 
@@ -1827,9 +1838,9 @@ public class DataRegion extends AbstractDataRegion
         out.write(")})();\n");
         out.write("</script>\n");
 
-        if (1==1)
+        if (1 == 1)
             return false;
-        
+
         ButtonBar buttonBar;
 
         if (action == MODE_INSERT)
@@ -1855,9 +1866,9 @@ public class DataRegion extends AbstractDataRegion
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-                renderFormField(ctx, out, renderer);
-                if (null != renderer.getColumnInfo())
-                    renderedColumns.add(renderer.getColumnInfo().getPropertyName());
+            renderFormField(ctx, out, renderer);
+            if (null != renderer.getColumnInfo())
+                renderedColumns.add(renderer.getColumnInfo().getPropertyName());
         }
 
         int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size()); // One extra one for the column to reuse the same value
@@ -1984,7 +1995,7 @@ public class DataRegion extends AbstractDataRegion
         if (action == MODE_UPDATE && valueMap != null)
         {
             if (valueMap instanceof BoundMap)
-                renderOldValues(out, ((BoundMap)valueMap).getBean());
+                renderOldValues(out, ((BoundMap) valueMap).getBean());
             else
                 renderOldValues(out, valueMap, ctx.getFieldMap());
         }
@@ -1996,7 +2007,8 @@ public class DataRegion extends AbstractDataRegion
             for (ColumnInfo pkCol : pkCols)
             {
                 String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName)) {
+                if (!renderedColumns.contains(pkColName))
+                {
                     Object pkVal = null;
                     //UNDONE: Should we require a viewForm whenever someone
                     //posts? I tend to think so.
@@ -2006,7 +2018,8 @@ public class DataRegion extends AbstractDataRegion
                     if (pkVal == null && valueMap != null)
                         pkVal = valueMap.get(pkColName);
 
-                    if (null != pkVal) {
+                    if (null != pkVal)
+                    {
                         out.write("<input type='hidden' name='");
                         if (viewForm != null)
                             out.write(viewForm.getFormFieldName(pkCol));
@@ -2028,7 +2041,7 @@ public class DataRegion extends AbstractDataRegion
         return true;
     }
 
-    
+
     private void renderForm(RenderContext ctx, Writer out) throws IOException
     {
         if (false)
@@ -2225,7 +2238,7 @@ public class DataRegion extends AbstractDataRegion
         if (action == MODE_UPDATE && valueMap != null)
         {
             if (valueMap instanceof BoundMap)
-                renderOldValues(out, ((BoundMap)valueMap).getBean());
+                renderOldValues(out, ((BoundMap) valueMap).getBean());
             else
                 renderOldValues(out, valueMap, ctx.getFieldMap());
         }
@@ -2237,7 +2250,8 @@ public class DataRegion extends AbstractDataRegion
             for (ColumnInfo pkCol : pkCols)
             {
                 String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName)) {
+                if (!renderedColumns.contains(pkColName))
+                {
                     Object pkVal = null;
                     //UNDONE: Should we require a viewForm whenever someone
                     //posts? I tend to think so.
@@ -2247,7 +2261,8 @@ public class DataRegion extends AbstractDataRegion
                     if (pkVal == null && valueMap != null)
                         pkVal = valueMap.get(pkColName);
 
-                    if (null != pkVal) {
+                    if (null != pkVal)
+                    {
                         out.write("<input type='hidden' name='");
                         if (viewForm != null)
                             out.write(viewForm.getFormFieldName(pkCol));
@@ -2268,7 +2283,7 @@ public class DataRegion extends AbstractDataRegion
         renderFormEnd(ctx, out);
     }
 
-    
+
     private void writeSameHeader(RenderContext ctx, Writer out)
             throws IOException
     {
@@ -2295,9 +2310,11 @@ public class DataRegion extends AbstractDataRegion
         if (null != _isFileUploadForm)
             return _isFileUploadForm.booleanValue();
 
-        for (DisplayColumn dc : _displayColumns) {
+        for (DisplayColumn dc : _displayColumns)
+        {
             ColumnInfo col = dc.getColumnInfo();
-            if (null != col && col.getInputType().equalsIgnoreCase("file")) {
+            if (null != col && col.getInputType().equalsIgnoreCase("file"))
+            {
                 hasFileFields = true;
                 break;
             }
@@ -2444,21 +2461,26 @@ public class DataRegion extends AbstractDataRegion
         TOP(true, false),
         BOTTOM(false, true),
         BOTH(true, true);
+
         ButtonBarPosition(boolean atTop, boolean atBottom)
         {
             _atTop = atTop;
             _atBottom = atBottom;
         }
+
         final private boolean _atTop;
         final private boolean _atBottom;
+
         public boolean atTop()
         {
             return _atTop;
         }
+
         public boolean atBottom()
         {
             return _atBottom;
         }
+
         public boolean atBoth()
         {
             return _atTop && _atBottom;

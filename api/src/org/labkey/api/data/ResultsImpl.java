@@ -72,7 +72,7 @@ public class ResultsImpl implements Results
             for (int i = 1; i <= count; i++)
             {
                 String name = rsmd.getColumnName(i);
-                ColumnInfo col = new ColumnInfo(rsmd,i);
+                ColumnInfo col = new ColumnInfo(rsmd, i);
                 col.setAlias(name);
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
@@ -111,7 +111,7 @@ public class ResultsImpl implements Results
     {
         _rs = rs;
         _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
-        _fieldIndexMap = new HashMap<>(_fieldMap.size()*2);
+        _fieldIndexMap = new HashMap<>(_fieldMap.size() * 2);
         try
         {
             if (null != rs)
@@ -129,11 +129,11 @@ public class ResultsImpl implements Results
 
     public ResultsImpl(RenderContext ctx)
     {
-        this(ctx.getResultSet(), ctx.getFieldMap());
+        this(ctx.getResults(), ctx.getFieldMap());
     }
 
 
-// TODO: Remove... not used
+    // TODO: Remove... not used
 //    public ResultsImpl(ResultsImpl rs)
 //    {
 //        this._rs = rs._rs;
@@ -202,7 +202,7 @@ public class ResultsImpl implements Results
         {
             try
             {
-                return getObject((FieldKey)key);
+                return getObject((FieldKey) key);
             }
             catch (SQLException e)
             {
@@ -331,31 +331,31 @@ public class ResultsImpl implements Results
     @Override
     public boolean isComplete()
     {
-        return ((Table.TableResultSet)_rs).isComplete();
+        return ((Table.TableResultSet) _rs).isComplete();
     }
 
     @Override
     public Map<String, Object> getRowMap() throws SQLException
     {
-        return ((Table.TableResultSet)_rs).getRowMap();
+        return ((Table.TableResultSet) _rs).getRowMap();
     }
 
     @Override
     public Iterator<Map<String, Object>> iterator()
     {
-        return ((Table.TableResultSet)_rs).iterator();
+        return ((Table.TableResultSet) _rs).iterator();
     }
 
     @Override
     public String getTruncationMessage(int maxRows)
     {
-        return ((Table.TableResultSet)_rs).getTruncationMessage(maxRows);
+        return ((Table.TableResultSet) _rs).getTruncationMessage(maxRows);
     }
 
     @Override
     public int getSize()
     {
-        return ((Table.TableResultSet)_rs).getSize();
+        return ((Table.TableResultSet) _rs).getSize();
     }
 
 
@@ -497,17 +497,16 @@ public class ResultsImpl implements Results
     }
 
 
-
     //
     // java.sql.Wrapper
     //
-    
+
     @Override
     public <T> T unwrap(Class<T> tClass)
             throws SQLException
     {
         if (tClass.isAssignableFrom(_rs.getClass()))
-            return (T)_rs;
+            return (T) _rs;
         return null;
     }
 

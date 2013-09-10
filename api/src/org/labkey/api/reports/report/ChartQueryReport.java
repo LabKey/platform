@@ -112,7 +112,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
             RenderContext ctx = dataView.getRenderContext();
-            return null == ctx.getResultSet() ? null : new ResultsImpl(ctx);
+            return null == ctx.getResults() ? null : new ResultsImpl(ctx);
         }
         return null;
     }
@@ -124,7 +124,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         JFreeChart chart = _createChart(context, errors, null);
         if (chart != null && errors.isEmpty())
         {
-            final ChartReportDescriptor descriptor = (ChartReportDescriptor)getDescriptor();
+            final ChartReportDescriptor descriptor = (ChartReportDescriptor) getDescriptor();
             final BufferedImage img = chart.createBufferedImage(descriptor.getWidth(), descriptor.getHeight());
             HttpServletResponse response = context.getResponse();
 
@@ -173,7 +173,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         JFreeChart chart = _createChart(context, errors, renderInfo);
         if (chart != null && errors.isEmpty())
         {
-            final ChartReportDescriptor descriptor = (ChartReportDescriptor)getDescriptor();
+            final ChartReportDescriptor descriptor = (ChartReportDescriptor) getDescriptor();
             ChartRenderingInfo info = new ChartRenderingInfo();
             chart.createBufferedImage(descriptor.getWidth(), descriptor.getHeight(), info);
 
@@ -187,8 +187,9 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         final ReportDescriptor reportDescriptor = getDescriptor();
         if (reportDescriptor instanceof ChartReportDescriptor)
         {
-            try {
-                ChartReportDescriptor descriptor = (ChartReportDescriptor)reportDescriptor;
+            try
+            {
+                ChartReportDescriptor descriptor = (ChartReportDescriptor) reportDescriptor;
                 ReportQueryView view = createQueryView(context, descriptor);
                 if (view != null)
                 {
@@ -231,6 +232,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
     private class ChartLabelGenerator implements ChartReportDescriptor.LegendItemLabelGenerator
     {
         private Map<String, String> _columnMap;
+
         public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception
         {
             if (_columnMap == null)

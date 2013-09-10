@@ -192,13 +192,16 @@ public class QueryView extends WebPartView<Object>
     }
 
 
-    /** Must call setSettings before using the view */
+    /**
+     * Must call setSettings before using the view
+     */
     public QueryView(UserSchema schema)
     {
         setSchema(schema);
     }
 
-    @Deprecated /** Use the constructor that takes an Errors object instead */
+    @Deprecated
+    /** Use the constructor that takes an Errors object instead */
     protected QueryView(UserSchema schema, QuerySettings settings)
     {
         this(schema, settings, null);
@@ -220,7 +223,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void setSettings(QuerySettings settings)
     {
-         if (null != _settings || null == _schema)
+        if (null != _settings || null == _schema)
             throw new IllegalStateException();
         _settings = settings;
         _queryDef = settings.getQueryDef(_schema);
@@ -262,7 +265,9 @@ public class QueryView extends WebPartView<Object>
         return getSettings().getSelectionKey();
     }
 
-    /** Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none. */
+    /**
+     * Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none.
+     */
     public URLHelper getReturnURL()
     {
         URLHelper url = getSettings().getReturnUrl();
@@ -305,14 +310,14 @@ public class QueryView extends WebPartView<Object>
                     out.print(PageFlowUtil.filter(e.toString()));
                 }
 
-                String resolveURL =  ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
+                String resolveURL = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
                 if (null != resolveURL && seen.add(resolveURL))
                 {
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
                     if (getUser().isDeveloper())
                     {
                         out.write(" ");
-                        out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText,"resolve"), resolveURL));
+                        out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
                     }
                 }
                 out.write("<br>");
@@ -418,7 +423,7 @@ public class QueryView extends WebPartView<Object>
                 if (srcURL != null)
                 {
                     String encodedSrcURL = PageFlowUtil.encode(srcURL.getLocalURIString());
-                    expr = ((StringExpressionFactory.AbstractStringExpression)expr).addParameter(QueryParam.srcURL.name(), encodedSrcURL);
+                    expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(QueryParam.srcURL.name(), encodedSrcURL);
                 }
             }
         }
@@ -457,7 +462,7 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getBaseFilter() != null)
             (getSettings().getBaseFilter()).applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
-        if (getSettings().getBaseSort() != null && getSettings().getBaseSort().getSortList().size()>0)
+        if (getSettings().getBaseSort() != null && getSettings().getBaseSort().getSortList().size() > 0)
             getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT, true);
 
         switch (action)
@@ -519,7 +524,7 @@ public class QueryView extends WebPartView<Object>
                     break;
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
-                addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT +  ".");
+                addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
                 break;
             }
             case createRReport:
@@ -566,6 +571,7 @@ public class QueryView extends WebPartView<Object>
     {
         return param(param.toString());
     }
+
     protected String param(String param)
     {
         return getDataRegionName() + "." + param;
@@ -721,9 +727,9 @@ public class QueryView extends WebPartView<Object>
     {
 //        if (getSettings().getAllowChooseQuery())
 //        {
-            MenuButton queryButton = createQueryPickerButton("Query");
-            queryButton.setVisible(getSettings().getAllowChooseQuery());
-            bar.add(queryButton);
+        MenuButton queryButton = createQueryPickerButton("Query");
+        queryButton.setVisible(getSettings().getAllowChooseQuery());
+        bar.add(queryButton);
 //        }
 
         if (getSettings().getAllowChooseView())
@@ -840,7 +846,9 @@ public class QueryView extends WebPartView<Object>
         return btnPrint;
     }
 
-    /** Make all links rendered in columns target the specified browser window/tab */
+    /**
+     * Make all links rendered in columns target the specified browser window/tab
+     */
     public void setLinkTarget(String linkTarget)
     {
         _linkTarget = linkTarget;
@@ -949,12 +957,12 @@ public class QueryView extends WebPartView<Object>
             @Override
             public boolean shouldRender(RenderContext ctx)
             {
-                ResultSet rs = ctx.getResultSet();
+                ResultSet rs = ctx.getResults();
                 if (!(rs instanceof Table.TableResultSet))
                     return false;
-                if (((Table.TableResultSet)rs).isComplete() &&
-                    ctx.getCurrentRegion().getOffset() == 0 &&
-                    !(showingAll || showingSelected || showingUnselected || maxRows > 0))
+                if (((Table.TableResultSet) rs).isComplete() &&
+                        ctx.getCurrentRegion().getOffset() == 0 &&
+                        !(showingAll || showingSelected || showingUnselected || maxRows > 0))
                     return false;
                 return super.shouldRender(ctx);
             }
@@ -967,7 +975,7 @@ public class QueryView extends WebPartView<Object>
             int index = Collections.binarySearch(sizes, maxRows);
             if (index < 0)
             {
-                sizes.add(-index-1, maxRows);
+                sizes.add(-index - 1, maxRows);
             }
         }
 
@@ -1208,7 +1216,7 @@ public class QueryView extends WebPartView<Object>
             containerFilterItem.setId(getBaseMenuId() + ":Views:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
-            ContainerFilterable table = (ContainerFilterable)t;
+            ContainerFilterable table = (ContainerFilterable) t;
 
             ContainerFilter selectedFilter = table.getContainerFilter();
 
@@ -1223,7 +1231,7 @@ public class QueryView extends WebPartView<Object>
 
                 filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
 
-                if(selectedFilter.getType() == filterType)
+                if (selectedFilter.getType() == filterType)
                 {
                     filterItem.setSelected(true);
                 }
@@ -1260,13 +1268,13 @@ public class QueryView extends WebPartView<Object>
                 break;
             }
         }
-        NavTree item = new NavTree(defaultLabel, (String)null);
+        NavTree item = new NavTree(defaultLabel, (String) null);
         item.setScript(getChangeViewScript(""));
 
         item.setId(getBaseMenuId() + ":Views:default");
         if ("".equals(currentView))
             item.setStrong(true);
-        if ( _customView != null)
+        if (_customView != null)
         {
             StringBuilder description = new StringBuilder();
             if (_customView.isSession())
@@ -1289,11 +1297,14 @@ public class QueryView extends WebPartView<Object>
             iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
             item.setImageSrc(iconUrl.getLocalURIString());
         }
-        catch (URISyntaxException e) { }
+        catch (URISyntaxException e)
+        {
+        }
         menu.addMenuItem(item);
 
         // sort the grid view alphabetically, with private views over public ones
-        Collections.sort(views, new Comparator<CustomView>() {
+        Collections.sort(views, new Comparator<CustomView>()
+        {
             public int compare(CustomView o1, CustomView o2)
             {
                 if (!o1.isShared() && o2.isShared()) return -1;
@@ -1315,7 +1326,7 @@ public class QueryView extends WebPartView<Object>
                 continue;
             String label = view.getLabel();
 
-            item = new NavTree(label, (String)null);
+            item = new NavTree(label, (String) null);
             item.setScript(getChangeViewScript(name));
             item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(name));
             if (name.equals(currentView))
@@ -1391,7 +1402,8 @@ public class QueryView extends WebPartView<Object>
             List<Report> reports = entry.getValue();
 
             // sort the list of reports within each type grouping
-            Collections.sort(reports, new Comparator<Report>() {
+            Collections.sort(reports, new Comparator<Report>()
+            {
                 @Override
                 public int compare(Report o1, Report o2)
                 {
@@ -1537,7 +1549,9 @@ public class QueryView extends WebPartView<Object>
 
     private String _baseId = null;
 
-    /** Use this html encoded dataRegionName as the base id for menus and attribute values that need to be rendered into the DOM. */
+    /**
+     * Use this html encoded dataRegionName as the base id for menus and attribute values that need to be rendered into the DOM.
+     */
     protected String getBaseMenuId()
     {
         if (_baseId == null)
@@ -1567,7 +1581,8 @@ public class QueryView extends WebPartView<Object>
     {
         if (_report != null)
         {
-            try {
+            try
+            {
                 ReportDataRegion dr = new ReportDataRegion(getSettings(), getViewContext(), _report);
                 RenderContext ctx = new RenderContext(getViewContext());
 
@@ -1632,7 +1647,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         TableInfo table = getTable();
-        if(table != null && table.getAggregateRowConfig() != null)
+        if (table != null && table.getAggregateRowConfig() != null)
         {
             rgn.setAggregateRowConfig(table.getAggregateRowConfig());
         }
@@ -1684,7 +1699,7 @@ public class QueryView extends WebPartView<Object>
 
             if (keys.size() > 0)
             {
-                Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
+                Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
                 for (ColumnInfo col : selectedCols.values())
                     rgn.addColumn(col);
             }
@@ -1868,7 +1883,7 @@ public class QueryView extends WebPartView<Object>
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)
     {
         List<DisplayColumn> ret = new ArrayList<>(list);
-        for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext();)
+        for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext(); )
         {
             if (it.next() instanceof DetailsColumn)
             {
@@ -1931,7 +1946,7 @@ public class QueryView extends WebPartView<Object>
             Set<FieldKey> requiredCols = new HashSet<>();
             for (ColumnInfo c : t.getColumns())
             {
-                if(c.inferIsShownInInsertView())
+                if (c.inferIsShownInInsertView())
                     requiredCols.add(c.getFieldKey());
             }
 
@@ -1946,7 +1961,7 @@ public class QueryView extends WebPartView<Object>
                 if (col != null && col.isUserEditable())
                 {
                     fieldKeys.add(key);
-                    if(requiredCols.contains(key))
+                    if (requiredCols.contains(key))
                         requiredCols.remove(key);
                 }
             }
@@ -1962,7 +1977,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
         List<DisplayColumn> displayColumns = getExportColumns(rgn.getDisplayColumns());
         // Need to remove special MV columns
-        for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext();)
+        for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext(); )
         {
             DisplayColumn col = it.next();
             if (col.getColumnInfo() instanceof RawValueColumn)
@@ -2014,7 +2029,7 @@ public class QueryView extends WebPartView<Object>
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView) : getExcelWriter(docType);
             ew.setCaptionType(captionType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
-            if(prefix != null)
+            if (prefix != null)
                 ew.setFilenamePrefix(prefix);
             ew.write(response);
 
@@ -2211,7 +2226,7 @@ public class QueryView extends WebPartView<Object>
         {
             // Setting URLs is not supported on SchemaTableInfos, which are singletons anyway and therefore
             // shouldn't be mutated by a request
-            AbstractTableInfo urlTableInfo = (AbstractTableInfo)_table;
+            AbstractTableInfo urlTableInfo = (AbstractTableInfo) _table;
             try
             {
                 if (_updateURL != null)
@@ -2247,7 +2262,7 @@ public class QueryView extends WebPartView<Object>
             ContainerFilter filter = getContainerFilter();
             if (filter != null)
             {
-                ContainerFilterable fTable = (ContainerFilterable)_table;
+                ContainerFilterable fTable = (ContainerFilterable) _table;
                 fTable.setContainerFilter(filter);
             }
         }

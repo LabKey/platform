@@ -18,14 +18,13 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -36,7 +35,9 @@ public class OutOfRangeDisplayColumn extends DataColumn
     private ColumnInfo _oorIndicatorColumn;
     private boolean _doneWithSuperclassConstructor = true;
 
-    /** Look up the OORIndicator column through QueryService */
+    /**
+     * Look up the OORIndicator column through QueryService
+     */
     public OutOfRangeDisplayColumn(ColumnInfo numberColumn)
     {
         this(numberColumn, null);
@@ -78,13 +79,15 @@ public class OutOfRangeDisplayColumn extends DataColumn
         {
             // Try to only show the error message for the first row
             int row = 1;
-            if (ctx.getResultSet() != null)
+            if (ctx.getResults() != null)
             {
                 try
                 {
-                    row = ctx.getResultSet().getRow();
+                    row = ctx.getResults().getRow();
                 }
-                catch (SQLException e) {}
+                catch (SQLException ignored)
+                {
+                }
             }
             if (row == 1)
             {
@@ -98,7 +101,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
         result.append(super.getFormattedValue(ctx));
         return result.toString();
     }
-    
+
     public Object getDisplayValue(RenderContext ctx)
     {
         return getFormattedValue(ctx);

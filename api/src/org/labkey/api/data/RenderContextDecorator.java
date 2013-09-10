@@ -25,7 +25,6 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -53,7 +52,9 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public @Nullable Errors getErrors()
+    public
+    @Nullable
+    Errors getErrors()
     {
         return _ctx.getErrors();
     }
@@ -131,12 +132,6 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public ResultSet getResultSet()
-    {
-        return _ctx.getResultSet();
-    }
-
-    @Override
     public ActionURL getSortFilterURLHelper()
     {
         return _ctx.getSortFilterURLHelper();
@@ -157,7 +152,7 @@ public class RenderContextDecorator extends RenderContext
 
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName,
-            List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
+                                                             List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
             throws IOException
     {
         return _ctx.getAggregates(displayColumns, tinfo, settings, dataRegionName, aggregatesIn, parameters, async);

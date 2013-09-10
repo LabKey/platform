@@ -35,7 +35,6 @@ import org.springframework.validation.Errors;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +52,9 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     private boolean _useContainerFilter = true;
     private ViewContext _viewContext;
-    private @Nullable Errors _errors;
+    private
+    @Nullable
+    Errors _errors;
     private TableViewForm _form;
     private DataRegion _currentRegion;
     private Filter _baseFilter;
@@ -94,7 +95,9 @@ public class RenderContext implements Map<String, Object>, Serializable
         _viewContext = context;
     }
 
-    public @Nullable Errors getErrors()
+    public
+    @Nullable
+    Errors getErrors()
     {
         return _errors;
     }
@@ -175,15 +178,8 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         _aggregates = aggregates;
     }
-    
-    public Results getResults()
-    {
-        return _rs;
-    }
 
-    /** use getResults() */
-    @Deprecated
-    public ResultSet getResultSet()
+    public Results getResults()
     {
         return _rs;
     }
@@ -255,13 +251,15 @@ public class RenderContext implements Map<String, Object>, Serializable
         return context.cloneActionURL();
     }
 
-    /** valid after call to getResultSet() */
+    /**
+     * valid after call to getResultSet()
+     */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
         return null == _rs ? null : _rs.getFieldMap();
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url;
         if (null != settings)
@@ -280,7 +278,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _rs;
     }
 
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async) throws IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -419,7 +417,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (async)
         {
-             return selector.getResultsAsync(getCache(), false, getViewContext().getResponse());
+            return selector.getResultsAsync(getCache(), false, getViewContext().getResponse());
         }
         else
         {
@@ -478,11 +476,11 @@ public class RenderContext implements Map<String, Object>, Serializable
         {
             if (null != _rs)
             {
-                if (_rs.hasColumn((FieldKey)key))
+                if (_rs.hasColumn((FieldKey) key))
                     return true;
             }
             // <UNDONE>
-            FieldKey f = (FieldKey)key;
+            FieldKey f = (FieldKey) key;
             key = f.getParent() == null ? f.getName() : f.encode();
             // </UNDONE>
         }
@@ -562,11 +560,11 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (key instanceof FieldKey)
         {
-            if (null != _rs && _rs.hasColumn((FieldKey)key))
+            if (null != _rs && _rs.hasColumn((FieldKey) key))
             {
                 try
                 {
-                    ColumnInfo col = _rs.findColumnInfo((FieldKey)key);
+                    ColumnInfo col = _rs.findColumnInfo((FieldKey) key);
                     return col == null ? null : col.getValue(_row);
                 }
                 catch (SQLException x)
@@ -577,7 +575,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
             // NOTE: Ideally we should not need to convert FieldKey to String at all
             // but _row is currently a <String,Object> map (not <FieldKey,Object>)
-            FieldKey f = (FieldKey)key;
+            FieldKey f = (FieldKey) key;
             key = f.getParent() == null ? f.getName() : f.encode();
 
             // 13607 : Nonconforming field names in datasets cause data loss on edit
@@ -656,7 +654,9 @@ public class RenderContext implements Map<String, Object>, Serializable
     }
 
 
-    /** ViewContext wrappers */
+    /**
+     * ViewContext wrappers
+     */
     public Container getContainer()
     {
         return _viewContext.getContainer();
@@ -679,7 +679,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         _viewContext.setRequest(request);
     }
 
-    
+
     public ViewContext getViewContext()
     {
         return _viewContext;
@@ -727,11 +727,11 @@ public class RenderContext implements Map<String, Object>, Serializable
             sb.append(br);
             if (m instanceof LabkeyError)
             {
-                sb.append(((LabkeyError)m).renderToHTML(getViewContext()));
+                sb.append(((LabkeyError) m).renderToHTML(getViewContext()));
             }
             else
             {
-                sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable)m), true));
+                sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true));
             }
             br = "<br>";
         }
@@ -779,14 +779,16 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _view;
     }
 
-    /** Gets the value and does type conversion */
+    /**
+     * Gets the value and does type conversion
+     */
     public <Type> Type get(FieldKey fieldKey, Class<? extends Type> clazz)
     {
         Object value = get(fieldKey);
         if (value != null && !clazz.isInstance(value))
         {
-            return (Type)ConvertUtils.convert(value.toString(), clazz);
+            return (Type) ConvertUtils.convert(value.toString(), clazz);
         }
-        return (Type)value;
+        return (Type) value;
     }
 }
