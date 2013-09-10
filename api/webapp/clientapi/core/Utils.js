@@ -820,7 +820,7 @@ LABKEY.Utils.convertToTable(
                      //it would be nice to store them in the current folder, but we cant guarantee the user has write access..
                      containerPath: error.containerPath || '/shared',
                      schemaName: 'auditlog',
-                     queryName: 'audit',
+                     queryName: 'Client API Actions',
                      rows: [{
                         EventType: "Client API Actions",
                         Key1: 'Client Error',
