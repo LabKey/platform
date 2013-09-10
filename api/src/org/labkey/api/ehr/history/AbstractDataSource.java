@@ -124,6 +124,9 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
         final Collection<ColumnInfo> cols = getColumns(ti);
 
+        if (ti.getColumn("qcstate") != null)
+            filter.addCondition(FieldKey.fromString("QCState/publicdata"), true, CompareType.EQUAL);
+
         TableSelector ts = new TableSelector(ti, cols, filter, null);
         ts.setForDisplay(true);
 

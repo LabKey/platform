@@ -70,13 +70,6 @@ LABKEY.ext.Ext4Helper = new function(){
             //this produces a generic editor
             var editor = LABKEY.ext.Ext4Helper.getDefaultEditorConfig(meta);
 
-            //for multiline fields:
-            if(editor.editable && meta.inputType == 'textarea'){
-                editor = new LABKEY.ext.LongTextField({
-                    columnName: editor.dataIndex
-                });
-            }
-
             //now we allow overrides of default behavior, in order of precedence
             if(meta.editorConfig)
                 Ext4.Object.merge(editor, meta.editorConfig);

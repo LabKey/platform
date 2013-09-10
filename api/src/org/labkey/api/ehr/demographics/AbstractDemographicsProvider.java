@@ -52,6 +52,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
     private Module _owner = null;
     private String _schemaName;
     private String _queryName;
+    protected boolean _supportsQCState = true;
 
     public AbstractDemographicsProvider(Module owner, String schemaName, String queryName)
     {
@@ -124,7 +125,11 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
     protected SimpleFilter getFilter(Collection<String> ids)
     {
-        return new SimpleFilter(FieldKey.fromString("Id"), ids, CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Id"), ids, CompareType.IN);
+        if (this._supportsQCState)
+            filter.addCondition(FieldKey.fromString("QCState/publicdata"), true, CompareType.EQUAL);
+
+        return filter;
     }
 
     protected void processRow(Results rs, Map<FieldKey, ColumnInfo> cols, Map<String, Object> map) throws SQLException

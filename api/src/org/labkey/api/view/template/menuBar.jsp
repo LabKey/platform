@@ -167,6 +167,8 @@
                     }]
                 });
 
+                this.addEvents('beforehide');
+
                 this.popup = new Ext4.Layer({zindex : 1000, constrain : false }, loader);
                 this.popup.alignTo(this.hoverEl);
                 this.popup.hide();
@@ -268,10 +270,12 @@
             },
 
             hide : function() {
-                this.hoverEl.removeCls(this.hoverCls);
-                this.popup.hide();
-                if (HoverNavigation.visiblePopup == this) {
-                    HoverNavigation.visiblePopup = false;
+                if (this.fireEvent('beforehide', this) !== false) {
+                    this.hoverEl.removeCls(this.hoverCls);
+                    this.popup.hide();
+                    if (HoverNavigation.visiblePopup == this) {
+                        HoverNavigation.visiblePopup = false;
+                    }
                 }
             }
         });
@@ -300,6 +304,8 @@
                         <%=sep%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
                         sep = ",";
                     }%>
+
+                    <%=sep%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
             }});
 <%
     }

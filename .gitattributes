@@ -688,6 +688,7 @@ api/src/org/labkey/api/laboratory/assay/ParserErrors.java -text
 api/src/org/labkey/api/laboratory/assay/PivotingAssayParser.java -text
 api/src/org/labkey/api/laboratory/assay/PivotingImportMethod.java -text
 api/src/org/labkey/api/laboratory/assay/SimpleAssayDataProvider.java -text
+api/src/org/labkey/api/laboratory/button/ChangeAssayResultStatusBtn.java -text
 api/src/org/labkey/api/ldk/AbstractNavItem.java -text
 api/src/org/labkey/api/ldk/ExtendedSimpleModule.java -text
 api/src/org/labkey/api/ldk/LDKService.java -text
