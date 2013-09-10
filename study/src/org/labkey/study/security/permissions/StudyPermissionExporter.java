@@ -1,0 +1,295 @@
+package org.labkey.study.security.permissions;
+
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RestrictedReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.study.model.GroupSecurityType;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.studySecurityPolicy.xml.GroupPermission;
+import org.labkey.studySecurityPolicy.xml.GroupPermissions;
+import org.labkey.studySecurityPolicy.xml.GroupSecurityTypeEnum;
+import org.labkey.studySecurityPolicy.xml.PerDatasetPermission;
+import org.labkey.studySecurityPolicy.xml.PerDatasetPermissions;
+import org.labkey.studySecurityPolicy.xml.SecurityTypeEnum;
+import org.labkey.studySecurityPolicy.xml.StudySecurityPolicy;
+import org.labkey.studySecurityPolicy.xml.StudySecurityPolicyDocument;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * User: bimber
+ * Date: 8/23/13
+ * Time: 7:24 PM
+ */
+public class StudyPermissionExporter
+{
+    public StudyPermissionExporter()
+    {
+
+    }
+
+    public StudySecurityPolicyDocument getStudySecurityPolicyDocument(StudyImpl study)
+    {
+        SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
+
+        StudySecurityPolicyDocument xml = StudySecurityPolicyDocument.Factory.newInstance();
+
+        //security type
+        StudySecurityPolicy sp = StudySecurityPolicy.Factory.newInstance();
+
+        sp.setSecurityType(SecurityTypeEnum.Enum.forString(study.getSecurityType().name()));
+
+
+        //group permissions
+        GroupPermissions gp = GroupPermissions.Factory.newInstance();
+        Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+        for (Group group : groups)
+        {
+            if (group.getUserId() == Group.groupAdministrators)
+                continue;
+
+            GroupPermission p = gp.addNewGroupPermission();
+            p.setGroupName(group.getName());
+            p.setSecurityType(GroupSecurityTypeEnum.Enum.forString(GroupSecurityType.getTypeForGroup(group, study).name()));
+        }
+
+        sp.setGroupPermissions(gp);
+
+        //per dataset permissions
+        PerDatasetPermissions pdp = PerDatasetPermissions.Factory.newInstance();
+        ArrayList<Group> restrictedGroups = new ArrayList<>();
+        for (Group g : groups)
+        {
+            if (g.getUserId() != Group.groupAdministrators && studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))
+                restrictedGroups.add(g);
+        }
+
+        for (DataSet ds : study.getDataSets())
+        {
+            SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
+
+            for (Group g : restrictedGroups)
+            {
+                java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
+                Role assignedRole = roles.isEmpty() ? null : roles.get(0);
+
+                boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
+                boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);
+
+                if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
+                    readPerm = true;
+
+                boolean noPerm = !writePerm && !readPerm && assignedRole == null;
+
+                String role = null;
+                if (noPerm)
+                    role = "NONE";
+                if (readPerm)
+                    role = ReaderRole.class.getName();
+
+                if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+                {
+                    if (writePerm)
+                        role = EditorRole.class.getName();
+
+                    if (assignedRole != null)
+                    {
+                        role = assignedRole.getClass().getName();
+                    }
+                }
+
+                if (role != null)
+                {
+                    PerDatasetPermission pd = pdp.addNewDatasetPermission();
+                    pd.setDatasetName(ds.getName());
+                    pd.setGroupName(g.getName());
+                    pd.setRole(role);
+                }
+            }
+        }
+
+        sp.setPerDatasetPermissions(pdp);
+
+        xml.setStudySecurityPolicy(sp);
+
+        return xml;
+    }
+
+    public void loadFromXmlFile(StudyImpl study, User u, File file, List<String> errorMsgs) throws IllegalArgumentException
+    {
+        study = study.createMutable();
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(study);
+        FileInputStream is = null;
+        try
+        {
+            XmlOptions xmlOptions = new XmlOptions();
+            Map<String, String> namespaceMap = new HashMap<>();
+            namespaceMap.put("", "http://labkey.org/studySecurityPolicy/xml");
+            xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+
+            is = new FileInputStream(file);
+            StudySecurityPolicyDocument spd = StudySecurityPolicyDocument.Factory.parse(is, xmlOptions);
+            if (AppProps.getInstance().isDevMode())
+            {
+                try
+                {
+                    XmlBeansUtil.validateXmlDocument(spd, null);
+                }
+                catch (XmlValidationException e)
+                {
+                    throw new IllegalArgumentException("Invalid XML file: " + e.getDetails());
+                }
+            }
+
+            StudySecurityPolicy sp = spd.getStudySecurityPolicy();
+            SecurityType st = SecurityType.valueOf(sp.getSecurityType().toString());
+            study.setSecurityType(st);
+            StudyManager.getInstance().updateStudy(u, study);
+
+            for (GroupPermission gp : sp.getGroupPermissions().getGroupPermissionArray())
+            {
+                Integer groupId = SecurityManager.getGroupId(study.getContainer(), gp.getGroupName(), false);
+                if (groupId == null)
+                {
+                    groupId = SecurityManager.getGroupId(null, gp.getGroupName(), false);
+                }
+
+                if (groupId == null)
+                {
+                    errorMsgs.add("Unable to find group with name: " + gp.getGroupName() + ", skipping");
+                    continue;
+                }
+
+                Group group = SecurityManager.getGroup(groupId);
+                GroupSecurityType securityType = GroupSecurityType.valueOf(gp.getSecurityType().toString());
+
+                if (securityType == GroupSecurityType.UPDATE_ALL)
+                    policy.addRoleAssignment(group, EditorRole.class);
+                else if (securityType == GroupSecurityType.READ_ALL)
+                    policy.addRoleAssignment(group, ReaderRole.class);
+                else if (securityType == GroupSecurityType.PER_DATASET)
+                    policy.addRoleAssignment(group, RestrictedReaderRole.class);
+                else if (securityType == GroupSecurityType.NONE)
+                    policy.addRoleAssignment(group, NoPermissionsRole.class);
+                else
+                    throw new IllegalArgumentException("Unexpected permission type: " + securityType.name());
+            }
+
+            SecurityPolicyManager.savePolicy(policy);
+
+            if (sp.isSetPerDatasetPermissions())
+            {
+                Map<DataSet, List<PerDatasetPermission>> map = new HashMap<>();
+                for (PerDatasetPermission pd : sp.getPerDatasetPermissions().getDatasetPermissionArray())
+                {
+                    DataSet ds = study.getDataSetByName(pd.getDatasetName());
+                    if (ds == null)
+                    {
+                        errorMsgs.add("Unable to find dataset with name: " + pd.getDatasetName() + ", skipping");
+                        continue;
+                    }
+
+                    List<PerDatasetPermission> list = map.get(ds);
+                    if (list == null)
+                        list = new ArrayList<>();
+
+                    list.add(pd);
+                    map.put(ds, list);
+                }
+
+                for (DataSet ds : study.getDataSets())
+                {
+                    MutableSecurityPolicy dsPolicy = new MutableSecurityPolicy(ds);
+                    List<PerDatasetPermission> list = map.get(ds);
+                    if (list != null)
+                    {
+                        for (PerDatasetPermission pd : list)
+                        {
+                            Integer groupId = SecurityManager.getGroupId(study.getContainer(), pd.getGroupName(), false);
+                            if (groupId == null)
+                            {
+                                groupId = SecurityManager.getGroupId(null, pd.getGroupName(), false);
+                            }
+
+                            if (groupId == null)
+                            {
+                                errorMsgs.add("Unable to find group with name: " + pd.getGroupName() + ", skipping");
+                                continue;
+                            }
+
+                            Group group = SecurityManager.getGroup(groupId);
+
+                            String roleClass = pd.getRole();
+                            boolean foundRole = false;
+                            for (Role role : RoleManager.getAllRoles())
+                            {
+                                if (role.getClass().getName().equals(roleClass))
+                                {
+                                    dsPolicy.addRoleAssignment(group, role);
+                                    foundRole = true;
+                                    break;
+                                }
+                            }
+
+                            if (!foundRole && !"NONE".equals(roleClass))
+                            {
+                                errorMsgs.add("Unable to find role: " + roleClass);
+                            }
+                        }
+                    }
+
+                    SecurityPolicyManager.savePolicy(dsPolicy);
+                }
+            }
+        }
+        catch (XmlException | IOException e)
+        {
+            throw new IllegalArgumentException("Unable to read XML file: " + e.getMessage(), e);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (is != null)
+            {
+                try
+                {
+                    is.close();
+                }
+                catch (IOException e)
+                {
+                    //ignore
+                }
+            }
+        }
+    }
+}

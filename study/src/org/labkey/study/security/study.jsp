@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.Group"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
-<%@ page import="org.labkey.api.security.SecurityPolicy"%>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
-<%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
+<%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
@@ -37,22 +38,22 @@
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
     <form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
 <%
-    String redir = (String)HttpView.currentContext().get("redirect");
+    String redir = (String) HttpView.currentContext().get("redirect");
     if (redir != null)
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
-%>        
+%>
     <table>
-        
+
         <tr>
             <th>&nbsp;</th>
             <% if (includeEditOption)
             {
-            %><th width=100>EDIT&nbsp;ALL<%=PageFlowUtil.helpPopup("EDIT ALL","user/group may view and edit all rows in all datasets")%></th><%
+            %><th width=100>EDIT&nbsp;ALL<%=PageFlowUtil.helpPopup("EDIT ALL", "user/group may view and edit all rows in all datasets")%></th><%
             }
             %>
-            <th width=100>READ&nbsp;ALL<%=PageFlowUtil.helpPopup("READ ALL","user/group may view all rows in all datasets")%></th>
-            <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET","user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
-            <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE","user/group may not view or edit any detail data")%></th></tr>
+            <th width=100>READ&nbsp;ALL<%=PageFlowUtil.helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
+            <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
+            <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
     <%
     SecurityPolicy folderPolicy = me.getViewContext().getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
@@ -70,19 +71,20 @@ Any user with READ access to this folder may view some summary data.  However, a
         boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasNonInheritedPermission(group, ReadPermission.class);
         if (!includeEditOption && hasUpdatePerm)
             hasReadAllPerm = true;
+        GroupSecurityType gt = GroupSecurityType.getTypeForGroup(group, study);
         String inputName = "group." + group.getUserId();
         String warning = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='inline';\"";
         String clear = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='none';\"";
         %><tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {
-        %><th><input <%=warning%> type=radio name="<%=inputName%>" value="UPDATE" <%=hasUpdatePerm?"checked":""%>></th><%
+        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>" <%=h(GroupSecurityType.UPDATE_ALL == gt?"checked":"")%>></th><%
         }
         %>
-        <th><input <%=warning%> type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th>
-        <th><input <%=warning%> type=radio name="<%=inputName%>" value="READOWN" <%=!hasReadAllPerm && !hasUpdatePerm && hasReadSomePerm?"checked":""%>></th>
-        <th><input <%=clear%> type=radio name="<%=inputName%>" value="NONE" <%=!hasReadAllPerm && !hasReadSomePerm?"checked":""%>></th><%
-        %><td id="<%=inputName%>$WARN" style="display:<%=!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none"%>;"><img src="<%=contextPath%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>" <%=h(GroupSecurityType.READ_ALL == gt?"checked":"")%>></th>
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>" <%=h(GroupSecurityType.PER_DATASET == gt?"checked":"")%>></th>
+        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>" <%=h(GroupSecurityType.NONE == gt?"checked":"")%>></th><%
+        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=h(contextPath)%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }
     %></table>

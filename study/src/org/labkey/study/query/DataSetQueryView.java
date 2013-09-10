@@ -389,10 +389,9 @@ public class DataSetQueryView extends StudyQueryView
                     bar.add(manageButton);
 
                     // bulk import
-                    if (view.getTable().getImportDataURL(getContainer()) != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                    ActionURL importURL = view.getTable().getImportDataURL(getContainer());
+                    if (importURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
                     {
-                        ActionURL importURL = new ActionURL(StudyController.ImportAction.class, _dataset.getContainer());
-                        importURL.addParameter(DataSetDefinition.DATASETKEY, _dataset.getDataSetId());
                         ActionButton uploadButton = new ActionButton(importURL, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(InsertPermission.class);
                         bar.add(uploadButton);

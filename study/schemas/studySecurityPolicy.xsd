@@ -1,0 +1,47 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:sp="http://labkey.org/studySecurityPolicy/xml"
+           targetNamespace="http://labkey.org/studySecurityPolicy/xml" elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+    <xs:element name="studySecurityPolicy" type="sp:StudySecurityPolicy"/>
+    <xs:complexType name="StudySecurityPolicy">
+        <xs:sequence>
+            <xs:element name="securityType" type="sp:SecurityTypeEnum" minOccurs="1"/>
+            <xs:element name="groupPermissions" type="sp:GroupPermissions" minOccurs="1"/>
+            <xs:element name="perDatasetPermissions" type="sp:PerDatasetPermissions" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="SecurityTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BASIC_READ"/>
+            <xs:enumeration value="BASIC_WRITE"/>
+            <xs:enumeration value="ADVANCED_READ"/>
+            <xs:enumeration value="ADVANCED_WRITE"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="GroupSecurityTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="UPDATE_ALL"/>
+            <xs:enumeration value="READ_ALL"/>
+            <xs:enumeration value="PER_DATASET"/>
+            <xs:enumeration value="NONE"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="GroupPermissions">
+        <xs:sequence>
+            <xs:element name="groupPermission" minOccurs="0" maxOccurs="unbounded" type="sp:GroupPermission"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="GroupPermission">
+        <xs:attribute name="groupName" type="xs:string" use="required"/>
+        <xs:attribute name="securityType" type="sp:GroupSecurityTypeEnum" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="PerDatasetPermissions">
+        <xs:sequence>
+            <xs:element name="datasetPermission" minOccurs="0" maxOccurs="unbounded" type="sp:PerDatasetPermission"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PerDatasetPermission">
+        <xs:attribute name="datasetName" type="xs:string" use="required"/>
+        <xs:attribute name="groupName" type="xs:string" use="required"/>
+        <xs:attribute name="role" type="xs:string" use="required"/>
+    </xs:complexType>
+</xs:schema>

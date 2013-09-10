@@ -15,8 +15,12 @@
  */
 package org.labkey.study.controllers.security;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.reports.Report;
@@ -28,19 +32,29 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.model.GroupSecurityType;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.security.permissions.StudyPermissionExporter;
+import org.labkey.studySecurityPolicy.xml.StudySecurityPolicyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -97,7 +111,7 @@ public class SecurityController extends SpringActionController
             Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
             policy.clearAssignedRoles(siteAdminGroup);
             policy.addRoleAssignment(siteAdminGroup, ReaderRole.class);
-            
+
             study.savePolicy(policy);
             return true;
         }
@@ -117,7 +131,7 @@ public class SecurityController extends SpringActionController
             Enumeration i = request.getParameterNames();
             while (i.hasMoreElements())
             {
-                String name = (String)i.nextElement();
+                String name = (String) i.nextElement();
                 if (!name.startsWith("group."))
                     continue;
                 String s = name.substring("group.".length());
@@ -133,20 +147,159 @@ public class SecurityController extends SpringActionController
                 if (!set.contains(groupid))
                     continue;
                 Group group = SecurityManager.getGroup(groupid);
-                if(null == group)
+                if (null == group)
                     continue;
 
                 s = request.getParameter(name);
-                if (s.equals("UPDATE"))
+                if (s.equals(GroupSecurityType.UPDATE_ALL.getParamName()))
                     policy.addRoleAssignment(group, EditorRole.class);
-                else if (s.equals("READ"))
+                else if (s.equals(GroupSecurityType.READ_ALL.getParamName()))
                     policy.addRoleAssignment(group, ReaderRole.class);
-                else if (s.equals("READOWN"))
+                else if (s.equals(GroupSecurityType.PER_DATASET.getParamName()))
                     policy.addRoleAssignment(group, RestrictedReaderRole.class);
                 else
                     policy.addRoleAssignment(group, NoPermissionsRole.class);
             }
             return policy;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ExportSecurityPolicyAction extends ExportAction<Object>
+    {
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try
+            {
+                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                if (study == null)
+                {
+                    errors.reject(ERROR_MSG, "No study in this folder");
+                    return;
+                }
+
+                StudyPermissionExporter exporter = new StudyPermissionExporter();
+                StudySecurityPolicyDocument doc = exporter.getStudySecurityPolicyDocument(study);
+
+                XmlOptions xmlOptions = new XmlOptions();
+                xmlOptions.setSavePrettyPrint();
+
+                String fileName = "studyPolicy.xml";
+                PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), fileName, true);
+                doc.save(response.getOutputStream(), xmlOptions);
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImportSecurityPolicyAction extends FormViewAction<Object>
+    {
+        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+            {
+                return new SimpleErrorView(errors);
+            }
+            else
+            {
+                throw new RedirectException(new ActionURL(BeginAction.class, getContainer()));
+            }
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+
+        public void validateCommand(Object form, Errors errors)
+        {
+
+        }
+
+        public boolean handlePost(Object form, BindException errors) throws Exception
+        {
+            List<String> messages = new ArrayList<>();
+            StudyPermissionExporter exporter = new StudyPermissionExporter();
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            if (study == null)
+            {
+                errors.reject(ERROR_MSG, "Error: there is no study in this folder");
+                return false;
+            }
+
+            try
+            {
+                Map<String, MultipartFile> map = getFileMap();
+                if (map.isEmpty())
+                {
+                    errors.reject(ERROR_MSG, "You must select a valid XML file");
+                    return false;
+                }
+                else if (map.size() > 1)
+                {
+                    errors.reject(ERROR_MSG, "Only one file is allowed.");
+                    return false;
+                }
+                else
+                {
+                    MultipartFile file = map.values().iterator().next();
+
+                    if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
+                    {
+                        errors.reject(ERROR_MSG, "You must select a valid XML file");
+                        return false;
+                    }
+                    else if (!file.getOriginalFilename().endsWith(".xml"))
+                    {
+                        errors.reject("folderImport", "You must select a valid XML file");
+                        return false;
+                    }
+                    else
+                    {
+                        InputStream is = file.getInputStream();
+                        File tmpFile = File.createTempFile("studyPolicy", ".xml");
+                        tmpFile.deleteOnExit();
+                        FileUtil.copyData(is, tmpFile);
+                        exporter.loadFromXmlFile(study, getUser(), tmpFile, messages);
+
+                        StringBuilder sb = new StringBuilder();
+                        if (messages.size() > 0)
+                        {
+                            sb.append(StringUtils.join(messages, "<br>"));
+                        }
+                        else
+                        {
+                            sb.append("Success importing XML file");
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Error importing XML file: " + e.getMessage());
+                return false;
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
+                errors.reject(ERROR_MSG, "Error importing XML file: " + e.getMessage());
+                return false;
+            }
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            String redirect = (String) getViewContext().get("redirect");
+            if (redirect != null)
+                return new ActionURL(redirect);
+
+            return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
     }
 
@@ -161,7 +314,7 @@ public class SecurityController extends SpringActionController
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> groupsInProject = new HashSet<>(groups.length*2);
+            HashSet<Integer> groupsInProject = new HashSet<>(groups.length * 2);
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
@@ -209,8 +362,8 @@ public class SecurityController extends SpringActionController
                 {
                     continue;
                 }
-                
-                groupToPermission.put(gid,perm);
+
+                groupToPermission.put(gid, perm);
             }
             return groupToPermission;
         }
@@ -225,7 +378,7 @@ public class SecurityController extends SpringActionController
                 if (groupsInProject.contains(gid))
                 {
                     Group group = SecurityManager.getGroup(gid);
-                    if(null == group)
+                    if (null == group)
                         continue;
 
                     String perm = entry.getValue();
@@ -244,7 +397,7 @@ public class SecurityController extends SpringActionController
 
         public ActionURL getSuccessURL(Object o)
         {
-            String redirect = (String)getViewContext().get("redirect");
+            String redirect = (String) getViewContext().get("redirect");
             if (redirect != null)
                 return new ActionURL(redirect);
 
@@ -333,13 +486,13 @@ public class SecurityController extends SpringActionController
                     if (form.getRemove() != 0)
                     {
                         Group group = SecurityManager.getGroup(form.getRemove());
-                        if(null != group)
+                        if (null != group)
                             policy.addRoleAssignment(group, RoleManager.getRole(NoPermissionsRole.class));
                     }
                     if (form.getAdd() != 0)
                     {
                         Group group = SecurityManager.getGroup(form.getAdd());
-                        if(null != group)
+                        if (null != group)
                             policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
                     }
                 }
@@ -351,7 +504,7 @@ public class SecurityController extends SpringActionController
                         for (int gid : form.getGroups())
                         {
                             Group group = SecurityManager.getGroup(gid);
-                            if(null != group)
+                            if (null != group)
                                 policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
                         }
                 }
@@ -376,7 +529,7 @@ public class SecurityController extends SpringActionController
 
                 if (getUser().isSiteAdmin())
                     root.addChild("Manage Views",
-                        new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).getLocalURIString());
+                            new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).getLocalURIString());
             }
             catch (Exception e)
             {
@@ -390,7 +543,10 @@ public class SecurityController extends SpringActionController
     {
         private SecurityType _securityType;
 
-        public SecurityType getSecurityType() {return _securityType;}
+        public SecurityType getSecurityType()
+        {
+            return _securityType;
+        }
 
         public void setSecurityString(String s)
         {
@@ -424,7 +580,7 @@ public class SecurityController extends SpringActionController
 
         public ActionURL getSuccessURL(StudySecurityForm studySecurityForm)
         {
-            String redirect = (String)getViewContext().get("redirect");
+            String redirect = (String) getViewContext().get("redirect");
             if (redirect != null)
                 return new ActionURL(redirect);
 
@@ -502,11 +658,26 @@ public class SecurityController extends SpringActionController
         {
             this.add = add;
         }
-        public void setPermissionType(String type){_permissionType = type;}
-        public String getPermissionType(){return _permissionType;}
 
-        public void setTabId(String id){_tabId = id;}
-        public String getTabId(){return _tabId;}
+        public void setPermissionType(String type)
+        {
+            _permissionType = type;
+        }
+
+        public String getPermissionType()
+        {
+            return _permissionType;
+        }
+
+        public void setTabId(String id)
+        {
+            _tabId = id;
+        }
+
+        public String getTabId()
+        {
+            return _tabId;
+        }
     }
 
     static class Overview extends WebPartView
@@ -541,6 +712,13 @@ public class SecurityController extends SpringActionController
                 v.addView(studyView);
                 v.addView(dsView);
             }
+
+            JspView<StudyImpl> exportView = new JspView<>("/org/labkey/study/security/importExport.jsp", study);
+            exportView.setTitle("Import/Export Policy");
+            if (redirect != null)
+                exportView.addObject("redirect", redirect.getLocalURIString());
+            v.addView(exportView);
+
             impl = v;
         }
 
