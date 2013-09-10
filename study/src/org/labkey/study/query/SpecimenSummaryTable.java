@@ -271,7 +271,13 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 finally
                 {
                     if (rs != null)
-                        try { rs.close(); } catch (SQLException e) {}
+                        try
+                        {
+                            rs.close();
+                        }
+                        catch (SQLException e)
+                        {
+                        }
                 }
             }
             return _commentCache;
@@ -340,7 +346,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             {
                 try
                 {
-                    sb.append(getCommentText(ctx, ctx.getResultSet().getString("SpecimenHash"), lineSeparator));
+                    sb.append(getCommentText(ctx, ctx.getResults().getString("SpecimenHash"), lineSeparator));
                 }
                 catch (SQLException e)
                 {

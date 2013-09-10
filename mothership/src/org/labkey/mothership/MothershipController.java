@@ -34,14 +34,29 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.*;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -51,20 +66,34 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
 import org.labkey.mothership.query.MothershipSchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import java.awt.*;
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -141,7 +170,7 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
             settings.getBaseSort().insertSortColumn("-SVNRevision");
-            
+
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
             return new VBox(linkView, queryView);
@@ -166,7 +195,7 @@ public class MothershipController extends SpringActionController
             TimeSeries runningTotal = new TimeSeries("Total installations");
             TimeSeries registrations = new TimeSeries("Registered users");
 
-            while(cal.compareTo(start) < 0)
+            while (cal.compareTo(start) < 0)
             {
                 registrations.add(new Day(cal.getTime()), UserManager.getUserCount(cal.getTime()));
 
@@ -217,7 +246,7 @@ public class MothershipController extends SpringActionController
             TimeSeries repeatPings = new TimeSeries("External that also pinged the previous week");
             Set<String> repeatServerGUIDs = new HashSet<>();
 
-            while(cal.compareTo(start) < 0)
+            while (cal.compareTo(start) < 0)
             {
                 ServerInstallation[] installations = MothershipManager.get().getServerInstallationsActiveOn(cal);
                 int externalCount = 0;
@@ -270,29 +299,30 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    private JFreeChart createChart(final XYDataset dataset, String title, String label) {
+    private JFreeChart createChart(final XYDataset dataset, String title, String label)
+    {
 
         // create the chart...
         final JFreeChart chart = ChartFactory.createTimeSeriesChart(
-            title,      // chart title
-            "Date",                      // x axis label
-            label,                      // y axis label
-            dataset,                  // data
-            true,                     // include legend
-            true,                     // tooltips
-            false                     // urls
+                title,      // chart title
+                "Date",                      // x axis label
+                label,                      // y axis label
+                dataset,                  // data
+                true,                     // include legend
+                true,                     // tooltips
+                false                     // urls
         );
-        
+
         // NOW DO SOME OPTIONAL CUSTOMISATION OF THE CHART...
         chart.setBackgroundPaint(Color.white);
 
 //        final StandardLegend legend = (StandardLegend) chart.getLegend();
-  //      legend.setDisplaySeriesShapes(true);
+        //      legend.setDisplaySeriesShapes(true);
 
         // get a reference to the plot for further customisation...
         final XYPlot plot = chart.getXYPlot();
         plot.setBackgroundPaint(Color.lightGray);
-    //    plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 5.0, 5.0, 5.0, 5.0));
+        //    plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 5.0, 5.0, 5.0, 5.0));
         plot.setDomainGridlinePaint(Color.white);
         plot.setRangeGridlinePaint(Color.white);
         plot.getRangeAxis().setLowerBound(0.0);
@@ -310,7 +340,7 @@ public class MothershipController extends SpringActionController
 
         return chart;
     }
-    
+
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteAction extends FormHandlerAction
     {
@@ -380,7 +410,8 @@ public class MothershipController extends SpringActionController
     public class InsertAction extends FormHandlerAction<SoftwareReleaseForm>
     {
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
-        {}
+        {
+        }
 
         public boolean handlePost(SoftwareReleaseForm form, BindException errors) throws Exception
         {
@@ -465,7 +496,8 @@ public class MothershipController extends SpringActionController
     public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
         public void validateCommand(UpgradeMessageForm target, Errors errors)
-        {}
+        {
+        }
 
         public boolean handlePost(UpgradeMessageForm form, BindException errors) throws Exception
         {
@@ -493,7 +525,7 @@ public class MothershipController extends SpringActionController
                 throw new NotFoundException();
             }
             ServerSessionDetailView detailView = new ServerSessionDetailView(form);
-            
+
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
             settings.getBaseSort().insertSortColumn("-Created");
@@ -534,7 +566,7 @@ public class MothershipController extends SpringActionController
             QueryView sessionGridView = schema.createView(getViewContext(), settings, errors);
             sessionGridView.setShowBorders(true);
             sessionGridView.setShowExportButtons(false);
-            
+
             return new VBox(updateView, sessionGridView);
         }
 
@@ -587,7 +619,8 @@ public class MothershipController extends SpringActionController
     public class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
     {
         public void validateCommand(ExceptionStackTraceForm target, Errors errors)
-        {}
+        {
+        }
 
         public boolean handlePost(ExceptionStackTraceForm form, BindException errors) throws Exception
         {
@@ -605,7 +638,8 @@ public class MothershipController extends SpringActionController
     public class UpdateInstallationAction extends FormHandlerAction<ServerInstallationForm>
     {
         public void validateCommand(ServerInstallationForm target, Errors errors)
-        {}
+        {
+        }
 
         public boolean handlePost(ServerInstallationForm form, BindException errors) throws Exception
         {
@@ -693,7 +727,7 @@ public class MothershipController extends SpringActionController
                     report.setPageflowName(form.getPageflowName());
                     report.setBrowser(form.getBrowser());
                     report.setServerSessionId(session.getServerSessionId());
-                    
+
                     MothershipManager.get().insertException(stackTrace, report);
                 }
                 setSuccessHeader();
@@ -787,11 +821,11 @@ public class MothershipController extends SpringActionController
     {
         public ResultSetGridView(String title, String sql) throws SQLException
         {
-            super(new DataRegion(), (BindException)null);
+            super(new DataRegion(), (BindException) null);
             setTitle(title);
             TableInfo exceptionTableInfo = MothershipManager.get().getTableInfoServerInstallation();
             getDataRegion().setTable(exceptionTableInfo);
-            ResultSet rs = Table.executeQuery(exceptionTableInfo.getSchema(), sql, null);
+            ResultSet rs = new SqlSelector(exceptionTableInfo.getSchema(), new SQLFragment(sql)).getResultSet();
             setResultSet(rs);
             getDataRegion().setColumns(DataRegion.colInfosFromMetaData(rs.getMetaData()));
             getDataRegion().setSortable(false);
@@ -807,11 +841,11 @@ public class MothershipController extends SpringActionController
         {
             super("\"Unbugged\" Exceptions by Owner",
                     "SELECT core.usersdata.displayname as Owner, count(*) as ExceptionCount \n" +
-                    "FROM mothership.exceptionstacktrace, core.principals, core.usersdata\n" +
-                    "WHERE assignedto IS NOT NULL AND bugnumber IS NULL\n" +
-                    "and core.principals.userid = assignedto\n" +
-                    "and core.principals.userid = core.usersdata.userid\n" +
-                    "group by core.usersdata.displayname order by ExceptionCount DESC");
+                            "FROM mothership.exceptionstacktrace, core.principals, core.usersdata\n" +
+                            "WHERE assignedto IS NOT NULL AND bugnumber IS NULL\n" +
+                            "and core.principals.userid = assignedto\n" +
+                            "and core.principals.userid = core.usersdata.userid\n" +
+                            "group by core.usersdata.displayname order by ExceptionCount DESC");
             getDataRegion().getDisplayColumn("Owner").setURL("mothership/showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
             getDataRegion().getDisplayColumn("Owner").setWidth("200");
             getDataRegion().getDisplayColumn("ExceptionCount").setCaption("Exception Count");
@@ -845,10 +879,10 @@ public class MothershipController extends SpringActionController
     {
         StringBuilder builder = new StringBuilder();
         builder.append(PageFlowUtil.textLink("View Exceptions", "showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
-            PageFlowUtil.textLink("View All Installations", "showInstallations.view") + " " +
-            PageFlowUtil.textLink("Configure Mothership", "editUpgradeMessage.view") + " " +
-            PageFlowUtil.textLink("List of Releases", "showReleases.view") + " " +
-            PageFlowUtil.textLink("Reports", "reports.view") + " ");
+                PageFlowUtil.textLink("View All Installations", "showInstallations.view") + " " +
+                PageFlowUtil.textLink("Configure Mothership", "editUpgradeMessage.view") + " " +
+                PageFlowUtil.textLink("List of Releases", "showReleases.view") + " " +
+                PageFlowUtil.textLink("Reports", "reports.view") + " ");
 
         if (getUser() != null && !getUser().isGuest())
         {
@@ -1371,7 +1405,7 @@ public class MothershipController extends SpringActionController
 
                     ColumnInfo displayColumn = defaultServerInstallationColumn.getColumnInfo().getDisplayField();
 
-                    ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer)row.get("ServerInstallationId")).intValue(), ctx.getContainer());
+                    ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
                     if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
                     {
                         return PageFlowUtil.filter(si.getNote());
@@ -1480,7 +1514,7 @@ public class MothershipController extends SpringActionController
                 // incorrect for their usage on this page.
                 if (!"Note".equalsIgnoreCase(col.getColumnName()))
                 {
-                   col.setUserEditable(false);
+                    col.setUserEditable(false);
                 }
             }
 

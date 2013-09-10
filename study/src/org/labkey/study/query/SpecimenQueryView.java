@@ -67,6 +67,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         REQUESTS,
         DEFAULT
     }
+
     private boolean _requireSequenceNum;
     private boolean _enableRequests;
 
@@ -86,7 +87,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (col == null)
                 throw new IllegalStateException("Failed to find expected column " + colName);
             ColumnInfo foundCol = null;
-            for (Iterator<ColumnInfo> it = currentColumns.iterator(); it.hasNext() && foundCol == null;)
+            for (Iterator<ColumnInfo> it = currentColumns.iterator(); it.hasNext() && foundCol == null; )
             {
                 ColumnInfo current = it.next();
                 if (colName.equalsIgnoreCase(current.getName()))
@@ -161,8 +162,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 Object reason = ctx.getRow().get(reasonAlias);
 
                 out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                            (reason instanceof String ? reason : "Specimen Unavailable.") + "<br><br>" +
-                            "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
+                        (reason instanceof String ? reason : "Specimen Unavailable.") + "<br><br>" +
+                                "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
             }
         }
 
@@ -214,8 +215,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (!isAvailable(ctx))
             {
                 out.write(PageFlowUtil.helpPopup("Specimens Unavailable",
-                            "No vials of this primary specimen are available.  All vials are either part of an active specimen request, " +
-                                    "locked by an administrator, or not currently held by a repository."));
+                        "No vials of this primary specimen are available.  All vials are either part of an active specimen request, " +
+                                "locked by an administrator, or not currently held by a repository."));
             }
         }
 
@@ -224,7 +225,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             Integer count;
             if (getRequiredColumnValue(ctx, "AvailableCount") != null)
             {
-                count = ((Number)getRequiredColumnValue(ctx, "AvailableCount")).intValue();
+                count = ((Number) getRequiredColumnValue(ctx, "AvailableCount")).intValue();
             }
             else
             {
@@ -249,68 +250,78 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public enum ViewType
     {
         SUMMARY()
-        {
-            public String getQueryName()
-            {
-                return "SpecimenSummary";
-            }
+                {
+                    public String getQueryName()
+                    {
+                        return "SpecimenSummary";
+                    }
 
-            public String getViewName()
-            {
-                return null;
-            }
-            public boolean isVialView()
-            {
-                return false;
-            }
-            public boolean isForExport()
-            {
-                return false;
-            }},
+                    public String getViewName()
+                    {
+                        return null;
+                    }
+
+                    public boolean isVialView()
+                    {
+                        return false;
+                    }
+
+                    public boolean isForExport()
+                    {
+                        return false;
+                    }
+                },
         VIALS()
-        {
-            public String getQueryName()
-            {
-                return "SpecimenDetail";
-            }
+                {
+                    public String getQueryName()
+                    {
+                        return "SpecimenDetail";
+                    }
 
-            public String getViewName()
-            {
-                return null;
-            }
+                    public String getViewName()
+                    {
+                        return null;
+                    }
 
-            public boolean isVialView()
-            {
-                return true;
-            }
-            public boolean isForExport()
-            {
-                return false;
-            }},
+                    public boolean isVialView()
+                    {
+                        return true;
+                    }
+
+                    public boolean isForExport()
+                    {
+                        return false;
+                    }
+                },
         VIALS_EMAIL()
-        {
-            public String getQueryName()
-            {
-                return "SpecimenDetail";
-            }
+                {
+                    public String getQueryName()
+                    {
+                        return "SpecimenDetail";
+                    }
 
-            public String getViewName()
-            {
-                return "SpecimenEmail";
-            }
+                    public String getViewName()
+                    {
+                        return "SpecimenEmail";
+                    }
 
-            public boolean isVialView()
-            {
-                return true;
-            }
-            public boolean isForExport()
-            {
-                return true;
-            }};
+                    public boolean isVialView()
+                    {
+                        return true;
+                    }
 
-    public abstract String getQueryName();
+                    public boolean isForExport()
+                    {
+                        return true;
+                    }
+                };
+
+        public abstract String getQueryName();
+
         public abstract String getViewName();
+
         public abstract boolean isVialView();
+
         public abstract boolean isForExport();
     }
 
@@ -333,7 +344,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         setShowImportDataButton(false);
         if (isEditable)
         {
-            AbstractTableInfo tableInfo = (AbstractTableInfo)getTable();
+            AbstractTableInfo tableInfo = (AbstractTableInfo) getTable();
             ActionURL updateActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, getContainer());
             updateActionURL.addParameter("schemaName", "study");
             updateActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
@@ -346,7 +357,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             tableInfo.setInsertURL(new DetailsURL(insertActionURL));
         }
 
-        setViewItemFilter(new ReportService.ItemFilter() {
+        setViewItemFilter(new ReportService.ItemFilter()
+        {
             public boolean accept(String type, String label)
             {
                 if (StudyCrosstabReport.TYPE.equals(type)) return true;
@@ -475,11 +487,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     public Map<String, Integer> getSampleCounts(RenderContext ctx)
     {
-        if (null  == _availableSpecimenCounts)
+        if (null == _availableSpecimenCounts)
             try
             {
                 _availableSpecimenCounts = new HashMap<>();
-                ResultSet rs = ctx.getResultSet();
+                ResultSet rs = ctx.getResults();
                 Set<String> specimenHashes = new HashSet<>();
                 int originalRow = rs.getRow();
                 rs.last();
@@ -499,7 +511,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                             specimenHashes = new HashSet<>();
                         }
                     }
-                    while(rs.next());
+                    while (rs.next());
                     if (!specimenHashes.isEmpty())
                     {
                         _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
@@ -587,12 +599,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
         String sql = "SpecimenHash NOT IN (" +
-        "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
+                "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join study.Vial v on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                +  "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
+                + "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
 
-        filter.addWhereClause(sql, new Object[] {locationId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
+        filter.addWhereClause(sql, new Object[]{locationId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
 
         return filter;
     }
@@ -602,14 +614,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
         String sql = "GlobalUniqueId IN ("
                 + "SELECT rs.SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                +  "where r.DestinationSiteId=? AND rs.Container=? AND status.SpecimensLocked=?" +
+                + "where r.DestinationSiteId=? AND rs.Container=? AND status.SpecimensLocked=?" +
                 (completedRequestsOnly ? " AND status.FinalState=?" : "") + ")";
 
         Object[] params;
         if (completedRequestsOnly)
-            params = new Object[] {locationId, container.getId(), Boolean.TRUE, Boolean.TRUE};
+            params = new Object[]{locationId, container.getId(), Boolean.TRUE, Boolean.TRUE};
         else
-            params = new Object[] {locationId, container.getId(), Boolean.TRUE};
+            params = new Object[]{locationId, container.getId(), Boolean.TRUE};
 
         filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
@@ -619,38 +631,38 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, int locationId, boolean completedRequestsOnly)
     {
         String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
-                        "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
-                        "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
-                        "study.Participant AS Participant\n" +
-                        "WHERE Request.Container = Status.Container AND\n" +
-                        "     Request.StatusId = Status.RowId AND\n" +
-                        "     RequestSpecimen.SampleRequestId = Request.RowId AND\n" +
-                        "     RequestSpecimen.Container = Request.Container AND\n" +
-                        "     Specimen.Container = RequestSpecimen.Container AND\n" +
-                        "     Specimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
-                        "     Participant.Container = Specimen.Container AND\n" +
-                        "     Participant.ParticipantId = Specimen.Ptid AND\n" +
-                        "     Status.SpecimensLocked = ? AND\n" +
-                        (completedRequestsOnly ? "     Status.FinalState = ? AND\n" : "") +
-                        "     Specimen.Container = ? AND\n" +
-                        "     Participant.EnrollmentSiteId ";
+                "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
+                "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
+                "study.Participant AS Participant\n" +
+                "WHERE Request.Container = Status.Container AND\n" +
+                "     Request.StatusId = Status.RowId AND\n" +
+                "     RequestSpecimen.SampleRequestId = Request.RowId AND\n" +
+                "     RequestSpecimen.Container = Request.Container AND\n" +
+                "     Specimen.Container = RequestSpecimen.Container AND\n" +
+                "     Specimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
+                "     Participant.Container = Specimen.Container AND\n" +
+                "     Participant.ParticipantId = Specimen.Ptid AND\n" +
+                "     Status.SpecimensLocked = ? AND\n" +
+                (completedRequestsOnly ? "     Status.FinalState = ? AND\n" : "") +
+                "     Specimen.Container = ? AND\n" +
+                "     Participant.EnrollmentSiteId ";
 
         Object[] params;
         if (locationId == -1)
         {
             sql += "IS NULL)";
             if (completedRequestsOnly)
-                params = new Object[] { Boolean.TRUE, Boolean.TRUE, container.getId()};
+                params = new Object[]{Boolean.TRUE, Boolean.TRUE, container.getId()};
             else
-                params = new Object[] { Boolean.TRUE, container.getId()};
+                params = new Object[]{Boolean.TRUE, container.getId()};
         }
         else
         {
             sql += "= ?)";
             if (completedRequestsOnly)
-                params = new Object[] { Boolean.TRUE, Boolean.TRUE, container.getId(), locationId };
+                params = new Object[]{Boolean.TRUE, Boolean.TRUE, container.getId(), locationId};
             else
-                params = new Object[] { Boolean.TRUE, container.getId(), locationId };
+                params = new Object[]{Boolean.TRUE, container.getId(), locationId};
         }
 
         filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
@@ -663,13 +675,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
         String sql = "GlobalUniqueId " + (showRequested ? "" : "NOT ") + "IN ("
                 + "SELECT rs.SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                +  "where rs.Container=? AND status.SpecimensLocked=?" + (completedRequestsOnly ? " AND status.FinalState=?" : "") +
+                + "where rs.Container=? AND status.SpecimensLocked=?" + (completedRequestsOnly ? " AND status.FinalState=?" : "") +
                 ")";
         Object[] params;
         if (completedRequestsOnly)
-            params = new Object[] {container.getId(), Boolean.TRUE, Boolean.TRUE};
+            params = new Object[]{container.getId(), Boolean.TRUE, Boolean.TRUE};
         else
-            params = new Object[] {container.getId(), Boolean.TRUE};
+            params = new Object[]{container.getId(), Boolean.TRUE};
 
         filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
@@ -725,10 +737,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         if (_hiddenFormFields != null)
         {
-            for (Map.Entry<String,String> param : _hiddenFormFields.entrySet())
+            for (Map.Entry<String, String> param : _hiddenFormFields.entrySet())
                 rgn.addHiddenFormField(param.getKey(), param.getValue());
         }
-        
+
         rgn.addHiddenFormField("referrer", getViewContext().getActionURL().getLocalURIString());
 
         if (_viewType.isVialView())
@@ -807,10 +819,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
         boolean zeroVialIndicator = false;
         if (!_disableLowVialIndicators)
         {
-            DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
+            DisplaySettings settings = SampleManager.getInstance().getDisplaySettings(getContainer());
             oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
-                (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
-                    getUser().isSiteAdmin());
+                    (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
+                            getUser().isSiteAdmin());
             zeroVialIndicator = settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().isSiteAdmin());
@@ -820,7 +832,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
-                SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+                    SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
 
         // this column is normally hidden but we need it on the select for any specimen filters
@@ -934,7 +946,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
         finally
         {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (rs != null) try
+            {
+                rs.close();
+            }
+            catch (SQLException e)
+            {
+            }
         }
     }
 
