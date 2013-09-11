@@ -90,6 +90,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
@@ -2877,6 +2879,19 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
+        importRows(InsertPermission.class)
+        {
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+            {
+                BatchValidationException errors = new BatchValidationException();
+                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
+                qus.importRows(user, container, it, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
+                return Collections.emptyList();
+            }
+        },
         update(UpdatePermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
@@ -3034,7 +3049,8 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getViewContext().getUser(), getViewContext().getContainer(), extraContext);
 
-                response.put("rows", responseRows);
+                if (commandType != CommandType.importRows)
+                    response.put("rows", responseRows);
 
                 if (transacted)
                     table.getSchema().getScope().commitTransaction();
@@ -3115,6 +3131,20 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
             JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true, errors);
+            if (response == null || errors.hasErrors())
+                return null;
+            return new ApiSimpleResponse(response);
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    @ApiVersion(8.3)
+    public class ImportRowsAction extends BaseSaveRowsAction
+    {
+        @Override
+        public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
+        {
+            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
