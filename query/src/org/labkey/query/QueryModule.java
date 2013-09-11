@@ -53,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -201,6 +202,11 @@ public class QueryModule extends DefaultModule
 
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
+
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NEW_MANAGE_VIEWS,
+                "New Manage Views",
+                "Manage Views based on the Data Views webpart.",
+                false);
     }
 
     @Override

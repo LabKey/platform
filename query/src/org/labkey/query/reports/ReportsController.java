@@ -145,8 +145,10 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.query.DataViewsWebPartFactory;
 import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.chart.ChartServiceImpl;
@@ -246,6 +248,11 @@ public class ReportsController extends SpringActionController
         public ActionURL urlManageViews(Container c)
         {
             return new ActionURL(ManageViewsAction.class, c);
+        }
+
+        public ActionURL urlNewManageViews(Container c)
+        {
+            return new ActionURL(NewManageViewsAction.class, c);
         }
 
         public ActionURL urlPlotChart(Container c)
@@ -2207,6 +2214,32 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class NewManageViewsAction extends SimpleViewAction<ViewsSummaryForm>
+    {
+        public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
+        {
+            WebPartFactory factory = Portal.getPortalPart(DataViewsWebPartFactory.NAME);
+            if (factory != null)
+            {
+                Portal.WebPart part = factory.createWebPart();
+                part.getPropertyMap().put("adminView", "true");
+
+                WebPartView view = factory.getWebPartView(getViewContext(), part);
+
+                view.setTitle("Manage Views");
+                view.setIsWebPart(false);
+
+                return view;
+            }
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 
     public static class ViewOptionsForm extends ViewsSummaryForm
     {
@@ -2393,6 +2426,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Deprecated
     public class ManageViewsSummaryAction extends ApiAction<ViewsSummaryForm>
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
@@ -2960,6 +2994,7 @@ public class ReportsController extends SpringActionController
         private String pageId;
         private boolean includeData = true;
         private boolean includeMetadata = true;
+        private boolean adminView;
         private int _parent = -2;
         Map<String, Object> _props;
 
@@ -3025,6 +3060,16 @@ public class ReportsController extends SpringActionController
             return _parent;
         }
 
+        public boolean isAdminView()
+        {
+            return adminView;
+        }
+
+        public void setAdminView(boolean adminView)
+        {
+            this.adminView = adminView;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -3060,6 +3105,10 @@ public class ReportsController extends SpringActionController
                 else
                     webPartProps.put("height", String.valueOf(700));
                 response.put("webpart", new JSONObject(webPartProps));
+            }
+            else if (form.isAdminView())
+            {
+                props = getAdminConfiguration();
             }
             else
             {
@@ -3232,6 +3281,35 @@ public class ReportsController extends SpringActionController
 
             return props;
         }
+    }
+
+    private Map<String, String> getAdminConfiguration()
+    {
+        Map<String, String> props = new HashMap<>();
+
+        for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
+        {
+            String typeName = type.getName();
+
+            if (typeName.equalsIgnoreCase("reports") ||
+                typeName.equalsIgnoreCase("queries"))
+            {
+                props.put(typeName, "1");
+            }
+            else
+                props.put(typeName, "0");
+        }
+
+        // visible columns
+        props.put("Type", "1");
+        props.put("Author", "1");
+        props.put("Modified", "1");
+        props.put("Status", "1");
+        props.put("Access", "1");
+        props.put("Details", "1");
+        //props.put("Data Cut Date", "1");
+
+        return props;
     }
 
     /**
@@ -3466,6 +3544,8 @@ public class ReportsController extends SpringActionController
 
             if (null != webPart)
                 props = webPart.getPropertyMap();
+            else if (form.isAdminView())
+                props = getAdminConfiguration();
             else
                 props = resolveJSONProperties(form.getProps());
 

@@ -246,7 +246,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initComponent : function() {
 
         this.customMode = false;
-        this.editMode = false;
+        this.editMode = this.adminView;
         this.searchVal = "";
         this._height = null;
 
@@ -293,7 +293,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 // These parameters are required for specific webpart filtering
                 pageId      : this.pageId,
                 index       : this.index,
-                returnUrl   : this.returnUrl
+                returnUrl   : this.returnUrl,
+                adminView   : this.adminView
             },
             reader : 'json'
         };
@@ -418,7 +419,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             // These parameters are required for specific webpart filtering
             includeData : false,
             pageId : this.pageId,
-            index  : this.index
+            index  : this.index,
+            adminView : this.adminView
         };
 
         Ext4.Ajax.request({
@@ -611,7 +613,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 scope : this
             },
-            hidden   : true,
+            hidden   : !this.adminView,
             scope    : this
         },{
             xtype    : 'treecolumn',

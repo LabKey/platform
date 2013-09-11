@@ -273,6 +273,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Deprecated
     public class ManageViewsSummaryAction extends ApiAction<ViewsSummaryForm>
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception

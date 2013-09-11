@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.apache.commons.lang3.BooleanUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -37,6 +39,12 @@
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     User u = me.getViewContext().getUser();
     int webPartId = me.getModelBean().getRowId();
+    Map<String, String> properties = me.getModelBean().getPropertyMap();
+
+    // the adminView flag refers to manage views
+    boolean adminView = false;
+    if (properties.containsKey("adminView"))
+        adminView = BooleanUtils.toBoolean(properties.get("adminView"));
 
     String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -51,6 +59,7 @@
                 pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
                 index       : <%= me.getModelBean().getIndex() %>,
                 webpartId   : <%= webPartId %>,
+                adminView   : <%= adminView%>,
                 returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
                 allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
                 listeners   : {
