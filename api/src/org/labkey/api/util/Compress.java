@@ -19,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.dialect.KeywordCandidates;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -60,12 +59,14 @@ public class Compress
     // Compress a byte[] using the GZIP algorithm (see above).
     public static byte[] compressGzip(byte[] bytes)
     {
-        try
+        // GZIPOutputStream must be closed before getting byte array, so nest the try-with-resources blocks
+        try (ByteArrayOutputStream buf = new ByteArrayOutputStream())
         {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            GZIPOutputStream zip = new GZIPOutputStream(buf);
-            zip.write(bytes);
-            zip.close();
+            try (GZIPOutputStream zip = new GZIPOutputStream(buf))
+            {
+                zip.write(bytes);
+            }
+
             return buf.toByteArray();
         }
         catch (IOException x)
@@ -75,49 +76,34 @@ public class Compress
     }
 
     //create a compressed output from a file.  the name of the compressed file will the the input filename plus '.gz'
-    public static File compressGzip (File input)
+    public static File compressGzip(File input)
     {
         File output = new File(input.getPath() + ".gz");
         return compressGzip(input, output);
     }
 
     //create a compressed output file from the input file
-    public static File compressGzip (File input, File output)
+    public static File compressGzip(File input, File output)
     {
-        try
+        try (FileInputStream i = new FileInputStream(input); GZIPOutputStream o = new GZIPOutputStream(new FileOutputStream(output)))
         {
-            FileInputStream i = null;
-            GZIPOutputStream o = null;
-
-            try
-            {
-                i = new FileInputStream(input);
-                o = new GZIPOutputStream(new FileOutputStream(output));
-                FileUtil.copyData(i, o);
-            }
-            finally
-            {
-                if (i != null) try { i.close(); } catch (IOException e) {  }
-                if (o != null) try { o.close(); } catch (IOException e) {  }
-            }
-
-            return output;
+            FileUtil.copyData(i, o);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+
+        return output;
     }
 
     // Decompress a byte array that was compressed using GZIP.
     public static String decompressGzip(byte[] bytes)
     {
-        try
+        try (ByteArrayOutputStream buf = new ByteArrayOutputStream())
         {
             GZIPInputStream is = new GZIPInputStream(new ByteArrayInputStream(bytes));
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
             IOUtils.copy(is, buf);
-            buf.close();
 
             return buf.toString("UTF-8");
         }
@@ -128,34 +114,21 @@ public class Compress
     }
 
     //create a compressed output file from the input file
-    public static File decompressGzip (File input, File output)
+    public static File decompressGzip(File input, File output)
     {
-        try
+        try (GZIPInputStream i = new GZIPInputStream(new FileInputStream(input)); FileOutputStream o = new FileOutputStream(output))
         {
-            GZIPInputStream i = null;
-            FileOutputStream o = null;
-
-            try
-            {
-                i = new GZIPInputStream(new FileInputStream(input));
-                o = new FileOutputStream(output);
-                FileUtil.copyData(i, o);
-            }
-            finally
-            {
-                if (i != null) try { i.close(); } catch (IOException e) {  }
-                if (o != null) try { o.close(); } catch (IOException e) {  }
-            }
-
-            return output;
+            FileUtil.copyData(i, o);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+
+        return output;
     }
 
-    // Compress byte array using the DEFLATE algorithm.  Using DEFLATE is more efficient than GZIP compression
+    // Compress a string using the DEFLATE algorithm.  Using DEFLATE is more efficient than GZIP compression
     // (less overhead) but many common browsers don't accept this format directly.  Best for internal use.
     public static byte[] deflate(String source)
     {
@@ -163,14 +136,13 @@ public class Compress
     }
 
 
-    // Compress a string using the DEFLATE algorithm (see above).
+    // Compress a byte array using the DEFLATE algorithm (see above).
     public static byte[] deflate(byte[] bytes)
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length);
         byte[] buffer = new byte[bytes.length];
         Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
 
-        try
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length))
         {
             deflater.setInput(bytes);
             deflater.finish();
@@ -180,33 +152,27 @@ public class Compress
                 int count = deflater.deflate(buffer);
                 bos.write(buffer, 0, count);
             }
+
+            return bos.toByteArray();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
         finally
         {
             deflater.end();
-
-            try
-            {
-                bos.close();
-            }
-            catch (IOException e)
-            {
-                // Ignore
-            }
         }
-
-        return bos.toByteArray();
     }
 
 
     // Decompress a byte array that was compressed using deflate().
     public static String inflate(byte[] source) throws DataFormatException
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(source.length);
         byte[] buffer = new byte[source.length * 3];
         Inflater decompressor = new Inflater();
 
-        try
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(source.length))
         {
             decompressor.setInput(source, 0, source.length);
 
@@ -215,22 +181,17 @@ public class Compress
                 int count = decompressor.inflate(buffer);
                 bos.write(buffer, 0, count);
             }
+
+            return getString(bos);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
         finally
         {
             decompressor.end();
-
-            try
-            {
-                bos.close();
-            }
-            catch (IOException e)
-            {
-                //
-            }
         }
-
-        return getString(bos);
     }
 
 
