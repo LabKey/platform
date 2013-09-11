@@ -1081,7 +1081,7 @@ public class Query
             // NOTE: DISTINCT means lookups can not be pushed down
             new SqlTest("Rdistinct", "SELECT DISTINCT R.twelve FROM R",
                     "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                    "<table tableName=\"Rquery\" tableDbType=\"NOT_IN_DB\">\n" +
+                    "<table tableName=\"Rdistinct\" tableDbType=\"NOT_IN_DB\">\n" +
                     "<columns>\n" +
                     " <column columnName=\"twelve\">\n" +
                     "  <fk>\n" +
