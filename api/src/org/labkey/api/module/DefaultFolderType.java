@@ -24,6 +24,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.assay.AssayUrls;
@@ -406,6 +407,9 @@ public class DefaultFolderType implements FolderType
             adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
         else
             adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(StudyUrls.class).getManageViewsURL(container)));
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NEW_MANAGE_VIEWS))
+            adminNavTree.addChild(new NavTree("New Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlNewManageViews(container)));
     }
 
     public void addManageLinks(NavTree adminNavTree, Container container)
