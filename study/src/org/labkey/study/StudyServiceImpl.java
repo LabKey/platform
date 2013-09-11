@@ -882,4 +882,10 @@ public class StudyServiceImpl implements StudyService.Service
 
         return new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
     }
+
+    @Override
+    public String getDefaultDateFormatString(Container container)
+    {
+        return StudyManager.getInstance().getDefaultDateFormatString(container);
+    }
 }

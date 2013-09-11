@@ -2278,6 +2278,7 @@ query/src/org/labkey/query/CustomViewQueryChangeListener.java -text
 query/src/org/labkey/query/CustomViewUtil.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
+query/src/org/labkey/query/DataViewsWebPartFactory.java -text
 query/src/org/labkey/query/ExternalSchema.java -text
 query/src/org/labkey/query/ExternalSchemaDefImporterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDefWriterFactory.java -text
@@ -2404,6 +2405,7 @@ query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/attachmentReport.jsp -text
 query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/createQueryReport.jsp -text
+query/src/org/labkey/query/reports/view/dataViews.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
@@ -2484,6 +2486,11 @@ query/src/org/labkey/query/view/InheritedQueryDataViewProvider.java -text
 query/src/org/labkey/query/view/QueryDataViewProvider.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
+query/webapp/dataview/DataViewPropertiesPanel.js -text
+query/webapp/dataview/DataViewUtil.js -text
+query/webapp/dataview/DataViewsPanel.css -text
+query/webapp/dataview/DataViewsPanel.js -text
+query/webapp/dataviews.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
 query/webapp/query/columnPicker.js -text
@@ -3530,7 +3537,6 @@ study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/customizeStudyList.jsp -text
 study/src/org/labkey/study/view/dataSetDisplayOrder.jsp -text
 study/src/org/labkey/study/view/dataSetVisibility.jsp -text
-study/src/org/labkey/study/view/dataViews.jsp -text
 study/src/org/labkey/study/view/datasetCharts.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetInfo.jsp -text
@@ -3654,12 +3660,7 @@ study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
-study/webapp/dataviews.lib.xml -text
 study/webapp/sampleRequest.js -text
-study/webapp/study/DataViewPropertiesPanel.js -text
-study/webapp/study/DataViewUtil.js -text
-study/webapp/study/DataViewsPanel.css -text
-study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text

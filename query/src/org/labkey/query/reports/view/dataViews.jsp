@@ -17,12 +17,13 @@
 %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -36,8 +37,9 @@
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     User u = me.getViewContext().getUser();
     int webPartId = me.getModelBean().getRowId();
+
+    String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="dvc"></div>
 <script type="text/javascript">
 
     (function() {
@@ -45,7 +47,7 @@
         Ext4.onReady(function() {
             var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
                 id          : 'data-views-panel-<%= webPartId %>',
-                renderTo    : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
+                renderTo    : <%=q(renderId)%>,
                 pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
                 index       : <%= me.getModelBean().getIndex() %>,
                 webpartId   : <%= webPartId %>,
@@ -103,3 +105,5 @@
         Ext4.onReady(enableEdit);
     }
 </script>
+
+<div id='<%=h(renderId)%>' class="dvc"></div>

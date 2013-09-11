@@ -27,9 +27,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
@@ -42,8 +40,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.views.DataViewInfo;
-import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -55,10 +51,30 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -69,22 +85,64 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.model.ViewInfo;
-import org.labkey.api.reports.report.*;
-import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.AbstractReportIdentifier;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.*;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
@@ -103,13 +161,41 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
-import org.labkey.study.importer.*;
+import org.labkey.study.importer.DatasetImportUtils;
+import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.study.importer.SchemaReader;
+import org.labkey.study.importer.SchemaTsvReader;
+import org.labkey.study.importer.StudyImportJob;
+import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
-import org.labkey.study.model.*;
+import org.labkey.study.importer.VisitMapImporter;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.CustomParticipantView;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitDataSet;
+import org.labkey.study.model.VisitDataSetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.query.*;
+import org.labkey.study.query.DataSetQuerySettings;
+import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.PublishedRecordQueryView;
+import org.labkey.study.query.StudyPropertiesQueryView;
+import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.StudyQueryView;
+import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -117,12 +203,9 @@ import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
-import org.springframework.beans.PropertyValue;
-import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.xml.sax.SAXException;
@@ -132,11 +215,28 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -208,6 +308,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageReports(Container container)
         {
             return new ActionURL(ReportsController.ManageReportsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageDatasetsURL(Container container)
+        {
+            return new ActionURL(ManageTypesAction.class, container);
         }
     }
 
@@ -1077,6 +1183,9 @@ public class StudyController extends BaseStudyController
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
             if (customParticipantView != null && customParticipantView.isActive())
             {
+                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
+                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
+
                 HtmlView participantView = new HtmlView(customParticipantView.getBody());
                 vbox.addView(participantView);
             }
@@ -4648,6 +4757,9 @@ public class StudyController extends BaseStudyController
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
             {
+                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
+                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
+
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
                 form.setEditable(!view.isModuleParticipantView());
@@ -6691,858 +6803,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class BrowseDataAction extends ApiAction<BrowseDataForm>
-    {
-        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
-        {
-            Map<String, Map<String, Object>> types = new TreeMap<>();
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
-
-            Map<String, String> props;
-            if (webPart != null)
-            {
-                props = webPart.getPropertyMap();
-                Map<String, String> webPartProps = new HashMap<>();
-                webPartProps.put("name", webPart.getName());
-                if (props.containsKey("webpart.title"))
-                    webPartProps.put("title", props.get("webpart.title"));
-                if (props.containsKey("webpart.height"))
-                    webPartProps.put("height", props.get("webpart.height"));
-                else
-                    webPartProps.put("height", String.valueOf(700));
-                response.put("webpart", new JSONObject(webPartProps));
-            }
-            else
-            {
-                props = resolveJSONProperties(form.getProps());
-            }
-
-            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
-            for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
-            {
-                Map<String, Object> info = new HashMap<>();
-                boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
-
-                info.put("name", type.getName());
-                info.put("visible", visible);
-
-                types.put(type.getName(), info);
-
-                if (visible)
-                    visibleDataTypes.add(type);
-            }
-
-            response.put("types", new JSONArray(types.values()));
-
-            String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
-            if (dateFormat == null)
-                dateFormat = DateUtil.getStandardDateFormatString();
-
-
-            //The purpose of this flag is so LABKEY.Query.getDataViews() can omit additional information only used to render the
-            //webpart.  this also leaves flexibility to change that metadata
-            if (form.includeMetadata())
-            {
-                // visible columns
-                Map<String, Map<String, Boolean>> columns = new LinkedHashMap<>();
-
-                columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
-                columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
-                columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
-                columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
-                columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
-                columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
-                columns.put("Data Cut Date", Collections.singletonMap("checked", getCheckedState("Data Cut Date", props, false)));
-
-                response.put("visibleColumns", columns);
-
-                // provider editor information
-                Map<String, Map<String, Object>> viewTypeProps = new HashMap<>();
-                for (DataViewProvider.Type type : visibleDataTypes)
-                {
-                    DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
-                    DataViewProvider.EditInfo editInfo = provider.getEditInfo();
-                    if (editInfo != null)
-                    {
-                        Map<String, Object> info = new HashMap<>();
-                        for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
-                        {
-                            info.put(propName, true);
-                        }
-                        viewTypeProps.put(type.getName(), info);
-                    }
-                }
-                response.put("editInfo", viewTypeProps);
-                response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
-            }
-
-            if (form.includeData())
-            {
-                int startingDefaultDisplayOrder = 0;
-                Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
-                    @Override
-                    public int compare(String s1, String s2)
-                    {
-                        return s1.compareToIgnoreCase(s2);
-                    }
-                });
-
-                getViewContext().put("returnUrl", form.getReturnUrl());
-
-                // get the data view information from all visible providers
-                List<DataViewInfo> views = new ArrayList<>();
-
-                for (DataViewProvider.Type type : visibleDataTypes)
-                {
-                    DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
-                    views.addAll(provider.getViews(getViewContext()));
-                }
-
-                for (DataViewInfo info : views)
-                {
-                    ViewCategory category = info.getCategory();
-
-                    if (category != null)
-                    {
-                        if (category.getDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
-                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, category.getDisplayOrder());
-                        else
-                            defaultCategories.add(category.getLabel());
-                    }
-                }
-
-                // add the default categories after the explicit categories
-                Map<String, Integer> defaultCategoryMap = new HashMap<>();
-                for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
-                {
-                    defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);                    
-                }
-
-                for (DataViewInfo info : views)
-                {
-                    ViewCategory category = info.getCategory();
-
-                    if (category != null)
-                    {
-                        if (category.getDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(category.getLabel()))
-                            category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
-                    }
-                }
-                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views, dateFormat));
-            }
-
-            return response;
-        }
-
-        private Boolean getCheckedState(String prop, Map<String, String> propMap, boolean defaultState)
-        {
-            if (propMap.containsKey(prop))
-            {
-                return !propMap.get(prop).equals("0");
-            }
-            return defaultState;
-        }
-
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
-        {
-            JSONObject jsonProps = (JSONObject) formProps;
-            Map<String, String> props = new HashMap<>();
-            boolean explicit = false;
-
-            if (null != jsonProps && jsonProps.size() > 0)
-            {
-                try
-                {
-                    // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
-                    for (int i=0; i < dataTypes.length(); i++)
-                    {
-                        props.put((String) dataTypes.get(i), "on");
-                        explicit = true;
-                    }
-                }
-                catch (JSONException x)
-                {
-                    /* No-op */
-                }
-
-                if (explicit)
-                {
-                    for (ViewInfo.DataType t : ViewInfo.DataType.values())
-                    {
-                        if (!props.containsKey(t.name()))
-                        {
-                            props.put(t.name(), "0");
-                        }
-                    }
-                }
-            }
-
-            return props;
-        }
-    }
-
-    /**
-     * This action is currently just an example. This would provide the proper configuration for a tree-based
-     * layout of categorized data views. For now only dummy data is generated for rendering.
-     * See 'asTree' in DataViewsPanel.js.
-     */
-    @RequiresPermissionClass(ReadPermission.class)
-    public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
-    {
-        private String dateFormat;
-
-        @Override
-        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
-        {
-            HttpServletResponse resp = getViewContext().getResponse();
-            resp.setContentType("application/json");
-            resp.getWriter().write(getTreeData(form).toString());
-
-            return null;
-        }
-
-        private JSONObject getTreeData(BrowseDataForm form) throws Exception
-        {
-            List<DataViewProvider.Type> visibleDataTypes = getVisibleDataTypes(form);
-
-            int startingDefaultDisplayOrder = 0;
-            Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
-                @Override
-                public int compare(String s1, String s2)
-                {
-                    return s1.compareToIgnoreCase(s2);
-                }
-            });
-
-            if (null != form.getReturnUrl())
-                getViewContext().put("returnUrl", form.getReturnUrl());
-
-            // get the data view information from all visible providers
-            List<DataViewInfo> views = new ArrayList<>();
-
-            for (DataViewProvider.Type type : visibleDataTypes)
-            {
-                views.addAll(DataViewService.get().getProvider(type, getViewContext()).getViews(getViewContext()));
-            }
-
-            for (DataViewInfo info : views)
-            {
-                ViewCategory category = info.getCategory();
-
-                if (category != null)
-                {
-                    if (category.getDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
-                    {
-                        startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, category.getDisplayOrder());
-                    }
-                    else
-                        defaultCategories.add(category.getLabel());
-                }
-            }
-
-            // add the default categories after the explicit categories
-            Map<String, Integer> defaultCategoryMap = new HashMap<>();
-            for (String cat : defaultCategories)
-            {
-                defaultCategoryMap.put(cat, ++startingDefaultDisplayOrder);
-            }
-
-            for (DataViewInfo info : views)
-            {
-                ViewCategory category = info.getCategory();
-
-                if (category != null)
-                {
-                    if (category.getDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(category.getLabel()))
-                        category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
-                }
-            }
-
-            dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
-            if (dateFormat == null)
-                dateFormat = DateUtil.getStandardDateFormatString();
-
-            return buildTree(views);
-        }
-
-        private JSONObject buildTree(List<DataViewInfo> views)
-        {
-            Comparator<ViewCategory> t = new Comparator<ViewCategory>()
-            {
-                @Override
-                public int compare(ViewCategory c1, ViewCategory c2)
-                {
-                    int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
-                    if (order == 0)
-                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
-                    else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
-                        return 1;
-                    else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
-                        return -1;
-                    else if (c1.getDisplayOrder() == 0)
-                        return 1;
-                    else if (c2.getDisplayOrder() == 0)
-                        return -1;
-                    return order;
-                }
-            };
-
-            // Get all categories -- group views by them
-            Map<Integer, List<DataViewInfo>> groups = new HashMap<>();
-            Map<Integer, ViewCategory> categories = new HashMap<>();
-            TreeSet<ViewCategory> order = new TreeSet<>(t);
-
-            for (DataViewInfo view : views)
-            {
-                ViewCategory vc = view.getCategory();
-                if (null != vc)
-                {
-                    if (!groups.containsKey(vc.getRowId()))
-                    {
-                        groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
-                    }
-                    groups.get(vc.getRowId()).add(view);
-                    categories.put(vc.getRowId(), vc);
-                    if (null == vc.getParent())
-                    {
-                        order.add(vc);
-                    }
-                    else if (!categories.containsKey(vc.getParent().getRowId()))
-                    {
-                        // Possible unreferenced parent
-                        vc = vc.getParent();
-                        if (!groups.containsKey(vc.getRowId()))
-                        {
-                            groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
-                        }
-                        categories.put(vc.getRowId(), vc);
-                        order.add(vc);
-                    }
-                }
-            }
-
-            // Construct category tree
-            Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<>();
-
-            for (Integer ckey : groups.keySet())
-            {
-                ViewCategory c = categories.get(ckey);
-
-                if (!tree.containsKey(ckey))
-                {
-                    tree.put(ckey, new TreeSet<>(t));
-                }
-
-                ViewCategory p = c.getParent();
-                if (null != p)
-                {
-                    if (!tree.containsKey(p.getRowId()))
-                    {
-                        tree.put(p.getRowId(), new TreeSet<>(t));
-                    }
-                    tree.get(p.getRowId()).add(c);
-                }
-            }
-
-            // create output
-
-            // Construct root node
-            JSONObject root = new JSONObject();
-            JSONArray rootChildren = new JSONArray();
-
-            for (ViewCategory vc : order)
-            {
-                JSONObject category = new JSONObject();
-                category.put("name", vc.getLabel());
-                category.put("icon", false);
-                category.put("expanded", true);
-                category.put("cls", "dvcategory");
-                category.put("children", processChildren(vc, groups, tree));
-
-                rootChildren.put(category);
-            }
-
-            root.put("name", ".");
-            root.put("expanded", true);
-            root.put("children", rootChildren);
-
-            return root;
-        }
-
-        private JSONArray processChildren(ViewCategory vc, Map<Integer, List<DataViewInfo>> groups, Map<Integer, TreeSet<ViewCategory>> tree)
-        {
-            JSONArray children = new JSONArray();
-
-            // process other categories
-            if (tree.get(vc.getRowId()).size() > 0)
-            {
-                // has it's own sub-categories
-                for (ViewCategory v : tree.get(vc.getRowId()))
-                {
-                    JSONObject category = new JSONObject();
-                    category.put("name", v.getLabel());
-                    category.put("icon", false);
-                    category.put("expanded", true);
-                    category.put("cls", "dvcategory");
-                    category.put("children", processChildren(v, groups, tree));
-
-                    children.put(category);
-                }
-            }
-
-            // process views
-            for (DataViewInfo view : groups.get(vc.getRowId()))
-            {
-                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view, dateFormat);
-                viewJson.put("name", view.getName());
-                viewJson.put("leaf", true);
-                viewJson.put("icon", view.getIcon());
-                children.put(viewJson);
-            }
-
-            return children;
-        }
-
-        private List<DataViewProvider.Type> getVisibleDataTypes(BrowseDataForm form)
-        {
-            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
-            Map<String, String> props;
-            Portal.WebPart webPart = getWebPart(form);
-
-            if (null != webPart)
-                props = webPart.getPropertyMap();
-            else
-                props = resolveJSONProperties(form.getProps());
-
-            for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
-            {
-                boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
-
-                if (visible)
-                    visibleDataTypes.add(type);
-            }
-
-            return visibleDataTypes;
-        }
-
-        @Nullable
-        private Portal.WebPart getWebPart(BrowseDataForm form)
-        {
-            return Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
-        }
-
-        private Boolean getCheckedState(String prop, Map<String, String> propMap, boolean defaultState)
-        {
-            if (propMap.containsKey(prop))
-            {
-                return !propMap.get(prop).equals("0");
-            }
-            return defaultState;
-        }
-
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
-        {
-            JSONObject jsonProps = (JSONObject) formProps;
-            Map<String, String> props = new HashMap<>();
-            boolean explicit = false;
-
-            if (null != jsonProps && jsonProps.size() > 0)
-            {
-                try
-                {
-                    // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
-                    for (int i=0; i < dataTypes.length(); i++)
-                    {
-                        props.put((String) dataTypes.get(i), "on");
-                        explicit = true;
-                    }
-                }
-                catch (JSONException x)
-                {
-                    /* No-op */
-                }
-
-                if (explicit)
-                {
-                    for (ViewInfo.DataType t : ViewInfo.DataType.values())
-                    {
-                        if (!props.containsKey(t.name()))
-                        {
-                            props.put(t.name(), "0");
-                        }
-                    }
-                }
-            }
-
-            return props;
-        }
-    }
-
-    public static class BrowseDataForm extends ReturnUrlForm implements CustomApiForm
-    {
-        private int index;
-        private String pageId;
-        private boolean includeData = true;
-        private boolean includeMetadata = true;
-        private int _parent = -2;
-        Map<String, Object> _props;
-
-        private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
-
-        public ViewInfo.DataType[] getDataTypes()
-        {
-            return _dataTypes;
-        }
-
-        public void setDataTypes(ViewInfo.DataType[] dataTypes)
-        {
-            _dataTypes = dataTypes;
-        }
-
-        public int getIndex()
-        {
-            return index;
-        }
-
-        public void setIndex(int index)
-        {
-            this.index = index;
-        }
-
-        public String getPageId()
-        {
-            return pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            this.pageId = pageId;
-        }
-
-        public boolean includeData()
-        {
-            return includeData;
-        }
-
-        public void setIncludeData(boolean includedata)
-        {
-            includeData = includedata;
-        }
-
-        public boolean includeMetadata()
-        {
-            return includeMetadata;
-        }
-
-        public void setIncludeMetadata(boolean includeMetadata)
-        {
-            this.includeMetadata = includeMetadata;
-        }
-
-        public void setParent(int parent)
-        {
-            _parent = parent;
-        }
-
-        public int getParent()
-        {
-            return _parent;
-        }
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            _props = props;
-        }
-
-        public Map<String, Object> getProps()
-        {
-            return _props;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GetCategoriesAction extends ApiAction<BrowseDataForm>
-    {
-        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> categoryList = new ArrayList<>();
-
-            List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<>();
-            List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<>();
-
-            ViewCategory[] categories;
-            int parent = form.getParent();
-
-            // Default, no parent specifically requested
-            if (parent == -2)
-            {
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
-            }
-            else if (parent == 0)
-            {
-                // parent filter on non-existent category
-                categories = new ViewCategory[0];
-            }
-            else
-            {
-                SimpleFilter filter;
-                FieldKey field = FieldKey.fromParts("Parent");
-
-                if (parent > 0)
-                    filter = new SimpleFilter(field, parent);
-                else
-                    filter = new SimpleFilter(field, null, CompareType.ISBLANK);
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser(), filter);
-            }
-
-            for (ViewCategory c : categories)
-            {
-                if (c.getDisplayOrder() != 0)
-                    categoriesWithDisplayOrder.add(c);
-                else
-                    categoriesWithoutDisplayOrder.add(c);
-            }
-
-            Collections.sort(categoriesWithDisplayOrder, new Comparator<ViewCategory>(){
-                @Override
-                public int compare(ViewCategory c1, ViewCategory c2)
-                {
-                    return c1.getDisplayOrder() - c2.getDisplayOrder();
-                }
-            });
-
-            if (!categoriesWithoutDisplayOrder.isEmpty())
-            {
-                Collections.sort(categoriesWithoutDisplayOrder, new Comparator<ViewCategory>(){
-                    @Override
-                    public int compare(ViewCategory c1, ViewCategory c2)
-                    {
-                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
-                    }
-                });
-            }
-            for (ViewCategory vc : categoriesWithDisplayOrder)
-                categoryList.add(vc.toJSON(getUser()));
-
-            // assign an order to all categories returned to the client
-            int count = categoriesWithDisplayOrder.size() + 1;
-            for (ViewCategory vc : categoriesWithoutDisplayOrder)
-            {
-                vc.setDisplayOrder(count++);
-                categoryList.add(vc.toJSON(getUser()));
-            }
-            response.put("categories", categoryList);
-
-            return response;
-        }
-    }
-
-    public static class CategoriesForm implements CustomApiForm
-    {
-        List<ViewCategory> _categories = new ArrayList<>();
-
-        public List<ViewCategory> getCategories()
-        {
-            return _categories;
-        }
-
-        public void setCategories(List<ViewCategory> categories)
-        {
-            _categories = categories;
-        }
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            Object categoriesProp = props.get("categories");
-            if (categoriesProp != null)
-            {
-                for (JSONObject categoryInfo : ((JSONArray) categoriesProp).toJSONObjectArray())
-                {
-                    _categories.add(ViewCategory.fromJSON(categoryInfo));
-                }
-            }
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class SaveCategoriesAction extends MutatingApiAction<CategoriesForm>
-    {
-        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-            try {
-                scope.ensureTransaction();
-
-                for (ViewCategory category : form.getCategories())
-                    ViewCategoryManager.getInstance().saveCategory(getContainer(), getUser(), category);
-
-                scope.commitTransaction();
-
-                response.put("success", true);
-                return response;
-            }
-            catch (Exception e) {
-                response.put("success", false);
-                response.put("message", e.getMessage());
-            }
-            finally
-            {
-                scope.closeConnection();
-            }
-            return response;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class DeleteCategoriesAction extends MutatingApiAction<CategoriesForm>
-    {
-        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-            try {
-                scope.ensureTransaction();
-
-                for (ViewCategory category : form.getCategories())
-                    ViewCategoryManager.getInstance().deleteCategory(getContainer(), getUser(), category);
-
-                scope.commitTransaction();
-                
-                response.put("success", true);
-                return response;
-            }
-            finally
-            {
-                scope.closeConnection();
-            }
-        }
-    }
-
-    public static class EditViewsForm
-    {
-        String _id;
-        String _dataType;
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        public void setId(String id)
-        {
-            _id = id;
-        }
-
-        public String getDataType()
-        {
-            return _dataType;
-        }
-
-        public void setDataType(String dataType)
-        {
-            _dataType = dataType;
-        }
-
-        public Map<String, Object> getPropertyMap(PropertyValues pv, List<String> editableValues, Map<String, MultipartFile> files) throws ValidationException
-        {
-            Map<String, Object> map = new HashMap<>();
-
-            for (PropertyValue value : pv.getPropertyValues())
-            {
-                if (editableValues.contains(value.getName()))
-                    map.put(value.getName(), value.getValue());
-            }
-
-            for (String fileName : files.keySet())
-            {
-                if (editableValues.contains(fileName) && !files.get(fileName).isEmpty())
-                {
-                    try {
-                        map.put(fileName, files.get(fileName).getInputStream());
-                    }
-                    catch(IOException e)
-                    {
-                        throw new ValidationException("Unable to read file: " + fileName);
-                    }
-                }
-            }
-
-            return map;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class EditViewAction extends MutatingApiAction<EditViewsForm>
-    {
-        private DataViewProvider _provider;
-        private Map<String, Object> _propertiesMap;
-
-        public EditViewAction()
-        {
-            super();
-            //because this will typically be called from a hidden iframe
-            //we must respond with a content-type of text/html or the
-            //browser will prompt the user to save the response, as the
-            //browser won't natively show application/json content-type            
-            setContentTypeOverride("text/html");
-        }
-
-        @Override
-        public void validateForm(EditViewsForm form, Errors errors)
-        {
-            DataViewProvider.Type type = DataViewService.get().getDataTypeByName(form.getDataType());
-            if (type != null)
-            {
-                _provider = DataViewService.get().getProvider(type, getViewContext());
-                DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
-
-                if (editInfo != null)
-                {
-                    List<String> editable = Arrays.asList(editInfo.getEditableProperties(getContainer(), getUser()));
-                    try {
-                        _propertiesMap = form.getPropertyMap(getPropertyValues(), editable, getFileMap());
-                        editInfo.validateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
-                    }
-                    catch (ValidationException e)
-                    {
-                        for (ValidationError error : e.getErrors())
-                            errors.reject(ERROR_MSG, error.getMessage());
-                    }
-                }
-                else
-                    errors.reject(ERROR_MSG, "This data view does not support editing");
-            }
-            else
-                errors.reject(ERROR_MSG, "Unable to find the specified data view type");
-        }
-
-        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
-            if (editInfo != null && _propertiesMap != null)
-            {
-                editInfo.updateProperties(getViewContext(), form.getId(), _propertiesMap);
-                response.put("success", true);
-            }
-            else
-                response.put("success", false);
-
-            return response;
         }
     }
 

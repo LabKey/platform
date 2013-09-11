@@ -6,11 +6,11 @@
 
 Ext4.tip.QuickTipManager.init();
 
-Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
+Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
-    extend : 'Ext.form.Panel',
-
-    alias : 'widget.dvproperties',
+    extend  : 'Ext.form.Panel',
+    alias   : 'widget.dvproperties',
+    alternateClassName : ['LABKEY.study.DataViewPropertiesPanel'],
 
     constructor : function(config) {
 

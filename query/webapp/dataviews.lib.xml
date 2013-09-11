@@ -1,0 +1,11 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="dataview/DataViewUtil.js"/>
+        <script path="dataview/DataViewPropertiesPanel.js"/>
+        <script path="dataview/DataViewsPanel.css"/>
+        <script path="dataview/DataViewsPanel.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+    </dependencies>
+</libraries>

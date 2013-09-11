@@ -1142,7 +1142,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             form.setValues({category: 0});
                         }
                         Ext4.Ajax.request({
-                            url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                            url     : LABKEY.ActionURL.buildURL('reports', 'editView.api'),
                             method  : 'POST',
                             params  : form.getValues(),
                             success : function(){

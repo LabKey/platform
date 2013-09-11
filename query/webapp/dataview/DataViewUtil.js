@@ -3,9 +3,10 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('LABKEY.study.DataViewUtil', {
+Ext4.define('LABKEY.ext4.DataViewUtil', {
 
     singleton : true,
+    alternateClassName : ['LABKEY.study.DataViewUtil'],
 
     getUsersStore : function() {
 
@@ -82,10 +83,10 @@ Ext4.define('LABKEY.study.DataViewUtil', {
             proxy   : {
                 type   : 'ajax',
                 api    : {
-                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
-                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
+                    create  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
+                    read    : LABKEY.ActionURL.buildURL('reports', 'getCategories.api'),
+                    update  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
+                    destroy : LABKEY.ActionURL.buildURL('reports', 'deleteCategories.api')
                 },
                 extraParams : {
                     // These parameters are required for specific webpart filtering
@@ -522,10 +523,10 @@ Ext4.define('LABKEY.study.DataViewUtil', {
             proxy   : {
                 type   : 'ajax',
                 api    : {
-                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
-                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
+                    create  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
+                    read    : LABKEY.ActionURL.buildURL('reports', 'getCategories.api'),
+                    update  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
+                    destroy : LABKEY.ActionURL.buildURL('reports', 'deleteCategories.api')
                 },
                 extraParams : extraParams,
                 reader : { type : 'json', root : 'categories' },

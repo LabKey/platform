@@ -46,16 +46,12 @@ import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -216,7 +212,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
-    public static final WebPartFactory dataViewsWebPartFactory = new DataViewsWebPartFactory();
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
@@ -301,7 +296,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-                subjectsWebPartFactory, subjectsWideWebPartFactory, dataViewsWebPartFactory, dataToolsWebPartFactory,
+                subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory,
                 dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
                 specimenReportWebPartFactory, studyScheduleWebPartFactory));
     }
@@ -503,64 +498,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return new HtmlView("Views", "This folder does not contain a study");
 
             return new ReportsController.ReportsWebPart(!WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()));
-        }
-    }
-
-    private static class DataViewsWebPartFactory extends BaseWebPartFactory
-    {
-        public DataViewsWebPartFactory()
-        {
-            super("Data Views", WebPartFactory.LOCATION_BODY, true, false); // is editable
-            addLegacyNames("Dataset Browse", "Dataset Browse (Experimental)");
-        }
-
-        @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
-        {
-            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/dataViews.jsp", webPart);
-            view.setTitle("Data Views");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-            Container c = portalCtx.getContainer();
-            NavTree menu = new NavTree();
-
-            if (portalCtx.hasPermission(InsertPermission.class))
-            {
-                NavTree reportMenu = new NavTree("Add Report");
-                reportMenu.addChild("From File", PageFlowUtil.urlProvider(ReportUrls.class).urlAttachmentReport(portalCtx.getContainer(), portalCtx.getActionURL()));
-                reportMenu.addChild("From Link", PageFlowUtil.urlProvider(ReportUrls.class).urlLinkReport(portalCtx.getContainer(), portalCtx.getActionURL()));
-                menu.addChild(reportMenu);
-            }
-
-            if (portalCtx.hasPermission(AdminPermission.class))
-            {
-                NavTree customize = new NavTree("");
-
-                String customizeScript = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
-
-                customize.setScript(customizeScript);
-                view.setCustomize(customize);
-
-                String editScript = "editDataViews(" + webPart.getRowId() + ");";
-                NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
-                view.addCustomMenu(edit);
-
-                menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
-                menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
-            }
-
-            if(portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
-            {
-                ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c);
-
-                if (StudyService.get().getStudy(c) != null)
-                    url = new ActionURL(ReportsController.ManageReportsAction.class, c);
-
-                menu.addChild("Manage Views", url);
-            }
-
-            view.setNavMenu(menu);
-
-            return view;
         }
     }
 

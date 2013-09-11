@@ -155,7 +155,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new QueryWebPartFactory(), new ReportsWebPartFactory()));
+        return new ArrayList<WebPartFactory>(Arrays.asList(new QueryWebPartFactory(), new ReportsWebPartFactory(), new DataViewsWebPartFactory()));
     }
 
     public boolean hasScripts()

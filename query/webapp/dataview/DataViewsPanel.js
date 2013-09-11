@@ -141,7 +141,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             layout : 'border',
             minWidth: 625,
             frame  : false, border : false,
-            allowCustomize : true
+            allowCustomize : true,
+            pageId  : -1,
+            index   : -1,
+            height  : 700
         });
 
         // The following default to type 'string'
@@ -285,7 +288,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     getViewProxy : function() {
         return {
             type   : 'ajax',
-            url    : LABKEY.ActionURL.buildURL('study', 'browseDataTree.api'),
+            url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
             extraParams : {
                 // These parameters are required for specific webpart filtering
                 pageId      : this.pageId,
@@ -374,7 +377,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     /**
-     * Handles the json response from study/browseData.api
+     * Handles the json response from reports/browseData.api
      * @param json
      */
     onConfigure : function(json) {
@@ -419,7 +422,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
 
         Ext4.Ajax.request({
-            url    : LABKEY.ActionURL.buildURL('study', 'browseData.api', null, extraParams),
+            url    : LABKEY.ActionURL.buildURL('reports', 'browseData.api', null, extraParams),
             method : 'GET',
             success: function(response) {
                 if (handler)
@@ -1135,7 +1138,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         form.setValues({category: 0});
                     }
                     form.submit({
-                        url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                        url : LABKEY.ActionURL.buildURL('reports', 'editView.api'),
                         method : 'POST',
                         submitEmptyText : false,
                         success : function() {
