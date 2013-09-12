@@ -20,8 +20,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.PropertyDescriptor;
 
 import java.util.Collections;
 import java.util.Set;
@@ -35,7 +34,7 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
     public static final String EVENT_TYPE = "FileSystemBatch";
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new FileSystemBatchAuditDomainKind();
     }
@@ -84,7 +83,7 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return Collections.emptySet();
         }

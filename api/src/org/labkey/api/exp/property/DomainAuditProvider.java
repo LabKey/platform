@@ -25,13 +25,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.List;
@@ -61,7 +62,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new DomainAuditDomainKind();
     }
@@ -186,20 +187,21 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     {
         public static final String NAME = "DomainAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_DOMAIN_URI, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_DOMAIN_NAME, JdbcType.VARCHAR));
-        }
+        private final Set<PropertyDescriptor> _fields;
 
         public DomainAuditDomainKind()
         {
             super(EVENT_TYPE);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_URI, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_NAME, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

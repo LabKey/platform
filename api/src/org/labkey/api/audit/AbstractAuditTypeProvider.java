@@ -16,7 +16,9 @@
 package org.labkey.api.audit;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -24,9 +26,12 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -35,7 +40,9 @@ import org.labkey.api.security.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: klum
@@ -55,17 +62,33 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
 
-    protected abstract DomainKind getDomainKind();
+    protected abstract AbstractAuditDomainKind getDomainKind();
 
     @Override
     public void initializeProvider(User user)
     {
         // Register the DomainKind
-        DomainKind domainKind = getDomainKind();
+        AbstractAuditDomainKind domainKind = getDomainKind();
         PropertyService.get().registerDomainKind(domainKind);
 
-        // if the domain doesn't exist, create it
         Domain domain = getDomain();
+
+        // NOTE: Remove domains created prior to migration that used DomainKind base properties instead of normal PropertyDescriptors
+        // NOTE: This check will drop domains from servers built from source during 13.3 dev prior to the audit hard table migration.
+        if (domain != null && domain.getProperties().length == 0 && !AuditLogService.get().hasEventTypeMigrated(getEventName()))
+        {
+            try
+            {
+                domain.delete(user);
+                domain = null;
+            }
+            catch (DomainNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // if the domain doesn't exist, create it
         if (domain == null)
         {
             try
@@ -79,66 +102,77 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 throw new RuntimeException(e);
             }
         }
-        else
-        {
-            // ensure the domain fields are in sync with the domain kind specification
-            ensureProperties(user, domain, domainKind);
-        }
+
+        // ensure the domain fields are in sync with the domain kind specification
+        ensureProperties(user, domain, domainKind);
     }
 
-    protected void ensureProperties(User user, Domain domain, DomainKind domainKind)
+    // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
+    protected void ensureProperties(User user, Domain domain, AbstractAuditDomainKind domainKind)
     {
         if (domain != null && domainKind != null)
         {
-            DbScope scope = domainKind.getScope();
+            // Create a map of desired properties
+            Map<String, PropertyDescriptor> props = new CaseInsensitiveHashMap<>();
+            for (PropertyDescriptor pd : domainKind.getProperties())
+                props.put(pd.getName(), pd);
 
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            // Create a map of existing properties
+            Map<String, PropertyDescriptor> current = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : domain.getProperties())
             {
-                StorageProvisioner.ProvisioningReport preport = StorageProvisioner.getProvisioningReport(domain.getTypeURI());
-                if (preport.getProvisionedDomains().size() != 1)
-                {
-                    return;
-                }
-                StorageProvisioner.ProvisioningReport.DomainReport report = preport.getProvisionedDomains().iterator().next();
-
-                TableChange drops = new TableChange(domainKind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.DropColumns);
-                boolean hasDrops = false;
-                TableChange adds = new TableChange(domainKind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
-                boolean hasAdds = false;
-
-                for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
-                {
-                    if (!st.hasProblem)
-                        continue;
-                    if (st.spec == null && st.prop == null)
-                    {
-                        if (null != st.colName)
-                        {
-                            drops.dropColumnExactName(st.colName);
-                            hasDrops = true;
-                        }
-                    }
-                    else if (st.spec != null && st.prop == null)
-                    {
-                        if (st.colName == null)
-                        {
-                            adds.addColumn(st.spec);
-                            hasAdds = true;
-                        }
-                    }
-                }
-                Connection conn = scope.getConnection();
-                if (hasDrops)
-                    executeChange(scope, conn, drops);
-                if (hasAdds)
-                    executeChange(scope, conn, adds);
-
-                if (hasDrops || hasAdds)
-                    domainKind.invalidate(domain);
-
-                scope.commitTransaction();
+                PropertyDescriptor pd = dp.getPropertyDescriptor();
+                current.put(pd.getName(), pd);
             }
-            catch (Exception e)
+
+            Set<PropertyDescriptor> toAdd = new LinkedHashSet<>();
+            for (PropertyDescriptor pd : props.values())
+                if (!current.containsKey(pd.getName()))
+                    toAdd.add(pd);
+
+            Set<PropertyDescriptor> toUpdate = new LinkedHashSet<>();
+            Set<PropertyDescriptor> toDelete = new LinkedHashSet<>();
+            for (PropertyDescriptor pd : current.values())
+            {
+                if (props.containsKey(pd.getName()))
+                    toUpdate.add(pd);
+                else
+                    toDelete.add(pd);
+            }
+
+            for (PropertyDescriptor pd : toAdd)
+            {
+                domain.addPropertyOfPropertyDescriptor(pd);
+            }
+
+            for (PropertyDescriptor pd : toDelete)
+            {
+                DomainProperty dp = domain.getPropertyByURI(pd.getPropertyURI());
+                if (dp == null)
+                    throw new RuntimeException("Failed to find property to delete: " + pd.getName());
+                dp.delete();
+            }
+
+            try (DbScope.Transaction transaction = domainKind.getScope().ensureTransaction())
+            {
+                // CONSIDER: Avoid always updating the existing properties -- only update changed props.
+                for (PropertyDescriptor pd : toUpdate)
+                {
+                    PropertyDescriptor desired = props.get(pd.getName());
+                    assert desired != null;
+                    desired.copyTo(pd);
+                    OntologyManager.updatePropertyDescriptor(pd);
+                }
+
+                boolean changed = !toAdd.isEmpty() || !toDelete.isEmpty();
+                if (changed)
+                {
+                    domain.save(user);
+                }
+
+                transaction.commit();
+            }
+            catch (ChangePropertyDescriptorException e)
             {
                 throw new RuntimeException(e);
             }

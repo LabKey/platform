@@ -15,6 +15,8 @@
  */
 package org.labkey.api.audit.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -33,13 +35,11 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
@@ -59,33 +59,30 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 {
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
-    private static String XAR_SUBSTITUTION_GUID = "GUID";
 
     private static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
     private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
-    public static String PROPERTY_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}-${TableName}";
-    public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
-
-    private static final Set<PropertyStorageSpec> _baseFields = new LinkedHashSet<>();
+    private static final Set<PropertyStorageSpec> _baseFields;
     private static final Set<String> _reservedNames = new HashSet<>();
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
 
     static {
-        _baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
-        _baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
-        _baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
-        _baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
-        _baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
-        _baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
-        _baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
-        _baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR).setEntityId(true));
+        Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
+        baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
+        baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
+        baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
+        baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
+        baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
+        baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
+        baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
+        baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR).setEntityId(true));
+        _baseFields = Collections.unmodifiableSet(baseFields);
     }
 
     private final String _eventType;
-    private Set<PropertyStorageSpec> _allColumns = new LinkedHashSet<>();
 
     public AbstractAuditDomainKind(String eventType)
     {
@@ -93,7 +90,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     protected abstract String getNamespacePrefix();
-    protected abstract Set<PropertyStorageSpec> getColumns();
+
+    /**
+     * @return The PropertyDescriptors that should exist on the AuditTypeProvider's Domain (these properties don't exist in the database yet.)
+     */
+    public abstract Set<PropertyDescriptor> getProperties();
 
     protected String getEventType()
     {
@@ -103,13 +104,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        // return the base fields plus any event type specific fields
-        if (_allColumns.isEmpty())
-        {
-            _allColumns.addAll(_baseFields);
-            _allColumns.addAll(getColumns());
-        }
-        return _allColumns;
+        return _baseFields;
     }
 
     @Override
@@ -119,6 +114,8 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         {
             for (PropertyStorageSpec spec : getBaseProperties())
                 _reservedNames.add(spec.getName());
+            for (PropertyDescriptor pd : getProperties())
+                _reservedNames.add(pd.getName());
         }
         return _reservedNames;
     }
@@ -135,7 +132,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         return new SQLFragment("NULL");
     }
 
-    protected Container getDomainContainer()
+    protected static Container getDomainContainer()
     {
         return ContainerManager.getSharedContainer();
     }
@@ -144,6 +141,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
         return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(), u);
+    }
+
+    public String getDomainURI()
+    {
+        return getDomainURI(AbstractAuditTypeProvider.SCHEMA_NAME, getEventType(), getNamespacePrefix(), getDomainContainer(), null);
     }
 
     public static String getDomainURI(String schemaName, String tableName, String namespacePrefix, Container c, User u)
@@ -163,22 +165,9 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         }
     }
 
-    private static String generatePropertyURI(String schemaName, String tableName, String namespacePrefix, Container c, User u)
+    private String generatePropertyURI(String propertyName)
     {
-        try
-        {
-            XarContext xc = new XarContext("Domains", c, u);
-            xc.addSubstitution(XAR_SUBSTITUTION_SCHEMA_NAME, schemaName);
-            xc.addSubstitution(XAR_SUBSTITUTION_TABLE_NAME, tableName);
-            xc.addSubstitution(XAR_SUBSTITUTION_GUID, GUID.makeGUID());
-
-            String template = String.format(PROPERTY_NAMESPACE_PREFIX_TEMPLATE, namespacePrefix);
-            return LsidUtils.resolveLsidFromTemplate(PROPERTY_LSID_TEMPLATE, xc, template);
-        }
-        catch (XarFormatException xfe)
-        {
-            return null;
-        }
+        return getDomainURI() + "#" + propertyName;
     }
 
     @Override
@@ -296,33 +285,28 @@ public abstract class AbstractAuditDomainKind extends DomainKind
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(getNamespacePrefix()) ? Handler.Priority.MEDIUM : null;
     }
 
-    protected boolean createPropertyDescriptor(Domain domain, String namespacePrefix, User user,
-                                               String name, PropertyType type)
+    protected PropertyDescriptor createPropertyDescriptor(@NotNull String name, @NotNull PropertyType type)
     {
-        return createPropertyDescriptor(domain, namespacePrefix, user, name, null, type, null, false);
+        return createPropertyDescriptor(name, type, null, null, false);
     }
 
-    protected boolean createPropertyDescriptor(Domain domain, String namespacePrefix, User user,
-                                               String name, String caption, PropertyType type, String description, boolean required)
+    protected PropertyDescriptor createPropertyDescriptor(
+            @NotNull String name, @NotNull PropertyType type,
+            @Nullable String caption, @Nullable String description,
+            boolean required)
     {
-        if (domain.getPropertyByName(name) == null)
-        {
-            String propertyURI = generatePropertyURI(AbstractAuditTypeProvider.SCHEMA_NAME,
-                    domain.getName(), namespacePrefix, domain.getContainer(), user);
+        Container domainContainer = getDomainContainer();
 
-            DomainProperty prop = domain.addProperty();
-            prop.setName(name);
-            if (caption != null)
-                prop.setLabel(caption);
-            prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-            prop.setPropertyURI(propertyURI);
-            prop.setRequired(required);
-            if (description != null)
-                prop.setDescription(description);
+        String propertyURI = generatePropertyURI(name);
 
-            return true;
-        }
-        return false;
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type.getTypeUri(), name, domainContainer);
+        if (caption != null)
+            pd.setLabel(caption);
+        if (description != null)
+            pd.setDescription(description);
+        pd.setRequired(required);
+
+        return pd;
     }
 
     @Override

@@ -277,7 +277,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         scope: false,
         metadata: false,
         parameters: false,
-        showViewPanel: false
+        showViewPanel: false,
+        _success: false,
+        _failure: false
     },
 
     constructor : function(config)
@@ -386,6 +388,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         this.userContainerFilter = "";
         for (var key in params)
         {
+            if (!params.hasOwnProperty(key))
+                continue;
             if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
             {
                 this.userFilters[key] = params[key];
@@ -438,7 +442,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (this.userFilters)
         {
             for (name in this.userFilters)
-                params[name] = this.userFilters[name];
+            {
+                if (this.userFilters.hasOwnProperty(name))
+                    params[name] = this.userFilters[name];
+            }
         }
 
         if (this.userContainerFilter)
@@ -450,11 +457,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         {
             for (name in this.parameters)
             {
-                var key = name;
-                if (key.indexOf(this.dataRegionName + ".param.") !== 0)
-                    key = this.dataRegionName + ".param." + name;
+                if (this.parameters.hasOwnProperty(name))
+                {
+                    var key = name;
+                    if (key.indexOf(this.dataRegionName + ".param.") !== 0)
+                        key = this.dataRegionName + ".param." + name;
 
-                params[key] = this.parameters[name];
+                    params[key] = this.parameters[name];
+                }
             }
         }
 
@@ -462,7 +472,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         //if (this.userAggregates)
         //{
         //    for (var name in this.userAggregates)
-        //        params[name] = this.userAggregates[name];
+        //    {
+        //        if (this.userAggregates.hasOwnProperty(name))
+        //            params[name] = this.userAggregates[name];
+        //    }
         //}
 
         //forward query string parameters for this data region
@@ -767,7 +780,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         {
             for (var name in this.userFilters)
             {
-                if (name.indexOf(namePrefix) >= 0)
+                if (this.userFilters.hasOwnProperty(name) && name.indexOf(namePrefix) >= 0)
                     delete this.userFilters[name];
             }
         }
@@ -933,3 +946,4 @@ LABKEY.AggregateTypes = {
      */
         MAX: 'max'
 };
+
