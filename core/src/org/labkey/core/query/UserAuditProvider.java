@@ -23,11 +23,11 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -35,6 +35,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new UserAuditDomainKind();
     }
@@ -138,19 +139,19 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         public static final String NAME = "UserAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
-
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
-        }
+        private final Set<PropertyDescriptor> _fields;
 
         public UserAuditDomainKind()
         {
             super(UserManager.USER_AUDIT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER, PropertyType.INTEGER));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

@@ -28,15 +28,15 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +70,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new ExperimentAuditDomainKind();
     }
@@ -253,22 +253,23 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     {
         public static final String NAME = "ExperimentAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL_LSID, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_RUN_LSID, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL_RUN, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_RUN_GROUP, JdbcType.INTEGER));
-        }
+        private static Set<PropertyDescriptor> _fields = new LinkedHashSet<>();
 
         public ExperimentAuditDomainKind()
         {
             super(EVENT_TYPE);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL_LSID, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_RUN_LSID, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL_RUN, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_RUN_GROUP, PropertyType.INTEGER));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

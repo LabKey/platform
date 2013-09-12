@@ -24,11 +24,10 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -38,16 +37,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.ContainerContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +93,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new DatasetAuditDomainKind();
     }
@@ -294,23 +290,23 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public static final String NAME = "DatasetAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
-
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_DATASET_ID, JdbcType.INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_HAS_DETAILS, JdbcType.BOOLEAN));
-            _fields.add(createFieldSpec(COLUMN_NAME_LSID, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
-        }
+        private static Set<PropertyDescriptor> _fields;
 
         public DatasetAuditDomainKind()
         {
             super(DATASET_AUDIT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DATASET_ID, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_HAS_DETAILS, PropertyType.BOOLEAN));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LSID, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

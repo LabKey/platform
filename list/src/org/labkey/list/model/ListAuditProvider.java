@@ -26,17 +26,17 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditViewFactory;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +68,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new ListAuditDomainKind();
     }
@@ -269,24 +269,25 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     {
         public static final String NAME = "ListAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
 
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ID, JdbcType. INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_LIST_DOMAIN_URI, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_LIST_ITEM_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
-            _fields.add(createFieldSpec(COLUMN_NAME_LIST_NAME, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(OLD_RECORD_PROP_NAME, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(NEW_RECORD_PROP_NAME, JdbcType.VARCHAR));
-        }
+        private final Set<PropertyDescriptor> _fields;
 
         public ListAuditDomainKind()
         {
             super(ListManager.LIST_AUDIT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ID, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_DOMAIN_URI, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING)); // UNDONE: is needed ? .setEntityId(true));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

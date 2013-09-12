@@ -29,11 +29,11 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -44,6 +44,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -159,7 +160,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new AssayAuditDomainKind();
     }
@@ -290,23 +291,23 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         public static final String NAME = "AssayAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
-
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_PROTOCOL, JdbcType.INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_TARGET_STUDY, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_DATASET_ID, JdbcType.INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_SOURCE_LSID, JdbcType.VARCHAR));
-            _fields.add(createFieldSpec(COLUMN_NAME_RECORD_COUNT, JdbcType.INTEGER));
-        }
+        private final Set<PropertyDescriptor> _fields;
 
         public AssayAuditDomainKind()
         {
             super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TARGET_STUDY, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DATASET_ID, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_RECORD_COUNT, PropertyType.INTEGER));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

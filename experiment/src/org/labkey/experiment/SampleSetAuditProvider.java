@@ -22,10 +22,9 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
@@ -55,7 +54,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new SampleSetAuditDomainKind();
     }
@@ -122,7 +121,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return Collections.emptySet();
         }

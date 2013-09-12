@@ -28,12 +28,11 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
@@ -45,6 +44,7 @@ import org.labkey.study.query.SpecimenQueryView;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +74,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new SpecimenCommentAuditDomainKind();
     }
@@ -221,19 +221,19 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         public static final String NAME = "SpecimenCommentAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
-
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_VIAL_ID, JdbcType.VARCHAR));
-        }
+        private final Set<PropertyDescriptor> _fields;
 
         public SpecimenCommentAuditDomainKind()
         {
             super(SPECIMEN_COMMENT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_VIAL_ID, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

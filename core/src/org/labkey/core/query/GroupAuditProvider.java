@@ -28,13 +28,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -46,6 +45,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +94,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    protected DomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         return new GroupAuditDomainKind();
     }
@@ -281,21 +281,21 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         public static final String NAME = "GroupAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static final Set<PropertyStorageSpec> _fields = new LinkedHashSet<>();
-
-        static {
-            _fields.add(createFieldSpec(COLUMN_NAME_USER, JdbcType.INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_GROUP, JdbcType.INTEGER));
-            _fields.add(createFieldSpec(COLUMN_NAME_RESOURCE_ENTITY_ID, JdbcType.VARCHAR).setEntityId(true));
-        }
+        private static Set<PropertyDescriptor> _fields;
 
         public GroupAuditDomainKind()
         {
             super(GroupManager.GROUP_AUDIT_EVENT);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_GROUP, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_RESOURCE_ENTITY_ID, PropertyType.STRING)); // UNDONE: is needed? .setEntityId(true));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
-        protected Set<PropertyStorageSpec> getColumns()
+        public Set<PropertyDescriptor> getProperties()
         {
             return _fields;
         }

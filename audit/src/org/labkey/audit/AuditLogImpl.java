@@ -128,7 +128,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         synchronized (STARTUP_LOCK)
         {
             // Ensure audit provider's domains have been initialized.  This must happen before flushing the temporary event queues.
-            initializeProviders();
+            // UNDONE: Uncomment when we are ready to flip to the new audit providers
+            //initializeProviders();
 
             // Migrate audit providers if needed. We need to perform migration after the
             // server is fully started to ensure all audit providers have been registered and
