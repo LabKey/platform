@@ -23,6 +23,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.JavaRuntimeHack;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -113,28 +114,36 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
+    @JavaRuntimeHack
     public AbstractSearchService()
     {
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
 
         // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-        // TODO: Remove this once Oracle fixes it; they claim it will be fixed in Java 7u40
+        // This has been fixed in Java 7u40. For now, continue implementing memtracker hack for JVM < 1.7.0_40.
         if (SystemUtils.IS_JAVA_1_7)
         {
-            MemTracker.register(new MemTrackerListener()
-            {
-                @Override
-                public void beforeReport(Set<Object> set)
-                {
-                    // Add a no-op marker item to the queue to purge previously removed item that queue might be holding.
-                    _itemQueue.put(_commitItem);
-                    _runQueue.put(_commitItem);
+            String version = SystemUtils.JAVA_VERSION;
 
-                    // TODO: Ignore commit item?
-//                    set.add(_commitItem);
+            if (version.startsWith("1.7.0_"))
+            {
+                int minorVersion = Integer.valueOf(version.substring(6));
+
+                if (minorVersion < 40)
+                {
+                    MemTracker.register(new MemTrackerListener()
+                    {
+                        @Override
+                        public void beforeReport(Set<Object> set)
+                        {
+                            // Add a no-op marker item to the queue to purge previously removed item that queue might be holding.
+                            _itemQueue.put(_commitItem);
+                            _runQueue.put(_commitItem);
+                        }
+                    });
                 }
-            });
+            }
         }
     }
     
