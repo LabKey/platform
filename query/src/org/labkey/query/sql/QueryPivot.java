@@ -785,16 +785,20 @@ public class QueryPivot extends QueryRelation
             }
         }
 
+        SQLFragment _sqlPivot = null;
 
         @Override
         public SQLFragment getFromSQL(String pivotTableAlias)
         {
+            if (null != _sqlPivot)
+                return _sqlPivot;
             SQLFragment f = new SQLFragment();
             SQLFragment fromSql = getSql();
             if (null == fromSql)
                 return null;
             f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
-            return f;
+            _sqlPivot = f;
+            return _sqlPivot;
         }
 
 

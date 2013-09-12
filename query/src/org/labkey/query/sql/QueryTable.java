@@ -62,6 +62,7 @@ public class QueryTable extends QueryRelation
     final TableInfo _tableInfo;
     final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
     String _innerAlias;
+    final int _uniqueAliasCounter;
 
     Boolean _generateSelectSQL = null;
 
@@ -74,6 +75,9 @@ public class QueryTable extends QueryRelation
         String selectName = table.getSelectName();
         if (null != selectName)
             setSavedName(selectName);
+
+        // call this now so we it doesn't change if _getSql() is called more than once
+        _uniqueAliasCounter = _query.incrementAliasCounter();
     }
 
 
@@ -211,7 +215,7 @@ public class QueryTable extends QueryRelation
                 name = name.substring(gttp.length(), name.indexOf("$"));
         }
         String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true);
-        r += "_" + _query.incrementAliasCounter();
+        r += "_" + _uniqueAliasCounter;
         return r;
     }
 
