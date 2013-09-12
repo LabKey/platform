@@ -39,6 +39,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
@@ -49,6 +50,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -80,10 +82,13 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.XmlBeansUtil;
@@ -117,7 +122,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -260,6 +267,7 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<>(getAllQueryDefs(user, container, null, true, false).values());
     }
 
+
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, @NotNull Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
@@ -304,6 +312,11 @@ public class QueryServiceImpl extends QueryService
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
+            if (null == containerCur)
+            {
+                assert false : "Unexpected null parent container: " + containerCur.getPath();
+                break;
+            }
 
             for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
             {
@@ -2182,12 +2195,88 @@ public class QueryServiceImpl extends QueryService
 	        }
         }
 
-	    @After
-	    public void tearDown() throws Exception
-	    {
-		    _close();
-	    }
+
+        @Test
+        public void testParameters() throws SQLException
+        {
+/*            PARAMETERS(X INTEGER DEFAULT 5)
+            SELECT *
+                    FROM Table R
+            WHERE R.X = X
+
+            Supported data types for parameters are: BIGINT, BIT, CHAR, DECIMAL, DOUBLE, FLOAT, INTEGER, LONGVARCHAR, NUMERIC, REAL, SMALLINT, TIMESTAMP, TINYINT, VARCHAR
+*/
+            String sql = "PARAMETERS (" +
+                    " bint BIGINT DEFAULT NULL," +
+                    " bit BIT DEFAULT NULL," +
+                    " char CHAR DEFAULT NULL," +
+                    " dec DECIMAL DEFAULT NULL," +
+                    " d DOUBLE DEFAULT NULL, " +
+                    " f FLOAT DEFAULT NULL," +
+                    " i INTEGER DEFAULT NULL," +
+                    " text LONGVARCHAR DEFAULT NULL," +
+                    " num NUMERIC DEFAULT NULL," +
+                    " real REAL DEFAULT NULL," +
+                    " sint SMALLINT DEFAULT NULL," +
+                    " ts TIMESTAMP DEFAULT NULL," +
+                    " ti TINYINT DEFAULT NULL," +
+                    " s VARCHAR DEFAULT NULL)\n" +
+                    "SELECT bint, bit, char, dec, d, i, text, num, real, sint, ts, ti, s FROM core.Users WHERE 0=1";
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql);
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(),qd);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = qdef.getTable(errors, false);
+            assertTrue(errors.isEmpty());
+            assertEquals(JdbcType.BIGINT, t.getColumn("bint").getJdbcType());
+            assertEquals(JdbcType.BOOLEAN, t.getColumn("bit").getJdbcType());
+            assertEquals(JdbcType.CHAR, t.getColumn("char").getJdbcType());
+            assertEquals(JdbcType.DECIMAL, t.getColumn("dec").getJdbcType());
+            assertEquals(JdbcType.DOUBLE, t.getColumn("d").getJdbcType());
+            assertEquals(JdbcType.INTEGER, t.getColumn("i").getJdbcType());
+            assertEquals(JdbcType.LONGVARCHAR, t.getColumn("text").getJdbcType());
+            assertEquals(JdbcType.DECIMAL, t.getColumn("num").getJdbcType());
+            assertEquals(JdbcType.REAL, t.getColumn("real").getJdbcType());
+            assertEquals(JdbcType.SMALLINT, t.getColumn("sint").getJdbcType());
+            assertEquals(JdbcType.TIMESTAMP, t.getColumn("ts").getJdbcType());
+            assertEquals(JdbcType.TINYINT, t.getColumn("ti").getJdbcType());
+            assertEquals(JdbcType.VARCHAR, t.getColumn("s").getJdbcType());
+
+            Results rs = new TableSelector(t).getResults();
+            assertEquals(JdbcType.BIGINT, rs.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
+            assertEquals(JdbcType.BOOLEAN, rs.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
+            assertEquals(JdbcType.CHAR, rs.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
+            assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
+            assertEquals(JdbcType.DOUBLE, rs.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
+            assertEquals(JdbcType.INTEGER, rs.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
+            assertEquals(JdbcType.LONGVARCHAR, rs.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
+            assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
+            assertEquals(JdbcType.REAL, rs.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
+            assertEquals(JdbcType.SMALLINT, rs.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
+            assertEquals(JdbcType.TIMESTAMP, rs.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
+            assertEquals(JdbcType.TINYINT, rs.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
+            assertEquals(JdbcType.VARCHAR, rs.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
+
+            ResultSetMetaData rsmd = rs.getMetaData();
+            assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(rs.findColumn("bint")));
+            assertTrue(Types.BIT==rsmd.getColumnType(rs.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(rs.findColumn("bit")));
+            assertEquals(JdbcType.CHAR.sqlType, rsmd.getColumnType(rs.findColumn("char")));
+            assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("dec")));
+            assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(rs.findColumn("d")));
+            assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(rs.findColumn("i")));
+            assertTrue(Types.LONGVARCHAR == rsmd.getColumnType(rs.findColumn("text")) || Types.CLOB == rsmd.getColumnType(rs.findColumn("text")) || Types.VARCHAR == rsmd.getColumnType(rs.findColumn("text")));
+            assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("num")));
+            assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
+            assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
+            assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
+            assertEquals(JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
+            assertEquals(JdbcType.VARCHAR.sqlType, rsmd.getColumnType(rs.findColumn("s")));
+        }
     }
+
 
     @Override
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)

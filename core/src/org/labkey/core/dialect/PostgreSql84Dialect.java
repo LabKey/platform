@@ -191,7 +191,7 @@ class PostgreSql84Dialect extends SqlDialect
         sqlTypeIntMap.put(Types.BOOLEAN, "BOOLEAN");
         sqlTypeIntMap.put(Types.CHAR, "CHAR");
         sqlTypeIntMap.put(Types.LONGVARBINARY, "LONGVARBINARY");
-        sqlTypeIntMap.put(Types.LONGVARCHAR, "LONGVARCHAR");
+        sqlTypeIntMap.put(Types.LONGVARCHAR, "TEXT");
         sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
         sqlTypeIntMap.put(Types.TIMESTAMP, "TIMESTAMP");
         sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE PRECISION");
