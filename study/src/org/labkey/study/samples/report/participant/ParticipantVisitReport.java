@@ -49,7 +49,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         try
         {
             CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-            SampleManager.SummaryByVisitParticipant[] countSummary =
+            Collection<SampleManager.SummaryByVisitParticipant> countSummary =
                     SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
             Map<String, Row> rows = new TreeMap<>();
             for (SampleManager.SummaryByVisitParticipant count : countSummary)

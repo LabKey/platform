@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -463,7 +464,7 @@ public class MothershipManager
         return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
     }
 
-    public ServerInstallation[] getServerInstallationsActiveOn(Calendar cal) throws SQLException
+    public Collection<ServerInstallation> getServerInstallationsActiveOn(Calendar cal)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT si.* FROM ");
@@ -474,20 +475,20 @@ public class MothershipManager
         sql.add(cal.getTime());
         sql.add(cal.getTime());
 
-        return Table.executeQuery(getSchema(), sql, ServerInstallation.class);
+        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
     }
 
-    public ServerInstallation[] getServerInstallationsActiveBefore(Calendar cal) throws SQLException
+    public Collection<ServerInstallation> getServerInstallationsActiveBefore(Calendar cal) throws SQLException
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT si.* FROM ");
         sql.append(getTableInfoServerInstallation(), "si");
         sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession());
+        sql.append(getTableInfoServerSession(), "ss");
         sql.append(" WHERE earliestknowntime <= ?)");
         sql.add(cal.getTime());
 
-        return Table.executeQuery(getSchema(), sql, ServerInstallation.class);
+        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
     }
 
     public ServerInstallation getServerInstallation(int id, Container c)

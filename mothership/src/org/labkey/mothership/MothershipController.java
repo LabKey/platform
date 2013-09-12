@@ -248,7 +248,7 @@ public class MothershipController extends SpringActionController
 
             while (cal.compareTo(start) < 0)
             {
-                ServerInstallation[] installations = MothershipManager.get().getServerInstallationsActiveOn(cal);
+                Collection<ServerInstallation> installations = MothershipManager.get().getServerInstallationsActiveOn(cal);
                 int externalCount = 0;
                 int repeatCount = 0;
                 for (ServerInstallation installation : installations)
