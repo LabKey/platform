@@ -15,20 +15,18 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.WebPartView;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
-import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletResponse;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;

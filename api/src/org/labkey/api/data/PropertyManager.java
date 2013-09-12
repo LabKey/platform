@@ -695,7 +695,7 @@ public class PropertyManager
         {
             SimpleFilter filter = new SimpleFilter(new SQLClause("ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")", null, FieldKey.fromParts("ObjectId")));
             Selector selector = new TableSelector(prop.getTableInfoPropertySets(), filter, null);
-            Long count = selector.getRowCount();
+            long count = selector.getRowCount();
 
             // We found orphaned property sets... log them
             if (count != 0)
@@ -706,7 +706,7 @@ public class PropertyManager
                     @Override
                     public void exec(Map map) throws SQLException
                     {
-                        sb.append(map.get("category") + "\t" + map.get("set") + "\t" + map.get("objectid") + "\n");
+                        sb.append(map.get("category")).append("\t").append(map.get("set")).append("\t").append(map.get("objectid")).append("\n");
                     }
                 });
                 _log.error(topMessage + ":\n" + sb);

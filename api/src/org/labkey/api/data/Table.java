@@ -272,11 +272,18 @@ public class Table
         return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
     }
 
+    @NotNull
+    @Deprecated /** Use SqlSelector */
+    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sqlf).getArray(clss);
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
 
-    // 72 usages
+    // 58 usages
     @NotNull
     @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
@@ -285,7 +292,7 @@ public class Table
     }
 
 
-    // 30 usages
+    // 26 usages
     @Deprecated /** Use TableSelector */
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -305,7 +312,7 @@ public class Table
     }
 
 
-    // 7 usages
+    // 6 usages
     @Deprecated /** Use TableSelector */
     public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
@@ -318,7 +325,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 152 usages
+    // 138 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -327,15 +334,7 @@ public class Table
 
     // ===== SqlSelector methods below =====
 
-    // 19 usages
-    @NotNull
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sqlf).getArray(clss);
-    }
-
-    // 30 usages
+    // 23 usages
     @NotNull
     @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
@@ -343,7 +342,7 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
-    // 55 usages
+    // 44 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
@@ -351,14 +350,14 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
-    // 53 usages
+    // 51 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
     }
 
-    // 30 usages
+    // 29 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
