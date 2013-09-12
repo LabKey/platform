@@ -22,6 +22,7 @@ commons-validator-1.4.0.jar|Commons Validator|1.4.0|{link:Apache|http://jakarta.
 commons-vfs2-2.0.jar|Commons Virtual File System|2.0|{link:Apache|http://commons.apache.org/proper/commons-vfs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|matthewb|File system abstraction layer
 core-renderer.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
 ehcache-core-2.6.0.jar|Ehcache|2.6.0|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
+gson-2.2.4.jar|Google Gson|2.2.4|{link:google-gson|http://code.google.com/p/google-gson}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Converts Java Objects to JSON and vice versa (used by tika-app.jar and jclouds)
 guava-14.0.1.jar|Guava: Google Core Libraries for Java|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-dnd-3.2.0.jar|Drag-and-Drop Library for Google Web-Toolkit|3.2.0|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
 gwt-servlet.jar|Server Support for Google Web Toolkit|2.5.1|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|marki|Support for rich web apps
