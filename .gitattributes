@@ -98,6 +98,7 @@ api/src/org/labkey/api/admin/PipelineJobLoggerGetter.java -text
 api/src/org/labkey/api/admin/StaticLoggerGetter.java -text
 api/src/org/labkey/api/admin/SubfolderWriter.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
+api/src/org/labkey/api/annotations/JavaRuntimeHack.java -text
 api/src/org/labkey/api/annotations/Tomcat6Hack.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
