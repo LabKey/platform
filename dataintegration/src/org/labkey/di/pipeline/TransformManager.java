@@ -37,6 +37,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -46,15 +48,14 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.di.ScheduledPipelineJobContext;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationDbSchema;
@@ -161,7 +162,7 @@ public class TransformManager implements DataIntegrationService
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String id)
     {
-        Pair<Module,ScheduledPipelineJobDescriptor> p = _etls.get(id);
+        Pair<Module, ScheduledPipelineJobDescriptor> p = _etls.get(id);
         if (null == p)
             return null;
         return p.getValue();
@@ -541,7 +542,7 @@ public class TransformManager implements DataIntegrationService
 
 
     @Override
-    public Collection<ScheduledPipelineJobDescriptor> loadDescriptorsFromFiles(Module module, boolean autoRegister)
+    public Collection<ScheduledPipelineJobDescriptor> registerDescriptorsFromFiles(Module module)
     {
         Path etlsDirPath = new Path("etls");
         Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
@@ -562,8 +563,7 @@ public class TransformManager implements DataIntegrationService
                     if (descriptor != null)
                     {
                         l.add(descriptor);
-                        if (autoRegister)
-                            _etls.put(descriptor.getId(), new Pair<Module,ScheduledPipelineJobDescriptor>(module,descriptor));
+                        _etls.put(descriptor.getId(), new Pair<Module, ScheduledPipelineJobDescriptor>(module, descriptor));
                     }
                 }
             }

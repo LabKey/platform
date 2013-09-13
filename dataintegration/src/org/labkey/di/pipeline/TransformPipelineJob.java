@@ -16,7 +16,6 @@
 package org.labkey.di.pipeline;
 
 import org.json.JSONObject;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;

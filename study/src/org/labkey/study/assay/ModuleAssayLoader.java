@@ -17,6 +17,7 @@
 package org.labkey.study.assay;
 
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -39,6 +40,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 {
     public static final String DOMAINS_DIR_NAME = "domains";
 
+    @NotNull
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
         // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
@@ -48,7 +50,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         return Collections.emptySet();
     }
 
-    public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
+    public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
         Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
         if (assayDir != null && assayDir.exists() && assayDir.isCollection())

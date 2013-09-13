@@ -281,6 +281,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
     }
 
+    @NotNull
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {

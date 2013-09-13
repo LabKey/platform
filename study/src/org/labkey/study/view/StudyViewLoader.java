@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -35,6 +36,7 @@ public class StudyViewLoader implements ModuleResourceLoader
 {
     /*package*/ static final String VIEWS_DIR_NAME = "views";
 
+    @NotNull
     @Override
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
@@ -43,7 +45,7 @@ public class StudyViewLoader implements ModuleResourceLoader
     }
 
     @Override
-    public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
+    public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
         Resource viewsDir = module.getModuleResource(VIEWS_DIR_NAME);
         if (viewsDir != null && viewsDir.exists() && viewsDir.isCollection())

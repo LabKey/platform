@@ -24,6 +24,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -89,7 +90,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
 
-
     @NotNull
     @Override
     public Set<String> getSchemaNames()
@@ -148,6 +148,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
             setFrame(WebPartView.FrameType.PORTAL);
             setModelBean(this);
         }
+    }
+
+    @NotNull
+    @Override
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.<ModuleResourceLoader>singleton(new EtlResourceLoader());
     }
 
     //

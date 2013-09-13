@@ -274,6 +274,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
     }
 
+    @NotNull
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {

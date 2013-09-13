@@ -844,6 +844,7 @@ dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
+dataintegration/src/org/labkey/di/EtlResourceLoader.java -text
 dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
 dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text

@@ -40,7 +40,6 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -117,14 +116,14 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
 
     private transient Resource _resource;
-    private Path _resourcePath;
-    private long _lastUpdateCheck;
-    private long _lastModified;
+    private final Path _resourcePath;
+//    private final long _lastUpdateCheck;
+//    private final long _lastModified;
 
-    private String _id;
-    private String _name;
-    private String _description;
-    private String _moduleName;
+    private final String _id;
+    private final String _name;
+    private final String _description;
+    private final String _moduleName;
 
     // schedule
     private Long _interval = null;
@@ -132,8 +131,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     // steps
     private FilterStrategy.Factory _defaultFactory = null;
-    private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<>();
-    private CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
+    private final ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<>();
+    private final CaseInsensitiveHashSet _stepIds = new CaseInsensitiveHashSet();
 
 
     public TransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
@@ -147,22 +146,16 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         else
             name = FileUtil.getBaseName(_resourcePath.getName());
         _id = "{" + moduleName + "}/" + name;
-        parse();
-    }
 
-
-    private void parse() throws IOException, XmlException
-    {
-        InputStream inputStream = null;
-        try
+        try (InputStream inputStream = _resource.getInputStream())
         {
-            Resource resource = ensureResource();
-            inputStream = resource.getInputStream();
+//            Resource resource = ensureResource();
+
             if (inputStream == null)
             {
-                throw new IOException("Unable to get InputStream from " + resource);
+                throw new IOException("Unable to get InputStream from " + _resource);
             }
-            _lastModified = resource.getLastModified();
+//            _lastModified = resource.getLastModified();
 
             XmlOptions options = new XmlOptions();
             options.setValidateStrict();
@@ -214,11 +207,6 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
             }
         }
-        finally
-        {
-            if (inputStream != null) { try { inputStream.close(); } catch (IOException ignored) {} }
-        }
-
     }
 
 
@@ -318,28 +306,28 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return meta;
     }
 
-    private Resource ensureResource()
-    {
-        if (_resource == null)
-        {
-            _resource = ModuleLoader.getInstance().getResource(_resourcePath);
-            if (_resource == null)
-            {
-                throw new IllegalStateException("Could not resolve resource for " + _resourcePath + ", perhaps the ETL descriptor is no longer available?");
-            }
-        }
-        return _resource;
-    }
-
+//    private Resource ensureResource()
+//    {
+//        if (_resource == null)
+//        {
+//            _resource = ModuleLoader.getInstance().getResource(_resourcePath);
+//            if (_resource == null)
+//            {
+//                throw new IllegalStateException("Could not resolve resource for " + _resourcePath + ", perhaps the ETL descriptor is no longer available?");
+//            }
+//        }
+//        return _resource;
+//    }
+//
     public String getName()
     {
-        checkForUpdates();
+//        checkForUpdates();
         return _name;
     }
 
     public String getDescription()
     {
-        checkForUpdates();
+//        checkForUpdates();
         return _description;
     }
 
@@ -356,7 +344,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     public int getVersion()
     {
-        checkForUpdates();
+//        checkForUpdates();
         // TODO - add config for real version number
         return 1;
     }
@@ -374,31 +362,27 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 //    }
 
 
-    private void checkForUpdates()
-    {
-        long currentTime = System.currentTimeMillis();
-        if (_lastUpdateCheck + UPDATE_CHECK_FREQUENCY < currentTime)
-        {
-            _lastUpdateCheck = currentTime;
-            if (_lastModified != ensureResource().getLastModified())
-            {
-                // XML has changed, time to reload
-                try
-                {
-                    parse();
-                }
-                catch (IOException e)
-                {
-                    LOG.warn("Unable to parse " + ensureResource(), e);
-                }
-                catch (XmlException e)
-                {
-                    LOG.warn("Unable to parse " + ensureResource(), e);
-                }
-            }
-        }
-    }
-
+//    private void checkForUpdates()
+//    {
+//        long currentTime = System.currentTimeMillis();
+//        if (_lastUpdateCheck + UPDATE_CHECK_FREQUENCY < currentTime)
+//        {
+//            _lastUpdateCheck = currentTime;
+//            if (_lastModified != ensureResource().getLastModified())
+//            {
+//                // XML has changed, time to reload
+//                try
+//                {
+//                    parse();
+//                }
+//                catch (IOException | XmlException e)
+//                {
+//                    LOG.warn("Unable to parse " + ensureResource(), e);
+//                }
+//            }
+//        }
+//    }
+//
     @Override
     public String toString()
     {
