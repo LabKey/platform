@@ -279,6 +279,7 @@ public class MockModule implements Module
         return Collections.emptySet();
     }
 
+    @NotNull
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
         return Collections.emptySet();

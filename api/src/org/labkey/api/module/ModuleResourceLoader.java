@@ -15,6 +15,8 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.File;
 import java.util.Set;
@@ -33,7 +35,7 @@ import java.util.Set;
  */
 public interface ModuleResourceLoader
 {
-    public Set<String> getModuleDependencies(Module module, File explodedModuleDir);
+    public @NotNull Set<String> getModuleDependencies(Module module, File explodedModuleDir);
 
-    public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException;
+    public void registerResources(Module module) throws IOException, ModuleResourceLoadException;
 }

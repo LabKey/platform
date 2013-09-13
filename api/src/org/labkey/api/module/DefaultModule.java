@@ -39,8 +39,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.di.DataIntegrationService;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
@@ -50,7 +48,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
@@ -182,14 +179,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
-
-        Collection<ScheduledPipelineJobDescriptor> jobs = getScheduledPipelineJobDescriptors();
-        if (null != jobs)
-        {
-            DataIntegrationService dis = ServiceRegistry.get(DataIntegrationService.class);
-            if (null != dis)
-                dis.registerDescriptors(this, jobs);
-        }
 
         for (WebPartFactory part : getWebPartFactories())
             part.setModule(this);
@@ -402,16 +391,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             _webPartFactories = wpf;
         }
         return _webPartFactories;
-    }
-
-
-
-    public Collection<ScheduledPipelineJobDescriptor> getScheduledPipelineJobDescriptors()
-    {
-        DataIntegrationService dis = ServiceRegistry.get(DataIntegrationService.class);
-        if (null == dis)
-            return null;
-        return dis.loadDescriptorsFromFiles(this, false);
     }
 
 
@@ -913,6 +892,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
+    @NotNull
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {

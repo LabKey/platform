@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.resource.Resource;
 
 import java.io.File;
@@ -30,6 +31,7 @@ public class FolderTypeResourceLoader implements ModuleResourceLoader
 {
     private static final String FOLDER_TYPES_NAME = "folderTypes";
 
+    @NotNull
     @Override
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
@@ -37,7 +39,7 @@ public class FolderTypeResourceLoader implements ModuleResourceLoader
     }
 
     @Override
-    public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
+    public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
         Resource folderTypesDir = module.getModuleResource(FOLDER_TYPES_NAME);
         if (folderTypesDir != null && folderTypesDir.exists() && folderTypesDir.isCollection())

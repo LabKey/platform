@@ -1038,7 +1038,7 @@ public class ModuleLoader implements Filter
                 {
                     try
                     {
-                        resLoader.loadResources(m, m.getExplodedPath());
+                        resLoader.registerResources(m);
                     }
                     catch(Throwable t)
                     {

@@ -26,6 +26,7 @@ import java.util.Collection;
  */
 public interface DataIntegrationService
 {
+    // TODO: Remove?
     void registerDescriptors(Module module, Collection<ScheduledPipelineJobDescriptor> descriptor);
-    public Collection<ScheduledPipelineJobDescriptor> loadDescriptorsFromFiles(Module module, boolean autoRegister);
+    public Collection<ScheduledPipelineJobDescriptor> registerDescriptorsFromFiles(Module module);
 }

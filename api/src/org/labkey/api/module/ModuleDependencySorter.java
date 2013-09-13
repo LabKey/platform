@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -260,6 +261,7 @@ public class ModuleDependencySorter
             testModules.add(new MockModule("c"));
 
             ModuleResourceLoader loader = new ModuleResourceLoader() {
+                @NotNull
                 public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
                 {
                     if (module.getName().equals("a"))
@@ -269,7 +271,7 @@ public class ModuleDependencySorter
                     return Collections.emptySet();
                 }
 
-                public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
+                public void registerResources(Module module) throws IOException, ModuleResourceLoadException
                 {
                 }
             };
