@@ -289,7 +289,7 @@ public class SimpleQueryTransformStep extends TransformTask
             if (jd instanceof TransformDescriptor)
                 factory = ((TransformDescriptor)jd).getDefaultFilterFactory();
             if (null == factory)
-                factory = new ModifiedSinceFilterStrategy.Factory(jd);
+                factory = new ModifiedSinceFilterStrategy.Factory();
 
             _filterStrategy = factory.getFilterStrategy(_context, _meta);
         }
