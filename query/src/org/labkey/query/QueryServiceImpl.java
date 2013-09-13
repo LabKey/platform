@@ -2245,7 +2245,8 @@ public class QueryServiceImpl extends QueryService
             assertEquals(JdbcType.TINYINT, t.getColumn("ti").getJdbcType());
             assertEquals(JdbcType.VARCHAR, t.getColumn("s").getJdbcType());
 
-            Results rs = new TableSelector(t).getResults();
+            try (Results rs = new TableSelector(t).getResults())
+            {
             assertEquals(JdbcType.BIGINT, rs.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
             assertEquals(JdbcType.BOOLEAN, rs.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
             assertEquals(JdbcType.CHAR, rs.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
@@ -2274,6 +2275,7 @@ public class QueryServiceImpl extends QueryService
             assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
             assertEquals(JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
             assertEquals(JdbcType.VARCHAR.sqlType, rsmd.getColumnType(rs.findColumn("s")));
+            }
         }
     }
 
