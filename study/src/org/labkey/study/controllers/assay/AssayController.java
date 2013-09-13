@@ -93,7 +93,7 @@ import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.actions.TemplateAction;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AbstractAssayView;
+import org.labkey.api.study.assay.AssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -1110,7 +1110,7 @@ public class AssayController extends SpringActionController
         {
             _protocol = form.getProtocol();
 
-            AbstractAssayView result = new AbstractAssayView();
+            AssayView result = new AssayView();
             QueryView view = PipelineService.get().getPipelineQueryView(getViewContext(), PipelineService.PipelineButtonOption.Assay);
             view.setTitle("Data Pipeline");
             result.setupViews(view, false, form.getProvider(), form.getProtocol());
