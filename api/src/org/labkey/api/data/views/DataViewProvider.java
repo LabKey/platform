@@ -68,6 +68,12 @@ public interface DataViewProvider
 
     public interface EditInfo
     {
+        // the list of actions that are allowed
+        enum Actions {
+            update,
+            delete,
+        }
+
         // a list of standard properties
         enum Property {
             name,
@@ -116,5 +122,20 @@ public interface DataViewProvider
          * @throws Exception
          */
         void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception;
+
+        /**
+         * Return the array of actions that this edit provider supports
+         * @param container
+         * @param user
+         * @return
+         */
+        Actions[] getAllowableActions(Container container, User user);
+
+        /**
+         * Deletes the view identified by the id
+         * @param id the unique identifier for the data object being updated.
+         * @throws ValidationException
+         */
+        void deleteView(Container container, User user, String id) throws ValidationException;
     }
 }

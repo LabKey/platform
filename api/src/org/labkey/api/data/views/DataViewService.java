@@ -291,4 +291,21 @@ public class DataViewService
 
         return json;
     }
+
+    public JSONObject toJSON(Container container, User user, DataViewProvider.EditInfo info)
+    {
+        JSONObject o = new JSONObject();
+
+        JSONObject props = new JSONObject();
+        for (String propName : info.getEditableProperties(container, user))
+            props.put(propName, true);
+        o.put("props", props);
+
+        JSONObject actions = new JSONObject();
+        for (DataViewProvider.EditInfo.Actions action : info.getAllowableActions(container, user))
+            actions.put(action.name(), true);
+        o.put("actions", actions);
+
+        return o;
+    }
 }
