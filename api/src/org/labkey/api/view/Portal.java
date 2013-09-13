@@ -1186,24 +1186,28 @@ public class Portal
         if (page.isHidden() == hidden)
             return;
 
+        if (page.isCustomTab() && hidden)
+        {
+            // Custom (portal page) tab; Do actual delete
+            deletePage(page);
+        }
+        else
+        {
+            _hidePage(page, hidden);
+        }
+    }
+
+    public static void deletePage(PortalPage page)
+    {
+        // Called above, and also by ContainerManager when deleting container tab
         try
         {
-            if (page.isCustomTab() && hidden)
-            {
-                // Custom (portal page) tab; Do actual delete
-                TableInfo tableInfo = getTableInfoPortalWebParts();
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition(tableInfo.getColumn("container"), page.getContainer());
-                filter.addCondition(tableInfo.getColumn("pageid"), page.getPageId());
-                Table.delete(tableInfo, filter);
-                Table.delete(getTableInfoPortalPages(), new Object[] {page.getContainer(), page.getPageId()});
-            }
-            else
-            {
-                page = page.copy();
-                page.setHidden(hidden);
-                Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
-            }
+            TableInfo tableInfo = getTableInfoPortalWebParts();
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(tableInfo.getColumn("container"), page.getContainer());
+            filter.addCondition(tableInfo.getColumn("pageid"), page.getPageId());
+            Table.delete(tableInfo, filter);
+            Table.delete(getTableInfoPortalPages(), new Object[] {page.getContainer(), page.getPageId()});
         }
         catch (SQLException x)
         {
@@ -1215,6 +1219,23 @@ public class Portal
         }
     }
 
+    private static void _hidePage(PortalPage page, boolean hidden)
+    {
+        try
+        {
+            page = page.copy();
+            page.setHidden(hidden);
+            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+        }
+    }
 
     public static void hidePage(Container c, String pageId)
     {

@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
@@ -47,7 +48,7 @@ public interface FolderType
      * Configure the container with whatever active modules and web parts are required for this folder type.
      * Convention is to NOT remove web parts already in the folder.
      */
-    public void configureContainer(Container c, User user);
+    public void configureContainer(Container c, User user, boolean brandNew);
 
     /**
      * This FolderType is being *removed* as the owner of the container. Clean up anything that you
@@ -160,6 +161,9 @@ public interface FolderType
 
     /** @return The default tab to select, which defaults to the first (including for non-tabbed folders) */
     public FolderTab getDefaultTab();
+
+    @Nullable
+    public FolderTab findTab(String tabName);
 
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();

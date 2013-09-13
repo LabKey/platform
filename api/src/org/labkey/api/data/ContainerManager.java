@@ -67,6 +67,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -126,6 +127,7 @@ public class ContainerManager
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
+    public static final String CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME = "ctFolderTypeOverridden";
 
     // enum of properties you can see in property change events
     public enum Property
@@ -302,7 +304,7 @@ public class ContainerManager
     }
 
 
-    public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
+    public static void setFolderType(Container c, FolderType folderType, User user, boolean brandNew, BindException errors)
     {
         FolderType oldType = c.getFolderType();
 
@@ -313,17 +315,32 @@ public class ContainerManager
         List<String> errorStrings = new ArrayList<>();
         if (folderType.hasContainerTabs())
         {
-            List<Container> containersBecomingTabs = findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
+            List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
+            List<Container> containersBecomingTabs = findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
 
-            if (errorStrings.isEmpty() && !containersBecomingTabs.isEmpty())
+            if (errorStrings.isEmpty())
             {
-                // Make containers tab container; Folder tab will find them by name
-                try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+                if (!containersBecomingTabs.isEmpty())
                 {
-                    for (Container container : containersBecomingTabs)
-                        updateType(container, Container.TYPE.tab.toString(), user);
+                    // Make containers tab container; Folder tab will find them by name
+                    try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+                    {
+                        for (Container container : containersBecomingTabs)
+                            updateType(container, Container.TYPE.tab.toString(), user);
 
-                    transaction.commit();
+                        transaction.commit();
+                    }
+                }
+
+                if (!childTabFoldersNonMatchingTypes.isEmpty())
+                {
+                    // Check these and change type unless they were overridden explicitly
+                    for (Container container : childTabFoldersNonMatchingTypes)
+                        if (!getContainerTabTypeOverridden(container))
+                        {
+                            FolderType newType = folderType.findTab(container.getName()).getFolderType();    // Can't throw null because already checked
+                            setFolderType(container, newType, user, false, errors);
+                        }
                 }
             }
         }
@@ -337,9 +354,19 @@ public class ContainerManager
             }
 
             oldType.unconfigureContainer(c, user);
-            folderType.configureContainer(c, user);
+            folderType.configureContainer(c, user, brandNew);
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
+
+            if (c.isContainerTab())
+            {
+                Boolean containerTabTypeOverridden = false;
+                FolderTab tab = c.getParent().getFolderType().findTab(c.getName());
+                if (null != tab && !folderType.equals(tab.getFolderType()))
+                    containerTabTypeOverridden = true;
+                props.put(CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME, containerTabTypeOverridden.toString());
+            }
+
             PropertyManager.saveProperties(props);
 
             // TODO: Not needed? I don't think we've changed the container's state.
@@ -352,7 +379,8 @@ public class ContainerManager
         }
     }
 
-    public static List<Container> findAndCheckContainersMatchingTabs(Container c, FolderType folderType, List<String> errorStrings)
+    public static List<Container> findAndCheckContainersMatchingTabs(Container c, FolderType folderType,
+                                                                     List<Container> childTabFoldersNonMatchingTypes, List<String> errorStrings)
     {
         List<Container> containersMatchingTabs = new ArrayList<>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
@@ -365,7 +393,10 @@ public class ContainerManager
                     {
                         if (!child.getFolderType().getName().equalsIgnoreCase(folderTab.getFolderTypeName()))
                         {
-                            errorStrings.add("Child folder " + child.getName() +
+                            if (child.isContainerTab())
+                                childTabFoldersNonMatchingTypes.add(child);     // Tab type doesn't match child tab folder
+                            else
+                                errorStrings.add("Child folder " + child.getName() +
                                     " matches container tab, but folder type " + child.getFolderType().getName() + " doesn't match tab's folder type " +
                                     folderTab.getFolderTypeName() + ".");
                         }
@@ -451,6 +482,12 @@ public class ContainerManager
         return props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
     }
 
+    public static boolean getContainerTabTypeOverridden(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        String overridden = props.get(ContainerManager.CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME);
+        return (null != overridden) ? overridden.equalsIgnoreCase("true") : false;
+    }
 
     public static Container ensureContainer(String path)
     {
@@ -968,7 +1005,7 @@ public class ContainerManager
             Map<String, NavTree> m = new HashMap<>();
             for (Container f : folders)
             {
-                if (f.isWorkbookOrTab())
+                if (f.isWorkbookOrTab())                    // TODO: seems correct
                     continue;
 
                 SecurityPolicy policy = f.getPolicy();
@@ -1183,6 +1220,14 @@ public class ContainerManager
             {
                 _removeFromCache(c);
                 return false;
+            }
+
+            if (c.isContainerTab())
+            {
+                // Need to remove portal page, too; container name is page's pageId and in container's parent container
+                Portal.PortalPage page = Portal.getPortalPage(c.getParent(), c.getName());
+                if (null != page)               // Be safe
+                    Portal.deletePage(page);
             }
 
             fireDeleteContainer(c, user);
@@ -2023,7 +2068,7 @@ public class ContainerManager
 
             Container newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
-            newFolder.setFolderType(folderType, TestContext.get().getUser());
+            newFolder.setFolderType(folderType, TestContext.get().getUser(), true);
 
             newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), folderType);

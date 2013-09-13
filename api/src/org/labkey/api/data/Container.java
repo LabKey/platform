@@ -52,6 +52,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.springframework.validation.BindException;
@@ -376,7 +377,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay(User user)
     {
-        if (isWorkbookOrTab())
+        if (isWorkbookOrTab())                          // TODO: still seems right, can't navigate directly to it
             return false;
 
         String name = _path.getName();
@@ -712,15 +713,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _defaultModule;
     }
 
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules)
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew)
     {
         BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, errors);
+        setFolderType(folderType, ensureModules, brandNew, errors);
     }
 
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew, BindException errors)
     {
-        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), errors);
+        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), brandNew, errors);
         if (!errors.hasErrors())
         {
             Set<Module> modules = new HashSet<>(folderType.getActiveModules());
@@ -729,20 +730,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
     }
 
-    public void setFolderType(FolderType folderType, User user)
+    public void setFolderType(FolderType folderType, User user, boolean brandNew)
     {
         BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, user, errors);
+        setFolderType(folderType, user, brandNew, errors);
     }
 
-    public void setFolderType(FolderType folderType, User user, BindException errors)
+    public void setFolderType(FolderType folderType, User user, boolean brandNew, BindException errors)
     {
-        ContainerManager.setFolderType(this, folderType, user, errors);
+        ContainerManager.setFolderType(this, folderType, user, brandNew, errors);
 
         if (!errors.hasErrors())
         {
             if (isWorkbook())
-            appendWorkbookModulesToParent();
+                appendWorkbookModulesToParent();
         }
     }
 
@@ -961,12 +962,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         // Container tab inherits from parent
-        if (isContainerTab())
+/*        if (isContainerTab())
         {
             for (Module module : getParent().getActiveModules())
                 if (null != module)
                     modules.add(module);
-        }
+        }   */
 
         // add all 'always display' modules, remove all 'never display' modules:
         for (Module module : allModules)
@@ -1262,5 +1263,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         return noun;
+    }
+
+    public List<FolderTab> getDefaultTabs()
+    {
+        // Filter out any container tabs whose containers have been deleted
+        FolderType folderType = getFolderType();
+        List<FolderTab> folderTabs = new ArrayList<>();
+        for (FolderTab folderTab : folderType.getDefaultTabs())
+        {
+            if (!folderTab.isContainerTab() || null != ContainerManager.getChild(this, folderTab.getName()))
+            {
+                folderTabs.add(folderTab);
+            }
+        }
+        return folderTabs;
     }
 }

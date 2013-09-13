@@ -119,7 +119,7 @@ public class DefaultFolderType implements FolderType
         return getDefaultTabs().get(0);
     }
 
-    public void configureContainer(Container c, User user)
+    public void configureContainer(Container c, User user, boolean brandNew)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
         List<Portal.WebPart> defaultParts = getPreferredWebParts();
@@ -188,27 +188,35 @@ public class DefaultFolderType implements FolderType
         c.setActiveModules(active);
         Portal.saveParts(c, all);
 
+        // A few things left to do; ordering is important
+        if (brandNew)
+        {
+            // Force container tab containers to be created
+            for (FolderTab folderTab : getDefaultTabs())        // Get default tabs from folder type
+            {
+                if (folderTab.isContainerTab() && !c.isContainerTab())
+                {
+                    Container containerDummy = folderTab.getContainerTab(c, user, brandNew);
+                }
+            }
+        }
+
         if (hasConfigurableTabs())
         {
-            // Find or create pages for all default tabs
+            // Find or create pages for all default tabs (except container tabs whose container has been deleted)
             resetDefaultTabs(c);
         }
 
-        for (FolderTab folderTab : getDefaultTabs())
+        for (FolderTab folderTab : c.getDefaultTabs())          // Get default tabs from container and create web parts
         {
             folderTab.initializeContent(c);
-            if (FolderTab.TAB_TYPE.Container == folderTab.getTabType() && !c.isContainerTab())
-            {
-                // Force container to be created
-                Container containerDummy = ((SimpleFolderTab)folderTab).getContainer(c, user);
-            }
         }
     }
 
     @Override
     public void resetDefaultTabs(Container c)
     {
-        Portal.resetPages(c, getDefaultTabs(), false);
+        Portal.resetPages(c, c.getDefaultTabs(), false);
     }
 
 
@@ -440,7 +448,8 @@ public class DefaultFolderType implements FolderType
     }
 
     @Nullable
-    protected FolderTab findTab(String caption)
+    @Override
+    public FolderTab findTab(String caption)
     {
         for (FolderTab tab : getDefaultTabs())
             if (tab.getName().equalsIgnoreCase(caption))

@@ -187,34 +187,35 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             // Make sure tab isVisible and if its a container tab, make sure user has permission to see container
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()) && hasPermission(folderTab, container, ctx.getUser()))
             {
-                String label = portalPage.getCaption() != null ?
-                        portalPage.getCaption() :
-                        folderTab.isDefaultTab() ?
-                                getStartPageLabel(ctx) :
-                                folderTab.getCaption(ctx);
-
-                NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
-                nav.setId("portal:" + portalPage.getPageId());
-                nav.addChild(getTabMenu(ctx, folderTab, portalPage, label));
-                buttons.add(nav);
-                navMap.put(portalPage.getPageId(), nav);
-                // Stop looking for a tab to select if we've already found one
-                if (_activePortalPage == null &&
-                        (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
-                        (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
+                if (!folderTab.isContainerTab() || null != folderTab.getContainerTab(container, ctx.getUser(), false))
                 {
-                    nav.setSelected(true);
-                    _activePortalPage = folderTab.getName();
+                    // Not a container tab or it is and the container exists -- go make a tab!
+                    String label = portalPage.getCaption() != null ?
+                            portalPage.getCaption() :
+                            folderTab.isDefaultTab() ?
+                                    getStartPageLabel(ctx) :
+                                    folderTab.getCaption(ctx);
 
-                    // If container tab, add tabs for its folderType as children
-                    if (FolderTab.TAB_TYPE.Container == folderTab.getTabType())
+                    NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
+                    nav.setId("portal:" + portalPage.getPageId());
+                    nav.addChild(getTabMenu(ctx, folderTab, portalPage, label));
+                    buttons.add(nav);
+                    navMap.put(portalPage.getPageId(), nav);
+
+                    // Stop looking for a tab to select if we've already found one
+                    if (_activePortalPage == null &&
+                            (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
+                            (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
                     {
-                        // Container Tab must be SimpleFolderType
-                        SimpleFolderTab simpleFolderTab = (SimpleFolderTab)folderTab;
-                        Container folderContainer = simpleFolderTab.getContainer(container, ctx.getUser());
-                        if (null != folderContainer)
+                        nav.setSelected(true);
+                        _activePortalPage = folderTab.getName();
+
+                        // If container tab, add tabs for its folderType as children
+                        if (folderTab.isContainerTab())
                         {
-                            FolderType folderType = simpleFolderTab.getFolderType();
+                            Container folderContainer = folderTab.getContainerTab(container, ctx.getUser(), false);
+                            assert(null != folderContainer);        // we checked above here
+                            FolderType folderType = folderTab.getFolderType();
                             if (null != folderType)
                             {
                                 folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
@@ -239,7 +240,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                                     subContainerTabs.get(0).setSelected(true);
                             }
                         }
-                   }
+                    }
                 }
             }
         }
@@ -397,11 +398,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private boolean hasPermission(FolderTab folderTab, Container container, User user)
     {
-        if (FolderTab.TAB_TYPE.Container == folderTab.getTabType())
+        if (folderTab.isContainerTab())
         {
-            // Container Tab must be SimpleFolderType
-            SimpleFolderTab simpleFolderTab = (SimpleFolderTab)folderTab;
-            Container folderContainer = simpleFolderTab.getContainer(container, user);
+            Container folderContainer = folderTab.getContainerTab(container, user, false);
             if (null != folderContainer && !folderContainer.hasPermission(user, ReadPermission.class))
             {
                 return false;
@@ -435,7 +434,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 //        menu.addChild(new NavTree("Permissions"));
 //        menu.addChild(new NavTree("Settings"));
 
-        if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
+        if (false) // folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {
             Container tabContainer = ContainerManager.getChild(ctx.getContainer(), folderTab.getName());
 

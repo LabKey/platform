@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -63,6 +64,12 @@ public abstract class FolderTab
     public String getFolderTypeName()
     {
         return "";                      // Default is no folder type name; container tabs will have a folder type name
+    }
+
+    @Nullable
+    public FolderType getFolderType()
+    {
+        return null;
     }
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
@@ -245,5 +252,16 @@ public abstract class FolderTab
     public int getDefaultIndex()
     {
         return _defaultIndex;
+    }
+
+    public boolean isContainerTab()
+    {
+        return FolderTab.TAB_TYPE.Container == getTabType();
+    }
+
+    @Nullable
+    public Container getContainerTab(Container parent, User user, boolean forceCreate)
+    {
+        return null;
     }
 }
