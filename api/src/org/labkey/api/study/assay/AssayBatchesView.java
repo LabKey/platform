@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * A composite of a header section and a QueryView for the batches below
  */
-public class AssayBatchesView extends AbstractAssayView
+public class AssayBatchesView extends AssayView
 {
     public AssayBatchesView(ExpProtocol protocol, boolean minimizeLinks)
     {

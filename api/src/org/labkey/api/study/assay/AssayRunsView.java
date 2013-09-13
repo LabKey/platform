@@ -28,7 +28,7 @@ import org.springframework.validation.BindException;
  * Date: Aug 21, 2007
  * Time: 9:30:03 AM
  */
-public class AssayRunsView extends AbstractAssayView
+public class AssayRunsView extends AssayView
 {
     public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, BindException errors)
     {

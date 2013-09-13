@@ -1257,7 +1257,6 @@ api/src/org/labkey/api/study/actions/publishHeader.jsp -text
 api/src/org/labkey/api/study/assay/AbstractAssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AbstractAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractAssayTsvDataHandler.java -text
-api/src/org/labkey/api/study/assay/AbstractAssayView.java -text
 api/src/org/labkey/api/study/assay/AbstractParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/AbstractPlateBasedAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractTempDirDataCollector.java -text
@@ -1288,6 +1287,7 @@ api/src/org/labkey/api/study/assay/AssayService.java -text
 api/src/org/labkey/api/study/assay/AssayTableMetadata.java -text
 api/src/org/labkey/api/study/assay/AssayUploadXarContext.java -text
 api/src/org/labkey/api/study/assay/AssayUrls.java -text
+api/src/org/labkey/api/study/assay/AssayView.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
 api/src/org/labkey/api/study/assay/BulkPropertiesUploadWizardAction.java -text

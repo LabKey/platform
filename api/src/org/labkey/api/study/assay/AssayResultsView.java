@@ -26,7 +26,7 @@ import org.springframework.validation.BindException;
  * A composite of a header section and a QueryView for the results below
  * User: kevink
  */
-public class AssayResultsView extends AbstractAssayView
+public class AssayResultsView extends AssayView
 {
     public AssayResultsView(ExpProtocol protocol, boolean minimizeLinks, BindException errors)
     {
