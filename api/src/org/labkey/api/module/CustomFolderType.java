@@ -44,6 +44,7 @@ import java.util.Set;
 public class CustomFolderType implements FolderType
 {
     public CustomFolderType(){}
+    public void configureContainer(Container c, User user) {  }
     public void configureContainer(Container c, User user, boolean brandNew) {  }
     public void unconfigureContainer(Container c, User user) {  }
     public String getName() { return "None"; }

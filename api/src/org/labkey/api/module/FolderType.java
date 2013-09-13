@@ -48,6 +48,13 @@ public interface FolderType
      * Configure the container with whatever active modules and web parts are required for this folder type.
      * Convention is to NOT remove web parts already in the folder.
      */
+    public void configureContainer(Container c, User user);
+
+    /**
+     * Configure the container with whatever active modules and web parts are required for this folder type.
+     * Convention is to NOT remove web parts already in the folder.
+     * @param brandNew indicates container is newly created and if it has tab folders, those folders should be created as well
+     */
     public void configureContainer(Container c, User user, boolean brandNew);
 
     /**
@@ -162,6 +169,7 @@ public interface FolderType
     /** @return The default tab to select, which defaults to the first (including for non-tabbed folders) */
     public FolderTab getDefaultTab();
 
+    /** @return the folder tab in htis folder type's default tabs whose name matches the tabName; null if none found */
     @Nullable
     public FolderTab findTab(String tabName);
 

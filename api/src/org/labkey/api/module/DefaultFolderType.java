@@ -119,6 +119,11 @@ public class DefaultFolderType implements FolderType
         return getDefaultTabs().get(0);
     }
 
+    public void configureContainer(Container c, User user)
+    {
+        configureContainer(c, user, false);
+    }
+
     public void configureContainer(Container c, User user, boolean brandNew)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
