@@ -18,10 +18,12 @@ package org.labkey.di.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -39,6 +41,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -47,9 +50,12 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -61,6 +67,18 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
+import org.labkey.di.filters.FilterStrategy;
+import org.labkey.di.filters.ModifiedSinceFilterStrategy;
+import org.labkey.di.filters.RunFilterStrategy;
+import org.labkey.di.filters.SelectAllFilterStrategy;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
+import org.labkey.etl.xml.EtlDocument;
+import org.labkey.etl.xml.EtlType;
+import org.labkey.etl.xml.FilterType;
+import org.labkey.etl.xml.SchemaQueryType;
+import org.labkey.etl.xml.TransformType;
+import org.labkey.etl.xml.TransformsType;
+import org.quartz.CronExpression;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -76,7 +94,9 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -117,11 +137,11 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    private TransformDescriptor parseETL(Resource resource, String moduleName)
+    @Nullable TransformDescriptor parseETL(Resource resource, String moduleName)
     {
         try
         {
-            return new TransformDescriptor(resource, moduleName);
+            return parseETLThrow(resource, moduleName);
         }
         catch (XmlException|IOException e)
         {
@@ -130,6 +150,200 @@ public class TransformManager implements DataIntegrationService
         return null;
     }
 
+
+    TransformDescriptor parseETLThrow(Resource resource, String moduleName) throws IOException, XmlException
+    {
+        FilterStrategy.Factory _defaultFactory = null;
+        Long interval = null;
+        CronExpression cron = null;
+
+        final ArrayList<SimpleQueryTransformStepMeta> stepMetaDatas = new ArrayList<>();
+        final Path resourcePath = resource.getPath();
+        final String filename;
+        final CaseInsensitiveHashSet stepIds = new CaseInsensitiveHashSet();
+
+        // TODO: Change this... no longer special case config.xml?
+        if ("config.xml".equals(resourcePath.getName().toLowerCase()))
+            filename = resourcePath.getParent().getName();
+        else
+            filename = FileUtil.getBaseName(resourcePath.getName());
+
+        String _id = "{" + moduleName + "}/" + filename;
+
+        try (InputStream inputStream = resource.getInputStream())
+        {
+//            Resource resource = ensureResource();
+
+            if (inputStream == null)
+            {
+                throw new IOException("Unable to get InputStream from " + resource);
+            }
+//            _lastModified = resource.getLastModified();
+
+            XmlOptions options = new XmlOptions();
+            options.setValidateStrict();
+            EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
+            EtlType etlXML = document.getEtl();
+
+            // handle default transform
+            FilterType ft = etlXML.getIncrementalFilter();
+            if (null != ft)
+                _defaultFactory = createFilterFactory(ft);
+            if (null == _defaultFactory)
+                _defaultFactory = new ModifiedSinceFilterStrategy.Factory();
+
+            // schedule
+            if (null != etlXML.getSchedule())
+            {
+                if (null != etlXML.getSchedule().getPoll())
+                {
+                    String s = etlXML.getSchedule().getPoll().getInterval();
+                    if (StringUtils.isNumeric(s))
+                        interval = Long.parseLong(s) * 60 * 1000;
+                    else
+                        interval = DateUtil.parseDuration(s);
+                }
+                else if (null != etlXML.getSchedule().getCron())
+                {
+                    try
+                    {
+                        cron = new CronExpression(etlXML.getSchedule().getCron().getExpression());
+                    }
+                    catch (ParseException x)
+                    {
+                        throw new XmlException("Could not parse cron expression: " + etlXML.getSchedule().getCron().getExpression(), x);
+                    }
+                }
+            }
+
+            TransformsType transforms = etlXML.getTransforms();
+            if (null != transforms)
+            {
+                TransformType[] transformTypes = transforms.getTransformArray();
+                for (TransformType t : transformTypes)
+                {
+                    SimpleQueryTransformStepMeta meta = buildSimpleQueryTransformStepMeta(t, stepIds);
+                    stepMetaDatas.add(meta);
+                }
+            }
+
+            return new TransformDescriptor(_id, etlXML.getName(), etlXML.getDescription(), moduleName, interval, cron, _defaultFactory, stepMetaDatas);
+        }
+    }
+
+
+    private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
+    {
+        String className = StringUtils.defaultString(filterTypeXML.getClassName(), ModifiedSinceFilterStrategy.class.getName());
+        if (!className.contains("."))
+            className = "org.labkey.di.filters." + className;
+        if (className.equals(ModifiedSinceFilterStrategy.class.getName()))
+            return new ModifiedSinceFilterStrategy.Factory(filterTypeXML);
+        else if (className.equals(RunFilterStrategy.class.getName()))
+            return new RunFilterStrategy.Factory(filterTypeXML);
+        else if (className.equals(SelectAllFilterStrategy.class.getName()))
+            return new SelectAllFilterStrategy.Factory();
+        throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
+    }
+
+
+    // errors
+    static final String INVALID_TYPE = "Invalid transform type specified";
+    static final String TYPE_REQUIRED = "Transform type attribute is required";
+    static final String ID_REQUIRED = "Id attribute is required";
+    static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
+    static final String INVALID_TARGET_OPTION = "Invaild targetOption attribute value specified";
+    static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
+
+    private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
+    {
+        SimpleQueryTransformStepMeta meta = new SimpleQueryTransformStepMeta();
+
+        if (null == transformXML.getId())
+            throw new XmlException(ID_REQUIRED);
+
+        if (stepIds.contains(transformXML.getId()))
+            throw new XmlException(DUPLICATE_ID);
+
+        stepIds.add(transformXML.getId());
+        meta.setId(transformXML.getId());
+
+        if (null != transformXML.getDescription())
+        {
+            meta.setDescription(transformXML.getDescription());
+        }
+
+        String className = transformXML.getType();
+
+        if (null == className)
+        {
+            className = TransformTask.class.getName();
+        }
+
+        try
+        {
+            Class taskClass = Class.forName(className);
+            if (isValidTaskClass(taskClass))
+            {
+                meta.setTaskClass(taskClass);
+            }
+            else
+            {
+                throw new XmlException(INVALID_TYPE);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new XmlException(INVALID_TYPE);
+        }
+
+        SchemaQueryType source = transformXML.getSource();
+
+        if (null != source)
+        {
+            meta.setSourceSchema(SchemaKey.fromString(source.getSchemaName()));
+            meta.setSourceQuery(source.getQueryName());
+            if (null != source.getTimestampColumnName())
+                meta.setSourceTimestampColumnName(source.getTimestampColumnName());
+            if (null != source.getSourceOption())
+            {
+                try
+                {
+                    meta.setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption()));
+                }
+                catch (IllegalArgumentException x)
+                {
+                    throw new XmlException(INVALID_SOURCE_OPTION);
+                }
+            }
+        }
+
+        SchemaQueryType destination = transformXML.getDestination();
+
+        if (null != destination)
+        {
+            meta.setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
+            meta.setTargetQuery(destination.getQueryName());
+            if (null != destination.getTargetOption())
+            {
+                try
+                {
+                    meta.setTargetOptions(CopyConfig.TargetOptions.valueOf(destination.getTargetOption()));
+                }
+                catch (IllegalArgumentException x)
+                {
+                    throw new XmlException(INVALID_TARGET_OPTION);
+                }
+            }
+        }
+
+        return meta;
+    }
+
+    private boolean isValidTaskClass(Class taskClass)
+    {
+        return TransformTask.class.isAssignableFrom(taskClass);
+    }
 
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getRegisteredDescriptors()

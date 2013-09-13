@@ -24,7 +24,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -183,24 +182,22 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
 
     public static class Factory implements FilterStrategy.Factory
     {
-        ScheduledPipelineJobDescriptor _jobDescriptor;
-        FilterType _filterType;
+        private final FilterType _filterType;
 
-        public Factory(ScheduledPipelineJobDescriptor jobDescriptor)
+        public Factory()
         {
-            _jobDescriptor = jobDescriptor;
+            this(null);
         }
 
-        public Factory(ScheduledPipelineJobDescriptor jobDescriptor, FilterType ft)
+        public Factory(FilterType ft)
         {
-            _jobDescriptor = jobDescriptor;
             _filterType = ft;
         }
 
         @Override
         public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
         {
-            return new ModifiedSinceFilterStrategy(context, stepMeta, null==_filterType?null:_filterType.getTimestampColumnName());
+            return new ModifiedSinceFilterStrategy(context, stepMeta, null == _filterType ? null : _filterType.getTimestampColumnName());
         }
 
         @Override

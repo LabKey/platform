@@ -24,7 +24,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -203,17 +202,14 @@ public class RunFilterStrategy implements FilterStrategy
 
     public static class Factory implements FilterStrategy.Factory
     {
-        ScheduledPipelineJobDescriptor _jobDescriptor;
-        SchemaKey _runTableSchema = null;
-        String _runTableName = null;
-        String _pkColumnName = null;
-        String _fkColumnName = null;
+        private final SchemaKey _runTableSchema;
+        private final String _runTableName;
+        private final String _pkColumnName;
+        private final String _fkColumnName;
 
-        public Factory(ScheduledPipelineJobDescriptor jobDescriptor, FilterType ft)
+        public Factory(FilterType ft)
         {
-            _jobDescriptor = jobDescriptor;
-            if (null != ft.getRunTableSchema())
-                _runTableSchema = SchemaKey.decode(ft.getRunTableSchema());
+            _runTableSchema = null != ft.getRunTableSchema() ? SchemaKey.decode(ft.getRunTableSchema()) : null;
             _runTableName = ft.getRunTable();
             _pkColumnName = ft.getPkColumnName();
             _fkColumnName = ft.getFkColumnName();
