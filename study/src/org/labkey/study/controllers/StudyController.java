@@ -4863,7 +4863,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("Study already exists in folder");
 
             SecurityManager.setInheritPermissions(studyFolder);
-            studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), getUser());
+            studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), getUser(), true);
 
             StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
             study.setTimepointType(TimepointType.DATE);

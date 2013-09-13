@@ -40,49 +40,49 @@
 var requiredModules = new Object();
 var defaultModules = new Object();
 <% //Generate javascript objects...
-final ViewContext context = HttpView.currentContext();
-Container c = context.getContainerNoTab();
-FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
-Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getAllFolderTypes();
-List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-Collections.sort(allModules, new Comparator<Module>()
-{
-    public int compare(Module o1, Module o2)
+    final ViewContext context = HttpView.currentContext();
+    Container c = context.getContainer();
+    FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
+    Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getAllFolderTypes();
+    List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+    Collections.sort(allModules, new Comparator<Module>()
     {
-        return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
-    }
-});
-Set<Module> activeModules = c.getActiveModules();
-Set<Module> requiredModules = c.getRequiredModules();
-Map<String, Set<String>> dependencyMap = c.getModuleDependencyMap();
-JSONObject dependencyMapJson = new JSONObject();
-for (String m : dependencyMap.keySet())
-{
-    dependencyMapJson.put(m, dependencyMap.get(m));
-}
-
-Module defaultModule = c.getDefaultModule();
-FolderType folderType = c.getFolderType();
-
-for (FolderType ft : allFolderTypes)
-{
-if (!ft.isWorkbookType())
-{
-    String arraySep = "";
-%>
-        requiredModules["<%=ft.getName()%>"] =  [<%
-        for (Module m : ft.getActiveModules())
+        public int compare(Module o1, Module o2)
         {
-            if (null != m) //FIX: 4612: active module might not be present in the build
-            {
-                out.print(arraySep + "\"" + m.getName() + "\"");
-                arraySep = ",";
-            }
-        } %>];<%
-        if (null != ft.getDefaultModule())
-            out.print("defaultModules[\"" + ft.getName() + "\"] = \"" + ft.getDefaultModule().getName() + "\";\n");
+        return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
+        }
+    });
+    Set<Module> activeModules = c.getActiveModules();
+    Set<Module> requiredModules = c.getRequiredModules();
+    Map<String, Set<String>> dependencyMap = c.getModuleDependencyMap();
+    JSONObject dependencyMapJson = new JSONObject();
+    for (String m : dependencyMap.keySet())
+    {
+        dependencyMapJson.put(m, dependencyMap.get(m));
     }
-}
+
+    Module defaultModule = c.getDefaultModule();
+    FolderType folderType = c.getFolderType();
+
+    for (FolderType ft : allFolderTypes)
+    {
+        if (!ft.isWorkbookType())
+        {
+            String arraySep = "";
+%>
+            requiredModules["<%=h(ft.getName())%>"] =  [<%
+            for (Module m : ft.getActiveModules())
+            {
+                if (null != m) //FIX: 4612: active module might not be present in the build
+                {
+                    out.print(text(arraySep + "\"" + h(m.getName()) + "\""));
+                    arraySep = ",";
+                }
+            } %>];<%
+            if (null != ft.getDefaultModule())
+                out.print(text("defaultModules[\"" + h(ft.getName()) + "\"] = \"" + h(ft.getDefaultModule().getName()) + "\";\n"));
+        }
+    }
 %>
 var switchedOnLast = new Object();
 function changeFolderType()
@@ -127,12 +127,13 @@ function getSelectedFolderType()
 }
 
 function updateDefaultOptions(cb)
-    {
+{
     var dependencyMap = <%=dependencyMapJson%>;
     //if this module is required by others, we alert before disabling it
     if(cb)
     {
-        if(!cb.checked && dependencyMap[cb.value]){
+        if(!cb.checked && dependencyMap[cb.value])
+        {
             var dm = [];
             //only warn about dependencies if they are active
             Ext.each(dependencyMap[cb.value], function(m){
@@ -144,9 +145,11 @@ function updateDefaultOptions(cb)
                     dm.push(m);
             }, this);
 
-            if(dm && dm.length){
+            if(dm && dm.length)
+            {
                 Ext.Msg.confirm('Warning', 'This module is required by the following other active modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
-                    if(btn == 'yes'){
+                    if(btn == 'yes')
+                    {
                         //uncheck boxes without firing onclick events
                         uncheckEl(cb.value);
                         Ext.each(dm, function(m){
@@ -162,9 +165,11 @@ function updateDefaultOptions(cb)
                 return false;
             }
         }
-        else {
+        else
+        {
             //also turn on dependencies, silently
-            for (var m in dependencyMap){
+            for (var m in dependencyMap)
+            {
                 if(dependencyMap[m].indexOf(cb.value) > -1)
                 {
                     var el = Ext.Element.select('input[value='+m+'][type="checkbox"]');
@@ -199,21 +204,21 @@ function updateDefaultOptions(cb)
     }
         
     for (var i = 0; i < <%= allModules.size() %>; i++)
-        {
+    {
         var current = document.folderModules['activeModules[' + i + ']'];
 
         if (current != undefined && current.checked)
-            {
+        {
             defaultDropdown.options[optionIndex] = new Option(current.value);
             defaultDropdown.options[optionIndex].value = current.value;
             defaultDropdown.options[optionIndex].text = current.title
             if (defaultName.length != 0 && current.value == defaultName)
                 defaultDropdown.selectedIndex = optionIndex;
             optionIndex++;
-            }
         }
-    return true;
     }
+    return true;
+}
 
 function setNodeText(parent, text)
 {
@@ -230,18 +235,28 @@ function setNodeText(parent, text)
 function validate()
 {
     for (var i = 0; i < <%= allModules.size() %>; i++)
-        {
+    {
         var module = document.folderModules['activeModules[' + i + ']'];
         if (module != undefined && module.checked)
-            {
-                return true;
-            }
+        {
+            return true;
         }
-    alert("Error: Please select at least one tab to display.");
+    }
     return false;
 }
+
+function checkChangedType()
+{
+    var currentType = '<%=text(folderType.getName())%>';
+    if (currentType.toLowerCase() != getSelectedFolderType().toLowerCase())
+    {
+        return confirm("Are you sure you want to change a container tab's folder type?");
+    }
+    return true;
+}
+
 </script>
-<form name="folderModules" method=POST action="<%=buildURL(FolderManagementAction.class)%>" onsubmit="return validate();">
+<form name="folderModules" id="folderModules" method=POST action="<%=text(buildURL(FolderManagementAction.class))%>" onsubmit="return validate();">
     <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
@@ -270,20 +285,21 @@ function validate()
     %>
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
-                <%=generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))%>
+                <%/* =generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))*/%>
+                <div id="UpdateFolderButtonDiv"/>
     <%WebPartView.endTitleFrame(out);%>
     </td>
     <td width="30%" valign="top">
-        <div id="defaultTabDiv" style="display:<%="None".equals(folderType.getName()) ? "" : "none"%>">
+        <div id="defaultTabDiv" style="display:<%=text("None".equals(h(folderType.getName())) ? "" : "none")%>">
             <%WebPartView.startTitleFrame(out, "Default Tab", null, "100%", null);%>
-            <select name="defaultModule" value="<%=defaultModule.getName()%>">
+            <select name="defaultModule" value="<%=h(defaultModule.getName())%>">
             <%
                     for (Module module : allModules)
                         {
                         if (activeModules.contains(module))
                             {
                             %>
-                                <option value="<%= module.getName() %>" <%= module.getName().equals(defaultModule.getName()) ? "selected" : "" %>><%= module.getTabName(HttpView.currentContext()) %></option>
+                                <option value="<%= h(module.getName()) %>" <%= text(module.getName().equals(defaultModule.getName()) ? "selected" : "") %>><%= h(module.getTabName(HttpView.currentContext())) %></option>
                             <%
                             }
                         }
@@ -306,8 +322,8 @@ for (Module module : allModules)
     if (active || enabled)
         {
         %>
-        <input type="checkbox" name="activeModules[<%= i++ %>]" title="<%= module.getTabName(HttpView.currentContext())%>" value="<%= module.getName()%>"
-        <%=disabled(!enabled)%><%=checked(active)%> onClick="return updateDefaultOptions(this);"><%= module.getTabName(HttpView.currentContext()) %><br>
+        <input type="checkbox" name="activeModules[<%= i++ %>]" title="<%= h(module.getTabName(HttpView.currentContext()))%>" value="<%= h(module.getName())%>"
+        <%=disabled(!enabled)%><%=checked(active)%> onClick="return updateDefaultOptions(this);"><%= h(module.getTabName(HttpView.currentContext())) %><br>
         <%
         }
     }
@@ -317,4 +333,37 @@ for (Module module : allModules)
 </table>
 </form>
 </div>
-<script type="text/javascript">updateDefaultOptions()</script>
+<script type="text/javascript">
+
+    var updateButton = Ext.create({
+        xtype: 'button',
+        text: '<%=text(form.isWizard() ? "Next" : "Update Folder")%>',
+        renderTo: 'UpdateFolderButtonDiv',
+        handler: function() {
+            if (!validate())
+            {
+                Ext.MessageBox.alert("Error", "Please select at least one tab to display.");
+            }
+            else
+            {
+                var currentType = '<%=text(folderType.getName())%>';
+                var isContainerTab = <%=c.isContainerTab()%>;
+                if (isContainerTab && currentType.toLowerCase() != getSelectedFolderType().toLowerCase())
+                {
+                    Ext.MessageBox.confirm("Change Folder Type", "Are you sure you want to change a tab folder's type?", function(btn) {
+                        if (btn == "yes")
+                        {
+                            submitForm(document.getElementById('folderModules'));
+                        }
+                    }, this);
+                }
+                else
+                {
+                    submitForm(document.getElementById('folderModules'));
+                }
+            }
+        }
+    });
+
+    updateDefaultOptions()
+</script>

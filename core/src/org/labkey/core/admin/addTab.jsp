@@ -35,7 +35,7 @@
     AdminController.AddTabForm form = me.getModelBean();
     Container c = context.getContainer();
     FolderType folderType = c.getFolderType();
-    List<FolderTab> folderTabs = folderType.getDefaultTabs();
+    List<FolderTab> folderTabs = c.getDefaultTabs();        // Get from the container, so it can filter out deleted container tabs
     Errors errors = me.getErrors();
     Map<String, Portal.PortalPage> pages = Portal.getPages(c);
 %>

@@ -51,13 +51,16 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 extend : 'Ext.data.Model',
                 proxy : {
                     type        : 'ajax',
-                    url         : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api')
+                    url         : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api', null, {showContainerTabs: config.showContainerTabs})
                 },
                 fields : [
-                    {name : 'containerPath'                  },
-                    {name : 'id',           type : 'int'     },
-                    {name : 'isProject',    type : 'boolean' },
-                    {name : 'text'                           }
+                    {name : 'containerPath'                                },
+                    {name : 'id',                         type : 'int'     },
+                    {name : 'isProject',                  type : 'boolean' },
+                    {name : 'isContainerTab',             type : 'boolean' },
+                    {name : 'folderTypeHasContainerTabs', type : 'boolean' },
+                    {name : 'containerTabTypeOveridden',  type : 'boolean' },
+                    {name : 'text'                                         }
                 ]
             });
         }
@@ -85,7 +88,44 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
             order  : 'reorderFolders',
             remove : 'deleteFolder',
             rename : 'renameFolder',
-            reorder: 'reorderFolders'
+            reorder: 'reorderFolders',
+            revert : function(selectedFolder) {
+                var plural = selectedFolder[0].data.isContainerTab ? '' : 's';
+                Ext4.Msg.show({
+                    title: 'Revert Folder(s)',
+                    msg: 'Are you sure you want to revert the tab folder' + plural + ' to the original folder type' + plural + '?',
+                    buttons : Ext4.MessageBox.OKCANCEL,
+                    icon    : Ext4.MessageBox.WARNING,
+                    fn      : function(btn) {
+                        if (btn == 'ok')
+                        {
+                            Ext4.Ajax.request({
+                                url     : LABKEY.ActionURL.buildURL('admin', 'revertFolder.api'),
+                                method  : 'POST',
+                                jsonData: {containerPath : selectedFolder[0].data.containerPath},
+                                success : function(resp){
+                                    var o = Ext4.decode(resp.responseText);
+
+                                    if (o.success)
+                                    {
+                                        Ext4.Msg.alert('Revert Folder' + plural, 'Folder' + plural + ' reverted successfully');
+                                        if (selectedFolder[0].data.isContainerTab)
+                                            selectedFolder[0].data.containerTabTypeOveridden = false;
+                                        this._validateFolder(selectedFolder[0])
+                                    }
+                                    else
+                                    {
+                                        Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');
+                                    }
+                                },
+                                failure : function() {Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');},
+                                scope   : this
+                            });
+                        }
+                    },
+                    scope: this
+                })
+            }
         };
 
 
@@ -101,7 +141,10 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this, tooltip: "Create a subfolder for the selected folder" },
                     {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this, tooltip: "Delete the selected folder" },
                     {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this, tooltip: "Move the selected folder" },
-                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Rename the selected folder" }
+                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Rename the selected folder" },
+                    {text : 'Revert',               itemId : 'revert',  handler : function() { this.action('revert'); },  scope : this,
+                        tooltip: "For a tab folder, revert to the original folder type; for a folder with children tab folders, revert each child tab folder to its original folder type"
+                    }
                 ]
             }];
         }
@@ -597,29 +640,53 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
     },
 
     _validateFolders : function(nodes) {
-        var tool = this.getDockedItems('toolbar');
-        if (this.dockedDefaults && tool && tool[0]) {
-            if (nodes.length == 1)
-            {
-                // check to disable 'move'
-                tool[0].getComponent('move').setDisabled(nodes[0].data.isProject);
+        if (nodes.length == 1)
+        {
+            this._validateFolder(nodes[0]);
+        }
 
-                // check to disable 'delete'
-                var lowerPath = nodes[0].data.containerPath.toLowerCase();
-                tool[0].getComponent('remove').setDisabled(lowerPath == '/home' || lowerPath == '/shared' || lowerPath == '/');
-
-                // check to disable 'rename'
-                tool[0].getComponent('rename').setDisabled(lowerPath == '/home' || lowerPath == '/shared' || lowerPath == '/');
-            }
-
-            if (nodes.length > 1)
-            {
-                var nonMultiActions = ['alias', 'reorder', 'create', 'remove', 'rename'];
+        if (nodes.length > 1)
+        {
+            var tool = this.getDockedItems('toolbar');
+            if (this.dockedDefaults && tool && tool[0]) {
+                var nonMultiActions = ['alias', 'reorder', 'create', 'remove', 'rename', 'revert'];
                 for (var i=0; i < nonMultiActions.length; i++)
                 {
                     tool[0].getComponent(nonMultiActions[i]).setDisabled(true);
                 }
             }
+        }
+    },
+
+    _validateFolder: function(node)
+    {
+        var tool = this.getDockedItems('toolbar');
+        if (this.dockedDefaults && tool && tool[0]) {
+            // check to disable 'create' subfolder
+            var noCreate = node.data.isContainerTab;
+            tool[0].getComponent('create').setDisabled(noCreate);
+            tool[0].getComponent('create').setVisible(!noCreate);
+
+            // check to disable 'move'
+            var noMove = node.data.isProject || node.data.isContainerTab;
+            tool[0].getComponent('move').setDisabled(noCreate);
+            tool[0].getComponent('move').setVisible(!noCreate);
+
+            // check to disable 'delete'
+            var lowerPath = node.data.containerPath.toLowerCase();
+            var noDelete = lowerPath == '/home' || lowerPath == '/shared' || lowerPath == '/';
+            tool[0].getComponent('remove').setDisabled(noDelete);
+            tool[0].getComponent('remove').setVisible(!noDelete);
+
+            // check to disable 'rename'
+            var noRename = noDelete;
+            tool[0].getComponent('rename').setDisabled(noRename);
+            tool[0].getComponent('rename').setVisible(!noRename);
+
+            // check to disable 'revert'
+            var noRevert = !((node.data.isContainerTab && node.data.containerTabTypeOveridden) || node.data.folderTypeHasContainerTabs);
+            tool[0].getComponent('revert').setDisabled(noRevert);
+            tool[0].getComponent('revert').setVisible(!noRevert);
         }
     },
 

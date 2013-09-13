@@ -20,9 +20,9 @@
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Container c = getViewContext().getContainerNoTab();
+    Container c = getViewContext().getContainer();
 %>
-<form name="fullTextSearch" method="POST" action="<%=buildURL(FolderManagementAction.class)%>tabId=fullTextSearch">
+<form name="fullTextSearch" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>tabId=fullTextSearch">
     <table>
         <tr>
             <td>

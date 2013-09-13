@@ -27,7 +27,7 @@
 <%
     int rowId = 0;
 %>
-<form name="mvIndicatorsForm" method="POST" action="<%=buildURL(FolderManagementAction.class)%>tabId=mvIndicators">
+<form name="mvIndicatorsForm" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>tabId=mvIndicators">
     <table>
         <tr>
             <td>
@@ -40,8 +40,6 @@
             <td>
                 <%
                     Container c = HttpView.getContextContainer();
-                    if (c.isContainerTab())
-                        c = c.getParent();          // Not allowed to do anything on container tab
                     Container definingContainer = MvUtil.getDefiningContainer(c);
                     boolean inherited = !c.equals(definingContainer);
 

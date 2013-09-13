@@ -63,7 +63,8 @@ public class PageWriterFactory implements FolderWriterFactory
             // Get list of child containers that are not container tabs, but match container tabs; these are bad
             FolderType folderType = ContainerManager.getFolderType(c);
             List<String> errorStrings = new ArrayList<>();
-            List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
+            List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
+            List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
             if (!containersMatchingTabs.isEmpty())
             {
                 throw new Container.ContainerException("Folder " + c.getPath() +

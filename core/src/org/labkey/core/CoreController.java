@@ -997,7 +997,7 @@ public class CoreController extends SpringActionController
                     FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
                     if (folderType != null)
                     {
-                        newContainer.setFolderType(folderType, getUser());
+                        newContainer.setFolderType(folderType, getUser(), true);
                     }
                 }
 
@@ -1408,6 +1408,9 @@ public class CoreController extends SpringActionController
             props.put("expanded", false);
 //            props.put("leaf", !c.hasChildren());  // commented out because you cannot 'drop' on a leaf as an append action
             props.put("iconCls", "x4-tree-icon-parent");
+            props.put("isContainerTab", c.isContainerTab());
+            props.put("folderTypeHasContainerTabs", c.getFolderType().hasContainerTabs());
+            props.put("containerTabTypeOveridden", ContainerManager.getContainerTabTypeOverridden(c));
             return props;
         }
     }

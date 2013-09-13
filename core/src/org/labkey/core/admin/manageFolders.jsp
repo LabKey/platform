@@ -26,7 +26,7 @@
 <%
     HttpView<FolderManagementForm> me = (HttpView<FolderManagementAction.FolderManagementForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainerNoTab();
+    Container c = ctx.getContainer();
 %>
 <div id="fmp"></div>
 <script type="text/javascript">
@@ -43,7 +43,7 @@
             minWidth : 600,
             selected : <%= c.getRowId() %>,
             requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
-            showContainerTabs : false
+            showContainerTabs : true
         });
 
         var _resize = function(w, h) {

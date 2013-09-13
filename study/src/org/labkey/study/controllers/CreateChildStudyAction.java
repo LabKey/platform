@@ -220,7 +220,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 
         FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
-        _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
+        _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), false);
 
         return study;
     }

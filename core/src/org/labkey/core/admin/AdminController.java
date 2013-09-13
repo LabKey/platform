@@ -4230,7 +4230,7 @@ public class AdminController extends SpringActionController
                         }
 
                         c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
-                        c.setFolderType(type, getUser());
+                        c.setFolderType(type, getUser(), true);
 
                         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
                         {
@@ -4242,7 +4242,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules);
+                            c.setFolderType(FolderType.NONE, activeModules, false);
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             c.setDefaultModule(defaultModule);
                         }
@@ -4682,6 +4682,75 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class RevertFolderAction extends ApiAction<RevertFolderForm>
+    {
+        public ApiResponse execute(RevertFolderForm form, BindException errors) throws Exception
+        {
+            boolean success = false;
+            Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
+            if (null != revertContainer)
+            {
+                if (revertContainer.isContainerTab())
+                {
+                    FolderTab tab = revertContainer.getParent().getFolderType().findTab(revertContainer.getName());
+                    if (null != tab)
+                    {
+                        FolderType origFolderType = tab.getFolderType();
+                        if (null != origFolderType)
+                        {
+                            revertContainer.setFolderType(origFolderType, getUser(), false, errors);
+                            if (!errors.hasErrors())
+                                success = true;
+                        }
+                    }
+                }
+                else if (revertContainer.getFolderType().hasContainerTabs())
+                {
+                    try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+                    {
+                        List<Container> children = revertContainer.getChildren();
+                        for (Container container : children)
+                        {
+                            if (container.isContainerTab())
+                            {
+                                FolderTab tab = revertContainer.getFolderType().findTab(container.getName());
+                                if (null != tab)
+                                {
+                                    FolderType origFolderType = tab.getFolderType();
+                                    if (null != origFolderType)
+                                    {
+                                        container.setFolderType(origFolderType, getUser(), false, errors);
+                                    }
+                                }
+                            }
+                        }
+                        if (!errors.hasErrors())
+                        {
+                            transaction.commit();
+                            success = true;
+                        }
+                    }
+                }
+            }
+            return new ApiSimpleResponse("success", success);
+        }
+    }
+
+    public static class RevertFolderForm
+    {
+        private String _containerPath;
+
+        public String getContainerPath()
+        {
+            return _containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            _containerPath = containerPath;
+        }
+    }
 
     public static class EmailTestForm
     {
@@ -5659,7 +5728,7 @@ public class AdminController extends SpringActionController
             final Map<String, Object> properties = new HashMap<>();
             Container tabContainer;
 
-            if (getContainer().isContainerTab())
+            if (getContainer().isContainerTab())                       // TODO: ??
             {
                 tabContainer = getContainer().getParent();
             }
