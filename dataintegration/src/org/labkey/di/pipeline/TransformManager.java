@@ -63,6 +63,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.VariableMap;
@@ -114,13 +115,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TransformManager implements DataIntegrationService
 {
     private static final TransformManager INSTANCE = new TransformManager();
-
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
-
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-
-    private static boolean _shuttingDown = false;
-
 
     public static TransformManager get()
     {
@@ -172,13 +168,10 @@ public class TransformManager implements DataIntegrationService
 
         try (InputStream inputStream = resource.getInputStream())
         {
-//            Resource resource = ensureResource();
-
             if (inputStream == null)
             {
                 throw new IOException("Unable to get InputStream from " + resource);
             }
-//            _lastModified = resource.getLastModified();
 
             XmlOptions options = new XmlOptions();
             options.setValidateStrict();
@@ -386,7 +379,7 @@ public class TransformManager implements DataIntegrationService
     public synchronized ActionURL runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
             throws PipelineJobException
     {
-        if (_shuttingDown)
+        if (ViewServlet.isShuttingDown())
             throw new PipelineJobException("Could not create job: server is shutting down");
 
         try
@@ -431,7 +424,7 @@ public class TransformManager implements DataIntegrationService
 
     public synchronized void runNowQuartz(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
-        if (_shuttingDown)
+        if (ViewServlet.isShuttingDown())
             return;
 
         try
@@ -474,7 +467,7 @@ public class TransformManager implements DataIntegrationService
 
     public synchronized void schedule(ScheduledPipelineJobDescriptor descriptor, Container container, User user, boolean verbose)
     {
-        if (_shuttingDown)
+        if (ViewServlet.isShuttingDown())
             return;
 
         try
@@ -675,7 +668,6 @@ public class TransformManager implements DataIntegrationService
 
     public void shutdownPre()
     {
-        _shuttingDown = true;
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
