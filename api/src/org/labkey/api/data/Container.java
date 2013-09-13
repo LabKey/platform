@@ -713,10 +713,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _defaultModule;
     }
 
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules)
+    {
+        setFolderType(folderType, ensureModules, false);
+    }
+
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew)
     {
         BindException errors = new BindException(new Object(), "dummy");
         setFolderType(folderType, ensureModules, brandNew, errors);
+    }
+
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
+    {
+        setFolderType(folderType, ensureModules, false, errors);
     }
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew, BindException errors)
@@ -730,10 +740,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
     }
 
+    public void setFolderType(FolderType folderType, User user)
+    {
+        setFolderType(folderType, user, false);
+    }
+
     public void setFolderType(FolderType folderType, User user, boolean brandNew)
     {
         BindException errors = new BindException(new Object(), "dummy");
         setFolderType(folderType, user, brandNew, errors);
+    }
+
+    public void setFolderType(FolderType folderType, User user, BindException errors)
+    {
+        setFolderType(folderType, user, false, errors);
     }
 
     public void setFolderType(FolderType folderType, User user, boolean brandNew, BindException errors)
