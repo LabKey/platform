@@ -111,6 +111,10 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             if (StudyService.get().getStudy(c) != null)
                 menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
             menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
+
+            NavTree manageViews = new NavTree("Manage Categories");
+            manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
+            menu.addChild(manageViews);
         }
 
         if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
