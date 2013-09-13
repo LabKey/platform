@@ -859,12 +859,14 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _xlsURL;
         private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
+        private final String _dataRegionName;
 
-        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
+        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL, String dataRegionName)
         {
             _xlsURL = xlsURL;
             _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
+            _dataRegionName = dataRegionName;
         }
 
         public ActionURL getXlsxURL()
@@ -881,12 +883,43 @@ public class QueryView extends WebPartView<Object>
         {
             return _xlsURL;
         }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
+    }
+
+    public static class TextExportOptionsBean
+    {
+        private final ActionURL _tsvURL;
+        private final String _dataRegionName;
+
+        public TextExportOptionsBean(ActionURL tsvURL, String dataRegionName)
+        {
+            _tsvURL = tsvURL;
+            _dataRegionName = dataRegionName;
+        }
+
+        public ActionURL getTsvURL()
+        {
+            return _tsvURL;
+        }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
     }
 
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName());
-        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), urlFor(QueryAction.exportRowsXLSX), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
+        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
+                urlFor(QueryAction.exportRowsExcel),
+                urlFor(QueryAction.exportRowsXLSX),
+                _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null,
+                getDataRegionName());
         exportButton.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
 
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
@@ -894,7 +927,8 @@ public class QueryView extends WebPartView<Object>
         {
             tsvURL.replaceParameter("exportAsWebPage", "true");
         }
-        exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", tsvURL));
+        TextExportOptionsBean textBean = new TextExportOptionsBean(tsvURL, getDataRegionName());
+        exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
 
         if (_allowExportExternalQuery)
         {

@@ -1057,14 +1057,40 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
             /**
              * Show a message in the header of this DataRegion.
-             * @param html the HTML source of the message to be shown
-             * @param part
+             * @param {String / Object} htmlOrConfig the HTML source of the message to be shown or a config object witht the following properties:
+             *      <ul>
+             *          <li><strong>html</strong>: {String} the HTML source of the message to be shown.</li>
+             *          <li><strong>part</strong>: {String} The part of the message area to render the message to.</li>
+             *          <li><strong>duration</strong>: {Integer} The amount of time (in milliseconds) the message will stay visible.</li>
+             *          <li><strong>hideButtonPanel</strong>: {Boolean} If true the button panel (customize view, export, etc.) will be hidden if visible.</li>
+             *      </ul>
+             * @param part The part of the message are to render the message to. Used to scope messages so they can be added
+             *      and removed without clearing other messages.
              * @return {Ext.Element} The Ext.Element of the newly created message div.
              */
-            addMessage: function (html, part)
+            addMessage: function (htmlOrConfig, part)
             {
                 if (this.msgbox)
-                    this.msgbox.addMessage(html, part);
+                {
+                    if (typeof htmlOrConfig === "string")
+                    {
+                        this.msgbox.addMessage(htmlOrConfig, part);
+                    }
+
+                    if (typeof htmlOrConfig === "object")
+                    {
+                        this.msgbox.addMessage(htmlOrConfig.html, htmlOrConfig.part || part);
+
+                        if (htmlOrConfig.hideButtonPanel)
+                            this.hideButtonPanel();
+
+                        if (htmlOrConfig.duration)
+                        {
+                            var dr = this;
+                            setTimeout(function(){dr.removeMessage(htmlOrConfig.part || part); dr.header.fireEvent('resize');}, htmlOrConfig.duration);
+                        }
+                    }
+                }
             },
 
             /**
@@ -1715,6 +1741,66 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     {
                         // We're not showing another ribbon panel, so show the new one right away
                         callback.call(this);
+                    }
+                }
+            },
+
+            /**
+             * Hide the ribbon panel. If visible the ribbon panel will be hidden.
+             */
+            hideButtonPanel: function()
+            {
+                this._hideButtonPanel(this.header, true);
+            },
+
+            _hideButtonPanel: function(headerOrFooter, animate)
+            {
+                var _duration = 0.4, y, h, panelDiv = headerOrFooter.child(".labkey-ribbon");
+
+                if (this.currentPanelId)
+                {
+                    var panelToHide =  this.panelButtonContents[this.currentPanelId];
+
+                    if (this.headerLock())
+                    {
+                        y = this.colHeaderRow.getY();
+                        h = this.headerSpacer.getHeight();
+                    }
+
+                    var callback = function()
+                    {
+                        panelToHide.setVisible(false);
+                        this.fireEvent('afterpanelhide');
+                        this.currentPanelId = null;
+                        // Close the panelDiv since we're not adding a new panel.
+                        panelDiv.setDisplayed(true);
+                        // Remove highlight from the button that triggered the menu. The button in question *should* be the
+                        // only button below the dataregion that has the labkey-menu-button-active class on it.
+                        var button = Ext.query('#' + this.getId() + ' .labkey-menu-button-active')[0];
+                        if (button)
+                        {
+                            Ext.get(button).removeClass('labkey-menu-button-active');
+                        }
+                    };
+
+                    if (animate)
+                    {
+                        panelToHide.getEl().slideOut('t', {
+                            callback: callback,
+                            concurrent: true,
+                            duration: _duration,
+                            scope: this
+                        });
+                    }
+                    else
+                    {
+                        callback.call(this);
+                    }
+
+                    if (this.headerLock())
+                    {
+                        this.headerSpacer.setHeight(h - panelToHide.getHeight());
+                        this.colHeaderRow.shift({y: (y - panelToHide.getHeight()), duration: _duration, concurrent: true, scope: this});
                     }
                 }
             },
@@ -2933,6 +3019,7 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
     removeMessage: function (part)
     {
 
+        part = part || 'info';
         delete this.parts[part];
         this._refresh();
     },

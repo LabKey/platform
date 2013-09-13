@@ -17,16 +17,21 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<QueryView.ExcelExportOptionsBean> me = (JspView<QueryView.ExcelExportOptionsBean>) HttpView.currentView();
-    QueryView.ExcelExportOptionsBean model = me.getModelBean();
+    QueryView.ExcelExportOptionsBean model = (QueryView.ExcelExportOptionsBean) HttpView.currentModel();
     String xlsxGUID = GUID.makeGUID();
     String xlsGUID = GUID.makeGUID();
-    String onClickScript = "window.location = document.getElementById('" + xlsGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : (document.getElementById('" + xlsxGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsxURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL() == null ? "" : model.getIqyURL().getLocalURIString()) + "); return false;";
+    String onClickScript = "window.location = document.getElementById('" + xlsGUID + "').checked ? " +
+            PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) +
+            " : (document.getElementById('" + xlsxGUID + "').checked ? " +
+            PageFlowUtil.jsString(model.getXlsxURL().getLocalURIString()) +
+            " : " + PageFlowUtil.jsString(model.getIqyURL() == null ? "" : model.getIqyURL().getLocalURIString()) + "); " +
+            "LABKEY.DataRegions['" + model.getDataRegionName() + "'].addMessage({html:'<div class=\"labkey-message\"><strong>" +
+            "Excel export started.</strong></div>', part: 'excelExport', hideButtonPanel: true, duration:5000}); " +
+            "return false;";
 %>
 <table class="labkey-export-tab-contents">
     <tr>

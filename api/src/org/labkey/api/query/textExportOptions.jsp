@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,9 +39,14 @@
     quoteMap.put(TSVWriter.QUOTE.DOUBLE.name(), "Double (" + TSVWriter.QUOTE.DOUBLE.quoteChar + ")");
     quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
 
-    ActionURL url = (ActionURL)HttpView.currentModel();
-
-    String onClickScript = "window.location='" + url + "&delim=' + document.getElementById('" + delimGUID + "').value + '&quote=' + document.getElementById('" + quoteGUID + "').value;return false;";
+    QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
+    ActionURL url = model.getTsvURL();
+    String dataRegionName = model.getDataRegionName();
+    String onClickScript = "window.location='" + url + "&delim=' + document.getElementById('" + delimGUID + "').value + " +
+            "'&quote=' + document.getElementById('" + quoteGUID + "').value;" +
+            "LABKEY.DataRegions['"  + dataRegionName +"'].addMessage({html:'<div class=\"labkey-message\"><strong>" +
+            "Text export started.</strong></div>', part: 'textExport', hideButtonPanel: true, duration:5000}); " +
+            "return false;";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
