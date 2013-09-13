@@ -152,6 +152,10 @@ public class DatasetViewProvider implements DataViewProvider
                 Property.status.name(),
         };
 
+        private static final Actions[] _actions = {
+                Actions.update
+        };
+
         @Override
         public String[] getEditableProperties(Container container, User user)
         {
@@ -252,6 +256,18 @@ public class DatasetViewProvider implements DataViewProvider
             {
                 scope.closeConnection();
             }
+        }
+
+        @Override
+        public Actions[] getAllowableActions(Container container, User user)
+        {
+            return _actions;
+        }
+
+        @Override
+        public void deleteView(Container container, User user, String id) throws ValidationException
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

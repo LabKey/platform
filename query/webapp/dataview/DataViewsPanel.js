@@ -264,6 +264,20 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // secondary display panels
         this.customPanel = this.initCustomization();
 
+        // delete views template
+        this.deleteTpl = new Ext4.XTemplate(
+            '<div><span>Are you shure you want to delete the selected view(s)?</span></div><br/>' +
+            '<tpl for=".">' +
+                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+            '</tpl>');
+
+        // delete unsupported template
+        this.unsupportedDeleteTpl = new Ext4.XTemplate(
+            '<div><span>Delete is not allowed for the following view type(s), please omit them from your selection.</span></div><br/>' +
+            '<tpl for=".">' +
+                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+            '</tpl>');
+
         this.callParent();
     },
 
@@ -598,11 +612,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     meta.style = 'display: none;';  // what a nightmare
                 }
 
+                var editable = false;
+                if (!rec.data.readOnly && this.editInfo[rec.data.dataType])
+                    editable = this.editInfo[rec.data.dataType].actions['update'];
+
                 // an item needs an edit info interface to be editable
-                if (rec.data.readOnly || !this.editInfo[rec.data.dataType]) {
+                if (editable)
+                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
+                else
                     return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>';
-                }
-                return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
             },
             listeners : {
                 beforehide : function(c) {
@@ -928,6 +946,73 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
     },
 
+    deleteSelected : function() {
+
+        var gpSelModel = this.gridPanel.getSelectionModel();
+
+        if (gpSelModel) {
+
+            var sel = gpSelModel.getSelection();
+            if (sel.length > 0) {
+
+                var unsupported = [];
+                var viewsToDelete = [];
+
+                // make sure the view provider supports delete
+                Ext4.each(sel, function(rec){
+                    var type = rec.data.dataType;
+
+                    if (!this.editInfo[type] || !this.editInfo[type].actions['delete'])
+                        unsupported.push(rec);
+                    else
+                        viewsToDelete.push({id : rec.data.id, dataType : rec.data.dataType});
+
+                }, this);
+
+                if (unsupported.length > 0) {
+
+                    Ext4.Msg.show({
+                        title   : 'Delete Views',
+                        msg     : this.unsupportedDeleteTpl.apply(unsupported),
+                        buttons : Ext4.Msg.OK,
+                        icon    : Ext4.MessageBox.INFO
+                    });
+                }
+                else {
+
+                    Ext4.Msg.show({
+                        title   : 'Delete Views',
+                        msg     : this.deleteTpl.apply(sel),
+                        scope   : this,
+                        buttons : Ext4.Msg.OKCANCEL,
+                        icon    : Ext4.MessageBox.QUESTION,
+                        fn      : function(id) {
+
+                            if (id == 'ok') {
+                                Ext4.Ajax.request({
+                                    url     : LABKEY.ActionURL.buildURL("reports", "deleteViews.api"),
+                                    scope   : this,
+                                    jsonData: {views : viewsToDelete},
+                                    success : function(){this.gridPanel.store.load();},
+                                    failure : LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
+                                        Ext4.Msg.alert("Delete Views", "Deletion Failed: " + json.exception);
+                                    }, null, true)
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+            else {
+                Ext4.Msg.show({
+                    title   : 'Delete Views',
+                    msg     : 'No views have been selected',
+                    buttons : Ext4.Msg.OK,
+                    icon    : Ext4.MessageBox.INFO
+                });
+            }
+        }
+    },
     // private
     _displayCustomMode : function(data) {
 
@@ -1108,8 +1193,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onEditClick : function(view, record) {
 
         // grab the map of available fields from the edit info for the view type
-        var editInfo = this.editInfo[record.data.dataType] || {};
+        var editInfo = {};
         var formItems = [];
+
+        if (this.editInfo[record.data.dataType])
+            editInfo = this.editInfo[record.data.dataType].props;
 
         /* Record 'id' is required */
         if (record.data.id == undefined || record.data.id == "") {
@@ -1159,11 +1247,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope: this
         }];
 
-        if (record.data.dataType == 'reports') {
+        if (this.editInfo[record.data.dataType] && this.editInfo[record.data.dataType].actions['delete']) {
             var gpStore = this.gridPanel.getStore(); // Need because for some reason this.gridPanel is not in scope
                                                      // in the successCallback below.
             buttons.push({
-                text: 'Delete Report',
+                text: 'Delete View',
                 scope: this,
                 handler: function ()
                 {
@@ -1184,19 +1272,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         if (choice == "yes")
                         {
                             editWindow.close();
-                            var deleteURL = LABKEY.ActionURL.buildURL('reports', 'manageViewsDeleteReports', null, {
-                                reportId: record.data.reportId
-                            });
-                            Ext4.Ajax.request({
-                                url: deleteURL,
-                                method: 'POST',
+                            Ext.Ajax.request({
+                                url     : LABKEY.ActionURL.buildURL("reports", "deleteViews.api"),
+                                scope   : this,
+                                jsonData: {views : record.data},
                                 success: successCallback,
                                 failure: failureCallback
                             });
                         }
                     };
 
-                    Ext4.MessageBox.confirm('Delete Report?', msg, confirmCallback, this);
+                    Ext4.MessageBox.confirm('Delete View?', msg, confirmCallback, this);
                 }
             });
         }

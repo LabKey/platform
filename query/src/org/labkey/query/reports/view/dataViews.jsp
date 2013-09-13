@@ -124,6 +124,17 @@
 
         Ext4.onReady(enableEdit);
     }
+
+    function deleteDataViews(webpartId) {
+        var enableDelete = function (){
+
+            var panel = Ext4.getCmp('data-views-panel-' + webpartId);
+
+            if (panel) { panel.deleteSelected(); }
+        };
+
+        Ext4.onReady(enableDelete);
+    }
 </script>
 
 <div id='<%=h(renderId)%>' class="dvc"></div>

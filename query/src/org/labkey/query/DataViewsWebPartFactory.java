@@ -103,11 +103,11 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
                 customize.setScript(customizeScript);
                 view.setCustomize(customize);
-            }
-            String editScript = "editDataViews(" + webPart.getRowId() + ");";
-            NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
-            view.addCustomMenu(edit);
 
+                String editScript = "editDataViews(" + webPart.getRowId() + ");";
+                NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
+                view.addCustomMenu(edit);
+            }
             if (StudyService.get().getStudy(c) != null)
                 menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
             menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
@@ -115,6 +115,9 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             NavTree manageViews = new NavTree("Manage Categories");
             manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
             menu.addChild(manageViews);
+
+            String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
+            menu.addChild("Delete Selected", "javascript:" + deleteScript);
         }
 
         if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())

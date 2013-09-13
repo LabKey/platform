@@ -55,6 +55,7 @@ import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.study.StudySchema;
 
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -262,6 +263,11 @@ public class ReportViewProvider implements DataViewProvider
                 Property.customThumbnailFileName.name()
         };
 
+        private static final Actions[] _actions = {
+                Actions.update,
+                Actions.delete
+        };
+
         @Override
         public String[] getEditableProperties(Container container, User user)
         {
@@ -363,6 +369,33 @@ public class ReportViewProvider implements DataViewProvider
                 scope.closeConnection();
             }
         }
-    }
 
+        @Override
+        public Actions[] getAllowableActions(Container container, User user)
+        {
+            return _actions;
+        }
+
+        @Override
+        public void deleteView(Container container, User user, String id) throws ValidationException
+        {
+            Report report = ReportService.get().getReportByEntityId(container, id);
+
+            if (report != null)
+            {
+                List<ValidationError> errors = new ArrayList<>();
+                try
+                {
+                    if (report.canDelete(user, container, errors))
+                        ReportService.get().deleteReport(new DefaultContainerUser(container, user), report);
+                    else
+                        throw new ValidationException(errors);
+                }
+                catch (SQLException e)
+                {
+                    throw new ValidationException(e.getMessage());
+                }
+            }
+        }
+    }
 }

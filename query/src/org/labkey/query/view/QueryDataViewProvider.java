@@ -15,31 +15,20 @@
  */
 package org.labkey.query.view;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
-import org.labkey.api.data.views.DefaultViewInfo;
 import org.labkey.api.data.views.ProviderType;
 import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUrls;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
+import org.labkey.query.persist.CstmView;
+import org.labkey.query.persist.QueryManager;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * User: klum
@@ -58,5 +47,64 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
     protected boolean includeView(ViewContext context, CustomViewInfo view)
     {
         return !ReportUtil.isInherited(view, context.getContainer());
+    }
+
+    @Override
+    public EditInfo getEditInfo()
+    {
+        return new EditInfoImpl();
+    }
+
+    public static class EditInfoImpl implements DataViewProvider.EditInfo
+    {
+        private static final Actions[] _actions = {
+                Actions.delete
+        };
+
+        @Override
+        public String[] getEditableProperties(Container container, User user)
+        {
+            return new String[0];
+        }
+
+        @Override
+        public void validateProperties(Container container, User user, String id, Map<String, Object> props) throws ValidationException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Actions[] getAllowableActions(Container container, User user)
+        {
+            return _actions;
+        }
+
+        @Override
+        public void deleteView(Container container, User user, String id) throws ValidationException
+        {
+            try
+            {
+                CstmView view = QueryManager.get().getCustomView(id);
+                if (view != null)
+                {
+                    if (view.isShared())
+                    {
+                        if (!container.hasPermission(user, EditSharedViewPermission.class))
+                            throw new ValidationException("The specified view is shared, you must be in the Editor role to be allowed to delete a shared view.");
+                    }
+                    QueryManager.get().delete(user, view);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+        }
     }
 }

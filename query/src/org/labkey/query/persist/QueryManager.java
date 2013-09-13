@@ -188,6 +188,15 @@ public class QueryManager
         return view;
     }
 
+    public CstmView getCustomView(String entityId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(getTableInfoCustomView().getColumn("EntityId"), entityId);
+        CstmView view = new TableSelector(getTableInfoCustomView(), filter, null).getObject(CstmView.class);
+        _log.debug(view);
+        return view;
+    }
+
     /**
      * Get all shared custom views that are applicable.
      * If <code>inheritable</code> is true, custom views from parent and Shared container are included.

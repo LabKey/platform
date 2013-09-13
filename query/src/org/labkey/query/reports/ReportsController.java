@@ -63,7 +63,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -3164,14 +3163,7 @@ public class ReportsController extends SpringActionController
                     DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
                     DataViewProvider.EditInfo editInfo = provider.getEditInfo();
                     if (editInfo != null)
-                    {
-                        Map<String, Object> info = new HashMap<>();
-                        for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
-                        {
-                            info.put(propName, true);
-                        }
-                        viewTypeProps.put(type.getName(), info);
-                    }
+                        viewTypeProps.put(type.getName(), DataViewService.get().toJSON(getContainer(), getUser(), editInfo));
                 }
                 response.put("editInfo", viewTypeProps);
                 response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
@@ -3881,4 +3873,109 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    public static class DeleteDataViewsForm implements CustomApiForm
+    {
+        List<Pair<String, String>> _views = new ArrayList<>();
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            if (props.containsKey("views"))
+            {
+                Object views = props.get("views");
+                if (views instanceof JSONArray)
+                {
+                    for (JSONObject view : ((JSONArray)views).toJSONObjectArray())
+                        _views.add(new Pair<String, String>(view.getString("dataType"), view.getString("id")));
+                }
+                else if (views instanceof JSONObject)
+                {
+                    JSONObject view = (JSONObject)views;
+                    _views.add(new Pair<String, String>(view.getString("dataType"), view.getString("id")));
+                }
+            }
+        }
+
+        public List<Pair<String, String>> getViews()
+        {
+            return _views;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DeleteViewsAction extends MutatingApiAction<DeleteDataViewsForm>
+    {
+        @Override
+        public void validateForm(DeleteDataViewsForm form, Errors errors)
+        {
+            Map<String, Boolean> validMap = new HashMap<>();
+
+            for (Pair<String, String> view : form.getViews())
+            {
+                if (validMap.containsKey(view.getKey()))
+                {
+                    continue;
+                }
+                else
+                {
+                    DataViewProvider.Type type = DataViewService.get().getDataTypeByName(view.getKey());
+                    if (type != null)
+                    {
+                        DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
+                        DataViewProvider.EditInfo editInfo = provider.getEditInfo();
+
+                        if (editInfo != null)
+                        {
+                            List<DataViewProvider.EditInfo.Actions> actions = Arrays.asList(editInfo.getAllowableActions(getContainer(), getUser()));
+                            if (actions.contains(DataViewProvider.EditInfo.Actions.delete))
+                                validMap.put(view.getKey(), true);
+                            else
+                            {
+                                errors.reject(ERROR_MSG, "This data view does not support deletes");
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            errors.reject(ERROR_MSG, "This data view does not support deletes");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "Unable to find the specified data view type");
+                        return;
+                    }
+                }
+            }
+        }
+
+        public ApiResponse execute(DeleteDataViewsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
+                for (Pair<String, String> view : form.getViews())
+                {
+                    DataViewProvider.Type type = DataViewService.get().getDataTypeByName(view.getKey());
+                    if (type != null)
+                    {
+                        DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
+                        DataViewProvider.EditInfo editInfo = provider.getEditInfo();
+
+                        if (editInfo != null)
+                        {
+                            editInfo.deleteView(getContainer(), getUser(), view.getValue());
+                        }
+                    }
+                }
+                transaction.commit();
+            }
+            response.put("success", true);
+            return response;
+        }
+    }
 }
