@@ -20,7 +20,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
 import org.springframework.validation.BindException;
 
-abstract public class FormPage<FORM extends HasViewContext> extends ContextPage
+abstract public class FormPage<FORM extends HasViewContext> extends JspBase
 {
     public FORM __form;
     

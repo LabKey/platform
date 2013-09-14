@@ -22,6 +22,8 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HString;
@@ -68,8 +70,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
         super();
     }
 
-    ViewContext _viewContext;
-    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private ViewContext _viewContext;
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public ViewContext getViewContext()
     {
@@ -79,6 +81,21 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
+    }
+
+    public ActionURL getActionURL()
+    {
+        return _viewContext.getActionURL();
+    }
+
+    public Container getContainer()
+    {
+        return _viewContext.getContainer();
+    }
+
+    public User getUser()
+    {
+        return _viewContext.getUser();
     }
 
     /**
