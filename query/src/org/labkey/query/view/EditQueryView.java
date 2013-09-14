@@ -37,7 +37,6 @@ public class EditQueryView extends WebPartView
     {
         EditQueryPage page = (EditQueryPage) JspLoader.createPage(EditQueryView.class, "editQueryWebPart.jsp");
         page.setWebPart(_part);
-        page.setContext(getViewContext());
         page.include(new JspView(page), out);
     }
 }
