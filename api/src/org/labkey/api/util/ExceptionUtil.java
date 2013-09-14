@@ -341,11 +341,7 @@ public class ExceptionUtil
 
             _jobRunner.execute(report);
         }
-        catch (MalformedURLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (URISyntaxException e)
+        catch (MalformedURLException | URISyntaxException e)
         {
             throw new RuntimeException(e);
         }
@@ -451,9 +447,9 @@ public class ExceptionUtil
         if (response.isCommitted())
         {
             // if we can't reset(), flushing might make it slightly less likely to send half-written attributes etc
-            try {response.getOutputStream().flush();} catch (Exception x) {}
-            try {response.getWriter().flush();} catch (Exception x) {}
-            try {response.flushBuffer();} catch (Exception x) {}
+            try {response.getOutputStream().flush();} catch (Exception ignored) {}
+            try {response.getWriter().flush();} catch (Exception ignored) {}
+            try {response.flushBuffer();} catch (Exception ignored) {}
         }
 
         // Do redirects before response.reset() otherwise we'll lose cookies (e.g., login page)
@@ -609,11 +605,7 @@ public class ExceptionUtil
                     ex.printStackTrace(response.getWriter());
                     response.getWriter().println("</pre>");
                 }
-                catch (IOException e)
-                {
-                    // Give up at this point
-                }
-                catch (IllegalStateException e)
+                catch (IOException | IllegalStateException e)
                 {
                     // Give up at this point
                 }
@@ -634,7 +626,7 @@ public class ExceptionUtil
                 errorView.render(request, response);
                 return null;
             }
-            catch (IllegalStateException x)
+            catch (IllegalStateException ignored)
             {
             }
             catch (Exception x)
@@ -741,7 +733,7 @@ public class ExceptionUtil
     @NotNull
     public static String getExtendedMessage(Throwable t)
     {
-        StringBuffer sb = new StringBuffer(t.toString());
+        StringBuilder sb = new StringBuilder(t.toString());
         for (Map.Entry<Enum,String> e : getExceptionDecorations(t).entrySet())
             sb.append("\n").append(e.getKey()).append("=").append(e.getValue());
         return sb.toString();
@@ -933,7 +925,6 @@ public class ExceptionUtil
         @Test
         public void testServerError()
         {
-            User guest = UserManager.getGuestUser();
             User me = TestContext.get().getUser();
             ExceptionResponse answer;
 
