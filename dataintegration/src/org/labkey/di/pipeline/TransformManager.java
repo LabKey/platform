@@ -32,6 +32,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -46,6 +47,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -107,6 +109,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: jeckels
@@ -122,10 +126,6 @@ public class TransformManager implements DataIntegrationService
     {
         return INSTANCE;
     }
-
-
-    private final Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> _etls =
-            Collections.synchronizedMap(new CaseInsensitiveTreeMap<Pair<Module, ScheduledPipelineJobDescriptor>>());
 
 
     private TransformManager()
@@ -149,7 +149,7 @@ public class TransformManager implements DataIntegrationService
 
     TransformDescriptor parseETLThrow(Resource resource, String moduleName) throws IOException, XmlException
     {
-        FilterStrategy.Factory _defaultFactory = null;
+        FilterStrategy.Factory defaultFactory = null;
         Long interval = null;
         CronExpression cron = null;
 
@@ -164,7 +164,7 @@ public class TransformManager implements DataIntegrationService
         else
             filename = FileUtil.getBaseName(resourcePath.getName());
 
-        String _id = "{" + moduleName + "}/" + filename;
+        String id = createConfigId(moduleName, filename);
 
         try (InputStream inputStream = resource.getInputStream())
         {
@@ -181,9 +181,9 @@ public class TransformManager implements DataIntegrationService
             // handle default transform
             FilterType ft = etlXML.getIncrementalFilter();
             if (null != ft)
-                _defaultFactory = createFilterFactory(ft);
-            if (null == _defaultFactory)
-                _defaultFactory = new ModifiedSinceFilterStrategy.Factory();
+                defaultFactory = createFilterFactory(ft);
+            if (null == defaultFactory)
+                defaultFactory = new ModifiedSinceFilterStrategy.Factory();
 
             // schedule
             if (null != etlXML.getSchedule())
@@ -220,8 +220,35 @@ public class TransformManager implements DataIntegrationService
                 }
             }
 
-            return new TransformDescriptor(_id, etlXML.getName(), etlXML.getDescription(), moduleName, interval, cron, _defaultFactory, stepMetaDatas);
+            return new TransformDescriptor(id, etlXML.getName(), etlXML.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas);
         }
+    }
+
+
+    String createConfigId(String moduleName, String filename)
+    {
+        return "{" + moduleName + "}/" + filename;
+    }
+
+
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("\\{(\\w+)\\}/(.+)");
+
+    Pair<Module, String> parseConfigId(String configId)
+    {
+        // Parse out the module name and the config name
+        Matcher matcher = CONFIG_ID_PATTERN.matcher(configId);
+
+        if (!matcher.matches() || matcher.groupCount() != 2)
+            throw new IllegalStateException("Unrecognized configuration ID format: " + configId);
+
+        String moduleName = matcher.group(1);
+        String filename = matcher.group(2);
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+
+        if (null == module)
+            throw new IllegalStateException("Module does not exist: " + moduleName);
+
+        return new Pair<>(module, filename);
     }
 
 
@@ -341,38 +368,22 @@ public class TransformManager implements DataIntegrationService
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getRegisteredDescriptors()
     {
-        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<>(_etls.size());
-        synchronized (_etls)
-        {
-            for (Pair<Module,ScheduledPipelineJobDescriptor> d : _etls.values())
-                list.add(d.getValue());
-        }
-        return list;
+        // Easy to implement, if we actually need it
+        throw new UnsupportedOperationException();
     }
 
 
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
-        Set<Module> modules = c.getActiveModules();
-        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<>(_etls.size());
-        synchronized (_etls)
-        {
-            for (Pair<Module,ScheduledPipelineJobDescriptor> p : _etls.values())
-                if (modules.contains(p.getKey()))
-                    list.add(p.getValue());
-        }
-        return list;
+        return DescriptorCache.getDescriptors(c);
     }
 
 
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String id)
     {
-        Pair<Module, ScheduledPipelineJobDescriptor> p = _etls.get(id);
-        if (null == p)
-            return null;
-        return p.getValue();
+        return DescriptorCache.getDescriptor(id);
     }
 
 
@@ -645,24 +656,26 @@ public class TransformManager implements DataIntegrationService
     /* Should only be called once at startup */
     public void startAllConfigurations()
     {
-        DbScope scope = DbSchema.get("dataintegration").getScope();
-
+        DbSchema schema = DataIntegrationDbSchema.getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
-        ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
-        for (TransformConfiguration config : configs)
-        {
-            // CONSIDER explicit runAs user
-            int runAsUserId = config.getModifiedBy();
-            User runAsUser = UserManager.getUser(runAsUserId);
 
-            Pair<Module,ScheduledPipelineJobDescriptor> etl = _etls.get(config.getTransformId());
-            if (null == etl)
-                continue;
-            Container c = ContainerManager.getForId(config.getContainerId());
-            if (null == c)
-                continue;
-            schedule(etl.getValue(), c, runAsUser, config.isVerboseLogging());
-        }
+        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<TransformConfiguration>(){
+            @Override
+            public void exec(TransformConfiguration config) throws SQLException
+            {
+                // CONSIDER explicit runAs user
+                int runAsUserId = config.getModifiedBy();
+                User runAsUser = UserManager.getUser(runAsUserId);
+
+                ScheduledPipelineJobDescriptor descriptor = DescriptorCache.getDescriptor(config.getTransformId());
+                if (null == descriptor)
+                    return;
+                Container c = ContainerManager.getForId(config.getContainerId());
+                if (null == c)
+                    return;
+                schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                }
+        }, TransformConfiguration.class);
     }
 
 
@@ -703,7 +716,7 @@ public class TransformManager implements DataIntegrationService
 
         Integer[] expRunIds = new TableSelector(ti.getColumn("ExpRunId"), f, s).getArray(Integer.class);
 
-        if (expRunIds != null && expRunIds.length > 0)
+        if (expRunIds.length > 0)
             return expRunIds[0];
 
         return null;
@@ -735,7 +748,12 @@ public class TransformManager implements DataIntegrationService
     //
 
 
-    @Override
+    @Deprecated   // Never queried
+    private final Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> _etls =
+            Collections.synchronizedMap(new CaseInsensitiveTreeMap<Pair<Module, ScheduledPipelineJobDescriptor>>());
+
+
+    @Override   @Deprecated  // Nobody calls this
     public void registerDescriptors(Module module, Collection<ScheduledPipelineJobDescriptor> descriptors)
     {
         if (null == descriptors || descriptors.isEmpty())
@@ -747,7 +765,7 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    @Override
+    @Override   @Deprecated  // Nobody should call this
     public Collection<ScheduledPipelineJobDescriptor> registerDescriptorsFromFiles(Module module)
     {
         Path etlsDirPath = new Path("etls");
@@ -785,6 +803,13 @@ public class TransformManager implements DataIntegrationService
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testCache()
+        {
+            Container home = ContainerManager.getHomeContainer();
+            DescriptorCache.getDescriptors(home);
+        }
+
         @Test
         public void scheduler() throws Exception
         {

@@ -32,6 +32,7 @@ import java.util.Set;
  * Date: 9/12/13
  * Time: 2:42 PM
  */
+@Deprecated  // ETLs will now be loaded when requested... no need to proactively register them
 public class EtlResourceLoader implements ModuleResourceLoader
 {
     @NotNull
