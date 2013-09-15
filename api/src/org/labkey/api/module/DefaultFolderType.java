@@ -121,11 +121,6 @@ public class DefaultFolderType implements FolderType
 
     public void configureContainer(Container c, User user)
     {
-        configureContainer(c, user, false);
-    }
-
-    public void configureContainer(Container c, User user, boolean brandNew)
-    {
         List<Portal.WebPart> required = getRequiredWebParts();
         List<Portal.WebPart> defaultParts = getPreferredWebParts();
 
@@ -194,15 +189,13 @@ public class DefaultFolderType implements FolderType
         Portal.saveParts(c, all);
 
         // A few things left to do; ordering is important
-        if (brandNew)
+
+        // Force container tab containers to be created (unless they've been deleted explicitly)
+        for (FolderTab folderTab : getDefaultTabs())        // Get default tabs from folder type
         {
-            // Force container tab containers to be created
-            for (FolderTab folderTab : getDefaultTabs())        // Get default tabs from folder type
+            if (folderTab.isContainerTab() && !c.isContainerTab())
             {
-                if (folderTab.isContainerTab() && !c.isContainerTab())
-                {
-                    Container containerDummy = folderTab.getContainerTab(c, user, brandNew);
-                }
+                Container containerDummy = folderTab.getContainerTab(c, user);
             }
         }
 

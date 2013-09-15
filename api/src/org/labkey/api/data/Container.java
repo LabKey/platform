@@ -715,23 +715,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules)
     {
-        setFolderType(folderType, ensureModules, false);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew)
-    {
         BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, brandNew, errors);
+        setFolderType(folderType, ensureModules, errors);
     }
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
     {
-        setFolderType(folderType, ensureModules, false, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, boolean brandNew, BindException errors)
-    {
-        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), brandNew, errors);
+        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), errors);
         if (!errors.hasErrors())
         {
             Set<Module> modules = new HashSet<>(folderType.getActiveModules());
@@ -742,23 +732,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, User user)
     {
-        setFolderType(folderType, user, false);
-    }
-
-    public void setFolderType(FolderType folderType, User user, boolean brandNew)
-    {
         BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, user, brandNew, errors);
+        setFolderType(folderType, user, errors);
     }
 
     public void setFolderType(FolderType folderType, User user, BindException errors)
     {
-        setFolderType(folderType, user, false, errors);
-    }
-
-    public void setFolderType(FolderType folderType, User user, boolean brandNew, BindException errors)
-    {
-        ContainerManager.setFolderType(this, folderType, user, brandNew, errors);
+        ContainerManager.setFolderType(this, folderType, user, errors);
 
         if (!errors.hasErrors())
         {

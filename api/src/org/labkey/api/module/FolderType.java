@@ -51,13 +51,6 @@ public interface FolderType
     public void configureContainer(Container c, User user);
 
     /**
-     * Configure the container with whatever active modules and web parts are required for this folder type.
-     * Convention is to NOT remove web parts already in the folder.
-     * @param brandNew indicates container is newly created and if it has tab folders, those folders should be created as well
-     */
-    public void configureContainer(Container c, User user, boolean brandNew);
-
-    /**
      * This FolderType is being *removed* as the owner of the container. Clean up anything that you
      * might want. Typically this involves turning off the *permanent* bit for the web parts this
      * FolderType may have set.

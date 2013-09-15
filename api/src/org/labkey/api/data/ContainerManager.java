@@ -127,7 +127,8 @@ public class ContainerManager
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
-    public static final String CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME = "ctFolderTypeOverridden";
+    public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
+    public static final String FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED = "ctChildDeleted";
 
     // enum of properties you can see in property change events
     public enum Property
@@ -303,8 +304,7 @@ public class ContainerManager
         return c;
     }
 
-
-    public static void setFolderType(Container c, FolderType folderType, User user, boolean brandNew, BindException errors)
+    public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
     {
         FolderType oldType = c.getFolderType();
 
@@ -339,7 +339,7 @@ public class ContainerManager
                         if (!getContainerTabTypeOverridden(container))
                         {
                             FolderType newType = folderType.findTab(container.getName()).getFolderType();    // Can't throw null because already checked
-                            setFolderType(container, newType, user, false, errors);
+                            setFolderType(container, newType, user, errors);
                         }
                 }
             }
@@ -354,7 +354,7 @@ public class ContainerManager
             }
 
             oldType.unconfigureContainer(c, user);
-            folderType.configureContainer(c, user, brandNew);
+            folderType.configureContainer(c, user);
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
 
@@ -364,7 +364,7 @@ public class ContainerManager
                 FolderTab tab = c.getParent().getFolderType().findTab(c.getName());
                 if (null != tab && !folderType.equals(tab.getFolderType()))
                     containerTabTypeOverridden = true;
-                props.put(CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME, containerTabTypeOverridden.toString());
+                props.put(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN, containerTabTypeOverridden.toString());
             }
 
             PropertyManager.saveProperties(props);
@@ -478,15 +478,45 @@ public class ContainerManager
     @Nullable
     public static String getFolderTypeName(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
-        return props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
+        Map<String, String> props = PropertyManager.getProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME);
+        return props.get(FOLDER_TYPE_PROPERTY_NAME);
     }
 
     public static boolean getContainerTabTypeOverridden(Container c)
     {
+        Map<String, String> props = PropertyManager.getProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME);
+        String overridden = props.get(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN);
+        return (null != overridden) && overridden.equalsIgnoreCase("true");
+    }
+
+    private static void setContainerTabDeleted(Container c, String tabName)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
+        int suffix = 0;
+        while (true)
+        {
+            String childDeleted = props.get(FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix);
+            if (null == childDeleted)
+                break;
+            suffix += 1;
+        }
+        props.put(FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix, tabName);
+        PropertyManager.saveProperties(props);
+    }
+
+    public static boolean hasContainerTabBeenDeleted(Container c, String tabName)
+    {
+        // We keep arbitrary number of deleted children tabs using suffix 0, 1, 2....
         Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
-        String overridden = props.get(ContainerManager.CONTAINER_TAB_TYPE_OVERRIDE_PROPERTY_NAME);
-        return (null != overridden) ? overridden.equalsIgnoreCase("true") : false;
+        for (int suffix = 0; ; suffix += 1)
+        {
+            String childDeleted = props.get(ContainerManager.FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix);
+            if (null == childDeleted)
+                break;
+            if (childDeleted.equalsIgnoreCase(tabName))
+                return true;
+        }
+        return false;
     }
 
     public static Container ensureContainer(String path)
@@ -1228,6 +1258,9 @@ public class ContainerManager
                 Portal.PortalPage page = Portal.getPortalPage(c.getParent(), c.getName());
                 if (null != page)               // Be safe
                     Portal.deletePage(page);
+
+                // Tell parent
+                setContainerTabDeleted(c.getParent(), c.getName());
             }
 
             fireDeleteContainer(c, user);
@@ -2068,7 +2101,7 @@ public class ContainerManager
 
             Container newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
-            newFolder.setFolderType(folderType, TestContext.get().getUser(), true);
+            newFolder.setFolderType(folderType, TestContext.get().getUser());
 
             newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), folderType);

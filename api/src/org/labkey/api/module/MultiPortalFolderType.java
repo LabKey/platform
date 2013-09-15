@@ -187,7 +187,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             // Make sure tab isVisible and if its a container tab, make sure user has permission to see container
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()) && hasPermission(folderTab, container, ctx.getUser()))
             {
-                if (!folderTab.isContainerTab() || null != folderTab.getContainerTab(container, ctx.getUser(), false))
+                if (!folderTab.isContainerTab() || null != folderTab.getContainerTab(container, ctx.getUser()))
                 {
                     // Not a container tab or it is and the container exists -- go make a tab!
                     String label = portalPage.getCaption() != null ?
@@ -213,7 +213,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                         // If container tab, add tabs for its folderType as children
                         if (folderTab.isContainerTab())
                         {
-                            Container folderContainer = folderTab.getContainerTab(container, ctx.getUser(), false);
+                            Container folderContainer = folderTab.getContainerTab(container, ctx.getUser());
                             assert(null != folderContainer);        // we checked above here
                             FolderType folderType = folderTab.getFolderType();
                             if (null != folderType)
@@ -400,7 +400,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     {
         if (folderTab.isContainerTab())
         {
-            Container folderContainer = folderTab.getContainerTab(container, user, false);
+            Container folderContainer = folderTab.getContainerTab(container, user);
             if (null != folderContainer && !folderContainer.hasPermission(user, ReadPermission.class))
             {
                 return false;

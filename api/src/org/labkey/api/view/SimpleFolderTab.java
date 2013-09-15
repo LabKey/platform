@@ -187,17 +187,17 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     }
 
     @Override
-    public Container getContainerTab(Container parent, User user, boolean forceCreate)
+    public Container getContainerTab(Container parent, User user)
     {
         if (TAB_TYPE.Container == getTabType())
         {
             Container container = ContainerManager.getChild(parent, getName());
-            if (null == container && forceCreate)
+            if (null == container && !ContainerManager.hasContainerTabBeenDeleted(parent, getName()))
             {
                 container = ContainerManager.createContainer(parent, getName(), null, null, Container.TYPE.tab, user);
                 FolderType folderType = getFolderType();
                 if (null != folderType)
-                    container.setFolderType(folderType, user, true);
+                    container.setFolderType(folderType, user);
             }
             return container;
         }

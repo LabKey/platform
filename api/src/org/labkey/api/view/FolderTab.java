@@ -260,7 +260,7 @@ public abstract class FolderTab
     }
 
     @Nullable
-    public Container getContainerTab(Container parent, User user, boolean forceCreate)
+    public Container getContainerTab(Container parent, User user)
     {
         return null;
     }
