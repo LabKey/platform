@@ -136,8 +136,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
         FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
 
-        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser(), true);
-        homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser(), false);
+        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
+        homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
 
         String defaultPageName = "default";
 

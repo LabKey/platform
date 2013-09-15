@@ -4230,7 +4230,7 @@ public class AdminController extends SpringActionController
                         }
 
                         c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
-                        c.setFolderType(type, getUser(), true);
+                        c.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
                         {
@@ -4242,7 +4242,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules, false);
+                            c.setFolderType(FolderType.NONE, activeModules);
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             c.setDefaultModule(defaultModule);
                         }
@@ -4699,7 +4699,7 @@ public class AdminController extends SpringActionController
                         FolderType origFolderType = tab.getFolderType();
                         if (null != origFolderType)
                         {
-                            revertContainer.setFolderType(origFolderType, getUser(), false, errors);
+                            revertContainer.setFolderType(origFolderType, getUser(), errors);
                             if (!errors.hasErrors())
                                 success = true;
                         }
@@ -4720,7 +4720,7 @@ public class AdminController extends SpringActionController
                                     FolderType origFolderType = tab.getFolderType();
                                     if (null != origFolderType)
                                     {
-                                        container.setFolderType(origFolderType, getUser(), false, errors);
+                                        container.setFolderType(origFolderType, getUser(), errors);
                                     }
                                 }
                             }

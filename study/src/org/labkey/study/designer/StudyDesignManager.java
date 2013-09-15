@@ -378,7 +378,7 @@ public class StudyDesignManager
             throw new IllegalStateException("Study already exists in folder");
         
         SecurityManager.setInheritPermissions(studyFolder);
-        studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), user, true);
+        studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), user);
 
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());

@@ -209,14 +209,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
         {
-            container.setFolderType(FolderType.NONE, activeModules, false, errors);
+            container.setFolderType(FolderType.NONE, activeModules, errors);
             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
             container.setDefaultModule(defaultModule);
         }
         else
         {
             FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
-            container.setFolderType(folderType, activeModules, false, errors);
+            container.setFolderType(folderType, activeModules, errors);
         }
         if (errors.hasErrors())
             return false;

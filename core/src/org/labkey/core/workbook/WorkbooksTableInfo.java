@@ -461,7 +461,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
 
                 FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
                 if (folderType != null)
-                    _currentContainer.setFolderType(folderType, user, true);
+                    _currentContainer.setFolderType(folderType, user);
             }
         }
 
