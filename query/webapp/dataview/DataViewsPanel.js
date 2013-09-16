@@ -190,7 +190,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'modifiedBy'},
             {name : 'refreshDate',          type : 'date'},
             {name : 'name'},
-            {name : 'access'},
+            {name : 'access',               mapping : 'access.label'},
+            {name : 'accessUrl',            mapping : 'access.url'},
             {name : 'runUrl'},
             {name : 'runTarget', defaultValue:undefined},
             {name : 'detailsUrl'},
@@ -549,7 +550,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             cls      : 'iScroll', // webkit custom scroll bars
             scroll   : 'vertical',
             columns  : this.initGridColumns(visibleColumns),
-            multiSelect: true,
+            multiSelect: this.adminView,
             region   : 'center',
             viewConfig : {
                 stripeRows : true,
@@ -749,7 +750,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width    : 100,
                 dataIndex: 'access',
                 sortable : false,
-                menuDisabled : true
+                menuDisabled : true,
+                renderer : this.accessRenderer,
+                scope : this
             });
         }
 
@@ -1339,5 +1342,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }, this);
 
         window.show();
+    },
+
+    accessRenderer : function(value, meta, rec) {
+
+        var tpl = new Ext4.XTemplate(
+            '<a data-qtip="Click to customize the permissions for this view" href="{accessUrl}">{access}</a>');
+
+        if (this.adminView && rec.data.access && rec.data.accessUrl)
+            return tpl.apply(rec.data);
+        else
+            return value;
     }
 });

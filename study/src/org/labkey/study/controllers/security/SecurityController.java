@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -515,9 +516,9 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(PermissionsForm saveReportForm)
+        public ActionURL getSuccessURL(PermissionsForm form)
         {
-            return null;
+            return form.getReturnActionURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -598,7 +599,7 @@ public class SecurityController extends SpringActionController
     public static final String TAB_REPORT = "tabReport";
     public static final String TAB_STUDY = "tabStudy";
 
-    public static class PermissionsForm
+    public static class PermissionsForm extends ReturnUrlForm
     {
         private ReportIdentifier reportId;
         private Integer remove = 0;

@@ -158,6 +158,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
@@ -314,6 +315,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageDatasetsURL(Container container)
         {
             return new ActionURL(ManageTypesAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageReportPermissions(Container container)
+        {
+            return new ActionURL(SecurityController.ReportPermissionsAction.class, container);
         }
     }
 

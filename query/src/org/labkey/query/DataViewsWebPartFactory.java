@@ -132,7 +132,10 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             menu.addChild(manageViews);
 
             String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
-            menu.addChild("Delete Selected", "javascript:" + deleteScript);
+            NavTree deleteViews = new NavTree("Delete Selected");
+            deleteViews.setScript(deleteScript);
+            deleteViews.setDescription("Hold cntl to select more than one record");
+            menu.addChild(deleteViews);
         }
 
         if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())

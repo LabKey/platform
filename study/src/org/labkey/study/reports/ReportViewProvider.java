@@ -43,11 +43,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -115,6 +117,7 @@ public class ReportViewProvider implements DataViewProvider
     {
         Container c = context.getContainer();
         User user = context.getUser();
+        boolean studyFolder = StudyService.get().getStudy(c) != null;
 
         if (filter == null)
             throw new IllegalArgumentException("ReportFilter cannot be null");
@@ -216,7 +219,21 @@ public class ReportViewProvider implements DataViewProvider
                         access = "public";
                         info.setShared(true);
                     }
-                    info.setAccess(access);
+                    // studies support dataset level report permissions
+                    if (studyFolder)
+                    {
+                        ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
+                                                        addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+
+                        URLHelper returnUrl = context.getActionURL().getReturnURL();
+                        if (returnUrl != null)
+                            url.addReturnURL(returnUrl);
+
+                        info.setAccess(access, url);
+                    }
+                    else
+                        info.setAccess(access);
+
                     info.setVisible(!descriptor.isHidden());
 
                     // This icon is the small icon -- not the same as thumbnail
