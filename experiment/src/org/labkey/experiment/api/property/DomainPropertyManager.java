@@ -288,34 +288,37 @@ public class DomainPropertyManager
 
     public void saveConditionalFormats(User user, PropertyDescriptor prop, List<ConditionalFormat> formats)
     {
-        try
+        if (null != prop)
         {
-            // Delete them all first
-            deleteConditionalFormats(prop.getPropertyId());
-
-            // Save the new ones
-            int index = 0;
-            for (ConditionalFormat format : formats)
+            try
             {
-                // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
-                Map<String, Object> row = new HashMap<>();
-                row.put("Bold", format.isBold());
-                row.put("Italic", format.isItalic());
-                row.put("Strikethrough", format.isStrikethrough());
-                row.put("TextColor", format.getTextColor());
-                row.put("BackgroundColor", format.getBackgroundColor());
-                row.put("Filter", format.getFilter());
-                row.put("SortOrder", index++);
-                row.put("PropertyId", prop.getPropertyId());
+                // Delete them all first
+                deleteConditionalFormats(prop.getPropertyId());
 
-                Table.insert(user, getTinfoConditionalFormat(), row);
-                // Blow the cache for the container
-                _conditionalFormatCache.remove(prop.getContainer().getEntityId());
+                // Save the new ones
+                int index = 0;
+                for (ConditionalFormat format : formats)
+                {
+                    // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("Bold", format.isBold());
+                    row.put("Italic", format.isItalic());
+                    row.put("Strikethrough", format.isStrikethrough());
+                    row.put("TextColor", format.getTextColor());
+                    row.put("BackgroundColor", format.getBackgroundColor());
+                    row.put("Filter", format.getFilter());
+                    row.put("SortOrder", index++);
+                    row.put("PropertyId", prop.getPropertyId());
+
+                    Table.insert(user, getTinfoConditionalFormat(), row);
+                    // Blow the cache for the container
+                    _conditionalFormatCache.remove(prop.getContainer().getEntityId());
+                }
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 }

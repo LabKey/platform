@@ -51,7 +51,7 @@ Ext4.define('Security.field.PrincipalComboBox', {
 
     constructor : function(config)
     {
-        var a = config.excludedPrincipals || [], i;
+        var a = Ext4.isArray(config.excludedPrincipals) ? config.excludedPrincipals : [], i;
         a.push(Security.util.SecurityCache.groupDevelopers);
         a.push(Security.util.SecurityCache.groupAdministrators);
 
@@ -79,14 +79,10 @@ Ext4.define('Security.field.PrincipalComboBox', {
 
     onDataChanged : function(store)
     {
-        if (store != this.unfilteredStore)
-        {
-            console.error("unexpected event: onDataChanged");
-            return;
+        if (store) {
+            this.callParent([store, false]);
+            this.bindStore(store);
         }
-
-        this.callParent([store, false]);
-        this.bindStore(store);
     },
 
     bindStore : function(store, initial)
