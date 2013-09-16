@@ -128,15 +128,13 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         synchronized (STARTUP_LOCK)
         {
             // Ensure audit provider's domains have been initialized.  This must happen before flushing the temporary event queues.
-            // UNDONE: Uncomment when we are ready to flip to the new audit providers
-            //initializeProviders();
+            initializeProviders();
 
             // Migrate audit providers if needed. We need to perform migration after the
             // server is fully started to ensure all audit providers have been registered and
             // so can't be done in an deferred upgrade script.
-            // UNDONE: Uncomment when we are ready to flip to the new audit providers
-            //if (!isMigrateComplete())
-            //    AuditUpgradeCode.migrateProviders(this);
+            if (!isMigrateComplete())
+                AuditUpgradeCode.migrateProviders(this);
 
             _logToDatabase.set(true);
 
@@ -277,11 +275,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         {
             if (!_factoryInitialized.containsKey(event.getEventType()))
             {
-                if (isMigrateComplete() || hasEventTypeMigrated(event.getEventType()))
-                {
-                    _log.info("Skipping initialization of previously migrated audit event factory: " + event.getEventType());
-                }
-                else
+                if (!isMigrateComplete() && !hasEventTypeMigrated(event.getEventType()))
                 {
                     _log.info("Initializing audit event factory for: " + event.getEventType());
                     AuditViewFactory factory = getAuditViewFactory(event.getEventType());
