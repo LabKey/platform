@@ -200,8 +200,9 @@ public class SimpleUserSchema extends UserSchema
 
         protected void addTableURLs()
         {
-            // Generic query details page if none provided in schema xml.
-            if (!hasDetailsURL())
+            // Generic query details page if none provided in schema xml
+            // Without a PK, we can't filter to show just the relevant row, so there's no use using a default details URL
+            if (!hasDetailsURL() && !getPkColumns().isEmpty())
             {
                 DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
                 setDetailsURL(detailsURL);

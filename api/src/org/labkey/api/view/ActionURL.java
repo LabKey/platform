@@ -182,7 +182,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    private static String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    private String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
     {
         if (useContainerRelativeURL())
             return toPathStringNew(contextPath, pageFlow, action, extraPath, encode);
@@ -216,7 +216,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    private static String toPathString(String pageFlow, String action, Path extraPath, boolean encode)
+    private String toPathString(String pageFlow, String action, Path extraPath, boolean encode)
     {
         Path contextPath = AppProps.getInstance().getParsedContextPath();
         return toPathString(contextPath, pageFlow, action, extraPath, encode);
