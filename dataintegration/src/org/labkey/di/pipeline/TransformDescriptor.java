@@ -37,6 +37,8 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -362,19 +364,20 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     public static class TestCase extends Assert
     {
-        String BASE_PATH = "sampledata/dataintegration/etls/";
-        String ONE_TASK = "one.xml";
-        String UNIT_TASKS = "unit.xml";
-        String FOUR_TASKS = "four.xml";
-        String NO_ID = "noid.xml";
-        String DUP_ID = "duplicate.xml";
-        String UNKNOWN_CLASS = "unknown.xml";
-        String INVALID_CLASS = "invalid.xml";
-        String NO_CLASS = "noclass.xml";
-        String BAD_SOURCE_OPT = "badsourceopt.xml";
-        String BAD_TARGET_OPT = "badtargetopt.xml";
-        int TRY_QUANTA = 100; // ms
-        int NUM_TRIES = 100; // retry for a maximum of 10 seconds
+        private static final String BASE_PATH = "sampledata/dataintegration/etls/";
+        private static final String ONE_TASK = "one.xml";
+        private static final String UNIT_TASKS = "unit.xml";
+        private static final String FOUR_TASKS = "four.xml";
+        private static final String NO_ID = "noid.xml";
+        private static final String DUP_ID = "duplicate.xml";
+        private static final String UNKNOWN_CLASS = "unknown.xml";
+        private static final String INVALID_CLASS = "invalid.xml";
+        private static final String NO_CLASS = "noclass.xml";
+        private static final String BAD_SOURCE_OPT = "badsourceopt.xml";
+        private static final String BAD_TARGET_OPT = "badtargetopt.xml";
+        private static final int TRY_QUANTA = 100; // ms
+        private static final int NUM_TRIES = 100; // retry for a maximum of 10 seconds
+        private static final Module module = ModuleLoader.getInstance().getModule("DataIntegration");
 
         class EtlResource implements Resource
         {
@@ -456,7 +459,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             // verifies that the correct task pipeline is setup for ONE_TASK and FOUR_TASK ETL configurations
             //
 
-            TransformDescriptor d1 = TransformManager.get().parseETLThrow(new EtlResource(getFile(ONE_TASK)), "junit");
+            TransformDescriptor d1 = TransformManager.get().parseETLThrow(new EtlResource(getFile(ONE_TASK)), module);
             TaskPipeline p1 = d1.getTaskPipeline();
             assert null != p1;
 
@@ -465,7 +468,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             assert null != p1;
             verifyTaskPipeline(p1, d1);
 
-            TransformDescriptor d4 =  TransformManager.get().parseETLThrow(new EtlResource(getFile(FOUR_TASKS)), "junit");
+            TransformDescriptor d4 =  TransformManager.get().parseETLThrow(new EtlResource(getFile(FOUR_TASKS)), module);
             TaskPipeline p4 = d4.getTaskPipeline();
             assert null != p4;
             verifyTaskPipeline(p4, d4);
@@ -522,7 +525,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             // runs an ETL job (junit.xml) with two test tasks.  Tests the end to end scenario of running a checker,
             // executing a multi-step job, and logging the ETL as an experiment run
             //
-            TransformDescriptor d =  TransformManager.get().parseETLThrow(new EtlResource(getFile(UNIT_TASKS)), "junit");
+            TransformDescriptor d =  TransformManager.get().parseETLThrow(new EtlResource(getFile(UNIT_TASKS)), module);
             TransformJobContext context = new TransformJobContext(d, c, u);
             TransformPipelineJob job = (TransformPipelineJob) d.getPipelineJob(context);
 
@@ -775,7 +778,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private TransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
         {
             EtlResource etl = new EtlResource(file);
-            return TransformManager.get().parseETLThrow(etl, "junit");
+            return TransformManager.get().parseETLThrow(etl, module);
         }
 
         private void checkInvalidSyntax(File file, String expected) throws IOException
@@ -783,7 +786,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             EtlResource etl = new EtlResource(file);
             try
             {
-                TransformManager.get().parseETLThrow(etl, "junit");
+                TransformManager.get().parseETLThrow(etl, module);
             }
             catch (XmlException x)
             {

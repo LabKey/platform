@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -102,11 +101,8 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -133,11 +129,11 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    @Nullable TransformDescriptor parseETL(Resource resource, String moduleName)
+    @Nullable TransformDescriptor parseETL(Resource resource, Module module)
     {
         try
         {
-            return parseETLThrow(resource, moduleName);
+            return parseETLThrow(resource, module);
         }
         catch (XmlException|IOException e)
         {
@@ -147,7 +143,7 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    TransformDescriptor parseETLThrow(Resource resource, String moduleName) throws IOException, XmlException
+    TransformDescriptor parseETLThrow(Resource resource, Module module) throws IOException, XmlException
     {
         FilterStrategy.Factory defaultFactory = null;
         Long interval = null;
@@ -155,16 +151,10 @@ public class TransformManager implements DataIntegrationService
 
         final ArrayList<SimpleQueryTransformStepMeta> stepMetaDatas = new ArrayList<>();
         final Path resourcePath = resource.getPath();
-        final String filename;
         final CaseInsensitiveHashSet stepIds = new CaseInsensitiveHashSet();
+        final String configName = getConfigName(resourcePath.getName());
 
-        // TODO: Change this... no longer special case config.xml?
-        if ("config.xml".equals(resourcePath.getName().toLowerCase()))
-            filename = resourcePath.getParent().getName();
-        else
-            filename = FileUtil.getBaseName(resourcePath.getName());
-
-        String id = createConfigId(moduleName, filename);
+        String configId = createConfigId(module, configName);
 
         try (InputStream inputStream = resource.getInputStream())
         {
@@ -220,14 +210,27 @@ public class TransformManager implements DataIntegrationService
                 }
             }
 
-            return new TransformDescriptor(id, etlXML.getName(), etlXML.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas);
+            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas);
         }
     }
 
 
-    String createConfigId(String moduleName, String filename)
+    boolean isConfigFile(String filename)
     {
-        return "{" + moduleName + "}/" + filename;
+        return filename.endsWith(".xml");
+    }
+
+
+    String getConfigName(String filename)
+    {
+        assert filename.endsWith(".xml") : "Configuration filename \"" + filename + "\" does not end with .xml";
+        return FileUtil.getBaseName(filename);
+    }
+
+
+    String createConfigId(Module module, String configName)
+    {
+        return "{" + module.getName() + "}/" + configName;
     }
 
 
@@ -366,7 +369,7 @@ public class TransformManager implements DataIntegrationService
     }
 
     @NotNull
-    public Collection<ScheduledPipelineJobDescriptor> getRegisteredDescriptors()
+    public Collection<ScheduledPipelineJobDescriptor> getAllDescriptors()
     {
         // Easy to implement, if we actually need it
         throw new UnsupportedOperationException();
@@ -748,51 +751,11 @@ public class TransformManager implements DataIntegrationService
     //
 
 
-    @Deprecated   // Never queried
-    private final Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> _etls =
-            Collections.synchronizedMap(new CaseInsensitiveTreeMap<Pair<Module, ScheduledPipelineJobDescriptor>>());
-
-
-    @Override   @Deprecated  // Nobody calls this
-    public void registerDescriptors(Module module, Collection<ScheduledPipelineJobDescriptor> descriptors)
+    @Override
+    public void registerDescriptors(Module module)
     {
-        if (null == descriptors || descriptors.isEmpty())
-            return;
-        Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> m = new TreeMap<>();
-        for (ScheduledPipelineJobDescriptor d : descriptors)
-            m.put(d.getId(), new Pair(module,d));
-        _etls.putAll(m);
-    }
-
-
-    @Override   @Deprecated  // Nobody should call this
-    public Collection<ScheduledPipelineJobDescriptor> registerDescriptorsFromFiles(Module module)
-    {
-        Path etlsDirPath = new Path("etls");
-        Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-        ArrayList<ScheduledPipelineJobDescriptor> l = new ArrayList<>();
-
-        if (etlsDir != null && etlsDir.isCollection())
-        {
-            for (Resource r : etlsDir.list())
-            {
-                Resource configXml = null;
-                if (r.isCollection())
-                    configXml = r.find("config.xml");
-                else if (r.isFile() && r.getName().toLowerCase().endsWith(".xml"))
-                    configXml = r;
-                if (null != configXml && configXml.isFile())
-                {
-                    TransformDescriptor descriptor = parseETL(configXml, module.getName());
-                    if (descriptor != null)
-                    {
-                        l.add(descriptor);
-                        _etls.put(descriptor.getId(), new Pair<Module, ScheduledPipelineJobDescriptor>(module, descriptor));
-                    }
-                }
-            }
-        }
-        return l;
+        // Delegate to the cache
+        DescriptorCache.registerModule(module);
     }
 
 
@@ -803,13 +766,6 @@ public class TransformManager implements DataIntegrationService
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testCache()
-        {
-            Container home = ContainerManager.getHomeContainer();
-            DescriptorCache.getDescriptors(home);
-        }
-
         @Test
         public void scheduler() throws Exception
         {

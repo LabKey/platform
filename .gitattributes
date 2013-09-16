@@ -626,6 +626,7 @@ core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
+core/src/org/labkey/core/FileSystemListenerServiceImpl.java -text
 core/src/org/labkey/core/ModulePropertiesTestCase.java -text
 core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsHelper.java -text
@@ -856,6 +857,7 @@ dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/DescriptorCache.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
+dataintegration/src/org/labkey/di/pipeline/EtlDirectoryListener.java -text
 dataintegration/src/org/labkey/di/pipeline/TestTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text

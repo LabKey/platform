@@ -61,6 +61,7 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.resource.FileSystemListenerService;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
@@ -650,6 +651,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
+
+        try
+        {
+            ServiceRegistry.get().registerService(FileSystemListenerService.class, new FileSystemListenerServiceImpl());
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
     }
 
     @Override
