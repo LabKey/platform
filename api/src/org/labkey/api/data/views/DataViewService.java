@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -224,7 +225,7 @@ public class DataViewService
         o.put("readOnly", info.isReadOnly());
 
         if (info.getAccess() != null)
-            o.put("access", info.getAccess());
+            o.put("access", createAccessObject(info.getAccess(), info.getAccessUrl()));
 
         if (info.getCreatedBy() != null)
         {
@@ -288,6 +289,17 @@ public class DataViewService
 
         json.put("userId", user != null ? user.getUserId() : "");
         json.put("displayName", user != null ? user.getDisplayName(currentUser) : "");
+
+        return json;
+    }
+
+    private JSONObject createAccessObject(String access, ActionURL accessUrl)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("label", access);
+        if (accessUrl != null)
+            json.put("url", accessUrl.getLocalURIString());
 
         return json;
     }

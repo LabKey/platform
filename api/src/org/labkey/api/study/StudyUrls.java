@@ -33,4 +33,5 @@ public interface StudyUrls extends UrlProvider
     ActionURL getDatasetsURL(Container container);
     ActionURL getManageReports(Container container);
     ActionURL getManageDatasetsURL(Container container);
+    ActionURL getManageReportPermissions(Container container);
 }

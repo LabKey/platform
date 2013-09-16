@@ -57,6 +57,7 @@ public interface DataViewInfo
     boolean isReadOnly();
     @Nullable
     String getAccess();                 // string description whether this view is public/private (or other)
+    @Nullable ActionURL getAccessUrl(); // view access settings
 
     @Nullable
     User getCreatedBy();

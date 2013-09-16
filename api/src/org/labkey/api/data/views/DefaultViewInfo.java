@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.views;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
@@ -58,6 +59,7 @@ public class DefaultViewInfo implements DataViewInfo
     private boolean _shared = true;
     private boolean _readOnly;
     private String _access;
+    private ActionURL _accessUrl;
     private boolean _allowCustomThumbnail = false;
 
     private String _schemaName;
@@ -274,7 +276,18 @@ public class DefaultViewInfo implements DataViewInfo
 
     public void setAccess(String access)
     {
+        setAccess(access, null);
+    }
+
+    public void setAccess(String access, @Nullable ActionURL url)
+    {
         _access = access;
+        _accessUrl = url;
+    }
+
+    public ActionURL getAccessUrl()
+    {
+        return _accessUrl;
     }
 
     public boolean isShared()
