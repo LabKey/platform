@@ -17,8 +17,6 @@ package org.labkey.api.di;
 
 import org.labkey.api.module.Module;
 
-import java.util.Collection;
-
 /**
  * User: matthewb
  * Date: 2013-04-03
@@ -26,7 +24,5 @@ import java.util.Collection;
  */
 public interface DataIntegrationService
 {
-    // TODO: Remove?
-    void registerDescriptors(Module module, Collection<ScheduledPipelineJobDescriptor> descriptor);
-    public Collection<ScheduledPipelineJobDescriptor> registerDescriptorsFromFiles(Module module);
+    public void registerDescriptors(Module module);
 }

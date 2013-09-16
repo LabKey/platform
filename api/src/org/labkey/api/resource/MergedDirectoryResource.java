@@ -18,6 +18,7 @@ package org.labkey.api.resource;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
@@ -25,6 +26,9 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -188,5 +192,23 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public long getLastModified()
     {
         return exists() ? _dirs.get(0).lastModified() : Long.MIN_VALUE;
+    }
+
+    // Listen for events in all directories associated with this resource  TODO: This is just a test... final impl will change
+    @SafeVarargs
+    public final void registerListener(FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events) throws IOException
+    {
+        if (isCollection())
+        {
+            FileSystemListenerService service = ServiceRegistry.get().getService(FileSystemListenerService.class);
+
+            if (null != service)
+            {
+                for (File dir : _dirs)
+                {
+                    service.addListener(Paths.get(dir.toURI()), listener, events);
+                }
+            }
+        }
     }
 }

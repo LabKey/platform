@@ -1076,6 +1076,8 @@ api/src/org/labkey/api/resource/AbstractResourceCollection.java -text
 api/src/org/labkey/api/resource/ClassResource.java -text
 api/src/org/labkey/api/resource/ClassResourceCollection.java -text
 api/src/org/labkey/api/resource/FileResource.java -text
+api/src/org/labkey/api/resource/FileSystemDirectoryListener.java -text
+api/src/org/labkey/api/resource/FileSystemListenerService.java -text
 api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text
