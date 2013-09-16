@@ -1921,6 +1921,49 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresSiteAdmin
+    public class TruncateTableAction extends ApiAction<QueryForm>
+    {
+
+        @Override
+        public ApiResponse execute(QueryForm queryForm, BindException errors) throws Exception
+        {
+            int deletedRows;
+            TableInfo table = getTableInfo(getContainer(), getUser(), queryForm.getSchemaName(), queryForm.getQueryName());
+            try{
+                table.getSchema().getScope().ensureTransaction();
+                ApiSimpleResponse response = new ApiSimpleResponse();
+                QueryUpdateService updater = queryForm.getQuerySettings().getTable(queryForm.getSchema()).getUpdateService();
+                deletedRows = updater.truncateRows(getUser(), getContainer(), null);
+
+                response.put("success", true);
+                response.put("deletedRows", deletedRows);
+                table.getSchema().getScope().commitTransaction();
+                return response;
+            }
+            finally
+            {
+                table.getSchema().getScope().closeConnection();
+            }
+        }
+
+        @NotNull
+        protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
+        {
+            if (null == schemaName || null == queryName)
+                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
+
+            UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
+            if (null == schema)
+                throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
+
+            TableInfo table = schema.getTable(queryName);
+            if (table == null)
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
+            return table;
+        }
+    }
+
 
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>

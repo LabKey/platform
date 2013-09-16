@@ -32,6 +32,8 @@
 <%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.security.roles.SiteAdminRole" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
@@ -92,6 +94,11 @@
                         // the toLowerCase() is just for the ListTest, fix the test
                         %><td><labkey:link href="<%=text(link.getHref())%>" text="<%=text(link.getText().toLowerCase())%>" /></td><%
                     }
+                    if(c.hasPermission(user, AdminPermission.class))
+                    {
+                        String onClick = "truncateTable('"+list.getName()+"')";
+                        %><td><labkey:link href="#" text="Delete All Rows" onclick="<%=text(onClick)%>" /></td><%
+                    }
                 }
                 %></tr><%
             }
@@ -123,3 +130,42 @@
         }
     }
 %>
+
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+</script>
+
+<script type="text/javascript">
+    function truncateTable(queryName)
+    {
+        Ext4.Msg.confirm("Confirm Deletion",
+                "Are you sure you wish to delete all rows for the table "+ queryName + "?  This action cannot be undone.",
+                function(button){
+                    if (button === 'yes') {
+                        truncate();
+                    }
+                }
+        );
+
+        function truncate()
+        {
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('query', 'truncateTable'),
+                method  : 'POST',
+                success: function(response){
+                    console.log(response);
+                    var data = Ext4.JSON.decode(response.responseText);
+                    Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
+                },
+                failure : function()
+                {
+                    alert("An unexpected error has occured.")
+                },
+                jsonData : {schemaName : 'lists', queryName : queryName},
+                headers : {'Content-Type' : 'application/json'},
+                scope : this
+            });
+        }
+
+    }
+</script>

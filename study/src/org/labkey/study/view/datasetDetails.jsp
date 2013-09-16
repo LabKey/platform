@@ -46,6 +46,10 @@
     DataSetDefinition dataset = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
+
+    String queryName = dataset.getTableInfo(context.getUser()).getName();
+    String schemaName = dataset.getTableInfo(context.getUser()).getSchema().getQuerySchemaName();
+
     Set<Class<? extends Permission>> permissions = context.getContainer().getPolicy().getPermissions(context.getUser());
     StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
@@ -94,6 +98,9 @@ if (permissions.contains(UpdatePermission.class))
         <a class="labkey-button" href="#" onclick="showLinkDialog()"><span>Link or Define Dataset</span></a>
 <%
     }
+    %>
+    &nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
+<%
 }
 if (!pipelineSet)
 {
@@ -185,6 +192,38 @@ if (!pipelineSet)
 </script>
 
 <script type="text/javascript">
+    function truncateTable()
+    {
+        Ext4.Msg.confirm("Confirm Deletion",
+                "Are you sure you wish to delete all rows for the table "+ <%=q(queryName)%> + "?  This action cannot be undone.",
+                function(button){
+                    if (button === 'yes') {
+                        truncate();
+                    }
+                }
+        );
+
+        function truncate()
+        {
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('query', 'truncateTable'),
+                method  : 'POST',
+                success: function(response){
+                    console.log(response);
+                    var data = Ext4.JSON.decode(response.responseText);
+                    Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
+                },
+                failure : function()
+                {
+                    alert("Well that didn't work.")
+                },
+                jsonData : {schemaName : <%=q(schemaName)%>, queryName : <%=q(queryName)%>},
+                headers : {'Content-Type' : 'application/json'},
+                scope : this
+            });
+        }
+
+    }
     function showLinkDialog(){
         Ext4.onReady(function(){
             var datasets = [
