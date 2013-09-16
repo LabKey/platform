@@ -165,18 +165,31 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
     {
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
         JSONObject state = cfg.getJsonState();
-        if (null == state || state.isEmpty() || null == state.getJSONObject("steps"))
+        if (null == state || state.isEmpty())
             return null;
-        JSONObject step = state.getJSONObject("steps").getJSONObject(_config.getId());
-        Object o = step.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
+        JSONObject steps = _getObject(state, "steps");
+        JSONObject step = _getObject(steps, _config.getId());
+        Object o = _get(step, TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
         try
         {
-            return Timestamp.valueOf((String)o);
+            if (o instanceof String)
+                return Timestamp.valueOf((String)o);
         }
         catch (Exception x){}
         return (Date) JdbcType.TIMESTAMP.convert(o);
+    }
+
+
+    private static JSONObject _getObject(JSONObject json, String property)
+    {
+        return null!=json && json.has(property) ? json.getJSONObject(property) : null;
+    }
+
+    private static Object _get(JSONObject json, String property)
+    {
+        return null!=json && json.has(property) ? json.get(property) : null;
     }
 
 

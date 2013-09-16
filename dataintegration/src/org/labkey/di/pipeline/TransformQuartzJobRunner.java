@@ -49,13 +49,12 @@ public class TransformQuartzJobRunner implements Job
         ScheduledPipelineJobContext info = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
 
-        Callable c = d.getChecker(info);
+        boolean hasWork = d.checkForWork(info, true, info.isVerbose());
+        if (!hasWork)
+            return;
+
         try
         {
-            boolean hasWork = Boolean.TRUE == c.call();
-            if (!hasWork)
-                return;
-
             PipelineJob job = d.getPipelineJob(info);
             if (null == job)
                 return;
@@ -69,10 +68,6 @@ public class TransformQuartzJobRunner implements Job
             {
                 LOG.error("Unable to queue ETL job", e);
             }
-        }
-        catch (JobExecutionException x)
-        {
-            throw x;
         }
         catch (RuntimeException x)
         {

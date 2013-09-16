@@ -143,7 +143,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     {
         try
         {
-            Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getTransformRunId());
+            TransformManager.get().updateTransformRun(getUser(), run);
         }
         catch (SQLException e)
         {
@@ -154,7 +154,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
     private TransformRun getTransformRun()
     {
-        TransformRun run  = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), _runId), null).getObject(TransformRun.class);
+        TransformRun run  = TransformManager.get().getTransformRun(getContainer(), _runId);
         if (run == null)
         {
             getLogger().error("Unable to find database record for run with TransformRunId " + _runId);

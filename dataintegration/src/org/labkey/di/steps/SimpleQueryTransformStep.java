@@ -18,6 +18,7 @@ package org.labkey.di.steps;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -107,7 +108,8 @@ public class SimpleQueryTransformStep extends TransformTask
         {
             getJob().getLogger().error(x);
         }
-   }
+    }
+
 
     private void recordWork(RecordedAction action)
     {
@@ -209,9 +211,18 @@ public class SimpleQueryTransformStep extends TransformTask
         try
         {
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
-            TableInfo t = sourceSchema.getTable(meta.getSourceQuery());
+            sourceSchema.getTable(meta.getSourceQuery());   // validate source query
             FilterStrategy filterStrategy = getFilterStrategy();
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
+
+            try
+            {
+                log.info(filterStrategy.getClass().getName() + ": " + (null == f ? "no filter"  : f.toSQLString(sourceSchema.getDbSchema().getSqlDialect())));
+            }
+            catch (UnsupportedOperationException|IllegalArgumentException x)
+            {
+                /* oh well */
+            }
 
             DataIteratorBuilder source = new QueryDataIteratorBuilder(sourceSchema, meta.getSourceQuery(), null, f);
             if (_useAsynchrousQuery)
@@ -263,17 +274,13 @@ public class SimpleQueryTransformStep extends TransformTask
                 return qus.importRows(u, c, source, context.getErrors(), null);
             }
         }
-        catch (BatchValidationException batchx)
+        catch (BatchValidationException|QueryUpdateServiceException ex)
         {
-            throw new RuntimeException(batchx);
+            throw new RuntimeException(ex);
         }
         catch (SQLException sqlx)
         {
-            throw new RuntimeException(sqlx);
-        }
-        catch (QueryUpdateServiceException qusx)
-        {
-            throw new RuntimeException(qusx);
+            throw new RuntimeSQLException(sqlx);
         }
     }
 

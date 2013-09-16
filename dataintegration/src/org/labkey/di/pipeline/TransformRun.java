@@ -16,6 +16,7 @@
 package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -30,6 +31,21 @@ import java.util.Date;
 @SuppressWarnings("UnusedDeclaration")
 public class TransformRun
 {
+    public enum TransformRunStatus
+    {
+        NO_WORK("NO WORK"),
+        PENDING("PENDING"),
+        RUNNING("RUNNING"),
+        COMPLETE(PipelineJob.COMPLETE_STATUS),
+        ERROR(PipelineJob.ERROR_STATUS);
+
+        final String _display;
+        TransformRunStatus(String display)
+        {
+            _display = display;
+        }
+    }
+
     private int _transformRunId;
     private Integer _recordCount;
     private String _transformId;
@@ -44,6 +60,7 @@ public class TransformRun
     private Container _container;
     private Integer _jobId;
     private Integer _expRunId = null;
+    private String _transformRunLog = null;
 
     public int getTransformRunId()
     {
@@ -183,5 +200,20 @@ public class TransformRun
     public Integer getExpRunId()
     {
         return _expRunId;
+    }
+
+    public void setTransformRunStatusEnum(TransformRunStatus transformRunStatus)
+    {
+        _status = transformRunStatus._display;
+    }
+
+    public String getTransformRunLog()
+    {
+        return _transformRunLog;
+    }
+
+    public void setTransformRunLog(String transformRunLog)
+    {
+        _transformRunLog = transformRunLog;
     }
 }

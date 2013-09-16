@@ -29,6 +29,7 @@
             <column columnName="Status"/>
             <column columnName="StartTime"/>
             <column columnName="EndTime"/>
+            <column columnName="TransformRunLog"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>

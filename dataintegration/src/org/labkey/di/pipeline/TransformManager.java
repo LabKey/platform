@@ -401,18 +401,9 @@ public class TransformManager implements DataIntegrationService
             ContainerUser context = descriptor.getJobContext(container, user);
 
             // see if we have work to do before directly scheduling the pipeline job
-            Callable c = descriptor.getChecker(context);
-            try
-            {
-                boolean hasWork = Boolean.TRUE == c.call();
-                if (!hasWork)
-                    return null;
-            }
-            catch (Exception e)
-            {
-                throw new UnexpectedException(e);
-            }
-
+            boolean hasWork = descriptor.checkForWork(context, false, true);
+            if (!hasWork)
+                return null;
             PipelineJob job = descriptor.getPipelineJob(context);
             if (null == job)
                 throw new PipelineJobException("Could not create job: " + descriptor.toString());
@@ -707,6 +698,30 @@ public class TransformManager implements DataIntegrationService
         }
     }
 
+
+    public TransformRun getTransformRun(Container c, int runId)
+    {
+        TransformRun run;
+        run = new SqlSelector(DataIntegrationDbSchema.getSchema(),
+                "SELECT * FROM " + DataIntegrationDbSchema.getTransformRunTableInfo().getFromSQL("x") +
+                " WHERE container=? and transformrunid=?", c.getId(), runId).getObject(TransformRun.class);
+        return run;
+    }
+
+
+    public TransformRun insertTransformRun(User user, TransformRun run) throws SQLException
+    {
+        run = Table.insert(user, DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+        return run;
+    }
+
+
+    public void updateTransformRun(User user, TransformRun run) throws SQLException
+    {
+        Table.update(user, DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getTransformRunId());
+    }
+
+
     public Integer getLastSuccessfulTransformExpRun(String transformId, int version)
     {
         SimpleFilter f = new SimpleFilter();
@@ -830,18 +845,12 @@ public class TransformManager implements DataIntegrationService
                     return new ScheduledPipelineJobContext(this, c, user);
                 }
 
+
                 @Override
-                public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
+                public boolean checkForWork(ScheduledPipelineJobContext context, boolean background, boolean verbose)
                 {
-                    return new Callable<Boolean>()
-                    {
-                        @Override
-                        public Boolean call() throws Exception
-                        {
-                            counter.incrementAndGet();
-                            return false;
-                        }
-                    };
+                    counter.incrementAndGet();
+                    return false;
                 }
 
                 @Override

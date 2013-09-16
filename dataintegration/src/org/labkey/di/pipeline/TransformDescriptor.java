@@ -23,8 +23,9 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.ScheduledPipelineJobContext;
@@ -52,10 +53,12 @@ import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.VariableMap;
@@ -74,6 +77,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -81,7 +85,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+
 
 /**
  * User: jeckels
@@ -199,16 +203,117 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return TransformQuartzJobRunner.class;
     }
 
+
     @Override
     public TransformJobContext getJobContext(Container c, User user)
     {
         return new TransformJobContext(this, c, user);
     }
 
+
     @Override
-    public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
+    public boolean checkForWork(ScheduledPipelineJobContext context, boolean background, boolean verbose)
     {
-        return new UpdatedRowsChecker(this, context, _stepMetaDatas);
+        if (null == context.getContainer())
+            throw new IllegalArgumentException("container context is null");
+
+        Exception x = null;
+        String errorVerbose = null;
+
+        try
+        {
+            LOG.debug("Running" + this.getClass().getSimpleName() + " " + this.toString());
+
+            Container c = context.getContainer();
+            if (null == c)
+                return false;
+
+            for (SimpleQueryTransformStepMeta stepMeta : _stepMetaDatas)
+            {
+                /* <FOR TESTING ONLY> */
+                boolean throwNullPointerException = false;
+                if (throwNullPointerException)
+                {
+                    throw new NullPointerException("NPE: TESTING");
+                }
+                /* </FOR TESTING ONLY> */
+
+                // TODO : mapping from Step -> StepMeta should not be hard coded
+                TransformTask step;
+
+                if (TransformTask.class.equals(stepMeta.getTaskClass()))
+                {
+                    step = new SimpleQueryTransformStep(null, null, stepMeta, (TransformJobContext)context);
+                }
+                else if (TestTask.class.equals(stepMeta.getTaskClass()))
+                {
+                    step = new TestTask(null, null, stepMeta);
+                }
+                else
+                {
+                    throw new ConfigurationException("Unexpected class: " + stepMeta.getTaskClass());
+                }
+
+                if (step.hasWork())
+                    return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            x = ex;
+            StringBuilder sb = new StringBuilder();
+            StringBuilderWriter sbw = new StringBuilderWriter(sb);
+            ex.printStackTrace(new PrintWriter(sbw));
+            errorVerbose = sb.toString();
+        }
+
+        if (null != x || verbose || context.isVerbose())
+        {
+            TransformRun run = new TransformRun();
+            run.setContainer(context.getContainer());
+            run.setTransformId(getId());
+            run.setStartTime(new Date());
+            if (null == x)
+                run.setTransformRunStatusEnum(TransformRun.TransformRunStatus.NO_WORK);
+            else
+                run.setTransformRunStatusEnum(TransformRun.TransformRunStatus.ERROR);
+            if (null != errorVerbose)
+                run.setTransformRunLog(errorVerbose);
+            try
+            {
+                TransformManager.get().insertTransformRun(context.getUser(),run);
+            }
+            catch (SQLException sqlx)
+            {
+                throw new RuntimeSQLException(sqlx);
+            }
+        }
+
+        if (null != x)
+            wrapException(x);
+
+        return false;
+    }
+
+
+    private void wrapException(Exception x)
+    {
+        try
+        {
+            throw x;
+        }
+        catch (RuntimeException ex)
+        {
+            throw ex;
+        }
+        catch (SQLException ex)
+        {
+            throw new RuntimeSQLException(ex);
+        }
+        catch (Exception ex)
+        {
+            throw new UnexpectedException(ex);
+        }
     }
 
 
@@ -227,6 +332,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         }
 
         TransformRun run = new TransformRun();
+        run.setTransformRunStatusEnum(TransformRun.TransformRunStatus.PENDING);
         run.setStartTime(new Date());
         run.setTransformId(getId());
         run.setTransformVersion(getVersion());
@@ -237,7 +343,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         try
         {
-            run = Table.insert(context.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+            TransformManager.get().insertTransformRun(context.getUser(), run);
         }
         catch (SQLException e)
         {
@@ -562,7 +668,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         {
             int runId = job.getTransformRunId();
             TransformDescriptor d = job.getTransformDescriptor();
-            TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), new SimpleFilter(FieldKey.fromParts("TransformRunId"), runId), null).getObject(TransformRun.class);
+            TransformRun run = TransformManager.get().getTransformRun(job.getContainer(), runId);
             String status = run.getStatus();
             Integer expId = run.getExpRunId();
             Integer jobId = run.getJobId();
@@ -738,6 +844,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
             assert found;
         }
+
 
         private void waitForJobToFinish(PipelineJob job) throws Exception
         {

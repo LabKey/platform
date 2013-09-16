@@ -193,7 +193,8 @@ public class RunFilterStrategy implements FilterStrategy
     {
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
         JSONObject state = cfg.getJsonState();
-        Object o = state.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
+        String propertyName = TransformProperty.IncrementalRunId.getPropertyDescriptor().getName();
+        Object o = state.has(propertyName) ? state.get(propertyName) : null;
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
         return (Integer)JdbcType.INTEGER.convert(o);
