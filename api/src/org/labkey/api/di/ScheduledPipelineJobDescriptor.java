@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.ContainerUser;
 import org.quartz.ScheduleBuilder;
 
@@ -46,6 +47,6 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     C getJobContext(Container c, User user);
 
     // these methods actually implement the Job
-    Callable<Boolean> getChecker(C context);
+    boolean checkForWork(C context, boolean background, boolean verbose);
     PipelineJob getPipelineJob(C context) throws PipelineJobException;
 }
