@@ -108,6 +108,7 @@ public class TriggerDataBuilderHelper
             return (MapDataIterator)_delegate;
         }
 
+
         @Override
         public boolean next() throws BatchValidationException
         {
@@ -119,22 +120,25 @@ public class TriggerDataBuilderHelper
                 _firstRow = false;
             }
 
-            boolean ret = getInput().next();
-            if (ret)
+            while (getInput().next())
             {
                 int rowNumber = (Integer)getInput().get(0);
                 _currentRow = getInput().getMap();
                 try
                 {
                     _target.fireRowTrigger(_c, TableInfo.TriggerType.INSERT, true, rowNumber, _currentRow, null, _extraContext);
+                    return true;
                 }
                 catch (ValidationException vex)
                 {
                     getErrors().addRowError(vex.fillIn(_target.getPublicSchemaName(), _target.getName(), _currentRow, rowNumber));
+                    _context.checkShouldCancel();
                 }
             }
-            return ret;
+
+            return false;
         }
+
 
         @Override
         public Object get(int i)
