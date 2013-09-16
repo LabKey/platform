@@ -76,13 +76,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     static
     {
-        DEFAULT_COLUMN_LABELS.put(VIAL_ID, "Vial Id");
+        DEFAULT_COLUMN_LABELS.put(VIAL_ID, "Global Unique Id");
         DEFAULT_COLUMN_LABELS.put(SAMPLE_ID, "Sample Id");
-        DEFAULT_COLUMN_LABELS.put(DRAW_TIMESTAMP, "Draw Date");
+        DEFAULT_COLUMN_LABELS.put(DRAW_TIMESTAMP, "Draw Timestamp");
         DEFAULT_COLUMN_LABELS.put(VISIT, "Visit Id");
         DEFAULT_COLUMN_LABELS.put(VOLUME, "Volume");
-        DEFAULT_COLUMN_LABELS.put(UNITS, "Units");
-        DEFAULT_COLUMN_LABELS.put(PRIMARY_SPECIMEN_TYPE, "Specimen Type");
+        DEFAULT_COLUMN_LABELS.put(UNITS, "Volume Units");
+        DEFAULT_COLUMN_LABELS.put(PRIMARY_SPECIMEN_TYPE, "Primary Type");
         DEFAULT_COLUMN_LABELS.put(ADDITIVE_TYPE, "Additive Type");
         DEFAULT_COLUMN_LABELS.put(DERIVIATIVE_TYPE, "Derivative Type");
         DEFAULT_COLUMN_LABELS.put(PARTICIPANT_ID, "Subject Id");
@@ -238,7 +238,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             //Make specimen requestable
             if (null == row.get("lab"))
                 specimenRow.put(labLookup.getForeignKeyCol(), labLookup.getDefaultLabId());
-            
+
             if (study.getTimepointType() != TimepointType.VISIT)
                 specimenRow.put(VISIT, StudyManager.sequenceNumFromDate((Date) specimenRow.get(DRAW_TIMESTAMP)));
 

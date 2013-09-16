@@ -21,16 +21,69 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = (JspView<ShowUploadSpecimensAction.UploadSpecimensForm>) HttpView.currentView();
     ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
     Container c = getViewContext().getContainer();
+    Study study = StudyManager.getInstance().getStudy(c);
 %>
 <labkey:errors/>
 Use this form to insert or update specimens in the repository.<br>
-<%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br><br>
+<%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br>
+
+<div id="showExpectedDataFieldsDiv"><%= textLink("Show Required Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
+
+<div id="expectedDataFields" style="display: none">
+    <br>
+    <strong>Required Data Fields</strong>
+    <table class="labkey-show-borders" cellpadding="3" cellspacing="0">
+        <tr>
+            <td><strong>Name</strong></td>
+            <td><strong>Type</strong></td>
+            <td><strong>Description</strong></td>
+        </tr>
+        <tr>
+            <td>Global Unique Id</td>
+            <td>Int</td>
+            <td>A unique id to be associated with the vial</td>
+        </tr>
+        <tr>
+            <td>Sample Id</td>
+            <td>Int</td>
+            <td>A unique id to be associated with the sample.  If null, this will be replaced by the Global Unique Id</td>
+        </tr>
+        <tr>
+            <td><%=h(study.getSubjectNounSingular())%> Id</td>
+            <td>Int</td>
+            <td>A unique id to be associated with the <%=h(study.getSubjectNounSingular())%>.  If null, this will be replaced by the Global Unique Id</td>
+        </tr>
+        <%
+            if (study.getTimepointType() != TimepointType.VISIT) {
+        %>
+        <tr>
+            <td>Draw Timestamp</td>
+            <td>Date</td>
+            <td>The draw date of the sample </td>
+        </tr>
+        <%
+            } else {
+        %>
+        <tr>
+            <td>Visit Id</td>
+            <td>Int</td>
+            <td>The visit Id associated with the sample</td>
+        </tr>
+        <% } %>
+
+    </table>
+</div>
+<br>
 Paste data in the area below
 <form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
