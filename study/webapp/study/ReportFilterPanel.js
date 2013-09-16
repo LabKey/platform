@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresCss("study/DataViewsPanel.css");
+LABKEY.requiresCss("study/ReportFilterPanel.css");
 
 /**
  * Base class that will render one section of a FilterPanel, displaying a list of checkboxes.

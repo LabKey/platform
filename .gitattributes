@@ -3670,6 +3670,7 @@ study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantReport.js -text
+study/webapp/study/ReportFilterPanel.css -text
 study/webapp/study/ReportFilterPanel.js -text
 study/webapp/study/SpecimenSearchPanel.js -text
 study/webapp/study/StudySchedule.css -text
