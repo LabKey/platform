@@ -4,7 +4,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresScript("/study/DataViewUtil.js");
+LABKEY.requiresScript("/dataview/DataViewUtil.js");
 
 Ext4.define('LABKEY.ext4.GenericCombo', {
 
