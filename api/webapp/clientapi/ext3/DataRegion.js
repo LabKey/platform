@@ -895,8 +895,22 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // private
             changeFilter: function (newParamValPairs, newQueryString)
             {
-                if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
-                    return;
+                if (this.hasListener("beforefilterchange"))
+                {
+                    var filterPairs = [], paramName, paramVal, i;
+
+                    // Issue 18303, 18448: Only include filter parameters (ignore .sort and others)
+                    for (i=0; i < newParamValPairs.length; i++)
+                    {
+                        paramName = newParamValPairs[i][0];
+                        paramVal = newParamValPairs[i][1];
+                        if (paramName.indexOf(this.name + ".") == 0 && paramName.indexOf("~") > -1)
+                            filterPairs.push([paramName, paramVal]);
+                    }
+
+                    if (false === this.fireEvent("beforefilterchange", this, filterPairs))
+                        return;
+                }
 
                 // when filters change, remove offsets
                 var params = LABKEY.DataRegion.getParamValPairsFromString(newQueryString, [this.name + '.offset']);
@@ -1384,16 +1398,19 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // private
             _setParams: function (newParamValPairs, skipPrefixes)
             {
-                for (var i = 0; i < skipPrefixes.length; i++)
+                var i, param, value;
+
+                for (i=0; i < skipPrefixes.length; i++)
                     skipPrefixes[i] = this.name + skipPrefixes[i];
 
                 var paramValPairs = this.getParamValPairs(this.requestURL, skipPrefixes);
                 if (newParamValPairs)
                 {
-                    for (var i = 0; i < newParamValPairs.length; i++)
+                    for (i = 0; i < newParamValPairs.length; i++)
                     {
-                        var param = newParamValPairs[i][0],
-                                value = newParamValPairs[i][1];
+                        param = newParamValPairs[i][0];
+                        value = newParamValPairs[i][1];
+
                         if (null != param && null != value)
                         {
                             if (param.indexOf(this.name) !== 0)
@@ -1409,20 +1426,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // private
             _setAllCheckboxes: function (value, elementName)
             {
-                if (!this.table)
-                    return;
-
-                var checkboxes = Ext.query('input[@type="checkbox"]', this.table.dom);
-                var len = checkboxes ? checkboxes.length : 0;
                 var ids = [];
-                for (var i = 0; i < len; i++)
+
+                if (this.table)
                 {
-                    var e = checkboxes[i];
-                    if (!e.disabled && (elementName == null || elementName == e.name))
+                    var checkboxes = Ext.query('input[@type="checkbox"]', this.table.dom);
+                    var len = checkboxes ? checkboxes.length : 0;
+                    for (var i = 0; i < len; i++)
                     {
-                        e.checked = value;
-                        if (e.name != ".toggle")
-                            ids.push(e.value);
+                        var e = checkboxes[i];
+                        if (!e.disabled && (elementName == null || elementName == e.name))
+                        {
+                            e.checked = value;
+                            if (e.name != ".toggle")
+                                ids.push(e.value);
+                        }
                     }
                 }
                 return ids;
@@ -1434,7 +1452,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 if (this.showRecordSelectors)
                 {
                     msg += "&nbsp;<span class='labkey-button select-none'>Select None</span>";
-                    var showOpts = new Array();
+                    var showOpts = [];
                     if (this.showRows != "all")
                         showOpts.push("<span class='labkey-button show-all'>Show All</span>");
                     if (this.showRows != "selected")
@@ -2562,7 +2580,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
     var allowableContainerFilters = config.allowableContainerFilters;
     var containerFilterable = (allowableContainerFilters && allowableContainerFilters.length > 1);
 
-    var containerData = new Array();
+    var containerData = [];
     if (targetContainers)
     {
         for (var i = 0; i < targetContainers.length; i++)
@@ -2800,14 +2818,14 @@ LABKEY.DataRegion.getParamValPairsFromString = function (queryString, skipPrefix
         queryString = queryString.substring(queryString.indexOf("?") + 1);
     }
 
-    var newParamValPairs = [];
+    var paramValPairs = [];
     if (queryString != null && queryString.length > 0)
     {
-        var paramValPairs = queryString.split("&");
+        var pairs = queryString.split("&");
         var iNew = 0;
-        PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
+        PARAM_LOOP: for (var i = 0; i < pairs.length; i++)
         {
-            var paramPair = paramValPairs[i].split("=", 2);
+            var paramPair = pairs[i].split("=", 2);
             paramPair[0] = decodeURIComponent(paramPair[0]);
 
             if (paramPair[0] == ".lastFilter")
@@ -2843,11 +2861,11 @@ LABKEY.DataRegion.getParamValPairsFromString = function (queryString, skipPrefix
             }
             if (paramPair.length > 1)
                 paramPair[1] = decodeURIComponent(paramPair[1]);
-            newParamValPairs[iNew] = paramPair;
+            paramValPairs[iNew] = paramPair;
             iNew++;
         }
     }
-    return newParamValPairs;
+    return paramValPairs;
 };
 
 // private

@@ -53,7 +53,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             // hook key events
             keys:[{
                 key: Ext.EventObject.ENTER,
-                handler: this.apply,
+                handler: this.onApply,
                 scope: this
             },{
                 key: Ext.EventObject.ESC,
@@ -478,13 +478,15 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     inputFieldValidator : function(input, combo) {
 
         var store = combo.getStore();
-        var rec = store.getAt(store.find('value', combo.getValue()));
-        var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
+        if (store) {
+            var rec = store.getAt(store.find('value', combo.getValue()));
+            var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
 
-        if (rec) {
-            if (filter.isMultiValued())
-                return this.validateEqOneOf(input.getValue());
-            return this.validateInputField(input.getValue());
+            if (rec) {
+                if (filter.isMultiValued())
+                    return this.validateEqOneOf(input.getValue());
+                return this.validateInputField(input.getValue());
+            }
         }
         return true;
     },
