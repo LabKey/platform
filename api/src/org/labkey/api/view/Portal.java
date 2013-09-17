@@ -1186,15 +1186,8 @@ public class Portal
         if (page.isHidden() == hidden)
             return;
 
-        if (page.isCustomTab() && hidden)
-        {
-            // Custom (portal page) tab; Do actual delete
-            deletePage(page);
-        }
-        else
-        {
-            _hidePage(page, hidden);
-        }
+
+        _hidePage(page, hidden);
     }
 
     public static void deletePage(PortalPage page)
@@ -1218,6 +1211,26 @@ public class Portal
             WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
         }
     }
+
+    public static void deletePage(Container c, String pageId)
+    {
+        PortalPage page = WebPartCache.getPortalPage(c,pageId);
+        deletePage(page);
+    }
+
+    public static void deletePage(Container c, int index)
+    {
+        Map<String, PortalPage> pages = WebPartCache.getPages(c, true);
+        for (PortalPage page : pages.values())
+        {
+            if (page.getIndex() == index)
+            {
+                deletePage(page);
+                break;
+            }
+        }
+    }
+
 
     private static void _hidePage(PortalPage page, boolean hidden)
     {
@@ -1264,7 +1277,6 @@ public class Portal
                 break;
             }
         }
-        return;
     }
 
     public static void updatePortalPage(Container c, PortalPage page)

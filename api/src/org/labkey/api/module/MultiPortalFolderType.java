@@ -418,14 +418,21 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage, String folderLabel)
     {
         NavTree menu = new NavTree("Tab Administration");
-        ActionURL removeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
+        ActionURL hideURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
+        ActionURL deleteURL = PageFlowUtil.urlProvider(ProjectUrls.class).getDeletePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
         NavTree moveMenu = new NavTree("Move");
         String moveConfig = "{pageId: \"" + portalPage.getPageId() + "\", folderLabel:\"" + folderLabel +"\"}";
 
         moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
         moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
 
-        menu.addChild(new NavTree("Remove", removeURL));
+        menu.addChild(new NavTree("Hide", hideURL));
+
+        if (portalPage.isCustomTab())
+        {
+            menu.addChild(new NavTree("Delete", deleteURL));
+        }
+
         menu.addChild(moveMenu);
         ActionURL renameURL = PageFlowUtil.urlProvider(AdminUrls.class).getRenameTabURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
         menu.addChild(new NavTree("Rename", renameURL));
