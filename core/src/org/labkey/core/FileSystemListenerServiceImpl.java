@@ -9,6 +9,7 @@ import org.labkey.api.util.ShutdownListener;
 
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
@@ -110,6 +111,10 @@ public class FileSystemListenerServiceImpl implements FileSystemListenerService
                         // If it's no longer valid, then I guess we should remove the listener
                         if (!watchKey.reset())
                             _listeners.remove(watchKey);        // TODO: create an event for this to notify listeners?
+                    }
+                    catch (ClosedWatchServiceException ignored)
+                    {
+                        // We closed the service... loop will be interrupted and terminate soon enough
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {
