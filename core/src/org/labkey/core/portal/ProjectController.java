@@ -170,17 +170,17 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
-//        public ActionURL getHidePortalPageURL(Container c, int index, ActionURL returnURL)
-//        {
-//            ActionURL url = new ActionURL(HidePortalPageAction.class, c);
-//            url.addParameter("index", index);
-//            url.addReturnURL(returnURL);
-//            return url;
-//        }
-
         public ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(HidePortalPageAction.class, c);
+            url.addParameter("pageId", pageId);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
+        public ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(DeletePortalPageAction.class, c);
             url.addParameter("pageId", pageId);
             url.addReturnURL(returnURL);
             return url;
@@ -535,6 +535,47 @@ public class ProjectController extends SpringActionController
                 Portal.hidePage(getContainer(), form.getPageId());
             else if (0 <= form.getIndex())
                 Portal.hidePage(getContainer(), form.getIndex());
+            return true;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+
+        public URLHelper getSuccessURL(CustomizePortletForm form)
+        {
+            return form.getReturnURLHelper(beginURL());
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeletePortalPageAction extends FormViewAction<CustomizePortletForm>
+    {
+        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
+        {
+            handlePost(form, errors);
+            URLHelper successURL = getSuccessURL(form);
+            if (null != successURL)
+                return HttpView.redirect(successURL);
+            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+        }
+
+        @Override
+        public void validateCommand(CustomizePortletForm target, Errors errors)
+        {
+            if (null == target.getPageId() && 0 > target.getIndex())
+                throw new NotFoundException();
+        }
+
+        @Override
+        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        {
+            if (null != form.getPageId())
+                Portal.deletePage(getContainer(), form.getPageId());
+            else if (0 <= form.getIndex())
+                Portal.deletePage(getContainer(), form.getIndex());
             return true;
         }
 
