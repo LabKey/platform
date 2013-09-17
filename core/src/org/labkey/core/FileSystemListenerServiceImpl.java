@@ -97,11 +97,11 @@ public class FileSystemListenerServiceImpl implements FileSystemListenerService
                                 Path entry = event.context();
 
                                 if (ENTRY_CREATE == kind)
-                                    listener.fileCreated(watchedPath, entry);
+                                    listener.entryCreated(watchedPath, entry);
                                 else if (ENTRY_DELETE == kind)
-                                    listener.fileDeleted(watchedPath, entry);
+                                    listener.entryDeleted(watchedPath, entry);
                                 else if (ENTRY_MODIFY == kind)
-                                    listener.fileModified(watchedPath, entry);
+                                    listener.entryModified(watchedPath, entry);
                                 else
                                     assert false : "Unknown event!";
                             }
@@ -127,6 +127,15 @@ public class FileSystemListenerServiceImpl implements FileSystemListenerService
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
             interrupt();
+
+            try
+            {
+                _watcher.close();
+            }
+            catch (IOException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
         }
 
         @Override

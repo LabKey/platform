@@ -24,14 +24,14 @@ class EtlDirectoryListener implements FileSystemDirectoryListener
     }
 
     @Override
-    public void fileCreated(Path directory, Path entry)
+    public void entryCreated(Path directory, Path entry)
     {
         LOG.info(entry.toString() + " created");
         DescriptorCache.removeConfigNames(_module);
     }
 
     @Override
-    public void fileDeleted(Path directory, Path entry)
+    public void entryDeleted(Path directory, Path entry)
     {
         LOG.info(entry.toString() + " deleted");
         DescriptorCache.removeConfigNames(_module);
@@ -39,7 +39,7 @@ class EtlDirectoryListener implements FileSystemDirectoryListener
     }
 
     @Override
-    public void fileModified(Path directory, Path entry)
+    public void entryModified(Path directory, Path entry)
     {
         LOG.info(entry.toString() + " updated");
         removeDescriptor(entry);
