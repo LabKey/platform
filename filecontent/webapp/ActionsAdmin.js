@@ -502,13 +502,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
      */
     createToolbarPanel : function()
     {
-        var buttons = [];
+        var buttons = [], i;
         if (this.tbarItemsConfig && this.tbarItemsConfig.length)
         {
-            for (var i=0; i < this.tbarItemsConfig.length; i++)
+            for (i=0; i < this.tbarItemsConfig.length; i++)
             {
                 var cfg = this.tbarItemsConfig[i];
-                if (typeof this.actions[cfg.id] == "object")
+                if (Ext.isObject(this.actions[cfg.id]))
                 {
                     var action = this.actions[cfg.id];
                     action.initialConfig.pressed = false;
@@ -553,13 +553,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         });
 
         var actions = [];
-        for (var a in this.actions)
+        for (i in this.actions)
         {
-            var action = this.actions[a];
+            var action = this.actions[i];
 
-            if (action && ('object' == typeof action))
+            if (Ext.isObject(action))
             {
-                var config = Ext.applyIf({xtype:'button', disabled:false, pressed: false, actionId:a}, action.initialConfig);
+                var config = Ext.applyIf({xtype:'button', disabled:false, pressed: false, actionId:i}, action.initialConfig);
 
                 config.handler = undefined;
                 config.listeners = undefined;
@@ -590,7 +590,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     var sourceEl = e.getTarget('table.x-btn', 10, true);
 
                     if (sourceEl) {
-                        d = sourceEl.dom.cloneNode(true);
+                        var d = sourceEl.dom.cloneNode(true);
                         d.id = Ext.id();
                         var comp = v.findById(sourceEl.id);
 
@@ -612,24 +612,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             });
         });
 
-        var data = [];
-        var sampleStore = new Ext.data.ArrayStore({
-            fields: [
-                {name: 'name'},
-                {name: 'modified'},
-                {name: 'size'},
-                {name: 'createdBy'},
-                {name: 'description'},
-                {name: 'fileExt'}
-            ],
-            data: [
-                ['file1.xls', '4/15/2010', 10150, 'test user', 'first file', 'xls'],
-                ['file2.xls', '4/16/2010', 13155, 'administrator', 'second file', 'xls']
-            ]
-        })
-
         // substitute in some renderers
-        for (var i=0; i < this.columnModel.length; i++)
+        for (i=0; i < this.columnModel.length; i++)
         {
             var col = this.columnModel[i];
 
@@ -644,53 +628,34 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 col.renderer = undefined;
         }
 
-        this.grid = new Ext.grid.GridPanel(
-        {
+        this.grid = new Ext.grid.GridPanel({
             tbar: this.toolbar,
             layout: 'fit',
-            store: sampleStore,
-            border:true,
+            store: {
+                xtype: 'arraystore',
+                fields: [
+                    {name: 'name'},
+                    {name: 'modified'},
+                    {name: 'size'},
+                    {name: 'createdBy'},
+                    {name: 'description'},
+                    {name: 'fileExt'}
+                ],
+                data: [
+                    ['file1.xls', '4/15/2010', 10150, 'test user', 'first file', 'xls'],
+                    ['file2.xls', '4/16/2010', 13155, 'administrator', 'second file', 'xls']
+                ]
+            },
+            border: true,
             height: 150,
             columns: this.columnModel,
             id: 'exampleFileGrid'
         });
 
-        this.inheritPanel = new Ext.form.RadioGroup(
-        {
-            items: [{
-                    boxLabel: 'Inherit configuration from parent folder/project',
-                    // Workbooks always inherit from parent config, but pull the config directly so
-                    // be sure the UI reflects that
-                    checked: this.inheritedTbarConfig || LABKEY.Security.currentContainer.type == 'workbook',
-                    name: 'inheritedTbarConfig',
-                    value: 'true',
-                    disabled: LABKEY.Security.currentContainer.type == 'project'
-                },
-                {
-                    boxLabel: 'Define configuration for this folder/project',
-                    // Workbooks always inherit from parent config, but pull the config directly so
-                    // be sure the UI reflects that
-                    checked: !this.inheritedTbarConfig && !LABKEY.Security.currentContainer.type == 'workbook',
-                    name: 'inheritedTbarConfig',
-                    value: 'false',
-                    disabled: LABKEY.Security.currentContainer.type == 'workbook'
-                }
-            ],
-            listeners: {
-                change: { fn: function(field, checked) {
-                    this.inheritedTbarConfig = checked.value == 'true';
-                    // Show/hide the actual config based on whether it's being set in this container or being inherited
-                    Ext.ComponentMgr.get('dragHelpHTML').setVisible(!this.inheritedTbarConfig);
-                    Ext.ComponentMgr.get('allButtonsPanel').setVisible(!this.inheritedTbarConfig);
-                    Ext.ComponentMgr.get('exampleFileGrid').setVisible(!this.inheritedTbarConfig);
-                }, scope: this }
-            }
-        });
-
         if (this.gridConfig)
             this.grid.applyState(this.gridConfig);
 
-        var toolbarPanel = new Ext.Panel({
+        return new Ext.Panel({
             id: 'toolbarTab',
             title: 'Toolbar and Grid Settings',
             bodyStyle : 'padding:10px;',
@@ -701,7 +666,36 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             },
             items: [
                 {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span>', border: false, height: 20, autoScroll:true},
-                this.inheritPanel,
+                {
+                    xtype: 'radiogroup',
+                    height: 20,
+                    items: [{
+                        boxLabel: 'Inherit configuration from parent folder/project',
+                        // Workbooks always inherit from parent config, but pull the config directly so
+                        // be sure the UI reflects that
+                        checked: this.inheritedTbarConfig || LABKEY.Security.currentContainer.type == 'workbook',
+                        name: 'inheritedTbarConfig',
+                        value: 'true',
+                        disabled: LABKEY.Security.currentContainer.type == 'project'
+                    },{
+                        boxLabel: 'Define configuration for this folder/project',
+                        // Workbooks always inherit from parent config, but pull the config directly so
+                        // be sure the UI reflects that
+                        checked: !this.inheritedTbarConfig && !LABKEY.Security.currentContainer.type == 'workbook',
+                        name: 'inheritedTbarConfig',
+                        value: 'false',
+                        disabled: LABKEY.Security.currentContainer.type == 'workbook'
+                    }],
+                    listeners: {
+                        change: { fn: function(field, checked) {
+                            this.inheritedTbarConfig = checked.value == 'true';
+                            // Show/hide the actual config based on whether it's being set in this container or being inherited
+                            Ext.ComponentMgr.get('dragHelpHTML').setVisible(!this.inheritedTbarConfig);
+                            Ext.ComponentMgr.get('allButtonsPanel').setVisible(!this.inheritedTbarConfig);
+                            Ext.ComponentMgr.get('exampleFileGrid').setVisible(!this.inheritedTbarConfig);
+                        }, scope: this }
+                    }
+                },
                 {html: 'Drag the buttons on the toolbar to customize the button order. ' +
                        'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
                        'by clicking on the toolbar button and selecting "remove" from the dropdown menu.<br><br>' +
@@ -711,8 +705,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 this.grid
             ]
         });
-
-        return toolbarPanel;
     },
 
     /**
