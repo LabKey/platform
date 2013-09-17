@@ -591,7 +591,7 @@ public class DbSchema
                     }
                     catch (Exception e)
                     {
-                        throw new RuntimeException("Exception testing table " + schema.getName() + "." + tableName, e);
+                        throw new RuntimeException("Exception testing table " + schema.getDisplayName() + "." + tableName, e);
                     }
                 }
             }
@@ -604,9 +604,9 @@ public class DbSchema
 
             // Not using assertNotNull, because it appends non-legal HTML text to our message
             if (null != sOut)
-                fail("<div>Errors in schema " + schema.getName()
+                fail("<div>Errors in schema " + schema.getDisplayName()
                      + ".xml.  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
-                     + schema.getName() + "\">Click here for an XML doc with fixes</a>."
+                     + schema.getDisplayName() + "\">Click here for an XML doc with fixes</a>."
                      + "<br>"
                      + sOut + "</div>");
 
@@ -835,7 +835,7 @@ public class DbSchema
         {
             assertNotNull(test);
             assertTrue(test.getTableNames().size() > 20);
-            assertTrue("\"" + requestedName + "\" schema does not match \"" + expected.getName() + "\" schema", test == expected);
+            assertTrue("\"" + requestedName + "\" schema does not match \"" + expected.getDisplayName() + "\" schema", test == expected);
         }
     }
 
@@ -945,7 +945,7 @@ public class DbSchema
                 Set<DbSchema> schemas = module.getSchemasToTest();
 
                 for (DbSchema schema : schemas)
-                    lastRowId = checkContainerColumns(schema.getName(), sbCheck, tempTableName, module.getName(), lastRowId);
+                    lastRowId = checkContainerColumns(schema.getDisplayName(), sbCheck, tempTableName, module.getName(), lastRowId);
             }
 
             tTemplate.track();

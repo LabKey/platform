@@ -16,7 +16,6 @@
 
 package org.labkey.api.module;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
@@ -100,11 +99,7 @@ public abstract class SpringModule extends DefaultModule
             }
             return con;
         }
-        catch (IllegalAccessException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (InstantiationException x)
+        catch (IllegalAccessException | InstantiationException x)
         {
             throw new RuntimeException(x);
         }
@@ -147,20 +142,15 @@ public abstract class SpringModule extends DefaultModule
         String potentialPath = "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
 
         // Look for a context file
-        InputStream is = null;
-        try
+        try (InputStream is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath))
         {
-            is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath);
             if (is != null && is.read() != -1)
             {
                 return potentialPath;
             }
         }
         catch (IOException e) { /* Just return */ }
-        finally
-        {
-            IOUtils.closeQuietly(is);
-        }
+
         return null;
     }
 
@@ -432,7 +422,7 @@ public abstract class SpringModule extends DefaultModule
     }
 
 
-    /** Spring BeanFactory likes strings, I don't like strings, so use this as an go-between */
+    /** Spring BeanFactory likes strings, I don't like strings, so use this as a go-between */
     public <T> T getBean(Class<T> cls)
     {
         try
