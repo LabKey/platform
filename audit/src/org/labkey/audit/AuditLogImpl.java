@@ -796,7 +796,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                     insertSelect.append("CAST(");
                 insertSelect.append(fromCol.getAlias());
                 if (castNeeded)
-                    insertSelect.append(" AS ").append(dialect.sqlTypeNameFromJdbcType(targetCol.getJdbcType())).append(")");
+                {
+                    insertSelect.append(" AS ").append(dialect.sqlTypeNameFromJdbcType(targetCol.getJdbcType()));
+                    if (targetCol.getJdbcType().isText() && targetCol.getScale() > 0)
+                        insertSelect.append("(").append(targetCol.getScale()).append(")");
+                    insertSelect.append(")");
+                }
                 coalesceSep = ", ";
             }
 
