@@ -1024,7 +1024,6 @@ public class ModuleLoader implements Filter
                 {
                     ModuleContext ctx = getModuleContext(m);
                     m.startup(ctx);
-                    m.runDeferredUpgradeTasks(ctx);
                     ctx.setModuleState(ModuleLoader.ModuleState.Running);
                 }
                 catch (Throwable x)
@@ -1044,6 +1043,22 @@ public class ModuleLoader implements Filter
                     {
                         _log.error("Unable to load resources from module " + m.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
                     }
+                }
+            }
+
+            // Finally, run any deferred upgrades, after all of the modules are in the Running state so that we
+            // know they've registered their listeners
+            for (Module m : _modules)
+            {
+                try
+                {
+                    ModuleContext ctx = getModuleContext(m);
+                    m.runDeferredUpgradeTasks(ctx);
+                }
+                catch (Throwable x)
+                {
+                    setStartupFailure(x);
+                    _log.error("Failure starting module: " + m.getName(), x);
                 }
             }
 
