@@ -1755,7 +1755,7 @@ public class PageFlowUtil
 
     public static final String ext4ThemeRoot()
     {
-        return "ext-4.2.1/packages/";
+        return "ext-theme/";
     }
 
     public static String resolveExtThemePath(Container container)
@@ -1769,7 +1769,7 @@ public class PageFlowUtil
             themeName = theme.getFriendlyName();
         }
 
-        return "/" + ext4ThemeRoot() + themeName.toLowerCase() + "/build/resources/" + themeName.toLowerCase() + "-all.css";
+        return "/" + ext4ThemeRoot() + themeName.toLowerCase() + "/ext-all.css";
     }
 
     private static void explodedExtPaths(Map<String, JSONObject> packages, String pkgDep, Set<String> scripts)
