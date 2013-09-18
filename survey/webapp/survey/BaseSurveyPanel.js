@@ -934,7 +934,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     {
         var values = {};
         Ext4.each(form.getFields().items, function(field){
-            if (field.submitValue && field.isDirty() && field.isValid())
+            if (field.submitValue && field.isDirty() && (field.isHidden() || field.isValid()))
             {
                 // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radiofeilds
                 if (field.getXType() == "radiogroup")

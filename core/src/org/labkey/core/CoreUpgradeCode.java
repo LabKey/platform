@@ -35,8 +35,11 @@ import org.labkey.core.query.UsersDomainKind;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -261,13 +264,14 @@ public class CoreUpgradeCode implements UpgradeCode
 
     // invoked by core-13.14-13.15.sql
     @SuppressWarnings({"UnusedDeclaration"})
-    public void populateWorkbookSortOrderAndName(ModuleContext moduleContext)
+    @DeferredUpgrade
+    public void populateWorkbookSortOrderAndName(final ModuleContext moduleContext)
     {
         if (moduleContext.isNewInstall())
             return;
 
         final DbSchema schema = CoreSchema.getInstance().getSchema();
-        final String updateSql = "UPDATE core.Containers SET SortOrder = ?, Name = ? WHERE Parent = ? AND RowId = ?";
+        final String updateSql = "UPDATE core.Containers SET SortOrder = ? WHERE Parent = ? AND RowId = ?";
         final SqlExecutor updateExecutor = new SqlExecutor(schema);
 
         String selectSql = "SELECT Parent, RowId FROM core.Containers WHERE Type = 'workbook' ORDER BY Parent, RowId";
@@ -281,9 +285,19 @@ public class CoreUpgradeCode implements UpgradeCode
 
                 if (null != parent)
                 {
-                    int rowId = rs.getInt(2);
                     int sortOrder = DbSequenceManager.get(parent, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
-                    updateExecutor.execute(updateSql, sortOrder, String.valueOf(sortOrder), parent, rowId);
+
+                    int rowId = rs.getInt(2);
+                    Container workbook = ContainerManager.getForRowId(rowId);
+                    String oldName = workbook.getPath();
+                    // Do a standard rename
+                    ContainerManager.rename(workbook, moduleContext.getUpgradeUser(), Integer.toString(sortOrder));
+                    // Add an alias so that old URLs continue to work
+                    List<String> aliases = new ArrayList<>(Arrays.asList(ContainerManager.getAliasesForContainer(workbook)));
+                    aliases.add(oldName);
+                    ContainerManager.saveAliasesForContainer(workbook, aliases);
+                    // Do a direct SQL update to set the sort order
+                    updateExecutor.execute(updateSql, sortOrder, parent, rowId);
                 }
             }
         });
