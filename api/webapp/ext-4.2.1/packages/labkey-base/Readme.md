@@ -1,2 +1,0 @@
-# labkey-base - Read Me
-
