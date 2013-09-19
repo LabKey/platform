@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -32,8 +33,6 @@
 <%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.security.roles.SiteAdminRole" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
@@ -97,7 +96,7 @@
                     if(c.hasPermission(user, AdminPermission.class))
                     {
                         String onClick = "truncateTable('"+list.getName()+"')";
-                        %><td><labkey:link href="#" text="Delete All Rows" onclick="<%=text(onClick)%>" /></td><%
+                        %><td><%=textLink("Delete All Rows", "#", onClick, "")%></td><%
                     }
                 }
                 %></tr><%
