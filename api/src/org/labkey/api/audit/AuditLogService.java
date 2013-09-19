@@ -76,6 +76,8 @@ public class AuditLogService
 
     public static AuditTypeProvider getAuditProvider(String eventType)
     {
+        if (eventType == null)
+            return null;
         return _auditTypeProviders.get(eventType.toLowerCase());
     }
 
