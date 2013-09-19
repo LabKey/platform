@@ -1783,8 +1783,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     onHistoryChange : function(token) {
-        // URL is URL encoded, so decode it before parsing it in case it contains spaces or other special characters
-        token = unescape(token);
         if (!token)
             token = "lk-sb-panel-home"; //back to home panel
         else
