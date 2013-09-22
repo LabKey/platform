@@ -615,10 +615,15 @@ api/src/org/labkey/api/files/FileContentEmailPref.java -text
 api/src/org/labkey/api/files/FileContentEmailPrefFilter.java -text
 api/src/org/labkey/api/files/FileContentService.java -text
 api/src/org/labkey/api/files/FileListener.java -text
+api/src/org/labkey/api/files/FileSystemDirectoryListener.java -text
+api/src/org/labkey/api/files/FileSystemWatcher.java -text
+api/src/org/labkey/api/files/FileSystemWatcherImpl.java -text
+api/src/org/labkey/api/files/FileSystemWatchers.java -text
 api/src/org/labkey/api/files/FileUrls.java -text
 api/src/org/labkey/api/files/FilesAdminOptions.java -text
 api/src/org/labkey/api/files/FilesTbarBtnOption.java -text
 api/src/org/labkey/api/files/MissingRootDirectoryException.java -text
+api/src/org/labkey/api/files/NoopSystemWatcher.java -text
 api/src/org/labkey/api/files/TableUpdaterFileListener.java -text
 api/src/org/labkey/api/files/UnsetRootDirectoryException.java -text
 api/src/org/labkey/api/files/view/CustomizeFilesWebPartView.java -text
@@ -1076,8 +1081,6 @@ api/src/org/labkey/api/resource/AbstractResourceCollection.java -text
 api/src/org/labkey/api/resource/ClassResource.java -text
 api/src/org/labkey/api/resource/ClassResourceCollection.java -text
 api/src/org/labkey/api/resource/FileResource.java -text
-api/src/org/labkey/api/resource/FileSystemDirectoryListener.java -text
-api/src/org/labkey/api/resource/FileSystemListenerService.java -text
 api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text

@@ -18,7 +18,8 @@ package org.labkey.api.resource;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
@@ -27,13 +28,14 @@ import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -52,7 +54,6 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     private long _versionStamp;
     private long _versionStampTime;
 
-
     // Static method that operates on the shared cache; removes all children associated with this resolver.
     public static void clearResourceCache(final Resolver resolver)
     {
@@ -70,9 +71,21 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
         super(path, resolver);
+        assert validateDirs(dirs);
         _dirs = dirs;
         _additional = children;
         _cacheKey = new Pair<>(_resolver, getPath());
+    }
+
+    private boolean validateDirs(List<File> dirs)
+    {
+        Set<File> files = new HashSet<>();
+
+        for (File dir : dirs)
+            if (!files.add(dir))
+                assert false : dir.toString() + " was listed twice!";
+
+        return true;
     }
 
     public Resource parent()
@@ -196,18 +209,13 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     // Listen for events in all directories associated with this resource  TODO: This is just a test... final impl will change
     @SafeVarargs
-    public final void registerListener(FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events) throws IOException
+    public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events) throws IOException
     {
         if (isCollection())
         {
-            FileSystemListenerService service = ServiceRegistry.get().getService(FileSystemListenerService.class);
-
-            if (null != service)
+            for (File dir : _dirs)
             {
-                for (File dir : _dirs)
-                {
-                    service.addListener(Paths.get(dir.toURI()), listener, events);
-                }
+                watcher.addListener(dir.toPath(), listener, events);
             }
         }
     }

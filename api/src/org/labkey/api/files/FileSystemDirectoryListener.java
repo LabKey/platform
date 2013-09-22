@@ -1,4 +1,4 @@
-package org.labkey.api.resource;
+package org.labkey.api.files;
 
 import java.nio.file.Path;
 

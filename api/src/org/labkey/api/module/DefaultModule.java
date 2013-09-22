@@ -1080,7 +1080,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected List<File> getResourceDirectories()
     {
-        List<File> dirs = new ArrayList<>(3);
+        Set<File> dirs = new LinkedHashSet<>(3);
         String build = getBuildPath();
         File exploded = getExplodedPath();
         String source = getSourcePath();
@@ -1090,30 +1090,34 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (null != source)
             {
                 File f = new File(source);
+
                 if (f.isDirectory())
+                {
                     dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
 
-                f = new File(new File(source), "resources");
-                if (f.isDirectory())
-                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
+                    f = new File(new File(source), "resources");
+                    if (f.isDirectory())
+                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
 
-                f = new File(new File(source), "src");
-                if (f.isDirectory())
-                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
+                    f = new File(new File(source), "src");
+                    if (f.isDirectory())
+                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
+                }
             }
-            if (null != build)
+            else if (null != build)
             {
                 File f = new File(build);
                 if (f.isDirectory())
                     dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
             }
         }
-        if (exploded != null && exploded.isDirectory())
+
+        if (dirs.isEmpty() && exploded != null && exploded.isDirectory())
         {
             dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
         }
 
-        return dirs;
+        return new LinkedList<>(dirs);
     }
 
 

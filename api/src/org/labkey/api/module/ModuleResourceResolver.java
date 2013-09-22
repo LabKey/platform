@@ -16,19 +16,31 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.resource.AbstractResource;
+import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatcher;
+import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.ClassResourceCollection;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 /**
  * User: kevink
@@ -37,19 +49,35 @@ import java.util.List;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
-    private static final StringKeyCache<Resource> RESOURCES = CacheManager.getStringKeyCache(4096, CacheManager.HOUR, "Module resources");
+    private static final BlockingStringKeyCache<Resource> CACHE = CacheManager.getBlockingStringKeyCache(4096, CacheManager.HOUR, "Module resources", null);
     private static final boolean DEV_MODE = AppProps.getInstance().isDevMode();
+    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Module resource resolver watcher");
 
-    private static final Resource CACHE_MISS = new AbstractResource(null, null) {
-        public Resource parent()
-        {
-            return null;
-        }
-    };
-
+    // Consider: single static set to track registered listeners?
+    private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
     private final Module _module;
     private final MergedDirectoryResource _root;
     private final ClassResourceCollection[] _classes;
+    private final CacheLoader<String, Resource> RESOURCE_LOADER = new CacheLoader<String, Resource>()
+    {
+        @Override
+        public Resource load(String key, @Nullable Object argument)
+        {
+            Path normalized = (Path)argument;
+            Resource r = resolve(normalized);
+
+            // In dev mode, register a listener on every directory we encounter
+            if (DEV_MODE && null != r && r.exists() && r.isCollection())
+                registerListener(r);
+
+            if (null == r)
+                LOG.debug("missed resource: " + key);
+            else if (r.exists())
+                LOG.debug("resolved resource: " + r + " -> " + key);
+
+            return r;
+        }
+    };
 
     ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
     {
@@ -63,33 +91,51 @@ public class ModuleResourceResolver implements Resolver
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
-    private static Resource get(String cacheKey)
+    // We're in dev mode, r is a collection, and r exists()
+    private void registerListener(Resource r)
     {
-        return RESOURCES.get(cacheKey);
+        Path path = r.getPath();
+
+        if (_pathsWithListeners.add(path))
+        {
+            LOG.debug("registering a listener on: " + r.toString());
+
+            try
+            {
+                ((MergedDirectoryResource)r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
+            }
+            catch (IOException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
     }
 
-    private static void put(String cacheKey, Resource r)
+    private void remove(final String fullPath)
     {
-        RESOURCES.put(cacheKey, r);
-    }
+        CACHE.removeUsingFilter(new Filter<String>()
+        {
+            @Override
+            public boolean accept(String key)
+            {
+                String moduleName = _module.getName();
 
-    private static void miss(String cacheKey)
-    {
-        // Cache misses in production mode for the default time period and
-        // in dev mode for a short time (about the length of a request.)
-        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT);
-    }
+                if (key.startsWith(moduleName))
+                {
+                    String shortPath = key.substring(moduleName.length() + 1);
+                    return fullPath.endsWith(shortPath);
+                }
 
-    private static void remove(String cacheKey)
-    {
-        RESOURCES.remove(cacheKey);
+                return false;
+            }
+        });
     }
 
     // Clear all resources from the cache for just this module
     public void clear()
     {
-        String prefix = this.toString();  // Remove all entries having a key that starts with this module name
-        RESOURCES.removeUsingPrefix(prefix);
+        String prefix = _module.getName();  // Remove all entries having a key that starts with this module name
+        CACHE.removeUsingPrefix(prefix);
         MergedDirectoryResource.clearResourceCache(this);
     }
 
@@ -98,45 +144,16 @@ public class ModuleResourceResolver implements Resolver
         return Path.emptyPath;
     }
 
+    @Nullable
     public Resource lookup(Path path)
     {
         if (path == null || !path.startsWith(getRootPath()))
             return null;
 
         Path normalized = path.normalize();
-        String cacheKey = this + ":" + normalized;
-        Resource r = get(cacheKey);
+        String cacheKey = _module.getName() + ":" + normalized;
 
-        if (r == CACHE_MISS)
-            return null;
-
-        if (r == null)
-        {
-            r = resolve(normalized);
-
-            if (null == r)
-            {
-                LOG.debug("missed resource: " + path);
-                miss(cacheKey);
-                return null;
-            }
-
-            if (r.exists())
-            {
-                LOG.debug("resolved resource: " + r + " -> " + normalized);
-                put(cacheKey, r);
-                return r;
-            }
-        }
-        else if (DEV_MODE && !r.exists())
-        {
-            // remove cached resource and try again
-            LOG.debug("removed resource: " + r);
-            remove(cacheKey);
-            return lookup(path);
-        }
-
-        return r;
+        return CACHE.get(cacheKey, normalized, RESOURCE_LOADER);
     }
 
     private Resource resolve(Path path)
@@ -194,5 +211,35 @@ public class ModuleResourceResolver implements Resolver
     public Module getModule()
     {
         return _module;
+    }
+
+    public class ModuleResourceResolverListener implements FileSystemDirectoryListener
+    {
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            LOG.debug(entry + " created");
+            remove(directory.resolve(entry).toString());
+        }
+
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            LOG.debug(entry + " deleted");
+            remove(directory.resolve(entry).toString());
+        }
+
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            throw new IllegalStateException("Modified shouldn't be called!");
+        }
+
+        @Override
+        public void overflow()
+        {
+            LOG.debug("overflow!");
+            CACHE.clear();    // Clear the entire cache
+        }
     }
 }
