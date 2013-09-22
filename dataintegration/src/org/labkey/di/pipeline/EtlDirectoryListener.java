@@ -2,7 +2,7 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.module.Module;
-import org.labkey.api.resource.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemDirectoryListener;
 
 import java.nio.file.Path;
 

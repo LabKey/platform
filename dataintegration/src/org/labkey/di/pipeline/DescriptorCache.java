@@ -7,6 +7,8 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.files.FileSystemWatcher;
+import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.MergedDirectoryResource;
@@ -37,6 +39,7 @@ public class DescriptorCache
     // create, delete, and update events. The module list is initialized at startup time and never changes.
     private static final List<Module> _etlModules = new CopyOnWriteArrayList<>();
     private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "ETL job descriptors and collections", null);
+    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("ETL descriptor cache watcher");
 
     // At startup, we record all modules with "etls" directories and register a file listener to monitor for changes.
     // Loading the list of configurations in each module and the descriptors themselves happens lazily.
@@ -53,7 +56,7 @@ public class DescriptorCache
             {
                 // TODO: Dev mode only?
                 // TODO: Integrate this better with Resource
-                ((MergedDirectoryResource)etlsDir).registerListener(new EtlDirectoryListener(module),
+                ((MergedDirectoryResource)etlsDir).registerListener(WATCHER, new EtlDirectoryListener(module),
                         StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
             }
             catch (IOException e)
