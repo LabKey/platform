@@ -25,9 +25,9 @@ import java.lang.*;
  * Time: 8:30 AM
  */
 
-// This is a "generic enum"... it was a true enum (SecurityManager.GroupMemberType), but I migrated it to this
-// interface / implementation approach because using generics cleaned up getGroupMembers(), getAllGroupMembers(), etc.
-// Standard enums don't support generics.
+// This is a "generic enum"... it was a true enum (SecurityManager.GroupMemberType), but this interface / implementation approach
+// better supports generics and cleans up getGroupMembers(), getAllGroupMembers(), etc. Standard enums don't support generics.
+// CONSIDER: Add ACTIVE_USERS type?
 public interface MemberType<P extends UserPrincipal>
 {
     @Nullable P getPrincipal(int id);
@@ -40,7 +40,7 @@ public interface MemberType<P extends UserPrincipal>
         }
     };
 
-    static MemberType<User> USERS = new MemberType<User>() {
+    static MemberType<User> ACTIVE_AND_INACTIVE_USERS = new MemberType<User>() {
         @Override
         public User getPrincipal(int id)
         {
@@ -48,11 +48,11 @@ public interface MemberType<P extends UserPrincipal>
         }
     };
 
-    static MemberType<UserPrincipal> BOTH = new MemberType<UserPrincipal>() {
+    static MemberType<UserPrincipal> ALL_GROUPS_AND_USERS = new MemberType<UserPrincipal>() {
         @Override
         public UserPrincipal getPrincipal(int id)
         {
-            User user = USERS.getPrincipal(id);
+            User user = ACTIVE_AND_INACTIVE_USERS.getPrincipal(id);
 
             if (null != user)
                 return user;

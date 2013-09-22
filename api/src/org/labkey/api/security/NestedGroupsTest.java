@@ -269,7 +269,7 @@ public class NestedGroupsTest extends Assert
 
     private Set<UserPrincipal> getMembers(@Nullable Group group)
     {
-        return null != group ? SecurityManager.getGroupMembers(group, MemberType.BOTH) : Collections.<UserPrincipal>emptySet();
+        return null != group ? SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS) : Collections.<UserPrincipal>emptySet();
     }
 
     private void expected(int[] actualIds, UserPrincipal... expectedMembers)
@@ -322,13 +322,13 @@ public class NestedGroupsTest extends Assert
 
     private void validateGroupMembers(Group group, int users, int groups, int recursiveUsers, int recursiveGroups)
     {
-        assertEquals(users, SecurityManager.getGroupMembers(group, MemberType.USERS).size());
+        assertEquals(users, SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
         assertEquals(groups, SecurityManager.getGroupMembers(group, MemberType.GROUPS).size());
-        assertEquals(users + groups, SecurityManager.getGroupMembers(group, MemberType.BOTH).size());
+        assertEquals(users + groups, SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
 
-        assertEquals(recursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.USERS).size());
+        assertEquals(recursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
         assertEquals(recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.GROUPS).size());
-        assertEquals(recursiveUsers + recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.BOTH).size());
+        assertEquals(recursiveUsers + recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
     }
 
     private void cleanup()

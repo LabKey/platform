@@ -168,7 +168,7 @@ public class GroupManager
         {
             if (!hideUnconnected || connected.contains(g.getUserId()))
             {
-                int userCount = SecurityManager.getGroupMembers(g, MemberType.USERS).size();
+                int userCount = SecurityManager.getGroupMembers(g, MemberType.ACTIVE_AND_INACTIVE_USERS).size();
                 int groupCount = SecurityManager.getGroupMembers(g, MemberType.GROUPS).size();
 
                 sb.append("\t").append(g.getUserId()).append(" [");
@@ -248,7 +248,7 @@ public class GroupManager
             {
                 // remove existing group members, full replacement
                 List<UserPrincipal> membersToDelete = new ArrayList<>();
-                membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.BOTH));
+                membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS));
                 SecurityManager.deleteMembers(group, membersToDelete);
 
                 for (UserRefType xmlMember : xmlGroupType.getUsers().getUserArray())
@@ -534,7 +534,7 @@ public class GroupManager
             return (Group)groupMap.get(g);  //it has already been copied
         }
 
-        Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, MemberType.BOTH);
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, MemberType.ALL_GROUPS_AND_USERS);
         Set<UserPrincipal> translatedMembers = new LinkedHashSet<>();
 
         for (UserPrincipal m : members)
@@ -561,7 +561,7 @@ public class GroupManager
         if (SecurityManager.getGroupId(c, newGroupName, null, false) != null)
         {
             Group existingGroup = SecurityManager.getGroup(SecurityManager.getGroupId(c, newGroupName));
-            Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, MemberType.BOTH);
+            Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, MemberType.ALL_GROUPS_AND_USERS);
 
             if(existingMembers.equals(translatedMembers))
             {

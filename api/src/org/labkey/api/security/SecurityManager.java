@@ -1373,7 +1373,7 @@ public class SecurityManager
         if (group.isGuests() || group.isUsers())
             return "Can't add a member to the " + group.getName() + " group";
 
-        Set<UserPrincipal> members = getGroupMembers(group, MemberType.BOTH);
+        Set<UserPrincipal> members = getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
 
         if (members.contains(principal))
             return ALREADY_A_MEMBER_ERROR_MESSAGE;
@@ -1539,7 +1539,7 @@ public class SecurityManager
     }
 
 
-    // Returns all members of this group, including those in subgroups (recursive)
+    // Returns the members of this group dictated by memberType, including those in subgroups (recursive)
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
     {
         Set<Group> visitedGroups = new HashSet<>();
@@ -1582,7 +1582,7 @@ public class SecurityManager
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
     {
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<>();
-        Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.BOTH);
+        Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         LinkedList<UserPrincipal> visited = new LinkedList<>();
         for (UserPrincipal memberGroup : getGroupMembers(group, MemberType.GROUPS))
         {
@@ -1595,7 +1595,7 @@ public class SecurityManager
 
     private static void checkForRedundantMembers(Group group, Set<UserPrincipal> origMembers, Map<UserPrincipal, List<UserPrincipal>> redundantMembers, LinkedList<UserPrincipal> visited)
     {
-        Set<UserPrincipal> members = getGroupMembers(group, MemberType.BOTH);
+        Set<UserPrincipal> members = getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
 
         for (UserPrincipal principal : members)
         {
@@ -1643,7 +1643,7 @@ public class SecurityManager
      */
     private static void checkForMembership(UserPrincipal principal, Group group, LinkedList<UserPrincipal> visited, Set<List<UserPrincipal>> memberships)
     {
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.BOTH))
+        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS))
         {
             if (visited.contains(member))
                 continue;
@@ -1744,7 +1744,7 @@ public class SecurityManager
                 continue;
 
             // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, MemberType.USERS);
+            members = getGroupMembers(g, MemberType.ACTIVE_AND_INACTIVE_USERS);
 
             //add this group's members to hashset
             if (!members.isEmpty())
