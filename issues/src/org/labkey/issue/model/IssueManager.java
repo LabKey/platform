@@ -538,7 +538,7 @@ public class IssueManager
 
                 if (null != group)
                 {
-                    Set<User> groupMembers = SecurityManager.getAllGroupMembers(group, MemberType.USERS);
+                    Set<User> groupMembers = SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
                     if (!groupMembers.isEmpty())
                         initialAssignedTo.addAll(groupMembers);
                 }

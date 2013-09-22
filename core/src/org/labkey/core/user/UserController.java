@@ -1925,7 +1925,7 @@ public class UserController extends SpringActionController
                 response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
                 // Direct members only... does not recurse into subgroups. TODO: Provide that ability?
-                users = SecurityManager.getGroupMembers(group, MemberType.USERS);
+                users = SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
             }
             else
             {

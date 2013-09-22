@@ -320,7 +320,7 @@ public class CoreQuerySchema extends UserSchema
                 _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
-                for (UserPrincipal adminUser : SecurityManager.getGroupMembers(siteAdminGroup, MemberType.USERS))
+                for (UserPrincipal adminUser : SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS))
                 {
                     _projectUserIds.add(adminUser.getUserId());
                 }

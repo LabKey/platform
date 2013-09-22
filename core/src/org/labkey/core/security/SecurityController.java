@@ -674,7 +674,7 @@ public class SecurityController extends SpringActionController
                 if (removeNames != null)
                 {
                     //get list of group members to determine how many there are
-                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.USERS);
+                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.ACTIVE_AND_INACTIVE_USERS);
 
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
                     if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
@@ -854,7 +854,7 @@ public class SecurityController extends SpringActionController
         // validate that group is in the current project!
         Container c = getContainer();
         ensureGroupInContainer(group, c);
-        Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.BOTH);
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
