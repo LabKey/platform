@@ -91,6 +91,7 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
@@ -274,12 +275,6 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getManageViewsURL(Container container)
-        {
-            return new ActionURL(ReportsController.ManageReportsAction.class, container);
-        }
-
-        @Override
         public ActionURL getStudyOverviewURL(Container container)
         {
             return new ActionURL(OverviewAction.class, container);
@@ -303,12 +298,6 @@ public class StudyController extends BaseStudyController
         public ActionURL getDatasetsURL(Container container)
         {
             return new ActionURL(StudyController.DatasetsAction.class, container);
-        }
-
-        @Override
-        public ActionURL getManageReports(Container container)
-        {
-            return new ActionURL(ReportsController.ManageReportsAction.class, container);
         }
 
         @Override
@@ -4801,13 +4790,13 @@ public class StudyController extends BaseStudyController
             else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
                 return new ActionURL(form.getReturnUrl());
             else
-                return new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+                return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            root.addChild("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
+            root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             return root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
         }
     }

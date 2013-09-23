@@ -2411,7 +2411,6 @@ query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/createQueryReport.jsp -text
 query/src/org/labkey/query/reports/view/dataViews.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text
-query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
@@ -2522,7 +2521,6 @@ query/webapp/reports/internal-link.png -text
 query/webapp/reports/js.png -text
 query/webapp/reports/link_data.png -text
 query/webapp/reports/local-link.png -text
-query/webapp/reports/manageViews.js -text
 query/webapp/reports/output_chart.jpg -text
 query/webapp/reports/output_excel.jpg -text
 query/webapp/reports/output_grid.jpg -text
@@ -3569,7 +3567,6 @@ study/src/org/labkey/study/view/manageStudyPropertiesExt.jsp -text
 study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
-study/src/org/labkey/study/view/manageViews.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
 study/src/org/labkey/study/view/moduleNav.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text

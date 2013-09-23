@@ -772,7 +772,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
     getCategories : function(){
          Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+            url     : LABKEY.ActionURL.buildURL('reports', 'getCategories.api'),
             method  : 'GET',
             success : function(response){
                 this.categories = Ext4.decode(response.responseText);

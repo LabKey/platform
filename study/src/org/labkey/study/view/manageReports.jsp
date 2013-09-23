@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.reports.model.ViewInfo" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -29,9 +32,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.reports.model.ViewInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -124,7 +124,7 @@
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            <%=textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c))%>
+            <%=textLink("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c))%>
             </td></tr>
         </table>
 <%

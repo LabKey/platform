@@ -47,7 +47,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -64,7 +63,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -158,7 +156,7 @@ public class ReportsController extends BaseStudyController
             if (_study == null)
                 return root.addChild("No Study In Folder");
             else if (getUser().isSiteAdmin())
-                return root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
+                return root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 return root.addChild("Views");
         }
@@ -185,7 +183,7 @@ public class ReportsController extends BaseStudyController
             if (redirectUrl != null)
                 return HttpView.redirect(redirectUrl);
             else
-                return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
+                return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -217,215 +215,12 @@ public class ReportsController extends BaseStudyController
                         view.delete(context.getUser(), context.getRequest());
                 }
             }
-            return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
+            return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null; 
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ManageReportsAction extends SimpleViewAction<StudyManageReportsBean>
-    {
-        public ModelAndView getView(StudyManageReportsBean form, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("manageReportsAndViews"));
-            StudyJspView<StudyManageReportsBean> view = new StudyJspView<>(getStudyRedirectIfNull(), "manageViews.jsp", form, errors);
-
-            view.setTitle("Manage Views");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    public static class ViewsSummaryForm
-    {
-        private String _schemaName;
-        private String _queryName;
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    @Deprecated
-    public class ManageViewsSummaryAction extends ApiAction<ViewsSummaryForm>
-    {
-        public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
-        {
-            boolean showQueries = getContainer().hasPermission(getUser(), AdminPermission.class) ||
-                    ReportUtil.isInRole(getUser(), getContainer(), EditorRole.class);
-            JSONArray views = new JSONArray();
-
-            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), showQueries, !showQueries))
-                views.put(info.toJSON(getUser()));
-
-            return new ApiSimpleResponse("views", views);
-        }
-    }
-
-    public static class RenameReportForm
-    {
-        private int _reportId;
-        private String _reportName;
-        private String _reportDescription;
-
-        public int getReportId(){return _reportId;}
-        public void setReportId(int reportId){_reportId = reportId;}
-        public String getReportName(){return _reportName;}
-        public void setReportName(String reportName){_reportName = reportName;}
-
-        public String getReportDescription()
-        {
-            return _reportDescription;
-        }
-
-        public void setReportDescription(String reportDescription)
-        {
-            _reportDescription = reportDescription;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class RenameReportAction extends FormViewAction<RenameReportForm>
-    {
-        private String _newReportName;
-        private Report _report;
-
-        public void validateCommand(RenameReportForm form, Errors errors)
-        {
-            int reportId =  form.getReportId();
-            _newReportName =  form.getReportName();
-            if (!StringUtils.isEmpty(_newReportName))
-            {
-                try
-                {
-                    _report = ReportService.get().getReport(reportId);
-                    if (_report != null)
-                    {
-                        if (reportNameExists(getViewContext(), _newReportName, _report.getDescriptor().getReportKey()))
-                            errors.reject("renameReportAction", "There is already a view with the name of: " + _newReportName +
-                                    ". Please specify a different name.");
-                    }
-                    else
-                        errors.reject("renameReportAction", "Unable to find the specified report");
-                }
-                catch (Exception e)
-                {
-                    errors.reject("renameReportAction", "An error occurred trying to rename the specified report");
-                }
-            }
-            else
-                errors.reject("renameReportAction", "The view name cannot be blank");
-        }
-
-        public ModelAndView getView(RenameReportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            ManageReportsAction action = new ManageReportsAction();
-            action.setViewContext(getViewContext());
-            action.setPageConfig(getPageConfig());
-            return action.getView(null, errors);
-        }
-
-        public boolean handlePost(RenameReportForm form, BindException errors) throws Exception
-        {
-            String key = _report.getDescriptor().getReportKey();
-            String newKey;
-            int idx = key.lastIndexOf('/');
-            if (idx != -1)
-            {
-                newKey = key.substring(0, idx + 1) + _newReportName;
-            }
-            else
-                newKey = _newReportName;
-
-            if (_report instanceof StudyQueryReport)
-                ((StudyQueryReport)_report).renameReport(getViewContext(), newKey, _newReportName);
-            else
-            {
-                _report.getDescriptor().setReportName(_newReportName);
-                ReportService.get().saveReport(getViewContext(), key, _report);
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(RenameReportForm form)
-        {
-            return new ActionURL(ManageReportsAction.class, getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ReportDescriptionAction extends FormViewAction<RenameReportForm>
-    {
-        public void validateCommand(RenameReportForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(RenameReportForm renameReportForm, boolean reshow, BindException errors) throws Exception
-        {
-            ManageReportsAction action = new ManageReportsAction();
-            action.setViewContext(getViewContext());
-            action.setPageConfig(getPageConfig());
-            return action.getView(null, errors);
-        }
-
-        public boolean handlePost(RenameReportForm form, BindException errors) throws Exception
-        {
-            int reportId =  form.getReportId();
-            String reportDescription =  form.getReportDescription();
-            Report report = ReportService.get().getReport(reportId);
-            if (report != null)
-            {
-                report.getDescriptor().setReportDescription(StringUtils.trimToNull(reportDescription));
-                ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
-                return true;
-            }
-            else
-            {
-                errors.reject("reportDescription", "Unable to change the description for the specified report");
-                return false;
-            }
-        }
-
-        public ActionURL getSuccessURL(RenameReportForm renameReportForm)
-        {
-            return new ActionURL(ManageReportsAction.class, getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -598,6 +393,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    @Deprecated // there should no longer be any UI that refers to this action
     public class ConvertQueryToReportAction extends ApiAction<SaveReportViewForm>
     {
         public ApiResponse execute(SaveReportViewForm form, BindException errors) throws Exception
@@ -651,7 +447,7 @@ public class ReportsController extends BaseStudyController
                 return getDatasetForward(reportId, form.getRedirectToDataset());
             }
             else
-                return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
+                return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1875,7 +1671,7 @@ public class ReportsController extends BaseStudyController
 
 
             if (getUser().isSiteAdmin())
-                root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
+                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
         catch (Exception e)
         {
@@ -1891,7 +1687,7 @@ public class ReportsController extends BaseStudyController
             Study study = appendRootNavTrail(root);
 
             if (getUser().isSiteAdmin())
-                root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
+                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             
             VisitImpl visit = null;
 

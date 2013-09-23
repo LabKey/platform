@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
@@ -81,7 +82,7 @@
                 <%= buttonImg("Save and Finish", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;")%>
                 <%= bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ? 
                         generateButton("Cancel", bean.getReturnUrl()) :
-                        generateButton("Cancel", new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer())) %>
+                        generateButton("Cancel", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer())) %>
                 <%= buttonImg("Restore default script", "if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>

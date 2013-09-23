@@ -136,9 +136,6 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
             ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c);
-
-            if (StudyService.get().getStudy(c) != null)
-                url = PageFlowUtil.urlProvider(StudyUrls.class).getManageReports(c);
             menu.addChild("Manage Views", url);
         }
 

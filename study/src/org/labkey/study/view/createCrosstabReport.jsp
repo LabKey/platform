@@ -26,12 +26,14 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
     CreateCrosstabBean bean = me.getModelBean();
 
-    ActionURL returnURL = new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer());
+    ActionURL returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
 %>
 <form action="participantCrosstab.view" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">

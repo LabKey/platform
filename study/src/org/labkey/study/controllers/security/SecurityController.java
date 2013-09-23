@@ -27,6 +27,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
@@ -530,7 +531,7 @@ public class SecurityController extends SpringActionController
 
                 if (getUser().isSiteAdmin())
                     root.addChild("Manage Views",
-                            new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).getLocalURIString());
+                            PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()).getLocalURIString());
             }
             catch (Exception e)
             {

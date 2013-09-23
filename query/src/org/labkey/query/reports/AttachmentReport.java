@@ -160,24 +160,6 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         ActionURL url = new ActionURL(ReportsController.UpdateAttachmentReportAction.class, context.getContainer());
         url.addParameter("reportId", getReportId().toString());
 
-        // Total hack because Manage Views page calls this from an API action, but we want to return to
-        // the page URL. TODO: Report gathering APIs should take a page URL
-        String currentAction = context.getActionURL().getAction();
-
-        if ("manageViewsSummary".equals(currentAction))
-        {
-            String currentController = context.getActionURL().getController();
-            ActionURL returnURL = null;
-
-            if ("study-reports".equals(currentController))
-                returnURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageViewsURL(context.getContainer());
-            else if ("reports".equals(currentController))
-                returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer());
-
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
-        }
-
         return url;
     }
 
