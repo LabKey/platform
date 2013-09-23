@@ -9,7 +9,7 @@ import java.nio.file.WatchEvent;
  * Date: 9/19/13
  * Time: 9:50 AM
  */
-public class NoopSystemWatcher implements FileSystemWatcher
+public class NoopFileSystemWatcher implements FileSystemWatcher
 {
     @SafeVarargs
     public final void addListener(Path directory, FileSystemDirectoryListener listener, WatchEvent.Kind<Path>... events) throws IOException

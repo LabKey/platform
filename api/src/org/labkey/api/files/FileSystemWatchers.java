@@ -20,7 +20,7 @@ public class FileSystemWatchers
         catch (IOException e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
-            return new NoopSystemWatcher();
+            return new NoopFileSystemWatcher();
         }
     }
 }
