@@ -377,7 +377,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay(User user)
     {
-        if (isWorkbookOrTab())                          // TODO: still seems right, can't navigate directly to it
+        if (isWorkbookOrTab())
             return false;
 
         String name = _path.getName();
@@ -1289,7 +1289,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         List<FolderTab> folderTabs = new ArrayList<>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
         {
-            if (folderTab.isContainerTab() && null == ContainerManager.getChild(this, folderTab.getName()))
+            if (folderTab.isContainerTab() && null == ContainerManager.getChild(this, folderTab.getName()) &&
+                    ContainerManager.hasContainerTabBeenDeleted(this, folderTab.getName(), newFolderType))
             {
                 folderTabs.add(folderTab);
             }

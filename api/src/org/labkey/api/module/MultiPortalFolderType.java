@@ -215,7 +215,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                         {
                             Container folderContainer = folderTab.getContainerTab(container, ctx.getUser());
                             assert(null != folderContainer);        // we checked above here
-                            FolderType folderType = folderTab.getFolderType();
+                            FolderType folderType = folderContainer.getFolderType();        // get type from container because it may be different from original
                             if (null != folderType)
                             {
                                 folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited

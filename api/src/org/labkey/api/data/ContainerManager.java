@@ -336,7 +336,7 @@ public class ContainerManager
                 {
                     // Check these and change type unless they were overridden explicitly
                     for (Container container : childTabFoldersNonMatchingTypes)
-                        if (!getContainerTabTypeOverridden(container))
+                        if (!isContainerTabTypeOverridden(container))
                         {
                             FolderType newType = folderType.findTab(container.getName()).getFolderType();    // Can't throw null because already checked
                             setFolderType(container, newType, user, errors);
@@ -482,7 +482,22 @@ public class ContainerManager
         return props.get(FOLDER_TYPE_PROPERTY_NAME);
     }
 
-    public static boolean getContainerTabTypeOverridden(Container c)
+    public static boolean isContainerTabTypeThisOrChildrenOverridden(Container c)
+    {
+        if (isContainerTabTypeOverridden(c))
+            return true;
+        if (c.getFolderType().hasContainerTabs())
+        {
+            for (Container child : c.getChildren())
+            {
+                if (child.isContainerTab() && isContainerTabTypeOverridden(child))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isContainerTabTypeOverridden(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME);
         String overridden = props.get(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN);
@@ -1036,7 +1051,7 @@ public class ContainerManager
             Map<String, NavTree> m = new HashMap<>();
             for (Container f : folders)
             {
-                if (f.isWorkbookOrTab())                    // TODO: seems correct
+                if (f.isWorkbookOrTab())
                     continue;
 
                 SecurityPolicy policy = f.getPolicy();

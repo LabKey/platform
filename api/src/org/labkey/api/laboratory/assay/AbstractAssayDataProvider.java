@@ -321,7 +321,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 for (ExpRun run : runs)
                 {
                     Container runContainer = run.getContainer();
-                    if (runContainer.equals(c) || (runContainer.isWorkbookOrTab() && c.equals(runContainer.getParent())))
+                    if (runContainer.equals(c) || (runContainer.isWorkbook() && c.equals(runContainer.getParent())))
                     {
                         totalRuns++;
                     }
