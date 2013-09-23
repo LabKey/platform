@@ -253,6 +253,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 importSpecimenData(destStudy, vf);
                 importSpecimenSettings(_errors, destStudy, vf);
 
+                // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
+                importCohortSettings(_errors, destStudy, vf);
+
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
 
@@ -360,6 +363,19 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         return dataTypes;
     }
 
+    private void importCohortSettings(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
+    {
+        VirtualFile studyDir = vf.getDir("study");
+        StudyDocument studyDoc = getStudyDocument(studyDir);
+        if (studyDoc != null)
+        {
+            StudyImportContext importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
+            new CohortImporter().process(importContext, studyDir, errors);
+        }
+
+
+    }
+
     private void importSpecimenSettings(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
     {
         VirtualFile studyDir = vf.getDir("study");
@@ -399,9 +415,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
             ProtocolDocumentImporter proImporter = new ProtocolDocumentImporter();
             proImporter.process(importContext, studyDir, errors);
-
-            CohortImporter cohortImporter = new CohortImporter();
-            cohortImporter.process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());

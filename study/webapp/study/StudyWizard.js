@@ -862,7 +862,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var viewsStore = new Ext.data.Store({
             proxy: new Ext.data.HttpProxy({
-                url: LABKEY.ActionURL.buildURL('study', 'browseData.api')
+                url: LABKEY.ActionURL.buildURL('reports', 'browseData.api')
             }),
             reader: new Ext.data.JsonReader({
                 root: 'data',
@@ -1047,7 +1047,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             store: new Ext.data.Store({
                 proxy: new Ext.data.HttpProxy({
-                    url: LABKEY.ActionURL.buildURL('study', 'browseData.api')
+                    url: LABKEY.ActionURL.buildURL('reports', 'browseData.api')
                 }),
                 reader: new Ext.data.JsonReader({
                     root: 'data',
