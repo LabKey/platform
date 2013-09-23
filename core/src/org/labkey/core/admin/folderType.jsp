@@ -395,7 +395,7 @@ for (Module module : allModules)
                                 items: [
                                     {xtype: 'displayfield',
                                         value: 'This folder was previously typed as the new folder type and had deleted tab folders.'},
-                                    {xtype: 'displayfield', value: 'Check the deleted tab folders that you want to be resurrected.'}
+                                    {xtype: 'displayfield', value: 'Check the deleted tab folders that you want to be recreated.'}
                                 ],
                                 layout: 'vbox',
                                 buttons: [{

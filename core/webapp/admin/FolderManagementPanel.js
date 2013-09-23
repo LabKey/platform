@@ -59,7 +59,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     {name : 'isProject',                  type : 'boolean' },
                     {name : 'isContainerTab',             type : 'boolean' },
                     {name : 'folderTypeHasContainerTabs', type : 'boolean' },
-                    {name : 'containerTabTypeOveridden',  type : 'boolean' },
+                    {name : 'containerTabTypeOveridden',  type : 'boolean' },       // Says this folder or one of its children is overridden CT
                     {name : 'text'                                         }
                 ]
             });
@@ -89,43 +89,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
             remove : 'deleteFolder',
             rename : 'renameFolder',
             reorder: 'reorderFolders',
-            revert : function(selectedFolder) {
-                var plural = selectedFolder[0].data.isContainerTab ? '' : 's';
-                Ext4.Msg.show({
-                    title: 'Revert Folder(s)',
-                    msg: 'Are you sure you want to revert the tab folder' + plural + ' to the original folder type' + plural + '?',
-                    buttons : Ext4.MessageBox.YESNO,
-                    icon    : Ext4.MessageBox.WARNING,
-                    fn      : function(btn) {
-                        if (btn == 'ok')
-                        {
-                            Ext4.Ajax.request({
-                                url     : LABKEY.ActionURL.buildURL('admin', 'revertFolder.api'),
-                                method  : 'POST',
-                                jsonData: {containerPath : selectedFolder[0].data.containerPath},
-                                success : function(resp){
-                                    var o = Ext4.decode(resp.responseText);
-
-                                    if (o.success)
-                                    {
-                                        Ext4.Msg.alert('Revert Folder' + plural, 'Folder' + plural + ' reverted successfully');
-                                        if (selectedFolder[0].data.isContainerTab)
-                                            selectedFolder[0].data.containerTabTypeOveridden = false;
-                                        this._validateFolder(selectedFolder[0])
-                                    }
-                                    else
-                                    {
-                                        Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');
-                                    }
-                                },
-                                failure : function() {Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');},
-                                scope   : this
-                            });
-                        }
-                    },
-                    scope: this
-                })
-            }
+            revert : this.revertAction
         };
 
 
@@ -247,6 +211,63 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         else {
             console.warn('No folder to selected from which to start the action');
         }
+    },
+
+    revertAction : function(selectedFolder) {
+        var plural = selectedFolder[0].data.isContainerTab ? '' : 's';
+        Ext4.Msg.show({
+            title: 'Revert Folder(s)',
+            msg: 'Are you sure you want to revert the tab folder' + plural + ' to the original folder type' + plural + '?',
+            buttons : Ext4.MessageBox.YESNO,
+            icon    : Ext4.MessageBox.WARNING,
+            fn      : function(btn) {
+                if (btn == 'yes')
+                {
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('admin', 'revertFolder.api'),
+                        method  : 'POST',
+                        jsonData: {containerPath : selectedFolder[0].data.containerPath},
+                        success : function(resp){
+                            var o = Ext4.decode(resp.responseText);
+
+                            if (o.success)
+                            {
+                                Ext4.Msg.alert('Revert Folder' + plural, 'Folder' + plural + ' reverted successfully');
+
+                                // clear overridden flags
+                                selectedFolder[0].data.containerTabTypeOveridden = false;
+                                if (selectedFolder[0].data.folderTypeHasContainerTabs)
+                                {
+                                    for (var childFolder = selectedFolder[0].firstChild; childFolder != null; childFolder = childFolder.nextSibling)
+                                        childFolder.data.containerTabTypeOveridden = false;
+                                }
+                                else if (selectedFolder[0].data.isContainerTab)
+                                {
+                                    // reverted container tab; clear parent's Revert if no other sibs need reverting
+                                    var clearParentRevert = true;
+                                    for (var childFolder = selectedFolder[0].parentNode.firstChild; childFolder != null; childFolder = childFolder.nextSibling)
+                                        if (childFolder.data.containerTabTypeOveridden)
+                                        {
+                                            clearParentRevert = false;
+                                            break;
+                                        }
+                                    if (clearParentRevert)
+                                        selectedFolder[0].parentNode.data.containerTabTypeOveridden = false;
+                                }
+                                this._validateFolder(selectedFolder[0])
+                            }
+                            else
+                            {
+                                Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');
+                            }
+                        },
+                        failure : function() {Ext4.Msg.alert('Revert Folder' + plural, 'Revert not successful');},
+                        scope   : this
+                    });
+                }
+            },
+            scope: this
+        })
     },
 
     onNodeDragOver : function(node, dragPos, dragZone, overModel, e, data) {
@@ -684,7 +705,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
             tool[0].getComponent('rename').setVisible(!noRename);
 
             // check to disable 'revert'
-            var noRevert = !((node.data.isContainerTab && node.data.containerTabTypeOveridden) || node.data.folderTypeHasContainerTabs);
+            var noRevert = !node.data.containerTabTypeOveridden;
             tool[0].getComponent('revert').setDisabled(noRevert);
             tool[0].getComponent('revert').setVisible(!noRevert);
         }

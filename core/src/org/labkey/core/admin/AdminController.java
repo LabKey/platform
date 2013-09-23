@@ -5728,7 +5728,7 @@ public class AdminController extends SpringActionController
             final Map<String, Object> properties = new HashMap<>();
             Container tabContainer;
 
-            if (getContainer().isContainerTab())                       // TODO: ??
+            if (getContainer().isContainerTab())
             {
                 tabContainer = getContainer().getParent();
             }

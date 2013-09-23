@@ -1411,7 +1411,7 @@ public class CoreController extends SpringActionController
             props.put("iconCls", "x4-tree-icon-parent");
             props.put("isContainerTab", c.isContainerTab());
             props.put("folderTypeHasContainerTabs", c.getFolderType().hasContainerTabs());
-            props.put("containerTabTypeOveridden", ContainerManager.getContainerTabTypeOverridden(c));
+            props.put("containerTabTypeOveridden", ContainerManager.isContainerTabTypeThisOrChildrenOverridden(c));      // also set if child container tab overridden
             return props;
         }
     }
