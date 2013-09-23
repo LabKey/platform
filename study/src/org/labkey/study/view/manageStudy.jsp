@@ -57,6 +57,8 @@
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 
@@ -231,7 +233,7 @@
     <tr>
         <th align="left">Reports/Views</th>
         <td>Manage views for this Study</td>
-        <td><%=textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c)) %></td>
+        <td><%=textLink("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c)) %></td>
     </tr>
     <tr>
         <th align="left">Quality Control States</th>

@@ -76,35 +76,27 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         {
             NavTree reportMenu = new NavTree("Add Report");
 
-            if (adminView)
+            List<ReportService.DesignerInfo> designers = new ArrayList<>();
+            for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
+                designers.addAll(provider.getDesignerInfo(portalCtx));
+
+            Collections.sort(designers, new Comparator<ReportService.DesignerInfo>()
             {
-                List<ReportService.DesignerInfo> designers = new ArrayList<>();
-                for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
-                    designers.addAll(provider.getDesignerInfo(portalCtx));
-
-                Collections.sort(designers, new Comparator<ReportService.DesignerInfo>()
+                @Override
+                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
                 {
-                    @Override
-                    public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
-                    {
-                        return o1.getLabel().compareTo(o2.getLabel());
-                    }
-                });
-
-                for (ReportService.DesignerInfo info : designers)
-                {
-                    NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), info.getIconPath());
-
-                    item.setId(info.getId());
-                    item.setDisabled(info.isDisabled());
-
-                    reportMenu.addChild(item);
+                    return o1.getLabel().compareTo(o2.getLabel());
                 }
-            }
-            else    // eventually should have the same menu for data views and manage views
+            });
+
+            for (ReportService.DesignerInfo info : designers)
             {
-                reportMenu.addChild("From File", PageFlowUtil.urlProvider(ReportUrls.class).urlAttachmentReport(portalCtx.getContainer(), portalCtx.getActionURL()));
-                reportMenu.addChild("From Link", PageFlowUtil.urlProvider(ReportUrls.class).urlLinkReport(portalCtx.getContainer(), portalCtx.getActionURL()));
+                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), info.getIconPath());
+
+                item.setId(info.getId());
+                item.setDisabled(info.isDisabled());
+
+                reportMenu.addChild(item);
             }
             menu.addChild(reportMenu);
         }
@@ -127,15 +119,18 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                 menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
             menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
 
-            NavTree manageViews = new NavTree("Manage Categories");
-            manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
-            menu.addChild(manageViews);
+            if (adminView)
+            {
+                NavTree manageViews = new NavTree("Manage Categories");
+                manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
+                menu.addChild(manageViews);
 
-            String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
-            NavTree deleteViews = new NavTree("Delete Selected");
-            deleteViews.setScript(deleteScript);
-            deleteViews.setDescription("Hold cntl to select more than one record");
-            menu.addChild(deleteViews);
+                String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
+                NavTree deleteViews = new NavTree("Delete Selected");
+                deleteViews.setScript(deleteScript);
+                deleteViews.setDescription("Hold cntl to select more than one record");
+                menu.addChild(deleteViews);
+            }
         }
 
         if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())

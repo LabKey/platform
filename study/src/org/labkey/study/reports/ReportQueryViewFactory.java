@@ -29,6 +29,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -179,7 +180,7 @@ public class ReportQueryViewFactory
         @Override
         public void addManageViewItems(MenuButton button, Map<String, String> params)
         {
-            ActionURL url = new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+            ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
             for (Map.Entry<String, String> entry : params.entrySet())
                 url.addParameter(entry.getKey(), entry.getValue());
 

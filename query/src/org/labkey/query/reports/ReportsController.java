@@ -249,11 +249,6 @@ public class ReportsController extends SpringActionController
             return new ActionURL(ManageViewsAction.class, c);
         }
 
-        public ActionURL urlNewManageViews(Container c)
-        {
-            return new ActionURL(NewManageViewsAction.class, c);
-        }
-
         public ActionURL urlPlotChart(Container c)
         {
             return new ActionURL(PlotChartAction.class, c);
@@ -2196,25 +2191,6 @@ public class ReportsController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ManageViewsAction extends SimpleViewAction<ViewsSummaryForm>
-    {
-        public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
-        {
-            JspView view = new JspView<>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
-
-            view.setTitle("Manage Views");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class NewManageViewsAction extends SimpleViewAction<ViewsSummaryForm>
     {
         public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
         {

@@ -25,6 +25,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -959,7 +960,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     @Override
     public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        ActionURL url = new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
         for (Map.Entry<String, String> entry : params.entrySet())
             url.addParameter(entry.getKey(), entry.getValue());
 

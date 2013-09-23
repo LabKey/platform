@@ -43,6 +43,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -325,7 +326,7 @@ public class DataSetQueryView extends StudyQueryView
     @Override
     public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        ActionURL url = new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
         for (Map.Entry<String, String> entry : params.entrySet())
             url.addParameter(entry.getKey(), entry.getValue());
 

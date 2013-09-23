@@ -202,11 +202,6 @@ public class QueryModule extends DefaultModule
 
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
-
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NEW_MANAGE_VIEWS,
-                "New Manage Views",
-                "Manage Views based on the Data Views webpart.",
-                false);
     }
 
     @Override
