@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -177,7 +178,7 @@ public class DescriptorCache
                 }
             }
 
-            return configs;
+            return Collections.unmodifiableList(configs);
         }
     };
 }
