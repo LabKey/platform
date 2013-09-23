@@ -101,8 +101,7 @@
                 maxValue: 10,
                 value: <%= numberOfDigits%>,
                 width : 220,
-                labelWidth: 130,
-                height: 28
+                labelWidth: 130
             });
 
             var controls = [prefixField, digitsField];
@@ -223,6 +222,7 @@
                 valueField : 'DataSetId',
                 displayField : 'Label',
                 labelWidth : 200,
+                labelSeparator: '',
                 fieldLabel : 'Dataset Containing Aliases',
                 editable: false,
                 listeners : {
@@ -263,6 +263,7 @@
                 valueField : 'header',
                 displayField : 'header',
                 labelWidth : 200,
+                labelSeparator: '',
                 fieldLabel : 'Alias Column',
                 editable: false,
                 disabled : true
@@ -275,6 +276,7 @@
                 valueField : 'header',
                 displayField : 'header',
                 labelWidth : 200,
+                labelSeparator: '',
                 fieldLabel : 'Source Column',
                 editable: false,
                 disabled : true
