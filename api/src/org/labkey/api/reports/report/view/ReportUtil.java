@@ -183,14 +183,10 @@ public class ReportUtil
                 url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl));
             else
             {
-                // don't want to use the current url if it's an ajax request
-                ActionURL ajaxAction = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViewsSummary(context.getContainer());
                 Object returnUrlString = context.get(ReportDescriptor.Prop.returnUrl.name());
 
                 if (returnUrlString != null)
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, returnUrlString.toString());
-                else if (context.getActionURL().getController().equals(ajaxAction.getController()))
-                    url.addParameter(ReportDescriptor.Prop.redirectUrl, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
                 else
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getLocalURIString());
             }
