@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * ENUM version of java.sql.Types
@@ -265,13 +266,44 @@ public enum JdbcType
     }
 
 
+    private static final HashMap<Class,JdbcType> classMap = new HashMap<>();
+    static {
+        for (JdbcType t : JdbcType.values())
+            classMap.put(t.cls, t);
+
+        // primitives
+        classMap.put( boolean.class, BOOLEAN );
+        classMap.put( byte.class, TINYINT );
+        classMap.put( char.class, INTEGER );
+        classMap.put( short.class, SMALLINT );
+        classMap.put( int.class, INTEGER );
+        classMap.put( long.class, BIGINT );
+        classMap.put( float.class, REAL );
+        classMap.put( double.class, DOUBLE );
+        classMap.put( Boolean.class, BOOLEAN );
+        classMap.put( Byte.class, TINYINT );
+        classMap.put( Character.class, SMALLINT );
+        classMap.put( Short.class, SMALLINT );
+        classMap.put( Integer.class, INTEGER );
+        classMap.put( Long.class, BIGINT );
+        classMap.put( Float.class, REAL );
+        classMap.put( Double.class, DOUBLE );
+
+        classMap.put( String.class, VARCHAR);
+        classMap.put( java.util.Date.class, TIMESTAMP);
+        classMap.put( java.sql.Timestamp.class, TIMESTAMP);
+    }
+
+
     public static JdbcType valueOf(Class cls)
     {
-        for (JdbcType t : JdbcType.values())
-        {
-            if (t.cls == cls)
-                return t;
-        }
+        JdbcType t = classMap.get(cls);
+        if (null != t)
+            return t;
+        if (Enum.class.isAssignableFrom(cls))
+            return JdbcType.VARCHAR;
+        if (java.util.Date.class.isAssignableFrom(cls))
+            return JdbcType.TIMESTAMP;
         return null;
     }
 
@@ -506,6 +538,26 @@ public enum JdbcType
 
             assertEquals(promote(BOOLEAN, DATE), OTHER);
             assertEquals(promote(VARBINARY, INTEGER), OTHER);
+        }
+
+        @Test
+        public void valueOf()
+        {
+            assertEquals(JdbcType.VARCHAR, JdbcType.valueOf(String.class));
+            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(Integer.class));
+            assertEquals(JdbcType.DOUBLE, JdbcType.valueOf(Double.class));
+            assertEquals(JdbcType.TIMESTAMP, JdbcType.valueOf(java.util.Date.class));
+            assertEquals(JdbcType.TIMESTAMP, JdbcType.valueOf(java.sql.Timestamp.class));
+            assertEquals(JdbcType.BIGINT, JdbcType.valueOf(Long.class));
+
+            assertEquals(JdbcType.BOOLEAN, JdbcType.valueOf(boolean.class));
+            assertEquals(JdbcType.TINYINT, JdbcType.valueOf(byte.class));
+            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(char.class));
+            assertEquals(JdbcType.SMALLINT, JdbcType.valueOf(short.class));
+            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(int.class));
+            assertEquals(JdbcType.BIGINT, JdbcType.valueOf(long.class));
+            assertEquals(JdbcType.REAL, JdbcType.valueOf(float.class));
+            assertEquals(JdbcType.DOUBLE, JdbcType.valueOf(double.class));
         }
     }
 }

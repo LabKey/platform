@@ -227,11 +227,12 @@ abstract public class QueryService
     //
     // Thread local environment for executing a query
     //
-    // currently only supports USERID for implementing the USERID() method
+    // currently only supports USER for implementing the USERID() and USERNAME() method
     //
     public enum Environment
     {
-        USERID(JdbcType.INTEGER);
+        USER(JdbcType.OTHER),
+        CONTAINER(JdbcType.OTHER);
 
         public JdbcType type;
 

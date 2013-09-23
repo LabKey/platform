@@ -163,7 +163,7 @@ public class AuthFilter implements Filter
             }
         }
 
-        QueryService.get().setEnvironment(QueryService.Environment.USERID, null==user ? User.guest.getUserId() : user.getUserId());
+        QueryService.get().setEnvironment(QueryService.Environment.USER, null==user ? User.guest : user);
 
         try
         {

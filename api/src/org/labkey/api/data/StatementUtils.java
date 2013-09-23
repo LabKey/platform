@@ -842,7 +842,7 @@ public class StatementUtils
         sqlfDeclare.append(" ");
         String type = dialect.sqlTypeNameFromJdbcType(ph.p.getType());
         sqlfDeclare.append(type);
-        if (ph.p.getType().isText() && ph.p.getType() != JdbcType.GUID)
+        if (ph.p.getType().isText() && ph.p.getType() != JdbcType.LONGVARCHAR && ph.p.getType() != JdbcType.GUID)
         {
             int length = ph.length > 0 ? ph.length : 4000;
             sqlfDeclare.append("(").append(length).append(")");

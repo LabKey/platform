@@ -43,14 +43,14 @@ public class UserIdQueryForeignKey extends QueryForeignKey
         return column;
     }
 
-    static DisplayColumnFactory _factoryBlank =  new DisplayColumnFactory()
+    public static DisplayColumnFactory _factoryBlank =  new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
                     return new UserIdRenderer.GuestAsBlank(colInfo);
                 }
             };
-    static DisplayColumnFactory _factoryGuest =  new DisplayColumnFactory()
+    public static DisplayColumnFactory _factoryGuest =  new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
