@@ -128,7 +128,7 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
-    public static final String FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED = "ctChildDeleted";
+    public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
 
     // enum of properties you can see in property change events
     public enum Property
@@ -354,7 +354,6 @@ public class ContainerManager
             }
 
             oldType.unconfigureContainer(c, user);
-            folderType.configureContainer(c, user);
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
 
@@ -366,8 +365,9 @@ public class ContainerManager
                     containerTabTypeOverridden = true;
                 props.put(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN, containerTabTypeOverridden.toString());
             }
-
             PropertyManager.saveProperties(props);
+
+            folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
             // TODO: Not needed? I don't think we've changed the container's state.
             _removeFromCache(c);
@@ -489,34 +489,35 @@ public class ContainerManager
         return (null != overridden) && overridden.equalsIgnoreCase("true");
     }
 
-    private static void setContainerTabDeleted(Container c, String tabName)
+    private static void setContainerTabDeleted(Container c, String tabName, String folderTypeName)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
-        int suffix = 0;
-        while (true)
-        {
-            String childDeleted = props.get(FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix);
-            if (null == childDeleted)
-                break;
-            suffix += 1;
-        }
-        props.put(FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix, tabName);
+        // Add prop in this category <tabName, folderTypeName>
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        props.put(getDeletedTabKey(tabName, folderTypeName), "true");
         PropertyManager.saveProperties(props);
     }
 
-    public static boolean hasContainerTabBeenDeleted(Container c, String tabName)
+    public static void clearContainerTabDeleted(Container c, String tabName, String folderTypeName)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        String key = getDeletedTabKey(tabName, folderTypeName);
+        if (props.containsKey(key))
+        {
+            props.remove(key);
+            PropertyManager.saveProperties(props);
+        }
+    }
+
+    public static boolean hasContainerTabBeenDeleted(Container c, String tabName, String folderTypeName)
     {
         // We keep arbitrary number of deleted children tabs using suffix 0, 1, 2....
-        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
-        for (int suffix = 0; ; suffix += 1)
-        {
-            String childDeleted = props.get(ContainerManager.FOLDER_TYPE_PROPERTY_TABCHILDREN_DELETED + suffix);
-            if (null == childDeleted)
-                break;
-            if (childDeleted.equalsIgnoreCase(tabName))
-                return true;
-        }
-        return false;
+        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.TABFOLDER_CHILDREN_DELETED);
+        return props.containsKey(getDeletedTabKey(tabName, folderTypeName));
+    }
+
+    private static String getDeletedTabKey(String tabName, String folderTypeName)
+    {
+        return tabName + "-TABDELETED-FOLDER-" + folderTypeName;
     }
 
     public static Container ensureContainer(String path)
@@ -1260,7 +1261,7 @@ public class ContainerManager
                     Portal.deletePage(page);
 
                 // Tell parent
-                setContainerTabDeleted(c.getParent(), c.getName());
+                setContainerTabDeleted(c.getParent(), c.getName(), c.getParent().getFolderType().getName());
             }
 
             fireDeleteContainer(c, user);

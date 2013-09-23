@@ -192,7 +192,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         if (TAB_TYPE.Container == getTabType())
         {
             Container container = ContainerManager.getChild(parent, getName());
-            if (null == container && !ContainerManager.hasContainerTabBeenDeleted(parent, getName()))
+            if (null == container && !ContainerManager.hasContainerTabBeenDeleted(parent, getName(), parent.getFolderType().getName()))
             {
                 container = ContainerManager.createContainer(parent, getName(), null, null, Container.TYPE.tab, user);
                 FolderType folderType = getFolderType();

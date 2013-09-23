@@ -1279,4 +1279,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
         return folderTabs;
     }
+
+    public List<FolderTab> getDeletedTabFolders(String newFolderType)
+    {
+        // Get container tabs whose containers have been deleted
+        FolderType folderType = ModuleLoader.getInstance().getFolderType(newFolderType);
+        if (null == folderType)
+            throw new IllegalStateException("Folder type not found.");
+        List<FolderTab> folderTabs = new ArrayList<>();
+        for (FolderTab folderTab : folderType.getDefaultTabs())
+        {
+            if (folderTab.isContainerTab() && null == ContainerManager.getChild(this, folderTab.getName()))
+            {
+                folderTabs.add(folderTab);
+            }
+        }
+        return folderTabs;
+    }
 }
