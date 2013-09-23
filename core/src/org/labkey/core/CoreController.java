@@ -91,6 +91,7 @@ import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -1861,6 +1862,55 @@ public class CoreController extends SpringActionController
         public void setProperties(String properties)
         {
             this.properties = properties;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetContainerInfoAction extends ApiAction<ContainerInfoForm>
+    {
+        @Override
+        public ApiResponse execute(ContainerInfoForm form, BindException errors) throws Exception
+        {
+            // Provide information about container, specifically an array of child tab folders that were deleted
+            Container container = ContainerManager.getForPath(form.getContainerPath());
+            JSONArray deletedFolders = new JSONArray();
+            for (FolderTab folderTab : container.getDeletedTabFolders(form.getNewFolderType()))
+            {
+                JSONObject deletedFolder = new JSONObject();
+                deletedFolder.put("label", folderTab.getCaption(getViewContext()));
+                deletedFolder.put("name", folderTab.getName());
+                deletedFolders.put(deletedFolder);
+            }
+            JSONObject ret = new JSONObject();
+            ret.put("deletedFolders", deletedFolders);
+            ret.put("success", errors.getErrorCount() == 0);
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    public static class ContainerInfoForm
+    {
+        private String _containerPath;
+        private String _newFolderType;
+
+        public String getContainerPath()
+        {
+            return _containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            _containerPath = containerPath;
+        }
+
+        public String getNewFolderType()
+        {
+            return _newFolderType;
+        }
+
+        public void setNewFolderType(String newFolderType)
+        {
+            _newFolderType = newFolderType;
         }
     }
 }

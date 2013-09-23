@@ -94,7 +94,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 Ext4.Msg.show({
                     title: 'Revert Folder(s)',
                     msg: 'Are you sure you want to revert the tab folder' + plural + ' to the original folder type' + plural + '?',
-                    buttons : Ext4.MessageBox.OKCANCEL,
+                    buttons : Ext4.MessageBox.YESNO,
                     icon    : Ext4.MessageBox.WARNING,
                     fn      : function(btn) {
                         if (btn == 'ok')

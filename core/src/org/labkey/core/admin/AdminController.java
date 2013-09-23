@@ -6026,4 +6026,56 @@ public class AdminController extends SpringActionController
             _pageId = pageId;
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ClearDeletedTabFoldersAction extends ApiAction<DeletedFoldersForm>
+    {
+        @Override
+        public ApiResponse execute(DeletedFoldersForm form, BindException errors) throws Exception
+        {
+            Container container = ContainerManager.getForPath(form.getContainerPath());
+            for (String tabName : form.getResurrectFolders())
+            {
+                ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class DeletedFoldersForm
+    {
+        private String _containerPath;
+        private String _newFolderType;
+        private List<String> _resurrectFolders;
+
+        public List<String> getResurrectFolders()
+        {
+            return _resurrectFolders;
+        }
+
+        public void setResurrectFolders(List<String> resurrectFolders)
+        {
+            _resurrectFolders = resurrectFolders;
+        }
+
+        public String getContainerPath()
+        {
+            return _containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            _containerPath = containerPath;
+        }
+
+        public String getNewFolderType()
+        {
+            return _newFolderType;
+        }
+
+        public void setNewFolderType(String newFolderType)
+        {
+            _newFolderType = newFolderType;
+        }
+    }
 }
