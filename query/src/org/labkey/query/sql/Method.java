@@ -22,26 +22,37 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.Queryable;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.query.QueryServiceImpl;
+import org.labkey.query.sql.antlr.SqlBaseLexer;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public abstract class Method
+public abstract class
+        Method
 {
     private final static HashMap<String, Method> labkeyMethod = new HashMap<>();
 
@@ -58,9 +69,9 @@ public abstract class Method
                 }
 
                 @Override
-                public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors)
+                public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
                 {
-                    super.validate(fn, args, parseErrors);
+                    super.validate(fn, args, parseErrors, parseWarnings);
                     // only YEAR, MONTH supported
                     if (args.size() == 3)
                     {
@@ -111,6 +122,13 @@ public abstract class Method
                 }
             });
         labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("contextpath", new Method("contextPath", JdbcType.VARCHAR, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new ContextPathInfo();
+            }
+        });
         labkeyMethod.put("convert", new Method("convert", JdbcType.OTHER, 2, 2)
             {
                 @Override
@@ -129,6 +147,20 @@ public abstract class Method
         labkeyMethod.put("degrees", new JdbcMethod("degrees", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("exp", new JdbcMethod("exp", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("floor", new JdbcMethod("floor", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("foldername", new Method("folderName", JdbcType.VARCHAR, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new FolderInfo(false);
+            }
+        });
+        labkeyMethod.put("folderpath", new Method("folderPath", JdbcType.VARCHAR, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new FolderInfo(true);
+            }
+        });
         labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2));
         labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
@@ -143,6 +175,57 @@ public abstract class Method
             public MethodInfo getMethodInfo()
             {
                 return new IsMemberInfo();
+            }
+        });
+        labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1){
+            @Override
+            public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
+            {
+                super.validate(fn, args, parseErrors, parseWarnings);
+                if (args.size() != 1)
+                    return;
+                if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+
+                String className = "";
+                String propertyName = "";
+                try
+                {
+                    String param = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    int dot = param.lastIndexOf('.');
+                    if (dot < 0)
+                    {
+                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() parameter should be valid class name '.' field: " + param, null, args.get(0).getLine(), args.get(0).getColumn()));
+                        return;
+                    }
+                    className = param.substring(0,dot);
+                    propertyName = param.substring(dot+1);
+
+                    className = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    Class cls = Class.forName(className);
+                    propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
+                    Field f = cls.getField(propertyName);
+                    if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                    else if (null == JdbcType.valueOf(f.getType()))
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field type is not supported: " + f.getType().getName(), null, args.get(1).getLine(), args.get(1).getColumn()));
+                    else if (!f.isAnnotationPresent(Queryable.class) && cls.getPackage() != java.lang.Object.class.getPackage())
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not queryable: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() class not found: " + className, null, args.get(0).getLine(), args.get(0).getColumn()));
+                }
+                catch (NoSuchFieldException e)
+                {
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not accessible: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                }
+            }
+
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new JavaConstantInfo();
             }
         });
         labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
@@ -171,6 +254,37 @@ public abstract class Method
         labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("mod", new JdbcMethod("mod", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("moduleproperty", new Method("moduleproperty", JdbcType.VARCHAR, 2, 2){
+            @Override
+            public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
+            {
+                super.validate(fn,args,parseErrors,parseWarnings);
+                if (args.size() != 2)
+                    return;
+                if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                if (args.get(1).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(1).getLine(), args.get(1).getColumn()));
+
+                String moduleName = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                if (null == module)
+                {
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.get(0).getLine(), args.get(0).getColumn()));
+                    return;
+                }
+                String propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
+                ModuleProperty mp = module.getModuleProperties().get(propertyName);
+                if (null == mp)
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module property not found: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+            }
+
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new ModulePropertyInfo();
+            }
+        });
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("now", new JdbcMethod("now", JdbcType.TIMESTAMP, 0, 0));
@@ -222,12 +336,18 @@ public abstract class Method
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
-        // USERID() is handled by SqlParser, converted to "@@USERID"
         labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0) {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new UserIdInfo();
+            }
+        });
+        labkeyMethod.put("username", new Method("username", JdbcType.VARCHAR, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new UserNameInfo();
             }
         });
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
@@ -261,7 +381,7 @@ public abstract class Method
     abstract public MethodInfo getMethodInfo();
 
 
-    public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors)
+    public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
     {
         int count = args.size();
         if (count < _minArgs || count > _maxArgs)
@@ -346,8 +466,7 @@ public abstract class Method
                 interval = "SQL_TSI_" + interval;
             try
             {
-                TimestampDiffInterval i = TimestampDiffInterval.valueOf(interval);
-                return i;
+                return TimestampDiffInterval.valueOf(interval);
             }
             catch (IllegalArgumentException x)
             {
@@ -386,16 +505,14 @@ public abstract class Method
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)
         {
-            JdbcType jdbcType = _jdbcType;
             SQLFragment length = null;
             if (fragments.length >= 2)
             {
                 String sqlEscapeTypeName = getTypeArgument(fragments);
-                String typeName = sqlEscapeTypeName;
                 try
                 {
-                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    typeName = schema.getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
+                    JdbcType jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
+                    String typeName = schema.getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
                     if (fragments.length > 2)
                         length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
@@ -416,7 +533,7 @@ public abstract class Method
                 ret.append(fragments[1]);
                 if (null != length)
                 {
-                    ret.append("(" + length + ")");
+                    ret.append("(").append(length).append(")");
                 }
             }
             ret.append(")");                            
@@ -509,6 +626,7 @@ public abstract class Method
             }
             catch (NumberFormatException x)
             {
+                /* fall through */
             }
 
             if (supportsRoundDouble || i == Integer.MIN_VALUE)
@@ -698,12 +816,190 @@ public abstract class Method
                 @Override
                 public Object call() throws Exception
                 {
-                    return QueryServiceImpl.get().getEnvironment(QueryService.Environment.USERID);
+                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                    return null == user ? null : user.getUserId();
+                }
+            });
+            return ret;
+        }
+
+        @Override
+        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        {
+            ColumnInfo c = super.createColumnInfo(parentTable, arguments, alias);
+            c.setFk(new UserIdQueryForeignKey(parentTable.getUserSchema().getUser(), parentTable.getUserSchema().getContainer()));
+            c.setDisplayColumnFactory(UserIdQueryForeignKey._factoryBlank);
+            return c;
+        }
+    }
+
+    class UserNameInfo extends AbstractMethodInfo
+    {
+        UserNameInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment("?");
+            ret.add(new Callable(){
+                @Override
+                public Object call() throws Exception
+                {
+                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                    if (null == user)
+                        return null;
+                    return user.getDisplayName(user);
                 }
             });
             return ret;
         }
     }
+
+
+    class FolderInfo extends AbstractMethodInfo
+    {
+        final boolean path;
+
+        FolderInfo(boolean path)
+        {
+            super(JdbcType.VARCHAR);
+            this.path = path;
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            String v;
+            // NOTE we resolve CONTAINER at compile time because we don't have a good place to set this variable at runtime
+            // use of SqlSelector and async complicate that
+            Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+            v = null==cCompile ? null : path ? cCompile.getPath() : cCompile.getName();
+
+            if (null == v)
+                return new SQLFragment("CAST(NULL AS VARCHAR)");
+            else
+                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", v);
+        }
+    }
+
+
+    class ModulePropertyInfo extends AbstractMethodInfo
+    {
+        ModulePropertyInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            String moduleName = toSimpleString(arguments[0]);
+            String propertyName = toSimpleString(arguments[1]);
+
+            findProperty:
+            {
+                if (StringUtils.isEmpty(moduleName) || StringUtils.isEmpty(propertyName))
+                    break findProperty;
+
+                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                if (null == module)
+                    break findProperty;
+
+                ModuleProperty mp = module.getModuleProperties().get(propertyName);
+                if (null == mp)
+                    break findProperty;
+
+                Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+                String value = mp.getEffectiveValue(cCompile);
+                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
+            }
+
+            return new SQLFragment("CAST(NULL AS VARCHAR)");
+        }
+    }
+
+    class JavaConstantInfo extends AbstractMethodInfo
+    {
+        JavaConstantInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        @Override
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            getProperty:
+            {
+                String param = toSimpleString(arguments[0]);
+                int dot = param.lastIndexOf('.');
+                if (dot < 0)
+                    break getProperty;
+                String className = param.substring(0,dot);
+                String propertyName = param.substring(dot+1);
+
+                Class cls;
+                try
+                {
+                    cls = Class.forName(className);
+                }
+                catch (ClassNotFoundException e)
+                {
+                    break getProperty;
+                }
+
+                Field f;
+                try
+                {
+                    f = cls.getField(propertyName);
+                    if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
+                        break getProperty;
+                    if (!f.isAnnotationPresent(Queryable.class) && cls.getPackage() != java.lang.Object.class.getPackage())
+                        break getProperty;
+                }
+                catch (NoSuchFieldException e)
+                {
+                    break getProperty;
+                }
+
+                // NOTE: we've already said that this is a String so we can't really return the correct type here
+                JdbcType type = JdbcType.valueOf(f.getType());
+                if (null == type)
+                    break getProperty;
+
+                Object value;
+                try
+                {
+                    value = f.get(null);
+                }
+                catch (IllegalAccessException x)
+                {
+                    break getProperty;
+                }
+
+                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
+            }
+
+            // no legal field found
+            return new SQLFragment("CAST(NULL AS VARCHAR)");
+        }
+    }
+
+
+    class ContextPathInfo extends AbstractMethodInfo
+    {
+        ContextPathInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment("?");
+            ret.add(AppProps.getInstance().getContextPath());
+            return ret;
+        }
+    }
+
 
     class IsMemberInfo extends AbstractMethodInfo
     {
@@ -722,7 +1018,7 @@ public abstract class Method
             if (arguments.length == 1)
             {
                 //Current UserID gets put in QueryService.getEnvironment() by AuthFilter
-                User user =  UserManager.getUser((Integer) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USERID));
+                User user =  (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 Object[] groupIds = ArrayUtils.toObject(user.getGroups());
                 ret.append("(").append(groupArg).append(") IN (").append(StringUtils.join(groupIds, ",")).append(")");
                 return ret;
@@ -878,6 +1174,18 @@ public abstract class Method
         if (s.length() < 2 || !s.startsWith("'"))
             return false;
         return s.length()-1 == s.indexOf('\'',1);
+    }
+
+
+    public static String toSimpleString(SQLFragment f)
+    {
+        assert isSimpleString(f);
+        String s = f.getSQL();
+        if (s.length() < 2 || !s.startsWith("'"))
+            return s;
+        s = s.substring(1,s.length()-1);
+        s = StringUtils.replace(s,"''","'");
+        return s;
     }
 
 

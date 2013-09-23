@@ -503,6 +503,9 @@ public class Query
             assertParsed();
             if (_parseErrors.size() > 0)
                 return null;
+
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
+
             TableInfo tinfo = _queryRoot.getTableInfo();
             if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());

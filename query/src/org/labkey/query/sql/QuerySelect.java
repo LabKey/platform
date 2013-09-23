@@ -37,6 +37,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
@@ -105,7 +106,13 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         // subqueryTable is only for expr.createColumnInfo()
         // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
-        _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
+        _subqueryTable = new SQLTableInfo(_schema.getDbSchema()) {
+            @Override
+            public UserSchema getUserSchema()
+            {
+                return (UserSchema)QuerySelect.this.getSchema();
+            }
+        };
 
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;

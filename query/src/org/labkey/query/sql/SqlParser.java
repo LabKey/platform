@@ -739,7 +739,7 @@ public class SqlParser
                     Method m = Method.resolve(_dialect, name);
                     if (null != m)
                     {
-                        m.validate(node, exprList.childList(), _parseErrors);
+                        m.validate(node, exprList.childList(), _parseErrors, _parseWarnings);
                     }
                 }
                 catch (IllegalArgumentException x)
