@@ -1723,9 +1723,16 @@ public class PageFlowUtil
                 for (String script : (r.getCssPaths(c, u, AppProps.getInstance().isDevMode())))
                 {
                     sb.append("<link href=\"");
-                    sb.append(AppProps.getInstance().getContextPath());
-                    sb.append("/");
-                    sb.append(filter(script));
+                    if (ClientDependency.isExternalDependency(script))
+                    {
+                        sb.append(filter(script));
+                    }
+                    else
+                    {
+                        sb.append(AppProps.getInstance().getContextPath());
+                        sb.append("/");
+                        sb.append(filter(script));
+                    }
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
 
                     cssFiles.add((script));
@@ -1740,8 +1747,11 @@ public class PageFlowUtil
             String comma = "";
             for (String s : cssFiles)
             {
-                sb.append(comma).append(jsString(s));
-                comma = ",";
+                if (!ClientDependency.isExternalDependency(s))
+                {
+                    sb.append(comma).append(jsString(s));
+                    comma = ",";
+                }
             }
             sb.append(");\n");
             sb.append("    </script>\n");
@@ -1894,14 +1904,24 @@ public class PageFlowUtil
         String comma = "";
         for (String s : implicitIncludes)
         {
-            sb.append(comma).append(jsString(s));
-            comma = ",";
+            if (!ClientDependency.isExternalDependency(s))
+            {
+                sb.append(comma).append(jsString(s));
+                comma = ",";
+            }
         }
         sb.append(");\n");
         sb.append("    </script>\n");
 
         for (String s : includes)
-            sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        {
+            sb.append("    <script src=\"");
+            if (ClientDependency.isExternalDependency(s))
+                sb.append(s);
+            else
+                sb.append(contextPath).append("/").append(filter(s)).append("?").append(serverHash);
+            sb.append("\" type=\"text/javascript\"></script>\n");
+        }
 
         return sb.toString();
     }

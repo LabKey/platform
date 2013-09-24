@@ -69,9 +69,14 @@ public class ClientDependency
 
         public static TYPE fromPath(Path p)
         {
+            return fromString(p.toString());
+        }
+
+        public static TYPE fromString(String s)
+        {
             for (TYPE t : TYPE.values())
             {
-                if (t._fileType.isType(p.toString()))
+                if (t._fileType.isType(s))
                     return t;
             }
             return null;
@@ -84,7 +89,7 @@ public class ClientDependency
 
         private String _extension;
         private FileType _fileType;
-    };
+    }
 
     private LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
     private Module _module;
@@ -92,10 +97,25 @@ public class ClientDependency
     private String _devModePath;
     private boolean _compileInProductionMode = true;
 
+    private String _uri;
     private Path _filePath;
     private Resource _resource;
     private TYPE _primaryType;
     private ModeTypeEnum.Enum _mode = ModeTypeEnum.BOTH;
+
+    // Allows for a ClientDependency that exists externally
+    private ClientDependency(String uri)
+    {
+        _uri = uri;
+        _primaryType = TYPE.fromString(_uri);
+        if (_primaryType == null)
+        {
+            _log.warn("External client dependency type not recognized: " + uri);
+        }
+        _devModePath = _prodModePath = _uri;
+
+        _module = null; // not related to a module
+    }
 
     private ClientDependency(Path filePath, ModeTypeEnum.Enum mode)
     {
@@ -107,7 +127,7 @@ public class ClientDependency
         _primaryType = TYPE.fromPath(_filePath);
         if (_primaryType == null)
         {
-            _log.warn("Script type not recognized: " + filePath);
+            _log.warn("Client dependency type not recognized: " + filePath);
             return;
         }
 
@@ -147,6 +167,11 @@ public class ClientDependency
     {
         _module = m;
         _primaryType = TYPE.context;
+    }
+
+    public static boolean isExternalDependency(String path)
+    {
+        return path != null && (path.startsWith("http://") || path.startsWith("https://"));
     }
 
     public static ClientDependency fromModuleName(String mn)
@@ -201,6 +226,12 @@ public class ClientDependency
 
         ClientDependency cr = new ClientDependency(filePath, mode);
         CacheManager.getSharedCache().put(key, cr);
+        return cr;
+    }
+
+    public static ClientDependency fromURIPath(String uri)
+    {
+        ClientDependency cr = new ClientDependency(uri);
         return cr;
     }
 
@@ -275,7 +306,12 @@ public class ClientDependency
                     for (ScriptType s : dependencies.getDependencyArray())
                     {
                         ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : ModeTypeEnum.BOTH;
-                        ClientDependency cr = ClientDependency.fromFilePath(s.getPath(), mode);
+                        String path = s.getPath();
+                        ClientDependency cr;
+                        if (ClientDependency.isExternalDependency(path))
+                            cr = ClientDependency.fromURIPath(path);
+                        else
+                            cr = ClientDependency.fromFilePath(s.getPath(), mode);
                         _children.add(cr);
                     }
                 }
@@ -424,7 +460,8 @@ public class ClientDependency
 
         if(TYPE.context.equals(_primaryType))
         {
-            cd.addAll(_module.getClientDependencies(c, u));
+            if (_module != null)
+                cd.addAll(_module.getClientDependencies(c, u));
         }
 
         return cd;
@@ -510,6 +547,8 @@ public class ClientDependency
     {
         if (_filePath != null)
             return _filePath.toString();
+        if (_uri != null)
+            return _uri;
         else if (_module != null)
             return _module.getName() + "." + _primaryType.name();
         else
