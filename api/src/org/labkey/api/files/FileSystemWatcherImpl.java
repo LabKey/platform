@@ -75,10 +75,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             try
             {
-                WatchKey watchKey = _watcher.take();
-
                 while (_continue)
                 {
+                    WatchKey watchKey = _watcher.take();
+
                     try
                     {
                         FileSystemDirectoryListener listener = _listeners.get(watchKey);
