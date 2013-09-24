@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.SourceForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -37,11 +38,22 @@
 %>
 
 <%
-    SourceForm form = (SourceForm)HttpView.currentModel();
-    boolean builtIn = form.getQueryDef().isTableQueryDefinition();
+    QueryController.SourceQueryAction action = (QueryController.SourceQueryAction)HttpView.currentModel();
+    QueryDefinition queryDef = action._queryDef;
+    boolean builtIn = queryDef.isTableQueryDefinition();
     String sqlHelpTopic = "labkeySql";
     String metadataHelpTopic = "metadataSql";
-    ActionURL exeUrl = form.getQueryDef().urlFor(QueryAction.executeQuery, getViewContext().getContainer());
+    ActionURL exeUrl = null;
+    try
+    {
+        exeUrl = queryDef.urlFor(QueryAction.executeQuery, getViewContext().getContainer());
+    }
+    catch (Exception x)
+    {
+        /* */
+    }
+
+    boolean canEdit = queryDef.canEdit(getUser());
 %>
 <style type="text/css">
 
@@ -136,15 +148,15 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
-            executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
-            canEdit   : <%= form.canEdit() %>,
-            canEditSql   : <%= form.canEditSql() %>,
-            canEditMetaData   : <%= form.canEditMetaData() %>,
+            executeUrl: <%= PageFlowUtil.jsString(null==exeUrl ? null : exeUrl.toString()) %>,
+            canEdit   : <%= canEdit %>,
+            canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,
+            canEditMetaData   : <%=canEdit && queryDef.isMetadataEditable() %>,
             builtIn   : <%= builtIn %>,
-            metadataEdit : <%= form.canEditMetaData() %>,
-            propEdit     : <%= form.canEditMetaData() && !builtIn %>,
-            queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
-            metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
+            metadataEdit : <%= queryDef.isMetadataEditable() %>,
+            propEdit     : <%=  queryDef.isMetadataEditable() && !builtIn %>,
+            queryText    : <%=PageFlowUtil.jsString(action._form.ff_queryText)%>,
+            metadataText : <%=PageFlowUtil.jsString(action._form.ff_metadataText)%>,
             help         : <%=PageFlowUtil.qh(new HelpTopic(sqlHelpTopic).toString())%>,
             metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
         };

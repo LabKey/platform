@@ -162,7 +162,6 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
@@ -568,27 +567,33 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            if (getContainer().hasPermission(getUser(), AdminPermission.class) || getUser().isDeveloper())
-            {
-                // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
-                // want it
-                try
-                {
-                    String schemaName = _form.getSchema().getSchemaPath().toDisplayString();
-                    ActionURL url = new ActionURL(BeginAction.class, _form.getViewContext().getContainer());
-                    url.addParameter("schemaName", _form.getSchemaName());
-                    url.addParameter("queryName", _form.getQueryName());
-                    (new BeginAction()).appendNavTrail(root)
-                            .addChild(schemaName + " Schema", url);
-                }
-                catch (NullPointerException e)
-                {
-                    LOG.error("NullPointerException in appendNavTrail", e);
-                    return root;
-                }
-            }
-            return root;
+            return _appendSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
+    }
+
+
+    NavTree _appendSchemaActionNavTrail(NavTree root, SchemaKey schemaKey, String queryName)
+    {
+        if (getContainer().hasPermission(getUser(), AdminPermission.class) || getUser().isDeveloper())
+        {
+            // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
+            // want it
+            try
+            {
+                String schemaName = schemaKey.toDisplayString();
+                ActionURL url = new ActionURL(BeginAction.class, getContainer());
+                url.addParameter("schemaName", schemaKey.toString());
+                url.addParameter("queryName", queryName);
+                (new BeginAction()).appendNavTrail(root)
+                        .addChild(schemaName + " Schema", url);
+            }
+            catch (NullPointerException e)
+            {
+                LOG.error("NullPointerException in appendNavTrail", e);
+                return root;
+            }
+        }
+        return root;
     }
 
 
@@ -719,34 +724,51 @@ public class QueryController extends SpringActionController
 
 
     // CONSIDER : deleting this action after the SQL editor UI changes are finalized, keep in mind that built-in views
-    // use this view as welll via the edit metadata page.
+    // use this view as well via the edit metadata page.
     @RequiresPermissionClass(ReadPermission.class)
-    public class SourceQueryAction extends FormViewAction<SourceForm>
+    public class SourceQueryAction extends SimpleViewAction<SourceForm>
     {
-        SourceForm _form;
+        public SourceForm _form;
+        public QuerySchema _baseSchema;
+        public QueryDefinition _queryDef;
 
-        public void validateCommand(SourceForm target, Errors errors)
+
+        @Override
+        public void validate(SourceForm target, BindException errors)
         {
+            _form = target;
+            if (StringUtils.isEmpty(target.getSchemaName()))
+                throw new NotFoundException("schema name not specified");
+            if (StringUtils.isEmpty(target.getQueryName()))
+                throw new NotFoundException("query name not specified");
+
+            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            if (null == _baseSchema)
+                throw new NotFoundException("schema not found: " + _form.getSchemaKey().toDisplayString());
         }
 
-        public ModelAndView getView(SourceForm form, boolean reshow, BindException errors) throws Exception
+
+        @Override
+        public ModelAndView getView(SourceForm form, BindException errors) throws Exception
         {
-            _form = form;
-            if (form.getQueryDef() == null)
-	    	{
-                throw new NotFoundException();
-	    	}
-            if (form.ff_queryText == null)
-            {
-                form.ff_queryText = form.getQueryDef().getSql();
-                form.ff_metadataText = form.getQueryDef().getMetadataXml();
-            }
             try
             {
-                QueryDefinition query = form.getQueryDef();
-                for (QueryException qpe : query.getParseErrors(form.getSchema()))
+                _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+
+                if (null == _queryDef)
+                    errors.reject(ERROR_MSG, "Query not found: " + form.getQueryName());
+                else
                 {
-                    errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
+                    if (form.ff_queryText == null)
+                    {
+                        form.ff_queryText = _queryDef.getSql();
+                        form.ff_metadataText = _queryDef.getMetadataXml();
+                    }
+
+                    for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
+                    {
+                        errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
+                    }
                 }
             }
             catch (Exception e)
@@ -763,69 +785,21 @@ public class QueryController extends SpringActionController
                 Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<>(QueryController.class, "sourceQuery.jsp", form, errors);
+            return new JspView<>(QueryController.class, "sourceQuery.jsp", this, errors);
         }
 
-        public boolean handlePost(SourceForm form, BindException errors) throws Exception
-        {
-            _form = form;
-
-            if (!form.canEdit())
-                return false;
-
-            try
-            {
-                QueryDefinition query = form.getQueryDef();
-                query.setSql(form.ff_queryText);
-                if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
-                {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
-                    {
-                        // Remember the URL and redirect immediately because the form won't be able to create
-                        // the URL again after the query definition is deleted
-                        ActionURL redirect = _form.getForwardURL();
-                        query.delete(getUser());
-                        throw new RedirectException(redirect);
-                    }
-                }
-                else
-                {
-                    query.setMetadataXml(form.ff_metadataText);
-                    /* if query definition has parameters set hidden==true by default */
-                    ArrayList<QueryException> qerrors = new ArrayList<>();
-                    TableInfo t = query.getTable(qerrors, false);
-                    if (null != t && qerrors.isEmpty())
-                    {
-                        boolean hasParams = !t.getNamedParameters().isEmpty();
-                        if (hasParams)
-                            query.setIsHidden(true);
-                    }
-                    query.save(getUser(), getContainer());
-                }
-                return true;
-            }
-            catch (SQLException e)
-            {
-                errors.reject("An exception occurred: " + e);
-                LOG.error("Error", e);
-                return false;
-            }
-        }
-
-        public ActionURL getSuccessURL(SourceForm sourceForm)
-        {
-            return _form.getForwardURL();
-        }
 
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("customSQL"));
 
-            (new SchemaAction(_form)).appendNavTrail(root)
-                    .addChild("Edit " + _form.getQueryName(), _form.urlFor(QueryAction.sourceQuery));
+            _appendSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
+
+            root.addChild("Edit " + _form.getQueryName());
             return root;
         }
     }
+
 
     /**
      * Ajax action to save a query. If the save is successful the request will return successfully. A query
@@ -837,55 +811,76 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
+        SourceForm _form;
+        QuerySchema _baseSchema;
+        QueryDefinition _queryDef;
+
+
+        @Override
+        public void validateForm(SourceForm target, Errors errors)
+        {
+            _form = target;
+            if (StringUtils.isEmpty(target.getSchemaName()))
+                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
+            if (StringUtils.isEmpty(target.getQueryName()))
+                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
+
+            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            if (null == _baseSchema)
+                throw new NotFoundException("Schema not found: " + _form.getSchemaKey().toDisplayString());
+        }
+
+
         @Override
         public ApiResponse execute(SourceForm form, BindException errors) throws Exception
         {
-            if (form.getQueryDef() == null)
-                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
 
-            if (!form.canEdit())
+            if (null == _queryDef)
+                throw new NotFoundException("Query not found: " + form.getQueryName());
+
+            if (!_queryDef.canEdit(getUser()))
                 throw new UnauthorizedException("Edit permissions are required.");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             try
             {
-                QueryDefinition query = form.getQueryDef();
-                query.setSql(form.ff_queryText);
+                _queryDef.setSql(form.ff_queryText);
 
-                if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                if (_queryDef.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
                 {
                     if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
                         // delete the query in order to reset the metadata over a built-in query
-                        query.delete(getUser());
+                        _queryDef.delete(getUser());
                     }
                 }
                 else
                 {
-                    query.setMetadataXml(form.ff_metadataText);
+                    _queryDef.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
                     ArrayList<QueryException> qerrors = new ArrayList<>();
                     try
                     {
-                        TableInfo t = query.getTable(qerrors, false);
+                        TableInfo t = _queryDef.getTable(qerrors, false);
                         if (null != t && qerrors.isEmpty())
                         {
                             boolean hasParams = !t.getNamedParameters().isEmpty();
                             if (hasParams)
-                                query.setIsHidden(true);
+                                _queryDef.setIsHidden(true);
                         }
                     }
                     catch (Exception ex)
                     {
                         /* continue and save anyway */
                     }
-                    query.save(getUser(), getContainer());
+                    _queryDef.save(getUser(), getContainer());
 
                     // the query was successfully saved, validate the query but return any errors in the success response
                     List<QueryParseException> parseErrors = new ArrayList<>();
                     List<QueryParseException> parseWarnings = new ArrayList<>();
-                    query.validateQuery(form.getSchema(), parseErrors, parseWarnings);
+                    _queryDef.validateQuery(_baseSchema, parseErrors, parseWarnings);
                     if (!parseErrors.isEmpty())
                     {
                         JSONArray errorArray = new JSONArray();
@@ -923,27 +918,52 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermissionClass(DeletePermission.class)
-    public class DeleteQueryAction extends ConfirmAction<QueryForm>
+    public class DeleteQueryAction extends ConfirmAction<SourceForm>
     {
-        QueryForm _form;
+        public SourceForm _form;
+        public QuerySchema _baseSchema;
+        public QueryDefinition _queryDef;
 
-        public ModelAndView getConfirmView(QueryForm form, BindException errors) throws Exception
+
+        @Override
+        public void validateCommand(SourceForm target, Errors errors)
         {
-            ensureQueryExists(form);
+            _form = target;
+            if (StringUtils.isEmpty(target.getSchemaName()))
+                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
+            if (StringUtils.isEmpty(target.getQueryName()))
+                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
 
-            return new JspView<>(QueryController.class, "deleteQuery.jsp", form, errors);
+            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            if (null == _baseSchema)
+                throw new NotFoundException("Schema not found: " + _form.getSchemaKey().toDisplayString());
         }
 
-        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+
+        @Override
+        public ModelAndView getConfirmView(SourceForm form, BindException errors) throws Exception
         {
-            _form = form;
-            QueryDefinition d = form.getQueryDef();
-            if (null == d)
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+
+            if (null == _queryDef)
+                throw new NotFoundException("Query not found: " + form.getQueryName());
+
+            return new JspView<>(QueryController.class, "deleteQuery.jsp", this, errors);
+        }
+
+
+        @Override
+        public boolean handlePost(SourceForm form, BindException errors) throws Exception
+        {
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+
+            if (null == _queryDef)
                 return false;
             try
             {
-                d.delete(getUser());
+                _queryDef.delete(getUser());
             }
             catch (Table.OptimisticConflictException x)
             {
@@ -951,13 +971,10 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        public void validateCommand(QueryForm queryForm, Errors errors)
-        {
-        }
 
-        public ActionURL getSuccessURL(QueryForm queryForm)
+        public ActionURL getSuccessURL(SourceForm queryForm)
         {
-            return _form.getSchema().urlFor(QueryAction.schema);
+            return ((UserSchema)_baseSchema).urlFor(QueryAction.schema);
         }
     }
 
@@ -1005,6 +1022,7 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
+
 
     @RequiresSiteAdmin
     public class RawTableMetaDataAction extends QueryViewAction

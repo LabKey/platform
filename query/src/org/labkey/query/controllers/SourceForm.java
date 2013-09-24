@@ -17,12 +17,15 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
 
-public class SourceForm extends QueryForm
+public class SourceForm extends ViewForm
 {
+    public String schemaName;
+    public String queryName;
     public String ff_queryText;
     public String ff_metadataText;
     public QueryAction ff_redirect = QueryAction.sourceQuery;
@@ -34,6 +37,33 @@ public class SourceForm extends QueryForm
     public SourceForm(ViewContext context)
     {
         setViewContext(context);
+    }
+
+    public String getSchemaName()
+    {
+        return schemaName;
+    }
+
+    public SchemaKey getSchemaKey()
+    {
+        if (null == schemaName)
+            return null;
+        return SchemaKey.decode(schemaName);
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        this.schemaName = schemaName;
+    }
+
+    public String getQueryName()
+    {
+        return queryName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        this.queryName = queryName;
     }
 
     public void setFf_queryText(String text)
@@ -50,8 +80,9 @@ public class SourceForm extends QueryForm
         ff_redirect = QueryAction.valueOf(action);
     }
 
-    public ActionURL getForwardURL()
+    // HACK so that &query.queryName=table works
+    public SourceForm getQuery()
     {
-        return getQueryDef().urlFor(ff_redirect);
+        return this;
     }
 }

@@ -16,18 +16,18 @@
  */
 --%>
 <%@ page extends="org.labkey.query.controllers.Page" %>
-<%@ page import="org.labkey.api.query.QueryForm"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    QueryForm form = (QueryForm) HttpView.currentModel();
-    QueryDefinition queryDef = form.getQueryDef();
+    QueryController.DeleteQueryAction action = (QueryController.DeleteQueryAction) HttpView.currentModel();
+    QueryDefinition queryDef = action._queryDef;
     Collection<String> dependents = queryDef == null ? null : queryDef.getDependents(getViewContext().getUser());
 %>
 <labkey:errors></labkey:errors>
-<p>Are you sure you want to delete the query '<%=h(form.getQueryName())%>'?</p>
+<p>Are you sure you want to delete the query '<%=h(action._form.getQueryName())%>'?</p>
 
 <%
     if (dependents != null && dependents.size() > 0)
