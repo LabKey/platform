@@ -115,6 +115,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 crosstabInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(crosstabInfo);
 
+/*
                 DesignerInfoImpl xlsInfo = new DesignerInfoImpl(ExportExcelReport.TYPE, "Workbook (.xls)",
                         new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer()),
                         _getIconPath(ExportExcelReport.TYPE));
@@ -128,14 +129,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 enrollmentInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 if (EnrollmentReport.getEnrollmentReport(context.getUser(), study, false) != null)
                     enrollmentInfo.setLabel("Configure Enrollment View");
-
+*/
                 DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE, study.getSubjectNounSingular() + " Report",
                         new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()),
                         _getIconPath(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
 
-                designers.add(enrollmentInfo);
+//                designers.add(enrollmentInfo);
             }
             catch (Exception e)
             {

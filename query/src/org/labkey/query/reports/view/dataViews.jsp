@@ -60,22 +60,33 @@
                 index       : <%= me.getModelBean().getIndex() %>,
                 webpartId   : <%= webPartId %>,
                 adminView   : <%= adminView%>,
+                fullPage    : <%= adminView%>,
                 returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
                 allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
                 listeners   : {
                     render: function(panel) {
                         // Issue 18337: hold onto the initial width diff for the panel, to be used in resizing
                         panel.panelWidthDiff = Ext4.getBody().getViewSize().width - panel.getWidth();
+
+                        if (panel.fullPage) {
+
+                            var size = Ext4.getBody().getViewSize();
+                            LABKEY.Utils.resizeToViewport(panel, size.width, size.height);
+                        }
                     }
                 }
             });
 
-            var resize = function() {
-                if (dvp && dvp.doLayout && dvp.panelWidthDiff)
-                {
-                    var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
-                    dvp.setWidth(width);
-                    dvp.doLayout();
+            var resize = function(w, h) {
+                if (dvp && dvp.doLayout) {
+
+                    if (dvp.fullPage)
+                        LABKEY.Utils.resizeToViewport(dvp, w, h);
+                    else if (dvp.panelWidthDiff) {
+                        var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
+                        dvp.setWidth(width);
+                        dvp.doLayout();
+                    }
                 }
             };
 

@@ -144,7 +144,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             allowCustomize : true,
             pageId  : -1,
             index   : -1,
-            height  : 700
+            minHeight  : 200
         });
 
         // The following default to type 'string'
