@@ -258,8 +258,8 @@ public class ProjectController extends SpringActionController
                     {
                         throw new UnauthorizedException();
                     }
-                    return new HtmlView("You do not have permission to view this folder.<br>" +
-                            "Please select another folder from the tree to the left.");
+                    return new HtmlView("You do not have permission to view this project directly, but " +
+                            "you may be able to choose a specific subfolder.");
                 }
             }
             return HttpView.redirect(c.getStartURL(getViewContext().getUser()));
