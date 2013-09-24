@@ -191,8 +191,8 @@ LABKEY.Utils = new function()
          *                           the width will not be set.
          * @param height - (Required) height of the viewport. In many cases, the window height. If a negative height is passed than
          *                           the height will not be set.
-         * @param paddingX - distance from the right edge of the viewport. Defaults to 30.
-         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 30.
+         * @param paddingX - distance from the right edge of the viewport. Defaults to 35.
+         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 35.
          */
         resizeToViewport : function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
@@ -206,7 +206,7 @@ LABKEY.Utils = new function()
             if (offsetX == undefined || offsetX == null)
                 offsetX = 35;
             if (offsetY == undefined || offsetY == null)
-                offsetY = 30;
+                offsetY = 35;
 
             if (paddingX !== undefined && paddingX != null)
                 padding.push(paddingX);
