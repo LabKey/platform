@@ -3553,6 +3553,7 @@ public class AdminController extends SpringActionController
 
             XmlOptions xOpt = new XmlOptions();
             xOpt.setSavePrettyPrint();
+            xOpt.setUseDefaultNamespace();
 
             tdoc.save(sw, xOpt);
 
