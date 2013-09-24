@@ -20,14 +20,14 @@ tokens
 	AGGREGATE;		// One of the aggregate functions (e.g. min, max, avg)
 	ALIAS;
     CASE2;
+    DATATYPE;
+	DATE_LITERAL;
     DECLARATION;
 	DESCENDING;
 	EXPR_LIST;
 	IN_LIST;
 	IS_NOT;
 	METHOD_CALL;
-	DATE_LITERAL;
-	TIMESTAMP_LITERAL;
 	NOT_BETWEEN;
 	NOT_IN;
 	NOT_LIKE;
@@ -37,7 +37,8 @@ tokens
 	ROW_STAR;
 	SELECT_FROM;
     STATEMENT;
-    DATATYPE;
+    TABLE_PATH_SUBSTITUTION;
+	TIMESTAMP_LITERAL;
 	UNARY_MINUS;
 	UNARY_PLUS;
 	UNION_ALL;
@@ -314,6 +315,7 @@ fromClause
 	: FROM^ { weakKeywords(); } joinExpression (COMMA! { weakKeywords(); } joinExpression )*
 	;
 
+
 joinExpression
 	: ((fromRange) -> fromRange)
 	    (
@@ -322,13 +324,28 @@ joinExpression
       )*
     ;
 
+
 fromRange
-	: (path { weakKeywords(); } (AS? identifier)?) -> ^(RANGE path identifier?)
+	: (tableSpecification { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecification identifier?)
 	| OPEN
 	    ( (subQuery) => subQuery CLOSE AS? identifier -> ^(RANGE subQuery identifier)
 	    | joinExpression CLOSE -> joinExpression
 	    )
 	;
+
+
+// Usually a simple dotted identifer 'path' such as "core.users".
+// however we support an 'escape' syntax as well such as "Folder.{moduleProperty('ehr','sharedFolder')}.specieslookup"
+// in theory can be extended such as {jdbc('jdbc:jtds:sqlserver://localhost/database')}.table
+tableSpecification
+    :  ( { weakKeywords(); } tableSpecificationPart DOT^ )* identifier
+    ;
+
+
+tableSpecificationPart
+    : identifier
+    | '{' specType=identifier specFn=identifier OPEN constantExprList CLOSE '}' -> ^(TABLE_PATH_SUBSTITUTION $specType $specFn constantExprList)
+    ;
 
 
 onClause
@@ -626,8 +643,6 @@ dottedIdentifier
 
 escapeFn
     : '{fn'! identifier op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! '}'!
-    | '{d ' QUOTED_STRING '}' -> ^(DATE_LITERAL QUOTED_STRING)
-    | '{ts ' QUOTED_STRING '}' -> ^(TIMESTAMP_LITERAL QUOTED_STRING)
     ;
 
 
@@ -655,6 +670,7 @@ subQuery
 	: selectStatement
 	;
 
+
 exprList
 	: exprListFragment -> ^(EXPR_LIST exprListFragment?)
  	;
@@ -663,13 +679,26 @@ exprListFragment
     : (expression (COMMA! expression)*)?
     ; 
 
+
+constantExprList
+	: constantExprListFragment -> ^(EXPR_LIST constantExprListFragment?)
+ 	;
+
+constantExprListFragment
+    : (constant (COMMA! constant)*)?
+    ;
+
+
 constant
 	: number
 	| QUOTED_STRING
 	| NULL
 	| TRUE
 	| FALSE
+    | '{d ' QUOTED_STRING '}' -> ^(DATE_LITERAL QUOTED_STRING)
+    | '{ts ' QUOTED_STRING '}' -> ^(TIMESTAMP_LITERAL QUOTED_STRING)
 	;
+
 
 number
     : NUM_INT
@@ -677,6 +706,7 @@ number
     | NUM_DOUBLE
     | NUM_FLOAT
     ;
+
 
 path
 	: identifier ( DOT^ { weakKeywords(); } identifier )*

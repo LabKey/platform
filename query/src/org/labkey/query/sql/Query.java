@@ -226,7 +226,7 @@ public class Query
                 parseError(_parseErrors, "Schema is not available, check configuration: " + getSchema().getName(), null);
                 return;
             }
-            SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
+            SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect(), getSchema().getContainer());
             parser.parseQuery(queryText, _parseErrors, _parseWarnings);
             if (!_parseErrors.isEmpty())
                 return;

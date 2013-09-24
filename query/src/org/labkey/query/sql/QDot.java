@@ -35,11 +35,7 @@ public class QDot extends QFieldKey
         if (left == null)
             return null;
         FieldKey right = ((QExpr)getLastChild()).getFieldKey();
-        if (right == null || right.getTable() != null)
-        {
-            return null;
-        }
-        return new FieldKey(left, right.getName());
+        return FieldKey.fromParts(left,right);
     }
 
     public void appendSource(SourceBuilder builder)

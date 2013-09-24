@@ -28,20 +28,30 @@ import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
@@ -76,6 +86,7 @@ public class SqlParser
     QNode _root;
     ArrayList<QParameter> _parameters;
     final SqlDialect _dialect;
+    Container _container = null;
 
     //
     // PUBLIC
@@ -86,13 +97,15 @@ public class SqlParser
         _dialect =null;
     }
 
-
-    /** providing a dialect only changes validation against passthrough methods */
-    public SqlParser(SqlDialect d)
+    /**
+     * providing a dialect only changes validation against passthrough methods,
+     * container only affects {substitutePath moduleProperty()}
+     */
+    public SqlParser(SqlDialect d, Container c)
     {
         _dialect = d;
+        this._container = c;
     }
-
 
     // for testing only
     public Tree rawQuery(String str) throws Exception
@@ -165,7 +178,7 @@ public class SqlParser
                 }
 
 				QNode qnodeRoot = convertParseTree(selectStmt);
-//				assert dump(qnodeRoot);
+				assert dump(qnodeRoot);
 				assert MemTracker.put(qnodeRoot);
 
 				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
@@ -784,12 +797,102 @@ public class SqlParser
                     return null;
                 }
             }
+            case TABLE_PATH_SUBSTITUTION:
+            {
+                if (children.size() != 3)
+                {
+                    _parseErrors.add(new QueryParseException("Bad escape syntax in FROM clause.", null, node.getLine(), node.getCharPositionInLine()));
+                    return null;
+                }
+                QIdentifier type = (QIdentifier)children.get(0);
+                if (!type.getIdentifier().equalsIgnoreCase("substitutePath"))
+                {
+                    _parseErrors.add(new QueryParseException("Unknown escape in FROM clause: " + type.getSourceText(), null, type.getLine(), type.getLine()));
+                    return null;
+                }
+                QIdentifier fn = (QIdentifier)children.get(1);
+                if (!fn.getIdentifier().equalsIgnoreCase("moduleProperty"))
+                {
+                    _parseErrors.add(new QueryParseException("Unknown escape function in FROM clause: " + fn.getSourceText(), null, fn.getLine(), fn.getLine()));
+                    return null;
+                }
+                QExprList exprlist = (QExprList)children.get(2);
+                List<QNode> args = exprlist.childList();
+                if (args.size() != 2 || !(args.get(0) instanceof QString) || !(args.get(1) instanceof QString))
+                {
+                    _parseErrors.add(new QueryParseException("Expected two strings arguments to escape function: " + fn.getSourceText(), null, fn.getLine(), fn.getLine()));
+                    return null;
+                }
+                return substituteModuleProperty(((QString) args.get(0)).getValue(), ((QString)args.get(1)).getValue());
+            }
 			default:
 				break;
 		}
 
 		return qnode(node, children);
 	}
+
+
+    private QFieldKey substituteModuleProperty(String moduleName, String propertyName)
+    {
+        if (StringUtils.isEmpty(moduleName) || StringUtils.isEmpty(propertyName))
+        {
+            _parseErrors.add(new QueryParseException("Expected two strings arguments to escape function: moduleProperty()", null, -1, -1));
+            return null;
+        }
+
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+        if (null == module)
+        {
+            _parseErrors.add(new QueryParseException("Can not resolve module: " + moduleName, null, -1, -1));
+            return null;
+        }
+
+        ModuleProperty mp = module.getModuleProperties().get(propertyName);
+        if (null == mp)
+        {
+            _parseErrors.add(new QueryParseException("Can not resolve module property: " + propertyName, null, -1, -1));
+            return null;
+        }
+
+        Container cCompile = _container;
+        if (null == cCompile)
+            cCompile = (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+        if (null == cCompile)
+        {
+            _parseErrors.add(new QueryParseException("Can not resolve moduleProperty(), container is not specified", null, -1, -1));
+            return null;
+        }
+        String value = mp.getEffectiveValue(cCompile);
+        if (StringUtils.isEmpty(value))
+        {
+            _parseErrors.add(new QueryParseException("Module property is empty: " + propertyName, null, -1, -1));
+            return null;
+        }
+
+        return substitutePath(value);
+    }
+
+
+    private QFieldKey substitutePath(String pathString)
+    {
+        Path p = Path.parse(pathString);
+        if (0 == p.size())
+        {
+            _parseErrors.add(new QueryParseException("Path substition is empty", null, -1, -1));
+            return null;
+        }
+        QFieldKey prev = null;
+        for (String part : p)
+        {
+            QIdentifier id = new QIdentifier(part);
+            if (null == prev)
+                prev = id;
+            else
+                prev = new QDot(prev, id);
+        }
+        return prev;
+    }
 
 
     private boolean validateConvertConstant(QNode n, QNode length)
