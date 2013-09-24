@@ -413,7 +413,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), DATA_TABLE_NAME)) || queryName.equalsIgnoreCase(DATA_TABLE_NAME))
             {
-                domainURI = getProvider().getResultsDomain(getProtocol()).getTypeURI();
+                Domain resultsDomain = getProvider().getResultsDomain(getProtocol());
+                if (resultsDomain != null)
+                {
+                    domainURI = resultsDomain.getTypeURI();
+                }
             }
             else if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), RUNS_TABLE_NAME)) || queryName.equalsIgnoreCase(RUNS_TABLE_NAME))
             {
