@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.util.Path;
 
 import java.util.Comparator;
 import java.util.List;
@@ -111,6 +112,16 @@ public class FieldKey extends QueryKey<FieldKey>
     {
         return QueryKey.fromParts(FACTORY, parts);
     }
+
+
+    static public FieldKey fromPath(Path path)
+    {
+        List<String> strings = new ArrayList<>(path.size());
+        for (String part : path)
+            strings.add(part);
+        return fromParts(strings);
+    }
+
 
 
     static public FieldKey remap(FieldKey key, @Nullable FieldKey parent, @Nullable Map<FieldKey,FieldKey> remap)
