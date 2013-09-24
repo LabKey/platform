@@ -46,8 +46,11 @@
     ActionURL printLink = context.cloneActionURL().replaceParameter("_print", "1");
     if (bean.getDataRegionSelectionKey() != null)
         printLink.replaceParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, bean.getDataRegionSelectionKey());
-%>
 
+
+    if (!bean.isPrint())
+    {
+%>
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
 <table><tr>
     <td><%= textLink("new " + names.singularName.getSource().toLowerCase(), IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
@@ -56,8 +59,9 @@
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
 </tr></table>
 </form>
-
 <%
+    }
+
     for (String issueId : issueIds )
     {
         Issue issue = IssueManager.getIssue(null, Integer.parseInt(issueId));
