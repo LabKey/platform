@@ -88,6 +88,13 @@ final public class DefaultSchema extends AbstractSchema
                 return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
+        registerProvider("Site", new FolderSchemaProvider(){
+            public QuerySchema getSchema(DefaultSchema schema)
+            {
+                Container container = ContainerManager.getRoot();
+                return new FolderSchema(schema.getUser(), container, null);
+            }
+        });
     }
 
     static public DefaultSchema get(User user, Container container)
