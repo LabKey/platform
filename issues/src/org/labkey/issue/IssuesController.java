@@ -438,6 +438,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
+            page.setPrint(isPrint());
             JspView v = new JspView<>(IssuesController.class, "detailList.jsp", page);
 
             page.setIssueIds(issueIds);
