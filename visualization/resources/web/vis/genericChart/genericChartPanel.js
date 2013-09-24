@@ -996,6 +996,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var wp = new LABKEY.QueryWebPart({
             schemaName  : this.schemaName,
             queryName   : this.queryName,
+            viewName    : this.viewName,
+            dataRegionName: this.dataRegionName,
             columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
             frame       : 'none',
             showBorders : false,
@@ -1036,6 +1038,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
+            viewName    : this.viewName,
+            dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
             maxRows     : 5000,
             requiredVersion : 12.1,
