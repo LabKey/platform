@@ -231,7 +231,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setName(String name)
     {
         checkLocked();
-        assert !_lockName;
+        // Disallow changing the name completely -- fixing up the casing is allowed.
+        assert !_lockName || name.equalsIgnoreCase(this.name);
         this.fieldKey = new FieldKey(null, name);
         this.name = null;
     }

@@ -483,16 +483,34 @@ public class StorageProvisioner
 
         SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
         ti.setMetaDataSchemaName(schemaName);
-        fixupProvisionedDomain(ti, domain, tableName);
+        fixupProvisionedDomain(ti, kind, domain, tableName);
 
         return ti;
     }
 
-    public static void fixupProvisionedDomain(SchemaTableInfo ti, Domain domain, String tableName)
+    public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind kind, Domain domain, String tableName)
     {
         assert !ti.isLocked();
 
         int index = 0;
+
+        for (PropertyStorageSpec s : kind.getBaseProperties())
+        {
+            ColumnInfo c = ti.getColumn(s.getName());
+
+            if (null == c)
+            {
+                Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + s.getName());
+                continue;
+            }
+
+            // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
+            // wants them based on its current property order
+            ti.setColumnIndex(c, index++);
+
+            // Use column name casing from the storage spec
+            c.setName(s.getName());
+        }
 
         for (DomainProperty p : domain.getProperties())
         {

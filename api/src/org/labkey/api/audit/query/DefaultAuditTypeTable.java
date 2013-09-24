@@ -24,6 +24,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -143,10 +144,16 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
             return col;
 
         // Handle the old style 'intKey1' and 'key1' columns
-        String newName = _legacyNameMap.get(name);
+        String newName = _legacyNameMap.get(FieldKey.fromParts(name));
         col = super.resolveColumn(newName);
         if (col != null)
-            return col;
+        {
+            // Wrap the column with AliasedColumn so the requested name is used as the column name.
+            AliasedColumn a = new AliasedColumn(this, name, col);
+            addColumn(a);
+            return a;
+        }
+
 
         // Now check for 'Property/...' columns
         if (name.equalsIgnoreCase("Property"))
