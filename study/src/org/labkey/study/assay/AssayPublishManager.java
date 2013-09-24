@@ -152,10 +152,10 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                          List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
+                                      List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
         TimepointType timetype = StudyManager.getInstance().getStudy(targetContainer).getTimepointType();
-        
+
         List<PropertyDescriptor> propertyDescriptors = new ArrayList<>();
         for (Map.Entry<String, PropertyType> entry : types.entrySet())
         {
@@ -174,7 +174,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                         List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
+                                      List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
@@ -213,13 +213,13 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
-                                          List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
+                                      List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, Collections.<PropertyDescriptor>emptyList(), keyPropertyName, errors);
     }
 
     private ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
-                                          List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
+                                       List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         // Partition dataMaps by targetStudy.
         Map<Container, List<Map<String, Object>>> partitionedDataMaps = new HashMap<>();
@@ -227,7 +227,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             Container targetStudy = targetContainer;
             if (dataMap.containsKey("TargetStudy"))
-                targetStudy = (Container)dataMap.get("TargetStudy");
+                targetStudy = (Container) dataMap.get("TargetStudy");
             assert targetStudy != null;
 
             List<Map<String, Object>> maps = partitionedDataMaps.get(targetStudy);
@@ -252,7 +252,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     private ActionURL _publishAssayData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
-                                      List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
+                                        List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         if (dataMaps.isEmpty())
         {
@@ -267,24 +267,24 @@ public class AssayPublishManager implements AssayPublishService.Service
         try
         {
             scope.ensureTransaction();
-            DataSetDefinition[] datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
+            List<DataSetDefinition> datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
             DataSetDefinition dataset = null;
-            for (int i = 0; i < datasets.length && dataset == null; i++)
+            for (int i = 0; i < datasets.size() && dataset == null; i++)
             {
                 // If there's a dataset linked to our protocol, use it
                 if (protocol != null &&
-                        datasets[i].getProtocolId() != null &&
-                        datasets[i].getProtocolId().equals(protocol.getRowId()))
+                        datasets.get(i).getProtocolId() != null &&
+                        datasets.get(i).getProtocolId().equals(protocol.getRowId()))
                 {
-                    dataset = datasets[i];
+                    dataset = datasets.get(i);
                 }
                 else if (protocol == null &&
-                        datasets[i].getTypeURI() != null &&
-                        datasets[i].getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName, datasets[i].getEntityId(), targetStudy.getContainer())))
+                        datasets.get(i).getTypeURI() != null &&
+                        datasets.get(i).getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName, datasets.get(i).getEntityId(), targetStudy.getContainer())))
                 {
                     // No protocol, but we've got a type uri match. This is used when creating a study
                     // from a study design
-                    dataset = datasets[i];
+                    dataset = datasets.get(i);
                 }
             }
             if (dataset == null)
@@ -365,8 +365,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             //Make sure that the study is updated with the correct timepoints.
             StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
-            ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
-            return url;
+            return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
         }
         catch (ChangePropertyDescriptorException e)
         {
@@ -672,10 +671,10 @@ public class AssayPublishManager implements AssayPublishService.Service
         File file;
         do
         {
-            String extension = StringUtils.defaultString(filename==null ? "tsv" : FileUtil.getExtension(filename), "tsv");
+            String extension = StringUtils.defaultString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
             String extra = id++ == 0 ? "" : String.valueOf(id);
             String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
-            fileName = fileName.replace('\\', '_').replace('/','_').replace(':','_');
+            fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
             file = new File(dir, fileName);
         }
         while (file.exists());
@@ -683,13 +682,13 @@ public class AssayPublishManager implements AssayPublishService.Service
         try
         {
             out = new FileOutputStream(file);
-            IOUtils.copy(tsv.openInputStream(),out);
+            IOUtils.copy(tsv.openInputStream(), out);
             tsv.closeInputStream();
         }
         finally
         {
             if (null != out)
-                try { out.close(); } catch (Exception x) {}
+                try { out.close(); } catch (Exception ignored) {}
         }
 
         UploadLog ul = new UploadLog();
@@ -804,7 +803,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             ul.setDescription(sb.toString());
             ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId());
         }
-        return Pair.of(lsids,ul);
+        return Pair.of(lsids, ul);
     }
 
     public UploadLog getUploadLog(Container c, int id)
@@ -814,7 +813,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
     }
-    
+
     public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
     {
         return getPublishHistory(c, protocol, null);
@@ -925,7 +924,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                 // Be careful to not assume that we have participant or visit columns in our data domain
                                 Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
                                 String ptid = ptidObject == null ? null : ptidObject.toString();
-                                int objectId = ((Number)objectIdColumn.getValue(rs)).intValue();
+                                int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
                                 Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
                                 // Only copy rows that have a participant and a visit/date
                                 if (ptid != null && visit != null)
@@ -938,7 +937,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                     }
                                     else
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date)ConvertUtils.convert(visit.toString(), Date.class), objectId);
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date) ConvertUtils.convert(visit.toString(), Date.class), objectId);
                                     }
                                     keys.put(objectId, key);
                                 }
@@ -953,7 +952,16 @@ public class AssayPublishManager implements AssayPublishService.Service
                         }
                         finally
                         {
-                            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+                            if (rs != null)
+                            {
+                                try
+                                {
+                                    rs.close();
+                                }
+                                catch (SQLException e)
+                                {
+                                }
+                            }
                         }
                     }
                 }

@@ -1683,12 +1683,12 @@ public class StudyManager
         return null;
     }
 
-    public DataSetDefinition[] getDataSetDefinitions(Study study)
+    public List<DataSetDefinition> getDataSetDefinitions(Study study)
     {
         return getDataSetDefinitions(study, null);
     }
 
-    public DataSetDefinition[] getDataSetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DataSetDefinition> getDataSetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)
@@ -1734,7 +1734,7 @@ public class StudyManager
             }
         });
 
-        return datasets.toArray(new DataSetDefinition[datasets.size()]);
+        return Collections.unmodifiableList(datasets);
     }
 
 
@@ -2399,7 +2399,7 @@ public class StudyManager
         Role restrictedReader = RoleManager.getRole(RestrictedReaderRole.class);
 
         Set<SecurableResource> resources = new HashSet<>();
-        resources.addAll(Arrays.asList(getDataSetDefinitions(study)));
+        resources.addAll(getDataSetDefinitions(study));
 
         Set<UserPrincipal> principals = new HashSet<>();
 

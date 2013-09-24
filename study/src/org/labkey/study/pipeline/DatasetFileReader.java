@@ -117,8 +117,8 @@ public class DatasetFileReader
             return;
         }
 
-        DataSetDefinition[] dsArray = _studyManager.getDataSetDefinitions(_study);
-        HashMap<String, DataSetDefinition> dsMap = new HashMap<>(dsArray.length * 3);
+        List<DataSetDefinition> dsArray = _studyManager.getDataSetDefinitions(_study);
+        HashMap<String, DataSetDefinition> dsMap = new HashMap<>(dsArray.size() * 3);
         // UNDONE: duplicate labels? dataset named participant?
         for (DataSetDefinition ds : dsArray)
         {
@@ -158,8 +158,8 @@ public class DatasetFileReader
 
         for (Map.Entry e : props.entrySet())
         {
-            String key = StringUtils.trimToEmpty((String)e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String)e.getValue());
+            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
+            String value = StringUtils.trimToEmpty((String) e.getValue());
             if (!key.startsWith("default."))
                 continue;
             if (key.equals("default.action"))
@@ -200,13 +200,13 @@ public class DatasetFileReader
 
         for (Map.Entry e : props.entrySet())
         {
-            String key = StringUtils.trimToEmpty((String)e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String)e.getValue());
+            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
+            String value = StringUtils.trimToEmpty((String) e.getValue());
             int period = key.indexOf('.');
             if (key.startsWith("default.") || -1 == period)
                 continue;
             String datasetKey = key.substring(0, period);
-            String propertyKey = key.substring(period+1);
+            String propertyKey = key.substring(period + 1);
             DataSetDefinition ds = dsMap.get(datasetKey);
             if (null == ds)
             {
@@ -368,22 +368,22 @@ public class DatasetFileReader
     /**
      * Key and value are case insensitive on search, but are returned in original case
      */
-    public static class OneToOneStringMap extends AbstractMap<String,String>
+    public static class OneToOneStringMap extends AbstractMap<String, String>
     {
-        private final CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<>();
-        private final CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<>();
+        private final CaseInsensitiveHashMap<Pair<String, String>> keyMap = new CaseInsensitiveHashMap<>();
+        private final CaseInsensitiveHashMap<Pair<String, String>> valMap = new CaseInsensitiveHashMap<>();
 
         @Override
         public String get(Object key)
         {
-            Pair<String,String> p = keyMap.get(key);
+            Pair<String, String> p = keyMap.get(key);
             return p == null ? null : p.getValue();
         }
 
 
         public String getKey(Object value)
         {
-            Pair<String,String> p = valMap.get(value);
+            Pair<String, String> p = valMap.get(value);
             return p == null ? null : p.getKey();
         }
 
@@ -391,19 +391,19 @@ public class DatasetFileReader
         @Override
         public String put(String key, String value)
         {
-            Pair<String,String> p = new Pair<>(key,value);
+            Pair<String, String> p = new Pair<>(key, value);
             String ret = _remove(p).getValue();
             _put(p);
             return ret;
         }
 
         /*  returns <old mapping for new value, old mapping for new key> */
-        private Pair<String,String> _remove(Pair<String,String> p)
+        private Pair<String, String> _remove(Pair<String, String> p)
         {
             String oldKey = null;
             String oldValue = null;
 
-            Pair<String,String> t = keyMap.get(p.getKey());
+            Pair<String, String> t = keyMap.get(p.getKey());
             if (null != t)
             {
                 oldValue = t.getValue();
@@ -419,11 +419,11 @@ public class DatasetFileReader
                     valMap.remove(oldKey);
             }
 
-            return new Pair<>(oldKey,oldValue);
+            return new Pair<>(oldKey, oldValue);
         }
 
 
-        private void _put(Pair<String,String> p)
+        private void _put(Pair<String, String> p)
         {
             keyMap.put(p.getKey(), p);
             valMap.put(p.getValue(), p);
@@ -433,7 +433,7 @@ public class DatasetFileReader
         @Override
         public String remove(Object key)
         {
-            Pair<String,String> p = keyMap.get(key);
+            Pair<String, String> p = keyMap.get(key);
             if (null == p)
                 return null;
             return _remove(p).getValue();
@@ -441,7 +441,7 @@ public class DatasetFileReader
 
         public String removeValue(Object value)
         {
-            Pair<String,String> p = valMap.get(value);
+            Pair<String, String> p = valMap.get(value);
             if (null == p)
                 return null;
             return _remove(p).getValue();
@@ -461,7 +461,7 @@ public class DatasetFileReader
 
         public Set<Entry<String, String>> entrySet()
         {
-            Set<Entry<String,String>> set = new HashSet<>();
+            Set<Entry<String, String>> set = new HashSet<>();
             set.addAll(keyMap.values());
             return Collections.unmodifiableSet(set);
         }

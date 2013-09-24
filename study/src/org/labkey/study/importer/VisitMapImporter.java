@@ -27,6 +27,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitDataSetType;
@@ -54,47 +55,54 @@ public class VisitMapImporter
 
     public enum Format
     {
-        DataFax {
-            public VisitMapReader getReader(String contents)
-            {
-                return new DataFaxVisitMapReader(contents);
-            }
-
-            public VisitMapReader getReader(VirtualFile file, String name) throws IOException
-            {
-                InputStream is = file.getInputStream(name);
-
-                if (is != null)
+        DataFax
                 {
-                    String contents = PageFlowUtil.getStreamContentsAsString(is);
-                    return new DataFaxVisitMapReader(contents);
-                }
-                return null;
-            }
+                    public VisitMapReader getReader(String contents)
+                    {
+                        return new DataFaxVisitMapReader(contents);
+                    }
 
-            public String getExtension()
-            {
-                return ".txt";
-            }},
+                    public VisitMapReader getReader(VirtualFile file, String name) throws IOException
+                    {
+                        InputStream is = file.getInputStream(name);
+
+                        if (is != null)
+                        {
+                            String contents = PageFlowUtil.getStreamContentsAsString(is);
+                            return new DataFaxVisitMapReader(contents);
+                        }
+                        return null;
+                    }
+
+                    public String getExtension()
+                    {
+                        return ".txt";
+                    }
+                },
 
         @SuppressWarnings({"UnusedDeclaration"})
-        Xml {
-            public VisitMapReader getReader(String contents) throws VisitMapParseException
-            {
-                return new XmlVisitMapReader(contents);
-            }
-            public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException
-            {
-                return new XmlVisitMapReader(file.getXmlBean(name));  //To change body of implemented methods use File | Settings | File Templates.
-            }
+        Xml
+                {
+                    public VisitMapReader getReader(String contents) throws VisitMapParseException
+                    {
+                        return new XmlVisitMapReader(contents);
+                    }
 
-            public String getExtension()
-            {
-                return ".xml";
-            }};
+                    public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException
+                    {
+                        return new XmlVisitMapReader(file.getXmlBean(name));  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    public String getExtension()
+                    {
+                        return ".xml";
+                    }
+                };
 
         abstract public VisitMapReader getReader(String contents) throws VisitMapParseException;
+
         abstract public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException;
+
         abstract public String getExtension();
 
         static Format getFormat(String name)
@@ -223,7 +231,7 @@ public class VisitMapImporter
             // we're using sequenceNumMin as the key in this instance
             if (visit != null && visit.getSequenceNumMin() != record.getSequenceNumMin())
                 visit = null;
-            
+
             if (visit == null)
             {
                 visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
@@ -263,7 +271,7 @@ public class VisitMapImporter
         }
     }
 
-    
+
     private VisitImpl _ensureMutable(VisitImpl v)
     {
         if (!v.isMutable())
@@ -285,12 +293,12 @@ public class VisitMapImporter
             assert visitId > 0;
 
             for (int dataSetId : record.getOptionalPlates())
-                requiredMapNew.put(new VisitMapKey(dataSetId,visitId), Boolean.FALSE);
+                requiredMapNew.put(new VisitMapKey(dataSetId, visitId), Boolean.FALSE);
             for (int dataSetId : record.getRequiredPlates())
-                requiredMapNew.put(new VisitMapKey(dataSetId,visitId), Boolean.TRUE);
+                requiredMapNew.put(new VisitMapKey(dataSetId, visitId), Boolean.TRUE);
         }
-            
-        for (Map.Entry<VisitMapKey,Boolean> e : requiredMapNew.entrySet())
+
+        for (Map.Entry<VisitMapKey, Boolean> e : requiredMapNew.entrySet())
         {
             VisitMapKey key = e.getKey();
             Boolean isRequiredNew = e.getValue();
@@ -326,7 +334,7 @@ public class VisitMapImporter
 
     private void saveDataSets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
-        DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(study);
         Set<Integer> existingSet = new HashSet<>();
         for (DataSet def : defs)
             existingSet.add(def.getDataSetId());

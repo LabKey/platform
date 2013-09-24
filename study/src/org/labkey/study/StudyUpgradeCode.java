@@ -104,7 +104,7 @@ public class StudyUpgradeCode implements UpgradeCode
         Map<String, Object>[] rows = new TableSelector(tinfo, Collections.singleton("Container")).getMapArray();
         for (Map<String, Object> row : rows)
         {
-            String container = (String)row.get("Container");
+            String container = (String) row.get("Container");
             String protocolDocumentEntityId = GUID.makeGUID();
             Table.execute(tinfo.getSchema(), sql, protocolDocumentEntityId, container);
         }
@@ -207,7 +207,7 @@ public class StudyUpgradeCode implements UpgradeCode
         try
         {
             con = scope.getConnection();
-            
+
             String tableName = domain.getStorageTableName();
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.RenameColumns);
 
@@ -252,7 +252,8 @@ public class StudyUpgradeCode implements UpgradeCode
         if (!context.isNewInstall())
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try {
+            try
+            {
                 scope.ensureTransaction();
                 for (Report report : ReportService.get().getReports(new SimpleFilter()))
                 {
@@ -311,8 +312,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 if (study != null)
                 {
                     List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                    DataSetDefinition[] datasetDefs = StudyManager.getInstance().getDataSetDefinitions(study);
-                    for (DataSetDefinition dsd : datasetDefs)
+                    for (DataSetDefinition dsd : StudyManager.getInstance().getDataSetDefinitions(study))
                     {
                         if (!dsd.getName().equals(dsd.getLabel()))
                         {

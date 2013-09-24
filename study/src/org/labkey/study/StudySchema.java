@@ -27,7 +27,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -108,7 +107,7 @@ public class StudySchema
 
     public TableInfo getTableInfoStudyData(StudyImpl study, @Nullable User user)
     {
-        return new StudyUnionTableInfo(study, Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(study)), user);
+        return new StudyUnionTableInfo(study, StudyManager.getInstance().getDataSetDefinitions(study), user);
     }
 
     public TableInfo getTableInfoStudyDataFiltered(StudyImpl study, Collection<DataSetDefinition> defs, User user)

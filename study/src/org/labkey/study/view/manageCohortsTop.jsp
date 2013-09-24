@@ -39,13 +39,13 @@
     <input type="hidden" name="reshow" value="true">
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">
-<%
-    // Continuous studies don't populate study.ParticipantVisit or study.Visit, so it's not yet possible to
-    // do advanced cohort calculations for continuous studies.  This support could be added in the future.
-    if (study.getTimepointType() != TimepointType.CONTINUOUS)
-    {
-        WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
-%>
+    <%
+        // Continuous studies don't populate study.ParticipantVisit or study.Visit, so it's not yet possible to
+        // do advanced cohort calculations for continuous studies.  This support could be added in the future.
+        if (study.getTimepointType() != TimepointType.CONTINUOUS)
+        {
+            WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
+    %>
     <script type="text/javascript">
         function setAdvanced(advanced)
         {
@@ -53,9 +53,9 @@
             var manual = manualEl && manualEl.checked;
             if (advanced && manual)
             {
-                 if (confirm('Enabling advanced cohort mode will enable automatic assignment.  ' +
-                                        'Any manual cohort assignments will be cleared, and you must ' +
-                                        'select a study dataset containing cohort assignments.  Continue?'))
+                if (confirm('Enabling advanced cohort mode will enable automatic assignment.  ' +
+                        'Any manual cohort assignments will be cleared, and you must ' +
+                        'select a study dataset containing cohort assignments.  Continue?'))
                 {
                     document.getElementById('manualCohortAssignmentEnabled').checked = false;
                     document.getElementById('manualCohortAssignmentDisabled').checked = true;
@@ -64,7 +64,7 @@
                 }
             }
             else if (confirm('Changing between simple and advanced modes requires updating cohort ' +
-                               'assignments for all <%= h(subjectNounPlural.toLowerCase()) %>.  Update cohort assignments now?'))
+                    'assignments for all <%= h(subjectNounPlural.toLowerCase()) %>.  Update cohort assignments now?'))
             {
                 document.manageCohorts.submit();
                 return true;
@@ -73,44 +73,57 @@
         }
     </script>
     <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport" id="simpleCohorts"
-           value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: <%= h(subjectNounPlural) %> are assigned to a single cohort throughout the study.<br>
-    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts" 
-           value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= h(subjectNounPlural) %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
-<%
-        WebPartView.endTitleFrame(out);
-    }
-    
-    if (!study.isAdvancedCohorts())
-    {
-        WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
-%>
-    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment" id="manualCohortAssignmentDisabled"
-           value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic: cohort assignments will be read from an existing study dataset.<br>
-    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment" id="manualCohortAssignmentEnabled"
-           value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual: cohort assignments will be made by hand.
+           value="false" <%=text(study.isAdvancedCohorts() ? "" : "checked")%>>Simple: <%= h(subjectNounPlural) %> are
+    assigned to a single cohort throughout the study.<br>
+    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts"
+           value="true" <%=text(study.isAdvancedCohorts() ? "checked" : "")%>>Advanced: <%= h(subjectNounPlural) %> may
+    change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
+    dataset.<br>
+    <%
+            WebPartView.endTitleFrame(out);
+        }
+
+        if (!study.isAdvancedCohorts())
+        {
+            WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
+    %>
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+           id="manualCohortAssignmentDisabled"
+           value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic: cohort assignments will be
+    read from an existing study dataset.<br>
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+           id="manualCohortAssignmentEnabled"
+           value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual: cohort assignments will be made
+    by hand.
 
     <%
-        WebPartView.endTitleFrame(out);
-    }
-    if (!study.isManualCohortAssignment())
-    { // If it's automatic, we need to include the dataset selection widgets
-        WebPartView.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
+            WebPartView.endTitleFrame(out);
+        }
+        if (!study.isManualCohortAssignment())
+        { // If it's automatic, we need to include the dataset selection widgets
+            WebPartView.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
     %>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
-<table>
+    <table>
         <tr>
-            <th align="right"><%= h(subjectNounSingle) %>/Cohort Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",
-                    subjectNounPlural + " can be assigned to cohorts based on the data in a field of a single dataset.  " +
-                    "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%></th>
+            <th align="right"><%= h(subjectNounSingle) %>/Cohort
+                Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",
+                        subjectNounPlural + " can be assigned to cohorts based on the data in a field of a single dataset.  " +
+                                "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%>
+            </th>
             <td>
-                <select name="participantCohortDataSetId" onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
+                <select name="participantCohortDataSetId"
+                        onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : manager.getDataSetDefinitions(study))
                         {
                             String selected = (study.getParticipantCohortDataSetId() != null &&
                                     dataset.getDataSetId() == study.getParticipantCohortDataSetId().intValue() ? "selected" : "");
-                            %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                    %>
+                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    </option>
+                    <%
                         }
                     %>
                 </select>
@@ -121,31 +134,31 @@
             <td>
                 <select name="participantCohortProperty">
                     <option value="">[None]</option>
-                <%
-            PropertyDescriptor[] descriptors;
-            Integer participantCohortDataSetId = study.getParticipantCohortDataSetId();
-            if (participantCohortDataSetId == null || participantCohortDataSetId.intValue() < 0)
-                descriptors = new PropertyDescriptor[0];
-            else
-            {
-                DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
-                if (dataset != null)
-                    descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
-                else
-                    descriptors = new PropertyDescriptor[0];
-            }
-                for (PropertyDescriptor pd : descriptors)
-                {
-                    if (pd.getPropertyType() == PropertyType.STRING) // only strings can be cohort labels
-                    {
-                %>
+                    <%
+                        PropertyDescriptor[] descriptors;
+                        Integer participantCohortDataSetId = study.getParticipantCohortDataSetId();
+                        if (participantCohortDataSetId == null || participantCohortDataSetId.intValue() < 0)
+                            descriptors = new PropertyDescriptor[0];
+                        else
+                        {
+                            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
+                            if (dataset != null)
+                                descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
+                            else
+                                descriptors = new PropertyDescriptor[0];
+                        }
+                        for (PropertyDescriptor pd : descriptors)
+                        {
+                            if (pd.getPropertyType() == PropertyType.STRING) // only strings can be cohort labels
+                            {
+                    %>
                     <option value="<%= pd.getName() %>" <%= pd.getName().equals(study.getParticipantCohortProperty()) ? "SELECTED" : "" %>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
-                <%
-                    }
-                }
-                %>
+                    <%
+                            }
+                        }
+                    %>
                 </select>
             </td>
         </tr>
@@ -156,10 +169,10 @@
                 <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all " + h(subjectNounPlural) + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>
-        </table>
+    </table>
     <%
-        WebPartView.endTitleFrame(out);
-    }
+            WebPartView.endTitleFrame(out);
+        }
     %>
 
 </form>

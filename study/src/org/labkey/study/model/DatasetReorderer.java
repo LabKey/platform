@@ -45,8 +45,8 @@ public class DatasetReorderer
     // list; any unspecified datasets will appear at the end of the list, maintaining their current order.
     public void reorderDatasets(List<Integer> orderedIds) throws SQLException
     {
-        DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(_study);
-        Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.length);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(_study);
+        Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.size());
 
         for (DataSetDefinition def : defs)
             map.put(def.getDataSetId(), def);
@@ -68,7 +68,7 @@ public class DatasetReorderer
 
     public void resetOrder() throws SQLException
     {
-        DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(_study);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(_study);
         for (DataSetDefinition def : defs)
             updateDef(def, 0);
     }

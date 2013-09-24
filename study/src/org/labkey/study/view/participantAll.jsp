@@ -1,27 +1,27 @@
 <%
-/*
- * Copyright (c) 2006-2013 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    /*
+     * Copyright (c) 2006-2013 LabKey Corporation
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
 %>
-<%@ page import="org.apache.commons.beanutils.ConvertUtils"%>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet"%>
-<%@ page import="org.labkey.api.collections.MultiValueMap"%>
-<%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.data.DbSchema"%>
-<%@ page import="org.labkey.api.data.Results"%>
+<%@ page import="org.apache.commons.beanutils.ConvertUtils" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
+<%@ page import="org.labkey.api.collections.MultiValueMap" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
+<%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
@@ -74,7 +74,7 @@
 
 <%
     ViewContext context = HttpView.currentContext();
-    org.labkey.study.query.StudyQuerySchema querySchema = (org.labkey.study.query.StudyQuerySchema)QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
+    org.labkey.study.query.StudyQuerySchema querySchema = (org.labkey.study.query.StudyQuerySchema) QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
     DbSchema dbSchema = querySchema.getDbSchema();
     String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
@@ -99,12 +99,12 @@
     StudyImpl study = manager.getStudy(context.getContainer());
 
     User user = (User) request.getUserPrincipal();
-    DataSetDefinition[] allDatasets = manager.getDataSetDefinitions(study);
-    ArrayList<DataSetDefinition> datasets = new ArrayList<>(allDatasets.length);
+    List<DataSetDefinition> allDatasets = manager.getDataSetDefinitions(study);
+    ArrayList<DataSetDefinition> datasets = new ArrayList<>(allDatasets.size());
     for (DataSetDefinition def : allDatasets)
     {
         if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
-                continue;
+            continue;
         datasets.add(def);
     }
 
@@ -118,12 +118,12 @@
 
     ResultSet rs;
 
-    Map<Pair<String,Double>,Integer> visitRowIdMap = new HashMap<>();
+    Map<Pair<String, Double>, Integer> visitRowIdMap = new HashMap<>();
     Map<Double, Date> ptidVisitDates = new TreeMap<>();
     rs = Table.executeQuery(dbSchema,
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
-            "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
-            "WHERE Container = ? AND ParticipantId = ?",
+                    "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
+                    "WHERE Container = ? AND ParticipantId = ?",
             new Object[]{study.getContainer(), bean.getParticipantId()});
     while (rs.next())
     {
@@ -131,7 +131,7 @@
         String ptid = rs.getString(2);
         double sequenceNum = rs.getDouble(3);
         Date visitDate = rs.getDate(4);
-        visitRowIdMap.put(new Pair(ptid,sequenceNum), visitRowId);
+        visitRowIdMap.put(new Pair(ptid, sequenceNum), visitRowId);
         if (bean.getParticipantId().equals(ptid))
             ptidVisitDates.put(sequenceNum, visitDate);
     }
@@ -155,7 +155,7 @@
         double s = rs.getDouble(2);
         Double sequenceNum = rs.wasNull() ? null : s;
         int datasetId = rs.getInt(3);
-        int rowCount = ((Number)rs.getObject(4)).intValue();
+        int rowCount = ((Number) rs.getObject(4)).intValue();
         Integer visitRowId = visitRowIdMap.get(new Pair(ptid, sequenceNum));
         if (null != visitRowId && null != sequenceNum)
             visitSequenceMap.put(visitRowId, sequenceNum);
@@ -188,55 +188,65 @@
 %>
 
 <%
-   if(!aliasMap.isEmpty()){
-       %>
-        <h3>Aliases:</h3>
-        <%
-        StringBuilder builder = new StringBuilder();
-        for(Map.Entry<String, String> entry : aliasMap.entrySet()){
-            builder.append(entry.getKey() + ": " + entry.getValue() + ", ");
-        }
-        String aliasString = builder.toString().substring(0, builder.toString().length()-2);
-        %>
-        <p><%=h(aliasString)%></p>
+    if (!aliasMap.isEmpty())
+    {
+%>
+<h3>Aliases:</h3>
 <%
-   }
+    StringBuilder builder = new StringBuilder();
+    for (Map.Entry<String, String> entry : aliasMap.entrySet())
+    {
+        builder.append(entry.getKey() + ": " + entry.getValue() + ", ");
+    }
+    String aliasString = builder.toString().substring(0, builder.toString().length() - 2);
+%>
+<p><%=h(aliasString)%>
+</p>
+<%
+    }
 %>
 <script>
     var tableReady = false;
-    LABKEY.Utils.onReady(function(){
+    LABKEY.Utils.onReady(function ()
+    {
         tableReady = true;
     });
 
-    var toggleIfReady = function(link, notify){
-        if(tableReady)
+    var toggleIfReady = function (link, notify)
+    {
+        if (tableReady)
             toggleLink(link, notify);
         return false;
     };
 </script>
 <table class="labkey-data-region">
 
-    <tr class="labkey-alternate-row">
-        <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=h(contextPath)%>/_.gif"></td>
-        <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=h(contextPath)%>/_.gif"></td><%
+<tr class="labkey-alternate-row">
+    <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <%
 
-            for (VisitImpl visit : visits)
+        for (VisitImpl visit : visits)
+        {
+            int seqKeyCount = 0;
+            for (Double seqNum : visitSequenceMap.get(visit.getRowId()))
             {
-                int seqKeyCount = 0;
-                for (Double seqNum : visitSequenceMap.get(visit.getRowId()))
-                {
-                    Integer c = countKeysForSequence.get(seqNum);
-                    seqKeyCount += c == null ? 1 : c;
-                }
-                totalSeqKeyCount += seqKeyCount;
-                %><td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %></td><%
+                Integer c = countKeysForSequence.get(seqNum);
+                seqKeyCount += c == null ? 1 : c;
             }
-        %>
-    </tr>
+            totalSeqKeyCount += seqKeyCount;
+    %>
+    <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %>
+    </td>
+    <%
+        }
+    %>
+</tr>
 
-    <tr class="labkey-alternate-row">
-        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
-        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td><%
+<tr class="labkey-alternate-row">
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <%
 
         for (VisitImpl visit : visits)
         {
@@ -247,321 +257,364 @@
                 Integer keyCount = countKeysForSequence.get(seqNum);
                 if (null == keyCount)
                     keyCount = 1;
-                %><td class="labkey-participant-view-header" colspan="<%=keyCount%>"><%= text(null==date ? "&nbsp;": h(ConvertUtils.convert(date))) %></td><%
-            }
-        }
-        %>
-    </tr>
-
+    %>
+    <td class="labkey-participant-view-header"
+        colspan="<%=keyCount%>"><%= text(null == date ? "&nbsp;" : h(ConvertUtils.convert(date))) %>
+    </td>
     <%
-        response.flushBuffer();
-
-        for (DataSetDefinition dataset : datasets)
-        {
-            // Do not display demographic data here. That goes in a separate web part,
-            // the participant characteristics
-            if (dataset.isDemographicData())
-                continue;
-
-            String typeURI = dataset.getTypeURI();
-            if (null == typeURI)
-                continue;
-
-            int datasetId = dataset.getDataSetId();
-            boolean expanded = false;
-            if ("expand".equalsIgnoreCase(expandedMap.get(datasetId)))
-                expanded = true;
-
-            if (!dataset.canRead(user))
-            {
-                %><tr class="labkey-header"><th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataset.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount+1%>" nowrap align="left" class="labkey-expandable-row-header">(no access)</td></tr><%
-                continue;
-            }
-
-            // get the data for this dataset and group rows by SequenceNum/Key
-            TableInfo table = querySchema.createDatasetTableInternal(dataset);
-            Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap<>();
-            FieldKey keyColumnName = null==dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
-
-            if (!datasetSet.contains(datasetId))
-                continue;
-            Map<FieldKey,ColumnInfo> allColumns = getQueryColumns(table);
-            ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
-            Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults();
-            int rowCount = dsResults.getSize();
-            while (dsResults.next())
-            {
-                double sequenceNum = dsResults.getDouble("SequenceNum");
-                Object key = null==keyColumnName ? "" : dsResults.getObject(keyColumnName);
-
-                Map<Object, Map> keyMap = seqKeyRowMap.get(sequenceNum);
-                if (null == keyMap)
-                    seqKeyRowMap.put(sequenceNum, keyMap = new HashMap<>());
-
-                keyMap.put(key, dsResults.getRowMap());
-            }
-            ResultSetUtil.close(dsResults);
-            if (rowCount == 0)
-                continue;
-
-            %>
-            <tr class="labkey-header">
-            <th nowrap align="left" class="labkey-expandable-row-header">
-                <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleIfReady(this, true);">
-                    <img src="<%= h(context.getContextPath()) %>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>" alt="Click to expand/collapse">
-                    <%=h(dataset.getDisplayString())%>
-                </a><%
-            if (null != StringUtils.trimToNull(dataset.getDescription()))
-            {
-                %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
-            }
-            %></th>
-                <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%></td>
-                <td class="labkey-expandable-row-header" colspan="<%=totalSeqKeyCount%>">&nbsp;</td>
-            </tr>
-            <%
-
-            for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
-            {
-                if (updateAccess)
-                {
-                %>
-                <tr style="<%=text(expanded ? "" : "display:none")%>">
-                    <td><a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a></td>
-                </tr>
-                <%
-                }
-                %>
-                <tr style="<%=text(expanded ? "" : "display:none")%>">
-                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>"></td>
-                </tr>
-                <%
-            }
-
-            if (updateAccess)
-            {
-                %>
-                <tr style="<%=text(expanded ? "" : "display:none")%>">
-                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row"><%=textLink("add chart",url.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%></td>
-                </tr>
-                <%
-            }
-            int row = 0;
-            String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
-
-            // display details link(s) only if we have a source lsid in at least one of the rows
-            boolean hasSourceLsid = false;
-
-            if (StudyManager.getInstance().showQCStates(context.getContainer()))
-            {
-                row++;
-                %>
-                <tr style="<%=text(expanded ? "" : "display:none")%>"><td class="<%= text(className) %>" align="left" nowrap>QC State</td><td class="<%= text(className) %>">&nbsp;</td>
-                <%
-                for (VisitImpl visit : visits)
-                {
-                    for (double seq : visitSequenceMap.get(visit.getRowId()))
-                    {
-                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
-                        int countTD = 0;
-                        if (null != keyMap)
-                        {
-                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
-                            {
-                                Integer id = (Integer)e.getValue().get("QCState");
-                                QCState state = getQCState(study, id);
-                                boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
-                                %>
-                                    <td class="<%=text(className)%>">
-                                        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
-                                    </td>
-                                <%
-                                countTD++;
-                            }
-                        }
-                        // do we need to pad?
-                        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
-                        if (countTD < maxTD)
-                        {
-                            %><td class="<%=text(className)%>" colspan="<%=maxTD-countTD%>">&nbsp;</td><%
-                        }
-                    }
-                }
-                %>
-                </tr>
-                <%
-            }
-
-                    // sort the properties so they appear in the same order as the grid view
-//            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataset, HttpView.getRootContext());
-            ColumnInfo[] displayColumns = sortColumns(allColumns.values(), dataset, HttpView.getRootContext());
-
-            for (ColumnInfo col : displayColumns)
-            {
-                if (col == null) continue;
-                row++;
-                className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
-                String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
-                %>
-                <tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>"><td align="left" nowrap><%=h(labelName)%></td><td>&nbsp;</td><%
-                for (VisitImpl visit : visits)
-                {
-                    for (double seq : visitSequenceMap.get(visit.getRowId()))
-                    {
-                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
-                        int countTD = 0;
-                        if (null != keyMap)
-                        {
-                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
-                            {
-                                Map propMap = e.getValue();
-                                if (sourceLsidColumn.getValue(propMap) != null)
-                                    hasSourceLsid = true;
-                                Object value = col.getValue(propMap);
-                                %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%></td><%
-                                countTD++;
-                            }
-                        }
-                        // do we need to pad?
-                        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
-                        if (countTD < maxTD)
-                        {
-                            %><td colspan="<%=maxTD-countTD%>">&nbsp;</td><%
-                        }
-                    }
-                }
-            %></tr><%
-            }
-            if (hasSourceLsid) // Need to display a details link
-            {
-                row++;
-                className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
-                %>
-                <tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>"><td align="left" nowrap>Details</td><td>&nbsp;</td><%
-                for (VisitImpl visit : visits)
-                {
-                    for (double seq : visitSequenceMap.get(visit.getRowId()))
-                    {
-                        Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
-                        int countTD = 0;
-                        if (null != keyMap)
-                        {
-                            for (Map.Entry<Object,Map> e : keyMap.entrySet())
-                            {
-                                String link = "&nbsp;";
-                                Map propMap = e.getValue();
-                                String sourceLsid = (String)sourceLsidColumn.getValue(propMap);
-
-                                if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getViewContext().getUser(), ReadPermission.class))
-                                {
-                                    ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
-                                    sourceURL.addParameter("sourceLsid", sourceLsid);
-                                    link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
-                                }
-                                %><td><%= text(link)%></td><%
-                                countTD++;
-                            }
-                        }
-                        // do we need to pad?
-                        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
-                        if (countTD < maxTD)
-                        {
-                            %><td colspan="<%=maxTD-countTD%>">&nbsp;</td><%
-                        }
-                    }
-                }
-            %></tr><%
             }
         }
     %>
+</tr>
+
+<%
+    response.flushBuffer();
+
+    for (DataSetDefinition dataset : datasets)
+    {
+        // Do not display demographic data here. That goes in a separate web part,
+        // the participant characteristics
+        if (dataset.isDemographicData())
+            continue;
+
+        String typeURI = dataset.getTypeURI();
+        if (null == typeURI)
+            continue;
+
+        int datasetId = dataset.getDataSetId();
+        boolean expanded = false;
+        if ("expand".equalsIgnoreCase(expandedMap.get(datasetId)))
+            expanded = true;
+
+        if (!dataset.canRead(user))
+        {
+%>
+<tr class="labkey-header">
+    <th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataset.getDisplayString())%>
+    </th>
+    <td colspan="<%=totalSeqKeyCount+1%>" nowrap align="left" class="labkey-expandable-row-header">(no access)</td>
+</tr>
+<%
+        continue;
+    }
+
+    // get the data for this dataset and group rows by SequenceNum/Key
+    TableInfo table = querySchema.createDatasetTableInternal(dataset);
+    Map<Double, Map<Object, Map>> seqKeyRowMap = new HashMap<>();
+    FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
+
+    if (!datasetSet.contains(datasetId))
+        continue;
+    Map<FieldKey, ColumnInfo> allColumns = getQueryColumns(table);
+    ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
+    Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults();
+    int rowCount = dsResults.getSize();
+    while (dsResults.next())
+    {
+        double sequenceNum = dsResults.getDouble("SequenceNum");
+        Object key = null == keyColumnName ? "" : dsResults.getObject(keyColumnName);
+
+        Map<Object, Map> keyMap = seqKeyRowMap.get(sequenceNum);
+        if (null == keyMap)
+            seqKeyRowMap.put(sequenceNum, keyMap = new HashMap<>());
+
+        keyMap.put(key, dsResults.getRowMap());
+    }
+    ResultSetUtil.close(dsResults);
+    if (rowCount == 0)
+        continue;
+
+%>
+<tr class="labkey-header">
+    <th nowrap align="left" class="labkey-expandable-row-header">
+        <a title="Click to expand/collapse"
+           href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+           onclick="return toggleIfReady(this, true);">
+            <img src="<%= h(context.getContextPath()) %>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
+                 alt="Click to expand/collapse">
+            <%=h(dataset.getDisplayString())%>
+        </a><%
+        if (null != StringUtils.trimToNull(dataset.getDescription()))
+        {
+    %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+        }
+    %></th>
+    <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%>
+    </td>
+    <td class="labkey-expandable-row-header" colspan="<%=totalSeqKeyCount%>">&nbsp;</td>
+</tr>
+<%
+
+    for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
+    {
+        if (updateAccess)
+        {
+%>
+<tr style="<%=text(expanded ? "" : "display:none")%>">
+    <td>
+        <a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a>
+    </td>
+</tr>
+<%
+    }
+%>
+<tr style="<%=text(expanded ? "" : "display:none")%>">
+    <td colspan="<%=totalSeqKeyCount%>"><img
+            src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>">
+    </td>
+</tr>
+<%
+    }
+
+    if (updateAccess)
+    {
+%>
+<tr style="<%=text(expanded ? "" : "display:none")%>">
+    <td colspan="<%=totalSeqKeyCount+1%>"
+        class="labkey-alternate-row"><%=textLink("add chart", url.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
+    </td>
+</tr>
+<%
+    }
+    int row = 0;
+    String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+
+    // display details link(s) only if we have a source lsid in at least one of the rows
+    boolean hasSourceLsid = false;
+
+    if (StudyManager.getInstance().showQCStates(context.getContainer()))
+    {
+        row++;
+%>
+<tr style="<%=text(expanded ? "" : "display:none")%>">
+    <td class="<%= text(className) %>" align="left" nowrap>QC State</td>
+    <td class="<%= text(className) %>">&nbsp;</td>
+    <%
+        for (VisitImpl visit : visits)
+        {
+            for (double seq : visitSequenceMap.get(visit.getRowId()))
+            {
+                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                int countTD = 0;
+                if (null != keyMap)
+                {
+                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    {
+                        Integer id = (Integer) e.getValue().get("QCState");
+                        QCState state = getQCState(study, id);
+                        boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
+    %>
+    <td class="<%=text(className)%>">
+        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
+    </td>
+    <%
+                countTD++;
+            }
+        }
+        // do we need to pad?
+        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
+        if (countTD < maxTD)
+        {
+    %>
+    <td class="<%=text(className)%>" colspan="<%=maxTD-countTD%>">&nbsp;</td>
+    <%
+                }
+            }
+        }
+    %>
+</tr>
+<%
+    }
+
+    // sort the properties so they appear in the same order as the grid view
+//            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataset, HttpView.getRootContext());
+    ColumnInfo[] displayColumns = sortColumns(allColumns.values(), dataset, HttpView.getRootContext());
+
+    for (ColumnInfo col : displayColumns)
+    {
+        if (col == null) continue;
+        row++;
+        className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+        String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
+%>
+<tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>">
+    <td align="left" nowrap><%=h(labelName)%>
+    </td>
+    <td>&nbsp;</td>
+    <%
+        for (VisitImpl visit : visits)
+        {
+            for (double seq : visitSequenceMap.get(visit.getRowId()))
+            {
+                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                int countTD = 0;
+                if (null != keyMap)
+                {
+                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    {
+                        Map propMap = e.getValue();
+                        if (sourceLsidColumn.getValue(propMap) != null)
+                            hasSourceLsid = true;
+                        Object value = col.getValue(propMap);
+    %>
+    <td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%>
+    </td>
+    <%
+                countTD++;
+            }
+        }
+        // do we need to pad?
+        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
+        if (countTD < maxTD)
+        {
+    %>
+    <td colspan="<%=maxTD-countTD%>">&nbsp;</td>
+    <%
+                }
+            }
+        }
+    %></tr>
+<%
+    }
+    if (hasSourceLsid) // Need to display a details link
+    {
+        row++;
+        className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+%>
+<tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>">
+    <td align="left" nowrap>Details</td>
+    <td>&nbsp;</td>
+    <%
+        for (VisitImpl visit : visits)
+        {
+            for (double seq : visitSequenceMap.get(visit.getRowId()))
+            {
+                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                int countTD = 0;
+                if (null != keyMap)
+                {
+                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    {
+                        String link = "&nbsp;";
+                        Map propMap = e.getValue();
+                        String sourceLsid = (String) sourceLsidColumn.getValue(propMap);
+
+                        if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getViewContext().getUser(), ReadPermission.class))
+                        {
+                            ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
+                            sourceURL.addParameter("sourceLsid", sourceLsid);
+                            link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
+                        }
+    %>
+    <td><%= text(link)%>
+    </td>
+    <%
+                countTD++;
+            }
+        }
+        // do we need to pad?
+        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
+        if (countTD < maxTD)
+        {
+    %>
+    <td colspan="<%=maxTD-countTD%>">&nbsp;</td>
+    <%
+                }
+            }
+        }
+    %></tr>
+<%
+        }
+    }
+%>
 </table>
 <%!
 
-Map<Integer,QCState> qcstates = null;
+    Map<Integer, QCState> qcstates = null;
 
-QCState getQCState(Study study, Integer id)
-{
-    if (null == qcstates)
+    QCState getQCState(Study study, Integer id)
     {
-        QCState[] states = StudyManager.getInstance().getQCStates(study.getContainer());
-        qcstates = new HashMap<>(2*states.length);
-        for (QCState state : states)
-            qcstates.put(state.getRowId(), state);
+        if (null == qcstates)
+        {
+            QCState[] states = StudyManager.getInstance().getQCStates(study.getContainer());
+            qcstates = new HashMap<>(2 * states.length);
+            for (QCState state : states)
+                qcstates.put(state.getRowId(), state);
+        }
+        return qcstates.get(id);
     }
-    return qcstates.get(id);
-}
 
 
-Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
-{
-    List<ColumnInfo> cols = t.getColumns();
-    // Use all of the columns in the default view of the dataset, which might include columns from the assay side if
-    // the data was linked
-    Set<FieldKey> keys = new java.util.LinkedHashSet<>(t.getDefaultVisibleColumns());
-    for (ColumnInfo c : cols)
-        keys.add(c.getFieldKey());
-    return QueryService.get().getColumns(t, keys);
-}
-
-
-static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
-        "lsid","sourcelsid","sequencenum","qcstate","participantid",
-        "visitrowid","dataset","participantsequencenum","created","modified","createdby","modifiedby","participantvisit");
-
-
-ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)
-{
-    final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
-    if (sortMap != null && !sortMap.isEmpty())
+    Map<FieldKey, ColumnInfo> getQueryColumns(TableInfo t)
     {
-        ArrayList<ColumnInfo> list = new ArrayList<>(sortMap.size());
+        List<ColumnInfo> cols = t.getColumns();
+        // Use all of the columns in the default view of the dataset, which might include columns from the assay side if
+        // the data was linked
+        Set<FieldKey> keys = new java.util.LinkedHashSet<>(t.getDefaultVisibleColumns());
+        for (ColumnInfo c : cols)
+            keys.add(c.getFieldKey());
+        return QueryService.get().getColumns(t, keys);
+    }
+
+
+    static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
+            "lsid", "sourcelsid", "sequencenum", "qcstate", "participantid",
+            "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit");
+
+
+    ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)
+    {
+        final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
+        if (sortMap != null && !sortMap.isEmpty())
+        {
+            ArrayList<ColumnInfo> list = new ArrayList<>(sortMap.size());
+            for (ColumnInfo col : cols)
+            {
+                if (sortMap.containsKey(col.getName()))
+                {
+                    int index = sortMap.get(col.getName());
+                    while (list.size() <= index)
+                        list.add(null);
+                    list.set(index, col);
+                }
+            }
+            List<ColumnInfo> results = new ArrayList<>();
+            for (ColumnInfo col : list)
+                if (col != null)
+                    results.add(col);
+            return results.toArray(new ColumnInfo[results.size()]);
+        }
+
+        // default list
+        String subjectcol = StudyService.get().getSubjectColumnName(context.getContainer());
+        List<ColumnInfo> ret = new ArrayList<>(cols.size());
         for (ColumnInfo col : cols)
         {
-            if (sortMap.containsKey(col.getName()))
-            {
-                int index = sortMap.get(col.getName());
-                while (list.size() <= index)
-                    list.add(null);
-                list.set(index, col);
-            }
+            if (skipColumns.contains(col.getName()))
+                continue;
+            if (subjectcol.equalsIgnoreCase(col.getName()))
+                continue;
+            if (col.isMvIndicatorColumn())
+                continue;
+            ret.add(col);
         }
-        List<ColumnInfo> results = new ArrayList<>();
-        for (ColumnInfo col : list)
-            if (col != null)
-                results.add(col);
-        return results.toArray(new ColumnInfo[results.size()]);
+        return ret.toArray(new ColumnInfo[ret.size()]);
     }
 
-    // default list
-    String subjectcol = StudyService.get().getSubjectColumnName(context.getContainer());
-    List<ColumnInfo> ret = new ArrayList<>(cols.size());
-    for (ColumnInfo col : cols)
+
+    public static class VisitMultiMap extends MultiValueMap<Integer, Double>
     {
-        if (skipColumns.contains(col.getName()))
-            continue;
-        if (subjectcol.equalsIgnoreCase(col.getName()))
-            continue;
-        if (col.isMvIndicatorColumn())
-            continue;
-        ret.add(col);
-    }
-    return ret.toArray(new ColumnInfo[ret.size()]);
-}
+        public VisitMultiMap()
+        {
+            super(new TreeMap<Integer, Collection<Double>>());
+        }
 
-
-public static class VisitMultiMap extends MultiValueMap<Integer, Double>
-{
-    public VisitMultiMap()
-    {
-        super(new TreeMap<Integer, Collection<Double>>());
+        @Override
+        protected Collection<Double> createValueCollection()
+        {
+            return new TreeSet<>();
+        }
     }
-
-    @Override
-    protected Collection<Double> createValueCollection()
-    {
-        return new TreeSet<>();
-    }
-}
 
 %>
 

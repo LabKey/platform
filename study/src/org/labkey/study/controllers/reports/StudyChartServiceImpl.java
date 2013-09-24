@@ -17,13 +17,15 @@
 package org.labkey.study.controllers.reports;
 
 import com.google.gwt.user.client.rpc.SerializableException;
+import gwt.client.org.labkey.study.chart.client.StudyChartService;
+import gwt.client.org.labkey.study.chart.client.model.GWTPair;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
-import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.client.model.GWTChartColumn;
+import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -37,18 +39,16 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
-import gwt.client.org.labkey.study.chart.client.StudyChartService;
-import gwt.client.org.labkey.study.chart.client.model.GWTPair;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
@@ -58,7 +58,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * User: Karl Lum
@@ -81,7 +80,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         return null;
     }
 
-    public List getStudyDatasets()
+    public List<GWTPair> getStudyDatasets()
     {
         List<GWTPair> datasets = new ArrayList<>();
         final Study study = StudyManager.getInstance().getStudy(_context.getContainer());
@@ -130,7 +129,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     private String saveDatasetChart(GWTChart chart, Report report) throws Exception
     {
-        for (Map.Entry<String, String> param : (Set<Map.Entry<String, String>>)chart.getProperties().entrySet())
+        for (Map.Entry<String, String> param : chart.getProperties().entrySet())
         {
             report.getDescriptor().setProperty(param.getKey(), param.getValue());
         }
@@ -148,9 +147,9 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
                 ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, _context.getContainer());
                 url.addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
                 if (showWithDataset == ReportManager.ALL_DATASETS)
-                    url.addParameter(DataSetDefinition.DATASETKEY,  report.getDescriptor().getProperty("datasetId"));
+                    url.addParameter(DataSetDefinition.DATASETKEY, report.getDescriptor().getProperty("datasetId"));
                 else
-                    url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(showWithDataset));
+                    url.replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(showWithDataset));
                 return url.toString();
             }
         }
@@ -204,7 +203,8 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)
     {
-        try {
+        try
+        {
             for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
             {
                 if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
@@ -273,7 +273,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         {
             // if this is a participant chart, just filter on the first participant in the dataset so that
             // the chart preview will look more representative.
-            int datasetId = NumberUtils.toInt((String)chart.getProperties().get(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt(chart.getProperties().get(DataSetDefinition.DATASETKEY));
             String qcState = getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
             List<String> participants = StudyController.getParticipantListFromCache(_context, datasetId, bean.getViewName(), null, qcState);
             if (!participants.isEmpty())

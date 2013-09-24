@@ -72,7 +72,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,10 +170,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         List<DataSetDefinition> datasets = getDataSets();
         ArrayList<SecurableResource> readableDatasets = new ArrayList<>(datasets.size());
-        for (DataSetDefinition ds: datasets)
+        for (DataSetDefinition ds : datasets)
             if (ds.canRead(user))
                 readableDatasets.add(ds);
-        
+
         return readableDatasets;
     }
 
@@ -231,13 +230,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public List<DataSetDefinition> getDataSets()
     {
-        return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this));
+        return StudyManager.getInstance().getDataSetDefinitions(this);
     }
-    
+
     @Override
     public List<DataSetDefinition> getDataSetsByType(String[] types)
     {
-        return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this, null, types));
+        return StudyManager.getInstance().getDataSetDefinitions(this, null, types);
     }
 
     public Set<PropertyDescriptor> getSharedProperties()
@@ -289,7 +288,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         return SampleManager.getInstance().getRepositorySettings(getContainer());
     }
-    
+
     public Object getPrimaryKey()
     {
         return getContainer();
@@ -437,7 +436,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _defaultDirectEntryQCState = defaultDirectEntryQCState;
     }
 
-    /** Used to determine which QC states should be shown when viewing datasets */ 
+    /**
+     * Used to determine which QC states should be shown when viewing datasets
+     */
     public boolean isShowPrivateDataByDefault()
     {
         return _showPrivateDataByDefault;
@@ -458,7 +459,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _blankQCStatePublic = blankQCStatePublic;
     }
 
-    /** Used to determine whether records without an assigned QC state are considered 'public' data */
+    /**
+     * Used to determine whether records without an assigned QC state are considered 'public' data
+     */
 
     public int getNumExtendedProperties(User user)
     {
@@ -622,8 +625,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
-            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " dataset" +  (getDataSets().size() == 1 ?"" : "s") + "</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " " + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s") +
-                ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
+            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " dataset" + (getDataSets().size() == 1 ? "" : "s") + "</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " " + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s") +
+                    ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
         }
         else
         {
@@ -662,7 +665,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _protocolDocumentEntityId = protocolDocumentEntityId;
     }
 
-    public void attachProtocolDocument(List<AttachmentFile> files , User user) throws IOException
+    public void attachProtocolDocument(List<AttachmentFile> files, User user) throws IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
         SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -827,7 +830,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         public ProtocolDocumentAttachmentParent(@NotNull Study study)
         {
             setContainer(study.getContainer().getId());
-            setEntityId(((StudyImpl)study).getProtocolDocumentEntityId());
+            setEntityId(((StudyImpl) study).getProtocolDocumentEntityId());
             _study = study;
         }
 
@@ -855,9 +858,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
 
     private static final CaseInsensitiveHashSet _skipProperties = new CaseInsensitiveHashSet();
+
     static
     {
-        _skipProperties.addAll("lsid","timepointtype","description","descriptionrenderertype","SubjectNounPlural","SubjectColumnName","container");
+        _skipProperties.addAll("lsid", "timepointtype", "description", "descriptionrenderertype", "SubjectNounPlural", "SubjectColumnName", "container");
     }
 
     @Override
@@ -901,7 +905,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         return sb.toString();
     }
-
 
 
     @Override
@@ -1043,7 +1046,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             }
             Calendar timepointCal = new GregorianCalendar();
             timepointCal.setTime(date);
-            sequenceNum = (double)daysBetween(startCal, timepointCal);
+            sequenceNum = (double) daysBetween(startCal, timepointCal);
         }
 
         if (sequenceNum != null)
@@ -1062,7 +1065,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     /**
      * Implementation based on posting at http://tripoverit.blogspot.com/2007/07/java-calculate-difference-between-two.html
-     **/
+     */
     public static int daysBetween(Calendar startDate, Calendar endDate)
     {
         boolean flipped = startDate.after(endDate);
@@ -1104,7 +1107,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         Study _testStudy = null;
         TestContext _context = null;
 
-//        @BeforeClass
+        //        @BeforeClass
         public void createStudy() throws SQLException
         {
             _context = TestContext.get();
@@ -1128,7 +1131,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         }
 
-//        @AfterClass
+        //        @AfterClass
         public void tearDown()
         {
             if (null != _testStudy)

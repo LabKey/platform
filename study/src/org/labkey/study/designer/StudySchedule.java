@@ -15,22 +15,17 @@
  */
 package org.labkey.study.designer;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Cohort;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.HttpView;
-import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -56,11 +51,11 @@ import java.util.Map;
 public class StudySchedule implements CustomApiForm
 {
     List<VisitImpl> _visits;
-    DataSetDefinition[] _datasets;
+    List<DataSetDefinition> _datasets;
     Map<String, DataViewInfo> _viewInfo = new HashMap<>();
     Map<Integer, List<VisitDataSet>> _schedule;
 
-    public void setDatasets(DataSetDefinition[] datasets, List<DataViewInfo> views)
+    public void setDatasets(List<DataSetDefinition> datasets, List<DataViewInfo> views)
     {
         _datasets = datasets;
 
@@ -108,7 +103,7 @@ public class StudySchedule implements CustomApiForm
         o.put("id", visit.getRowId());
         o.put("showByDefault", visit.isShowByDefault());
         if (visit.getCohort() != null)
-            o.put("cohort", serializeCohort(user, (CohortImpl)visit.getCohort()));
+            o.put("cohort", serializeCohort(user, (CohortImpl) visit.getCohort()));
 
         if (required)
             o.put("required", true);
@@ -159,7 +154,7 @@ public class StudySchedule implements CustomApiForm
         return o;
     }
 
-    private JSONArray serializeData(User user, DataSetDefinition[] datasets, List<VisitImpl> visits)
+    private JSONArray serializeData(User user, List<DataSetDefinition> datasets, List<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
         Map<Integer, VisitImpl> visitMap = new HashMap<>();
@@ -193,8 +188,8 @@ public class StudySchedule implements CustomApiForm
 
         if (schedule instanceof JSONArray)
         {
-            JSONArray schedules = (JSONArray)schedule;
-            for (int i=0; i < schedules.length(); i++)
+            JSONArray schedules = (JSONArray) schedule;
+            for (int i = 0; i < schedules.length(); i++)
             {
                 JSONObject rec = schedules.getJSONObject(i);
                 List<VisitDataSet> timepoints = new ArrayList<>();
@@ -204,23 +199,23 @@ public class StudySchedule implements CustomApiForm
                 {
                     if ("id".equals(entry.getKey()))
                     {
-                        JSONObject id = (JSONObject)entry.getValue();
+                        JSONObject id = (JSONObject) entry.getValue();
                         datasetId = id.getInt("id");
                     }
                     else if (entry.getValue() instanceof JSONObject)
                     {
-                        JSONObject timepoint = (JSONObject)entry.getValue();
+                        JSONObject timepoint = (JSONObject) entry.getValue();
 
-                        Integer id = (Integer)timepoint.get("id");
-                        Boolean required = (Boolean)timepoint.get("required");
+                        Integer id = (Integer) timepoint.get("id");
+                        Boolean required = (Boolean) timepoint.get("required");
 
-                        if(id != null)
+                        if (id != null)
                         {
                             timepoints.add(new VisitDataSet(container, -1, id, required != null ? required : false));
                         }
                     }
                 }
-                
+
                 if (datasetId != null)
                     _schedule.put(datasetId, timepoints);
             }

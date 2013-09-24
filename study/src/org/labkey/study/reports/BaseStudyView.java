@@ -34,7 +34,7 @@ import java.util.List;
  * User: Matthew
  * Date: Feb 1, 2006
  * Time: 10:01:53 AM
- *
+ * <p/>
  * Useful helpers for any study view
  */
 public class BaseStudyView<T> extends HttpView<T>
@@ -56,14 +56,14 @@ public class BaseStudyView<T> extends HttpView<T>
 
     private List<VisitImpl> _visits;            // display ordered
     private HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
-    private DataSetDefinition[] _datasetDefs;
+    private List<DataSetDefinition> _datasetDefs;
     private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<>();
 
     protected List<VisitImpl> getVisits()
     {
         if (null == _visits)
         {
-            _visits =  _studyManager.getVisits(_study, Visit.Order.DISPLAY);
+            _visits = _studyManager.getVisits(_study, Visit.Order.DISPLAY);
             for (VisitImpl v : _visits)
                 _visitMap.put(v.getRowId(), v);
         }
@@ -76,7 +76,7 @@ public class BaseStudyView<T> extends HttpView<T>
         return _visitMap.get(v);
     }
 
-    protected DataSet[] getDatasets()
+    protected List<DataSetDefinition> getDatasets()
     {
         if (null == _datasetDefs)
         {

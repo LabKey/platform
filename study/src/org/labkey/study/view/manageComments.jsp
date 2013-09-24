@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -27,8 +29,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,7 +39,7 @@
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
 
-    DataSet[] datasets = manager.getDataSetDefinitions(study);
+    List<? extends DataSet> datasets = manager.getDataSetDefinitions(study);
 
     PropertyDescriptor[] ptidDescriptors = new PropertyDescriptor[0];
     PropertyDescriptor[] ptidVisitDescriptors = new PropertyDescriptor[0];
@@ -66,16 +67,26 @@
 %>
 <labkey:errors/>
 
-<form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments" method="post">
+<form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments"
+      method="post">
     <table width="70%">
-        <tr><td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment information.</td></tr>
-        <tr><td/></tr>
-        <tr><td>
-            The comments associated with each <%= h(subjectNounSingle) %> or <%= h(subjectNounSingle) %>/Visit are saved as fields in datasets.
-            Each of the datasets can contain multiple fields, but only one field can
-            be designated to hold the comment text. Comment fields must be of type text or multi-line text.
-            Comments will appear automatically in colums for the specimen and vial views.
-        </td></tr>
+        <tr>
+            <td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment
+                information.
+            </td>
+        </tr>
+        <tr>
+            <td/>
+        </tr>
+        <tr>
+            <td>
+                The comments associated with each <%= h(subjectNounSingle) %> or <%= h(subjectNounSingle) %>/Visit are
+                saved as fields in datasets.
+                Each of the datasets can contain multiple fields, but only one field can
+                be designated to hold the comment text. Comment fields must be of type text or multi-line text.
+                Comments will appear automatically in colums for the specimen and vial views.
+            </td>
+        </tr>
     </table>
 
 
@@ -86,10 +97,13 @@
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
-                    subjectNounSingle.toLowerCase() + ". The dataset selected must be a demographics dataset.")%></th>
+            <th align="right">Comment
+                Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
+                        subjectNounSingle.toLowerCase() + ". The dataset selected must be a demographics dataset.")%>
+            </th>
             <td>
-                <select name="participantCommentDataSetId" id="participantCommentDataSetId" onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <select name="participantCommentDataSetId" id="participantCommentDataSetId"
+                        onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
@@ -98,7 +112,10 @@
                             {
                                 String selected = (bean.getParticipantCommentDataSetId() != null &&
                                         dataset.getDataSetId() == bean.getParticipantCommentDataSetId().intValue() ? "selected" : "");
-                                %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                    %>
+                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    </option>
+                    <%
                             }
                         }
                     %>
@@ -110,23 +127,23 @@
             <td>
                 <select name="participantCommentProperty" id="participantCommentProperty">
                     <option value="">[None]</option>
-                <%
-                for (PropertyDescriptor pd : ptidDescriptors)
-                {
-                    if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE) 
-                    {
-                %>
-                    <option value="<%= pd.getName() %>" <%= pd.getName().equals(bean.getParticipantCommentProperty()) ? "SELECTED" : "" %>>
+                    <%
+                        for (PropertyDescriptor pd : ptidDescriptors)
+                        {
+                            if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE)
+                            {
+                    %>
+                    <option value="<%= h(pd.getName()) %>" <%= text(pd.getName().equals(bean.getParticipantCommentProperty()) ? "SELECTED" : "") %>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
-                <%
-                    }
-                }
-                %>
+                    <%
+                            }
+                        }
+                    %>
                 </select>
             </td>
         </tr>
-        </table>
+    </table>
     <%
         WebPartView.endTitleFrame(out);
         WebPartView.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
@@ -136,16 +153,19 @@
     %>
     <span class="labkey-disabled">Not available in continuous date-based studies.</span>
     <%
-        }
-        else
-        {
+    }
+    else
+    {
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
-                    subjectNounSingle.toLowerCase() + "/visit combination. The dataset selected cannot be a demographics dataset.")%></th>
+            <th align="right">Comment
+                Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
+                        subjectNounSingle.toLowerCase() + "/visit combination. The dataset selected cannot be a demographics dataset.")%>
+            </th>
             <td>
-                <select name="participantVisitCommentDataSetId" id="participantVisitCommentDataSetId" onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <select name="participantVisitCommentDataSetId" id="participantVisitCommentDataSetId"
+                        onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
@@ -154,7 +174,10 @@
                             {
                                 String selected = (bean.getParticipantVisitCommentDataSetId() != null &&
                                         dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId().intValue() ? "selected" : "");
-                                %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                    %>
+                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    </option>
+                    <%
                             }
                         }
                     %>
@@ -166,23 +189,25 @@
             <td>
                 <select name="participantVisitCommentProperty" id="participantVisitCommentProperty">
                     <option value="">[None]</option>
-                <%
-                for (PropertyDescriptor pd : ptidVisitDescriptors)
-                {
-                    if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE)
-                    {
-                %>
-                    <option value="<%= pd.getName() %>" <%= pd.getName().equals(bean.getParticipantVisitCommentProperty()) ? "SELECTED" : "" %>>
+                    <%
+                        for (PropertyDescriptor pd : ptidVisitDescriptors)
+                        {
+                            if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE)
+                            {
+                    %>
+                    <option value="<%= h(pd.getName()) %>" <%= text(pd.getName().equals(bean.getParticipantVisitCommentProperty()) ? "SELECTED" : "") %>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
-                <%
-                    }
-                }
-                %>
+                    <%
+                            }
+                        }
+                    %>
                 </select>
             </td>
         </tr>
-        <tr><td>&nbsp;</td></tr>
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
         <tr>
             <td>&nbsp;</td>
             <td>
@@ -190,7 +215,7 @@
                 <%=generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, HttpView.currentContext().getContainer()))%>
             </td>
         </tr>
-        </table>
+    </table>
     <%
             WebPartView.endTitleFrame(out);
         }

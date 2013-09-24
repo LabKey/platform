@@ -220,7 +220,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null; 
+            return null;
         }
     }
 
@@ -411,7 +411,7 @@ public class ReportsController extends BaseStudyController
                     if (def != null)
                     {
                         report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDataSetId()));
-                        ((StudyQueryReport)report).renameReport(getViewContext(), key, form.getViewName());
+                        ((StudyQueryReport) report).renameReport(getViewContext(), key, form.getViewName());
                         return new ApiSimpleResponse("success", true);
                     }
                 }
@@ -422,7 +422,8 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class)
     /**
      * Action for non-query based views (static, xls export, advanced)
      */
@@ -462,7 +463,7 @@ public class ReportsController extends BaseStudyController
         url.setAction(StudyController.DatasetReportAction.class);
 
         url.replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
-        url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(dataset));
+        url.replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(dataset));
         return HttpView.redirect(url);
     }
 
@@ -515,7 +516,8 @@ public class ReportsController extends BaseStudyController
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)
     {
-        try {
+        try
+        {
             for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
             {
                 if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
@@ -627,7 +629,7 @@ public class ReportsController extends BaseStudyController
         public Report getReport(ContainerUser cu) throws Exception
         {
             Report report = super.getReport(cu);
-            CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)report.getDescriptor();
+            CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor) report.getDescriptor();
 
             if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISITKEY, Integer.toString(_visitRowId));
             if (!StringUtils.isEmpty(_rowField)) descriptor.setProperty("rowField", _rowField);
@@ -745,12 +747,12 @@ public class ReportsController extends BaseStudyController
             this.locationId = locationId;
         }
 
-        public ReportIdentifier getReportId() 
+        public ReportIdentifier getReportId()
         {
             return reportId;
         }
 
-        public void setReportId(ReportIdentifier reportId) 
+        public void setReportId(ReportIdentifier reportId)
         {
             this.reportId = reportId;
         }
@@ -786,7 +788,7 @@ public class ReportsController extends BaseStudyController
                 {
                     throw new NotFoundException();
                 }
-                report = (ExportExcelReport)r;
+                report = (ExportExcelReport) r;
             }
             else
             {
@@ -857,7 +859,7 @@ public class ReportsController extends BaseStudyController
 
     public static class CreateCrosstabBean
     {
-        private DataSetDefinition[] _datasets;
+        private List<DataSetDefinition> _datasets;
         private List<VisitImpl> _visits;
 
         public CreateCrosstabBean(ViewContext context) throws IllegalStateException
@@ -867,7 +869,7 @@ public class ReportsController extends BaseStudyController
             _visits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
         }
 
-        public DataSetDefinition[] getDatasets()
+        public List<DataSetDefinition> getDatasets()
         {
             return _datasets;
         }
@@ -1084,7 +1086,7 @@ public class ReportsController extends BaseStudyController
 
             Container c = getViewContext().getContainer();
             Study study = getStudyThrowIfNull(c);
-            DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
+            List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(study);
             out.write("<td>Add as Custom View For: ");
             out.write("<select name=\"showWithDataset\">");
             //out.write("<option value=\"0\">Views and Reports Web Part</option>");
@@ -1143,7 +1145,10 @@ public class ReportsController extends BaseStudyController
         protected String dataRegionName;
         private BindException _errors;
 
-        public SaveReportForm(){}
+        public SaveReportForm()
+        {
+        }
+
         public SaveReportForm(Report report)
         {
             this.label = report.getDescriptor().getReportName();
@@ -1263,7 +1268,10 @@ public class ReportsController extends BaseStudyController
         private String _dataRegionName;
         private String _redirectUrl;
 
-        public SaveReportViewForm(){}
+        public SaveReportViewForm()
+        {
+        }
+
         public SaveReportViewForm(Report report)
         {
             super();
@@ -1285,7 +1293,7 @@ public class ReportsController extends BaseStudyController
                 descriptor.setProperty(QueryParam.viewName.toString(), getViewName());
             if (!StringUtils.isEmpty(getDataRegionName()))
                 descriptor.setProperty(QueryParam.dataRegionName.toString(), getDataRegionName());
-           if (!getShareReport())
+            if (!getShareReport())
                 descriptor.setOwner(getViewContext().getUser().getUserId());
 
             return report;
@@ -1364,7 +1372,10 @@ public class ReportsController extends BaseStudyController
             return _reports;
         }
 
-        public void setReports(Report[] reports){_reports = reports;}
+        public void setReports(Report[] reports)
+        {
+            _reports = reports;
+        }
 
         public void setAction(String action){_action = action;}
         public String getAction(){return _action;}
@@ -1438,11 +1449,11 @@ public class ReportsController extends BaseStudyController
         int _datasetId = 0;
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
         {
-			ViewContext context = getViewContext();
-			if (StringUtils.isEmpty(form.getSchemaName()))
-				form.setSchemaName("study");
+            ViewContext context = getViewContext();
+            if (StringUtils.isEmpty(form.getSchemaName()))
+                form.setSchemaName("study");
             UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), form.getSchemaName());
-			if (null == schema)
+            if (null == schema)
             {
                 throw new NotFoundException("schema not found");
             }
@@ -1457,7 +1468,7 @@ public class ReportsController extends BaseStudyController
             props.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
-            _datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));
+            _datasetId = NumberUtils.toInt((String) getViewContext().get(DataSetDefinition.DATASETKEY));
             DataSet def = StudyManager.getInstance().getDataSetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
             if (def != null)
                 props.put("datasetId", String.valueOf(_datasetId));
@@ -1528,20 +1539,20 @@ public class ReportsController extends BaseStudyController
 
                 if (idx > 0)
                 {
-                    final String ptid = participantGroup.get(idx-1);
+                    final String ptid = participantGroup.get(idx - 1);
                     nextParticipantURL = context.cloneActionURL();
                     nextParticipantURL.replaceParameter("participantId", ptid);
                 }
 
-                if (idx < participantGroup.size()-1)
+                if (idx < participantGroup.size() - 1)
                 {
-                    final String ptid = participantGroup.get(idx+1);
+                    final String ptid = participantGroup.get(idx + 1);
                     previousParticipantURL = context.cloneActionURL();
                     previousParticipantURL.replaceParameter("participantId", ptid);
                 }
             }
         }
-        StudyController.ParticipantNavView view =  new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, qcState, title);
+        StudyController.ParticipantNavView view = new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, qcState, title);
         view.setShowCustomizeLink(false);
 
         return view;
@@ -1575,8 +1586,8 @@ public class ReportsController extends BaseStudyController
             if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+                        replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
+                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);
             }
@@ -1618,7 +1629,7 @@ public class ReportsController extends BaseStudyController
     {
         private ReportIdentifier reportId;
         private int datasetId;
-        /** UNDONE: should this be renamed sequenceNum? */ 
+        /** UNDONE: should this be renamed sequenceNum? */
         private double visitId;
         private String columnX;
 
@@ -1688,7 +1699,7 @@ public class ReportsController extends BaseStudyController
 
             if (getUser().isSiteAdmin())
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-            
+
             VisitImpl visit = null;
 
             if (visitRowId > 0)
@@ -1740,7 +1751,7 @@ public class ReportsController extends BaseStudyController
         {
             Object model = getModelBean();
             if (model instanceof StudyManageReportsBean)
-                ((StudyManageReportsBean)model).setAdminView(mode);
+                ((StudyManageReportsBean) model).setAdminView(mode);
         }
     }
 
@@ -1807,7 +1818,7 @@ public class ReportsController extends BaseStudyController
         {
             if (model instanceof RReportBean)
             {
-                RReportBean bean = (RReportBean)model;
+                RReportBean bean = (RReportBean) model;
                 boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
                 out.print("<table>");
 
@@ -1832,7 +1843,8 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
         public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
@@ -1870,7 +1882,8 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class)
     public class SaveParticipantReportAction extends ApiAction<ParticipantReportForm>
     {
         @Override
@@ -1885,7 +1898,8 @@ public class ReportsController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Report measures information cannot be blank");
             else
             {
-                try {
+                try
+                {
                     JSONArray config = new JSONArray(form.getMeasures());
                 }
                 catch (JSONException e)
@@ -1894,7 +1908,8 @@ public class ReportsController extends BaseStudyController
                 }
             }
 
-            try {
+            try
+            {
                 // check for duplicates on new reports
                 if (form.getReportId() == null)
                 {
@@ -2063,12 +2078,12 @@ public class ReportsController extends BaseStudyController
             Object measures = props.get(ParticipantReport.MEASURES_PROP);
             if (measures instanceof JSONArray)
             {
-                _measures = ((JSONArray)measures).toString();
+                _measures = ((JSONArray) measures).toString();
             }
             Object groups = props.get(ParticipantReport.GROUPS_PROP);
             if (groups instanceof JSONArray)
             {
-                _groups = ((JSONArray)groups).toString();
+                _groups = ((JSONArray) groups).toString();
             }
         }
     }
