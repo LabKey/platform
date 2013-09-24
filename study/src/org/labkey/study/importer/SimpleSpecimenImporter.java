@@ -79,7 +79,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         DEFAULT_COLUMN_LABELS.put(VIAL_ID, "Global Unique Id");
         DEFAULT_COLUMN_LABELS.put(SAMPLE_ID, "Sample Id");
         DEFAULT_COLUMN_LABELS.put(DRAW_TIMESTAMP, "Draw Timestamp");
-        DEFAULT_COLUMN_LABELS.put(VISIT, "Visit Id");
+        DEFAULT_COLUMN_LABELS.put(VISIT, "Visit");
         DEFAULT_COLUMN_LABELS.put(VOLUME, "Volume");
         DEFAULT_COLUMN_LABELS.put(UNITS, "Volume Units");
         DEFAULT_COLUMN_LABELS.put(PRIMARY_SPECIMEN_TYPE, "Primary Type");
@@ -100,7 +100,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     {
         _timepointType = timepointType;
         _columnLabels = new HashMap<>(DEFAULT_COLUMN_LABELS);
-        _columnLabels.put(PARTICIPANT_ID, participantIdLabel);
+        _columnLabels.put(PARTICIPANT_ID, participantIdLabel + " Id");
     }
 
     public String label(String columnName)

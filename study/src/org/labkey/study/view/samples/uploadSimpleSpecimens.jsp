@@ -45,41 +45,77 @@ Use this form to insert or update specimens in the repository.<br>
     <table class="labkey-show-borders" cellpadding="3" cellspacing="0">
         <tr>
             <td><strong>Name</strong></td>
+            <td><strong>Required</strong></td>
             <td><strong>Type</strong></td>
             <td><strong>Description</strong></td>
         </tr>
         <tr>
             <td>Global Unique Id</td>
-            <td>Int</td>
-            <td>A unique id to be associated with the vial</td>
+            <td>Yes</td>
+            <td>Integer</td>
+            <td>The global unique ID of each vial. Assumed to be globally unique within a study, but duplicates can exist cross-study.</td>
         </tr>
         <tr>
             <td>Sample Id</td>
-            <td>Int</td>
+            <td>Yes</td>
+            <td>Integer</td>
             <td>A unique id to be associated with the sample.  If null, this will be replaced by the Global Unique Id</td>
         </tr>
         <tr>
             <td><%=h(study.getSubjectNounSingular())%> Id</td>
-            <td>Int</td>
-            <td>A unique id to be associated with the <%=h(study.getSubjectNounSingular())%>.  If null, this will be replaced by the Global Unique Id</td>
+            <td>Yes</td>
+            <td>Integer</td>
+            <td>	The ID of the subject providing each specimen.  If null, this will be replaced by the Global Unique Id</td>
         </tr>
         <%
             if (study.getTimepointType() != TimepointType.VISIT) {
         %>
         <tr>
             <td>Draw Timestamp</td>
+            <td>Yes</td>
             <td>Date</td>
-            <td>The draw date of the sample </td>
+            <td>The timestamp of specimen collection.</td>
         </tr>
         <%
             } else {
         %>
         <tr>
-            <td>Visit Id</td>
-            <td>Int</td>
-            <td>The visit Id associated with the sample</td>
+            <td>Visit</td>
+            <td>Yes</td>
+            <td>Integer</td>
+            <td>The visit Id associated with the sample.</td>
         </tr>
         <% } %>
+        <tr>
+            <td>Volume</td>
+            <td>No</td>
+            <td>Double</td>
+            <td>The volume of each vial.</td>
+        </tr>
+        <tr>
+            <td>Volume Units</td>
+            <td>No</td>
+            <td>String</td>
+            <td>The units of volume for each specimen.</td>
+        </tr>
+        <tr>
+            <td>Primary Type</td>
+            <td>No</td>
+            <td>Integer</td>
+            <td>The ID of the primary type of each specimen.</td>
+        </tr>
+        <tr>
+            <td>Derivative Type</td>
+            <td>No</td>
+            <td>Integer</td>
+            <td>The ID of the derivative type of each specimen.</td>
+        </tr>
+        <tr>
+            <td>Additive Type</td>
+            <td>No</td>
+            <td>Integer</td>
+            <td>The ID of the additive type of each specimen.</td>
+        </tr>
 
     </table>
 </div>
