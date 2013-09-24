@@ -1,0 +1,71 @@
+package org.labkey.issue.query;
+
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.view.ActionURL;
+import org.labkey.issue.IssuesController;
+import org.labkey.issue.model.IssueManager;
+
+import java.util.Collections;
+
+/**
+ * User: adam
+ * Date: 9/21/13
+ * Time: 4:38 PM
+ */
+public class CommentsTable extends FilteredTable<IssuesQuerySchema>
+{
+    public CommentsTable(IssuesQuerySchema schema)
+    {
+        super(IssuesSchema.getInstance().getTableInfoComments(), schema);
+
+        ColumnInfo commentIdColumn = wrapColumn(_rootTable.getColumn("CommentId"));
+        commentIdColumn.setSortDirection(Sort.SortDirection.DESC);      // This is a nice idea, but only sorts if the column is shown
+        commentIdColumn.setHidden(true);
+        addColumn(commentIdColumn);
+
+        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+        ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
+        issueIdColumn.setLabel(names.singularName.getSource());
+        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
+        issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
+        addColumn(issueIdColumn);
+
+        ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
+        UserIdForeignKey.initColumn(createdBy);
+        addColumn(createdBy);
+
+        addWrapColumn(_rootTable.getColumn("Created"));
+        addWrapColumn(_rootTable.getColumn("Comment"));     // TODO: Special display column to render the HTML comment
+
+        // Don't need a "Details" column
+        setDetailsURL(AbstractTableInfo.LINK_DISABLER);
+    }
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return FieldKey.fromParts("IssueId", "Container");
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        FieldKey containerFieldKey = FieldKey.fromParts("Container");
+        clearConditions(containerFieldKey);
+        SQLFragment sql = new SQLFragment("IssueId IN (SELECT i.IssueId FROM ");
+        sql.append(IssuesSchema.getInstance().getTableInfoIssues(), "i");
+        sql.append(" WHERE ");
+        sql.append(filter.getSQLFragment(getSchema(), "i.Container", getContainer()));
+        sql.append(")");
+        addCondition(sql, containerFieldKey);
+    }
+}

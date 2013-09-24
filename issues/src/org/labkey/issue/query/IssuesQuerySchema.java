@@ -46,6 +46,14 @@ public class IssuesQuerySchema extends UserSchema
             {
                 return new IssuesTable(schema);
             }
+        },
+        Comments
+        {
+            @Override
+            public TableInfo createTable(IssuesQuerySchema schema)
+            {
+                return new CommentsTable(schema);
+            }
         };
 
         public abstract TableInfo createTable(IssuesQuerySchema schema);

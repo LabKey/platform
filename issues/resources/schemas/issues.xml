@@ -284,7 +284,7 @@
 		<ns:tableTitle>Issues</ns:tableTitle>
 		<ns:pkColumnName>IssueId</ns:pkColumnName>
 		<ns:versionColumnName>_ts</ns:versionColumnName>
-		<ns:titleColumn>_ts</ns:titleColumn>
+		<ns:titleColumn>Title</ns:titleColumn>
 	</ns:table>
     <ns:table tableName="EmailPrefs" tableDbType="TABLE">
         <ns:columns>

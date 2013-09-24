@@ -27,13 +27,12 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.CustomColumn;
-import org.labkey.issue.model.IssueManager.EntryTypeNames;
 import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
+import org.labkey.issue.model.IssueManager.EntryTypeNames;
 
 import java.util.ArrayList;
 import java.util.Arrays;
