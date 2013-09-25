@@ -195,7 +195,7 @@ if (!pipelineSet)
     function truncateTable()
     {
         Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the table "+ <%=q(queryName)%> + "?  This action cannot be undone.",
+                "Are you sure you wish to delete all rows for this dataset?  This action cannot be undone.",
                 function(button){
                     if (button === 'yes') {
                         truncate();
@@ -213,9 +213,10 @@ if (!pipelineSet)
                     var data = Ext4.JSON.decode(response.responseText);
                     Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                 },
-                failure : function()
+                failure : function(response)
                 {
-                    alert("Well that didn't work.")
+                    var data = Ext4.JSON.decode(response.responseText);
+                    Ext4.Msg.alert("Failed to Delete Rows", data.exception);
                 },
                 jsonData : {schemaName : <%=q(schemaName)%>, queryName : <%=q(queryName)%>},
                 headers : {'Content-Type' : 'application/json'},

@@ -138,7 +138,7 @@
     function truncateTable(queryName)
     {
         Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the table "+ queryName + "?  This action cannot be undone.",
+                "Are you sure you wish to delete all rows for this list?  This action cannot be undone.",
                 function(button){
                     if (button === 'yes') {
                         truncate();
@@ -156,9 +156,10 @@
                     var data = Ext4.JSON.decode(response.responseText);
                     Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                 },
-                failure : function()
+                failure : function(response)
                 {
-                    alert("An unexpected error has occured.")
+                    var data = Ext4.JSON.decode(response.responseText);
+                    Ext4.Msg.alert("Failed to Delete Rows", data.exception);
                 },
                 jsonData : {schemaName : 'lists', queryName : queryName},
                 headers : {'Content-Type' : 'application/json'},

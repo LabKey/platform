@@ -1939,7 +1939,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminPermission.class)
     public class TruncateTableAction extends ApiAction<QueryForm>
     {
 
