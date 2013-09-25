@@ -525,7 +525,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<>(QueryController.class, "browse.jsp", null);
+            return new JspView<>("/org/labkey/query/view/browse.jsp", null);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -539,7 +539,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new JspView<>(QueryController.class, "browse.jsp", form);
+            return new JspView<>("/org/labkey/query/view/browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -562,7 +562,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<>(QueryController.class, "browse.jsp", form);
+            return new JspView<>("/org/labkey/query/view/browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -632,7 +632,7 @@ public class QueryController extends SpringActionController
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
             setHelpTopic(new HelpTopic("customSQL"));
-            return new JspView<>(QueryController.class, "newQuery.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/newQuery.jsp", form, errors);
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -785,7 +785,7 @@ public class QueryController extends SpringActionController
                 Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<>(QueryController.class, "sourceQuery.jsp", this, errors);
+            return new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
         }
 
 
@@ -950,7 +950,7 @@ public class QueryController extends SpringActionController
             if (null == _queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
 
-            return new JspView<>(QueryController.class, "deleteQuery.jsp", this, errors);
+            return new JspView<>("/org/labkey/query/view/deleteQuery.jsp", this, errors);
         }
 
 
@@ -1880,7 +1880,7 @@ public class QueryController extends SpringActionController
             setHelpTopic(new HelpTopic("customSQL"));
             _queryName = form.getQueryName();
 
-            return new JspView<>(QueryController.class, "propertiesQuery.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);
         }
 
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
@@ -3372,7 +3372,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/query/controllers/apitest.jsp");
+            return new JspView("/org/labkey/query/view/apitest.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3388,7 +3388,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
            setHelpTopic(new HelpTopic("externalSchemas"));
-           return new JspView<>(getClass(), "admin.jsp", form, errors);
+           return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3456,7 +3456,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("linkedSchema"));
-            return new JspView<>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3471,7 +3471,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3637,7 +3637,7 @@ public class QueryController extends SpringActionController
             LinkedSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("linkedSchemas"));
-            return new JspView<>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
+            return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3659,7 +3659,7 @@ public class QueryController extends SpringActionController
             ExternalSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
+            return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3675,7 +3675,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<>(QueryController.class, "multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<>("/org/labkey/query/view/multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
         public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
@@ -4392,7 +4392,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<>(QueryController.class, "manageViews.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4409,7 +4409,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
         {
-            return new JspView<>(QueryController.class, "internalDeleteView.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
@@ -4444,7 +4444,7 @@ public class QueryController extends SpringActionController
             form.ff_hidden = QueryManager.get().isHidden(view.getFlags());
             form.ff_columnList = view.getColumns();
             form.ff_filter = view.getFilter();
-            return new JspView<>(QueryController.class, "internalSourceView.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
@@ -4493,7 +4493,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>(QueryController.class, "internalNewView.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/internalNewView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalNewViewForm form, BindException errors) throws Exception
@@ -5574,7 +5574,7 @@ public class QueryController extends SpringActionController
             if (reshow && !errors.hasErrors())
                 return null;
             
-            return new JspView<>("/org/labkey/query/controllers/exportTables.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/exportTables.jsp", form, errors);
         }
 
         @Override
@@ -5624,23 +5624,6 @@ public class QueryController extends SpringActionController
             }
 
             return errors;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public static class Expr extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView(QueryController.class, "expressionEval.jsp", null);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
         }
     }
 }

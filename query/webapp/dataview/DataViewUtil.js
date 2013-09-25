@@ -509,8 +509,6 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             parent : options.categoryId
         };
 
-        console.log(extraParams);
-
         if (extraParams.parent == undefined) {
             extraParams.parent = -1;
         }
