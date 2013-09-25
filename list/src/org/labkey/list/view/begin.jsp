@@ -95,7 +95,7 @@
                     }
                     if(c.hasPermission(user, AdminPermission.class))
                     {
-                        String onClick = "truncateTable('"+list.getName()+"')";
+                        String onClick = "truncateTable("+hq(list.getName())+")";
                         %><td><%=textLink("Delete All Rows", "#", onClick, "")%></td><%
                     }
                 }
