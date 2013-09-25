@@ -48,6 +48,8 @@ public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory,
     public SqlSelector(DbSchema schema, SQLFragment sql)
     {
         this(schema.getScope(), sql);
+        if (null == sql)
+            throw new NullPointerException();
     }
 
     // Execute select SQL against a schema; simple query with no parameters
