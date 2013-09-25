@@ -628,7 +628,7 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getDateDiff(int part, String value1, String value2)
     {
-        int divideBy;
+        double divideBy;
         switch (part)
         {
             case Calendar.MONTH:
@@ -657,6 +657,11 @@ class PostgreSql84Dialect extends SqlDialect
             case Calendar.SECOND:
             {
                 divideBy = 1;
+                break;
+            }
+            case Calendar.MILLISECOND:
+            {
+                divideBy = .001;
                 break;
             }
             default:

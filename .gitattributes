@@ -844,10 +844,14 @@ dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.03-0.04.sql -text
 dataintegration/schemas/etl.xsd -text
-dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
+dataintegration/src/org/labkey/di/DataIntegrationQuerySchema.java -text
 dataintegration/src/org/labkey/di/EtlResourceLoader.java -text
+dataintegration/src/org/labkey/di/TransformBaseTable.java -text
 dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
+dataintegration/src/org/labkey/di/TransformHistoryTable.java -text
+dataintegration/src/org/labkey/di/TransformHistoryView.java -text
+dataintegration/src/org/labkey/di/TransformSummaryTable.java -text
 dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text
 dataintegration/src/org/labkey/di/data/TransformDataType.java -text
@@ -876,6 +880,8 @@ dataintegration/src/org/labkey/di/steps/StepMeta.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
+dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
+dataintegration/src/org/labkey/di/view/transformHistory.jsp -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
 demo/resources/schemas/dbscripts/sqlserver/demo-0.00-1.00.sql -text

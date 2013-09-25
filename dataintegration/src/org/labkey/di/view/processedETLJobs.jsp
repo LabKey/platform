@@ -1,4 +1,4 @@
-<%@ page import="org.labkey.di.DataIntegrationDbSchema" %>
+<%@ page import="org.labkey.di.DataIntegrationQuerySchema" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%

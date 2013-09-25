@@ -22,7 +22,7 @@ import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.view.ViewContext;
-import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.DataIntegrationModule;
 
 /**
@@ -43,7 +43,7 @@ public class ETLPipelineProvider extends PipelineProvider
     {
         // Delete the our own records that point to the pipeline job record
         SQLFragment sql = new SQLFragment("DELETE FROM dataintegration.transformrun WHERE JobId = ?", sf.getRowId());
-        new SqlExecutor(DataIntegrationDbSchema.getSchema()).execute(sql);
+        new SqlExecutor(DataIntegrationQuerySchema.getSchema()).execute(sql);
     }
 
     @Override

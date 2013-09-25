@@ -22,8 +22,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,10 +36,16 @@ import java.util.Set;
  * User: jeckels
  * Date: 3/13/13
  */
-public class DataIntegrationDbSchema extends UserSchema
+public class DataIntegrationQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "dataintegration";
     public static final String SCHEMA_DESCRIPTION = "Contains data for ETL Transformations";
+    // list of each transform type with last run information
+    public static final String TRANSFORMSUMMARY_TABLE_NAME = "TransformSummary";
+    // history of a specific transform type ordered by newest run first
+    public static final String TRANSFORMHISTORY_TABLE_NAME = "TransformHistory";
+    // all transform runs
+    public static final String TRANSFORMRUN_TABLE_NAME = "TransformRun";
 
     public enum Columns
     {
@@ -56,7 +66,7 @@ public class DataIntegrationDbSchema extends UserSchema
         }
     }
 
-    public DataIntegrationDbSchema(User user, Container container)
+    public DataIntegrationQuerySchema(User user, Container container)
     {
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, container, getSchema());
     }
@@ -64,11 +74,35 @@ public class DataIntegrationDbSchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return new HashSet<>(getDbSchema().getTableNames());
+        HashSet<String> tableNames = new HashSet<>(getDbSchema().getTableNames());
+        tableNames.add(TRANSFORMHISTORY_TABLE_NAME);
+        tableNames.add(TRANSFORMSUMMARY_TABLE_NAME);
+        return tableNames;
     }
 
     @Override
     protected TableInfo createTable(String name)
+    {
+        if (TRANSFORMHISTORY_TABLE_NAME.equalsIgnoreCase(name))
+            return new TransformHistoryTable(this);
+
+        if (TRANSFORMSUMMARY_TABLE_NAME.equalsIgnoreCase(name))
+            return new TransformSummaryTable(this);
+
+        return getSchemaTable(name);
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        if (TRANSFORMHISTORY_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+            return new TransformHistoryView(this, settings);
+
+        return super.createView(context, settings, errors);
+    }
+
+
+    private TableInfo getSchemaTable(String name)
     {
         SchemaTableInfo tinfo = getDbSchema().getTable(name);
         if (null == tinfo)
@@ -85,7 +119,7 @@ public class DataIntegrationDbSchema extends UserSchema
         {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                return new DataIntegrationDbSchema(schema.getUser(), schema.getContainer());
+                return new DataIntegrationQuerySchema(schema.getUser(), schema.getContainer());
             }
         });
     }
@@ -105,5 +139,10 @@ public class DataIntegrationDbSchema extends UserSchema
     public static TableInfo getTranformConfigurationTableInfo()
     {
         return getSchema().getTable("transformconfiguration");
+    }
+
+    public static String getTransformRunTableName()
+    {
+        return SCHEMA_NAME + "." + TRANSFORMRUN_TABLE_NAME;
     }
 }

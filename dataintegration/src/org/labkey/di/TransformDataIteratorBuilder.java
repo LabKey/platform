@@ -27,7 +27,7 @@ import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.query.BatchValidationException;
 
-import static org.labkey.di.DataIntegrationDbSchema.Columns.*;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.*;
 
 /**
  * User: matthew
@@ -51,7 +51,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     static final CaseInsensitiveHashSet diColumns = new CaseInsensitiveHashSet();
     static
     {
-        for (DataIntegrationDbSchema.Columns c : DataIntegrationDbSchema.Columns.values())
+        for (DataIntegrationQuerySchema.Columns c : DataIntegrationQuerySchema.Columns.values())
             diColumns.add(c.getColumnName());
     }
 

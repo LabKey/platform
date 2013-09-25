@@ -94,7 +94,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<String> getSchemaNames()
     {
-        return Collections.singleton(DataIntegrationDbSchema.SCHEMA_NAME);
+        return Collections.singleton(DataIntegrationQuerySchema.SCHEMA_NAME);
     }
 
 
@@ -106,7 +106,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         ContainerManager.addContainerListener(this);
         ContextListener.addShutdownListener(this);
 
-        DataIntegrationDbSchema.register(this);
+        DataIntegrationQuerySchema.register(this);
         TransformDataType.register();
     }
 

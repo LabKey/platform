@@ -60,7 +60,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
@@ -850,7 +850,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         {
             SimpleFilter f = new SimpleFilter();
             TransformPipelineJob tj = (TransformPipelineJob) job;
-            TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
+            TableInfo ti = DataIntegrationQuerySchema.getTransformRunTableInfo();
             f.addCondition(new FieldKey(null, "transformrunid"), tj.getTransformRunId(), CompareType.EQUAL);
 
             for (int i = 0; i < NUM_TRIES; i++)

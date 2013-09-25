@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -87,6 +88,92 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class viewTransformHistoryAction extends SimpleViewAction<TransformViewForm>
+    {
+        private String _displayName;
+
+        @Override
+        public ModelAndView getView(TransformViewForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
+            return new JspView<>(DataIntegrationController.class, "transformHistory.jsp", form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendNavTrail(root, "Transform History");
+        }
+
+        protected NavTree appendNavTrail(NavTree root, String title)
+        {
+            if (_displayName != null)
+                title = title + " - " + _displayName;
+            root.addChild(title);
+            return root;
+        }
+
+        @Override
+        public void validate(TransformViewForm form, BindException errors)
+        {
+            ScheduledPipelineJobDescriptor d = null;
+
+            if (form.getTransformId() == null || form.getTransformRunId() == null)
+            {
+                errors.reject(ERROR_MSG, "both a TransformId and TransformRunId must be supplied");
+            }
+
+            d = getDescriptor(form);
+            _displayName = d != null ? d.getName() : null;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class viewTransformDetailsAction extends viewTransformHistoryAction
+    {
+        @Override
+        public ModelAndView getView(TransformViewForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
+            return new JspView<>(DataIntegrationController.class, "transformDetails.jsp", form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendNavTrail(root, "Transform Details");
+        }
+    }
+
+    // used for transform history and transform details action
+    @SuppressWarnings("UnusedDeclaration")
+    public static class TransformViewForm
+    {
+        Integer transformRunId = null;
+        String transformId = null;
+
+        public void setTransformId(String id)
+        {
+            this.transformId = id;
+        }
+        public String getTransformId()
+        {
+            return this.transformId;
+        }
+        public void setTransformRunId(Integer id)
+        {
+            this.transformRunId = id;
+        }
+        public Integer getTransformRunId()
+        {
+            return this.transformRunId;
+        }
+    }
 
     @SuppressWarnings("UnusedDeclaration")
     public static class TransformConfigurationForm
@@ -123,11 +210,15 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
+    static ScheduledPipelineJobDescriptor getDescriptor(TransformViewForm form)
     {
         return TransformManager.get().getDescriptor(form.getTransformId());
     }
 
+    static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
+    {
+        return TransformManager.get().getDescriptor(form.getTransformId());
+    }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class UpdateTransformConfigurationAction extends MutatingApiAction<TransformConfigurationForm>

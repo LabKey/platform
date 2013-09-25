@@ -42,7 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.di.DataIntegrationDbSchema.Columns;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns;
 
 /**
  * User: matthew

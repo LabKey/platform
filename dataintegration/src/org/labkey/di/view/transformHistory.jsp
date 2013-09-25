@@ -1,0 +1,60 @@
+<%
+    /*
+    * Copyright (c) 2013 LabKey Corporation
+    *
+    * Licensed under the Apache License, Version 2.0 (the "License");
+    * you may not use this file except in compliance with the License.
+    * You may obtain a copy of the License at
+    *
+    *     http://www.apache.org/licenses/LICENSE-2.0
+    *
+    * Unless required by applicable law or agreed to in writing, software
+    * distributed under the License is distributed on an "AS IS" BASIS,
+    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    * See the License for the specific language governing permissions and
+    * limitations under the License.
+    */
+%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.di.pipeline.TransformManager" %>
+<%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.di.view.DataIntegrationController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<DataIntegrationController.TransformViewForm> me =
+            (JspView<DataIntegrationController.TransformViewForm>) HttpView.currentView();
+    DataIntegrationController.TransformViewForm f = me.getModelBean();
+    String transformId = f.getTransformId();
+    ScheduledPipelineJobDescriptor descriptor = TransformManager.get().getDescriptor(transformId);
+%>
+<script type="text/javascript">
+    var X = Ext4 || Ext;
+    X.onReady(function()
+    {
+        var qwp = new LABKEY.QueryWebPart({
+            renderTo: 'transformHistoryDiv',
+            title: '<%=h(transformId)%>',
+            schemaName: 'dataintegration',
+            queryName: 'transformhistory',
+            filters: [
+                LABKEY.Filter.create('Name', '<%=h(transformId)%>')
+            ]
+        });
+
+        qwp.render();
+    });
+</script>
+<span id="transformHeader" style="font-size: medium" ><%
+    if (null != descriptor)
+    {
+    %>
+       Description:  <%=h(descriptor.getDescription())%><br>
+       Module:  <%=h(descriptor.getModuleName())%><br>
+       Schedule:  <%=h(descriptor.getScheduleDescription())%>
+    <%
+    }
+    %>
+</span>
+<p/>
+<div id="transformHistoryDiv"/>

@@ -66,7 +66,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.filters.FilterStrategy;
@@ -649,7 +649,7 @@ public class TransformManager implements DataIntegrationService
     /* Should only be called once at startup */
     public void startAllConfigurations()
     {
-        DbSchema schema = DataIntegrationDbSchema.getSchema();
+        DbSchema schema = DataIntegrationQuerySchema.getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
 
         new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<TransformConfiguration>(){
@@ -701,8 +701,8 @@ public class TransformManager implements DataIntegrationService
     public TransformRun getTransformRun(Container c, int runId)
     {
         TransformRun run;
-        run = new SqlSelector(DataIntegrationDbSchema.getSchema(),
-                "SELECT * FROM " + DataIntegrationDbSchema.getTransformRunTableInfo().getFromSQL("x") +
+        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(),
+                "SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
                 " WHERE container=? and transformrunid=?", c.getId(), runId).getObject(TransformRun.class);
         return run;
     }
@@ -710,14 +710,14 @@ public class TransformManager implements DataIntegrationService
 
     public TransformRun insertTransformRun(User user, TransformRun run) throws SQLException
     {
-        run = Table.insert(user, DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+        run = Table.insert(user, DataIntegrationQuerySchema.getTransformRunTableInfo(), run);
         return run;
     }
 
 
     public void updateTransformRun(User user, TransformRun run) throws SQLException
     {
-        Table.update(user, DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getTransformRunId());
+        Table.update(user, DataIntegrationQuerySchema.getTransformRunTableInfo(), run, run.getTransformRunId());
     }
 
 
@@ -725,7 +725,7 @@ public class TransformManager implements DataIntegrationService
     {
         SimpleFilter f = new SimpleFilter();
         Sort s = new Sort("-StartTime");
-        TableInfo ti = DataIntegrationDbSchema.getTransformRunTableInfo();
+        TableInfo ti = DataIntegrationQuerySchema.getTransformRunTableInfo();
 
         f.addCondition(new FieldKey(null, "TransformId"), transformId, CompareType.EQUAL);
         f.addCondition(new FieldKey(null, "TransformVersion"), version, CompareType.EQUAL);
