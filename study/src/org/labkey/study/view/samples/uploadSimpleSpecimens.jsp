@@ -37,7 +37,7 @@
 Use this form to insert or update specimens in the repository.<br>
 <%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br>
 
-<div id="showExpectedDataFieldsDiv"><%= textLink("Show Required Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
+<div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
 
 <div id="expectedDataFields" style="display: none">
     <br>
@@ -52,23 +52,32 @@ Use this form to insert or update specimens in the repository.<br>
         <tr>
             <td>Global Unique Id</td>
             <td>Yes</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>The global unique ID of each vial. Assumed to be globally unique within a study, but duplicates can exist cross-study.</td>
         </tr>
         <tr>
             <td>Sample Id</td>
             <td>Yes</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>A unique id to be associated with the sample.  If null, this will be replaced by the Global Unique Id</td>
         </tr>
         <tr>
             <td><%=h(study.getSubjectNounSingular())%> Id</td>
             <td>Yes</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>	The ID of the subject providing each specimen.  If null, this will be replaced by the Global Unique Id</td>
         </tr>
         <%
-            if (study.getTimepointType() != TimepointType.VISIT) {
+            if (study.getTimepointType() == TimepointType.VISIT) {
+        %>
+        <tr>
+            <td>Visit</td>
+            <td>Yes</td>
+            <td>Double</td>
+            <td>The visit Id associated with the sample.</td>
+        </tr>
+        <%
+            }
         %>
         <tr>
             <td>Draw Timestamp</td>
@@ -76,16 +85,6 @@ Use this form to insert or update specimens in the repository.<br>
             <td>Date</td>
             <td>The timestamp of specimen collection.</td>
         </tr>
-        <%
-            } else {
-        %>
-        <tr>
-            <td>Visit</td>
-            <td>Yes</td>
-            <td>Integer</td>
-            <td>The visit Id associated with the sample.</td>
-        </tr>
-        <% } %>
         <tr>
             <td>Volume</td>
             <td>No</td>
@@ -101,19 +100,19 @@ Use this form to insert or update specimens in the repository.<br>
         <tr>
             <td>Primary Type</td>
             <td>No</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>The ID of the primary type of each specimen.</td>
         </tr>
         <tr>
             <td>Derivative Type</td>
             <td>No</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>The ID of the derivative type of each specimen.</td>
         </tr>
         <tr>
             <td>Additive Type</td>
             <td>No</td>
-            <td>Integer</td>
+            <td>String</td>
             <td>The ID of the additive type of each specimen.</td>
         </tr>
 
