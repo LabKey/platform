@@ -1009,6 +1009,11 @@ public abstract class SqlDialect
                 partName = "second";
                 break;
             }
+            case Calendar.MILLISECOND:
+            {
+                partName = "millisecond";
+                break;
+            }
             default:
             {
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
