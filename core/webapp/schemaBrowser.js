@@ -1768,18 +1768,41 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (id.indexOf(this.qdpPrefix) > -1)
             id = id.substring(this.qdpPrefix.length);
 
+        //console.log("parseQueryId: " + id);
+
+        // onHistoryChange hands us a URI encoded token in Chrome and a decoded URI token in Firefox
         var ret = {};
-        if (id.indexOf('&') > -1)
+        if (id.indexOf('&') == 0)
         {
-            var schemaName = decodeURIComponent(id.substring(0, id.indexOf('&')));
-            ret.schemaName = LABKEY.SchemaKey.fromString(schemaName);
-            ret.queryName = decodeURIComponent(id.substring(id.indexOf('&')+1));
+            // strip off leading '&'
+            id = id.substring(1);
         }
+        else if (id.indexOf('%26') == 0)
+        {
+            // decode and strip off leading '&' encoded
+            id = decodeURIComponent(id.substring('%26'.length));
+        }
+        else
+        {
+            console.warn("Expected to find panel id of the form '&schemaName&queryName': ", id);
+            return ret;
+        }
+
+        var amp = id.indexOf('&');
+        if (amp > -1)
+        {
+            //console.log("  decoded: " + id);
+            var schemaName = id.substring(0, amp);
+            ret.schemaName = LABKEY.SchemaKey.fromString(schemaName);
+            ret.queryName = id.substring(amp+1);
+        }
+
+        //console.log("  ret: ", ret);
         return ret;
     },
 
     buildQueryPanelId : function(schemaName, queryName) {
-        return this.qdpPrefix + encodeURIComponent(schemaName.toString()) + "&" + encodeURIComponent(queryName);
+        return this.qdpPrefix + encodeURIComponent('&' + schemaName.toString() + '&' + queryName);
     },
 
     onHistoryChange : function(token) {
