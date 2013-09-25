@@ -616,6 +616,7 @@ public class Portal
         for (PortalPage p : pageMap.values())
             maxOriginalIndex = Math.max(maxOriginalIndex, p.getIndex());
 
+        boolean startingWithNoPages = pageMap.isEmpty() || (pageMap.size() == 1 && pageMap.containsKey("portal.default"));
         if (resetIndexes)
         {
             // Indexes only matter relative to each other
@@ -662,7 +663,8 @@ public class Portal
                     newIndex += 1;
                     PortalPage p = new PortalPage();
                     p.setPageId(tab.getName());
-                    p.setIndex(tab.getDefaultIndex() > 0 ? tab.getDefaultIndex() : newIndex);
+                    p.setIndex((startingWithNoPages && tab.getDefaultIndex() > 0) ?
+                            tab.getDefaultIndex() : newIndex);          // Only use default if we're adding all of them
                     allPages.add(p);
                     mustUpdateIndexes = true;           // Adding a page so must update all indexes to accommodate
                 }
