@@ -173,14 +173,14 @@ public class SimpleQueryTransformStep extends TransformTask
             int transformRunId = getTransformJob().getTransformRunId();
             DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log);
 
-            _recordsInserted = appendToTarget(meta, c, u, context, transformSource);
+            _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
 
             targetScope.commitTransaction();
             if (null != sourceScope)
                 sourceScope.commitTransaction();
 
             long finish = System.currentTimeMillis();
-            log.info("Copied " + _recordsInserted + " row" + (_recordsInserted != 1 ? "s" : "") + " in " + DateUtil.formatDuration(finish - start) + ".");
+            log.info("Copied " + getNumRowsString(_recordsInserted) + " in " + DateUtil.formatDuration(finish - start));
         }
         catch (Exception x)
         {
@@ -217,7 +217,7 @@ public class SimpleQueryTransformStep extends TransformTask
 
             try
             {
-                log.info(filterStrategy.getClass().getName() + ": " + (null == f ? "no filter"  : f.toSQLString(sourceSchema.getDbSchema().getSqlDialect())));
+                log.info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter"  : f.toSQLString(sourceSchema.getDbSchema().getSqlDialect())));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
@@ -236,8 +236,12 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
+    static String getNumRowsString(int rows)
+    {
+        return rows + " row" + (rows != 1 ? "s" : "");
+    }
 
-    static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source)
+    static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
         QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
         if (null == querySchema || null == querySchema.getDbSchema())
@@ -259,6 +263,8 @@ public class SimpleQueryTransformStep extends TransformTask
                 context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getTargetSchema() + "." + meta.getTargetQuery()));
                 return -1;
             }
+
+            log.info("Target option: " + meta.getTargetOptions());
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
             {
                 return qus.mergeRows(u, c, source, context.getErrors(), null);
@@ -266,7 +272,8 @@ public class SimpleQueryTransformStep extends TransformTask
             else
             if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
             {
-                qus.truncateRows(u, c, null /*extra script context */);
+                int rows = qus.truncateRows(u, c, null /*extra script context */);
+                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getTargetSchema() + "."  + meta.getTargetQuery());
                 return qus.importRows(u, c, source, context.getErrors(), null);
             }
             else

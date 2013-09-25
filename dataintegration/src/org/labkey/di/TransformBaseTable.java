@@ -11,12 +11,14 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.di.pipeline.TransformRun;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -84,8 +86,7 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(_nameMap.get("Status"));
         sql.append(", t.RecordCount AS ");
         sql.append(_nameMap.get("RecordCount"));
-        // get the number of seconds (n.nnn)
-        sql.append(", (CAST(");
+        sql.append(", (CAST("); // get the number of seconds as n.nnn
         sql.append(dialect.getDateDiff(Calendar.MILLISECOND, "t.EndTime", "t.StartTime"));
         sql.append(" AS FLOAT)/1000)");
         sql.append(" AS ");
@@ -95,6 +96,25 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(DataIntegrationQuerySchema.getTransformRunTableName());
         sql.append(" t\n");
         return sql.toString();
+    }
+    protected String getWhereClause()
+    {
+        return getWhereClause(null);
+    }
+
+    protected String getWhereClause(String tableAlias)
+    {
+        StringBuilder sqlWhere = new StringBuilder();
+        sqlWhere.append("WHERE ");
+        if (!StringUtils.isEmpty(tableAlias))
+        {
+            sqlWhere.append(tableAlias);
+            sqlWhere.append(".");
+        }
+        sqlWhere.append("Status <> '");
+        sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
+        sqlWhere.append("'");
+        return sqlWhere.toString();
     }
 
     protected void addBaseColumns()

@@ -44,6 +44,10 @@ public class TransformRun
         {
             _display = display;
         }
+        public String getDisplayName()
+        {
+            return _display;
+        }
     }
 
     private int _transformRunId;

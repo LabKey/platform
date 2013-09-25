@@ -23,6 +23,7 @@ public class TransformHistoryTable extends TransformBaseTable
         super(schema);
         _sql = new SQLFragment();
         _sql.append(getBaseSql());
+        _sql.append(getWhereClause("t"));
         addBaseColumns();
 
         // history table should link to filtered run table for transform details

@@ -40,6 +40,8 @@ public class TransformSummaryTable extends TransformBaseTable
         _sql.append("INNER JOIN (SELECT TransformId, max(StartTime) AS StartTime\n");
         _sql.append("FROM ");
         _sql.append(DataIntegrationQuerySchema.getTransformRunTableName());
+        _sql.append(" ");
+        _sql.append(getWhereClause());
         _sql.append(" GROUP BY TransformId) m\n");
         _sql.append("ON t.TransformId=m.TransformId AND t.StartTime=m.StartTime\n");
 
