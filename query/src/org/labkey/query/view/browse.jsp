@@ -15,66 +15,23 @@
  * limitations under the License.
  */
 %>
-
-<div id="browserContainer" class="extContainer" style="width:100%">
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("schemaBrowser.css"));
+        resources.add(ClientDependency.fromFilePath("schemaBrowser.js"));
+        resources.add(ClientDependency.fromFilePath("/query/browse.js"));
+        return resources;
+    }
+%>
+<div id="browserContainer" class="extContainer" style="width:100%;">
+    <!-- renderTo for browse.js -->
     <div id="browser"></div>
 </div>
-
-<script type="text/javascript">
-    LABKEY.requiresCss("schemaBrowser.css");
-</script>
-
-<script type="text/javascript">
-    LABKEY.requiresScript("schemaBrowser.js");
-</script>
-
-<script type="text/javascript">
-    var _browser = null;
-
-    Ext.onReady(function(){
-        _browser = new LABKEY.ext.SchemaBrowser({
-            renderTo: 'browser',
-            boxMinHeight: 600,
-            boxMinWidth: 900,
-            useHistory: true,
-            listeners: {
-                schemasloaded: {
-                    fn: onSchemasLoaded,
-                    scope: this
-                }
-            }
-        });
-    });
-
-    function onSchemasLoaded(browser)
-    {
-        var params = LABKEY.ActionURL.getParameters();
-
-        var schemaName = params.schemaName;
-        var queryName = params['queryName'] || params['query.queryName'];
-        if (queryName && schemaName)
-        {
-            browser.selectQuery(schemaName, queryName, function(){
-                browser.showQueryDetails(schemaName, queryName);
-            });
-        }
-        else if (schemaName)
-            browser.selectSchema(schemaName, queryName);
-
-        if (window.location.hash && window.location.hash.length > 1)
-        {
-            //window.location.hash returns an decoded value, which
-            //is different from what Ext.History.getToken() returns
-            //so use the same technique Ext does for getting the hash
-            var href = top.location.href;
-            var idx = href.indexOf("#");
-            var hash = idx >= 0 ? href.substr(idx + 1) : null;
-            if (hash)
-                browser.onHistoryChange(hash);
-        }
-    }
-</script>
-
 <!-- Fields required for history management -->
 <form id="history-form" class="x-hidden">
     <input type="hidden" id="x-history-field" />

@@ -16,26 +16,20 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
 <%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
-<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
-    AbstractExternalSchemaDef def = bean.getSchemaDef();
-    QueryController.DataSourceInfo initialSource = bean.getInitialSource();
-
+    Collection<QueryController.DataSourceInfo> sources = bean.getSources();
 %>
 <labkey:errors/>
 This page is not yet implemented.
 <table>
 <%
-    Collection<QueryController.DataSourceInfo> sources = bean.getSources();
     for (DataSourceInfo source : sources)
     { %>
         <tr><td colspan="2"><%=h(source.sourceName)%></td></tr><%

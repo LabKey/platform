@@ -26,19 +26,20 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%! String userIdToString(Integer userId)
-{
-    if (userId == null)
+<%!
+    String userIdToString(Integer userId)
     {
-        return "";
+        if (userId == null)
+        {
+            return "";
+        }
+        User user = UserManager.getUser(userId);
+        if (user == null)
+        {
+            return "Unknown user #" + userId;
+        }
+        return user.getDisplayName(user);
     }
-    User user = UserManager.getUser(userId);
-    if (user == null)
-    {
-        return "Unknown user #" + userId;
-    }
-    return user.getDisplayName(user);
-}
 %>
 <%
     InternalSourceViewForm form = (InternalSourceViewForm) HttpView.currentModel();
@@ -46,8 +47,6 @@
     urlPost.addParameter("customViewId", Integer.toString(form.getCustomViewId()));
     ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
     CstmView view = form.getViewAndCheckPermission();
-
-    QueryManager mgr = QueryManager.get();
 %>
 <labkey:errors />
 <form method = "POST" action="<%=h(urlPost)%>">

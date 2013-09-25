@@ -26,10 +26,9 @@
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType" %>
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();

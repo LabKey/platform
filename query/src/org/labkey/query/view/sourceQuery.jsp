@@ -121,23 +121,6 @@
 <div id="status" class="labkey-status-info" style="visibility: hidden;" width="99%">(status)</div>
 <div id="query-editor-panel" class="extContainer"></div>
 <script type="text/javascript">
-    // CONSIDER : These events are used by both this window and the iFrame of the editAreaLoader.
-    // If you are adding another event please be aware of both instances. 
-    function saveEvent(e) {
-        var cmp = Ext.getCmp('qep');
-        if (cmp) {  cmp.getSourceEditor().save(); }
-    }
-
-    function editEvent(e) {
-        var cmp = Ext.getCmp('qep');
-        if (cmp) {  cmp.openSourceEditor(true); }
-    }
-
-    function executeEvent(e) {
-        var cmp = Ext.getCmp('qep');
-        if (cmp) {  cmp.getSourceEditor().execute(true); }
-    }
-
     Ext.onReady(function(){
 
         Ext.QuickTips.init();
@@ -170,36 +153,37 @@
         else if (hash == "#metadata")
             activeTab = 2;
 
-        var queryEditor = new LABKEY.query.QueryEditorPanel({
-            id          : 'qep',
-            border      : false,
-            layout      : 'fit',
-            bodyCssClass: 'query-editor-panel',
-            query       : query,
-            activeTab   : activeTab
-        });
-
-        var panel = new Ext.Panel({
-            renderTo   : 'query-editor-panel',
-            layout     : 'fit',
-            frame      : false,
-            border     : false,
-            boxMinHeight: 450,
-            items      : [queryEditor]
-        });
-
-        var _resize = function(w, h) {
-            LABKEY.Utils.resizeToViewport(panel, w, h, 40, 50);
+        var clearStatus = function()
+        {
+            var elem = Ext.get("status");
+            elem.update("&nbsp;");
+            elem.setVisible(false);
         };
 
-        Ext.EventManager.onWindowResize(_resize);
-        Ext.EventManager.fireWindowResize();
+        var setError = function(msg)
+        {
+            var elem = Ext.get("status");
+            elem.update(msg);
+            elem.dom.className = "labkey-status-error";
+            elem.setVisible(true);
+        };
 
-        function beforeSave(qep)
+        var setStatus = function(msg, autoClear)
+        {
+            var elem = Ext.get("status");
+            elem.update(msg);
+            elem.dom.className = "labkey-status-info";
+            elem.setDisplayed(true);
+            elem.setVisible(true);
+            if(autoClear) clearStatus.defer(5000);
+        };
+
+        var beforeSave = function(qep)
         {
             setStatus('Saving...');
-        }
-        function afterSave(qep, saved, json)
+        };
+
+        var afterSave = function(qep, saved, json)
         {
             if (saved)
             {
@@ -215,60 +199,61 @@
                     msg += ": " + json.exception;
                 setError(msg);
             }
-        }
-        queryEditor.on('beforeSave', beforeSave);
-        queryEditor.on('save', afterSave);
+        };
 
-        function clearStatus()
-        {
-            var elem = Ext.get("status");
-            elem.update("&nbsp;");
-            elem.setVisible(false);
-        }
+        var panel = new Ext.Panel({
+            renderTo   : 'query-editor-panel',
+            layout     : 'fit',
+            frame      : false,
+            border     : false,
+            boxMinHeight: 450,
+            items      : [{
+                xtype       : 'labkey-query-editor',
+                id          : 'qep',
+                border      : false,
+                layout      : 'fit',
+                bodyCssClass: 'query-editor-panel',
+                query       : query,
+                activeTab   : activeTab,
+                listeners: {
+                    render: function(qep) {
+                        var onKeyDown = function(evt) {
+                            var handled = false;
 
-        function setStatus(msg, autoClear)
-        {
-            var elem = Ext.get("status");
-            elem.update(msg);
-            elem.dom.className = "labkey-status-info";
-            elem.setDisplayed(true);
-            elem.setVisible(true);
-            var clear = clearStatus;
-            if(autoClear) clearStatus.defer(5000);
-        }
+                            if(evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
+                                if (83 == evt.getKey()) {  // s
+                                    qep.getSourceEditor().save();
+                                    handled = true;
+                                }
+                                if (69 == evt.getKey()) {  // e
+                                    qep.openSourceEditor(true);
+                                    handled = true;
+                                }
+                                if (13 == evt.getKey()) {  // enter
+                                    qep.getSourceEditor().execute(true);
+                                    handled = true;
+                                }
+                            }
 
-        function setError(msg)
-        {
-            var elem = Ext.get("status");
-            elem.update(msg);
-            elem.dom.className = "labkey-status-error";
-            elem.setVisible(true);
-        }
+                            if(handled) {
+                                evt.preventDefault();
+                                evt.stopPropagation();
+                            }
+                        };
 
-        function onKeyDown(evt) {
-            var handled = false;
-
-            if(evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
-                if (83 == evt.getKey()) {  // s
-                    saveEvent(evt);
-                    handled = true;
+                        Ext.EventManager.addListener(document, "keydown", onKeyDown);
+                    },
+                    beforeSave: beforeSave,
+                    save: afterSave
                 }
-                if (69 == evt.getKey()) {  // e
-                    editEvent(evt);
-                    handled = true;
-                }
-                if (13 == evt.getKey()) {  // enter
-                    executeEvent(evt);
-                    handled = true;
-                }
-            }
+            }]
+        });
 
-            if(handled) {
-                evt.preventDefault();
-                evt.stopPropagation();
-            }
-        }
+        var _resize = function(w, h) {
+            LABKEY.Utils.resizeToViewport(panel, w, h, 40, 50);
+        };
 
-        Ext.EventManager.addListener(document, "keydown", onKeyDown);
+        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.fireWindowResize();
     });
 </script>

@@ -852,3 +852,5 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
     // Allows others to hook events on metadataEditor
     getMetadataEditor : function() { return this.metaEditor; }
 });
+
+Ext.reg("labkey-query-editor", LABKEY.query.QueryEditorPanel);

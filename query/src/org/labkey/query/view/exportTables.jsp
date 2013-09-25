@@ -24,22 +24,19 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
         resources.add(ClientDependency.fromFilePath("query/ExportTablePanel.js"));
         return resources;
     }
 %>
-
 <%
     JspView<QueryController.ExportTablesForm> me = (JspView<QueryController.ExportTablesForm>) HttpView.currentView();
     Errors errors = me.getErrors();
-%>
 
-<%
     if(errors.hasErrors())
     {
 %>
@@ -62,12 +59,6 @@
 %>
 
 <div id='merge-tables-ui'></div>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
-//    LABKEY.requiresScript('ExportTablePanel.js');
-</script>
-
 <script type="text/javascript">
     Ext4.onReady(function(){
         var exportPanel = Ext4.create('HIPC.tree.ExportTablePanel', {
