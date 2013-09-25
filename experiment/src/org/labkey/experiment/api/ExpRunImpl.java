@@ -764,9 +764,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         // Exceptions were not being handled by calling functions so we translate them here
-        catch (ExperimentException | IOException e)
+        catch (IOException e)
         {
             throw UnexpectedException.wrap(e);
+        }
+        // Fail silently if the parent directory does not exist - archiving is a best effort action
+        catch (ExperimentException e)
+        {
+            LOG.warn("Unable to read parent directory: " + e.getMessage());
         }
     }
 
