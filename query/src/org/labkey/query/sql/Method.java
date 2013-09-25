@@ -315,7 +315,28 @@ public abstract class
                 return new StartsWithInfo();
             }
         });
-        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
+        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3){
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new JdbcMethodInfoImpl(_name, _jdbcType)
+                {
+                    @Override
+                    public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+                    {
+                        if (arguments.length == 2)
+                        {
+                            SQLFragment[] argumentsThree = new SQLFragment[3];
+                            argumentsThree[0] = arguments[0];
+                            argumentsThree[1] = arguments[1];
+                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE));
+                            arguments = argumentsThree;
+                        }
+                        return super.getSQL(schema, arguments);
+                    }
+                };
+            }
+        });
         labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("timestampadd", new Method("timestampadd", JdbcType.TIMESTAMP, 3, 3)
             {
@@ -336,7 +357,8 @@ public abstract class
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0) {
+        labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {

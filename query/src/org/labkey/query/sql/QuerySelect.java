@@ -74,6 +74,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     QGroupBy _groupBy;
     QOrder _orderBy;
     QLimit _limit;
+    boolean _forceAllowOrderBy = false; // when we know this will not be wrapped by another SELECT
 
     private QSelect _select;
     private QWhere _where;
@@ -1369,29 +1370,31 @@ groupByLoop:
         }
         if (_orderBy != null)
         {
-            if (_limit == null && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
+            if (_limit == null & !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
-                parseError("ORDER BY in a LabKey SQL query in this database is not supported unless LIMIT is also specified.  You can set the sort using a custom grid view.", _orderBy);
-                return null;
+                reportWarning("The underlying database does not supported nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
             }
-            sql.pushPrefix("\nORDER BY ");
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            else
             {
-                QExpr expr = entry.getKey();
-                if (expr instanceof QIdentifier && aliasMap.containsKey(expr.getTokenText()))
+                sql.pushPrefix("\nORDER BY ");
+                for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
                 {
-                    sql.append(aliasMap.get(expr.getTokenText()));
+                    QExpr expr = entry.getKey();
+                    if (expr instanceof QIdentifier && aliasMap.containsKey(expr.getTokenText()))
+                    {
+                        sql.append(aliasMap.get(expr.getTokenText()));
+                    }
+                    else
+                    {
+                        QExpr r = resolveFields(expr, _orderBy, _orderBy);
+                        r.appendSql(sql);
+                    }
+                    if (!entry.getValue().booleanValue())
+                        sql.append(" DESC");
+                    sql.nextPrefix(",");
                 }
-                else
-                {
-                    QExpr r = resolveFields(expr, _orderBy, _orderBy);
-                    r.appendSql(sql);
-                }
-                if (!entry.getValue().booleanValue())
-                    sql.append(" DESC");
-                sql.nextPrefix(",");
+                sql.popPrefix();
             }
-            sql.popPrefix();
         }
         if (_limit != null)
         {
@@ -2073,7 +2076,7 @@ groupByLoop:
             r = null;
         QuerySelect selectParent = (QuerySelect)r;
 
-        if (!_allowStructuralOptimization)
+        if (_allowStructuralOptimization)
         {
             optimizeOrderBy(selectParent, childSelectOrTable);
         }

@@ -303,6 +303,21 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         else
         {
             Query q = getQuery(schema);
+            if (q.getParseErrors().isEmpty())
+            {
+                try
+                {
+                    q.getTableInfo();
+                }
+                catch (QueryService.NamedParameterNotProvided x)
+                {
+                    /* ignore */
+                }
+                catch (Exception x)
+                {
+                    errors.add(wrapParseException(x, false));
+                }
+            }
             for (QueryException e : q.getParseErrors())
                 errors.add(wrapParseException(e, true));
             if (errors.isEmpty() && null != warnings)

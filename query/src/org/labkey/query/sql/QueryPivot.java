@@ -167,6 +167,13 @@ public class QueryPivot extends QueryRelation
         if (inList instanceof QQuery)
         {
             _inQuery = createSubquery((QQuery)inList, "_pivotValues");
+            QuerySelect qs = _inQuery instanceof QuerySelect ?
+                    (QuerySelect)_inQuery :
+                    _inQuery instanceof QueryLookupWrapper ?
+                    (QuerySelect)((QueryLookupWrapper)_inQuery)._source :
+                    null;
+            if (null != qs)
+                qs._forceAllowOrderBy = true;
             // call getSql() here to generate errors (quick fail)
             _inQuery.getSql();
         }
@@ -250,7 +257,7 @@ public class QueryPivot extends QueryRelation
         try
         {
             _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
-            SQLFragment sqlPivotValues;
+            SQLFragment sqlPivotValues = null;
 
             if (null != _inQuery)
             {
@@ -259,12 +266,6 @@ public class QueryPivot extends QueryRelation
             }
             else
             {
-                // implicit sub query
-                // CONSIDER: _from.clone() and then simplify the select
-                // execute query
-                sqlPivotValues = new SQLFragment();
-                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
-
                 SQLFragment fromSql;
                 if (1==1)   // optimized version
                 {
@@ -294,15 +295,19 @@ public class QueryPivot extends QueryRelation
                 {
                     fromSql = _from.getFromSql();
                 }
-
-                if (null == fromSql)
+                if (null != fromSql)
                 {
-                    // If there are errors, it will get handled later
-                    assert !getParseErrors().isEmpty();
-                    return _pivotValues;
+                    sqlPivotValues = new SQLFragment();
+                    sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
+                    sqlPivotValues.append("\nFROM ").append(fromSql);
+                    sqlPivotValues.append("\nORDER BY 1 ASC");
                 }
-                sqlPivotValues.append("\nFROM ").append(fromSql);
-                sqlPivotValues.append("\nORDER BY 1 ASC");
+            }
+            if (null == sqlPivotValues)
+            {
+                // If there are errors, it will get handled later
+                assert !getParseErrors().isEmpty();
+                return _pivotValues;
             }
             rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
             JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
