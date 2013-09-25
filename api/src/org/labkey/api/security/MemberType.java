@@ -49,6 +49,16 @@ public interface MemberType<P extends UserPrincipal>
         }
     };
 
+    static MemberType<User> ACTIVE_USERS = new MemberType<User>() {
+        @Override
+        public User getPrincipal(int id)
+        {
+            User user = UserManager.getUser(id);
+
+            return (null != user && user.isActive() ? user : null);
+        }
+    };
+
     // All groups and all users (including inactive)
     static MemberType<UserPrincipal> ALL_GROUPS_AND_USERS = new MemberType<UserPrincipal>() {
         @Override

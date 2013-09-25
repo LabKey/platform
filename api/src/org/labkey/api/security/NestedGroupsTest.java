@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,16 +59,49 @@ public class NestedGroupsTest extends Assert
     private static final String[] SITE_GROUP_NAMES = new String[] {SITE_GROUP_1, SITE_GROUP_2};
 
     private Container _project;
+    private User _testUser;
 
     @Before
-    public void setUp()
+    public void setUp() throws ValidEmail.InvalidEmailException, SecurityManager.UserManagementException
     {
-        cleanup();
         _project = JunitUtil.getTestContainer().getProject();
+        assertNotNull(_project);
+
+        ValidEmail email = new ValidEmail("junit_test_user@test.com");
+        SecurityManager.NewUserStatus status = SecurityManager.addUser(email);
+        _testUser = status.getUser();
+        assertNotNull(_testUser);
+    }
+
+    @After
+    public void cleanup() throws ValidEmail.InvalidEmailException, SecurityManager.UserManagementException
+    {
+        Container project = JunitUtil.getTestContainer().getProject();
+
+        for (String groupName : PROJECT_GROUP_NAMES)
+        {
+            Integer groupId = SecurityManager.getGroupId(project, groupName, false);
+
+            if (null != groupId)
+                SecurityManager.deleteGroup(groupId);
+        }
+
+        for (String groupName : SITE_GROUP_NAMES)
+        {
+            Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), groupName, false);
+
+            if (null != groupId)
+                SecurityManager.deleteGroup(groupId);
+        }
+
+        ValidEmail email = new ValidEmail("junit_test_user@test.com");
+        User existingUser = UserManager.getUser(email);
+        if (null != existingUser)
+            UserManager.deleteUser(existingUser.getUserId());
     }
 
     @Test
-    public void test() throws SQLException, InterruptedException
+    public void test() throws SQLException, InterruptedException, ValidEmail.InvalidEmailException, SecurityManager.UserManagementException
     {
         final User user = TestContext.get().getUser();
 
@@ -91,6 +125,7 @@ public class NestedGroupsTest extends Assert
         assertTrue(!siteGroup2.isProjectGroup());
 
         addMember(projectX, user);
+        addMember(projectX, _testUser);
         int[] groups = GroupMembershipCache.getGroupMemberships(user.getUserId());
         expected(groups, projectX);
         notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1, coders, divA);
@@ -110,14 +145,42 @@ public class NestedGroupsTest extends Assert
         addMember(divA, user);
         addMember(divA, projectX);
 
-        validateGroupMembers(divA, 1, 1, 1, 1);
-        validateGroupMembers(divB, 0, 0, 0, 0);
-        validateGroupMembers(divC, 0, 0, 0, 0);
-        validateGroupMembers(coders, 1, 0, 1, 0);
-        validateGroupMembers(testers, 0, 0, 0, 0);
-        validateGroupMembers(writers, 0, 0, 0, 0);
-        validateGroupMembers(projectX, 1, 0, 1, 0);
-        validateGroupMembers(all, 0, 6, 1, 7);
+        validateGroupMembers(divA, 1, 1, 1, 2, 2, 1);
+        validateGroupMembers(divB, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(divC, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(coders, 1, 1, 0, 1, 1, 0);
+        validateGroupMembers(testers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(writers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(projectX, 2, 2, 0, 2, 2, 0);
+        validateGroupMembers(all, 0, 0, 6, 2, 2, 7);
+
+        UserManager.setUserActive(user, _testUser, false);
+        _testUser = UserManager.getUser(_testUser.getUserId());  // Refresh the user to update active bit
+        assertNotNull(_testUser);
+        assertFalse(_testUser.isActive());
+
+        validateGroupMembers(divA, 1, 1, 1, 2, 1, 1);
+        validateGroupMembers(divB, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(divC, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(coders, 1, 1, 0, 1, 1, 0);
+        validateGroupMembers(testers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(writers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(projectX, 2, 1, 0, 2, 1, 0);
+        validateGroupMembers(all, 0, 0, 6, 2, 1, 7);
+
+        UserManager.setUserActive(user, _testUser, true);
+        _testUser = UserManager.getUser(_testUser.getUserId());  // Refresh the user to update active bit
+        assertNotNull(_testUser);
+        assertTrue(_testUser.isActive());
+
+        validateGroupMembers(divA, 1, 1, 1, 2, 2, 1);
+        validateGroupMembers(divB, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(divC, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(coders, 1, 1, 0, 1, 1, 0);
+        validateGroupMembers(testers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(writers, 0, 0, 0, 0, 0, 0);
+        validateGroupMembers(projectX, 2, 2, 0, 2, 2, 0);
+        validateGroupMembers(all, 0, 0, 6, 2, 2, 7);
 
         // TODO: Create another group, add directly to "all", add user to new group, validate
         // TODO: Check permissions
@@ -224,7 +287,7 @@ public class NestedGroupsTest extends Assert
         List<Group> projectGroups = Arrays.asList(SecurityManager.getGroups(_project, false));
         String svg = GroupManager.getGroupGraphSvg(projectGroups, user, false);
 
-        // TODO: Assert something about gv... maybe just length of svg?
+        // TODO: Assert something about svg... maybe just length of svg?
     }
 
     private Group create(String name)
@@ -256,7 +319,7 @@ public class NestedGroupsTest extends Assert
         try
         {
             SecurityManager.addMember(group, principal);
-            fail("Expected failure when adding principal \"" + principal.getName() + "\" to group \"" + group.getName() + "\"");
+            fail("Expected failure when adding principal \"" + principal + "\" to group \"" + group + "\"");
         }
         catch (InvalidGroupMembershipException e)
         {
@@ -320,35 +383,16 @@ public class NestedGroupsTest extends Assert
         validate(expected, set, members);
     }
 
-    private void validateGroupMembers(Group group, int users, int groups, int recursiveUsers, int recursiveGroups)
+    private static void validateGroupMembers(Group group, int allUsers, int activeUsers, int groups, int allRecursiveUsers, int activeRecursiveUsers, int recursiveGroups)
     {
-        assertEquals(users, SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
+        assertEquals(allUsers, SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
+        assertEquals(activeUsers, SecurityManager.getGroupMembers(group, MemberType.ACTIVE_USERS).size());
         assertEquals(groups, SecurityManager.getGroupMembers(group, MemberType.GROUPS).size());
-        assertEquals(users + groups, SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
+        assertEquals(allUsers + groups, SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
 
-        assertEquals(recursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
+        assertEquals(allRecursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size());
+        assertEquals(activeRecursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS).size());
         assertEquals(recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.GROUPS).size());
-        assertEquals(recursiveUsers + recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
-    }
-
-    private void cleanup()
-    {
-        Container project = JunitUtil.getTestContainer().getProject();
-
-        for (String groupName : PROJECT_GROUP_NAMES)
-        {
-            Integer groupId = SecurityManager.getGroupId(project, groupName, false);
-
-            if (null != groupId)
-                SecurityManager.deleteGroup(groupId);
-        }
-
-        for (String groupName : SITE_GROUP_NAMES)
-        {
-            Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), groupName, false);
-
-            if (null != groupId)
-                SecurityManager.deleteGroup(groupId);
-        }
+        assertEquals(allRecursiveUsers + recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).size());
     }
 }
