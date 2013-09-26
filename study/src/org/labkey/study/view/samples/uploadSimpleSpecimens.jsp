@@ -76,8 +76,15 @@ Use this form to insert or update specimens in the repository.<br>
             <td>Double</td>
             <td>The visit Id associated with the sample.</td>
         </tr>
+        <tr>
+            <td>Draw Timestamp</td>
+            <td>No</td>
+            <td>Date</td>
+            <td>The timestamp of specimen collection.</td>
+        </tr>
+
         <%
-            }
+            } else {
         %>
         <tr>
             <td>Draw Timestamp</td>
@@ -85,6 +92,7 @@ Use this form to insert or update specimens in the repository.<br>
             <td>Date</td>
             <td>The timestamp of specimen collection.</td>
         </tr>
+        <% } %>
         <tr>
             <td>Volume</td>
             <td>No</td>
