@@ -112,7 +112,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                         new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()),
                         _getIconPath(StudyCrosstabReport.TYPE));
                 crosstabInfo.setId("create_crosstabView");
-                crosstabInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(crosstabInfo);
 
 /*

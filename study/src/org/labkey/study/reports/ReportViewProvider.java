@@ -300,11 +300,9 @@ public class ReportViewProvider implements DataViewProvider
             {
                 List<ValidationError> errors = new ArrayList<>();
 
-                if (!report.canEdit(user, container, errors))
-                {
-                    String errorMsg = ReportUtil.getErrors(errors);
-                    throw new ValidationException(errorMsg);
-                }
+                ReportService.get().tryValidateReportPermissions(new DefaultContainerUser(container, user), report, errors);
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
             }
         }
 
@@ -353,6 +351,11 @@ public class ReportViewProvider implements DataViewProvider
                         report.getDescriptor().setStatus((String)props.get(Property.status.name()));
                     if (props.containsKey(Property.refreshDate.name()))
                         report.getDescriptor().setRefeshDate(props.get(Property.refreshDate.name()));
+
+                    List<ValidationError> errors = new ArrayList<>();
+                    ReportService.get().tryValidateReportPermissions(context, report, errors);
+                    if (!errors.isEmpty())
+                        throw new ValidationException(errors);
 
                     ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
 

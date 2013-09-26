@@ -2193,7 +2193,7 @@ public class ReportsController extends SpringActionController
             if (factory != null)
             {
                 Portal.WebPart part = factory.createWebPart();
-                part.getPropertyMap().put("adminView", "true");
+                part.getPropertyMap().put("manageView", "true");
 
                 WebPartView view = factory.getWebPartView(getViewContext(), part);
 
@@ -2480,7 +2480,7 @@ public class ReportsController extends SpringActionController
         private String pageId;
         private boolean includeData = true;
         private boolean includeMetadata = true;
-        private boolean adminView;
+        private boolean manageView;
         private int _parent = -2;
         Map<String, Object> _props;
 
@@ -2546,14 +2546,14 @@ public class ReportsController extends SpringActionController
             return _parent;
         }
 
-        public boolean isAdminView()
+        public boolean isManageView()
         {
-            return adminView;
+            return manageView;
         }
 
-        public void setAdminView(boolean adminView)
+        public void setManageView(boolean manageView)
         {
-            this.adminView = adminView;
+            this.manageView = manageView;
         }
 
         @Override
@@ -2592,7 +2592,7 @@ public class ReportsController extends SpringActionController
                     webPartProps.put("height", String.valueOf(700));
                 response.put("webpart", new JSONObject(webPartProps));
             }
-            else if (form.isAdminView())
+            else if (form.isManageView())
             {
                 props = getAdminConfiguration();
             }
@@ -3023,7 +3023,7 @@ public class ReportsController extends SpringActionController
 
             if (null != webPart)
                 props = webPart.getPropertyMap();
-            else if (form.isAdminView())
+            else if (form.isManageView())
                 props = getAdminConfiguration();
             else
                 props = resolveJSONProperties(form.getProps());
@@ -3312,7 +3312,7 @@ public class ReportsController extends SpringActionController
             //we must respond with a content-type of text/html or the
             //browser will prompt the user to save the response, as the
             //browser won't natively show application/json content-type
-            setContentTypeOverride("text/html");
+            //setContentTypeOverride("text/html");
         }
 
         @Override

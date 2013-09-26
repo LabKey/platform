@@ -41,10 +41,10 @@
     int webPartId = me.getModelBean().getRowId();
     Map<String, String> properties = me.getModelBean().getPropertyMap();
 
-    // the adminView flag refers to manage views
-    boolean adminView = false;
-    if (properties.containsKey("adminView"))
-        adminView = BooleanUtils.toBoolean(properties.get("adminView"));
+    // the manageView flag refers to manage views
+    boolean manageView = false;
+    if (properties.containsKey("manageView"))
+        manageView = BooleanUtils.toBoolean(properties.get("manageView"));
 
     String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -59,8 +59,8 @@
                 pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
                 index       : <%= me.getModelBean().getIndex() %>,
                 webpartId   : <%= webPartId %>,
-                adminView   : <%= adminView%>,
-                fullPage    : <%= adminView%>,
+                manageView  : <%= manageView%>,
+                fullPage    : <%= manageView%>,
                 returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
                 allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
                 listeners   : {

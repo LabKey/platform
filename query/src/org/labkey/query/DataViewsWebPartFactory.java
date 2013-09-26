@@ -67,12 +67,12 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         NavTree menu = new NavTree();
         Map<String, String> properties = webPart.getPropertyMap();
 
-        // the adminView flag refers to manage views
-        boolean adminView = false;
-        if (properties.containsKey("adminView"))
-            adminView = BooleanUtils.toBoolean(properties.get("adminView"));
+        // the manageView flag refers to manage views
+        boolean manageView = false;
+        if (properties.containsKey("manageView"))
+            manageView = BooleanUtils.toBoolean(properties.get("manageView"));
 
-        if (portalCtx.hasPermission(InsertPermission.class))
+        if (portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
             NavTree reportMenu = new NavTree("Add Report");
 
@@ -103,7 +103,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
         if (portalCtx.hasPermission(AdminPermission.class))
         {
-            if (!adminView)
+            if (!manageView)
             {
                 NavTree customize = new NavTree("");
                 String customizeScript = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
@@ -119,21 +119,32 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                 menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
             menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
 
-            if (adminView)
+            if (manageView)
             {
                 NavTree manageViews = new NavTree("Manage Categories");
                 manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
                 menu.addChild(manageViews);
 
+/*
                 String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
                 NavTree deleteViews = new NavTree("Delete Selected");
                 deleteViews.setScript(deleteScript);
                 deleteViews.setDescription("Hold cntl to select more than one record");
                 menu.addChild(deleteViews);
+*/
             }
         }
 
-        if(!adminView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
+        if (manageView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
+        {
+            String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
+            NavTree deleteViews = new NavTree("Delete Selected");
+            deleteViews.setScript(deleteScript);
+            deleteViews.setDescription("Hold cntl to select more than one record");
+            menu.addChild(deleteViews);
+        }
+
+        if(!manageView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
             ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c);
             menu.addChild("Manage Views", url);

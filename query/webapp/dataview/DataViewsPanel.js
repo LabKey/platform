@@ -247,7 +247,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initComponent : function() {
 
         this.customMode = false;
-        this.editMode = this.adminView;
+        this.editMode = this.manageView;
         this.searchVal = "";
         this._height = null;
 
@@ -269,7 +269,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.deleteTpl = new Ext4.XTemplate(
             '<div><span>Are you shure you want to delete the selected view(s)?</span></div><br/>' +
             '<tpl for=".">' +
+                '<tpl if="data.type">' +
                 '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+                '</tpl>' +
             '</tpl>');
 
         // delete unsupported template
@@ -309,7 +311,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 pageId      : this.pageId,
                 index       : this.index,
                 returnUrl   : this.returnUrl,
-                adminView   : this.adminView
+                manageView  : this.manageView
             },
             reader : 'json'
         };
@@ -435,7 +437,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             includeData : false,
             pageId : this.pageId,
             index  : this.index,
-            adminView : this.adminView
+            manageView : this.manageView
         };
 
         Ext4.Ajax.request({
@@ -550,7 +552,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             cls      : 'iScroll', // webkit custom scroll bars
             scroll   : 'vertical',
             columns  : this.initGridColumns(visibleColumns),
-            multiSelect: this.adminView,
+            multiSelect: this.manageView,
             region   : 'center',
             viewConfig : {
                 stripeRows : true,
@@ -632,7 +634,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 scope : this
             },
-            hidden   : !this.adminView,
+            hidden   : !this.manageView,
             scope    : this
         },{
             xtype    : 'treecolumn',
@@ -877,8 +879,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             }
 
-            // custom/edit modes will show hidden
-            if (this.customMode || this.editMode) { return answer; }
+            // custom/edit modes will show hidden, if in manageViews, show hidden if the user is an administrator
+            if ((this.customMode || this.editMode) && this.allowCustomize) { return answer; }
 
             // otherwise never show hidden records
             if (!rec.data.visible) { return false; }
@@ -965,10 +967,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 Ext4.each(sel, function(rec){
                     var type = rec.data.dataType;
 
-                    if (!this.editInfo[type] || !this.editInfo[type].actions['delete'])
-                        unsupported.push(rec);
-                    else
-                        viewsToDelete.push({id : rec.data.id, dataType : rec.data.dataType});
+                    if (type) {
+                        if (!this.editInfo[type] || !this.editInfo[type].actions['delete'])
+                            unsupported.push(rec);
+                        else
+                            viewsToDelete.push({id : rec.data.id, dataType : rec.data.dataType});
+                    }
 
                 }, this);
 
@@ -981,7 +985,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         icon    : Ext4.MessageBox.INFO
                     });
                 }
-                else {
+                else if (viewsToDelete.length > 0) {
 
                     Ext4.Msg.show({
                         title   : 'Delete Views',
@@ -1239,9 +1243,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             editWindow.getEl().unmask();
                             editWindow.close();
                         },
-                        failure : function(response) {
+                        failure : function(form, action, a) {
                             editWindow.getEl().unmask();
-                            Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                            LABKEY.Utils.displayAjaxErrorResponse(action.response ? action.response : action);
                         },
                         scope : this
                     });
@@ -1315,7 +1319,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     category    : editInfo['category'],
                     description : editInfo['description'],
                     type        : true,
-                    visible     : editInfo['visible'],
+                    visible     : editInfo['visible'] && !this.manageView,
                     created     : true,
                     shared      : editInfo['shared'],
                     modified    : true,
@@ -1349,7 +1353,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var tpl = new Ext4.XTemplate(
             '<a data-qtip="Click to customize the permissions for this view" href="{accessUrl}">{access}</a>');
 
-        if (this.adminView && rec.data.access && rec.data.accessUrl)
+        if (this.manageView && rec.data.access && rec.data.accessUrl)
             return tpl.apply(rec.data);
         else
             return value;
