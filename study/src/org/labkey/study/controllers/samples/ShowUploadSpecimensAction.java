@@ -91,6 +91,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("SequenceNum", SimpleSpecimenImporter.VISIT);
         columnAliases.put("Sequence Num", SimpleSpecimenImporter.VISIT);
         columnAliases.put("Visit", SimpleSpecimenImporter.VISIT);
+        columnAliases.put("Timepoint Number", SimpleSpecimenImporter.VISIT);
         columnAliases.put("specimenNumber", SimpleSpecimenImporter.SAMPLE_ID);
         columnAliases.put("specimen Number", SimpleSpecimenImporter.SAMPLE_ID);
         columnAliases.put("totalVolume", SimpleSpecimenImporter.VOLUME);
