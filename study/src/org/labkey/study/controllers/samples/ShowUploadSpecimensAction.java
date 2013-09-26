@@ -86,6 +86,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Participant Id", SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put("Participant", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("SequenceNum", SimpleSpecimenImporter.VISIT);
         columnAliases.put("Sequence Num", SimpleSpecimenImporter.VISIT);
@@ -108,8 +109,11 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("Draw Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("draw Timestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
+        columnAliases.put("Vial Id", SimpleSpecimenImporter.VIAL_ID);
         columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
         columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);
+        columnAliases.put("Units", SimpleSpecimenImporter.UNITS);
+        columnAliases.put("Specimen Type", SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE);
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String, String> labels = new HashMap<>();

@@ -248,12 +248,6 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        // TODO: Delete this block
-//        Map<String, Iterable<Map<String, Object>>> inputs = new HashMap<>();
-//        inputs.put("specimens", specimenRows);
-//        for (LookupTable lookupTable : lookupTables.values())
-//            inputs.put(lookupTable.getTsvName(), lookupTable.toMaps());
-
         SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(container);
         Map<SpecimenTableType, SpecimenImportFile> sifMap = new EnumMap<>(SpecimenTableType.class);
         addSpecimenImportFile(sifMap, SpecimenTableType.Specimens, specimenRows, strategy);
