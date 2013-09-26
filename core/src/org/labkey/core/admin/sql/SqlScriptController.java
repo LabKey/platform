@@ -641,10 +641,6 @@ public class SqlScriptController extends SpringActionController
             html.append("    <tr><td>The following SQL scripts will never execute, because another script has the same" +
                     " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
-            html.append("    <tr><td>Note that after moving or deleting a script from the source directory you may also want " +
-                    "to delete it from the deploy directory (e.g., /labkey/build/deploy/modules/&lt;name&gt;/schemas/dbscripts/&lt;database&gt;) " +
-                    "as well so it stops appearing here.</td></tr>\n");
-            html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
 
             html.append("  <table>\n");

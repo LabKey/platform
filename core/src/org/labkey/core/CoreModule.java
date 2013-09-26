@@ -843,20 +843,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         List<File> resources = super.getResourceDirectories();
 
-        String root = AppProps.getInstance().getProjectRoot();
-        if (root != null)
-        {
-            resources.add(new File(root + "/server/api"));
-            resources.add(new File(root + "/server/internal"));
-            if (AppProps.getInstance().isDevMode())
-            {
-                resources.add(new File(root + "/server/api/src"));
-                resources.add(new File(root + "/server/internal/src"));
-
-                resources.add(new File(root + "/build/modules/api"));
-                resources.add(new File(root + "/build/modules/internal"));
-            }
-        }
+// I don't think we load any resources from these directories...
+//        String root = AppProps.getInstance().getProjectRoot();
+//        if (root != null)
+//        {
+//            resources.add(new File(root + "/server/api"));
+//            resources.add(new File(root + "/server/internal"));
+//            if (AppProps.getInstance().isDevMode())
+//            {
+//                resources.add(new File(root + "/server/api/src"));
+//                resources.add(new File(root + "/server/internal/src"));
+//
+//                resources.add(new File(root + "/build/modules/api"));
+//                resources.add(new File(root + "/build/modules/internal"));
+//            }
+//        }
 
         return resources;
     }

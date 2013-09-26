@@ -13,12 +13,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
-import java.io.IOException;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,17 +51,10 @@ public class DescriptorCache
         {
             _etlModules.add(module);
 
-            try
-            {
-                // TODO: Dev mode only?
-                // TODO: Integrate this better with Resource
-                ((MergedDirectoryResource)etlsDir).registerListener(WATCHER, new EtlDirectoryListener(module),
-                        StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            // TODO: Dev mode only?
+            // TODO: Integrate this better with Resource
+            ((MergedDirectoryResource)etlsDir).registerListener(WATCHER, new EtlDirectoryListener(module),
+                    StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
         }
     }
 
