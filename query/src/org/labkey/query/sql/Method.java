@@ -184,8 +184,10 @@ public abstract class
                 super.validate(fn, args, parseErrors, parseWarnings);
                 if (args.size() != 1)
                     return;
+                int line = args.get(0).getLine();
+                int column = args.get(0).getColumn();
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
-                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, line, column));
 
                 String className = "";
                 String propertyName = "";
@@ -195,30 +197,27 @@ public abstract class
                     int dot = param.lastIndexOf('.');
                     if (dot < 0)
                     {
-                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() parameter should be valid class name '.' field: " + param, null, args.get(0).getLine(), args.get(0).getColumn()));
+                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() parameter should be valid class name '.' field: " + param, null, line, column));
                         return;
                     }
                     className = param.substring(0,dot);
-                    propertyName = param.substring(dot+1);
-
-                    className = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    propertyName = param.substring(dot + 1);
                     Class cls = Class.forName(className);
-                    propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
                     Field f = cls.getField(propertyName);
                     if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, line, column));
                     else if (null == JdbcType.valueOf(f.getType()))
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field type is not supported: " + f.getType().getName(), null, args.get(1).getLine(), args.get(1).getColumn()));
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field type is not supported: " + f.getType().getName(), null, line, column));
                     else if (!f.isAnnotationPresent(Queryable.class) && cls.getPackage() != java.lang.Object.class.getPackage())
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not queryable: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not queryable: " + propertyName, null, line, column));
                 }
                 catch (ClassNotFoundException e)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() class not found: " + className, null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() class not found: " + className, null, line, column));
                 }
                 catch (NoSuchFieldException e)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not accessible: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not accessible: " + propertyName, null, line, column));
                 }
             }
 
