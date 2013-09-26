@@ -1245,7 +1245,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         },
                         failure : function(form, action, a) {
                             editWindow.getEl().unmask();
-                            LABKEY.Utils.displayAjaxErrorResponse(action.response ? action.response : action);
+                            LABKEY.Utils.displayAjaxErrorResponse(action.response ? action.response : action, null, false, 'A error occured saving the properties - ');
                         },
                         scope : this
                     });
