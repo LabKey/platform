@@ -29,12 +29,10 @@ import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +51,7 @@ public class ModuleResourceResolver implements Resolver
     private static final boolean DEV_MODE = AppProps.getInstance().isDevMode();
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Module resource resolver watcher");
 
-    // Consider: single static set to track registered listeners?
+    // Consider: single static set to track all registered listeners?
     private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
     private final Module _module;
     private final MergedDirectoryResource _root;
@@ -100,14 +98,7 @@ public class ModuleResourceResolver implements Resolver
         {
             LOG.debug("registering a listener on: " + r.toString());
 
-            try
-            {
-                ((MergedDirectoryResource)r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            ((MergedDirectoryResource)r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
         }
     }
 

@@ -313,7 +313,7 @@ LABKEY.requiresExtJs = LABKEY.requiresExt3;
  * This can be added to any LABKEY page in order to load ExtJS 4.  This is the preferred method to declare Ext4 usage
  * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
  * <p>
- * NOTE: It is important to place this line in a separate script block the your code.  For example:
+ * NOTE: It is important to place this line in a separate script block in your code.  For example:
  * @example
 &lt;script type="text/javascript"&gt;
     LABKEY.requiresExt4Sandbox();

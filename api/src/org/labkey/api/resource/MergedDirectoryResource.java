@@ -15,14 +15,17 @@
  */
 package org.labkey.api.resource;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Filter;
-import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
@@ -32,10 +35,15 @@ import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * User: kevink
@@ -43,16 +51,67 @@ import java.util.Set;
  */
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
-    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCache(500, CacheManager.DAY, "MergedDirectoryResourceCache");
-    private static final long VERSION_STAMP_CACHE_TIME = AppProps.getInstance().isDevMode() ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT;
+    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(500, CacheManager.DAY, "MergedDirectoryResourceCache", null);
+    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Merged directory resource watcher");
+    private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
     private final List<File> _dirs;
     private final Resource[] _additional;
     private final Pair<Resolver, Path> _cacheKey;
-    private final Object _lock = new Object();
 
-    private long _versionStamp;
-    private long _versionStampTime;
+    private final CacheLoader<Pair<Resolver, Path>, Map<String, Resource>> _loader = new CacheLoader<Pair<Resolver, Path>, Map<String, Resource>>()
+    {
+        @Override
+        public Map<String, Resource> load(Pair<Resolver, Path> key, @Nullable Object argument)
+        {
+            //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: " + ((children == null) ? "null" : "stale") + " cache: " + this);
+            Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
+
+            for (File dir : _dirs)
+            {
+                if (!dir.isDirectory())
+                    continue;
+                File[] files = dir.listFiles();
+                if (files == null)
+                    continue;
+                for (File f : files)
+                {
+                    String name = f.getName();
+                    // Issue 11189: default custom view .qview.xml file is hidden on MacOX or Linux
+                    if (!".qview.xml".equalsIgnoreCase(name) && f.isHidden())
+                        continue;
+//                        if (_resolver.filter(name))
+//                            continue;
+                    if (!map.containsKey(name))
+                        map.put(name, new ArrayList<>(Arrays.asList(f)));
+                    else
+                    {
+                        // only merge directories together
+                        ArrayList<File> existing = map.get(name);
+                        if (existing.get(0).isDirectory() && f.isDirectory())
+                            existing.add(f);
+                    }
+                }
+            }
+
+            Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
+
+            for (Map.Entry<String, ArrayList<File>> e : map.entrySet())
+            {
+                Path path = getPath().append(e.getKey());
+                ArrayList<File> files = e.getValue();
+                Resource r = files.size() == 1 && files.get(0).isFile() ?
+                        new FileResource(path, files.get(0), _resolver) :
+                        new MergedDirectoryResource(_resolver, path, files);
+                children.put(e.getKey(), r);
+            }
+
+            for (Resource r : _additional)
+                children.put(r.getName(), r);
+
+            return Collections.unmodifiableMap(children);
+        }
+    };
 
     // Static method that operates on the shared cache; removes all children associated with this resolver.
     public static void clearResourceCache(final Resolver resolver)
@@ -67,7 +126,6 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         });
     }
 
-
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
         super(path, resolver);
@@ -75,6 +133,12 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         _dirs = dirs;
         _additional = children;
         _cacheKey = new Pair<>(_resolver, getPath());
+
+        if (!KEYS_WITH_LISTENERS.contains(_cacheKey))
+        {
+            registerListener(WATCHER, new MergedDirectoryResourceListener(), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            KEYS_WITH_LISTENERS.add(_cacheKey);
+        }
     }
 
     private boolean validateDirs(List<File> dirs)
@@ -95,69 +159,18 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     private Map<String, Resource> getChildren()
     {
-        synchronized (_lock)
-        {
-            Map<String, Resource> children = CHILDREN_CACHE.get(_cacheKey);
-
-            // Check isStale() first to establish the versionStamp the first time through.
-            if (isStale() || null == children)
-            {
-                //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: " + ((children == null) ? "null" : "stale") + " cache: " + this);
-                Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
-
-                for (File dir : _dirs)
-                {
-                    if (!dir.isDirectory())
-                        continue;
-                    File[] files = dir.listFiles();
-                    if (files == null)
-                        continue;
-                    for (File f : files)
-                    {
-                        String name = f.getName();
-                        // Issue 11189: default custom view .qview.xml file is hidden on MacOX or Linux
-                        if (!".qview.xml".equalsIgnoreCase(name) && f.isHidden())
-                            continue;
-//                        if (_resolver.filter(name))
-//                            continue;
-                        if (!map.containsKey(name))
-                            map.put(name, new ArrayList<>(Arrays.asList(f)));
-                        else
-                        {
-                            // only merge directories together
-                            ArrayList<File> existing = map.get(name);
-                            if (existing.get(0).isDirectory() && f.isDirectory())
-                                existing.add(f);
-                        }
-                    }
-                }
-
-                children = new CaseInsensitiveTreeMap<>();
-
-                for (Map.Entry<String, ArrayList<File>> e : map.entrySet())
-                {
-                    Path path = getPath().append(e.getKey());
-                    ArrayList<File> files = e.getValue();
-                    Resource r = files.size() == 1 && files.get(0).isFile() ?
-                            new FileResource(path, files.get(0), _resolver) :
-                            new MergedDirectoryResource(_resolver, path, files);
-                    children.put(e.getKey(), r);
-                }
-
-                for (Resource r : _additional)
-                    children.put(r.getName(), r);
-
-                CHILDREN_CACHE.put(_cacheKey, children);
-            }
-
-            return children;
-        }
+        return CHILDREN_CACHE.get(_cacheKey, null, _loader);
     }
 
     public Collection<Resource> list()
     {
         Map<String, Resource> children = getChildren();
         return new ArrayList<>(children.values());
+    }
+
+    public void clearChildren()
+    {
+        CHILDREN_CACHE.remove(_cacheKey);
     }
 
     public boolean exists()
@@ -180,42 +193,49 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         return new ArrayList<>(getChildren().keySet());
     }
 
-    protected boolean isStale()
+    private class MergedDirectoryResourceListener implements FileSystemDirectoryListener
     {
-        return _versionStamp != getVersionStamp();
-    }
-
-    public long getVersionStamp()
-    {
-        // To not hit the disk too often, wait a minimum amount of time before getting the lastModified time.
-        if (_dirs != null && HeartBeat.currentTimeMillis() > _versionStampTime + VERSION_STAMP_CACHE_TIME)
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: checking timestamps: " + this);
-            long version = 0;
-            for (File d : _dirs)
-                version += d.lastModified();
-
-            _versionStampTime = HeartBeat.currentTimeMillis();
-            _versionStamp = version;
+            clearChildren();
         }
 
-        return _versionStamp;
-    }
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            clearChildren();
+        }
 
-    public long getLastModified()
-    {
-        return exists() ? _dirs.get(0).lastModified() : Long.MIN_VALUE;
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            clearChildren();
+        }
+
+        @Override
+        public void overflow()
+        {
+            clearChildren();
+        }
     }
 
     // Listen for events in all directories associated with this resource  TODO: This is just a test... final impl will change
     @SafeVarargs
-    public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events) throws IOException
+    public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
     {
         if (isCollection())
         {
             for (File dir : _dirs)
             {
-                watcher.addListener(dir.toPath(), listener, events);
+                try
+                {
+                    watcher.addListener(dir.toPath(), listener, events);
+                }
+                catch (IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
             }
         }
     }

@@ -176,7 +176,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
 
-        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
+//        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
 
@@ -1081,40 +1081,57 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected List<File> getResourceDirectories()
     {
         Set<File> dirs = new LinkedHashSet<>(3);
-        String build = getBuildPath();
-        File exploded = getExplodedPath();
-        String source = getSourcePath();
 
         if (AppProps.getInstance().isDevMode())
         {
-            if (null != source)
+            String sourcePath = getSourcePath();
+
+            if (null != sourcePath)
             {
-                File f = new File(source);
+                File sourceDir = new File(sourcePath);
 
-                if (f.isDirectory())
+                if (sourceDir.isDirectory())
                 {
-                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
+                    File resourcesDir = new File(new File(sourcePath), "resources");
 
-                    f = new File(new File(source), "resources");
-                    if (f.isDirectory())
-                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
+                    // If we have a "resources" directory then we assume a Java module layout (which includes a "src" directory)
+                    // If not, we're a simple modules with individual, top-level resource directories
+                    if (resourcesDir.isDirectory())
+                    {
+                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir));
 
-                    f = new File(new File(source), "src");
+                        File srcDir = new File(new File(sourcePath), "src");
+
+                        if (srcDir.isDirectory())
+                            dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(srcDir));
+                    }
+                    else
+                    {
+                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(sourceDir));
+                    }
+                }
+            }
+            else
+            {
+                String build = getBuildPath();
+
+                if (null != build)
+                {
+                    File f = new File(build);
                     if (f.isDirectory())
                         dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
                 }
             }
-            else if (null != build)
-            {
-                File f = new File(build);
-                if (f.isDirectory())
-                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
-            }
         }
 
-        if (dirs.isEmpty() && exploded != null && exploded.isDirectory())
+        if (dirs.isEmpty())
         {
-            dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
+            File exploded = getExplodedPath();
+
+            if (exploded != null && exploded.isDirectory())
+            {
+                dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
+            }
         }
 
         return new LinkedList<>(dirs);

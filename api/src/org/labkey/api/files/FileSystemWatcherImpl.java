@@ -52,7 +52,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         WatchKey watchKey = directory.register(_watcher, events);
         FileSystemDirectoryListener previous = _listeners.put(watchKey, listener);
 
-        assert null == previous : "Another listener is already registered with that WatchKey";
+        LOG.debug(_name + " registered a listener on " + directory.toString());
+
+        if (null != previous)
+            assert false : "Another listener is already registered with WatchKey " + watchKey.toString();
     }
 
     public void removeListener(Path directory)
@@ -92,11 +95,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
                             if (OVERFLOW == kind)
                             {
+                                LOG.info("Overflow! File system watcher events may have been lost.");
                                 listener.overflow();
                             }
                             else
                             {
                                 Path entry = event.context();
+                                LOG.debug(kind.name() + " event on " + watchedPath.resolve(entry));
 
                                 if (ENTRY_CREATE == kind)
                                     listener.entryCreated(watchedPath, entry);
@@ -133,6 +138,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
+            LOG.info(_name + " has been told to shutdown");
             _continue = false;
             close();
         }
