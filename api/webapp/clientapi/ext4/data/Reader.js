@@ -26,7 +26,7 @@ Ext4.define('LABKEY.ext4.data.JsonReader', {
         this.addEvents('dataload');
     },
     readRecords: function(data) {
-        if(data.metaData){
+        if (data.metaData){
             // NOTE: normalize which field holds the PK.  this is a little unfortunate b/c ext will automatically create this field if it doesnt exist,
             // such as a query w/o a PK.  therefore we fall back to a standard name, which we can ignore when drawing grids
             this.idProperty = data.metaData.id || this.idProperty || '_internalId';
@@ -40,11 +40,14 @@ Ext4.define('LABKEY.ext4.data.JsonReader', {
             //for example, columns w/ lookups could actually reference their target
             //we could add methods like getDisplayString(), which accept the ext record and return the appropriate display string
             Ext4.each(data.metaData.fields, function(meta){
-                if(meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
+                if (meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
                     meta.useNull = true;  //prevents Ext from assigning 0's to field when record created
 
+                if (meta.jsonType == 'string')
+                    meta.sortType = 'asUCString';
+
                 //convert string into function
-                if(meta.extFormatFn){
+                if (meta.extFormatFn){
                     try {
                         meta.extFormatFn = eval(meta.extFormatFn);
                     }
@@ -68,6 +71,11 @@ Ext4.define('LABKEY.ext4.data.JsonReader', {
         this.fireEvent('datachange', meta);
 
         this.callParent(arguments);
+
+        //NOTE: Ext.data.Model.onFieldAddReplace() would normally reset the idField; however, we usually end up changing the idProperty since it was not known at time of store creation
+        if (this.model){
+            this.model.prototype.idField = this.model.prototype.fields.get(this.model.prototype.idProperty);
+        }
     },
 
     /*

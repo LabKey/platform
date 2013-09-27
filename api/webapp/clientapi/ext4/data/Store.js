@@ -69,8 +69,9 @@
 Ext4.define('LABKEY.ext4.data.Store', {
 
     extend: 'Ext.data.Store',
-//    alternateClassName: 'LABKEY.ext4.Store',
-    alias: 'store.labkeystore',
+    alternateClassName: 'LABKEY.ext4.Store',
+
+    alias: ['store.labkeystore', 'store.labkey-store'],
 
     //the page size defaults to 25, which can give odd behavior for combos or other applications.
     //applications that want to use paging should modify this.
@@ -88,16 +89,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
         //specify an empty fields array instead of a model.  the reader will creates a model later
         this.fields = [];
 
-        this.proxy = {
-            type: 'labkeyajax',
-            store: this,
-            timeout: this.timeout,
-            listeners: {
-                scope: this,
-                exception: this.onProxyException
-            },
-            extraParams: baseParams
-        };
+        this.proxy = this.getProxyConfig();
 
         //see note below
         var autoLoad = config.autoLoad;
@@ -153,9 +145,23 @@ Ext4.define('LABKEY.ext4.data.Store', {
          */
         this.addEvents('beforemetachange', 'exception', 'synccomplete');
     },
+
     //private
+    getProxyConfig: function(){
+        return {
+            type: 'labkeyajax',
+            store: this,
+            timeout: this.timeout,
+            listeners: {
+                scope: this,
+                exception: this.onProxyException
+            },
+            extraParams: this.generateBaseParams()
+        }
+    },
+
     generateBaseParams: function(config){
-        if(config)
+        if (config)
             this.initialConfig = Ext4.apply({}, config);
 
         config = config || this;
@@ -173,15 +179,15 @@ Ext4.define('LABKEY.ext4.data.Store', {
             baseParams['containerFilter'] = config.containerFilter;
         }
 
-        if(config.ignoreFilter)
+        if (config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
 
-        if(Ext4.isDefined(config.maxRows)){
+        if (Ext4.isDefined(config.maxRows)){
             baseParams['query.maxRows'] = config.maxRows;
-            if(config.maxRows < this.pageSize)
+            if (config.maxRows < this.pageSize)
                 this.pageSize = config.maxRows;
 
-            if(config.maxRows === 0)
+            if (config.maxRows === 0)
                 this.pageSize = 0;
         }
 
@@ -197,15 +203,15 @@ Ext4.define('LABKEY.ext4.data.Store', {
         if (config.containerPath)
             baseParams.containerPath = config.containerPath;
 
-        if(config.pageSize && config.maxRows !== 0 && this.maxRows !== 0)
+        if (config.pageSize && config.maxRows !== 0 && this.maxRows !== 0)
             baseParams['limit'] = config.pageSize;
 
         //NOTE: sort() is a method in the store.  it's awkward to support a param, but we do it since selectRows() uses it
-        if(this.initialConfig && this.initialConfig.sort)
+        if (this.initialConfig && this.initialConfig.sort)
             baseParams['query.sort'] = this.initialConfig.sort;
         delete config.sort; //important...otherwise the native sort() method is overridden
 
-        if(config.sql){
+        if (config.sql){
             baseParams.sql = config.sql;
             this.updatable = false;
         }
@@ -223,18 +229,18 @@ Ext4.define('LABKEY.ext4.data.Store', {
     onReaderLoad: function(meta){
         //this.model.prototype.idProperty = this.proxy.reader.idProperty;
 
-        if(meta.fields && meta.fields.length){
+        if (meta.fields && meta.fields.length){
             var fields = [];
             Ext4.each(meta.fields, function(f){
                 this.translateMetadata(f);
 
-                if(this.metadataDefaults){
+                if (this.metadataDefaults){
                     Ext4.Object.merge(f, this.metadataDefaults);
                 }
 
-                if(this.metadata){
+                if (this.metadata){
                     //allow more complex metadata, per field
-                    if(this.metadata[f.name]){
+                    if (this.metadata[f.name]){
                         Ext4.Object.merge(f, this.metadata[f.name]);
                     }
                 }
@@ -246,16 +252,16 @@ Ext4.define('LABKEY.ext4.data.Store', {
                 this.queryTitle = meta.title;
 
             //allow mechanism to add new fields via metadata
-            if(this.metadata){
+            if (this.metadata){
                 var field;
                 for (var i in this.metadata){
                     field = this.metadata[i];
                     //TODO: we should investigate how convert() works and probably use this instead
-                    if(field.createIfDoesNotExist && Ext4.Array.indexOf(i)==-1){
+                    if (field.createIfDoesNotExist && Ext4.Array.indexOf(i)==-1){
                         field.name = field.name || i;
                         field.notFromServer = true;
                         this.translateMetadata(field);
-                        if(this.metadataDefaults)
+                        if (this.metadataDefaults)
                             Ext4.Object.merge(field, this.metadataDefaults);
 
                         meta.fields.push(Ext4.apply({}, field));
@@ -301,12 +307,12 @@ Ext4.define('LABKEY.ext4.data.Store', {
     sync: function(){
         this.generateBaseParams();
 
-        if(!this.updatable){
+        if (!this.updatable){
             alert('This store is not updatable');
             return;
         }
 
-        if(!this.syncNeeded()){
+        if (!this.syncNeeded()){
             this.fireEvent('synccomplete', this);
             return;
         }
@@ -319,7 +325,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
     update: function(){
         this.generateBaseParams();
 
-        if(!this.updatable){
+        if (!this.updatable){
             alert('This store is not updatable');
             return;
         }
@@ -330,7 +336,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
     create: function(){
         this.generateBaseParams();
 
-        if(!this.updatable){
+        if (!this.updatable){
             alert('This store is not updatable');
             return;
         }
@@ -341,7 +347,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
     destroy: function(){
         this.generateBaseParams();
 
-        if(!this.updatable){
+        if (!this.updatable){
             alert('This store is not updatable');
             return;
         }
@@ -358,7 +364,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
      */
     getCanonicalFieldName: function(fieldName){
         var fields = this.getFields();
-        if(fields.get(fieldName)){
+        if (fields.get(fieldName)){
             return fieldName;
         }
 
@@ -367,13 +373,13 @@ Ext4.define('LABKEY.ext4.data.Store', {
         var properties = ['name', 'fieldKeyPath'];
         Ext4.each(properties, function(prop){
             fields.each(function(field){
-                if(field[prop].toLowerCase() == fieldName.toLowerCase()){
+                if (field[prop].toLowerCase() == fieldName.toLowerCase()){
                     name = field.name;
                     return false;
                 }
             });
 
-            if(name)
+            if (name)
                 return false;  //abort the loop
         }, this);
 
@@ -385,7 +391,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
     onAdd: function(store, records, idx, opts){
         var val, record;
         this.getFields().each(function(meta){
-            if(meta.getInitialValue){
+            if (meta.getInitialValue){
                 for (var i=0;i<records.length;i++){
                     record = records[i];
                     val = meta.getInitialValue(record.get(meta.name), record, meta);
@@ -397,7 +403,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
 
     //private
     onBeforeLoad: function(operation){
-        if(this.sql){
+        if (this.sql){
             operation.sql = this.sql;
         }
         this.proxy.containerPath = this.containerPath;
@@ -407,21 +413,21 @@ Ext4.define('LABKEY.ext4.data.Store', {
     //private
     //NOTE: maybe this should be a plugin to combos??
     onLoad : function(store, records, success) {
-        if(!success)
+        if (!success)
             return;
         //the intent is to let the client set default values for created fields
         var toUpdate = [];
         this.getFields().each(function(f){
-            if(f.setValueOnLoad && (f.getInitialValue || f.defaultValue))
+            if (f.setValueOnLoad && (f.getInitialValue || f.defaultValue))
                 toUpdate.push(f);
         }, this);
-        if(toUpdate.length){
+        if (toUpdate.length){
             var allRecords = this.getRange();
             for (var i=0;i<allRecords.length;i++){
                 var rec = allRecords[i];
                 for (var j=0;j<toUpdate.length;j++){
                     var meta = toUpdate[j];
-                    if(meta.getInitialValue)
+                    if (meta.getInitialValue)
                         rec.set(meta.name, meta.getInitialValue(rec.get(meta.name), rec, meta));
                     else if (meta.defaultValue && !rec.get(meta.name))
                         rec.set(meta.name, meta.defaultValue)
@@ -460,11 +466,11 @@ Ext4.define('LABKEY.ext4.data.Store', {
         var row;
         var record;
         var index;
-        for(var idx = 0; idx < rows.length; ++idx)
+        for (var idx = 0; idx < rows.length; ++idx)
         {
             row = rows[idx];
 
-            if(!row || !row.values)
+            if (!row || !row.values)
                 return;
 
             //find the record using the id sent to the server
@@ -474,21 +480,21 @@ Ext4.define('LABKEY.ext4.data.Store', {
             //we defer to snapshot, since this will contain all records, even if the store is filtered
             record = (this.snapshot || this.data).get(row.oldKeys['_internalId']);
 
-            if(!record)
+            if (!record)
                 return;
 
             //apply values from the result row to the sent record
-            for(var col in record.data)
+            for (var col in record.data)
             {
                 //since the sent record might contain columns form a related table,
                 //ensure that a value was actually returned for that column before trying to set it
-                if(undefined !== row.values[col]){
+                if (undefined !== row.values[col]){
                     var x = record.fields.get(col);
                     record.set(col, record.fields.get(col).convert(row.values[col], row.values));
                 }
 
                 //clear any displayValue there might be in the extended info
-                if(record.json && record.json[col])
+                if (record.json && record.json[col])
                     delete record.json[col].displayValue;
             }
 
@@ -496,7 +502,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
             //HACK: this is using private data members of the base Store class. Unfortunately
             //Ext Store does not have a public API for updating the key value of a record
             //after it has been added to the store. This might break in future versions of Ext
-            if(record.internalId != row.values[idCol])
+            if (record.internalId != row.values[idCol])
             {
                 record.setId(row.values[idCol]);
                 record.internalId = row.values[idCol];
@@ -527,10 +533,10 @@ Ext4.define('LABKEY.ext4.data.Store', {
     //private
     onSaveRows: function(operation, success){
         var json = this.getJson(operation.response);
-        if(!json || !json.result)
+        if (!json || !json.result)
             return;
 
-        for(var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
+        for (var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
         {
             this.processResponse(json.result[commandIdx].rows);
         }
@@ -541,19 +547,19 @@ Ext4.define('LABKEY.ext4.data.Store', {
         var loadError = {message: response.statusText};
         var json = this.getJson(response);
 
-        if(json){
-            if(json && json.exception)
+        if (json){
+            if (json && json.exception)
                 loadError.message = json.exception;
 
             response.errors = json;
 
-            this.validateRecords(json);
+            this.processErrors(json);
         }
 
         this.loadError = loadError;
 
         //TODO: is this the right behavior?
-        if(response && response.status === 200){
+        if (response && (response.status === 200 || response.status == 0)){
             return;
         }
 
@@ -571,32 +577,35 @@ Ext4.define('LABKEY.ext4.data.Store', {
                 messageBody = 'There was an error';
         }
 
-        if(message)
+        if (message)
             messageBody += ' due to the following error:' + "<br>" + message;
         else
             messageBody += ' due to an unexpected error';
 
-        if(false !== this.fireEvent("exception", this, messageBody, response, operation)){
+        if (false !== this.fireEvent("exception", this, messageBody, response, operation)){
 
-            if(!this.supressErrorAlert)
+            if (!this.supressErrorAlert)
                 Ext4.Msg.alert("Error", messageBody);
 
             console.log(response);
         }
     },
 
-    validateRecords: function(errors){
-        Ext4.each(errors.errors, function(error){
-            //the error object for 1 row:
-            if(Ext4.isDefined(error.rowNumber)){
-                var record = this.getAt(error.rowNumber);
+    processErrors: function(json){
+        Ext4.each(json.errors, function(error){
+            //the error object for 1 row.  1-based row numbering
+            if (Ext4.isDefined(error.rowNumber)){
+                var record = this.getAt(error.rowNumber - 1);
+                if (!record)
+                    return;
+
                 record.serverErrors = {};
 
                 Ext4.each(error.errors, function(e){
-                    if(!record.serverErrors[e.field])
+                    if (!record.serverErrors[e.field])
                         record.serverErrors[e.field] = [];
 
-                    if(record.serverErrors[e.field].indexOf(e.message) == -1)
+                    if (record.serverErrors[e.field].indexOf(e.message) == -1)
                         record.serverErrors[e.field].push(e.message);
                 }, this);
             }
@@ -608,9 +617,9 @@ Ext4.define('LABKEY.ext4.data.Store', {
     // They provide the display value and information used in Missing value indicators
     // They are used by the Ext grid when rendering or creating a tooltip.  They are deleted here prsumably b/c if the value
     // is changed then we cannot count on them being accurate
-    onUpdate : function(store, record, operation) {
-        for(var field  in record.getChanges()){
-            if(record.raw && record.raw[field]){
+    onStoreUpdate : function(store, record, operation) {
+        for (var field  in record.getChanges()){
+            if (record.raw && record.raw[field]){
                 delete record.raw[field].displayValue;
                 delete record.raw[field].mvValue;
             }
@@ -698,7 +707,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
      */
     findFieldMetadata : function(fieldName){
         var fields = this.getFields();
-        if(!fields)
+        if (!fields)
             return null;
 
         return fields.get(fieldName);

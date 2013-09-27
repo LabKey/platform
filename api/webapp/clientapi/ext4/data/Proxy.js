@@ -120,7 +120,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
         }
 
         //this is added compared to Ext 4.1
-        if(commands.length){
+        if (commands.length){
             var request = Ext4.create('Ext.data.Request', {
                 action: 'saveRows',
                 url: LABKEY.ActionURL.buildURL("query", 'saveRows', this.extraParams.containerPath),
@@ -149,7 +149,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
             records: records
         });
 
-        if(action == 'read'){
+        if (action == 'read'){
             batch.add(operation);
         }
         else {
@@ -161,7 +161,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
      * @Override Ext.data.proxy.Server (4.1.0)
      */
     buildRequest: function(operation) {
-        if(this.extraParams.sql){
+        if (this.extraParams.sql){
             this.api.read = "executeSql.api";
         }
         else {
@@ -179,7 +179,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
         request.jsonData.commands = request.jsonData.commands || [];
 
         var command = this.buildCommand(operation);
-        if(command && command.rows.length){
+        if (command && command.rows.length){
             request.jsonData.commands.push(command);
         }
 
@@ -188,7 +188,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
 
     //does not override an Ext method - used internally
     buildCommand: function(operation){
-        if(operation.action!='read'){
+        if (operation.action!='read'){
             var command = {
                 schemaName: this.extraParams.schemaName,
                 queryName: this.extraParams['query.queryName'],
@@ -201,7 +201,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
                 }
             };
 
-            if(operation.action=='create')
+            if (operation.action=='create')
                 command.command = "insertWithKeys";
             else if (operation.action=='update')
                 command.command = "updateChangingKeys";
@@ -211,10 +211,18 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
             for (var i=0;i<operation.records.length;i++){
                 var record = operation.records[i];
                 var oldKeys = {};
-                oldKeys[this.reader.getIdProperty()] = record.getId();
+
+                //NOTE: if the PK of this table is editable (like a string), then we need to submit
+                //this record using the unmodified value as the PK
+                var id = record.getId();
+                if (record.modified && !Ext4.isEmpty(record.modified[this.reader.getIdProperty()])){
+                    id = record.modified[this.reader.getIdProperty()];
+                }
+
+                oldKeys[this.reader.getIdProperty()] = id;
                 oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
 
-                if(command.command == 'delete'){
+                if (command.command == 'delete'){
                     command.rows.push(this.getRowData(record));
                 }
                 else {
@@ -242,9 +250,9 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
         //convert empty strings to null before posting
         var data = {};
         Ext4.apply(data, record.data);
-        for(var field in data)
+        for (var field in data)
         {
-            if(Ext4.isEmpty(data[field]))
+            if (Ext4.isEmpty(data[field]))
                 data[field] = null;
         }
         return data;
@@ -258,7 +266,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
 
         //this is a little funny.  Ext expects to encode filters into a filter 'filter' param.
         //if present, we split it apart here.
-        if(params.filter && params.filter.length){
+        if (params.filter && params.filter.length){
             var val;
             Ext4.each(params.filter, function(f){
                 val = f.split('=');
@@ -301,9 +309,9 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
      */
     encodeFilters: function(filters){
         var result = [];
-        if(filters && filters.length){
+        if (filters && filters.length){
             Ext4.each(filters, function(filter){
-                if(filter.filterType)
+                if (filter.filterType)
                     result.push(Ext4.htmlEncode('query.' + filter.property + '~' + filter.filterType.getURLSuffix()) + '=' + Ext4.htmlEncode(filter.value));
             }, this);
         }

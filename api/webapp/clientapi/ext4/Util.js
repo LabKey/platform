@@ -78,9 +78,8 @@
             }
 
             if (qtip.length) {
-                //ext3
-                config.cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
-                //ext4
+                qtip = Ext4.Array.unique(qtip);
+                config.cellMetaData.tdAttr = config.cellMetaData.tdAttr || '';
                 config.cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
             }
         },
@@ -296,6 +295,7 @@
                 width            : meta.width,
                 height           : meta.height,
                 msgTarget        : 'qtip',
+                tabIndex         : 1,   //NOTE: if tabIndex is set, tabbing through forms will work correctly
                 validateOnChange : true
             };
 
@@ -316,7 +316,7 @@
             else if (meta.editable === false) {
                 field.xtype = 'displayfield';
             }
-            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false) {
+            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false && meta.facetingBehaviorType != 'ALWAYS_OFF') {
                 var l = meta.lookup;
 
                 //test whether the store has been created.  create if necessary
@@ -452,8 +452,11 @@
                     cellStyles.push('white-space:normal !important');
                 }
 
-                if(record && record.errors && record.errors.length){
-                    tdCls.push('labkey-grid-cell-invalid');
+
+                if (!record.isValid()){
+                    var errs = record.validate().getByField(meta.name);
+                    if (errs.length)
+                        tdCls.push('labkey-grid-cell-invalid');
                 }
 
                 if ((meta.allowBlank === false || meta.nullable === false) && Ext4.isEmpty(value)){
@@ -514,10 +517,13 @@
 
             //NOTE: this is substantially changed over LABKEY.ext.FormHelper
             if(meta.lookup && meta.lookup['public'] !== false && meta.lookups!==false){
-                displayValue = Util.getLookupDisplayValue(meta, displayValue, record, store);
-                meta.usingLookup = true;
-                shouldCache = false;
-                displayType = 'string';
+                //dont both w/ special renderer if the raw value is the same as the displayColumn
+                if (meta.lookup.keyColumn != meta.lookup.displayColumn){
+                    displayValue = Util.getLookupDisplayValue(meta, displayValue, record, store);
+                    meta.usingLookup = true;
+                    shouldCache = false;
+                    displayType = 'string';
+                }
             }
 
             if(meta.extFormatFn && Ext4.isFunction(meta.extFormatFn)){

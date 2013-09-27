@@ -423,9 +423,13 @@ LABKEY.requiresExt4ClientAPI = function(immediate)
     //for now we assume this is only dev mode
     LABKEY.requiresExt4Sandbox(immediate);
 
+    LABKEY.requiresScript("clientapi/ext4/Util.js", immediate);
+    LABKEY.requiresScript("clientapi/ext4/data/Reader.js", immediate);
+    LABKEY.requiresScript("clientapi/ext4/data/Proxy.js", immediate);
+    LABKEY.requiresScript("clientapi/ext4/data/Store.js", immediate);
+
     //load individual scripts so that they get loaded from source tree
     LABKEY.requiresScript("extWidgets/Ext4Helper.js", immediate);
-    LABKEY.requiresScript("extWidgets/Ext4Store.js", immediate);
     LABKEY.requiresScript("extWidgets/LabkeyCombo.js", immediate);
     LABKEY.requiresScript("extWidgets/ExtComponents.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4FormPanel.js", immediate);
