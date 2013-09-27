@@ -213,10 +213,9 @@ if (!pipelineSet)
                     var data = Ext4.JSON.decode(response.responseText);
                     Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                 },
-                failure : function(response)
+                failure : function(response, opts)
                 {
-                    var data = Ext4.JSON.decode(response.responseText);
-                    Ext4.Msg.alert("Failed to Delete Rows", data.exception);
+                    LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                 },
                 jsonData : {schemaName : <%=q(schemaName)%>, queryName : <%=q(queryName)%>},
                 headers : {'Content-Type' : 'application/json'},
