@@ -2501,7 +2501,6 @@ query/webapp/dataview/DataViewsPanel.js -text
 query/webapp/dataviews.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
-query/webapp/query/browse.js -text
 query/webapp/query/columnPicker.js -text
 query/webapp/query/columnProperties.gif -text
 query/webapp/query/delete.gif -text
