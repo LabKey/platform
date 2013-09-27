@@ -91,8 +91,8 @@ public interface WorkDirectory
 
     File newWorkFile(Function output, TaskPath taskPath, String baseName);
 
-    public interface CopyingResource
+    public interface CopyingResource extends AutoCloseable
     {
-        public void release();
+        public void close();
     }
 }

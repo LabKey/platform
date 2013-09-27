@@ -89,6 +89,12 @@ public class SimpleModule extends SpringModule
         setName(name);
     }
 
+    @Override
+    public double getVersion()
+    {
+        return super.getVersion();
+    }
+
     protected void init()
     {
         if (getName() == null || getName().length() == 0)
