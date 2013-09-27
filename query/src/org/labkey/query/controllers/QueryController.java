@@ -751,24 +751,23 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(SourceForm form, BindException errors) throws Exception
         {
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            if (null == _queryDef)
+                _queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+            if (null == _queryDef)
+                throw new NotFoundException("Query not found: " + form.getQueryName());
+
             try
             {
-                _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
-
-                if (null == _queryDef)
-                    errors.reject(ERROR_MSG, "Query not found: " + form.getQueryName());
-                else
+                if (form.ff_queryText == null)
                 {
-                    if (form.ff_queryText == null)
-                    {
-                        form.ff_queryText = _queryDef.getSql();
-                        form.ff_metadataText = _queryDef.getMetadataXml();
-                    }
+                    form.ff_queryText = _queryDef.getSql();
+                    form.ff_metadataText = _queryDef.getMetadataXml();
+                }
 
-                    for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
-                    {
-                        errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
-                    }
+                for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
+                {
+                    errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
                 }
             }
             catch (Exception e)
@@ -835,7 +834,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(SourceForm form, BindException errors) throws Exception
         {
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
-
+            if (null == _queryDef)
+                _queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
             if (null == _queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
 
