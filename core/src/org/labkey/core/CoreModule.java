@@ -812,15 +812,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return result;
     }
 
-    @Override
-    public List<String> getAttributions()
-    {
-        return Arrays.asList(
-            "<a href=\"http://www.apache.org\" target=\"top\"><img src=\"http://www.apache.org/images/asf_logo.gif\" alt=\"Apache\" width=\"185\" height=\"50\"></a>",
-            "<a href=\"http://www.springframework.org\" target=\"top\"><img src=\"http://static.springframework.org/images/spring21.png\" alt=\"Spring\" width=\"100\" height=\"48\"></a>"
-        );
-    }
-
     @NotNull
     @Override
     public List<File> getStaticFileDirectories()
@@ -835,31 +826,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
         return dirs;
-    }
-
-    @NotNull
-    @Override
-    protected List<File> getResourceDirectories()
-    {
-        List<File> resources = super.getResourceDirectories();
-
-// I don't think we load any resources from these directories...
-//        String root = AppProps.getInstance().getProjectRoot();
-//        if (root != null)
-//        {
-//            resources.add(new File(root + "/server/api"));
-//            resources.add(new File(root + "/server/internal"));
-//            if (AppProps.getInstance().isDevMode())
-//            {
-//                resources.add(new File(root + "/server/api/src"));
-//                resources.add(new File(root + "/server/internal/src"));
-//
-//                resources.add(new File(root + "/build/modules/api"));
-//                resources.add(new File(root + "/build/modules/internal"));
-//            }
-//        }
-
-        return resources;
     }
 
     @Override

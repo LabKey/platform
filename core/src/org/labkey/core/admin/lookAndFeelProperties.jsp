@@ -58,7 +58,7 @@
 </tr>
 <% } %>
 <tr>
-    <td colspan=2>Customize the look and feel of <%=c.isRoot() ? "your LabKey Server installation" : "the '" + h(c.getProject().getName()) + "' project"%> (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -75,15 +75,15 @@
         <select name="themeName">
             <% for (WebTheme theme : bean.themes)
                 {
-                    String selected;
+                    boolean selected;
 
                     //if a new theme has just been defined
                     if (bean.newTheme != null)
-                        selected = theme == bean.newTheme ? "selected" : "";
+                        selected = theme == bean.newTheme;
                     else
-                        selected = theme == bean.currentTheme ? "selected" : "";
+                        selected = theme == bean.currentTheme;
                     %>
-                    <option value="<%=h(theme.toString())%>" <%=selected%>><%=h(theme.getFriendlyName())%></option>
+                    <option value="<%=h(theme.toString())%>"<%=selected(selected)%>><%=h(theme.getFriendlyName())%></option>
                 <%}
             %>
         </select><%

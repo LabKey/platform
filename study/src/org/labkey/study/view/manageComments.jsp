@@ -110,10 +110,10 @@
                         {
                             if (dataset.isDemographicData())
                             {
-                                String selected = (bean.getParticipantCommentDataSetId() != null &&
-                                        dataset.getDataSetId() == bean.getParticipantCommentDataSetId().intValue() ? "selected" : "");
+                                boolean selected = (bean.getParticipantCommentDataSetId() != null &&
+                                        dataset.getDataSetId() == bean.getParticipantCommentDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                             }
@@ -133,7 +133,7 @@
                             if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE)
                             {
                     %>
-                    <option value="<%= h(pd.getName()) %>" <%= text(pd.getName().equals(bean.getParticipantCommentProperty()) ? "SELECTED" : "") %>>
+                    <option value="<%= h(pd.getName()) %>"<%=selected(pd.getName().equals(bean.getParticipantCommentProperty())) %>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
                     <%
@@ -172,10 +172,10 @@
                         {
                             if (!dataset.isDemographicData())
                             {
-                                String selected = (bean.getParticipantVisitCommentDataSetId() != null &&
-                                        dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId().intValue() ? "selected" : "");
+                                boolean selected = (bean.getParticipantVisitCommentDataSetId() != null &&
+                                        dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                             }
@@ -195,7 +195,7 @@
                             if (pd.getPropertyType() == PropertyType.STRING || pd.getPropertyType() == PropertyType.MULTI_LINE)
                             {
                     %>
-                    <option value="<%= h(pd.getName()) %>" <%= text(pd.getName().equals(bean.getParticipantVisitCommentProperty()) ? "SELECTED" : "") %>>
+                    <option value="<%= h(pd.getName()) %>"<%=selected(pd.getName().equals(bean.getParticipantVisitCommentProperty()))%>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
                     <%

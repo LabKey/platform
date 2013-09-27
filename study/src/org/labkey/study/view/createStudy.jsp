@@ -58,8 +58,8 @@
         <tr>
             <th style="text-align:left;width:18em">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
             <td align="left">
-                <input type="radio" name="timepointType" id="dateTimepointType" value="<%=TimepointType.DATE%>" <%=text(form.getTimepointType() == TimepointType.DATE ? "CHECKED" : "")%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Dates &nbsp;&nbsp;
-                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=text(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? "CHECKED" : "")%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Assigned Visits
+                <input type="radio" name="timepointType" id="dateTimepointType" value="<%=TimepointType.DATE%>"<%=checked(form.getTimepointType() == TimepointType.DATE)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Dates &nbsp;&nbsp;
+                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>"<%=checked(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Assigned Visits
             </td>
         </tr>
         <tr>
@@ -78,8 +78,8 @@
         <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
         <tr>
             <th style="text-align:left;width:18em">Repository Type</th>
-            <td align="left"><input type="radio" name="simpleRepository" value="true" <%=text(form.isSimpleRepository() ? "CHECKED" : "") %>> Standard Specimen Repository
-                <input type="radio" name="simpleRepository" value="false" <%=text(form.isSimpleRepository() ? "" : "CHECKED") %>> Advanced (External) Specimen Repository</td>
+            <td align="left"><input type="radio" name="simpleRepository" value="true"<%=checked(form.isSimpleRepository())%>> Standard Specimen Repository
+                <input type="radio" name="simpleRepository" value="false"<%=checked(!form.isSimpleRepository())%>> Advanced (External) Specimen Repository</td>
         </tr>
         <tr>
             <td>&nbsp;</td>

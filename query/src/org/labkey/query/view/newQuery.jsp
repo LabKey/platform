@@ -53,7 +53,7 @@
                     if (!queryName.equalsIgnoreCase(queryLabel))
                         displayText += " (" + queryLabel + ")";
                 %>
-                <option name="<%=h(queryName)%>" value="<%=h(queryName)%>" <%=text(queryName.equals(form.ff_baseTableName) ? " selected" : "")%>><%=h(displayText)%></option>
+                <option name="<%=h(queryName)%>" value="<%=h(queryName)%>"<%=selected(queryName.equals(form.ff_baseTableName))%>><%=h(displayText)%></option>
                 <% } %>
             </select>
         </p>

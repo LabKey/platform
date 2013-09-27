@@ -97,7 +97,7 @@
         for (DataSet def : defs)
         {
             if (def.canRead(context.getUser())) %>
-                <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=h(def.getLabel())%></option>
+                <option<%=selected(def.getDataSetId() == showWithDataset)%> value="<%=def.getDataSetId()%>"><%=h(def.getLabel())%></option>
 <%
         }
 %>
@@ -120,7 +120,7 @@
     if (context.hasPermission(AdminPermission.class)) {
 %>
         <tr>
-            <td><input type="checkbox" value="true" name="shareReport" <%=bean.getShareReport() ? "checked" : ""%>>Make this view available to all users.</td>
+            <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this view available to all users.</td>
             <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
         </tr>
 <%

@@ -49,7 +49,7 @@
                         for (SampleRequestStatus status : statuses)
                         {
                     %>
-                    <option value="<%= status.getRowId() %>" <%= text(bean.getSampleRequest().getStatusId() == status.getRowId() ? "SELECTED" : "") %>>
+                    <option value="<%= status.getRowId() %>"<%=selected(bean.getSampleRequest().getStatusId() == status.getRowId())%>>
                         <%= h(status.getLabel()) %>
                     </option>
                     <%

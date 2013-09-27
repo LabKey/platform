@@ -63,7 +63,7 @@
                         for (Map.Entry<String, Integer> entry : nameToId.entrySet())
                         {
                     %>
-                         <option value="<%= entry.getValue() %>" <%=entry.getValue().equals(viewProtocolId) ? "SELECTED" : ""%>>
+                         <option value="<%= entry.getValue() %>"<%=selected(entry.getValue().equals(viewProtocolId))%>>
                             <%= h(entry.getKey()) %></option>
                     <%
                         }
@@ -73,7 +73,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Show buttons in web part</td>
-            <td><input type="checkbox" name="<%=AssayBaseWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>></td>
+            <td><input type="checkbox" name="<%=AssayBaseWebPartFactory.SHOW_BUTTONS_KEY%>" value="true"<%=checked(showButtons)%>></td>
         </tr>
         <tr>
             <td/>

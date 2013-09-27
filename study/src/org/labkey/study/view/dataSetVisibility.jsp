@@ -124,7 +124,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= text(data.cohort != null && data.cohort.intValue() == cohort.getRowId() ? "SELECTED" : "") %>>
+                        <option value="<%= cohort.getRowId()%>"<%=selected(data.cohort != null && data.cohort == cohort.getRowId()) %>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -137,15 +137,15 @@
             </td>
             <td>
                 <select name="statuses">
-                    <option value="" <%= text(data.status == null || data.status.equals("None") ? "selected=\"selected\"" : "") %>>None</option>
-                    <option value="Draft" <%= text(data.status != null && data.status.equals("Draft") ? "selected=\"selected\"" : "") %>>Draft</option>
-                    <option value="Final" <%= text(data.status != null && data.status.equals("Final") ? "selected=\"selected\"" : "") %>>Final</option>
-                    <option value="Locked" <%= text(data.status != null && data.status.equals("Locked") ? "selected=\"selected\"" : "") %>>Locked</option>
-                    <option value="Unlocked" <%= text(data.status != null && data.status.equals("Unlocked") ? "selected=\"selected\"" : "") %>>Unlocked</option>
+                    <option value=""<%=selected(data.status == null || data.status.equals("None"))%>>None</option>
+                    <option value="Draft"<%=selected(data.status != null && data.status.equals("Draft"))%>>Draft</option>
+                    <option value="Final"<%=selected(data.status != null && data.status.equals("Final"))%>>Final</option>
+                    <option value="Locked"<%=selected(data.status != null && data.status.equals("Locked"))%>>Locked</option>
+                    <option value="Unlocked"<%=selected(data.status != null && data.status.equals("Unlocked"))%>>Unlocked</option>
                 </select>
             </td>
             <td align="center">
-                <input type="checkbox" name="visible" <%= text(data.visible ? "Checked" : "") %> value="<%= id %>">
+                <input type="checkbox" name="visible"<%=checked(data.visible)%> value="<%= id %>">
                 <input type="hidden" name="ids" value="<%= id %>">
             </td>
         </tr>

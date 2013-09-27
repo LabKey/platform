@@ -60,7 +60,7 @@ if (null != ss)
 
                     for (ExternalAnalyzer a : ExternalAnalyzer.values())
                     { %>
-                        <option<%=(a.toString().equals(currentAnalyzer) ? " selected" : "")%>><%=a.toString()%></option><%
+                        <option<%=selected(a.toString().equals(currentAnalyzer))%>><%=h(a.toString())%></option><%
                     }
                 %>
                 </select>

@@ -134,11 +134,11 @@
                                 <input type="hidden" name="visitRowIds" value="<%= visit.getRowId() %>">
                                 <select name="visitStatus">
                                     <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
-                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "") %>/>
+                                        <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>/>
                                     <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
-                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "")%>>Optional</option>
+                                        <%=selected(type == VisitDataSetType.OPTIONAL)%>>Optional</option>
                                     <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
-                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "")%>>Required</option>
+                                        <%=selected(type == VisitDataSetType.REQUIRED)%>>Required</option>
                                 </select>
                             </td>
                         </tr>

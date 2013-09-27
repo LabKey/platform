@@ -55,7 +55,7 @@
                             label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                         }
                 %>
-                <option value="<%= h(name) %>" <%= name.equals(report.getQueryName()) ? "SELECTED" : "" %>><%= h(label) %></option>
+                <option value="<%= h(name) %>"<%=selected(name.equals(report.getQueryName()))%>><%= h(label) %></option>
                 <%
                     }
                 %>
@@ -73,11 +73,11 @@
                     String ext = report.getFileExtension();
                 %>
                 <select name="fileExtension">
-                    <option value="txt" <%="txt".equals(ext) ? "SELECTED" : ""%>>txt (Plain Text)</option>
-                    <option value="tsv" <%="tsv".equals(ext) ? "SELECTED" : ""%>>tsv (Tab Delimited)</option>
-                    <option value="jpg" <%="jpg".equals(ext) ? "SELECTED" : ""%>>jpg (JPEG Image)</option>
-                    <option value="gif" <%="gif".equals(ext) ? "SELECTED" : ""%>>gif (GIF Image)</option>
-                    <option value="png" <%="png".equals(ext) ? "SELECTED" : ""%>>png (PNG Image)</option>
+                    <option value="txt"<%=selected("txt".equals(ext))%>>txt (Plain Text)</option>
+                    <option value="tsv"<%=selected("tsv".equals(ext))%>>tsv (Tab Delimited)</option>
+                    <option value="jpg"<%=selected("jpg".equals(ext))%>>jpg (JPEG Image)</option>
+                    <option value="gif"<%=selected("gif".equals(ext))%>>gif (GIF Image)</option>
+                    <option value="png"<%=selected("png".equals(ext))%>>png (PNG Image)</option>
                 </select>
             </td>
         </tr>

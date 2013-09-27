@@ -51,7 +51,7 @@ function showSystemRows(value)
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
             searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
     </tr>
-    <tr><td><input type="checkbox" name="useShoppingCart" <%= text(settings.isUseShoppingCart() ? "CHECKED" : "") %> onclick='showSystemRows(this.checked);'>
+    <tr><td><input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
         Allow requests to be built over multiple searches before submission</td></tr>
     <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">The specimen request administrator moves requests through states for

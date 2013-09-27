@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.query.controllers.PropertiesForm"%>
 <%@ page import="org.labkey.api.query.QueryAction"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.query.controllers.PropertiesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
@@ -37,8 +37,8 @@
             <td class="labkey-form-label" nowrap="true">Available in child folders?</td>
             <td>
                 <select name="inheritable">
-                    <option value="true"<%=form.inheritable ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=!form.inheritable ? " selected" : ""%>>No</option>
+                    <option value="true"<%=selected(form.inheritable)%>>Yes</option>
+                    <option value="false"<%=selected(!form.inheritable)%>>No</option>
                 </select>
             </td>
         </tr>
@@ -46,8 +46,8 @@
             <td class="labkey-form-label" nowrap="true">Hidden from the user?</td>
             <td>
                 <select name="hidden">
-                    <option value="true"<%=form.hidden ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=!form.hidden ? " selected" : ""%>>No</option>
+                    <option value="true"<%=selected(form.hidden)%>>Yes</option>
+                    <option value="false"<%=selected(!form.hidden)%>>No</option>
                 </select>
             </td>
         </tr>

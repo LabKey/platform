@@ -191,9 +191,9 @@
             <td><%= text(tdButtons) %></td>
             <td><input type="text" name="title" size="20" value="<%= h(input.getTitle()) %>"></td>
             <td><input type="text" name="helpText" size="50" value="<%= h(input.getHelpText()) %>"></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline" <%= text(input.isMultiLine() ? "CHECKED" : "") %>></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="required"<%= text(input.isRequired() ? "CHECKED" : "") %>></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="rememberSiteValue"<%= text(input.isRememberSiteValue() ? "CHECKED" : "") %>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline"<%=checked(input.isMultiLine())%>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="required"<%=checked(input.isRequired())%>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="rememberSiteValue"<%=checked(input.isRememberSiteValue())%>></td>
         </tr>
     <%
         }

@@ -69,9 +69,9 @@
                     <%
                         for (Visit.Type type : Visit.Type.values())
                         {
-                            String selected = (visit.getType() == type ? "selected" : "");
+                            boolean selected = (visit.getType() == type);
                             %>
-                            <option value="<%= type.getCode() %>" <%=text(selected)%>><%=h(type.getMeaning())%></option>
+                            <option value="<%= type.getCode() %>"<%=selected(selected)%>><%=h(type.getMeaning())%></option>
                             <%
                         }
                     %>
@@ -98,7 +98,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%=text(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : "")%>>
+                        <option value="<%= cohort.getRowId()%>"<%=selected(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId())%>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -121,8 +121,8 @@
                             DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), vds.getDataSetId());
                             if (def == null || def.getTypeURI() == null)
                                 continue;
-                            String selected = (visit.getVisitDateDatasetId() == def.getDataSetId() ? "selected" : "");
-                            %><option value="<%= def.getDataSetId() %>" <%= text(selected) %>><%= h(def.getLabel()) %></option><%
+                            boolean selected = (visit.getVisitDateDatasetId() == def.getDataSetId());
+                            %><option value="<%= def.getDataSetId() %>"<%=selected(selected) %>><%= h(def.getLabel()) %></option><%
                         }
                     %>
                 </select>
@@ -148,15 +148,15 @@
         %></td>
         <td>
             <select name="sequenceNumHandling">
-              <option <%=text(Visit.SequenceHandling.normal.name().equals(visit.getSequenceNumHandling())?"selected":"")%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
-              <option <%=text(Visit.SequenceHandling.logUniqueByDate.name().equals(visit.getSequenceNumHandling()) ?"selected":"")%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+              <option<%=selected(Visit.SequenceHandling.normal.name().equals(visit.getSequenceNumHandling()))%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
+              <option<%=selected(Visit.SequenceHandling.logUniqueByDate.name().equals(visit.getSequenceNumHandling()))%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
             </select>
         </td>
     </tr>
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=text(visit.isShowByDefault() ? "checked" : "")%>>
+                <input type="checkbox" name="showByDefault"<%=checked(visit.isShowByDefault())%>>
             </td>
         </tr>
         <tr>
@@ -180,11 +180,11 @@
                                 <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
                                 <select name="dataSetStatus">
                                     <option value="<%= text(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
-                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "")%>></option>
+                                        <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>></option>
                                     <option value="<%= text(VisitDataSetType.OPTIONAL.name()) %>"
-                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "") %>>Optional</option>
+                                        <%=selected(type == VisitDataSetType.OPTIONAL) %>>Optional</option>
                                     <option value="<%= text(VisitDataSetType.REQUIRED.name())  %>"
-                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "") %>>Required</option>
+                                        <%=selected(type == VisitDataSetType.REQUIRED) %>>Required</option>
                                 </select>
                             </td>
                         </tr>

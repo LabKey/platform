@@ -101,14 +101,14 @@ function orderModule(listName, hiddenElName, down)
             <td colspan="2">
                 <input type="checkbox"
                        name="explicitDisplayOrder"
-                       value="true" <%= text(displayEnabled ? "CHECKED" : "") %>
+                       value="true"<%=checked(displayEnabled)%>
                        onClick="document.reorder.displayOrderItems.disabled = !this.checked;">
                 Explicitly set display order
             </td>
             <td colspan="2">
                 <input type="checkbox"
                        name="explicitChronologicalOrder"
-                       value="true" <%= text(chronologicalEnabled ? "CHECKED" : "") %>
+                       value="true"<%=checked(chronologicalEnabled) %>
                        onClick="document.reorder.chronologicalOrderItems.disabled = !this.checked;">
                 Explicitly set chronological order
             </td>

@@ -37,11 +37,11 @@
         <tr><td class="labkey-title-area-line"></td></tr>
         <tr><td>
             <div style="padding-bottom: 1em">
-                <input type="radio" name="simple" value="true" <%=text(settings.isSimple() ? "CHECKED" : "") %> onChange="document.getElementById('enableRequestsBlock').style.display = 'none';">
+                <input type="radio" name="simple" value="true"<%=checked(settings.isSimple())%> onChange="document.getElementById('enableRequestsBlock').style.display = 'none';">
                 <em>Standard Specimen Repository</em>: allows you to upload a list of available specimens
             </div>
             <div>
-                <input type="radio" name="simple" value="false" <%=text(settings.isSimple() ? "" : "CHECKED") %> onChange="document.getElementById('enableRequestsBlock').style.display = 'block';">
+                <input type="radio" name="simple" value="false"<%=checked(settings.isSimple())%> onChange="document.getElementById('enableRequestsBlock').style.display = 'block';">
                 <em>Advanced (External) Specimen Repository</em>:
                         relies on an external set of tools to track movement of specimens between locations. The advanced system also optionally enables a customizable specimen
                         request system.
@@ -55,11 +55,11 @@
             <tr><td class="labkey-title-area-line"></td></tr>
             <tr><td>
                 <div style="padding-bottom: 1em">
-                    <input type="radio" name="specimenDataEditable" value="false"  <%=text(!settings.isSpecimenDataEditable() ? "CHECKED" : "") %>><em>Read-only</em>:
+                    <input type="radio" name="specimenDataEditable" value="false"<%=checked(!settings.isSpecimenDataEditable())%>><em>Read-only</em>:
                     Specimen data is read-only and can only be changed by importing a specimen archive.
                 </div>
                 <div>
-                    <input type="radio" name="specimenDataEditable" value="true"  <%=text(settings.isSpecimenDataEditable() ? "CHECKED" : "") %>><em>Editable</em>:
+                    <input type="radio" name="specimenDataEditable" value="true"<%=checked(settings.isSpecimenDataEditable())%>><em>Editable</em>:
                     Specimen data is editable.
                 </div>
             </td></tr>
@@ -67,11 +67,11 @@
             <tr><td class="labkey-title-area-line"></td></tr>
             <tr><td>
                 <div style="padding-bottom: 1em">
-                    <input type="radio" name="enableRequests" value="true"  <%=text(settings.isEnableRequests() ? "CHECKED" : "") %>><em>Enabled</em>:
+                    <input type="radio" name="enableRequests" value="true"<%=checked(settings.isEnableRequests())%>><em>Enabled</em>:
                     The system will allow users with appropriate permissions to request specimens, and will show counts of available specimens.
                 </div>
                 <div style="padding-bottom: 1em">
-                    <input type="radio" name="enableRequests" value="false"  <%=text(!settings.isEnableRequests() ? "CHECKED" : "") %>><em>Disabled</em>:
+                    <input type="radio" name="enableRequests" value="false"<%=checked(!settings.isEnableRequests())%>><em>Disabled</em>:
                     Specimen request features such as the specimen shopping cart will not appear in the specimen tracking user interface.
                 </div>
             </td></tr>

@@ -106,7 +106,7 @@
 
     <form id=permissionsForm action="" method=POST>
         <table>
-        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.defaultPermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Default</b> :<%
+        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Default</b> :<%
             if (isAttachmentReport)
             {
             %> this static report will be readable by all users with access to this study<%
@@ -116,11 +116,11 @@
             %> this dynamic view will be readable only by users who have permission to see the source datasets<%
             }
         %></td></tr>
-        <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.customPermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Custom</b> : set permissions per group
+        <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.customPermission)%> onclick="updateDisplay()"></td><td><b>Custom</b> : set permissions per group
     <%
         if (isOwner(bean, context)) {
     %>
-        <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.privatePermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only visible to you
+        <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.privatePermission)%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only visible to you
     <%
         }
     %>

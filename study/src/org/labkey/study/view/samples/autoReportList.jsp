@@ -139,7 +139,7 @@ This folder does not contain a study.
                                 for (CohortImpl cohort : cohorts)
                                 {
                             %>
-                                <option value="<%= cohort.getRowId() %>" <%= cohort.getRowId() == selectedCohortId ? "SELECTED" : ""%>>
+                                <option value="<%= cohort.getRowId() %>"<%=selected(cohort.getRowId() == selectedCohortId)%>>
                                     <%= h(cohort.getLabel()) %>
                                 </option>
                             <%
@@ -160,7 +160,7 @@ This folder does not contain a study.
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
                             %>
-                                <option value="<%= type.name() %>"  <%= type == selectedCohortType ? "SELECTED" : ""%>>
+                                <option value="<%= type.name() %>"<%=selected(type == selectedCohortType)%>>
                                     <%= h(type.getTitle()) %>
                                 </option>
                             <%
@@ -196,7 +196,7 @@ This folder does not contain a study.
                                                 for (ParticipantGroup grp : groups)
                                                 {
                                                     %>
-                                                    <option value="<%= grp.getRowId() %>" <%= grp.getRowId() == factory.getParticipantGroupFilter() ? "SELECTED" : "" %>>
+                                                    <option value="<%= grp.getRowId() %>"<%=selected(grp.getRowId() == factory.getParticipantGroupFilter())%>>
                                                         <%
                                                             if (!grp.getLabel().equals(cat.getLabel()))
                                                             {
@@ -233,7 +233,7 @@ This folder does not contain a study.
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
                             %>
-                                <option value="<%= status.name() %>" <%= factory.getStatusFilter() == status ? "SELECTED" : "" %>>
+                                <option value="<%= status.name() %>"<%=selected(factory.getStatusFilter() == status)%>>
                                     <%= h(status.getCaption()) %>
                                 </option>
                             <%
@@ -275,16 +275,16 @@ This folder does not contain a study.
                     <tr>
                         <td>&nbsp;</td>
                         <td>
-                            <input type="checkbox" name="hideEmptyColumns" <%= factory.isHideEmptyColumns() ? "CHECKED" : "" %>> Hide Empty Columns<br>
-                            <input type="checkbox" name="viewVialCount" <%= !atLeastOneChecked || factory.isViewVialCount() ? "CHECKED" : "" %>> Vial Counts<br>
-                            <input type="checkbox" name="viewVolume" <%= factory.isViewVolume() ? "CHECKED" : "" %>> Total Volume<br>
+                            <input type="checkbox" name="hideEmptyColumns"<%=checked(factory.isHideEmptyColumns())%>> Hide Empty Columns<br>
+                            <input type="checkbox" name="viewVialCount"<%=checked(!atLeastOneChecked || factory.isViewVialCount())%>> Vial Counts<br>
+                            <input type="checkbox" name="viewVolume"<%=checked(factory.isViewVolume())%>> Total Volume<br>
                 <%
                     if (factory.allowsParticipantAggregegates())
                     {
                 %>
-                            <input type="checkbox" name="viewParticipantCount" <%= factory.isViewParticipantCount() ? "CHECKED" : "" %>>
+                            <input type="checkbox" name="viewParticipantCount"<%=checked(factory.isViewParticipantCount())%>>
                             <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts<br>
-                            <input type="checkbox" name="viewPtidList" <%= factory.isViewPtidList() ? "CHECKED" : "" %>>
+                            <input type="checkbox" name="viewPtidList"<%=checked(factory.isViewPtidList())%>>
                             <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
                 <%
                     }

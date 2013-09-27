@@ -54,7 +54,7 @@
         </tr>
         <tr>
             <th align="left" width=200>Allow Study Reload</th>
-            <td><input id="allowReload" name="allowReload" type="checkbox"<%=allowReload ? " checked" : ""%> onchange="updateDisplay();"></td>
+            <td><input id="allowReload" name="allowReload" type="checkbox"<%=checked(allowReload)%> onchange="updateDisplay();"></td>
         </tr>
         <tr>
             <th align="left" width=200>Reload Interval</th>

@@ -113,11 +113,11 @@
                         if (def != null) {
                             String label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(label) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
                 <%
                         } else {
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name)) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name)) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(name) %></option>
                 <%
                         }
                     }

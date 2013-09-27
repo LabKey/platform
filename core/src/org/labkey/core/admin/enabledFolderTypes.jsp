@@ -37,10 +37,9 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
         <% for (FolderType folderType : bean.getAllFolderTypes())
         { %>
             <tr>
-                <td><input type="checkbox" name="<%= h(folderType.getName())%>" <%= text(bean.getEnabledFolderTypes().contains(folderType) ? "checked" : "") %> value="true" /></td>
+                <td><input type="checkbox" name="<%= h(folderType.getName())%>"<%=checked(bean.getEnabledFolderTypes().contains(folderType))%> value="true" /></td>
                 <td><strong><%= h(folderType.getName()) %></strong></td>
                 <td><%= h(folderType.getDescription()) %></td>
-                </td></tr>
             </tr>
         <% } %>
     </table>

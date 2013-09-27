@@ -163,7 +163,7 @@ Click the Save button at any time to accept the current settings and continue.</
         <select name="administratorContactEmail">
         <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
         for (Pair<Integer,String> member : members) { %>
-              <option value="<%=h(member.getValue())%>" <%= Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()) ? "selected" : "" %>><%=h(member.getValue())%></option>
+              <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()))%>><%=h(member.getValue())%></option>
         <% } %>
         </select>
     </td>

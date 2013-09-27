@@ -73,10 +73,10 @@
         }
     </script>
     <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport" id="simpleCohorts"
-           value="false" <%=text(study.isAdvancedCohorts() ? "" : "checked")%>>Simple: <%= h(subjectNounPlural) %> are
+           value="false"<%=checked(!study.isAdvancedCohorts())%>>Simple: <%= h(subjectNounPlural) %> are
     assigned to a single cohort throughout the study.<br>
     <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts"
-           value="true" <%=text(study.isAdvancedCohorts() ? "checked" : "")%>>Advanced: <%= h(subjectNounPlural) %> may
+           value="true" <%=checked(study.isAdvancedCohorts())%>>Advanced: <%= h(subjectNounPlural) %> may
     change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
     dataset.<br>
     <%
@@ -89,11 +89,11 @@
     %>
     <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            id="manualCohortAssignmentDisabled"
-           value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic: cohort assignments will be
+           value="false"<%=checked(!study.isManualCohortAssignment())%>>Automatic: cohort assignments will be
     read from an existing study dataset.<br>
     <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            id="manualCohortAssignmentEnabled"
-           value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual: cohort assignments will be made
+           value="true"<%=checked(study.isManualCohortAssignment())%>>Manual: cohort assignments will be made
     by hand.
 
     <%
@@ -118,10 +118,10 @@
                     <%
                         for (DataSet dataset : manager.getDataSetDefinitions(study))
                         {
-                            String selected = (study.getParticipantCohortDataSetId() != null &&
-                                    dataset.getDataSetId() == study.getParticipantCohortDataSetId().intValue() ? "selected" : "");
+                            boolean selected = (study.getParticipantCohortDataSetId() != null &&
+                                    dataset.getDataSetId() == study.getParticipantCohortDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                         }
@@ -137,7 +137,7 @@
                     <%
                         PropertyDescriptor[] descriptors;
                         Integer participantCohortDataSetId = study.getParticipantCohortDataSetId();
-                        if (participantCohortDataSetId == null || participantCohortDataSetId.intValue() < 0)
+                        if (participantCohortDataSetId == null || participantCohortDataSetId < 0)
                             descriptors = new PropertyDescriptor[0];
                         else
                         {
@@ -152,7 +152,7 @@
                             if (pd.getPropertyType() == PropertyType.STRING) // only strings can be cohort labels
                             {
                     %>
-                    <option value="<%= pd.getName() %>" <%= pd.getName().equals(study.getParticipantCohortProperty()) ? "SELECTED" : "" %>>
+                    <option value="<%= pd.getName() %>"<%=selected(pd.getName().equals(study.getParticipantCohortProperty()))%>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
                     <%

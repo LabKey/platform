@@ -144,8 +144,8 @@
                 <tr>
                     <td class="labkey-form-label">Parent</td>
                     <td width="99%">
-                        <select name="parent" id="<%=ID_PREFIX%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
-                            <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
+                        <select name="parent" id="<%=text(ID_PREFIX)%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
+                            <option<%=selected(model.getParent() == -1)%> value="-1">[none]</option>
                             <%
                                 for (WikiTree possibleParent : model.getPossibleParents())
                                 {
@@ -154,7 +154,7 @@
                                     HString parentTitle = possibleParent.getTitle();
                                     while (depth-- > 0)
                                         indent = indent + "&nbsp;&nbsp;";
-                                    %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
+                                    %><option<%=selected(possibleParent.getRowId() == model.getParent())%> value="<%= possibleParent.getRowId() %>"><%=text(indent)%><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
                                 }
                             %>
                         </select>

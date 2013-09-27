@@ -126,10 +126,9 @@
 
                     for (CohortImpl c : cohorts)
                     {
-                        String selected = c.getRowId() == selectedCohort.getRowId() ? "selected" : "";
-                        
+                        boolean selected = c.getRowId() == selectedCohort.getRowId();
                     %>
-                    <option value="<%=c.getRowId()%>" <%= text(selected) %>><%=h(c.getLabel())%></option>
+                    <option value="<%=c.getRowId()%>"<%=selected(selected)%>><%=h(c.getLabel())%></option>
                     <%
 
                     }

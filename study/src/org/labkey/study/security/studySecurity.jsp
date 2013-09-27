@@ -44,9 +44,8 @@
         <%
             for (SecurityType securityType : SecurityType.values())
             {
-                String selected = (study.getSecurityType() == securityType ? "selected" : "");
                 %>
-                <option value="<%= securityType.name() %>" <%= selected %>><%= securityType.getLabel() %></option>
+                <option value="<%=h(securityType.name())%>"<%=selected(study.getSecurityType() == securityType)%>><%=h(securityType.getLabel())%></option>
                 <%
             }
         %>

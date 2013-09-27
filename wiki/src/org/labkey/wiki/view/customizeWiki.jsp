@@ -189,19 +189,19 @@ function restoreDefaultPage()
             String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
             for (Container c : me.getContainerList())
             {
-                String selected = "";
+                boolean selected = false;
                 //if there's no property setting for container, select the current container.
                 if (webPartContainer == null)
                 {
                     if (null != currentContainer && c.getId().equals(currentContainer.getId()))
-                        selected = "selected";
+                        selected = true;
                 }
                 else if (c.getId().equals(webPartContainer))
                 {
-                    selected = "selected";
+                    selected = true;
                 }
                 out.write("\n");
-                %><option <%=selected%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option><%
+                %><option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option><%
             }
         %></select>
         <%=textLink("Reset to Folder Default Page", "javascript:restoreDefaultPage();")%>

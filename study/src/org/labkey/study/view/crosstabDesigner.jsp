@@ -50,19 +50,19 @@
             Compute<br>
             <table><tr>
                 <td>
-                    <input id="cbCount" type=checkbox name=stats value=Count <%=stats.contains("Count") ? "CHECKED" : ""%> ><span>&nbsp;Count of Records</span><br>
-                    <input id="cbSum" type=checkbox name=stats value=Sum <%=stats.contains("Sum") ? "CHECKED" : ""%> ><span>&nbsp;Sum</span>
+                    <input id="cbCount" type=checkbox name=stats value=Count<%=checked(stats.contains("Count"))%>><span>&nbsp;Count of Records</span><br>
+                    <input id="cbSum" type=checkbox name=stats value=Sum <%=checked(stats.contains("Sum"))%>><span>&nbsp;Sum</span>
                 </td>
                 <td>
-                    <input id="cbStdDev" type=checkbox name=stats value=StdDev  <%=stats.contains("StdDev") ? "CHECKED" : ""%> ><span>&nbsp;StdDev</span><br>
-                    <input id="cbMean" type=checkbox name=stats value=Mean <%=stats.contains("Mean") ? "CHECKED" : ""%> ><span>&nbsp;Mean</span>
+                    <input id="cbStdDev" type=checkbox name=stats value=StdDev<%=checked(stats.contains("StdDev"))%>><span>&nbsp;StdDev</span><br>
+                    <input id="cbMean" type=checkbox name=stats value=Mean<%=checked(stats.contains("Mean"))%>><span>&nbsp;Mean</span>
                 </td>
                 <td>
-                    <input id="cbMin" type=checkbox name=stats value=Min <%=stats.contains("Min") ? "CHECKED" : ""%> ><span>&nbsp;Min</span><br>
-                    <input id="cbMax" type=checkbox name=stats value=Max <%=stats.contains("Max") ? "CHECKED" : ""%> ><span>&nbsp;Max</span>
+                    <input id="cbMin" type=checkbox name=stats value=Min<%=checked(stats.contains("Min"))%>><span>&nbsp;Min</span><br>
+                    <input id="cbMax" type=checkbox name=stats value=Max<%=checked(stats.contains("Max"))%>><span>&nbsp;Max</span>
                 </td>
                 <td valign=top>
-                    <input id="cbMedian" type=checkbox name=stats value=Median <%=stats.contains("Median") ? "CHECKED" : ""%> ><span>&nbsp;Median</span><br>
+                    <input id="cbMedian" type=checkbox name=stats value=Median<%=checked(stats.contains("Median"))%>><span>&nbsp;Median</span><br>
                 </td>
             </tr></table>
         </td>

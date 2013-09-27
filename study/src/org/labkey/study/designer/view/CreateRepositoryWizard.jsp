@@ -97,7 +97,7 @@ the vaccine study.
                 for (Container c : sortedContainers)
                 {
             %>
-                    <option value="<%=c.getId()%>" <%=c.getId().equals(form.getParentFolderId()) ? "selected" : ""%>><%=h(c.getPath())%></option>
+                    <option value="<%=c.getId()%>"<%=selected(c.getId().equals(form.getParentFolderId()))%>><%=h(c.getPath())%></option>
             <%  } %>
                 </select>
             </td>

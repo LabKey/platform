@@ -57,10 +57,10 @@ for (found in foundSemanticTypes)
 	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch<%=checked(form.isPrefixMatch())%>></td></tr>
 	<tr><td colspan=2><hr></td></tr>
 	<tr><td class="labkey-form-label">Semantic Type</td><td><select name="semanticType"  style="width:320;">
-	<option value=""<%=form.getSemanticType() == null?" selected":""%>>- any -</option><%
+	<option value=""<%=selected(form.getSemanticType() == null)%>>- any -</option><%
 	for (String type : semanticTypes)
 		{
-		%><option<%=form.getSemanticType() != null && form.getSemanticType().equals(type)?" selected":""%>><%=h(type)%></option><%
+		%><option<%=selected(form.getSemanticType() != null && form.getSemanticType().equals(type))%>><%=h(type)%></option><%
 		}
 	%></select></td></tr>
 	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=h(form.getConcept())%>"></td></tr>

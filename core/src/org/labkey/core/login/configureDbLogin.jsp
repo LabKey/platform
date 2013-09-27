@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.PasswordExpiration" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.login.LoginController.Config" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.core.login.LoginController.Config" %>
 <%@ page import="org.labkey.core.login.PasswordRule" %>
-<%@ page import="org.labkey.api.security.PasswordExpiration" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<LoginController.Config> me = (JspView<Config>)HttpView.currentView();
@@ -47,7 +47,7 @@
         <td><select name="expiration"><%
             for (PasswordExpiration expiration : PasswordExpiration.displayValues())
             { %>
-            <option value="<%=expiration.name()%>"<%=expiration.equals(bean.currentExpiration) ? " selected" : ""%>><%=h(expiration.getDescription())%></option>
+            <option value="<%=h(expiration.name())%>"<%=selected(expiration.equals(bean.currentExpiration))%>><%=h(expiration.getDescription())%></option>
                 <%
             }
         %></select></td>

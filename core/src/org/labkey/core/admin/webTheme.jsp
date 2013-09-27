@@ -69,9 +69,8 @@ if (null != webThemeErrors) { %>
                 {
                     if (theme == selectedTheme)
                         themeFound = true;
-                    String selected = (theme == selectedTheme ? "selected" : "");
                     %>
-                    <option value="<%=h(theme.toString())%>" <%=selected%>><%=h(theme.getFriendlyName())%></option>
+                    <option value="<%=h(theme.toString())%>"<%=selected(theme == selectedTheme)%>><%=h(theme.getFriendlyName())%></option>
                 <%}
             %>
         </select>

@@ -79,7 +79,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= text(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : "") %>>
+                        <option value="<%= cohort.getRowId()%>"<%=selected(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId()) %>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -94,7 +94,7 @@
         <tr>
             <th align="right">Show By Default</th>
             <td>
-                <input type="checkbox" name="showByDefault" <%= text(visit.isShowByDefault() ? "checked" : "") %>>
+                <input type="checkbox" name="showByDefault"<%=checked((visit.isShowByDefault()))%>>
             </td>
         </tr>
         <tr>
@@ -118,11 +118,11 @@
                                 <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
                                 <select name="dataSetStatus">
                                     <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
-                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "") %>></option>
+                                        <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>></option>
                                     <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
-                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "") %>>Optional</option>
+                                        <%=selected(type == VisitDataSetType.OPTIONAL)%>>Optional</option>
                                     <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
-                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "") %>>Required</option>
+                                        <%=selected(type == VisitDataSetType.REQUIRED)%>>Required</option>
                                 </select>
                             </td>
                         </tr>

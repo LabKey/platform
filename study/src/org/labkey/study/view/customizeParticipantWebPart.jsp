@@ -65,7 +65,7 @@
                     for (SubjectDetailsWebPartFactory.DataType type : EnumSet.allOf(SubjectDetailsWebPartFactory.DataType.class))
                     {
                         %>
-                <option value="<%=type.name()%>"<% if (selectedData.equals(type.name())) out.print(" selected=\"selected\""); %>><%=type.toString()%></option>
+                <option value="<%=type.name()%>"<%=selected(selectedData.equals(type.name()))%>><%=type.toString()%></option>
                         <%
                     }
                 %>
@@ -82,7 +82,7 @@
         <td>
             <select name="<%=SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY%>">
                 <option value="false">Public data</option>
-                <option value="true" <%= includePrivateData ? "SELECTED" : "" %>>All data</option>
+                <option value="true"<%=selected(includePrivateData)%>>All data</option>
             </select>
         </td>
     </tr>

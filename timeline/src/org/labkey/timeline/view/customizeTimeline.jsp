@@ -204,7 +204,7 @@ Ext.onReady(function()
                                 {
                                     for (String queryName : new TreeSet<>(tableNames.keySet()))
                                     {
-                                        %><option value="<%=h(queryName)%>" <%=queryName.equals(settings.getQueryName()) ? "selected" : ""%>><%=h(queryName)%></option><%
+                                        %><option value="<%=h(queryName)%>"<%=selected(queryName.equals(settings.getQueryName()))%>><%=h(queryName)%></option><%
                                     }
                                 }
                                 %>
@@ -222,7 +222,7 @@ Ext.onReady(function()
                                         {
                                             viewName = StringUtils.trimToEmpty(viewName);
                                             String value = viewName.equals("") ? "<default view>" : viewName;
-                                            %><option value="<%=h(viewName)%>" <%=viewName.equals(settings.getViewName()) ? "selected" : ""%>><%=h(value)%></option><%
+                                            %><option value="<%=h(viewName)%>"<%=selected(viewName.equals(settings.getViewName()))%>><%=h(value)%></option><%
                                         }
                                     }
                                 }

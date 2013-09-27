@@ -58,7 +58,7 @@
                 <input type="radio" name="useCustomView"
                        value="false"
                        onclick="return setCustomScriptState(!this.selected)"
-                       <%= useCustomView ? "" : "CHECKED"%>>Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
+                       <%=checked(useCustomView)%>>Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
@@ -66,7 +66,7 @@
                 <input type="radio" name="useCustomView"
                        value="true"
                        onclick="return setCustomScriptState(this.selected)"
-                       <%= useCustomView ? "CHECKED" : ""%>>Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
+                       <%=checked(useCustomView)%>>Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>

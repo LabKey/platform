@@ -31,10 +31,10 @@
         <tr>
             <td>Run type to show:</td>
             <td>
-                <select name="<%= ExperimentRunWebPartFactory.EXPERIMENT_RUN_FILTER %>">
+                <select name="<%=h(ExperimentRunWebPartFactory.EXPERIMENT_RUN_FILTER)%>">
                     <option value="">&lt;Automatically selected based on runs&gt;</option>
                     <% for (ExperimentRunType type : bean.getTypes()) { %>
-                        <option value="<%=h(type.getDescription()) %>" <%= type.getDescription().equals(bean.getDefaultRunFilterName()) ? "selected" : "" %>><%=h(type.getDescription()) %></option>
+                        <option value="<%=h(type.getDescription()) %>"<%=selected(type.getDescription().equals(bean.getDefaultRunFilterName()))%>><%=h(type.getDescription()) %></option>
                     <% } %>
                 </select>
             </td>

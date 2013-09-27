@@ -57,7 +57,7 @@
         for (EmailTemplate et : emailTemplates)
         {
 %>
-            <option value="<%=h(et.getClass().getName())%>" <%=text(et.getClass().getName().equals(bean.getTemplateClass()) ? "selected" : "")%>><%=h(et.getName())%></option>
+            <option value="<%=h(et.getClass().getName())%>"<%=selected(et.getClass().getName().equals(bean.getTemplateClass()))%>><%=h(et.getName())%></option>
 <%
         }
 %>

@@ -112,7 +112,7 @@
                         <td>&nbsp;</td>
                         <th align="left">
                             <input type="checkbox"
-                                   name="complete" <%= text(requirement.isComplete() ? "CHECKED" : "")%>>
+                                   name="complete"<%=checked(requirement.isComplete())%>>
                             Complete
                         </th>
                     </tr>

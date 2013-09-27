@@ -50,9 +50,9 @@
                 <%
                     for (QCState state : states)
                     {
-                        boolean selected = bean.getNewState() != null && bean.getNewState().intValue() == state.getRowId();
+                        boolean selected = bean.getNewState() != null && bean.getNewState() == state.getRowId();
                 %>
-                    <option value="<%= state.getRowId() %>" <%= text(selected ? "SELECTED" : "") %>><%= h(state.getLabel()) %></option>
+                    <option value="<%= state.getRowId() %>"<%=selected(selected)%>><%= h(state.getLabel()) %></option>
                 <%
                     }
                 %>

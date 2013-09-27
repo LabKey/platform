@@ -312,13 +312,4 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
         }
     }
-
-    public List<String> getAttributions()
-    {
-        if (!MuleManager.isInstanciated())
-        {
-            return Collections.emptyList();
-        }
-        return Arrays.asList("<a href=\"http://www.mulesource.com\" target=\"top\"><img src=\"http://www.mulesource.com/images/mulesource_license_logo.gif\" alt=\"MuleSource\" width=\"252\" height=\"52\"></a>");
-    }
 }

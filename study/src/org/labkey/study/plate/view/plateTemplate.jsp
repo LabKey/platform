@@ -38,7 +38,7 @@
             for (WellGroup.Type type : WellGroup.Type.values())
             {
         %>
-        <option value="<%= h(type.name()) %>" <%= type == bean.getType() ? "SELECTED" : ""%>><%= h(type.name()) %></option>
+        <option value="<%=h(type.name())%>"<%=selected(type == bean.getType())%>><%= h(type.name()) %></option>
         <%
             }
         %>

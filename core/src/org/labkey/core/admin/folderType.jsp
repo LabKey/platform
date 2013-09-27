@@ -301,7 +301,7 @@ function checkChangedType()
                         if (activeModules.contains(module))
                             {
                             %>
-                                <option value="<%= h(module.getName()) %>" <%= text(module.getName().equals(defaultModule.getName()) ? "selected" : "") %>><%= h(module.getTabName(HttpView.currentContext())) %></option>
+                                <option value="<%= h(module.getName()) %>"<%=selected(module.getName().equals(defaultModule.getName()))%>><%= h(module.getTabName(HttpView.currentContext())) %></option>
                             <%
                             }
                         }

@@ -42,7 +42,7 @@
     for (AuditTypeProvider provider : providers)
     {
 %>
-        <option value="<%=h(provider.getEventName())%>"<%=h(provider.getEventName().equals(currentView) ? " selected" : "")%>><%=h(provider.getLabel())%></option>
+        <option value="<%=h(provider.getEventName())%>"<%=selected(provider.getEventName().equals(currentView))%>><%=h(provider.getLabel())%></option>
 <%
     }
 %>
@@ -55,7 +55,7 @@
     for (AuditTypeProvider provider : providers)
     {
 %>
-        <option value="<%=h(provider.getEventName())%>"<%=h(provider.getEventName().equals(currentView) ? " selected" : "")%>><%=h(provider.getLabel())%></option>
+        <option value="<%=h(provider.getEventName())%>"<%=selected(provider.getEventName().equals(currentView))%>><%=h(provider.getLabel())%></option>
 <%
     }
 %>

@@ -720,7 +720,6 @@ core/src/org/labkey/core/login/DbLoginAuthenticationProvider.java -text
 core/src/org/labkey/core/login/DbLoginManager.java -text
 core/src/org/labkey/core/login/LoginController.java -text
 core/src/org/labkey/core/login/PasswordRule.java -text
-core/src/org/labkey/core/login/attribution.jsp -text
 core/src/org/labkey/core/login/configureDbLogin.jsp -text
 core/src/org/labkey/core/login/finishResetPassword.jsp -text
 core/src/org/labkey/core/login/login.jsp -text

@@ -63,7 +63,7 @@ field in the uploaded data and that subject's StartDate.
                         for (Visit.Type type : Visit.Type.values())
                         {
                             %>
-                            <option value="<%= type.getCode() %>" <%=type.getCode()==visitTypeCode?"selected":""%>><%= type.getMeaning() %></option>
+                            <option value="<%= type.getCode() %>"<%=selected(type.getCode() == visitTypeCode)%>><%= type.getMeaning() %></option>
                             <%
                         }
                     %>
@@ -73,7 +73,7 @@ field in the uploaded data and that subject's StartDate.
         <tr>
             <th align="right">Show In Study Overview</th>
             <td>
-                <input type="checkbox" name="showByDefault" <%=v.isShowByDefault()?"checked":""%>>
+                <input type="checkbox" name="showByDefault"<%=checked(v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

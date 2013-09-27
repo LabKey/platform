@@ -53,7 +53,7 @@
                 <td>&nbsp;</td>
                 <td>[none]</td>
                 <td>Applies to data that has not been assigned an explicit QC State</td>
-                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox" <%= bean.getStudy().isBlankQCStatePublic() ? "CHECKED" : "" %>/></td>
+                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(bean.getStudy().isBlankQCStatePublic())%>/></td>
                 <td>[in&nbsp;use]<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></td>
             <tr>
             </tr>
@@ -74,7 +74,7 @@
                     <input type="text" name="descriptions" size="50"
                            value="<%= state.getDescription() != null ? h(state.getDescription()) : "" %>">
                 </td>
-                <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox" <%= state.isPublicData() ? "CHECKED" : "" %>/></td>
+                <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
                     <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
                             textLink("Delete", baseDeleteStateURL.clone().addParameter("id", state.getRowId()),
@@ -119,9 +119,9 @@
                             for (QCState state : bean.getQCStates())
                             {
                                 boolean selected = bean.getStudy().getDefaultPipelineQCState() != null &&
-                                                    bean.getStudy().getDefaultPipelineQCState().intValue() == state.getRowId();
+                                        bean.getStudy().getDefaultPipelineQCState() == state.getRowId();
                         %>
-                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>>
+                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>>
                             <%= h(state.getLabel())%></option>
                         <%
                             }
@@ -138,9 +138,9 @@
                             for (QCState state : bean.getQCStates())
                             {
                                 boolean selected = bean.getStudy().getDefaultAssayQCState() != null &&
-                                                    bean.getStudy().getDefaultAssayQCState().intValue() == state.getRowId();
+                                        bean.getStudy().getDefaultAssayQCState() == state.getRowId();
                         %>
-                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel())%></option>
+                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>><%= h(state.getLabel())%></option>
                         <%
                             }
                         %>
@@ -156,9 +156,9 @@
                             for (QCState state : bean.getQCStates())
                             {
                                 boolean selected = bean.getStudy().getDefaultDirectEntryQCState() != null &&
-                                                    bean.getStudy().getDefaultDirectEntryQCState().intValue() == state.getRowId();
+                                        bean.getStudy().getDefaultDirectEntryQCState() == state.getRowId();
                         %>
-                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel())%></option>
+                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>><%= h(state.getLabel())%></option>
                         <%
                             }
                         %>
@@ -180,7 +180,7 @@
             <td>
                 <select name="showPrivateDataByDefault">
                     <option value="false">Public data</option>
-                    <option value="true" <%= bean.getStudy().isShowPrivateDataByDefault() ? "SELECTED" : "" %>>All data</option>
+                    <option value="true"<%=selected(bean.getStudy().isShowPrivateDataByDefault())%>>All data</option>
                 </select>
             </td>
         </tr>

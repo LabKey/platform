@@ -63,7 +63,7 @@ is uploaded along with the data. This form allows you to define a range of seque
                         for (Visit.Type type : Visit.Type.values())
                         {
                             %>
-                            <option value="<%= type.getCode() %>" <%=text(type.getCode()==visitTypeCode?"selected":"")%>><%=h(type.getMeaning())%></option>
+                            <option value="<%= type.getCode() %>"<%=selected(type.getCode() == visitTypeCode)%>><%=h(type.getMeaning())%></option>
                             <%
                         }
                     %>
@@ -89,7 +89,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=text(v.isShowByDefault()?"checked":"")%>>
+                <input type="checkbox" name="showByDefault"<%=checked(v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

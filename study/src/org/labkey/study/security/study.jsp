@@ -78,12 +78,12 @@ Any user with READ access to this folder may view some summary data.  However, a
         %><tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {
-        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>" <%=h(GroupSecurityType.UPDATE_ALL == gt?"checked":"")%>></th><%
+        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%>></th><%
         }
         %>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>" <%=h(GroupSecurityType.READ_ALL == gt?"checked":"")%>></th>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>" <%=h(GroupSecurityType.PER_DATASET == gt?"checked":"")%>></th>
-        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>" <%=h(GroupSecurityType.NONE == gt?"checked":"")%>></th><%
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%>></th>
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%>></th>
+        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%>></th><%
         %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=h(contextPath)%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }

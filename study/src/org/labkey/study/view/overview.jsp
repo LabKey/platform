@@ -119,7 +119,7 @@
         for (CohortImpl cohort : cohorts)
         {
     %>
-    <option value="<%= cohort.getRowId() %>" <%= text(selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId() ? "SELECTED" : "") %>>
+    <option value="<%= cohort.getRowId() %>"<%=selected(selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId()) %>>
         <%= h(cohort.getLabel()) %>
     </option>
     <%
@@ -137,7 +137,7 @@
         for (QCStateSet set : qcStateSetOptions)
         {
     %>
-    <option value="<%= h(set.getFormValue()) %>" <%= text(set.equals(selectedQCStateSet) ? "SELECTED" : "") %>>
+    <option value="<%= h(set.getFormValue()) %>"<%=selected(set.equals(selectedQCStateSet))%>>
         <%= h(set.getLabel()) %>
     </option>
     <%
@@ -150,7 +150,7 @@
         for (VisitStatistic stat : VisitStatistic.values())
         {
             boolean checked = bean.stats.contains(stat);
-            out.print(text("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n"));
+            out.print(text("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n"));
         }
     %>
 </form>

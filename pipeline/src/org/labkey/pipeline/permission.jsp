@@ -45,7 +45,7 @@
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
 <form id="permissionsForm" action="updateRootPermissions.post" method="POST">
-<input id="enabledCheckbox" type="checkbox" name="enable" <%=enableFTP?"checked":""%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
+<input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
     Group[] groups = SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]

@@ -84,8 +84,8 @@
             <td><%=h(col.getLabel())%></td>
             <td><%=h(type)%></td>
             <td><%=h(col.getFormat())%></td>
-            <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
-            <td align="center"><input type=checkbox disabled <%=col.isMvEnabled() ? "checked" : ""%>></td>
+            <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable())%>></td>
+            <td align="center"><input type=checkbox disabled<%=checked(col.isMvEnabled())%>></td>
             <td><%=h(col.getDescription())%></td>
           </tr><%
     }
@@ -101,8 +101,8 @@
             <td><%= col.getLabel() %></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormat())%></td>
-            <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
-            <td align="center"><input type=checkbox disabled <%=col.isMvEnabled() ? "checked" : ""%>></td>
+            <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable())%>></td>
+            <td align="center"><input type=checkbox disabled<%=checked(col.isMvEnabled())%>></td>
             <td><%=h(col.getDescription())%></td>
         </tr>
         <%

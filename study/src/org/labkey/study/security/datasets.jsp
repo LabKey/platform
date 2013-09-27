@@ -211,18 +211,18 @@ else
             int id = g.getUserId();
             %><td style="text-align: left;">
                 <select name="<%=h(inputName)%>">
-                    <option value="<%=id%>_NONE" <%=text(noPerm ? "selected" : "")%>>None</option>
-                    <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>" <%=text(readPerm ? "selected" : "")%>>Read</option><%
+                    <option value="<%=id%>_NONE"<%=selected(noPerm)%>>None</option>
+                    <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>"<%=selected(readPerm)%>>Read</option><%
                     if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
                     {
                         %>
-                        <option value="<%=id%>_<%= h(EditorRole.class.getName()) %>" <%=text(writePerm ? "selected" : "")%>>Edit</option>
+                        <option value="<%=id%>_<%= h(EditorRole.class.getName()) %>"<%=selected(writePerm)%>>Edit</option>
                         <% for (Role possibleRole : possibleRoles)
                         {
                             // Filter out roles that can't be assigned to this user/group
                             if (!possibleRole.getExcludedPrincipals().contains(g))
                             { %>
-                                <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>" <%=text(possibleRole == assignedRole ? "selected" : "")%>><%= h(possibleRole.getName()) %></option><%
+                                <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>"<%=selected(possibleRole == assignedRole)%>><%=h(possibleRole.getName()) %></option><%
                             }
                         }
                     }

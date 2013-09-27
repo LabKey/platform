@@ -35,7 +35,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Project;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
@@ -94,10 +93,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * User: adam
@@ -1164,29 +1161,6 @@ public class LoginController extends SpringActionController
         protected String getEmailForForm(SetPasswordForm form)
         {
             return null;
-        }
-    }
-
-
-    // Attributions to Spring and Apache used to be displayed on the initial user page... not sure why.  If we actually
-    // need them, throw this view onto the appropriate page.
-    private static class AttributionView extends JspView<List<String>>
-    {
-        private AttributionView()
-        {
-            super("/org/labkey/core/login/attribution.jsp", getAttributions());
-        }
-
-        private static List<String> getAttributions()
-        {
-            List<String> attributions = new ArrayList<>();
-
-            for (Module module : ModuleLoader.getInstance().getModules())
-            {
-                attributions.addAll(module.getAttributions());
-            }
-
-            return attributions;
         }
     }
 

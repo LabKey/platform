@@ -126,7 +126,7 @@ function setDefaults()
                         for (LocationImpl location : locations)
                         {
                     %>
-                    <option value="<%= location.getRowId() %>" <%= text(bean.getSelectedSite() == location.getRowId() ? "SELECTED" : "")%>>
+                    <option value="<%= location.getRowId() %>"<%=selected(bean.getSelectedSite() == location.getRowId())%>>
                         <%= h(location.getDisplayName()) %>
                     </option>
                     <%

@@ -45,7 +45,7 @@
         <tr>
             <th align="right">Show By Default</th>
             <td>
-                <input type="checkbox" name="showByDefault" <%=form.isShowByDefault()?"checked":""%>>
+                <input type="checkbox" name="showByDefault"<%=checked(form.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

@@ -48,8 +48,8 @@
             <th align="right">Default mode:</th>
             <td>
                 <select name="defaultToCommentsMode">
-                    <option value="false" <%= text(!bean.isDefaultToCommentsMode() ? "SELECTED" : "")%>>Request Mode</option>
-                    <option value="true"  <%= text(bean.isDefaultToCommentsMode() ? "SELECTED" : "")%>>Comments Mode</option>
+                    <option value="false"<%=selected(!bean.isDefaultToCommentsMode())%>>Request Mode</option>
+                    <option value="true"<%=selected(bean.isDefaultToCommentsMode())%>>Comments Mode</option>
                 </select>
             </td>
         </tr>
@@ -60,8 +60,8 @@
                     "<p>Once a vial's QC state is set manually, it will no longer be updated automatically during the import process.", true)%>:</th>
             <td>
                 <select name="enableManualQCFlagging">
-                    <option value="true" <%= text(bean.isEnableManualQCFlagging() ? "SELECTED" : "")%>>Enabled</option>
-                    <option value="false"  <%= text(!bean.isEnableManualQCFlagging() ? "SELECTED" : "")%>>Disabled</option>
+                    <option value="true"<%=selected(bean.isEnableManualQCFlagging())%>>Enabled</option>
+                    <option value="false"<%=selected(!bean.isEnableManualQCFlagging())%>>Disabled</option>
                 </select>
             </td>
         </tr>
@@ -79,11 +79,11 @@
             <td>
                 <select name="lastVial">
                     <option value="<%= text(DisplaySettings.DisplayOption.NONE.name()) %>"
-                            <%= text(bean.getLastVialEnum() == DisplaySettings.DisplayOption.NONE ? "SELECTED" : "")%>>Never</option>
+                            <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.NONE)%>>Never</option>
                     <option value="<%= text(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
-                            <%= text(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : "")%>>For all users</option>
+                            <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS)%>>For all users</option>
                     <option value="<%= text(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
-                            <%= text(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : "")%>>For administrators only</option>
+                            <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY)%>>For administrators only</option>
                 </select>
             </td>
         </tr>
@@ -92,11 +92,11 @@
             <td>
                 <select name="zeroVials">
                     <option value="<%= text(DisplaySettings.DisplayOption.NONE.name()) %>"
-                            <%= text(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.NONE ? "SELECTED" : "")%>>Never</option>
+                            <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.NONE)%>>Never</option>
                     <option value="<%= text(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
-                            <%= text(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : "")%>>For all users</option>
+                            <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS)%>>For all users</option>
                     <option value="<%= text(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
-                            <%= text(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : "")%>>For administrators only</option>
+                            <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY)%>>For administrators only</option>
                 </select>
             </td>
         </tr>

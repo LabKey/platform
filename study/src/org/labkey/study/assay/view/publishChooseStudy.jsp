@@ -118,7 +118,7 @@
                         String path = study.getContainer().getPath();
                         boolean selected = firstStudyContainer != null && firstStudyContainer.getPath().equals(path);
                 %>
-                    <option value="<%= h(study.getContainer().getId()) %>" <%= text(selected ? "SELECTED" : "") %>><%= h(path)%> (<%= h(study.getLabel()) %>)</option>
+                    <option value="<%= h(study.getContainer().getId()) %>"<%=selected(selected)%>><%= h(path)%> (<%= h(study.getLabel()) %>)</option>
                 <%
                     }
                 %>

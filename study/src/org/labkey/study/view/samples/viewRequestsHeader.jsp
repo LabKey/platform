@@ -43,7 +43,7 @@ Filter by status: <select onChange="document.location=options[selectedIndex].val
     {
         current.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL, status.getLabel());
 %>
-    <option value="<%= current.getLocalURIString() %>" <%= bean.isFilteredStatus(status) ? "SELECTED" : "" %>><%= h(status.getLabel()) %></option>
+    <option value="<%= current.getLocalURIString() %>" <%=selected(bean.isFilteredStatus(status))%>><%= h(status.getLabel()) %></option>
 <%
     }
 %>

@@ -36,8 +36,8 @@
         </td>
         <td>
         <select name="displayType">
-            <option value="grid" <%="grid".equals(displayType) ? "selected" : ""%>>Grid</option>
-            <option value="details" <%=null == displayType || "details".equals(displayType) ? "selected" : ""%>>Details</option>
+            <option value="grid"<%=selected("grid".equals(displayType))%>>Grid</option>
+            <option value="details"<%=selected(null == displayType || "details".equals(displayType))%>>Details</option>
         </select>
         </td>
      </tr>
