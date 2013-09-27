@@ -231,9 +231,6 @@ public interface Module extends Comparable<Module>
     public Set<String> getModuleDependenciesAsSet();
     public Set<Module> getResolvedModuleDependencies();
 
-    /** Get a list of attributions (in HTML) that should be shown before users can log in. */
-    public List<String> getAttributions();
-
     /**
      * Returns the exploded path for the module.
      * @return The path to the exploded module directory

@@ -43,18 +43,18 @@
         cloudStoreNames = cloud.getEnabledCloudStores(ctx.getContainer());
     }
 
-    String small = "";
-    String medium = "";
-    String large = "";
+    boolean small = false;
+    boolean medium = false;
+    boolean large = false;
 
     System.out.println(form.getSize());
 
-    if(form.getSize() == 350)
-        small = "checked";
+    if (form.getSize() == 350)
+        small = true;
     else if(form.getSize() == 650)
-        medium = "checked";
+        medium = true;
     else
-        large = "checked";
+        large = true;
 
 %>
 <form action="<%=postUrl%>" method="post">
@@ -94,9 +94,9 @@
         <tr>
             <td class="labkey-form-label">Webpart Size</td>
             <td>
-                <input type="radio" name="size" value="350" <%=text(small)%>/>Small<br>
-                <input type="radio" name="size" value="650" <%=text(medium)%>/>Medium<br>
-                <input type="radio" name="size" value="1000" <%=text(large)%>/>Large<br>
+                <input type="radio" name="size" value="350"<%=checked(small)%>/>Small<br>
+                <input type="radio" name="size" value="650"<%=checked(medium)%>/>Medium<br>
+                <input type="radio" name="size" value="1000"<%=checked(large)%>/>Large<br>
             </td>
         </tr>
 

@@ -745,11 +745,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
-    public List<String> getAttributions()
-    {
-        return Collections.emptyList();
-    }
-
     public File getExplodedPath()
     {
         return _explodedPath;
