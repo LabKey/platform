@@ -131,11 +131,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
         if (remainingFiles != null && remainingFiles.length > 0)
         {
-            WorkDirectory.CopyingResource lock = null;
-            try
+            try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
             {
-                lock = ensureCopyingLock();
-
                 // First handle anything that's been explicitly configured
                 for (Map.Entry<String, TaskPath> entry : expectedOutputs.entrySet())
                 {
@@ -185,10 +182,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         action.addOutput(f, role, false);
                     }
                 }
-            }
-            finally
-            {
-                if (lock != null) { lock.release(); }
             }
         }
     }
@@ -264,10 +257,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         NetworkDrive.ensureDrive(source.getAbsolutePath());
         NetworkDrive.ensureDrive(target.getAbsolutePath());
-        CopyingResource resource = null;
-        try
+        try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
-            resource = ensureCopyingLock();
             _jobLog.info("Copying " + source + " to " + target);
             if (source.isDirectory())
             {
@@ -276,13 +267,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             else
             {
                 FileUtils.copyFile(source, target);
-            }
-        }
-        finally
-        {
-            if (resource != null)
-            {
-                resource.release();
             }
         }
     }
@@ -377,11 +361,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         ensureDescendant(fileWork);
         File fileReplace = null;
         File fileCopy = null;
-        CopyingResource resource = null;
 
-        try
+        try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
-            resource = ensureCopyingLock();
             if (fileDest.exists())
             {
                 // If the destination exists, rename it out of the way while we try to
@@ -465,11 +447,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             {
                 // Failed to get output file in place.  Attempt to rename original back into position.
                 fileReplace.renameTo(fileDest);
-            }
-
-            if (resource != null)
-            {
-                resource.release();
             }
         }
 
@@ -566,7 +543,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public class SimpleCopyingResource implements CopyingResource
     {
-        public void release()
+        public void close()
         {
             // If this is the real resource for the working directory, it can be released now
             if (_copyingResource == this)

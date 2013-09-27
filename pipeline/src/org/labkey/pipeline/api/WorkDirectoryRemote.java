@@ -384,10 +384,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             {
                 _systemLog.error("FileLockCopyingResource was not released before it was garbage collected. Creation stack is: ", _creationStack);
             }
-            release();
+            close();
         }
 
-        public void release()
+        @Override
+        public void close()
         {
             if (_lock != null)
             {
@@ -397,7 +398,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 _jobLog.debug("Lock #" + _lockNumber + " released");
                 _lock = null;
                 _channel = null;
-                super.release();
+                super.close();
 
                 // Unlock the memory part last
                 _memoryLock.unlock();

@@ -341,10 +341,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             // Input file location must be determined before creating the process command.
             if (!_factory.getInputPaths().isEmpty())
             {
-                WorkDirectory.CopyingResource lock = null;
-                try
+                try (WorkDirectory.CopyingResource lock = _wd.ensureCopyingLock())
                 {
-                    lock = _wd.ensureCopyingLock();
                     for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
                     {
                         TaskPath taskPath = entry.getValue();
@@ -355,10 +353,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                         }
                         inputFile(taskPath, role, action);
                     }
-                }
-                finally
-                {
-                    if (lock != null) { lock.release(); }
                 }
             }
 
