@@ -27,6 +27,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformConfiguration;
@@ -86,9 +87,7 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         timestampColumnName = StringUtils.defaultString(timestampColumnName, Columns.TransformModified.getColumnName());
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
-            _tsCol = _table.getColumn("modified");
-        if (null == _tsCol)
-            throw new IllegalArgumentException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
+            throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
     }
 
 
