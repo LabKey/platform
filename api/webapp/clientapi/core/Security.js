@@ -520,13 +520,13 @@ LABKEY.Security = new function()
             params.parent = config.destinationParent || config.parent || config.parentPath;
             params.addAlias = true;
 
-            if (!config.container) {
-                console.error('\'containerPath\' must be specified for LABKEY.Security.moveContainer invocation.');
+            if (!params.container) {
+                console.error("'containerPath' must be specified for LABKEY.Security.moveContainer invocation.");
                 return;
             }
 
-            if (!config.parent) {
-                console.error('\'parent\' must be specified for LABKEY.Security.moveContainer invocation.');
+            if (!params.parent) {
+                console.error("'parent' must be specified for LABKEY.Security.moveContainer invocation.");
                 return;
             }
             
