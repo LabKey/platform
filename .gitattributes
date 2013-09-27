@@ -2407,6 +2407,7 @@ query/src/org/labkey/query/reports/view/reportDetails.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/web.png -text
 query/src/org/labkey/query/reports/wordprocessing.png -text
+query/src/org/labkey/query/sql/AbstractQueryMethodInfo.java -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/ConvertType.java -text
 query/src/org/labkey/query/sql/IConstant.java -text

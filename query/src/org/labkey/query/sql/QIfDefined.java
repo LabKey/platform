@@ -42,10 +42,10 @@ public class QIfDefined extends QExpr
     }
 
     @Override
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         if (isDefined)
-            ((QExpr)getFirstChild()).appendSql(builder);
+            ((QExpr)getFirstChild()).appendSql(builder, query);
         else
             builder.append("NULL");
     }

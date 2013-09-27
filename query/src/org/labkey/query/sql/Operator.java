@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.*;
 
@@ -36,7 +37,7 @@ public enum Operator
     is_not(" IS NOT ", Precedence.comparison, IS_NOT, ResultType.bool),
     between(" BETWEEN ", Precedence.comparison, BETWEEN, ResultType.bool)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             builder.pushPrefix("");
             int i=0;
@@ -45,7 +46,7 @@ public enum Operator
                 boolean paren = needsParentheses((QExpr)operand, true);
                 if (paren)
                     builder.pushPrefix("(");
-                ((QExpr)operand).appendSql(builder);
+                ((QExpr)operand).appendSql(builder, query);
                 if (paren)
                     builder.popPrefix(")");
                 if (i==0)
@@ -59,7 +60,7 @@ public enum Operator
     },
     notBetween(" NOT BETWEEN ", Precedence.comparison, NOT_BETWEEN, ResultType.bool)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             builder.pushPrefix("");
             int i=0;
@@ -68,7 +69,7 @@ public enum Operator
                 boolean paren = needsParentheses((QExpr)operand, true);
                 if (paren)
                     builder.pushPrefix("(");
-                ((QExpr)operand).appendSql(builder);
+                ((QExpr)operand).appendSql(builder, query);
                 if (paren)
                     builder.popPrefix(")");
                 if (i==0)
@@ -100,31 +101,34 @@ public enum Operator
     divide("/", Precedence.multiplication, DIV, ResultType.arg),
     concat("||", Precedence.addition, CONCAT, ResultType.string)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             ArrayList<SQLFragment> terms = new ArrayList<>();
             for (QNode operand : operands)
             {
-                SQLFragment sqlf = ((QExpr)operand).getSqlFragment(builder.getDbSchema());
+                SQLFragment sqlf = ((QExpr)operand).getSqlFragment(builder.getDbSchema(), query);
                 JdbcType type = ((QExpr)operand).getSqlType();
                 if (null != builder.getDialect())
                     sqlf = builder.getDialect().implicitConvertToString(type, sqlf);
                 terms.add(sqlf);
             }
+            SqlDialect d = builder.getDialect();
+            if (null == d)
+                throw new NullPointerException();
             SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
             builder.append(f);
         }
     },
     not(" NOT ", Precedence.not, NOT, ResultType.bool)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             builder.append(getOperator());
             builder.append("(");
             Iterator<QNode> i = operands.iterator();
             assert i.hasNext();
 			QExpr operand = (QExpr)i.next();
-            operand.appendSql(builder);
+            operand.appendSql(builder, query);
             assert !i.hasNext();
             builder.append(")");
         }
@@ -134,36 +138,36 @@ public enum Operator
     like(" LIKE ", Precedence.like, LIKE, ResultType.bool)
     {
         @Override
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             Iterator<QNode> i = operands.iterator();
             assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder);
+            ((QExpr)i.next()).appendSql(builder, query);
             builder.append(" LIKE ");
             assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder);
+            ((QExpr)i.next()).appendSql(builder, query);
             if (i.hasNext())
             {
                 builder.append(" ESCAPE ");
-                ((QExpr)i.next()).appendSql(builder);
+                ((QExpr)i.next()).appendSql(builder, query);
             }
         }
     },
     notLike(" NOT LIKE ", Precedence.like, NOT_LIKE, ResultType.bool)
     {
         @Override
-        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
             Iterator<QNode> i = operands.iterator();
             assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder);
+            ((QExpr)i.next()).appendSql(builder, query);
             builder.append(" NOT LIKE ");
             assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder);
+            ((QExpr)i.next()).appendSql(builder, query);
             if (i.hasNext())
             {
                 builder.append(" ESCAPE ");
-                ((QExpr)i.next()).appendSql(builder);
+                ((QExpr)i.next()).appendSql(builder, query);
             }
         }
     },
@@ -225,7 +229,7 @@ public enum Operator
         return _strOp;
     }
 
-    public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+    public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
         builder.pushPrefix(getPrefix());
         boolean first = true;
@@ -238,7 +242,7 @@ public enum Operator
             {
                 builder.pushPrefix("(");
             }
-            operand.appendSql(builder);
+            operand.appendSql(builder, query);
             if (paren)
             {
                 builder.popPrefix(")");

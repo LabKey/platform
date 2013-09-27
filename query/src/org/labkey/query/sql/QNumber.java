@@ -91,7 +91,7 @@ public class QNumber extends QExpr implements IConstant
 		return _value;
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append(getValueString());
     }

@@ -26,7 +26,7 @@ public class QNull extends QExpr implements IConstant
 		super(false);
 	}
 	
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("NULL");
     }

@@ -51,14 +51,17 @@ abstract public class QExpr extends QNode
         return null;
     }
 
-    public SQLFragment getSqlFragment(DbSchema schema)
+    public SQLFragment getSqlFragment(DbSchema schema, Query query)
     {
         SqlBuilder ret = new SqlBuilder(schema);
-        appendSql(ret);
+        appendSql(ret, query);
         return ret;
     }
 
-    abstract public void appendSql(SqlBuilder builder);
+    /* Query context is used only by QMethodCall as far as I know, and that usage could probably
+     * be removed if some work (container context) could be evaluated at run-time instead of compile/parse.
+     */
+    abstract public void appendSql(SqlBuilder builder, Query query);
 
     public String getValueString()
     {
@@ -90,14 +93,14 @@ abstract public class QExpr extends QNode
     }
 
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String name)
+    public ColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
     {
         return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getSqlType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return getSqlFragment(getParentTable().getSchema());
+                return getSqlFragment(getParentTable().getSchema(), query);
             }
         };
     }

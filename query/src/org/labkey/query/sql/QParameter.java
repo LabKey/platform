@@ -100,7 +100,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     }
 
     @Override
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("CAST(? AS ").append(builder.getDialect().sqlTypeNameFromJdbcType(_type.type)).append(")");
         builder.add(this);

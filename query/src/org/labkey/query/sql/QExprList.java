@@ -25,20 +25,13 @@ public class QExprList extends QExpr
 
     }
 
-    public QExprList(QExpr... children)
-    {
-        for (QExpr child : children)
-        {
-            appendChild(child);
-        }
-    }
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
-            ((QExpr)child).appendSql(builder);
+            ((QExpr)child).appendSql(builder, query);
             builder.nextPrefix(",");
         }
         builder.popPrefix();
@@ -51,7 +44,7 @@ public class QExprList extends QExpr
         builder.pushPrefix("");
         for (QNode child : children())
         {
-            ((QNode)child).appendSource(builder);
+            child.appendSource(builder);
             builder.nextPrefix(",");
         }
         builder.popPrefix();

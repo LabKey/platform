@@ -34,7 +34,7 @@ public class QMethodCall extends QExpr
 
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         MethodInfo method = getMethod(builder.getDialect());
         if (method == null)
@@ -46,28 +46,40 @@ public class QMethodCall extends QExpr
         for (QNode n : getLastChild().children())
         {
 			QExpr expr = (QExpr)n;
-            arguments.add(expr.getSqlFragment(builder.getDbSchema()));
+            arguments.add(expr.getSqlFragment(builder.getDbSchema(), query));
         }
         QNode first = getFirstChild();
+
         if (first instanceof QField && null != ((QField)first).getTable())
+        {
+            // table.method()
             builder.append(method.getSQL(((QField)first).getRelationColumn().getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+        }
+        else if (method instanceof AbstractQueryMethodInfo)
+        {
+            // method that supports query parameter
+            builder.append(((AbstractQueryMethodInfo)method).getSQL(query, builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+        }
         else
+        {
+            // regular method info
             builder.append(method.getSQL(builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+        }
     }
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
+    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         MethodInfo method = getMethod(table.getSqlDialect());
         if (method == null)
         {
-            return super.createColumnInfo(table, alias);
+            return super.createColumnInfo(table, alias, query);
         }
         List<ColumnInfo> arguments = new ArrayList<>();
 
         for (ListIterator<QNode> it = getLastChild().childList().listIterator(); it.hasNext();)
         {
             QExpr expr = (QExpr)it.next();
-            arguments.add(expr.createColumnInfo(table, "arg" + it.previousIndex()));
+            arguments.add(expr.createColumnInfo(table, "arg" + it.previousIndex(), query));
         }
         return method.createColumnInfo(table, arguments.toArray(new ColumnInfo[arguments.size()]), alias);
     }
@@ -118,8 +130,7 @@ public class QMethodCall extends QExpr
         return false;
     }
 
-    @NotNull
-    @Override
+    @Override @NotNull
     public JdbcType getSqlType()
     {
         List<QNode> children = getLastChild().childList();

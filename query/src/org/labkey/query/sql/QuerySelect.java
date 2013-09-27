@@ -1333,7 +1333,7 @@ groupByLoop:
             {
                 sql.append("(");
                 QExpr term = resolveFields((QExpr)expr, null, _where);
-                term.appendSql(sql);
+                term.appendSql(sql, _query);
                 sql.append(")");
                 sql.nextPrefix(" AND ");
             }
@@ -1349,7 +1349,7 @@ groupByLoop:
                 // check here again for constants, after resolveFields()
                 if (gbExpr.isConstant())
                     parseError("Expression in Group By clause must not be a constant", expr);
-                gbExpr.appendSql(sql);
+                gbExpr.appendSql(sql, _query);
                 sql.append(")");
                 sql.nextPrefix(",");
             }
@@ -1362,7 +1362,7 @@ groupByLoop:
             {
                 sql.append("(");
                 QExpr term = resolveFields((QExpr)expr, null, _having);
-                term.appendSql(sql);
+                term.appendSql(sql, _query);
                 sql.append(")");
                 sql.nextPrefix(" AND ");
             }
@@ -1387,7 +1387,7 @@ groupByLoop:
                     else
                     {
                         QExpr r = resolveFields(expr, _orderBy, _orderBy);
-                        r.appendSql(sql);
+                        r.appendSql(sql, _query);
                     }
                     if (!entry.getValue().booleanValue())
                         sql.append(" DESC");
@@ -1820,7 +1820,7 @@ groupByLoop:
             if (expr instanceof QMethodCall && expr.getSqlType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer())
             {
                 b.append("CASE WHEN (");
-                expr.appendSql(b);
+                expr.appendSql(b, _query);
                 b.append(") THEN 1 ELSE 0 END");
                 return b;
             }
@@ -1830,7 +1830,7 @@ groupByLoop:
             {
                 int len = ((QString)expr).getValue().length();
                 b.append("CAST(");
-                expr.appendSql(b);
+                expr.appendSql(b, _query);
                 b.append(" AS VARCHAR");
                 if (len > 0)
                     b.append("(").append(len).append(")");
@@ -1838,7 +1838,7 @@ groupByLoop:
                 return b;
             }
 
-            expr.appendSql(b);
+            expr.appendSql(b, _query);
             return b;
         }
 
@@ -1923,7 +1923,7 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
-                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
+                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()), _query);
                 }
                 to.copyAttributesFrom(_colinfo);
                 if (_selectStarColumn)

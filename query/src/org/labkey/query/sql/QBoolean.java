@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 
@@ -38,10 +39,10 @@ public class QBoolean extends QExpr implements IConstant
         return "true".equalsIgnoreCase(getTokenText());
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         SqlDialect d = builder.getDialect();
-        builder.append(getValue().booleanValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
+        builder.append(getValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
     }
 
     public void appendSource(SourceBuilder builder)
@@ -49,7 +50,7 @@ public class QBoolean extends QExpr implements IConstant
         builder.append(getValue().toString());
     }
 
-    public JdbcType getSqlType()
+    public @NotNull JdbcType getSqlType()
     {
         return JdbcType.BOOLEAN;
     }

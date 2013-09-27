@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
 
 public class QRowStar extends QFieldKey
 {
@@ -33,7 +32,7 @@ public class QRowStar extends QFieldKey
         return _starFieldKey;
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("*");
     }

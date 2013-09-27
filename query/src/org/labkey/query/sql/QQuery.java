@@ -16,7 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.Table;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.QueryParseException;
 
@@ -102,7 +101,7 @@ public class QQuery extends QExpr
         builder.append(")");
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         if (_select == null)
         {

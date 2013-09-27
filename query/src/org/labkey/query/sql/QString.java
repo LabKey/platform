@@ -59,7 +59,7 @@ public class QString extends QExpr implements IConstant
         return unquote(getTokenText());
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.appendStringLiteral(getValue());
     }

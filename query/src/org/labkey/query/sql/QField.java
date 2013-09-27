@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
@@ -25,7 +26,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 
 
@@ -105,7 +105,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         QueryRelation.RelationColumn col = getRelationColumn();
         if (null == col)
@@ -114,7 +114,7 @@ public class QField extends QInternalExpr
                 return;
             String message = "Unexpected error parsing field:" + getSourceText();
             _table.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR: " + message + "#");
+            builder.append("#ERROR: ").append(message).append("#");
             return;
         }
         builder.append(col.getValueSql());
@@ -141,9 +141,8 @@ public class QField extends QInternalExpr
         final QField qField = (QField) o;
 
         if (!_name.equals(qField._name)) return false;
-        if (!_table.equals(qField._table)) return false;
+        return _table.equals(qField._table);
 
-        return true;
     }
 
 
@@ -156,7 +155,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public JdbcType getSqlType()
+    public @NotNull JdbcType getSqlType()
     {
         if (_column != null)
             return _column.getJdbcType();
@@ -167,7 +166,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
+    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(), getRelationColumn().getJdbcType());
         getRelationColumn().copyColumnAttributesTo(ret);
@@ -184,11 +183,12 @@ public class QField extends QInternalExpr
                 Method m = Method.resolve(d, _name.toLowerCase());
                 if (null != m)
                     return m.getMethodInfo();
+                return null;
             }
             catch (IllegalArgumentException iae)
             {
+                return null;
             }
-            return null;
         }
 
         return _table.getMethod(FieldKey.fromString(_name).getName());

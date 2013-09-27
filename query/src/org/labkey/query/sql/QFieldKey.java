@@ -17,8 +17,6 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.data.ColumnInfo;
 
 abstract public class QFieldKey extends QExpr
 {
@@ -36,19 +34,9 @@ abstract public class QFieldKey extends QExpr
         return new QDot(parent, new QIdentifier(key.getName()));
     }
 
-    public void declareFields()
-    {
-        throw new IllegalStateException("Fields should have been resolved.");
-    }
-
     abstract public FieldKey getFieldKey();
 
-    public void appendSql(SqlBuilder builder)
-    {
-        throw new IllegalStateException("Fields should have been resolved.");
-    }
-
-    public ColumnInfo getColumnInfo(FieldKey key, FilteredTable rootTable)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         throw new IllegalStateException("Fields should have been resolved.");
     }

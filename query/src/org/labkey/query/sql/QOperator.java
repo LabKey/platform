@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import com.drew.lang.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 
@@ -23,9 +24,9 @@ final public class QOperator extends QExpr
 {
     Operator _op;
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
-        _op.appendSql(builder, children());
+        _op.appendSql(builder, query, children());
     }
 
     public void appendSource(SourceBuilder builder)
@@ -67,7 +68,7 @@ final public class QOperator extends QExpr
     public String getValueString()
     {
         StringBuilder ret = new StringBuilder(_op.getPrefix());
-        boolean first = false;
+        boolean first = true;
         for (QNode n : children())
         {
 			QExpr child = (QExpr)n;
@@ -95,7 +96,7 @@ final public class QOperator extends QExpr
         return ret.toString();
     }
 
-    @Override
+    @Override @NotNull
     public JdbcType getSqlType()
     {
         if (_op.getResultType() == Operator.ResultType.bool)

@@ -16,16 +16,17 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 public class QElse extends QExpr
 {
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("\nELSE (");
         for (QNode child : children())
         {
-            ((QExpr)child).appendSql(builder);
+            ((QExpr)child).appendSql(builder, query);
         }
         builder.append(")");
     }
@@ -41,7 +42,7 @@ public class QElse extends QExpr
     }
 
     @Override
-    public JdbcType getSqlType()
+    public @NotNull JdbcType getSqlType()
     {
         return getChildrenSqlType();
     }

@@ -16,16 +16,17 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 public class QWhen extends QExpr
 {
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("\nWHEN(");
-        ((QExpr)getFirstChild()).appendSql(builder);
+        ((QExpr)getFirstChild()).appendSql(builder, query);
         builder.append(")THEN(");
-        ((QExpr)getLastChild()).appendSql(builder);
+        ((QExpr)getLastChild()).appendSql(builder, query);
         builder.append(")");
     }
 
@@ -38,7 +39,7 @@ public class QWhen extends QExpr
         builder.append(")");
     }
 
-    @Override
+    @Override @NotNull
     public JdbcType getSqlType()
     {
         QNode valueChild = getLastChild();

@@ -205,7 +205,7 @@ public class QueryUnion extends QueryRelation
                 }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
-                unionSql.append("#ERROR: " + message + "#");
+                unionSql.append("#ERROR: ").append(message).append("#");
                 return null;
             }
 			unionSql.append(unionOperator);
@@ -222,7 +222,7 @@ public class QueryUnion extends QueryRelation
             SQLFragment wrap = new SQLFragment();
             wrap.append("SELECT * FROM (");
             wrap.append(unionSql);
-            wrap.append(") u" + (unionSql.hashCode()&0x7fffffff));
+            wrap.append(") u").append(unionSql.hashCode() & 0x7fffffff);
             unionSql = wrap;
         }
 
@@ -236,8 +236,8 @@ public class QueryUnion extends QueryRelation
 				{
 					QExpr expr = resolveFields(entry.getKey());
 					unionSql.append(comma);
-					unionSql.append(expr.getSqlFragment(_schema.getDbSchema()));
-					if (!entry.getValue().booleanValue())
+					unionSql.append(expr.getSqlFragment(_schema.getDbSchema(), _query));
+					if (!entry.getValue())
 						unionSql.append(" DESC");
 					comma = ", ";
 				}
@@ -294,7 +294,7 @@ public class QueryUnion extends QueryRelation
 		FieldKey key = expr.getFieldKey();
 		if (key != null)
 		{
-            final UnionColumn uc = null==key ? null : _unionColumns.get(key.getName());
+            final UnionColumn uc = _unionColumns.get(key.getName());
             if (null == uc)
             {
                 _query.getParseErrors().add(new QueryParseException("Can't find column: " + key.getName(), null, expr.getLine(), expr.getColumn()));
@@ -303,7 +303,7 @@ public class QueryUnion extends QueryRelation
 			return new QField(null, key.getName(), expr)
 			{
 				@Override
-				public void appendSql(SqlBuilder builder)
+				public void appendSql(SqlBuilder builder, Query query)
 				{
                     builder.append(uc.getAlias());
 				}
@@ -324,7 +324,7 @@ public class QueryUnion extends QueryRelation
     }
     
 
-    RelationColumn getColumn(String name)
+    RelationColumn getColumn(@NotNull String name)
     {
         initColumns();
         return _unionColumns.get(name);
@@ -338,13 +338,13 @@ public class QueryUnion extends QueryRelation
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parent, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
         return null;
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parent, ColumnType.Fk fk, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         return null;
     }
@@ -424,6 +424,7 @@ public class QueryUnion extends QueryRelation
             return QueryUnion.this;
         }
 
+        @Override @NotNull
         public JdbcType getJdbcType()
         {
             return _first.getJdbcType();

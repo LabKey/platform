@@ -16,8 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.SQLFragment;
-
 /**
  * User: matthewb
  * Date: Dec 1, 2010
@@ -119,7 +117,7 @@ public class QJoin implements QJoinOrTable
         if (null != _on)
         {
             sql.append(" ON ");
-            select.resolveFields(_on, null, null).appendSql(sql);
+            select.resolveFields(_on, null, null).appendSql(sql, select._query);
         }
     }
 }

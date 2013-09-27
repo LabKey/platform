@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.util.DateUtil;
 
@@ -41,17 +42,17 @@ public class QDate extends QExpr implements IConstant
         return _value;
     }
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("{d '" + DateUtil.toISO(_value).substring(0,10) + "'}");
+        builder.append("{d '").append(DateUtil.toISO(_value).substring(0, 10)).append("'}");
     }
 
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("{d " + getTokenText() + "}");
+        builder.append("{d ").append(getTokenText()).append("}");
     }
 
-    public JdbcType getSqlType()
+    public @NotNull JdbcType getSqlType()
     {
         return JdbcType.DATE;
     }
@@ -64,7 +65,7 @@ public class QDate extends QExpr implements IConstant
     @Override
     public boolean equalsNode(QNode other)
     {
-        return other instanceof QDate && getValue().equals(((QNumber) other).getValue());
+        return other instanceof QDate && getValue().equals(((QDate) other).getValue());
     }
 
     @Override

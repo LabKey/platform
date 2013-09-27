@@ -32,13 +32,13 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
-import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.Queryable;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -236,9 +236,9 @@ public abstract class
             {
                 public MethodInfo getMethodInfo()
                 {
-                    return new AbstractMethodInfo(_jdbcType)
+                    return new AbstractQueryMethodInfo(_jdbcType)
                     {
-                        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+                        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
                         {
                             assert arguments.length == 2 || arguments.length == 3;
                             if (arguments.length == 2)
@@ -321,7 +321,7 @@ public abstract class
                 return new JdbcMethodInfoImpl(_name, _jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+                    public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
                     {
                         if (arguments.length == 2)
                         {
@@ -331,7 +331,7 @@ public abstract class
                             argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE));
                             arguments = argumentsThree;
                         }
-                        return super.getSQL(schema, arguments);
+                        return super.getSQL(query, schema, arguments);
                     }
                 };
             }
@@ -415,7 +415,7 @@ public abstract class
     }
 
 
-    static class JdbcMethodInfoImpl extends AbstractMethodInfo
+    static class JdbcMethodInfoImpl extends AbstractQueryMethodInfo
     {
         String _name;
 
@@ -425,7 +425,7 @@ public abstract class
             _name = name;
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append("{fn ");
@@ -451,7 +451,7 @@ public abstract class
             super(method._name, method._jdbcType);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] argumentsIN)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] argumentsIN)
         {
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
@@ -460,7 +460,7 @@ public abstract class
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
-            return super.getSQL(schema, arguments);
+            return super.getSQL(query, schema, arguments);
         }
     }
 
@@ -497,7 +497,7 @@ public abstract class
     }
 
 
-    class ConvertInfo extends AbstractMethodInfo
+    class ConvertInfo extends AbstractQueryMethodInfo
     {
         public ConvertInfo()
         {
@@ -524,7 +524,7 @@ public abstract class
             return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), jdbcType);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] fragments)
         {
             SQLFragment length = null;
             if (fragments.length >= 2)
@@ -574,7 +574,7 @@ public abstract class
         }
     }
 
-    static class PassthroughInfo extends AbstractMethodInfo
+    static class PassthroughInfo extends AbstractQueryMethodInfo
     {
         String _name;
 
@@ -602,7 +602,7 @@ public abstract class
             return jdbcType;
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append(_name).append("(");
@@ -628,16 +628,16 @@ public abstract class
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
-		public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+		public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
 		{
             boolean supportsRoundDouble = schema.getSqlDialect().supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(schema, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                    return super.getSQL(query, schema, new SQLFragment[] {arguments[0], new SQLFragment("0")});
                 else
-                    return super.getSQL(schema, new SQLFragment[] {arguments[0]});
+                    return super.getSQL(query, schema, new SQLFragment[] {arguments[0]});
             }
 
             int i = Integer.MIN_VALUE;
@@ -651,14 +651,14 @@ public abstract class
             }
 
             if (supportsRoundDouble || i == Integer.MIN_VALUE)
-                return super.getSQL(schema, arguments);
+                return super.getSQL(query, schema, arguments);
 
             // fall back, only supports simple integer
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
             scaled.append(")*").append(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(schema, new SQLFragment[] {scaled});
+            SQLFragment ret = super.getSQL(query, schema, new SQLFragment[] {scaled});
             ret.append("/");
             ret.append(Math.pow(10,i));
             return ret;
@@ -666,14 +666,14 @@ public abstract class
 	}
 
 
-    class AgeMethodInfo extends AbstractMethodInfo
+    class AgeMethodInfo extends AbstractQueryMethodInfo
     {
         AgeMethodInfo()
         {
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
@@ -690,14 +690,14 @@ public abstract class
     }
 
 
-    class AgeInYearsMethodInfo extends AbstractMethodInfo
+    class AgeInYearsMethodInfo extends AbstractQueryMethodInfo
     {
         AgeInYearsMethodInfo()
         {
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -725,14 +725,14 @@ public abstract class
     }
 
 
-    class AgeInMonthsMethodInfo extends AbstractMethodInfo
+    class AgeInMonthsMethodInfo extends AbstractQueryMethodInfo
     {
         AgeInMonthsMethodInfo()
         {
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -762,14 +762,14 @@ public abstract class
     }
 
 
-    class StartsWithInfo extends AbstractMethodInfo
+    class StartsWithInfo extends AbstractQueryMethodInfo
     {
         StartsWithInfo()
         {
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
             SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
@@ -800,14 +800,14 @@ public abstract class
 
 
 
-    class IsEqualInfo extends AbstractMethodInfo
+    class IsEqualInfo extends AbstractQueryMethodInfo
     {
         IsEqualInfo()
         {
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             SQLFragment a = arguments[0];
@@ -823,14 +823,14 @@ public abstract class
         }
     }
 
-    class UserIdInfo extends AbstractMethodInfo
+    class UserIdInfo extends AbstractQueryMethodInfo
     {
         UserIdInfo()
         {
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -848,20 +848,23 @@ public abstract class
         public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
             ColumnInfo c = super.createColumnInfo(parentTable, arguments, alias);
-            c.setFk(new UserIdQueryForeignKey(parentTable.getUserSchema().getUser(), parentTable.getUserSchema().getContainer()));
+            UserSchema schema = parentTable.getUserSchema();
+            if (null == schema)
+                throw new NullPointerException();
+            c.setFk(new UserIdQueryForeignKey(schema.getUser(), schema.getContainer()));
             c.setDisplayColumnFactory(UserIdQueryForeignKey._factoryBlank);
             return c;
         }
     }
 
-    class UserNameInfo extends AbstractMethodInfo
+    class UserNameInfo extends AbstractQueryMethodInfo
     {
         UserNameInfo()
         {
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -879,7 +882,7 @@ public abstract class
     }
 
 
-    class FolderInfo extends AbstractMethodInfo
+    class FolderInfo extends AbstractQueryMethodInfo
     {
         final boolean path;
 
@@ -889,12 +892,12 @@ public abstract class
             this.path = path;
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             String v;
             // NOTE we resolve CONTAINER at compile time because we don't have a good place to set this variable at runtime
             // use of SqlSelector and async complicate that
-            Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+            Container cCompile = getCompileTimeContainer(query);
             v = null==cCompile ? null : path ? cCompile.getPath() : cCompile.getName();
 
             if (null == v)
@@ -905,14 +908,14 @@ public abstract class
     }
 
 
-    class ModulePropertyInfo extends AbstractMethodInfo
+    class ModulePropertyInfo extends AbstractQueryMethodInfo
     {
         ModulePropertyInfo()
         {
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             String moduleName = toSimpleString(arguments[0]);
             String propertyName = toSimpleString(arguments[1]);
@@ -930,8 +933,10 @@ public abstract class
                 if (null == mp)
                     break findProperty;
 
-                Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
-                String value = mp.getEffectiveValue(cCompile);
+                String value = null;
+                Container cCompile = getCompileTimeContainer(query);
+                if (null != cCompile)
+                    value = mp.getEffectiveValue(cCompile);
                 return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
             }
 
@@ -939,7 +944,7 @@ public abstract class
         }
     }
 
-    class JavaConstantInfo extends AbstractMethodInfo
+    class JavaConstantInfo extends AbstractQueryMethodInfo
     {
         JavaConstantInfo()
         {
@@ -947,7 +952,7 @@ public abstract class
         }
 
         @Override
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             getProperty:
             {
@@ -1006,14 +1011,14 @@ public abstract class
     }
 
 
-    class ContextPathInfo extends AbstractMethodInfo
+    class ContextPathInfo extends AbstractQueryMethodInfo
     {
         ContextPathInfo()
         {
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(AppProps.getInstance().getContextPath());
@@ -1022,14 +1027,14 @@ public abstract class
     }
 
 
-    class IsMemberInfo extends AbstractMethodInfo
+    class IsMemberInfo extends AbstractQueryMethodInfo
     {
         IsMemberInfo()
         {
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             SQLFragment groupArg = arguments[0];
@@ -1141,7 +1146,7 @@ public abstract class
     }
 
 
-    class OverlapsMethodInfo extends AbstractMethodInfo
+    class OverlapsMethodInfo extends AbstractQueryMethodInfo
     {
         OverlapsMethodInfo()
         {
@@ -1149,7 +1154,7 @@ public abstract class
         }
         
         @Override
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
@@ -1207,6 +1212,15 @@ public abstract class
         s = s.substring(1,s.length()-1);
         s = StringUtils.replace(s,"''","'");
         return s;
+    }
+
+
+    static Container getCompileTimeContainer(Query query)
+    {
+        Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+        if (null == cCompile && null != query)
+            cCompile = query.getSchema().getContainer();
+        return cCompile;
     }
 
 

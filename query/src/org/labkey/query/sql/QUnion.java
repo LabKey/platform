@@ -52,7 +52,7 @@ public class QUnion extends QExpr
     }
 
 
-    public void appendSql(SqlBuilder builder)
+    public void appendSql(SqlBuilder builder, Query query)
     {
         if (_union == null)
         {

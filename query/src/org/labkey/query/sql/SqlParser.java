@@ -440,15 +440,19 @@ public class SqlParser
         {
             return (QueryParseException) e;
         }
-        if (e instanceof TokenStreamRecognitionException)
+        else if (e instanceof TokenStreamRecognitionException)
         {
             e = ((TokenStreamRecognitionException) e).recog;
         }
-        if (e instanceof RecognitionException)
+        else if (e instanceof RecognitionException)
         {
             RecognitionException re = (RecognitionException)e;
             String message = formatRecognitionException(re);
             return new QueryParseException(message, re, re.line, re.charPositionInLine);
+        }
+        else if (e instanceof RuntimeException)
+        {
+            _log.error("Unexpected exception", e);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }
