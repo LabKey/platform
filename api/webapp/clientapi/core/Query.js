@@ -1411,12 +1411,13 @@ LABKEY.Query = new function()
  */
 LABKEY.Query.Filter = function (columnName, value, filterType)
 {
-    if (columnName instanceof LABKEY.FieldKey){
-        columnName = columnName.toString();
-    }
-
-    if (columnName instanceof Array) {
-        columnName = columnName.join('/');
+    if (columnName) {
+        if (columnName instanceof LABKEY.FieldKey) {
+            columnName = columnName.toString();
+        }
+        else if (columnName instanceof Array) {
+            columnName = columnName.join('/');
+        }
     }
 
     if (!filterType)
