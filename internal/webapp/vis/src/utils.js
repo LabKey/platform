@@ -84,34 +84,6 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     return groupedData;
 };
 
-LABKEY.vis.groupDataWithSeriesCheck = function(data, groupAccessor, seriesList, columnAliases){
-    /*
-        Groups data by the groupAccessor passed in. Also, checks for the existance of any series data for that groupAccessor.
-        Returns an object where each attribute will be a groupAccessor with an array of data rows and a boolean for hasSeriesData
-    */
-    var groupedData = {};
-    for (var i = 0; i < data.length; i++)
-    {
-        var value = groupAccessor(data[i]);
-        if (!groupedData[value])
-        {
-            groupedData[value] = {data: [], hasSeriesData: false};
-        }
-        groupedData[value].data.push(data[i]);
-
-        for (var j = 0; j < seriesList.length; j++)
-        {
-            var seriesAlias = LABKEY.vis.getColumnAlias(columnAliases, seriesList[j].aliasLookupInfo);
-            if (seriesAlias && data[i][seriesAlias] && data[i][seriesAlias].value)
-            {
-                groupedData[value].hasSeriesData = true;
-                break;
-            }
-        }
-    }
-    return groupedData;
-};
-
 LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
     /*
      Lookup the column alias (from the getData response) by the specified measure information
