@@ -2047,11 +2047,6 @@ a.labkey-text-link, a.labkey-text-link:visited {
     background: url(./_images/arrow_right.png) right no-repeat;
 }
 
-/* Used in LABKEY.ext4.LinkButton in order to improve alignment*/
-.linkbutton {
-    font-size: 10px;
-}
-
 /* Data Region Header Locking */
 table.labkey-data-region a.labkey-text-link,
 table.labkey-data-region a.labkey-text-link:visited {
