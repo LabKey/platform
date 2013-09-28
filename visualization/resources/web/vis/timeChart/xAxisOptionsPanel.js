@@ -98,7 +98,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             width: 175,
             boxLabel: 'Visit Based Chart',
             checked: this.time == "visit",
-            disabled: this.timepointType == "date",
+            disabled: LABKEY.moduleContext.study.timepointType == "DATE",
             flex: 1,
             listeners: {
                 scope: this,
@@ -124,7 +124,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                     }
                 },
                 'enable': function(cmp){
-                    if(this.timepointType == "date"){
+                    if(LABKEY.moduleContext.study.timepointType == "DATE"){
                         cmp.setDisabled(true);
                     }
                 }
@@ -428,13 +428,13 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 scope: this,
                 'load': function(store, records, options) {
                     // if there are no zero date option for this study, return (an error message will be shown by the timeChartPanel
-                    if (store.getTotalCount() == 0 && this.timepointType == "date")
+                    if (store.getTotalCount() == 0 && LABKEY.moduleContext.study.timepointType == "DATE")
                     {
                         this.fireEvent('noDemographicData');
                         return;
                     }
 
-                    if(store.getTotalCount() == 0 && this.timepointType == "visit")
+                    if(store.getTotalCount() == 0 && LABKEY.moduleContext.study.timepointType == "VISIT")
                     {
                         // If we don't have any zero dates and we have a visit based study we'll want to automatically
                         // set the chart up as a visit based chart since there are no other options.

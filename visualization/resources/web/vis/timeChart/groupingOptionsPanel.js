@@ -39,8 +39,8 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             name: 'subject_selection',
             inputValue: 'subjects',
             labelAlign: 'top',
-            fieldLabel: this.subjectNounSingular + ' Selection',
-            boxLabel: this.subjectNounPlural,
+            fieldLabel: LABKEY.moduleContext.study.subject.nounSingular + ' Selection',
+            boxLabel: LABKEY.moduleContext.study.subject.nounPlural,
             checked: this.chartSubjectSelection == 'subjects',
             listeners: {
                 scope: this,
@@ -75,7 +75,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             name: 'subject_selection',
             inputValue: 'groups',
             width: 200,
-            boxLabel: this.subjectNounSingular + ' Groups',
+            boxLabel: LABKEY.moduleContext.study.subject.nounSingular + ' Groups',
             checked: this.chartSubjectSelection == 'groups',
             listeners: {
                 scope: this,
@@ -254,7 +254,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             width: 250,
             checked: this.chartLayout == 'per_subject',
             inputValue: 'per_subject',
-            boxLabel: 'One Chart Per ' + this.subjectNounSingular,
+            boxLabel: 'One Chart Per ' + LABKEY.moduleContext.study.subject.nounSingular,
             hidden: this.chartSubjectSelection ==  'groups',
             listeners: {
                 scope:this,

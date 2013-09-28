@@ -238,8 +238,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this,
             menu: {
                 items: [
-                    {text: 'Export as PDF', disabled: true, tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null},
-                    {text: 'Export as Script', disabled: true}
+                    {
+                        text: 'Export as PDF',
+                        icon: LABKEY.contextPath + '/_icons/pdf.gif',
+                        disabled: true,
+                        tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null
+                    },
+                    {
+                        text: 'Export as Script',
+                        icon: LABKEY.contextPath + '/_icons/text.png',
+                        disabled: true
+                    }
                 ]
             }
         });
@@ -969,7 +978,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 modal: true,
                 relative: this.exportBtn,
                 width: 800,
-                resizeable: false,
+                resizable: false,
                 closeAction: 'hide',
                 items: [{
                     xtype: 'panel',

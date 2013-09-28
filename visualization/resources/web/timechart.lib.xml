@@ -15,6 +15,8 @@
         <script path="vis/timeChart/aestheticOptionsPanel.js"/>
         <script path="vis/timeChart/participantSelector.js"/>
         <script path="vis/timeChart/groupSelector.js"/>
+        <script path="vis/timeChart/timeChartHelper.js"/>
+        <script path="vis/timeChart/exportScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>
     </library>
     <dependencies>

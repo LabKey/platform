@@ -235,7 +235,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             name: 'measure_series',
             inputValue: 'per_subject',
             hideLabel: true,
-            boxLabel: 'One Per ' + this.viewInfo.subjectNounSingular,
+            boxLabel: 'One Per ' + LABKEY.moduleContext.study.subject.nounSingular,
             width: 150,
             checked: true,
             listeners: {
@@ -255,7 +255,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.seriesPerDimensionRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'measure_series',
             inputValue: 'per_subject_and_dimension',
-            boxLabel: 'One Per ' + this.viewInfo.subjectNounSingular + ' and ',
+            boxLabel: 'One Per ' + LABKEY.moduleContext.study.subject.nounSingular + ' and ',
             disabled: true,
             width: 185,
             listeners: {
@@ -585,7 +585,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 'load': function(store, records, options){
                     // since the ParticipantVisit/VisitDate will almost always be the date the users wants for multiple measures,
                     // always make sure that it is added to the store
-                    var visitDateStr = this.viewInfo.subjectNounSingular + "Visit/VisitDate";
+                    var visitDateStr = LABKEY.moduleContext.study.subject.nounSingular + "Visit/VisitDate";
                     if (store.find('name', visitDateStr) == -1)
                     {
                         var newDateRecordData = {
@@ -731,7 +731,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     {
                         for (var i = 0; i < records.length; i++)
                         {
-                            if (records[i].data.name == this.viewInfo.subjectColumn || records[i].data.name == this.viewInfo.subjectColumn + "/" + this.viewInfo.subjectColumn)
+                            if (records[i].data.name == LABKEY.moduleContext.study.subject.columnName
+                                || records[i].data.name == LABKEY.moduleContext.study.subject.columnName + "/" + LABKEY.moduleContext.study.subject.columnName)
                             {
                                 store.remove(records[i]);
                                 break;

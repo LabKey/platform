@@ -9,7 +9,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
 
     constructor : function(config){
         Ext4.applyIf(config, {
-            title: config.subjectNounPlural,
+            title: LABKEY.moduleContext.study.subject.nounPlural,
             border: false,
             autoScroll: true,
             maxInitSelection: 5
@@ -59,9 +59,9 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             displayMode: 'PARTICIPANT',
             filterType: 'participant',
             subjectNoun: {
-                singular : this.subjectNounSingular,
-                plural : this.subjectNounPlural,
-                columnName: this.subjectColumn
+                singular : LABKEY.moduleContext.study.subject.nounSingular,
+                plural : LABKEY.moduleContext.study.subject.nounPlural,
+                columnName: LABKEY.moduleContext.study.subject.columnName
             },
             maxInitSelection: this.maxInitSelection,
             selection: this.selection,
