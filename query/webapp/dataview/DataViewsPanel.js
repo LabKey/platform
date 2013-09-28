@@ -1224,6 +1224,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var buttons = [{
             text: 'Save',
+            formBind: true,
             handler : function(btn) {
                 var form = btn.up('form').getForm();
                 if (form.isValid())
@@ -1233,18 +1234,25 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         // In order to clear the category
                         form.setValues({category: 0});
                     }
-                    Ext4.Ajax.request({
-                        url     : LABKEY.ActionURL.buildURL('reports', 'editView.api'),
-                        method  : 'POST',
-                        params  : form.getValues(),
+                    form.submit({
+                        url : LABKEY.ActionURL.buildURL('reports', 'editView.api'),
+                        method : 'POST',
+                        submitEmptyText : false,
                         success : function() {
                             this.onEditSave();
                             editWindow.getEl().unmask();
                             editWindow.close();
                         },
-                        failure : function(response) {
+                        failure : function(form, action) {
                             editWindow.getEl().unmask();
-                            LABKEY.Utils.displayAjaxErrorResponse(response, null, false, 'A error occured saving the properties - ');
+                            var msg = 'An error occurred saving the properties';
+                            if (action.response && action.response.responseText) {
+                                var json = Ext4.decode(action.response.responseText);
+
+                                if (json.exception)
+                                    msg = msg + ' - ' + json.exception;
+                            }
+                            Ext4.Msg.alert("Error", msg);
                         },
                         scope : this
                     });

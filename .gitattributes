@@ -2510,6 +2510,8 @@ query/webapp/query/moveup.gif -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
+query/webapp/reports/ScriptReportPanel.css -text
+query/webapp/reports/ScriptReportPanel.js -text
 query/webapp/reports/attachment.png -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/crosstab.png -text
@@ -2540,6 +2542,7 @@ query/webapp/reports/participantReport.png -text
 query/webapp/reports/r.gif -text
 query/webapp/reports/rowExpander.js -text
 query/webapp/reports/xls.gif -text
+query/webapp/scriptreporteditor.lib.xml -text
 search/Search.iml -text
 search/lib/instructions.txt -text
 search/lib/lucene-4.3.0.src.zip -text

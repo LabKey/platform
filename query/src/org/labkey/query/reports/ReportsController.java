@@ -3312,7 +3312,7 @@ public class ReportsController extends SpringActionController
             //we must respond with a content-type of text/html or the
             //browser will prompt the user to save the response, as the
             //browser won't natively show application/json content-type
-            //setContentTypeOverride("text/html");
+            setContentTypeOverride("text/html");
         }
 
         @Override

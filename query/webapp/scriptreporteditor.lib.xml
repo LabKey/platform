@@ -1,0 +1,10 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="reports/ScriptReportPanel.js"/>
+        <script path="reports/ScriptReportPanel.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+        <dependency path="codemirror" />
+    </dependencies>
+</libraries>
