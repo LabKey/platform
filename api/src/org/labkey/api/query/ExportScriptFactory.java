@@ -26,5 +26,5 @@ public interface ExportScriptFactory
 {
     public String getScriptType();
     public String getMenuText();
-    public WebPartView getView(QueryView queryView);
+    public ExportScriptModel getModel(QueryView queryView);
 }

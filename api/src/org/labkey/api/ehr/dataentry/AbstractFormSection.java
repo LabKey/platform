@@ -200,7 +200,7 @@ abstract public class AbstractFormSection implements FormSection
         defaultButtons.add("ADDANIMALS");
         defaultButtons.add("DELETERECORD");
         defaultButtons.add("SELECTALL");
-        defaultButtons.add("TEMPLATE");
+        //defaultButtons.add("TEMPLATE");
 
         return defaultButtons;
     }

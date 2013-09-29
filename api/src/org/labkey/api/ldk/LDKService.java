@@ -18,6 +18,7 @@ package org.labkey.api.ldk;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.ldk.notification.NotificationSection;
 import org.labkey.api.security.User;
 
 import java.util.Map;
@@ -53,4 +54,8 @@ abstract public class LDKService
     abstract public Map<String, Object> getContainerSizeJson(Container c, User u, boolean includeAllRootTypes, boolean includeFileCount);
 
     abstract public void applyNaturalSort(AbstractTableInfo ti, String colName);
+
+    abstract public void appendEnddateColumns(AbstractTableInfo ti);
+
+    abstract public void registerSiteSummaryNotification(NotificationSection ns);
 }

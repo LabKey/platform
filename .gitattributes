@@ -699,6 +699,7 @@ api/src/org/labkey/api/ldk/ExtendedSimpleModule.java -text
 api/src/org/labkey/api/ldk/LDKService.java -text
 api/src/org/labkey/api/ldk/NavItem.java -text
 api/src/org/labkey/api/ldk/notification/Notification.java -text
+api/src/org/labkey/api/ldk/notification/NotificationSection.java -text
 api/src/org/labkey/api/ldk/notification/NotificationService.java -text
 api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
 api/src/org/labkey/api/ldk/table/SimpleButtonConfigFactory.java -text
@@ -867,6 +868,7 @@ api/src/org/labkey/api/query/ChooseQueryView.java -text
 api/src/org/labkey/api/query/Closure.java -text
 api/src/org/labkey/api/query/CreateJavaScriptModel.java -text
 api/src/org/labkey/api/query/CreatePerlScriptModel.java -text
+api/src/org/labkey/api/query/CreateURLScriptModel.java -text
 api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
@@ -931,6 +933,7 @@ api/src/org/labkey/api/query/SimpleSchemaTreeVisitor.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text
 api/src/org/labkey/api/query/TableSorter.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
+api/src/org/labkey/api/query/URLExportScriptFactory.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text
 api/src/org/labkey/api/query/UserIdQueryForeignKey.java -text
 api/src/org/labkey/api/query/UserIdRenderer.java -text
@@ -939,10 +942,8 @@ api/src/org/labkey/api/query/UserSchemaAction.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
 api/src/org/labkey/api/query/ViewOptions.java -text
-api/src/org/labkey/api/query/createJavaScript.jsp -text
-api/src/org/labkey/api/query/createPerlScript.jsp -text
+api/src/org/labkey/api/query/createExportScript.jsp -text
 api/src/org/labkey/api/query/excelExportOptions.jsp -text
-api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/import.jsp -text
 api/src/org/labkey/api/query/scriptExportOptions.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
@@ -7831,6 +7832,7 @@ internal/src/org/labkey/api/exp/property/PlateBasedAssaySampleSetDomainKind.java
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
+internal/src/org/labkey/api/ldk/table/ContainerScopedTable.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text

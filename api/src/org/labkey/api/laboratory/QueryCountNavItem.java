@@ -72,6 +72,13 @@ public class QueryCountNavItem extends SingleNavItem
         if (ti == null)
             return new Long(0);
 
+        SimpleFilter filter = getFilter(c, ti);
+        TableSelector ts = new TableSelector(ti, ti.getPkColumns(), filter, null);
+        return ts.getRowCount();
+    }
+
+    protected SimpleFilter getFilter(Container c, TableInfo ti)
+    {
         SimpleFilter filter = new SimpleFilter();
 
         if (ti.getColumn("container") != null)
@@ -83,8 +90,7 @@ public class QueryCountNavItem extends SingleNavItem
                 filter.addCondition(clause);
         }
 
-        TableSelector ts = new TableSelector(ti, ti.getPkColumns(), filter, null);
-        return ts.getRowCount();
+        return filter;
     }
 
     protected ActionURL getActionURL(Container c, User u)

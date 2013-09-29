@@ -15,15 +15,17 @@
  */
 package org.labkey.api.query;
 
-import org.jetbrains.annotations.Nullable;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.WebPartView;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -83,6 +85,8 @@ public abstract class ExportScriptModel
     {
         return _view.getSettings().getViewName();
     }
+
+    public abstract String getScriptExportText();
 
     public abstract String getFilters();
     protected abstract String makeFilterExpression(String name, CompareType operator, String value);
@@ -161,7 +165,7 @@ public abstract class ExportScriptModel
         if (null == sortParam || sortParam.length() == 0)
             return null;
         else
-            return "\"" + sortParam + "\"";
+            return sortParam;
     }
 
     protected QueryView getQueryView()
@@ -174,7 +178,7 @@ public abstract class ExportScriptModel
         pageConfig.setTemplate(PageConfig.Template.None);
         response.setContentType("text/plain");
         ExportScriptFactory factory = QueryView.getExportScriptFactory(scriptType);
-        WebPartView scriptView = factory.getView(queryView);
+        WebPartView scriptView = new JspView<>("/org/labkey/api/query/createExportScript.jsp", factory.getModel(queryView));
         scriptView.setFrame(WebPartView.FrameType.NOT_HTML);
 
         QueryService.get().addAuditEvent(queryView, "Exported to script type " + scriptType, null);
@@ -189,5 +193,15 @@ public abstract class ExportScriptModel
             return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getUser());
         else
             return _view.getQueryDef().getContainerFilter();
+    }
+
+    protected String doubleQuote(String val)
+    {
+        return "\"" + val + "\"";
+    }
+
+    protected String indent(int indentSpaces)
+    {
+        return StringUtils.repeat(" ", indentSpaces);
     }
 }

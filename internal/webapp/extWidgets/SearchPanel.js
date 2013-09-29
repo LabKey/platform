@@ -110,7 +110,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         this.callParent();
 
-        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
+        this.store = this.store || Ext4.create('LABKEY.ext4.data.Store', {
             containerPath: this.containerPath
             ,queryName: this.queryName
             ,schemaName: this.schemaName

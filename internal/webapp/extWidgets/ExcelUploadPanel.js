@@ -26,6 +26,7 @@ Ext4.namespace('LABKEY.ext');
  * @param {String} [config.containerPath] The containerPath to use when fetching the query
  * @param {boolean} config.showAlertOnSuccess Defaults to true
  * @param {boolean} config.showAlertOnFailure Defaults to true
+ * @param {Integer} config.timeout The timeout in seconds.  Defaults to 60
  * @example &lt;script type="text/javascript"&gt;
     Ext4.onReady(function(){
 
@@ -55,6 +56,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             ,border: true
             ,bodyStyle:'padding:5px'
             ,frame: false
+            ,timeout: this.timeout || 60
             ,defaults: {
                 bodyStyle:'padding:5px',
                 border: false
@@ -229,7 +231,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     populateTemplates: function(meta){
         var toAdd = [];
 
-        if(meta.importMessage){
+        if (meta.importMessage){
             toAdd.push({
                 html: '<b>' + meta.importMessage + '</b>',
                 style: 'padding-bottom: 20px;',
@@ -237,8 +239,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             });
         }
 
-        if(meta.importTemplates && meta.importTemplates.length > 1)
-        {
+        if (meta.importTemplates && meta.importTemplates.length > 1){
             toAdd.push({
                 layout: 'hbox',
                 style: 'padding-bottom: 20px;',
@@ -266,7 +267,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                     scope: this,
                     handler: function(btn){
                         var field = this.down('#selectedTemplate');
-                        if(!field.getValue()){
+                        if (!field.getValue()){
                             Ext4.Msg.alert('Error', 'Must pick a template');
                             return;
                         }
@@ -305,7 +306,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         btn.setDisabled(true);
 
         var value = this.down('textarea') ? this.down('textarea').getValue() : this.down('fileuploadfield').getValue();
-        if(!value){
+        if (!value){
             Ext4.Msg.alert('Error', 'Must paste text or upload a file');
             btn.setDisabled(false);
             return;
@@ -327,33 +328,33 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         var errorArea = this.down('#errorArea');
         errorArea.removeAll();
 
-        if(this.btnToEnableOnComplete){
+        if (this.btnToEnableOnComplete){
             this.btnToEnableOnComplete.setDisabled(false);
             this.btnToEnableOnComplete = null;
         }
 
-        var response = Ext4.JSON.decode(action.response.responseText);
-        if(response && response.errors){
+        var response = (action.response && action.response.responseText) ? Ext4.JSON.decode(action.response.responseText) : null;
+        if (response && response.errors){
             var html = '<div style="color: red;padding-bottom: 10px;">There were errors in the upload: ';
-            if(response.errors._form){
+            if (response.errors._form){
                 html += response.errors._form;
             }
             html += '<br><br>';
 
-            if(Ext4.isArray(response.errors)){
+            if (Ext4.isArray(response.errors)){
                 var rowErrors;
                 var style = 'style="color:red;padding-right: 10px;vertical-align: top;"';
 
                 html += '<table border=0 style="vertical-align: top;">';
                 Ext4.each(response.errors, function(error){
                     var rowErrors = [];
-                    if(error.errors)
+                    if (error.errors)
                         Ext4.iterate(error.errors, function(field){
                             rowErrors.push(error.errors[field]); //field + ': ' +
                         }, this);
 
                     var hasRow = Ext4.isDefined(error.rowNumber);
-                    if(hasRow)
+                    if (hasRow)
                         html += '<tr><td '+style+'>Row '+(error.rowNumber+1) + ':</td>';
 
                     html += '<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>')+'</td></tr>';
@@ -363,25 +364,28 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             }
             html += '</div>';
         }
+        else {
+            console.log(action)
+        }
 
         errorArea.add({html: html});
         Ext4.Msg.hide();
 
-        if(!response || !response.success){
+        if (!response || !response.success){
             var msg = response ? response.exception || response.message : null;
 
-            if(this.showAlertOnFailure)
+            if (this.showAlertOnFailure)
                 Ext4.Msg.alert('Error', msg || 'There was a problem with the upload');
 
             this.fireEvent('uploadexception', this, response);
         }
         else {
-            if(response.rowCount > 0)
+            if (response.rowCount > 0)
                 response.successMessage = 'Success! '+response.rowCount+' rows inserted.';
             else
                 response.successMessage = 'No rows inserted.';
 
-            if(this.showAlertOnSuccess)
+            if (this.showAlertOnSuccess)
                 Ext4.Msg.alert('Error', response.successMessage);
 
             this.fireEvent('uploadcomplete', this, response);

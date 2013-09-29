@@ -53,6 +53,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private String _javascriptClass = "EHR.panel.DataEntryPanel";
     private String _storeCollectionClass = "EHR.data.StoreCollection";
     private List<FormSection> _sections;
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private Module _owner;
 
     public AbstractDataEntryForm(Module owner, String name, String label, String category, List<FormSection> sections)
@@ -242,10 +243,17 @@ public class AbstractDataEntryForm implements DataEntryForm
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
+        cds.addAll(_clientDependencies);
+
         for (FormSection section : getFormSections())
         {
             cds.addAll(section.getClientDependencies());
         }
         return cds;
+    }
+
+    protected void addClientDependency(ClientDependency cd)
+    {
+        _clientDependencies.add(cd);
     }
 }

@@ -180,7 +180,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             },
             width: 400,
             queryMode: 'local',
-            store: Ext4.create('LABKEY.ext4.Store', {
+            store: Ext4.create('LABKEY.ext4.data.Store', {
                 schemaName: 'core',
                 queryName: 'workbooks',
                 columns: 'RowId,Title,CreatedBy,Name',

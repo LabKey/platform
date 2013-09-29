@@ -1,5 +1,6 @@
+<%
 /*
- * Copyright (c) 2009-2013 LabKey Corporation
+ * Copyright (c) 2009-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.query;
-
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.JspView;
-
-/**
- * User: adam
- * Date: Jan 27, 2009
- * Time: 2:34:48 PM
- */
-public class RExportScriptFactory implements ExportScriptFactory
-{
-    public String getScriptType()
-    {
-        return "r";
-    }
-
-    public String getMenuText()
-    {
-        return "R";
-    }
-
-    public ExportScriptModel getModel(QueryView queryView)
-    {
-        return new RExportScriptModel(queryView);
-    }
-}
-
-
+%><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.query.ExportScriptModel" %><%@ page extends="org.labkey.api.jsp.JspBase" %><%
+    JspView<ExportScriptModel> me = (JspView<ExportScriptModel>) HttpView.currentView();
+    ExportScriptModel model = me.getModelBean();
+    me.getViewContext().getResponse().setContentType("text/plain");
+%><%=text(model.getScriptExportText())%>

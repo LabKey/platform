@@ -7,7 +7,7 @@
 /**
  * Constructs a new LabKey GridPanel using the supplied configuration.
  *
- * @param {LABKEY.ext4.Store} config.store A LABKEY.ext4.Store or a store config object which will be used to create a store.
+ * @param {LABKEY.ext4.data.Store} config.store A LABKEY.ext4.data.Store or a store config object which will be used to create a store.
  * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event
  * @param {boolean} [config.hideNonEditableColumns] If true, columns that are non-editable will be hidden
  * @param {boolean} [config.showPagingToolbar] If true, an Ext PagingToolbar will be appended to the bottom of the grid
@@ -15,7 +15,7 @@
  * @example &lt;script type="text/javascript"&gt;
     Ext4.onReady(function(){
 
-        var store = new LABKEY.ext4.Store({
+        var store = new LABKEY.ext4.data.Store({
             schemaName: 'lists',
             queryName: 'myList'
         });
@@ -160,7 +160,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         //allow creation of panel using store config object
         if(!this.store.events)
-            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+            this.store = Ext4.create('LABKEY.ext4.data.Store', this.store);
 
         this.store.supressErrorAlert = true;
 

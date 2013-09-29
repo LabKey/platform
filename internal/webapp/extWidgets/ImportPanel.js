@@ -12,7 +12,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
     initComponent: function(){
         this.viewName = this.viewName || '~~INSERT~~';
 
-        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
+        this.store = this.store || Ext4.create('LABKEY.ext4.data.Store', {
             schemaName: this.schemaName,
             queryName: this.queryName,
             viewName: this.viewName,
@@ -42,7 +42,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
 //            },{
 //                title: 'Import Multiple',
 //                xtype: 'labkey-gridpanel',
-//                store: Ext4.create('LABKEY.ext4.Store', {
+//                store: Ext4.create('LABKEY.ext4.data.Store', {
 //                    schemaName: this.schemaName,
 //                    queryName: this.queryName,
 //                    viewName: this.viewName,

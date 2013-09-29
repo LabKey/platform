@@ -16,6 +16,7 @@
 package org.labkey.api.ehr.history;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -98,10 +99,15 @@ abstract public class AbstractDataSource implements HistoryDataSource
         return us.getTable(_query);
     }
 
+    @NotNull
     public List<HistoryRow> getRows(Container c, User u, String subjectId, String caseId, boolean redacted)
     {
         String caseIdField = "caseId";
-        if (getTableInfo(c, u).getColumn(caseIdField) == null)
+        TableInfo ti = getTableInfo(c, u);
+        if (ti == null)
+            return  Collections.emptyList();
+
+        if (ti.getColumn(caseIdField) == null)
             return Collections.emptyList();
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString(caseIdField), caseId, CompareType.EQUAL);
@@ -109,18 +115,20 @@ abstract public class AbstractDataSource implements HistoryDataSource
         return getRows(c, u, filter, redacted);
     }
 
+    @NotNull
     public List<HistoryRow> getRows(Container c, User u, final String subjectId, Date minDate, Date maxDate, boolean redacted)
     {
         SimpleFilter filter = getFilter(subjectId, minDate, maxDate);
         return getRows(c, u, filter, redacted);
     }
 
+    @NotNull
     protected List<HistoryRow> getRows(Container c, User u, SimpleFilter filter, final boolean redacted)
     {
         Date start = new Date();
         final TableInfo ti = getTableInfo(c, u);
         if (ti == null)
-            return  null;
+            return  Collections.emptyList();
 
         final Collection<ColumnInfo> cols = getColumns(ti);
 

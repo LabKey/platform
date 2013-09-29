@@ -7,8 +7,8 @@ Ext4.namespace('LABKEY.ext', 'LABKEY.ext4');
 
 /**
  * A collection of static helper methods designed to interface between LabKey's metadata and Ext.
- * @class It is heavily used internally with LABKEY's Client API, such as LABKEY.ext4.FormPanel or LABKEY.ext4.Store;
- * however these methods can be called directly.  LABKEY.ext4.Store also contains convenience methods that wrap some of Ext4Helper's methods.
+ * @class It is heavily used internally with LABKEY's Client API, such as LABKEY.ext4.FormPanel or LABKEY.ext4.data.Store;
+ * however these methods can be called directly.  LABKEY.ext4.data.Store also contains convenience methods that wrap some of Ext4Helper's methods.
  *
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
@@ -319,7 +319,7 @@ LABKEY.ext.Ext4Helper = new function(){
             {
                 var config = c.store || LABKEY.ext.Ext4Helper.getLookupStoreConfig(c);
                 config.storeId = storeId;
-                store = Ext4.create('LABKEY.ext4.Store', config);
+                store = Ext4.create('LABKEY.ext4.data.Store', config);
             }
             return store;
         },

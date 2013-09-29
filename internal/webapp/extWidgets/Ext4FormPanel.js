@@ -22,7 +22,7 @@ Ext4.namespace('LABKEY.ext4');
  * @constructor
  * @augments Ext.form.Panel
  * @param config Configuration properties.
- * @param {String} config.store A LABKEY.ext4.Store or a store config object which will be used to create a store.
+ * @param {String} config.store A LABKEY.ext4.data.Store or a store config object which will be used to create a store.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  This should be a map where the keys match field names (case-sensitive).  This will not modify the underlying store.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event.  Defaults to false.
@@ -31,7 +31,7 @@ Ext4.namespace('LABKEY.ext4');
  * @example &lt;script type="text/javascript"&gt;
     Ext4.onReady(function(){
 
-        var store = new LABKEY.ext4.Store({
+        var store = new LABKEY.ext4.data.Store({
             schemaName: 'lists',
             queryName: 'myList'
         });
@@ -53,7 +53,7 @@ Ext4.namespace('LABKEY.ext4');
                 schemaName: 'lists',
                 queryName: 'myList',
                 viewName: 'view1',
-                //this is an alternate method to supply metadata config.  see LABKEY.ext4.Store for more information
+                //this is an alternate method to supply metadata config.  see LABKEY.ext4.data.Store for more information
                 metadata: {
                     field2: {
                         //this config will be applied to the Ext grid editor config object
@@ -172,7 +172,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         //allow creation of panel using store config object
         if(!this.store.events)
-            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+            this.store = Ext4.create('LABKEY.ext4.data.Store', this.store);
 
         this.store.supressErrorAlert = true;
     },

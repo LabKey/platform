@@ -102,11 +102,25 @@ public class JobRunner implements Executor
         _executor.shutdown();
     }
 
+    /**
+     * This will schedule the runnable to execute immediately, with no delay
+     * @param command
+     */
     public void execute(Runnable command)
+    {
+        execute(command, 0);
+    }
+
+    /**
+     * This will schedule the runnable using the provided delay
+     * @param command
+     * @param delay
+     */
+    public void execute(Runnable command, long delay)
     {
         synchronized (_jobs)
         {
-            Future task = _executor.schedule(command, 0, TimeUnit.MILLISECONDS);
+            Future task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
             if (command instanceof Job)
             {
                 Job job = (Job) command;

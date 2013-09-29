@@ -79,17 +79,9 @@ public class CreatePerlScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
-    @Override
-    public String getSort()
-    {
-        //remove enclosing double-quotes since we'll use PageFlowUtil.jsString() on the result
-        String sort = super.getSort();
-        return null != sort ? PageFlowUtil.jsString(sort.substring(1, sort.length() - 1)) : "null";
-    }
-
     // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
-    public String getStandardScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
+    public String getStandardScriptParameters(int indentSpaces)
     {
         String indent = StringUtils.repeat(" ", indentSpaces);
         _indentSpaces = indentSpaces;
@@ -112,15 +104,47 @@ public class CreatePerlScriptModel extends ExportScriptModel
         if (null != containerFilter && null != containerFilter.getType())
             params.append(indent).append("-containerFilterName => '").append(containerFilter.getType().name()).append("',\n");
 
-        params.append(indent).append("-sort => ").append(getSort());
-
-//        if (includeStandardCallbacks)
-//        {
-//            params.append(",\n");
-//            params.append(indent).append("success: onSuccess,\n");
-//            params.append(indent).append("error: onError");
-//        }
+        String sort = getSort();
+        if (sort != null)
+            params.append(indent).append("-sort => ").append(PageFlowUtil.jsString(sort));
 
         return params.toString();
+    }
+
+    @Override
+    public String getScriptExportText()
+    {
+        StringBuilder sb = new StringBuilder();
+        String indent = StringUtils.repeat(" ", 4);
+
+        sb.append("my $results = LABKEY::Query::selectRows(\n");
+        sb.append(getStandardScriptParameters(4)).append("\n");
+        sb.append(");\n");
+        sb.append("\n");
+
+        sb.append("#output the results in tab-delimited format").append("\n");
+        sb.append("my @fields;").append("\n");
+        sb.append("foreach my $field (@{$results->{metaData}->{fields}}){").append("\n");
+        sb.append(indent).append("push(@fields, $field->{name});").append("\n");
+        sb.append("}").append("\n");
+
+        sb.append("print join(\"\\t\", @fields) . \"\\n\";").append("\n");
+
+        sb.append("\n");
+        sb.append("foreach my $row (@{$results->{rows}}){").append("\n");
+        sb.append(indent).append("my @line;").append("\n");
+        sb.append(indent).append("foreach (@fields){").append("\n");
+        sb.append(indent).append(indent).append("if ($row->{$_}){").append("\n");
+        sb.append(indent).append(indent).append(indent).append("push(@line, $row->{$_});").append("\n");
+        sb.append(indent).append(indent).append("}").append("\n");
+        sb.append(indent).append(indent).append("else {").append("\n");
+        sb.append(indent).append(indent).append(indent).append("push(@line, \"\");").append("\n");
+        sb.append(indent).append(indent).append("}").append("\n");
+        sb.append(indent).append("}").append("\n");
+        sb.append(indent).append("print join(\"\\t\", @line);").append("\n");
+        sb.append(indent).append("print \"\\n\";").append("\n");
+        sb.append("};").append("\n");
+
+        return sb.toString();
     }
 }

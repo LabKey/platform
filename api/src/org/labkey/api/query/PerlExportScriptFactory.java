@@ -35,8 +35,8 @@ public class PerlExportScriptFactory implements ExportScriptFactory
         return "Perl";
     }
 
-    public WebPartView getView(QueryView queryView)
+    public ExportScriptModel getModel(QueryView queryView)
     {
-        return new JspView<>("/org/labkey/api/query/createPerlScript.jsp", new CreatePerlScriptModel(queryView));
+        return new CreatePerlScriptModel(queryView);
     }
 }

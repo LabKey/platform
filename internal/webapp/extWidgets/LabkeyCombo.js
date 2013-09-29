@@ -6,7 +6,7 @@
 /**
  * An extension to the Ext4 combobox.  The primary features this provides are more control over
  * how the display values are rendered and auto-resizing of the pick list based on the size of
- * the items.  Any extensions to this combo should be written to make sure it does not require this combo to use a LABKEY.ext4.Store, even
+ * the items.  Any extensions to this combo should be written to make sure it does not require this combo to use a LABKEY.ext4.data.Store, even
  * though in most cases this will be true.  If we we find we need this, we should extract the majority of extensions into either a separate
  * non-labkey dependent base class or into a plugin.
  * @cfg {Boolean} showValueInList If true, the underlying value will also be shown in the pick menu, in addition to the display value.

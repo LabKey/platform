@@ -128,14 +128,6 @@ public class CreateJavaScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
-    @Override
-    public String getSort()
-    {
-        //remove enclosing double-quotes since we'll use PageFlowUtil.jsString() on the result
-        String sort = super.getSort();
-        return null != sort ? PageFlowUtil.jsString(sort.substring(1, sort.length() - 1)) : "null";
-    }
-
     // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardJavaScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
@@ -157,7 +149,9 @@ public class CreateJavaScriptModel extends ExportScriptModel
         if (null != containerFilter && null != containerFilter.getType())
             params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
 
-        params.append(indent).append("sort: ").append(getSort());
+        String sort = getSort();
+        if (sort != null)
+            params.append(indent).append("sort: ").append(PageFlowUtil.jsString(sort));
 
         if (includeStandardCallbacks)
         {
@@ -167,5 +161,46 @@ public class CreateJavaScriptModel extends ExportScriptModel
         }
 
         return params.toString();
+    }
+
+    @Override
+    public String getScriptExportText()
+    {
+        String indent = StringUtils.repeat(" ", 4);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<script type=\"text/javascript\">").append("\n");
+        sb.append("\n");
+        sb.append("LABKEY.Query.selectRows({").append("\n");
+        sb.append(getStandardJavaScriptParameters(4, true)).append("\n");
+        sb.append("});").append("\n");
+        sb.append("\n");
+        sb.append("function onSuccess(results) {\n");
+        sb.append(indent).append("var data = '';\n");
+        sb.append(indent).append("var length = Math.min(10, results.rows.length);").append("\n");
+        sb.append("\n");
+        sb.append(indent).append("// Display first 10 rows in a popup dialog").append("\n");
+        sb.append(indent).append("for (var idxRow = 0; idxRow < length; idxRow++) {").append("\n");
+        sb.append(indent).append(indent).append("var row = results.rows[idxRow];").append("\n");
+        sb.append("\n");
+        sb.append(indent).append(indent).append("for (var col in row) {").append("\n");
+        sb.append(indent).append(indent).append(indent).append("data = data + row[col].value + ' ';").append("\n");
+        sb.append(indent).append(indent).append("}").append("\n");
+        sb.append("\n");
+
+        sb.append(indent).append(indent).append("data = data + '\\n'\\n").append("\n");
+        sb.append(indent).append("}").append("\n");
+        sb.append("\n");
+        sb.append(indent).append("alert(data);").append("\n");
+        sb.append("}").append("\n");
+        sb.append("\n");
+        sb.append("function onError(errorInfo) {").append("\n");
+        sb.append(indent).append("alert(errorInfo.exception);").append("\n");
+        sb.append("}").append("\n");
+        sb.append("\n");
+        sb.append("</script>");
+
+        return sb.toString();
     }
 }

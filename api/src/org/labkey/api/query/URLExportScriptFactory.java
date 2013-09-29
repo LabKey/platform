@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 LabKey Corporation
+ * Copyright (c) 2012-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,30 +15,28 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.WebPartView;
 
 /**
- * User: adam
- * Date: Jan 27, 2009
- * Time: 2:34:48 PM
+ * User: bbimber
+ * Date: 2/5/12
+ * Time: 8:37 PM
  */
-public class RExportScriptFactory implements ExportScriptFactory
+public class URLExportScriptFactory implements ExportScriptFactory
 {
     public String getScriptType()
     {
-        return "r";
+        return "url";
     }
 
     public String getMenuText()
     {
-        return "R";
+        return "Stable URL";
     }
 
     public ExportScriptModel getModel(QueryView queryView)
     {
-        return new RExportScriptModel(queryView);
+        return new CreateURLScriptModel(queryView);
     }
 }
-
-

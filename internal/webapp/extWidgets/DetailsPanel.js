@@ -12,7 +12,7 @@ Ext4.namespace('LABKEY.ext');
  * unless a record object or record index is provided using boundRecord.
  * @class LABKEY.ext.DetailsPanel
  * @cfg {object} store
- * @cfg {LABKEY.ext4.Store} store Can be supplied instead of schemaName / queryName
+ * @cfg {LABKEY.ext4.data.Store} store Can be supplied instead of schemaName / queryName
  * @cfg {string} titleField
  * @cfg {string} titlePrefix Defaults to 'Details'
  * @cfg {boolean} showBackBtn If false, the default 'back' button will not appear below the panel
@@ -64,7 +64,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
     getStore: function(){
         if(!this.store.events){
             this.store.autoLoad = false;
-            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+            this.store = Ext4.create('LABKEY.ext4.data.Store', this.store);
         }
 
         return this.store;
