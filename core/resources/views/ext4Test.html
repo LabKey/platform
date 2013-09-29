@@ -23,7 +23,7 @@ Ext4.onReady(function(){
     var queryName = 'containers';
     var filterArray = [LABKEY.Filter.create('entityid', LABKEY.Security.currentContainer.id, LABKEY.Filter.Types.EQUALS)];
 
-    var store = Ext4.create('LABKEY.ext4.Store', {
+    var store = Ext4.create('LABKEY.ext4.data.Store', {
         autoLoad: true,
         schemaName: schemaName,
         queryName: queryName

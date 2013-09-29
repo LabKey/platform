@@ -5,7 +5,7 @@ Ext4.onReady(function(){
     Ext4.create('LABKEY.ext4.FormPanel', {
         renderTo: webpart.wrapperDivId,
         border: false,
-        store: Ext4.create('LABKEY.ext4.Store', {
+        store: Ext4.create('LABKEY.ext4.data.Store', {
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             ignoreFilter: true, //always ignore filters on the default view, this record was requested by ID
             queryName: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),

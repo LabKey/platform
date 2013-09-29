@@ -32,6 +32,9 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -150,7 +153,15 @@ else
     }
 
     java.util.List<Role> possibleRoles = new ArrayList<>();
-    List<org.labkey.study.model.DataSetDefinition> datasets = study.getDataSets();
+    List<DataSetDefinition> datasets = new ArrayList<>(study.getDataSets());
+    Collections.sort(datasets, new Comparator<DataSetDefinition>(){
+        @Override
+        public int compare(DataSetDefinition o1, DataSetDefinition o2)
+        {
+            return o1.getLabel().toLowerCase().compareTo(o2.getLabel().toLowerCase());
+        }
+    });
+
     if (!datasets.isEmpty())
     {
         org.labkey.study.model.DataSetDefinition ds = datasets.get(0);
@@ -189,7 +200,7 @@ else
         </select></td><%
     }
     %></tr><%
-    for (DataSet ds : study.getDataSets())
+    for (DataSet ds : datasets)
     {
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 

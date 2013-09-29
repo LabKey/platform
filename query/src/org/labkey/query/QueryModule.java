@@ -34,6 +34,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
+import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
@@ -144,6 +145,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new RExportScriptFactory());
         QueryView.register(new JavaScriptExportScriptFactory());
         QueryView.register(new PerlExportScriptFactory());
+        QueryView.register(new URLExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());

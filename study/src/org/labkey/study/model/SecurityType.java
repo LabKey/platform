@@ -27,37 +27,40 @@ public enum SecurityType
      */
     BASIC_READ("Basic security with read-only datasets",
             "Uses the security settings of the containing folder for dataset security. " +
-            "Only administrators can import or delete dataset data."),
+            "Only administrators can import or delete dataset data.", false),
 
     /**
      * Anyone with update permissions can add and update dataset data
      */
     BASIC_WRITE("Basic security with editable datasets",
             "Identical to Basic Read-Only Security, except that individuals with UPDATE permission " +
-            "can edit, update, and delete data from datasets."),
+            "can edit, update, and delete data from datasets.", false),
 
     /**
      * Per-dataset security, read-only
      */
     ADVANCED_READ("Custom security with read-only datasets",
             "Allows the configuration of security on individual datasets. " +
-            "Only administrators can import or delete dataset data."),
+            "Only administrators can import or delete dataset data.", true),
 
     /**
      * Per-dataset security, read and write
      */
     ADVANCED_WRITE("Custom security with editable datasets",
             "Identical to Advanced Read-Only Security, except that datasets can be individually " +
-            "set to allow updates as well.");
+            "set to allow updates as well.", true);
 
     private final String label;
 
     private final String description;
 
-    SecurityType(String label, String description)
+    private final boolean supportsPerDatasetPermissions;
+
+    SecurityType(String label, String description, boolean supportsPerDatasetPermissions)
     {
         this.label = label;
         this.description = description;
+        this.supportsPerDatasetPermissions = supportsPerDatasetPermissions;
     }
 
     public String getLabel()
@@ -68,6 +71,11 @@ public enum SecurityType
     public String getDescription()
     {
         return description;
+    }
+
+    public boolean isSupportsPerDatasetPermissions()
+    {
+        return supportsPerDatasetPermissions;
     }
 
     public static String getHTMLDescription()

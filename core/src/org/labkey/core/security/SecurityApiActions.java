@@ -34,6 +34,7 @@ import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -962,6 +963,29 @@ public class SecurityApiActions
         {
             AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT, group.getName(),
                     "The security group named " + group.getName() + " was deleted.");
+        }
+    }
+
+    @RequiresSiteAdmin
+    public static class DeleteUserAction extends MutatingApiAction<IdForm>
+    {
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if(form.getId() < 0)
+                throw new IllegalArgumentException("You must specify an id parameter!");
+
+            User user = UserManager.getUser(form.getId());
+            if (null == user)
+                throw new IllegalArgumentException("User id " + form.getId() + " does not exist");
+
+            Container c = getViewContext().getContainer();
+            List<User> projectUsers = SecurityManager.getProjectUsers(c);
+            if (!projectUsers.contains(user))
+                throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
+
+            UserManager.deleteUser(user.getUserId());
+
+            return new ApiSimpleResponse("deleted", form.getId());
         }
     }
 

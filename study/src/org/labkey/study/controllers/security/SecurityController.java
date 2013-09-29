@@ -200,11 +200,17 @@ public class SecurityController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ImportSecurityPolicyAction extends FormViewAction<Object>
     {
+        private String _messageText = null;
+
         public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
         {
             if (errors.hasErrors())
             {
                 return new SimpleErrorView(errors);
+            }
+            else if (_messageText != null)
+            {
+                return new HtmlView(_messageText);
             }
             else
             {
@@ -214,7 +220,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root;
+            return root.addChild("Study Policy Import");
         }
 
         public void validateCommand(Object form, Errors errors)
@@ -271,16 +277,15 @@ public class SecurityController extends SpringActionController
                         StringBuilder sb = new StringBuilder();
                         if (messages.size() > 0)
                         {
+                            sb.append("The import was successful, but the following messages were generated:<br><br>");
+
                             sb.append(StringUtils.join(messages, "<br>"));
-                        }
-                        else
-                        {
-                            sb.append("Success importing XML file");
+                            _messageText = sb.toString();
                         }
                     }
                 }
 
-                return true;
+                return false;  //force text to always show
             }
             catch (IllegalArgumentException e)
             {
@@ -301,7 +306,10 @@ public class SecurityController extends SpringActionController
             if (redirect != null)
                 return new ActionURL(redirect);
 
-            return new ActionURL(SecurityController.BeginAction.class, getContainer());
+            if (_messageText == null)
+                return new ActionURL(SecurityController.BeginAction.class, getContainer());
+            else
+                return null;
         }
     }
 
