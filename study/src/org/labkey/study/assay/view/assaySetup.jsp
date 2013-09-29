@@ -24,7 +24,18 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.assay.AssayManager" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     Container c = getViewContext().getContainer();
     User user = getViewContext().getUser();

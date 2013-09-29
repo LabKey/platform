@@ -26,7 +26,18 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
     AdminController.CustomEmailForm bean = me.getModelBean();
@@ -143,11 +154,11 @@
 %>
     function changeEmailTemplate()
     {
-        var selection = Ext.get('templateClass').dom;
-        var subject = Ext.get('emailSubject').dom;
-        var message = Ext.get('emailMessage').dom;
-        var description = Ext.get('emailDescription').dom;
-        var descriptionFF = Ext.get('emailDescriptionFF').dom;
+        var selection = Ext4.get('templateClass').dom;
+        var subject = Ext4.get('emailSubject').dom;
+        var message = Ext4.get('emailMessage').dom;
+        var description = Ext4.get('emailDescription').dom;
+        var descriptionFF = Ext4.get('emailDescriptionFF').dom;
 
         for (var i=0; i < this.emailTemplates.length; i++)
         {
@@ -157,8 +168,8 @@
                 description.innerHTML = this.emailTemplates[i].description;
                 descriptionFF.value = this.emailTemplates[i].description;
                 message.value = this.emailTemplates[i].message;
-                Ext.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
-                Ext.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
+                Ext4.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
+                Ext4.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;
@@ -171,7 +182,7 @@
 
     function clearValidSubstitutions()
     {
-        var table = Ext.get('validSubstitutions').dom;
+        var table = Ext4.get('validSubstitutions').dom;
         if (table != undefined)
         {
             // delete all rows first
@@ -190,7 +201,7 @@
 
         if (record == undefined || record.replacements == undefined)
         {
-            var selection = Ext.get('templateClass').dom;
+            var selection = Ext4.get('templateClass').dom;
             for (var i=0; i < this.emailTemplates.length; i++)
             {
                 if (this.emailTemplates[i].name == selection.value)
@@ -200,7 +211,7 @@
                 }
             }
         }
-        var table = Ext.get('validSubstitutions').dom;
+        var table = Ext4.get('validSubstitutions').dom;
         var row;
         var cell;
 
@@ -237,16 +248,16 @@
     }
 <%
     if (StringUtils.isEmpty(errorHTML)) { %>
-    Ext.onReady(function()
+    Ext4.onReady(function()
         {
             if (LABKEY.ActionURL.getParameter('templateClass'))
             {
-                Ext.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClass');
+                Ext4.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClass');
             }
             changeEmailTemplate();
         });
 <% } else { %>
-        Ext.onReady(changeValidSubstitutions);
+        Ext4.onReady(changeValidSubstitutions);
 <% } %>
 </script>
 

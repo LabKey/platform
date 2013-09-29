@@ -15,23 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.SessionAppender" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%    
-    boolean loggingEnabled = SessionAppender.isLogging(request);
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        return resources;
+    }
 %>
-
-<%--<form method=POST>
-logging: <input name=logging type="checkbox"<%=checked(loggingEnabled%> value="true"><%= PageFlowUtil.generateSubmitButton("submit")%>
-</form>
-
-<div class="extContainer" id="logDiv">
-</div>
---%>
 <script type="text/javascript">
 
 var timeRenderer = Ext.util.Format.dateRenderer("H:m:s");
-var timestampRenderer = function(l){ return timeRenderer(new Date(l)); }
+var timestampRenderer = function(l){ return timeRenderer(new Date(l)); };
 
 Ext.onReady(function(){
 

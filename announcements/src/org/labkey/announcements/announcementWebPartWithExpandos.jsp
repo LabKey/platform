@@ -24,7 +24,17 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
     MessagesBean bean = me.getModelBean();
@@ -107,70 +117,53 @@ TD.message-short .message-less, TD.message-short .message-more
 }
 </style>
 <script type="text/javascript">
-function messageMoreSlide(elem)
-{
-    var more=Ext.get(elem);
-    var parent = more.parent("TD.message");
-    parent.removeClass("message-collapsed");
-    parent.addClass("message-expanding");
-    var text = Ext.fly(Ext.query("DIV.message-text", parent.dom)[0]);
-    parent.scale(null, text.dom.scrollHeight,
-    {
-        easing: 'easeOut',
-        callback:function(){
-            parent.applyStyles({height:''});
-            parent.removeClass("message-expanding");
-            parent.addClass("message-expanded");
-        }
-    });
-    return false;
-}
-function messageMoreSimple(elem)
-{
-    var more=Ext.get(elem);
-    var parent = more.parent("TD.message");
-    parent.removeClass("message-collapsed");
-    parent.addClass("message-expanded");
-    return false;
-}
-var messageMore = messageMoreSimple;
-function messageLessSimple(elem)
-{
-    var more=Ext.get(elem);
-    var parent = more.parent("TD.message");
-    parent.removeClass("message-expanded");
-    parent.addClass("message-collapsed");
-    return false;
-}
-var messageLess = messageLessSimple;
 
-function messageFixup(e)
-{
-    var container = Ext.get(e);
-    var parent = container.parent("TD.message");
-    var text = Ext.fly(Ext.query("DIV.message-text", parent.dom)[0]);
-    //console.debug("fixup " + parent.getHeight() + " " + container.getHeight() + " " + text.dom.scrollHeight + " " + text.getHeight());
-    if (parent.hasClass("message-expanded"))
-        return;
-    if (text.dom.scrollHeight <= <%=maxHeight%>)
-    {
-        parent.removeClass("message-collapsed");
-        parent.addClass("message-short");
-    }
-    else
-    {
-        parent.removeClass("message-short");
-        parent.addClass("message-collapsed");
-    }
-}
-function messageOnResize(id)
-{
-    var table = Ext.get(id);
-    var messages = Ext.query("DIV.message-container", table.dom);
-    Ext.each(messages, messageFixup);
-}
-Ext.onReady(function(){messageOnResize(<%=q(tableId)%>);});
-Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
+    var messageMore, messageLess;
+    Ext4.onReady(function() {
+
+        messageMore = function(elem) {
+            var more = Ext4.get(elem);
+            var parent = more.parent("TD.message");
+            parent.removeCls("message-collapsed");
+            parent.addCls("message-expanded");
+            return false;
+        };
+
+        messageLess = function(elem) {
+            var more = Ext4.get(elem);
+            var parent = more.parent("TD.message");
+            parent.removeCls("message-expanded");
+            parent.addCls("message-collapsed");
+            return false;
+        };
+
+        var messageFixup = function(e) {
+            var container = Ext4.get(e);
+            var parent = container.parent("TD.message");
+            var text = Ext4.fly(Ext4.query("DIV.message-text", parent.dom)[0]);
+            if (parent.hasCls("message-expanded"))
+                return;
+            if (text.dom.scrollHeight <= <%=maxHeight%>)
+            {
+                parent.removeCls("message-collapsed");
+                parent.addCls("message-short");
+            }
+            else
+            {
+                parent.removeCls("message-short");
+                parent.addCls("message-collapsed");
+            }
+        };
+
+        var messageOnResize = function(id) {
+            var table = Ext4.get(id);
+            var messages = Ext4.query("DIV.message-container", table.dom);
+            Ext4.each(messages, messageFixup);
+        };
+
+        messageOnResize(<%=q(tableId)%>);
+        Ext4.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
+    });
 </script>
 <!--ANNOUNCEMENTS-->
 <table style="table-layout: fixed; width: 100%;" id="<%=tableId%>">

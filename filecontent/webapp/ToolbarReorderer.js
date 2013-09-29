@@ -63,7 +63,6 @@ LABKEY.ext.ux.ToolbarReorderer = Ext.extend(LABKEY.ext.ux.Reorderer, {
         if(button.parentMenu != undefined) return;
 
         var el   = button.getEl(),
-            id   = el.id,
             tbar = this.target,
             me   = this;
 

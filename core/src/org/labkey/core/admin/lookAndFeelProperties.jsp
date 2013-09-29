@@ -26,14 +26,24 @@
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
-<%=formatMissedErrors("form")%>
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
+<%=formatMissedErrors("form")%>
 
 <form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
@@ -171,13 +181,8 @@
 
 </table>
 </form>
-
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
-<script type="text/javascript">
-    var _form = new LABKEY.Form({
-        formElement: 'form-preferences'
+    var _form = new LABKEY.Form({ formElement: 'form-preferences'
     });
 
     function confirmReset()

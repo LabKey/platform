@@ -31,6 +31,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+      resources.add(ClientDependency.fromFilePath("ext3"));
       resources.add(ClientDependency.fromFilePath("codemirror"));
       resources.add(ClientDependency.fromFilePath("query/QueryEditorPanel.js"));
       return resources;
@@ -250,7 +251,7 @@
         });
 
         var _resize = function(w, h) {
-            LABKEY.Utils.resizeToViewport(panel, w, h, 40, 50);
+            LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
         };
 
         Ext.EventManager.onWindowResize(_resize);

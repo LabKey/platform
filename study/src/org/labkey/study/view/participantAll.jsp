@@ -70,8 +70,18 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     ViewContext context = HttpView.currentContext();
     org.labkey.study.query.StudyQuerySchema querySchema = (org.labkey.study.query.StudyQuerySchema) QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
@@ -205,9 +215,9 @@
 <%
     }
 %>
-<script>
+<script type="text/javascript">
     var tableReady = false;
-    LABKEY.Utils.onReady(function ()
+    Ext4.onReady(function ()
     {
         tableReady = true;
     });

@@ -16,17 +16,23 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.admin.FolderSerializationRegistry"%>
+<%@ page import="org.labkey.api.admin.FolderWriter" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
@@ -34,7 +40,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
@@ -45,20 +50,14 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.admin.FolderSerializationRegistry" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.admin.FolderWriter" %>
-<%@ page import="org.labkey.api.writer.Writer" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 

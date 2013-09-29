@@ -28,12 +28,12 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-public LinkedHashSet<ClientDependency> getClientDependencies()
-{
-    LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-    resources.add(ClientDependency.fromFilePath("Ext4"));
-    return resources;
-}
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
 %>
 <%
     SystemMaintenanceProperties props = (SystemMaintenanceProperties)getModelBean();

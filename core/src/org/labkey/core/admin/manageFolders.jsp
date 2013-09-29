@@ -23,6 +23,19 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction.FolderManagementForm" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    // TODO: This doesn't currently load when used in a TabStripView.java -- need to bootstrap these view dependencies
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
+        resources.add(ClientDependency.fromFilePath("/admin/FolderManagementPanel.js"));
+        return resources;
+    }
+%>
 <%
     HttpView<FolderManagementForm> me = (HttpView<FolderManagementAction.FolderManagementForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
@@ -30,14 +43,14 @@
 %>
 <div id="fmp"></div>
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
+    LABKEY.requiresExt4ClientAPI();
     LABKEY.requiresScript("admin/FolderManagementPanel.js");
 </script>
 <script type="text/javascript">
 
     Ext4.onReady(function() {
 
-        var folderPanel = Ext4.create('LABKEY.ext.panel.FolderManagementPanel', {
+        var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
             renderTo : 'fmp',
             height   : 700,
             minWidth : 600,
@@ -50,7 +63,7 @@
             if (!folderPanel.rendered)
                 return;
 
-            LABKEY.Utils.resizeToViewport(folderPanel, w, h);
+            LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
         };
 
         Ext4.EventManager.onWindowResize(_resize);

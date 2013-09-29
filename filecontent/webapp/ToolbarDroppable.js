@@ -28,9 +28,7 @@ LABKEY.ext.ux.ToolbarDroppable = Ext.extend(Object, {
      * @constructor
      */
     constructor: function(config) {
-      Ext.apply(this, config, {
-
-      });
+      Ext.apply(this, config);
     },
 
     /**

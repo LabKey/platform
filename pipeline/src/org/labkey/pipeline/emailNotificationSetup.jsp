@@ -22,9 +22,32 @@
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        return resources;
+    }
 
+    public String getTitle(String pref, Container c, String title)
+    {
+        if (PipelineEmailPreferences.get().isInherited(c, pref))
+            return ("<span class=\"labkey-error\">*</span>&nbsp;" + title);
+        return title;
+    }
+
+    public String getSelected(String value, String option)
+    {
+        if (StringUtils.equals(value, option))
+            return "selected";
+        return "";
+    }
+%>
 <%
     Container c = HttpView.currentContext().getContainer();
     boolean notifyOwnerOnSuccess = PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c);
@@ -168,20 +191,3 @@
         <tr><td></td></tr>
     </table>
 </form>
-
-<%!
-    public String getTitle(String pref, Container c, String title)
-    {
-        if (PipelineEmailPreferences.get().isInherited(c, pref))
-            return ("<span class=\"labkey-error\">*</span>&nbsp;" + title);
-        return title;
-    }
-
-    public String getSelected(String value, String option)
-    {
-        if (StringUtils.equals(value, option))
-            return "selected";
-        return "";
-    }
-%>
-

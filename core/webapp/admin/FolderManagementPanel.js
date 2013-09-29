@@ -31,14 +31,13 @@ Ext4.tree.ViewDropZone.override({
 
 });
 
-Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
+Ext4.define('LABKEY.ext4.panel.FolderManagement', {
 
     extend : 'Ext.panel.Panel',
 
     constructor : function(config) {
 
         Ext4.QuickTips.init();
-        Ext4.Ajax.timeout = 300000; // 5 minutes.
 
         Ext4.applyIf(config, {
             layout : 'border',

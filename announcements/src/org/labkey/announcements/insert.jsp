@@ -24,8 +24,18 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        return resources;
+    }
+%>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
     InsertBean bean = me.getModelBean();
@@ -50,9 +60,6 @@ function validateForm(form)
     Ext.get('submitButton').replaceClass('labkey-disabled-button', 'labkey-button');
     return false;
 }
-Ext.onReady(function(){
-    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-});
 </script>
 <form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">

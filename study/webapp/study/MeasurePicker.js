@@ -416,7 +416,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             emptyText : 'Search',
             name : 'filterSearch'
         });
-        var taskFilterMeasures = new Ext.util.DelayedTask(function(){this.filterMeasures(this.searchBox.getValue());}, this);
+        var taskFilterMeasures = new Ext4.util.DelayedTask(function(){this.filterMeasures(this.searchBox.getValue());}, this);
         this.searchBox.on('change', function(cmp,e){taskFilterMeasures.delay(333);});
         tbarItems.push(this.searchBox);
 
@@ -837,7 +837,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 stripeRows : false
             },
             border: false,
-            selModel : Ext4.create(this.multiSelect ? 'Ext.selection.CheckboxModel' : 'Ext.selection.RowModel'),
+            selType: this.multiSelect ? 'checkboxmodel' : 'rowmodel',
             cls : 'measuresgrid iScroll',
             flex: 1,
             ui: this.ui,

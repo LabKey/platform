@@ -15,69 +15,65 @@
     * limitations under the License.
     */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.admin.CustomizeMenuForm" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.CustomizeMenuForm" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        resources.add(ClientDependency.fromFilePath("viewPicker.js"));
+        return resources;
+    }
+%>
 <%
     JspView<CustomizeMenuForm> me = (JspView<CustomizeMenuForm>) JspView.currentView();
     CustomizeMenuForm bean = me.getModelBean();
 %>
 <div id="someUniqueElement2"></div>
 <script type="text/javascript">
-    LABKEY.requiresScript("viewPicker.js");
+    Ext.onReady(function() {
 
-    var bean = <%= text(new JSONObject(bean).toString()) %>;
-</script>
-<script type="text/javascript">
+        var bean = <%= text(new JSONObject(bean).toString()) %>;
 
-    (function(){
+        Ext.QuickTips.init();
 
-        var init = function()
+        var submitFunction = function(params)
         {
-            Ext.QuickTips.init();
-
-            var submitFunction = function(params)
-            {
-                Ext.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin','customizeMenu.view'),
-                    method: 'POST',
-                    timeout: 30000,
-                    params: params,
-                    success: function(response, opts){
-                        window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
-                    },
-                    failure: function(response, opts) {
-                        LABKEY.Utils.displayAjaxErrorResponse(response, opts);
-                    }
-                });
-            };
-
-
-            var cancelFunction = function()
-            {
-                window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
-            };
-
-            var customizeForm = customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
-
-            var _resize = function(w, h) {
-                if (!customizeForm.rendered)
-                    return;
-
-                LABKEY.Utils.resizeToViewport(customizeForm, Math.min(w, 800));
-            };
-
-            Ext.EventManager.onWindowResize(_resize);
-            Ext.EventManager.fireWindowResize();
-
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('admin','customizeMenu.view'),
+                method: 'POST',
+                timeout: 30000,
+                params: params,
+                success: function(response, opts){
+                    window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
+                },
+                failure: function(response, opts) {
+                    LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+                }
+            });
         };
 
-        Ext.onReady(init);
-    })();
+
+        var cancelFunction = function()
+        {
+            window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
+        };
+
+        var customizeForm = customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
+
+        var _resize = function(w, h) {
+            if (!customizeForm.rendered)
+                return;
+
+            LABKEY.ext.Utils.resizeToViewport(customizeForm, Math.min(w, 800));
+        };
+
+        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.fireWindowResize();
+    });
 </script>

@@ -15,26 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.api.data.AbstractTableInfo" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
+<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      //Need to include the Helper for a use of the form panel configuration.
-      resources.add(ClientDependency.fromFilePath("/extWidgets/Ext4Helper.js"));
+      //Need to include the Util for a use of the form panel configuration.
+      resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
       return resources;
   }
 %>
@@ -67,8 +63,6 @@
 
 Ext4.QuickTips.init();
 
-(function(){/* All code */})();
-
 var canEdit = <%=q(canEdit?"true":"false")%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
@@ -76,47 +70,30 @@ var timepointType = "<%=h(timepointType)%>";
 
 function removeProtocolDocument(name, xid)
 {
-    if (Ext4)
-    {
-        function remove()
-        {
-            var params =
-            {
-                name: name
-            };
-
-            Ext4.Ajax.request(
-                    {
-                        url    : LABKEY.ActionURL.buildURL('study', 'removeProtocolDocument'),
-                        method : 'POST',
-                        success: function()
-                        {
-                            var el = document.getElementById(xid);
-                            if (el)
-                            {
-                                el.parentNode.removeChild(el);
-                            }
-                        },
-                        failure: function()
-                        {
-                            alert('Failed to remove study protocol document.');
-                        },
-                        params : params
-                    });
-        }
-
-        Ext4.Msg.show({
-            title : 'Remove Attachment',
-            msg : 'Please confirm you would like to remove this study protocol document. This cannot be undone.',
-            buttons: Ext4.Msg.OKCANCEL,
-            icon: Ext4.MessageBox.QUESTION,
-            fn  : function(b) {
-                if (b == 'ok') {
-                    remove();
-                }
+    Ext4.Msg.show({
+        title : 'Remove Attachment',
+        msg : 'Please confirm you would like to remove this study protocol document. This cannot be undone.',
+        buttons: Ext4.Msg.OKCANCEL,
+        icon: Ext4.MessageBox.QUESTION,
+        fn  : function(b) {
+            if (b == 'ok') {
+                Ext4.Ajax.request({
+                    url    : LABKEY.ActionURL.buildURL('study', 'removeProtocolDocument'),
+                    method : 'POST',
+                    success: function() {
+                        var el = document.getElementById(xid);
+                        if (el) {
+                            el.parentNode.removeChild(el);
+                        }
+                    },
+                    failure: function() {
+                        alert('Failed to remove study protocol document.');
+                    },
+                    params : { name: name}
+                });
             }
-        });
-    }
+        }
+    });
 }
 
 function addExtFilePickerHandler()
@@ -334,12 +311,6 @@ function renderFormPanel(data, editable){
         ]
     });
 
-    var protocolStore = Ext4.create('Ext.data.Store',{
-        model : 'ProtocolDoc',
-        data : protocolDocs
-    });
-   // protocolStore.loadRawData(protocolDocs);
-
     var protoTemplate = new Ext4.XTemplate(
         '<tpl for=".">',
             '<div class="protoDoc" id="attach-{atId}">',
@@ -367,43 +338,108 @@ function renderFormPanel(data, editable){
             handler: cancelButtonHandler
         });
     }
-    else if (<%=canEdit ? "true" : "false"%>)
+    else if (canEdit)
     {
         buttons.push({text:"Edit", handler: editButtonHandler});
         buttons.push({text:"Done", handler: doneButtonHandler});
     }
 
+    var getConfig = function(searchString){
+        var fields = data.metaData.fields;
+        for(var i = 0; i < fields.length; i++){
+            if(fields[i].caption == searchString && !fields[i].lookup)
+                return LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
+        }
+        return undefined;
+    };
+    var items = [
+        getConfig('Label'),
+        getConfig('Investigator'),
+        getConfig('Grant'),
+        getConfig('Description')
+    ];
 
-    var renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
-        fieldLabel : 'Render Type',
-        labelWidth : 150,
-        padding : 5,
-        hiddenName : 'DescriptionRendererType',
-        name : 'DescriptionRendererType',
-        triggerAction : 'all',
-        queryMode: 'local',
-        valueField: 'renderType',
-        displayField: 'displayText',
-        width : 500,
-        editable : false,
-        value : data.rows[0]['DescriptionRendererType'].value,
-        store : Ext4.create('Ext.data.ArrayStore', {
-            id : 0,
-            fields : ['renderType', 'displayText'],
-            data : [
+    var handledFields = {
+        Label: true,
+        Investigator: true,
+        Grant: true,
+        Description: true,
+
+        // Don't show these fields, they have a special UI for editing them
+        ParticipantAliasDatasetId: true,
+        ParticipantAliasSourceProperty: true,
+        ParticipantAliasSourceProperty: true,
+
+        DescriptionRendererType: true,
+
+        TimepointType: true,
+        Container: true
+    };
+
+    if (editableFormPanel) {
+        items.push({
+            fieldLabel : 'Render Type',
+            labelWidth : 150,
+            padding : 5,
+            hiddenName : 'DescriptionRendererType',
+            name : 'DescriptionRendererType',
+            triggerAction : 'all',
+            queryMode: 'local',
+            valueField: 'renderType',
+            displayField: 'displayText',
+            width : 500,
+            editable : false,
+            value : data.rows[0]['DescriptionRendererType'].value,
+            store : Ext4.create('Ext.data.ArrayStore', {
+                id : 0,
+                fields : ['renderType', 'displayText'],
+                data : [
 <%
-                comma = "";
-                for (WikiRendererType type : getRendererTypes())
-                {
-                    %><%=comma%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
-                    comma = ",";
-                }
+                    comma = "";
+                    for (WikiRendererType type : getRendererTypes())
+                    {
+                        %><%=comma%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
+                        comma = ",";
+                    }
 %>
-            ]
-        })
+                ]
+            })
+        });
+    }
+
+    items.push({
+        xtype: 'label',
+        text : 'Protocol Documents:',
+        style : 'float: left;',
+        width : 150
+    });
+    items.push({
+        xtype: 'panel',
+        itemId : 'protocolPanel',
+        cls    : 'protocolPanel',
+        height : (initHeight * 25) + 30,
+        border : false, frame: false,
+        enlarge : function(){
+            this.height += 35;
+        },
+        shrink : function(){
+            this.height -= 35;
+        },
+        items : [{
+            xtype : 'dataview',
+            store : {
+                xtype: 'store',
+                model : 'ProtocolDoc',
+                data : protocolDocs
+            },
+            tpl : protoTemplate,
+            itemSelector :  'div.protoDoc',
+            emptyText : 'No current docs'
+        }]
     });
 
-    var timepointTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+    // the original form didn't include these, but we can decide later
+    items.push({
         xtype : 'radiogroup',
         fieldLabel : "Timepoint Type",
         style : 'margin: 0px 5px;',
@@ -412,7 +448,6 @@ function renderFormPanel(data, editable){
         columns : 2,
         vertical : true,
         items : [{
-
             xtype: 'radio',
             id : 'visitRadio',
             inputId : 'visit',
@@ -434,68 +469,6 @@ function renderFormPanel(data, editable){
         }]
     });
 
-    var getConfig = function(searchString){
-        var fields = data.metaData.fields;
-        for(var i = 0; i < fields.length; i++){
-            if(fields[i].caption == searchString && !fields[i].lookup)
-                return LABKEY.ext.Ext4Helper.getFormEditorConfig(data.metaData.fields[i]);
-        }
-        return undefined;
-    };
-    var items = [];
-    var handledFields = {};
-    items.push(getConfig('Label'));
-    handledFields['Label'] = true;
-    items.push(getConfig('Investigator'));
-    handledFields['Investigator'] = true;
-    items.push(getConfig('Grant'));
-    handledFields['Grant'] = true;
-    items.push(getConfig('Description'));
-    handledFields['Description'] = true;
-
-    // Don't show these fields, they have a special UI for editing them
-    handledFields['ParticipantAliasDatasetId'] = true;
-    handledFields['ParticipantAliasSourceProperty'] = true;
-    handledFields['ParticipantAliasProperty'] = true;
-
-    if(editableFormPanel){
-        items.push(renderTypeCombo);
-    }
-    handledFields[renderTypeCombo.hiddenName] = true;
-
-    var protocolPanel = Ext4.create('Ext.Panel', {
-        itemId : 'protocolPanel',
-        cls    : 'protocolPanel',
-        height : (initHeight * 25) + 30,
-        border : false, frame: false,
-        enlarge : function(){
-            this.height += 35;
-        },
-        shrink : function(){
-            this.height -= 35;
-        },
-        items : [{
-            xtype : 'dataview',
-            store : protocolStore,
-            tpl : protoTemplate,
-            itemSelector :  'div.protoDoc',
-            emptyText : 'No current docs'
-        }]
-    });
-
-    var label = Ext4.create('Ext.form.Label', {
-          text : 'Protocol Documents:',
-          style : 'float: left;',
-          width : 150
-    });
-
-    items.push(label);
-    items.push(protocolPanel);
-    // the original form didn't include these, but we can decide later
-    items.push(timepointTypeRadioGroup);
-    handledFields['TimepointType'] = true;
-    //handledFields['StartDate'] = true;
-    handledFields['Container'] = true;
     var info = data.rows[0];
 
     items[0].value = info.Label.value;
@@ -550,7 +523,6 @@ function renderFormPanel(data, editable){
         buttons : buttons,
         buttonAlign : 'left',
         renderTo : 'testZone'
-
     });
 }
 
@@ -586,7 +558,7 @@ function isFormDirty()
 
 window.onbeforeunload = LABKEY.beforeunload(isFormDirty);
 
-Ext.onReady(createPage);
+Ext4.onReady(createPage);
 
 </script>
 

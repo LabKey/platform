@@ -7,6 +7,9 @@
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresScript("StatusBar.js");
 
+Ext.namespace('LABKEY.ext');
+Ext.namespace('LABKEY.FileSystem');
+
 /**
  * Creates an Ext TreeLoader used to display the contents of a LABKEY.FileSystem.  This is used internally by the FileBrowser and is not part of the public API.  Do not rely on its existence.
  * @class LABKEY.FileSystem.TreeLoader
@@ -2263,7 +2266,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         {
             this.resizer = new Ext.Resizable(this.el, {pinned: false});
             this.resizer.on("resize", function(o, width, height){
-                LABKEY.Utils.resizeToViewport(this, width, height);
+                LABKEY.ext.Utils.resizeToViewport(this, width, height);
             }, this);
         }
     },

@@ -1030,7 +1030,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
 
         private static final String DATA_REGION_NAME = "Users";
-        private int realRowIndex = 0;
 
         private HttpView getMessageTabView() throws Exception
         {

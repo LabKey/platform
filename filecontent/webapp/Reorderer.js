@@ -116,7 +116,6 @@ LABKEY.ext.ux.Reorderer = Ext.extend(Object, {
      */
     createItemDD: function(button) {
         var el   = button.getEl(),
-            id   = el.id,
             tbar = this.target,
             me   = this;
 

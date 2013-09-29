@@ -1676,7 +1676,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
         if (this.autoResize)
         {
-            Ext.EventManager.onWindowResize(function(w,h){ LABKEY.Utils.resizeToViewport(this, w, h, 46, 32); }, this);
+            Ext.EventManager.onWindowResize(function(w,h){ LABKEY.ext.Utils.resizeToViewport(this, w, h, 46, 32); }, this);
             this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
         }
 

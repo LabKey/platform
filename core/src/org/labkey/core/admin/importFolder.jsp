@@ -17,26 +17,12 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.gwt.client.ui.LabKeyLinkHTML" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     Container c = getViewContext().getContainerNoTab();
     String requestOrigin;
-    if(request.getParameter("origin") != null){
-        requestOrigin = request.getParameter("origin");
-    }
-    else {
-        requestOrigin = "here";
-    }
+    requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
 %>
-
-<script>
-    console.log(<%=q(requestOrigin)%>);
-</script>
-
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>

@@ -25,21 +25,10 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("clientapi/core"));
-      return resources;
-  }
-%>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
     LoginBean bean = me.getModelBean();

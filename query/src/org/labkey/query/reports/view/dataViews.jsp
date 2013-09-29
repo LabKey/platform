@@ -48,52 +48,49 @@
 
     String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
+<div id='<%=h(renderId)%>' class="dvc"></div>
 <script type="text/javascript">
 
-    (function() {
+    Ext4.onReady(function() {
+        var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
+            id          : 'data-views-panel-<%= webPartId %>',
+            renderTo    : <%=q(renderId)%>,
+            pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
+            index       : <%= me.getModelBean().getIndex() %>,
+            webpartId   : <%= webPartId %>,
+            manageView  : <%= manageView%>,
+            fullPage    : <%= manageView%>,
+            returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
+            allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
+            listeners   : {
+                render: function(panel) {
+                    // Issue 18337: hold onto the initial width diff for the panel, to be used in resizing
+                    panel.panelWidthDiff = Ext4.getBody().getViewSize().width - panel.getWidth();
 
-        Ext4.onReady(function() {
-            var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
-                id          : 'data-views-panel-<%= webPartId %>',
-                renderTo    : <%=q(renderId)%>,
-                pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
-                index       : <%= me.getModelBean().getIndex() %>,
-                webpartId   : <%= webPartId %>,
-                manageView  : <%= manageView%>,
-                fullPage    : <%= manageView%>,
-                returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
-                allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
-                listeners   : {
-                    render: function(panel) {
-                        // Issue 18337: hold onto the initial width diff for the panel, to be used in resizing
-                        panel.panelWidthDiff = Ext4.getBody().getViewSize().width - panel.getWidth();
+                    if (panel.fullPage) {
 
-                        if (panel.fullPage) {
-
-                            var size = Ext4.getBody().getViewSize();
-                            LABKEY.Utils.resizeToViewport(panel, size.width, size.height);
-                        }
+                        var size = Ext4.getBody().getViewSize();
+                        LABKEY.ext4.Util.resizeToViewport(panel, size.width, size.height);
                     }
                 }
-            });
-
-            var resize = function(w, h) {
-                if (dvp && dvp.doLayout) {
-
-                    if (dvp.fullPage)
-                        LABKEY.Utils.resizeToViewport(dvp, w, h);
-                    else if (dvp.panelWidthDiff) {
-                        var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
-                        dvp.setWidth(width);
-                        dvp.doLayout();
-                    }
-                }
-            };
-
-            Ext4.EventManager.onWindowResize(resize);
+            }
         });
 
-    })();
+        var resize = function(w, h) {
+            if (dvp && dvp.doLayout) {
+
+                if (dvp.fullPage)
+                    LABKEY.ext4.Util.resizeToViewport(dvp, w, h);
+                else if (dvp.panelWidthDiff) {
+                    var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
+                    dvp.setWidth(width);
+                    dvp.doLayout();
+                }
+            }
+        };
+
+        Ext4.EventManager.onWindowResize(resize);
+    });
 
     /**
      * Called by Server to handle cusomization actions. NOTE: The panel must be set to allow customization
@@ -147,5 +144,3 @@
         Ext4.onReady(enableDelete);
     }
 </script>
-
-<div id='<%=h(renderId)%>' class="dvc"></div>

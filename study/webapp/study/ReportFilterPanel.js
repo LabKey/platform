@@ -709,7 +709,9 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     handleAfterInitGroupConfig : function(count, cmp) {
 
         if (this.panelsToInit) {
-            this.panelsToInit.remove(cmp.id);
+            var idx = this.panelsToInit.indexOf(cmp.id);
+            if (idx > -1)
+                this.panelsToInit.splice(idx, 1);
             this.panelSelectCount += count;
             if (this.panelsToInit.length == 0) {
                 this.panelsToInit = null;

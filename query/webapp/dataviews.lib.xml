@@ -6,6 +6,6 @@
         <script path="dataview/DataViewsPanel.js"/>
     </library>
     <dependencies>
-        <dependency path="Ext4" />
+        <dependency path="clientapi/ext4" />
     </dependencies>
 </libraries>

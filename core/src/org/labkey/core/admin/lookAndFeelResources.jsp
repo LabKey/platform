@@ -25,13 +25,23 @@
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page import="org.labkey.core.CoreController" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
-<%=formatMissedErrors("form")%>
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     ProjectSettingsAction.LookAndFeelResourcesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
 %>
+<%=formatMissedErrors("form")%>
 <form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0>
@@ -98,9 +108,6 @@
 
 </table>
 </form>
-<script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
 <script type="text/javascript">
     var _form = new LABKEY.Form({
         formElement: 'form-preferences'

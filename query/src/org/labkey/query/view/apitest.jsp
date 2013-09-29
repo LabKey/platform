@@ -19,6 +19,17 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView me = (JspView) HttpView.currentView();
     ActionURL defGetUrl = new ActionURL(QueryController.SelectRowsAction.class, me.getViewContext().getContainer());
@@ -31,8 +42,6 @@
     if (queryName == null)
         queryName = "**query**";
     defGetUrl.addParameter("query.queryName", queryName);
-
-    ActionURL defPostUrl = new ActionURL(QueryController.UpdateRowsAction.class, me.getViewContext().getContainer());
 %>
 <style type="text/css">
     .error
@@ -166,8 +175,7 @@
         var respSize = document.getElementById("respSize");
         var sizeBytes = responseText.length;
         var units = ['bytes', 'kb', 'mb', 'gb'];
-        var unitIndex = 0;
-        for (unitIndex = 0; unitIndex < units.length && sizeBytes > 1000; unitIndex++)
+        for (var unitIndex = 0; unitIndex < units.length && sizeBytes > 1000; unitIndex++)
             sizeBytes /= 1000;
         // shift left, round to nearest int, shift right (to get two decimal places):
         var truncated = Math.round(sizeBytes*100)/100;
@@ -278,7 +286,6 @@
         var getUrl = document.getElementById("txtUrlGet").value;
         var postUrl = document.getElementById("txtUrlPost").value;
         var postData = document.getElementById("txtPost").value;
-        //var response = document.getElementById("lblResponse").innerHTML;
         var response = responseJSON;
 
         pairs.push('getUrl=' + encodeURIComponent(encodeURI(getUrl)));
@@ -323,12 +330,13 @@
     function showTest(responseText)
     {
         var obj = eval("(" + responseText + ")");
-        var win = new Ext.Window({
+        var win = Ext4.create('Ext.Window', {
             title: 'Recorded Test',
             border: false,
             constrain: true,
             closeAction: 'close',
             autoScroll: true,
+            autoShow: true,
             modal: true,
             items: [{
                 name: 'description',
@@ -338,14 +346,12 @@
                 width: 750,
                 value: obj.xml
             }],
-
             buttons: [{
                 text: 'Close',
                 id: 'btn_close',
                 handler: function(){win.close();}
             }]
         });
-        win.show();
     }
 
     function onGetUrlKeyDown(event)
