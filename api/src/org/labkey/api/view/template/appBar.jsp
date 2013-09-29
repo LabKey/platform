@@ -25,8 +25,17 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     ViewContext context = HttpView.currentView().getViewContext();
     AppBarView me = (AppBarView) HttpView.currentView();
@@ -140,7 +149,7 @@
     </div>
 
 <script type="text/javascript">
-    (function(){
+    Ext4.onReady(function() {
         var setMinWidth = function() {
             var tabs = Ext4.query('.labkey-app-bar ul li');
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
@@ -203,18 +212,17 @@
             }
         };
 
-        Ext4.onReady(function(){
-            setMinWidth();
-            addTabListeners();
-            Ext4.EventManager.onWindowResize(setMinWidth);
+        setMinWidth();
+        addTabListeners();
+        Ext4.EventManager.onWindowResize(setMinWidth);
 
-            if(window.addEventListener) {
-                // Most browsers.
-                window.addEventListener('scroll', scrollListener, false);
-            } else if(window.attachEvent) {
-                // <= IE8
-                window.attachEvent('onscroll',scrollListener);
-            }
-        });
-    })();
+        if (window.addEventListener) {
+            // Most browsers.
+            window.addEventListener('scroll', scrollListener, false);
+        }
+        else if(window.attachEvent) {
+            // <= IE8
+            window.attachEvent('onscroll',scrollListener);
+        }
+    });
 </script>

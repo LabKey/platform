@@ -17,7 +17,6 @@
         <script path="clientapi/ext3/Utils.js"/>
     </library>
     <dependencies>
-        <dependency path="clientapi/core" />
         <dependency path="Ext3" />
         <dependency path="GuidedTip.js"/> <!-- depended on by FormPanel.js -->
         <dependency path="GuidedTip.css"/>

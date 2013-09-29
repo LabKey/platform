@@ -15,13 +15,12 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.data.RenderContext;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -38,7 +37,7 @@ public class PopupMenu extends DisplayElement
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageId = "";
     private String _offset = "-1";
-    private String _extVersion = "Ext3";
+    private String _extVersion = "Ext4";
     
     public PopupMenu()
     {
@@ -148,46 +147,17 @@ public class PopupMenu extends DisplayElement
     public void renderMenuScript(Writer out, String dataRegionName) throws IOException
     {
         out.append("<script type=\"text/javascript\">\n");
-        if (getExtVersion().equals("Ext3"))
-        {
-            renderExt3Menu(out, dataRegionName);
-        }
-        else
-        {
-            renderExtMenu(out, dataRegionName);
-        }
+        renderExtMenu(out, dataRegionName);
         out.append("\n</script>");
-    }
-
-    private void renderExt3Menu(Writer out, String dataRegionName) throws IOException
-    {
-        out.append("Ext.onReady(function() {\n");
-        out.append(renderUnregScript(getId(dataRegionName)));
-        out.append("        var m = new Ext.menu.Menu(");
-        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-        out.append("         );});");
     }
 
     private void renderExtMenu(Writer out, String dataRegionName) throws IOException
     {
-        out.append("Ext4.onReady(function() {\n");
-        out.append("         var m = Ext4.create('Ext.menu.Menu', ");
+        out.append("_menuMgr.register(");
+        out.append(PageFlowUtil.qh(getId(dataRegionName)));
+        out.append(", ");
         out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-        out.append("         );});");
-    }
-
-    private String renderUnregScript(String id)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    var oldMenu = Ext.menu.MenuMgr.get(");
-        sb.append(PageFlowUtil.qh(id));
-        sb.append(");\n");
-        sb.append("    if(oldMenu)\n");
-        sb.append("    {\n");
-        sb.append("        oldMenu.removeAll();\n");
-        sb.append("        Ext.menu.MenuMgr.unregister(oldMenu);\n");
-        sb.append("    }\n");
-        return sb.toString();
+        out.append(");");
     }
 
     private static String renderMenuModel(Collection<NavTree> trees, String id)

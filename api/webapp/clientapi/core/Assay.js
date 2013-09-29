@@ -267,7 +267,7 @@ LABKEY.Assay = new function()
         {
             var dataObject = {};
 
-            LABKEY.ExtAdapter.apply(dataObject, config);
+            LABKEY.Utils.merge(dataObject, config);
             if (config.sort)
                 dataObject['query.sort'] = config.sort;
             if(config.offset)
@@ -293,9 +293,9 @@ LABKEY.Assay = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
-            }
+            };
 
-            if(LABKEY.ExtAdapter.isDefined(config.timeout))
+            if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             LABKEY.Ajax.request(requestConfig);
@@ -334,7 +334,7 @@ LABKEY.Assay = new function()
         {
             var dataObject = {};
 
-            LABKEY.ExtAdapter.apply(dataObject, config);
+            LABKEY.Utils.merge(dataObject, config);
 
             var successCallback = LABKEY.Utils.getOnSuccess(config);
 
@@ -347,9 +347,9 @@ LABKEY.Assay = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject
-            }
+            };
 
-            if(LABKEY.ExtAdapter.isDefined(config.timeout))
+            if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             LABKEY.Ajax.request(requestConfig);
@@ -435,9 +435,9 @@ LABKEY.Assay = new function()
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : parameters
-            }
+            };
 
-            if(LABKEY.ExtAdapter.isDefined(config.timeout))
+            if(LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             LABKEY.Ajax.request(requestConfig);

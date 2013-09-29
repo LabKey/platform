@@ -66,7 +66,7 @@ LABKEY.ActionURL = new function()
                 else
                 {
                     var curValue = parameters[name];
-                    if (LABKEY.ExtAdapter.isArray(curValue))
+                    if (LABKEY.Utils.isArray(curValue))
                         curValue.push(decodeURIComponent(nameValue[1]));
                     else
                         parameters[name] = [curValue, decodeURIComponent(nameValue[1])];
@@ -179,7 +179,7 @@ LABKEY.ActionURL = new function()
         getParameter : function(parameterName)
         {
             var val = buildParameterMap()[parameterName];
-            return (val && LABKEY.ExtAdapter.isArray(val) && val.length > 0) ? val[0] : val;
+            return (val && LABKEY.Utils.isArray(val) && val.length > 0) ? val[0] : val;
         },
 
         /**
@@ -191,13 +191,13 @@ LABKEY.ActionURL = new function()
         getParameterArray : function(parameterName)
         {
             var val = buildParameterMap()[parameterName];
-            return (val && !LABKEY.ExtAdapter.isArray(val)) ? [val] : val;
+            return (val && !LABKEY.Utils.isArray(val)) ? [val] : val;
         },
 
         /**
         * Returns an object mapping URL parameter names to parameter values. If a given parameter
         * appears more than once on the query string, the value in the map will be an array instead
-        * of a single value. Use LABKEY.ExtAdapter.isArray() to determine if the value is an array or not, or use
+        * of a single value. Use LABKEY.Utils.isArray() to determine if the value is an array or not, or use
         * getParameter() or getParameterArray() to retrieve a specific parameter name as a single value
         * or array respectively.
         * @param {String} [url] The URL to parse. If not specified, the browser's current location will be used.
@@ -329,7 +329,7 @@ that points back to the current page:
             for (var parameter in parameters)
             {
                 var pval = parameters[parameter];
-                if (LABKEY.ExtAdapter.isArray(pval))
+                if (LABKEY.Utils.isArray(pval))
                 {
                     for (var idx = 0; idx < pval.length; ++idx)
                     {

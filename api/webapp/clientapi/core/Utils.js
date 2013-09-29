@@ -22,14 +22,6 @@
  */
 LABKEY.Utils = new function()
 {
-    // private member variables
-    var _extParamMapping = {
-        "start" : "query.offset",
-        "limit" : "query.maxRows",
-        "sort" : "query.sort",
-        "dir" : "query.sortdir"
-        };
-
     // Private array of chars to use for UUID generation
     var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
 
@@ -46,11 +38,6 @@ LABKEY.Utils = new function()
                         'Y/n/d H:i:s|Y/n/d|' +
                         'j M Y G:i:s O|' +  // 10 Sep 2009 11:24:12 -0700
                         'j M Y H:i:s|c';
-    // private functions
-    function handleLoadError(This, o, arg, e)
-    {
-        LABKEY.Utils.displayAjaxErrorResponse(arg, e);
-    }
 
     function isObject(v)
     {
@@ -88,8 +75,6 @@ LABKEY.Utils = new function()
 
     /** @scope LABKEY.Utils */
     return {
-        // public functions
-
         /**
         * Encodes the html passed in so that it will not be interpreted as HTML by the browser.
         * For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
@@ -106,6 +91,42 @@ LABKEY.Utils = new function()
             var text = document.createTextNode(html);
             div.appendChild(text);
             return div.innerHTML;
+
+            // http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery
+            // http://jsperf.com/htmlencoderegex/25
+//            return String(value)
+//                    .replace(/&/g, '&amp;')
+//                    .replace(/"/g, '&quot;')
+//                    .replace(/'/g, '&#39;')
+//                    .replace(/</g, '&lt;')
+//                    .replace(/>/g, '&gt;');
+        },
+
+//        decodeHtml : function(value)
+//        {
+//            // http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery
+//            // http://jsperf.com/htmlencoderegex/25
+//            return String(value)
+//                    .replace(/&quot;/g, '"')
+//                    .replace(/&#39;/g, "'")
+//                    .replace(/&lt;/g, '<')
+//                    .replace(/&gt;/g, '>')
+//                    .replace(/&amp;/g, '&');
+//        },
+
+        isArray: function(value) {
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray
+            return Object.prototype.toString.call(value) === "[object Array]";
+        },
+
+        isDefined: function(value) {
+            return typeof value !== 'undefined';
+        },
+
+        isFunction: function(value) {
+            // http://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
+            var getType = {};
+            return value && getType.toString.call(value) === '[object Function]';
         },
 
         /**
@@ -113,7 +134,8 @@ LABKEY.Utils = new function()
          * it contains a very large set of date formats, which helps make a DateField more robust. For example, a
          * user would be allowed to enter dates like 6/1/2011, 06/01/2011, 6/1/11, etc.
          */
-        getDateAltFormats : function(){
+        getDateAltFormats : function()
+        {
             return DATEALTFORMATS;
         },
 
@@ -141,7 +163,7 @@ LABKEY.Utils = new function()
                 msgPrefix: msgPrefix,
                 showExceptionClass: showExceptionClass
             });
-            LABKEY.ExtAdapter.Msg.alert("Error", LABKEY.ExtAdapter.htmlEncode(error));
+            alert(LABKEY.Utils.encodeHtml(error));
         },
 
         /**
@@ -181,69 +203,13 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * This method takes an object that is/extends an Ext.Container (e.g. Panels, Toolbars, Viewports, Menus) and
-         * resizes it so the Container fits inside the viewable region of the window. This is generally used in the case
-         * where the Container is not rendered to a webpart but rather displayed on the page itself (e.g. SchemaBrowser,
-         * manageFolders, etc).
-         * NOTE: This method is safe to use for both Ext 3 and Ext 4 containers.
-         * @param extContainer - (Required) outer container which is the target to be resized
-         * @param width - (Required) width of the viewport. In many cases, the window width. If a negative width is passed than
-         *                           the width will not be set.
-         * @param height - (Required) height of the viewport. In many cases, the window height. If a negative height is passed than
-         *                           the height will not be set.
-         * @param paddingX - distance from the right edge of the viewport. Defaults to 35.
-         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 35.
+         * This method has been migrated to specific instances for both Ext 3.4.1 and Ext 4.2.1.
+         * For Ext 3.4.1 see LABKEY.ext.Utils.resizeToViewport
+         * For Ext 4.2.1 see LABKEY.ext4.Util.resizeToViewport
          */
         resizeToViewport : function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
-            if (!extContainer || !extContainer.rendered)
-                return;
-
-            if (width < 0 && height < 0)
-                return;
-
-            var padding = [];
-            if (offsetX == undefined || offsetX == null)
-                offsetX = 35;
-            if (offsetY == undefined || offsetY == null)
-                offsetY = 35;
-
-            if (paddingX !== undefined && paddingX != null)
-                padding.push(paddingX);
-            else
-            {
-
-                var bp = LABKEY.ExtAdapter.get('bodypanel');
-                if (bp) {
-                    var t  = LABKEY.ExtAdapter.query('table.labkey-proj');
-                    if (t && t.length > 0) {
-                        t = LABKEY.ExtAdapter.get(t[0]);
-                        padding.push((t.getWidth()-(bp.getWidth())) + offsetX);
-                    }
-                    else
-                        padding.push(offsetX);
-                }
-                else
-                    padding.push(offsetX);
-            }
-            if (paddingY !== undefined && paddingY != null)
-                padding.push(paddingY);
-            else
-                padding.push(offsetY);
-
-            var xy = extContainer.el.getXY();
-            var size = {
-                width  : Math.max(100,width-xy[0]-padding[0]),
-                height : Math.max(100,height-xy[1]-padding[1])
-            };
-
-            if (width < 0)
-                extContainer.setHeight(size.height);
-            else if (height < 0)
-                extContainer.setWidth(size.width);
-            else
-                extContainer.setSize(size);
-            extContainer.doLayout();
+            console.warn('LABKEY.Utils.resizeToViewport has been migrated. See JavaScript API documentation for details.');
         },
 
         /**
@@ -428,13 +394,13 @@ LABKEY.Utils.convertToTable(
             for(var prop in source)
             {
                 //special case: Ext adds a "constructor" property to every object, which we don't want to apply
-                if (prop == "constructor" || LABKEY.ExtAdapter.isFunction(prop))
+                if (prop == "constructor" || LABKEY.Utils.isFunction(prop))
                     continue;
                 
                 targetPropName = translationMap[prop];
                 if(targetPropName)
                     target[translationMap[prop]] = source[prop];
-                else if(undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.ExtAdapter.isFunction(source[prop])))
+                else if(undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.Utils.isFunction(source[prop])))
                     target[prop] = source[prop];
             }
         },
@@ -620,6 +586,14 @@ LABKEY.Utils.convertToTable(
             }
         },
 
+//        escapeId: function(id) {
+//            // Note: Does not work for \ (e.g. "Some\Id" parses as "SomeId" which should be "Some\\\Id" I think)
+//            return id.replace(/[!"#$%&'()*+,.\/:;<=>?@\[\\\]^`{|}~]/g, '\\\\$&');
+//        },
+
+        ensureBoxVisible: function() {
+            console.warn('LABKEY.Utils.ensureBoxVisible has been migrated to the appropriate Ext scope. Consider LABKEY.ext.Utils.ensureBoxVisible or LABKEY.ext4.Util.ensureBoxVisible');
+        },
         /**
           * Returns a universally unique identifier, of the general form: "92329D39-6F5C-4520-ABFC-AAB64544E172"
           * Based on original Math.uuid.js (v1.4)
@@ -677,9 +651,12 @@ LABKEY.Utils.convertToTable(
             {
                 for (var i in config)
                 {
-                    if (i.toString() != "text" && i.toString() != "class")
+                    if (config.hasOwnProperty(i))
                     {
-                        attrs += i.toString() + '=\"' + config[i] + '\" ';
+                        if (i.toString() != "text" && i.toString() != "class")
+                        {
+                            attrs += i.toString() + '=\"' + config[i] + '\" ';
+                        }
                     }
                 }
 
@@ -746,33 +723,6 @@ LABKEY.Utils.convertToTable(
             return o;
         },
 
-
-        // private
-        enableButton : function (elem)
-        {
-            if (typeof(Ext4) != 'undefined')
-            {
-                return Ext4.get(elem).replaceCls('labkey-disabled-button', 'labkey-button');
-            }
-            else if (typeof(Ext) != 'undefined')
-            {
-                return Ext.get(elem).replaceClass('labkey-disabled-button', 'labkey-button');
-            }
-        },
-
-        // private
-        disableButton : function (elem)
-        {
-            if (typeof(Ext4) != 'undefined')
-            {
-                return Ext4.get(elem).replaceCls("labkey-button", "labkey-disabled-button");
-            }
-            else if (typeof(Ext) != 'undefined')
-            {
-                return Ext.get(elem).replaceClass('labkey-button', 'labkey-disabled-button');
-            }
-        },
-
         /**
          * Provides a generic error callback.  This helper will call Ext.Msg.hide(), log the error to the console
          * and will log the error to the audit log table. The user must have insert permissions on the selected container for
@@ -826,7 +776,7 @@ LABKEY.Utils.convertToTable(
                         Key1: 'Client Error',
                         //NOTE: labkey should automatically crop these strings to the allowable length for that field
                         Key2: window.location.href,
-                        Key3: (error.stackTrace && LABKEY.ExtAdapter.isArray(error.stackTrace) ? error.stackTrace.join('\n') : null),
+                        Key3: (error.stackTrace && LABKEY.Utils.isArray(error.stackTrace) ? error.stackTrace.join('\n') : null),
                         Comment: (error.exception || error.statusText || error.message),
                         Date: new Date()
                      }],
@@ -953,12 +903,12 @@ LABKEY.Utils.convertToTable(
             var callback;
             var scripts;
 
-            if (LABKEY.ExtAdapter.isFunction(config)){
+            if (LABKEY.Utils.isFunction(config)){
                 scope = this;
                 callback = config;
                 scripts = null;
             }
-            else if (LABKEY.ExtAdapter.isObject(config) && LABKEY.ExtAdapter.isFunction(config.callback))
+            else if (LABKEY.ExtAdapter.isObject(config) && LABKEY.Utils.isFunction(config.callback))
             {
                 scope = config.scope || this;
                 callback = config.callback;

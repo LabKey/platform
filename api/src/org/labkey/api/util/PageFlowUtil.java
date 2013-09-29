@@ -1662,6 +1662,7 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
+        // TODO: Migrate to be dependent on ext 3 loading
         /* Stylesheets for Ext 3.x -- order matters as overriddes are in stylesheet.css and themeStylesheet.view */
         F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot() + "/resources/css/ext-all.css");
         F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
@@ -1842,11 +1843,6 @@ public class PageFlowUtil
                 }
             }
         }
-    }
-
-    public static String getLabkeyJS()
-    {
-        return getLabkeyJS(new LinkedHashSet<ClientDependency>());
     }
 
     public static String getLabkeyJS(LinkedHashSet<ClientDependency> resources)

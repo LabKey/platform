@@ -94,12 +94,12 @@ LABKEY.MultiRequest = function (config) {
 
     var self = this;
     var sending = false;
-    var waitQ = new Array();
-    var sendQ = new Array();
+    var waitQ = [];
+    var sendQ = [];
 
     var requests;
     var listeners;
-    if (LABKEY.ExtAdapter.isArray(config)) {
+    if (LABKEY.Utils.isArray(config)) {
         requests = config;
     } else {
         requests = config.requests;

@@ -61,9 +61,6 @@
         <td class="labkey-full-screen-background">
             <div class="labkey-full-screen-table">
                 <div id="dialogBody" class="labkey-dialog-body">
-                    <script type="text/javascript">
-                        LABKEY.requiresClientAPI();
-                    </script>
                     <% me.include(me.getBody(), out);%>
                 </div>
             </div>

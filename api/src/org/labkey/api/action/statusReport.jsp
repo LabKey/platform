@@ -18,7 +18,18 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%> <%
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
+<%
     ViewContext context = HttpView.currentContext();
     ActionURL url = context.cloneActionURL();
 %>
@@ -30,11 +41,11 @@
     var offset = 0;
     var baseURL = <%=q(url.toString() + "offset=")%>;
 
-    Ext.onReady(makeRequest);
+    Ext4.onReady(makeRequest);
 
     function makeRequest()
     {
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: baseURL + offset,
             method: 'POST',
             success: LABKEY.Utils.getCallbackWrapper(appendStatus),

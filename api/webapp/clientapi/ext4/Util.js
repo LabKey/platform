@@ -8,7 +8,6 @@
 (function() {
 
     // TODO: Some weird dependencies
-    // LABKEY.ext.LongTextField
     // LABKEY.Utils
 
     Ext4.ns('LABKEY.ext4');
@@ -22,6 +21,12 @@
     LABKEY.ext4.Util = {};
 
     var Util = LABKEY.ext4.Util;
+
+    var caseInsensitiveEquals = function(a, b) {
+        a = String(a);
+        b = String(b);
+        return a.toLowerCase() == b.toLowerCase();
+    };
 
     Ext4.apply(Util, {
 
@@ -434,7 +439,7 @@
                 displayValue = Ext4.util.Format.htmlEncode(displayValue);
 
                 //if meta.file is true, add an <img> for the file icon
-                if(meta.file){
+                if (meta.file) {
                     displayValue = "<img src=\"" + LABKEY.Utils.getFileIconUrl(value) + "\" alt=\"icon\" title=\"Click to download file\"/>&nbsp;" + displayValue;
                     //since the icons are 16x16, cut the default padding down to just 1px
                     cellStyles.push('padding: 1px 1px 1px 1px');
@@ -644,13 +649,6 @@
             //this produces a generic editor
             var editor = Util.getDefaultEditorConfig(meta);
 
-            //for multiline fields:
-            if (editor.editable && meta.inputType == 'textarea'){
-                editor = new LABKEY.ext.LongTextField({
-                    columnName: editor.dataIndex
-                });
-            }
-
             //now we allow overrides of default behavior, in order of precedence
             if (meta.editorConfig) {
                 Ext4.Object.merge(editor, meta.editorConfig);
@@ -840,16 +838,16 @@
             var aliasMatch = [];
 
             var testField = function(fieldMeta) {
-                if (LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.name)
-                    || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.caption)
-                    || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.shortCaption)
-                    || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.label)
+                if (caseInsensitiveEquals(fieldName, fieldMeta.name)
+                    || caseInsensitiveEquals(fieldName, fieldMeta.caption)
+                    || caseInsensitiveEquals(fieldName, fieldMeta.shortCaption)
+                    || caseInsensitiveEquals(fieldName, fieldMeta.label)
                 ){
                     fnMatch.push(fieldMeta.name);
                     return false;  //exit here because it should only match 1 name
                 }
 
-                if(fieldMeta.importAliases){
+                if (fieldMeta.importAliases) {
                     var aliases;
                     if(Ext4.isArray(fieldMeta.importAliases))
                         aliases = fieldMeta.importAliases;
@@ -857,13 +855,13 @@
                         aliases = fieldMeta.importAliases.split(',');
 
                     Ext4.each(aliases, function(alias){
-                        if(LABKEY.Utils.caseInsensitiveEquals(fieldName, alias))
+                        if (caseInsensitiveEquals(fieldName, alias))
                             aliasMatch.push(fieldMeta.name);  //continue iterating over fields in case a fieldName matches
                     }, this);
                 }
-            }
+            };
 
-            if(meta.hasOwnProperty('each')) {
+            if (meta.hasOwnProperty('each')) {
                 meta.each(testField, this);
             }
             else {
@@ -953,6 +951,71 @@
             field.editable   = (field.userEditable!==false && !field.readOnly && !field.autoIncrement && !field.calculated);
             field.allowBlank = field.nullable;
             field.jsonType   = field.jsonType || Util.findJsonType(field);
+        },
+
+        /**
+         * This method takes an object that is/extends an Ext4.Container (e.g. Panels, Toolbars, Viewports, Menus) and
+         * resizes it so the Container fits inside the viewable region of the window. This is generally used in the case
+         * where the Container is not rendered to a webpart but rather displayed on the page itself (e.g. SchemaBrowser,
+         * manageFolders, etc).
+         * @param extContainer - (Required) outer container which is the target to be resized
+         * @param width - (Required) width of the viewport. In many cases, the window width. If a negative width is passed than
+         *                           the width will not be set.
+         * @param height - (Required) height of the viewport. In many cases, the window height. If a negative height is passed than
+         *                           the height will not be set.
+         * @param paddingX - distance from the right edge of the viewport. Defaults to 35.
+         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 35.
+         */
+        resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
+        {
+            if (!extContainer || !extContainer.rendered)
+                return;
+
+            if (width < 0 && height < 0)
+                return;
+
+            var padding = [];
+            if (offsetX == undefined || offsetX == null)
+                offsetX = 35;
+            if (offsetY == undefined || offsetY == null)
+                offsetY = 35;
+
+            if (paddingX !== undefined && paddingX != null)
+                padding.push(paddingX);
+            else
+            {
+
+                var bp = Ext4.get('bodypanel');
+                if (bp) {
+                    var t  = Ext4.query('table.labkey-proj');
+                    if (t && t.length > 0) {
+                        t = Ext4.get(t[0]);
+                        padding.push((t.getWidth()-(bp.getWidth())) + offsetX);
+                    }
+                    else
+                        padding.push(offsetX);
+                }
+                else
+                    padding.push(offsetX);
+            }
+            if (paddingY !== undefined && paddingY != null)
+                padding.push(paddingY);
+            else
+                padding.push(offsetY);
+
+            var xy = extContainer.el.getXY();
+            var size = {
+                width  : Math.max(100,width-xy[0]-padding[0]),
+                height : Math.max(100,height-xy[1]-padding[1])
+            };
+
+            if (width < 0)
+                extContainer.setHeight(size.height);
+            else if (height < 0)
+                extContainer.setWidth(size.width);
+            else
+                extContainer.setSize(size);
+            extContainer.doLayout();
         }
     });
 }());

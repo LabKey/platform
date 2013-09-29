@@ -285,7 +285,7 @@ LABKEY.GridView = function(config)
                 {
                     storeConfig.allowNull = { keyColumn: lookupDef.keyColumn, displayColumn: lookupDef.displayColumn };
                 }
-                var dsLookup = LABKEY.Utils.createExtStore(storeConfig);
+                var dsLookup = LABKEY.ext.Utils.createExtStore(storeConfig);
 
                 displayColumn.renderer = getLookupRenderer(dsLookup, lookupDef);
                 if (_editable)
@@ -709,7 +709,7 @@ LABKEY.GridView = function(config)
         _storeConfig.queryName = _primaryQueryName;
         _storeConfig.viewName = _primaryViewName;
         _storeConfig.containerPath = _containerPath;
-        return LABKEY.Utils.createExtStore(_storeConfig);
+        return LABKEY.ext.Utils.createExtStore(_storeConfig);
     }
 
     function displayGridImpl()

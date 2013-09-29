@@ -704,7 +704,7 @@ LABKEY.Security = new function()
             config = config || {};
             if (undefined != config.container)
             {
-                if (LABKEY.ExtAdapter.isArray(config.container))
+                if (LABKEY.Utils.isArray(config.container))
                 {
                     params.multipleContainers = true;
                 }
@@ -976,7 +976,7 @@ LABKEY.Security = new function()
             if (config.schemaName && config.schemaName != "study")
                 throw "Method only works for the study schema";
 
-            function successCallback(json, response) {
+            var successCallback = function(json, response) {
 
                 //First lets make sure there is a study in here.
                 var studyResource = null;
@@ -995,19 +995,28 @@ LABKEY.Security = new function()
                     return;
                 }
 
-                var result = {queries:{}};
-                LABKEY.ExtAdapter.each(studyResource.children, function (dataset) {
+                var result = {queries:{}}, dataset;
+
+                for (i=0; i < studyResource.children.length; i++) {
+                    dataset = studyResource.children[i];
                     result.queries[dataset.name] = dataset;
                     dataset.permissionMap = {};
-                    LABKEY.ExtAdapter.each(dataset.effectivePermissions, function (perm) {
-                        dataset.permissionMap[perm] = true;
-                    })
-                });
+                    for (var j=0; j < dataset.effectivePermissions.length; j++) {
+                        dataset.permissionMap[dataset.effectivePermissions[j]] = true;
+                    }
+                }
 
                 config.success.apply(config.scope || this, [{schemas:{study:result}}, response]);
-            }
+            };
 
-            var myConfig = LABKEY.ExtAdapter.apply({}, config);
+            var myConfig = {};
+            if (config) {
+                for (var c in config) {
+                    if (config.hasOwnProperty(c)) {
+                        myConfig[c] = c;
+                    }
+                }
+            }
             myConfig.includeEffectivePermissions = true;
             myConfig.success = successCallback;
             return LABKEY.Security.getSecurableResources(myConfig);
@@ -1360,7 +1369,7 @@ LABKEY.Security = new function()
         {
             var params = {
                 groupId: config.groupId,
-                principalIds: (LABKEY.ExtAdapter.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+                principalIds: (LABKEY.Utils.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
@@ -1404,7 +1413,7 @@ LABKEY.Security = new function()
         {
             var params = {
                 groupId: config.groupId,
-                principalIds: (LABKEY.ExtAdapter.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+                principalIds: (LABKEY.Utils.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),

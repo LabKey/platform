@@ -57,7 +57,7 @@ LABKEY.Query.Visualization = new function() {
             {
                 json = LABKEY.ExtAdapter.decode(data.responseText);
                 if (json.visualizationConfig)
-                    json.visualizationConfig = Ext4.decode(json.visualizationConfig);
+                    json.visualizationConfig = LABKEY.ExtAdapter.decode(json.visualizationConfig);
             }
 
             if(successCallback)
@@ -82,7 +82,7 @@ LABKEY.Query.Visualization = new function() {
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext4.decode(response.responseText);
+                json = LABKEY.ExtAdapter.decode(response.responseText);
                 measures = createMeasureFn(json);
             }
 
@@ -284,7 +284,7 @@ LABKEY.Query.Visualization = new function() {
             var params = {
                 name : config.name,
                 description : config.description,
-                json : Ext4.encode(config.visualizationConfig),
+                json : LABKEY.ExtAdapter.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
                 thumbnailType: config.thumbnailType,

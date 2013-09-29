@@ -32,6 +32,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+      resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
       resources.add(ClientDependency.fromFilePath("applet.js"));
       resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
       resources.add(ClientDependency.fromFilePath("StatusBar.js"));
@@ -177,7 +178,7 @@
 
                 var _resize = function(w,h)
                 {
-                    LABKEY.Utils.resizeToViewport(panel, w, h);
+                    LABKEY.ext.Utils.resizeToViewport(panel, w, h);
                 };
 
                 if (autoResize)
@@ -202,7 +203,7 @@
             Ext.QuickTips.init();
 
             renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
-        }
+        };
 
         Ext.onReady(loadFileContent);
 

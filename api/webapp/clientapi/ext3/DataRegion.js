@@ -1541,11 +1541,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }
                     if (minCount <= selectionCount && (!maxCount || maxCount >= selectionCount))
                     {
-                        LABKEY.Utils.enableButton(buttonElement);
+                        Ext.get(buttonElement).replaceClass('labkey-disabled-button', 'labkey-button');
                     }
                     else
                     {
-                        LABKEY.Utils.disableButton(buttonElement);
+                        Ext.get(buttonElement).replaceClass('labkey-button', 'labkey-disabled-button');
                     }
                 }
             },

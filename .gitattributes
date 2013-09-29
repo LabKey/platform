@@ -1613,7 +1613,6 @@ api/webapp/WEB-INF/labkey.tld -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi.lib.xml -text
-api/webapp/clientapi/core.lib.xml -text
 api/webapp/clientapi/core/ActionURL.js -text
 api/webapp/clientapi/core/Ajax.js -text
 api/webapp/clientapi/core/Assay.js -text

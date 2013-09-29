@@ -47,6 +47,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+      resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
       resources.add(ClientDependency.fromFilePath("codemirror"));
       return resources;
   }
@@ -229,7 +230,7 @@ var f_scope<%=text(uid)%> = new (function() {
 
         tabs.strip.applyStyles({'background':'#ffffff'});
 
-        var _resize = function(w, h) { LABKEY.Utils.resizeToViewport(tabs, w, h, 40, 50); };
+        var _resize = function(w, h) { LABKEY.ext.Utils.resizeToViewport(tabs, w, h, 40, 50); };
 
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();

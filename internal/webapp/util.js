@@ -41,39 +41,6 @@ function getCheckedValues(form, elementName)
     return values;
 }
 
-/**
- * Given a radio button, determine which one in the group is selected and return its value
- * @param radioButton one of the radio buttons in the group
- */
-function getRadioButtonValue(radioButton)
-{
-    if (radioButton.form && radioButton.name)
-    {
-        var radioButtonElements = radioButton.form.elements[radioButton.name];
-        for (var i = 0; i < radioButtonElements.length; i++)
-        {
-            if (radioButtonElements[i].checked)
-            {
-                return radioButtonElements[i].value;
-            }
-        }
-    }
-}
-
-
-function getChildWithClassName(root, tagName, className)
-{
-    if (!root) return undefined;
-    var children = root.childNodes;
-    for (var j = children.length-1; j >= 0; j--)
-    {
-        var child = children[j];
-        if (child.tagName == tagName && child.className == className)
-            return child;
-    }
-    return undefined;
-}
-
 function toggleLink(link, notify)
 {
     collapseExpand(link, notify);
@@ -188,37 +155,6 @@ function toggleDisplay(elem)
     }
  }
 
- function toggleAll (nodeLink, parentId, notify)
- {
-    var tocParent = document.getElementById (parentId);
-    var tocTable = tocParent.childNodes.item(0);
-    while (tocTable && tocTable.nodeName != "TABLE")
-         { tocTable = tocTable.nextSibling; }
-    if (tocTable)
-    {
-        var linkText = nodeLink.childNodes.item (0);
-        if (linkText.nodeValue == 'expand all') {
-            toggleTable(tocTable, true, notify);
-            linkText.nodeValue = 'collapse all';
-        } else {
-            toggleTable(tocTable, false, notify);
-            linkText.nodeValue = 'expand all';
-        }
-    }
-
-    return false;
- }
-
-function adjustAllTocEntries(parentId, notify, expand)
-{
-    var tocParent = document.getElementById (parentId);
-    var tocTable = tocParent.childNodes.item(0);
-    while (tocTable && tocTable.nodeName != "TABLE")
-         { tocTable = tocTable.nextSibling; }
-    if (tocTable)
-        toggleTable(tocTable, expand, notify);
-}
-
  function getNextRow(rowElem)
  {
     if (null == rowElem)
@@ -257,11 +193,7 @@ function getHelpDiv()
 function showHelpDivDelay(elem, titleText, bodyText, width, delay)
 {
     // IE support
-    function go()
-    {
-        showHelpDiv(elem, titleText, bodyText, width);
-    }
-    _showTimer = setTimeout(go, delay ? delay : 400);
+    _showTimer = setTimeout(function() { showHelpDiv(elem, titleText, bodyText, width); }, delay ? delay : 400);
 }
 
 function showHelpDiv(elem, titleText, bodyText, width)
@@ -295,6 +227,12 @@ function showHelpDiv(elem, titleText, bodyText, width)
     var pos = bd.getScroll();
     var leftScroll = pos.left;
     var topScroll = pos.top;
+// This is the jQuery equivalent
+//    var bd = $(document.body);
+//    var viewportWidth = bd.outerWidth();
+//    var viewportHeight = bd.outerHeight();
+//    var leftScroll = bd.scrollLeft();
+//    var topScroll = bd.scrollTop();
 
     div.style.top = posTop + "px";
     div.style.display = "block";
@@ -574,6 +512,18 @@ function handleTabsInTextArea(event)
     }
 }
 
+_menuMgr = new function() {
+    var menus = {};
+
+    return {
+        register: function(id, config) {
+            menus[id] = config;
+        },
+        get: function(id) {
+            return menus[id];
+        }
+    };
+};
 
 function showMenu(parent, menuElementId, align) {
     if (!align)
@@ -581,50 +531,46 @@ function showMenu(parent, menuElementId, align) {
         align = "tl-bl?";
     }
 
-    var menu, oldExt = false, extPresent = false;
+    var menu, menuCfg, cls = 'labkey-menu-button-active';
     if (typeof(Ext) != 'undefined') {
-        oldExt = true;
-        extPresent = true;
         menu = Ext.menu.MenuMgr.get(menuElementId);
-    }
 
-    if (typeof(Ext4) != 'undefined' && !menu) {
-        menu = Ext4.menu.Manager.get(menuElementId);
-        extPresent = true;
-        oldExt = false;
-    }
-
-    if (menu && extPresent)
-    {
-        // While the menu's open, highlight the button that caused it to open
-        if (oldExt)
-        {
-            Ext.get(parent).addClass('labkey-menu-button-active');
-
-            //provide mechanism for menu to identify owner.  primarily used for animations
-            menu.floatParent = parent;
-
-            menu.show(parent, align);
-            var listener = function()
-            {
-                // Get rid of the highlight when the menu disappears, and remove the listener since the menu
-                // can be reused
-                menu.removeListener('beforehide', listener);
-                Ext.get(parent).removeClass('labkey-menu-button-active');
-                menu.floatParent = null;
-            };
-            menu.on('beforehide', listener);
+        if (!menu) {
+            menuCfg = _menuMgr.get(menuElementId);
+            if (menuCfg) {
+                menu = new Ext.menu.Menu(menuCfg);
+            }
         }
-        else
-        {
-            Ext4.get(parent).addCls('labkey-menu-button-active');
 
-            menu.show();
-            menu.alignTo(parent, align);
-        }
+        // attach class listeners
+        menu.on('beforeshow', function() { Ext.get(this).addClass(cls); menu.floatParent = this; }, parent);
+        menu.on('beforehide', function() { Ext.get(this).removeClass(cls); menu.floatParent = null; }, parent);
+
+        menu.show(parent, align);
     }
     else
+    {
         console.error("No menu registered :" + menuElementId);
+    }
+
+    // TODO: Ext 4 Menus do not escape id's properly, must fix before dependency on Ext 3 can be dropped
+//    if (typeof(Ext4) != 'undefined') {
+//        menu = Ext4.menu.Manager.get(menuElementId);
+//
+//        if (!menu) {
+//            menuCfg = _menuMgr.get(menuElementId);
+//            if (menuCfg) {
+//                menu = Ext4.create('Ext.menu.Menu', menuCfg);
+//            }
+//
+//            // attach class listeners
+//            menu.on('show', function() { Ext4.get(this).addCls(cls); }, parent);
+//            menu.on('beforehide', function() { Ext4.get(this).removeCls(cls); }, parent);
+//        }
+//
+//        menu.show();
+//        menu.alignTo(parent, align);
+//    }
 }
 
 
@@ -648,6 +594,28 @@ LABKEY.addMarkup(
 '  </table>'+
 '</div>'
 );
+//$(document.body).ready(function() {
+//    $(document.body).append(
+//        '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
+//        '   style="display:none;">'+
+//        '  <table id="helpDivTable">'+
+//        '    <tr class="labkey-wp-header" width="100%">'+
+//        '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
+//        '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
+//        '      </td>'+
+//        '      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
+//        '      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
+//        '      </td>'+
+//        '     </tr>'+
+//        '    <tr>'+
+//        '      <td colspan=2 style="padding:5px;">'+
+//        '        <span id="helpDivBody">Body</span>'+
+//        '      </td>'+
+//        '    </tr>'+
+//        '  </table>'+
+//        '</div>'
+//    );
+//});
 
 // generator function to create a function to call when flag field is clicked
 // This is used in FlagColumnRenderer

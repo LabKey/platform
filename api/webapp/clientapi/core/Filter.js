@@ -225,7 +225,7 @@ LABKEY.Filter = new function()
                     if (params[paramName] !== undefined)
                     {
                         var values = params[paramName];
-                        if (!LABKEY.ExtAdapter.isArray(values))
+                        if (!LABKEY.Utils.isArray(values))
                             values = [ values ];
                         values.push(paramValue);
                         paramValue = values;
@@ -258,7 +258,7 @@ LABKEY.Filter = new function()
                         if (params[paramName] !== undefined)
                         {
                             var values = params[paramName];
-                            if (!LABKEY.ExtAdapter.isArray(values))
+                            if (!LABKEY.Utils.isArray(values))
                                 values = [ values ];
                             values.push(paramValue);
                             paramValue = values;
@@ -353,7 +353,7 @@ LABKEY.Filter = new function()
                 {
                     var filterType = paramName.substring(paramName.indexOf("~") + 1);
                     var values = params[paramName];
-                    if (!LABKEY.ExtAdapter.isArray(values))
+                    if (!LABKEY.Utils.isArray(values))
                     {
                         values = [values];
                     }
@@ -404,7 +404,7 @@ LABKEY.Filter = new function()
                         var filterName = paramName.substring(tilde + 1);
                         var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
                         var values = params[paramName];
-                        if (!LABKEY.ExtAdapter.isArray(values))
+                        if (!LABKEY.Utils.isArray(values))
                         {
                             values = [values];
                         }

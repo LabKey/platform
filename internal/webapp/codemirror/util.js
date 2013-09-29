@@ -1,4 +1,9 @@
-Ext.namespace("LABKEY.codemirror");
+if (LABKEY.Utils.isDefined(window.Ext)) {
+    Ext.namespace("LABKEY.codemirror");
+}
+else {
+    LABKEY.codemirror = {};
+}
 
 LABKEY.codemirror.RegisterEditorInstance = function(id, instance){
 

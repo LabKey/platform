@@ -101,7 +101,7 @@ LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
     show: function () {
         LABKEY.ext.PersistentToolTip.superclass.show.call(this);
         if (this.el)
-            LABKEY.Utils.ensureBoxVisible(this);
+            LABKEY.ext.Utils.ensureBoxVisible(this);
     },
 
     // private

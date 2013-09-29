@@ -4,6 +4,7 @@
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
+Ext.namespace('LABKEY.ext');
 /**
  * @class Ext.StatusBar
  * <p>Basic status bar component that can be used as the bottom toolbar of any {@link Ext.Panel}.  In addition to

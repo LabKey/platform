@@ -99,8 +99,7 @@ LABKEY.Message = new function()
          * </ul>
          * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
-         * for the async request that can be used to cancel the request
-         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * for the async request that can be used to cancel the request.
          * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          * @example Example:
          <pre name="code" class="xml">

@@ -3,12 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-(function()
-{
+(function() {
     /** @private */
-    var X = Ext4 || Ext;
-    /** @private */
-    var $h = X.util.Format.htmlEncode;
+    var $h = Ext4.util.Format.htmlEncode;
 
     /** @constructor
      *
@@ -17,7 +14,7 @@
      */
     var FieldDefinition = function(field, column)
     {
-        X.apply(this, field||{}, column||{});
+        Ext4.apply(this, field||{}, column||{});
         if (this.fieldKeyPath)
             this.fieldKey = LABKEY.FieldKey.fromString(this.fieldKeyPath);
         if (this.extFormatFn)
@@ -69,7 +66,7 @@
             {
                 try
                 {
-                    formattedValue = X.Date.format(new Date(v), this.dateFormat||'Y-m-d');
+                    formattedValue = Ext4.Date.format(new Date(v), this.dateFormat||'Y-m-d');
                     break;
                 }
                 catch (ex)
@@ -90,7 +87,7 @@
         if (value.html)
             return html;
         var displayValue = this.getFormattedDisplayValue(value)
-        var html = X.isEmpty(displayValue) ? '&nbsp;' : $h(displayValue);
+        var html = Ext4.isEmpty(displayValue) ? '&nbsp;' : $h(displayValue);
         if (value.url && withUrls)
             html = "<a href=\"" + $h(value.url) + "\">" + html + "</a>";
         return html;
@@ -219,7 +216,7 @@
  */
 
 
-X.define('LABKEY.TemplateReport',
+Ext4.define('LABKEY.TemplateReport',
 {
     extend: 'Ext.Component',
 
@@ -254,13 +251,14 @@ X.define('LABKEY.TemplateReport',
             );
 
 
-            if (Ext.isString(this.reportTemplate))
+            if (Ext4.isString(this.reportTemplate))
                 this.reportTemplate = {template:tpl};
-            if (Ext.isArray(this.reportTemplate.template))
+            if (Ext4.isArray(this.reportTemplate.template))
                 this.reportTemplate.template = this.reportTemplate.template.join("");
             for (var p in this.reportTemplate.on)
             {
-                this.on(p, this.reportTemplate.on[p]);
+                if (this.reportTemplate.on.hasOwnProperty(p))
+                    this.on(p, this.reportTemplate.on[p]);
             }
     },
 
@@ -305,7 +303,7 @@ X.define('LABKEY.TemplateReport',
         }
 
         var gridFields = null;
-        if (X.isArray(this.gridFields))
+        if (Ext4.isArray(this.gridFields))
         {
             gridFields = [];
             for (i=0 ; i<this.gridFields.length ; i++)
@@ -317,19 +315,19 @@ X.define('LABKEY.TemplateReport',
         }
 
         var pageFields = null;
-        if (X.isArray(this.pageFields))
+        if (Ext4.isArray(this.pageFields))
         {
             pageFields = [];
             for (i=0 ; i<this.pageFields.length ; i++)
             {
-                var pf = Ext.isString(this.pageFields[i]) ? {name:this.pageFields[i]} : this.pageFields[i];
+                var pf = Ext4.isString(this.pageFields[i]) ? {name:this.pageFields[i]} : this.pageFields[i];
                 field = nameMap[pf.name];
                 if (field)
                     // create a copy of the field so page fields can have different formatting
-                    pageFields.push(Ext.apply({}, pf, field));
+                    pageFields.push(Ext4.apply({}, pf, field));
             }
         }
-        else if (X.isArray(this.pageBreakInfo))
+        else if (Ext4.isArray(this.pageBreakInfo))
         {
             pageFields = [];
             for (i=0 ; i<this.pageBreakInfo.length ; i++)
@@ -341,7 +339,7 @@ X.define('LABKEY.TemplateReport',
         }
 
         var rowBreakMap = {};
-        if (X.isArray(this.rowBreakInfo))
+        if (Ext4.isArray(this.rowBreakInfo))
         {
             for (i=0; i < this.rowBreakInfo.length; i++)
             {
@@ -361,7 +359,7 @@ X.define('LABKEY.TemplateReport',
             {
                 field = fields[f];
                 var value = objectRow[field.name] || {};
-                if (!X.isObject(value))
+                if (!Ext4.isObject(value))
                     value = {value: value};
                 value.field = field;
                 value.parentRow = parentRow;
@@ -389,7 +387,7 @@ X.define('LABKEY.TemplateReport',
         for (var i=0; i < gridFields.length; i++)
         {
             var field = objectRow[gridFields[i].name];
-            if (field && !rowBreakMap[gridFields[i].name] && !X.isEmpty(field.value))
+            if (field && !rowBreakMap[gridFields[i].name] && !Ext4.isEmpty(field.value))
                 return false;
         }
         return true;
@@ -434,12 +432,12 @@ X.define('LABKEY.TemplateReport',
         var breakInfos = [];
         var breakInfo;
         var pageBreakLevel = -1;
-        if (X.isArray(this.pageBreakInfo))
+        if (Ext4.isArray(this.pageBreakInfo))
         {
             breakInfos = breakInfos.concat(this.pageBreakInfo);
             pageBreakLevel = this.pageBreakInfo.length;
         }
-        if (X.isArray(this.rowBreakInfo))
+        if (Ext4.isArray(this.rowBreakInfo))
         {
             breakInfos = breakInfos.concat(this.rowBreakInfo);
         }
@@ -480,7 +478,7 @@ X.define('LABKEY.TemplateReport',
             for (var b=breakFields.length-1; b >=0 ; b--)
             {
                 var obj = arrayRow[breakFields[b].index];
-                var v = (obj && X.isDefined(obj.value)) ? obj.value : "" ;
+                var v = (obj && Ext4.isDefined(obj.value)) ? obj.value : "" ;
                 var prev = breakValues[b];
                 if (v != prev)
                     breakLevel = b;
@@ -520,7 +518,7 @@ X.define('LABKEY.TemplateReport',
             for (b=breakFields.length-1; b >=0 ; b--)
             {
                 obj = arrayRow[breakFields[b].index];
-                v = (obj && X.isDefined(obj.value)) ? obj.value : "" ;
+                v = (obj && Ext4.isDefined(obj.value)) ? obj.value : "" ;
                 prev = breakValues[b];
                 if (v != prev)
                     breakLevel = b;
@@ -599,9 +597,9 @@ X.define('LABKEY.TemplateReport',
 
     renderReport:function()
     {
-        if (!X.isObject(this.reportTemplate))
+        if (!Ext4.isObject(this.reportTemplate))
             throw "LABKEY.TemplateReport: No template provided";
-        if (!X.isObject(this.reportData))
+        if (!Ext4.isObject(this.reportData))
             throw "LABKEY.TemplateReport: Data not provided";
 
         var tplConfig =
@@ -644,7 +642,7 @@ X.define('LABKEY.TemplateReport',
                 transposed : this.transposed,
                 start : (new Date()).valueOf()
         };
-        X.apply(tplConfig, this.reportTemplate);
+        Ext4.apply(tplConfig, this.reportTemplate);
         this.template = new Ext4.XTemplate(tplConfig.template, tplConfig);
         this.template.data = this.reportData;
         this.template.overwrite(this.el, this.reportData);

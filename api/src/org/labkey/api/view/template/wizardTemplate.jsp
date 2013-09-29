@@ -69,11 +69,8 @@
                         </ol>
                     </td>
                     <td id="wizardBody" class="labkey-fullscreen-wizard-body">
-                        <div style="padding: 3em">
+                        <div style="padding: 3em;">
                             <span class="labkey-nav-page-header"><%= h(pageConfig.getTitle()) %></span>
-                            <script type="text/javascript">
-                                LABKEY.requiresClientAPI();
-                            </script>
                             <% me.include(me.getBody(), out);%>
                         </div>
                     </td>

@@ -1,9 +1,9 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="util.js"/>
+        <script path="util.js"/> <!-- TODO: REQUIRES FIX: Remove all Ext dependencies -->
     </library>
     <dependencies>
-        <dependency path="Ext4" />
+        <dependency path="Ext4" /> <!-- TODO: REMOVE: Once util.js is ext free -->
     </dependencies>
 </libraries>
 
