@@ -148,16 +148,18 @@
 
         function truncate()
         {
+            Ext4.getBody().mask();
             Ext4.Ajax.request({
                 url     : LABKEY.ActionURL.buildURL('query', 'truncateTable'),
                 method  : 'POST',
                 success: function(response){
-                    console.log(response);
+                    Ext4.getBody().unmask();
                     var data = Ext4.JSON.decode(response.responseText);
                     Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                 },
                 failure : function(response, opts)
                 {
+                    Ext4.getBody().unmask();
                     LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                 },
                 jsonData : {schemaName : 'lists', queryName : queryName},
