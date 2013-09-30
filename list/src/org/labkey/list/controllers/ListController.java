@@ -57,17 +57,11 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.query.AbstractQueryImportAction;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -720,14 +714,30 @@ public class ListController extends SpringActionController
                     UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                     if (schema != null)
                     {
+                        VBox box = new VBox();
+                        String domainUri = _list.getDomain().getTypeURI();
+
+                        // list audit events
                         QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
-
-                        SimpleFilter filter = new SimpleFilter();
-                        filter.addCondition(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_DOMAIN_URI), _list.getDomain().getTypeURI());
-
-                        settings.setBaseFilter(filter);
                         settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
-                        return schema.createView(getViewContext(), settings, errors);
+                        QueryView view = schema.createView(getViewContext(), settings, errors);
+                        view.setTitle("List Events");
+                        box.addView(view);
+
+                        // domain audit events associated with this list
+                        QuerySettings domainSettings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+
+                        SimpleFilter domainFilter = new SimpleFilter();
+                        domainFilter.addCondition(FieldKey.fromParts(DomainAuditProvider.COLUMN_NAME_DOMAIN_URI), domainUri);
+
+                        domainSettings.setBaseFilter(domainFilter);
+                        domainSettings.setQueryName(DomainAuditProvider.EVENT_TYPE);
+                        QueryView domainView = schema.createView(getViewContext(), domainSettings, errors);
+
+                        domainView.setTitle("List Design Changes");
+                        box.addView(domainView);
+
+                        return box;
                     }
                     return new HtmlView("Unable to create the List history view");
                 }
@@ -760,7 +770,7 @@ public class ListController extends SpringActionController
             _list = ListService.get().getList(getContainer(), listId);
             if (_list == null)
             {
-                throw new NotFoundException();
+                return new HtmlView("This list is no longer available.");
             }
 
             String comment = null;
@@ -812,11 +822,13 @@ public class ListController extends SpringActionController
                 Map<String,String> oldData = ListAuditViewFactory.decodeFromDataMap(oldRecord);
                 Map<String,String> newData = ListAuditViewFactory.decodeFromDataMap(newRecord);
 
+                String srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
+                if (srcUrl == null)
+                    srcUrl = getViewContext().getActionURL().getParameter(QueryParam.srcURL);
                 AuditChangesView view = new AuditChangesView(comment, oldData, newData);
-                view.setReturnUrl(getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
+                view.setReturnUrl(srcUrl);
 
                 return view;
-                //return new ItemDetails(comment, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
             }
             else
                 return new HtmlView("No details available for this event.");

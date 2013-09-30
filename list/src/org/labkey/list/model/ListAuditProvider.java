@@ -125,8 +125,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             }
         };
 
-        // XXX: entityId should be listItemEntityId, rowId should be removed?
-        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${entityId}&rowId=${rowId}");
+        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}");
         table.setDetailsURL(url);
 
         return table;
