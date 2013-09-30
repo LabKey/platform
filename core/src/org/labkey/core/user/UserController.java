@@ -47,6 +47,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -779,10 +780,24 @@ public class UserController extends SpringActionController
         else
         {
             SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
-            sql.insert(0, userIdColumnName + " IN (SELECT members.UserId ");
-            sql.append(")");
 
-            filter.addWhereClause(sql.getSQL(), sql.getParamsArray());
+            final FieldKey userIdColumnFieldKey = new FieldKey(null, userIdColumnName);
+            filter.addClause(new SimpleFilter.SQLClause(sql.getSQL(), sql.getParamsArray(), userIdColumnFieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    ColumnInfo col = columnMap.get(userIdColumnFieldKey);
+
+                    // NOTE: Ideally we would use col.getValueSql() here instead
+                    SQLFragment sql = new SQLFragment();
+                    sql.append(col.getAlias());
+                    sql.append(" IN (SELECT members.UserId ");
+                    sql.append(super.toSQLFragment(columnMap, dialect));
+                    sql.append(")");
+                    return sql;
+                }
+            });
         }
 
         return filter;
