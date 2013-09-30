@@ -4126,7 +4126,7 @@ public class AdminController extends SpringActionController
             JspView statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
-            Container c = getViewContext().getContainer();
+            Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(null, c));
             getPageConfig().setTemplate(Template.Wizard);
@@ -4154,7 +4154,7 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
-            Container parent = getContainer();
+            Container parent = getViewContext().getContainerNoTab();
             String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 

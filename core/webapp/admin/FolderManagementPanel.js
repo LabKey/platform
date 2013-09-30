@@ -699,7 +699,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
             tool[0].getComponent('remove').setVisible(!noDelete);
 
             // check to disable 'rename'
-            var noRename = noDelete;
+            var noRename = noDelete || node.data.isContainerTab;
             tool[0].getComponent('rename').setDisabled(noRename);
             tool[0].getComponent('rename').setVisible(!noRename);
 

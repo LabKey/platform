@@ -216,7 +216,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         else
         {
             FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
-            container.setFolderType(folderType, activeModules, errors);
+            if (container.isContainerTab() && folderType.hasContainerTabs())
+                errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
+            else
+                container.setFolderType(folderType, activeModules, errors);
         }
         if (errors.hasErrors())
             return false;
@@ -581,6 +584,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         if (container.isRoot())
             return AdminController.appendAdminNavTrail(root, "Admin Console", AdminController.ShowAdminAction.class, container);
 
+        if (container.isContainerTab())
+            root.addChild(container.getParent().getName());
+        root.addChild(container.getName());
         root.addChild("Folder Management");
         return root;
     }
