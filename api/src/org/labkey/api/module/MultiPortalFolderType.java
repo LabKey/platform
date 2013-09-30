@@ -23,7 +23,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -33,6 +35,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.SimpleFolderTab;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
@@ -236,7 +239,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                                     }
                                 }
 
-                                if (!foundSelected && nav.getChildCount() > 0)
+                                if (!foundSelected && nav.getChildCount() > 0 && !subContainerTabs.isEmpty())
                                     subContainerTabs.get(0).setSelected(true);
                             }
                         }
@@ -441,12 +444,25 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 //        menu.addChild(new NavTree("Permissions"));
 //        menu.addChild(new NavTree("Settings"));
 
-        if (false) // folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
+        if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {
             Container tabContainer = ContainerManager.getChild(ctx.getContainer(), folderTab.getName());
 
             if (null != tabContainer)
             {
+                // Add Folder Mgmt
+                menu.addSeparator();
+                if (ctx.hasPermission("MultiPortalFolderType", AdminPermission.class))
+                {
+                    NavTree folderAdmin = new NavTree("Folder");
+                    folderAdmin.addChildren(FolderAdminMenu.getFolderElements(tabContainer));
+                    menu.addChild(folderAdmin);
+                }
+                if (ctx.getUser().isDeveloper())
+                {
+                    menu.addChild(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(tabContainer)));
+                }
+
                 menu.addSeparator();
                 // might need to pass tabContainer into this.
                 tabContainer.getFolderType().addManageLinks(menu, tabContainer);

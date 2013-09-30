@@ -53,6 +53,13 @@ public class PopupAdminView extends PopupMenuView
     public PopupAdminView(final ViewContext context)
     {
         Container c = context.getContainer();
+        // If current context is a container tab, use the parent container to build this menu
+        if (c.isContainerTab())
+        {
+            c = c.getParent();
+            context.setContainer(c);
+        }
+
         User user = context.getUser();
 
         boolean isAdminInThisFolder = context.hasPermission("PopupAdminView", AdminPermission.class);
