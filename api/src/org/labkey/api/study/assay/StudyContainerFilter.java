@@ -52,7 +52,10 @@ public class StudyContainerFilter extends ContainerFilter
             
             if (_schema.getTargetStudy() != null)
             {
-                _ids = Collections.singleton(_schema.getTargetStudy().getId());
+                if (_schema.getTargetStudy().hasPermission(_schema.getUser(), ReadPermission.class))
+                    _ids = Collections.singleton(_schema.getTargetStudy().getId());
+                else
+                    return Collections.emptySet();
             }
             else
             {

@@ -55,10 +55,10 @@ public class SpecimenForeignKey extends LookupForeignKey
     private final AssayTableMetadata _tableMetadata;
     private final ContainerFilter _studyContainerFilter;
 
-    private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
-    private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SpecimenJoin";
-    private static final String VIAL_SUBQUERY_SUFFIX = "$VialJoin";
-    private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
+    private static final String ASSAY_SUBQUERY_SUFFIX = "$AS";
+    private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SP";
+    private static final String VIAL_SUBQUERY_SUFFIX = "$VI";
+    private static final String STUDY_SUBQUERY_SUFFIX = "$ST";
     private static final String DRAW_DT_COLUMN_NAME = "DrawDT";
 
     private Container _targetStudyOverride;
@@ -289,6 +289,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
+
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
                 String vialSubqueryAlias = parentAlias + VIAL_SUBQUERY_SUFFIX;
@@ -366,5 +367,26 @@ public class SpecimenForeignKey extends LookupForeignKey
                 _returnNull = true;
             }
         }
+    }
+
+
+    static String getAssayTableAlias(String base, ColumnInfo fk)
+    {
+        return LookupColumn.getTableAlias(base, fk.getAlias() + ASSAY_SUBQUERY_SUFFIX);
+    }
+
+    static String getSpecimenTableAlias(String base, ColumnInfo fk)
+    {
+        return LookupColumn.getTableAlias(base, fk.getAlias() + SPECIMEN_SUBQUERY_SUFFIX);
+    }
+
+    static String getVialTableAlias(String base, ColumnInfo fk)
+    {
+        return LookupColumn.getTableAlias(base, fk.getAlias() + VIAL_SUBQUERY_SUFFIX);
+    }
+
+    static String getStudyTableAlias(String base, ColumnInfo fk)
+    {
+        return LookupColumn.getTableAlias(base, fk.getAlias() + STUDY_SUBQUERY_SUFFIX);
     }
 }
