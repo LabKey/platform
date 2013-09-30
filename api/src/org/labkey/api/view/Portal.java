@@ -53,6 +53,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -602,9 +603,9 @@ public class Portal
         {
             insertPortalPage(c, pageId, index, null);
         }
-        catch (SQLException x)
+        catch (SQLException | DataIntegrityViolationException x)
         {
-            throw new RuntimeSQLException(x);
+            throw getPortalPageException(x);
         }
     }
 
@@ -712,9 +713,9 @@ public class Portal
 
             transaction.commit();
         }
-        catch (SQLException x)
+        catch (SQLException | DataIntegrityViolationException x)
         {
-            throw new RuntimeSQLException(x);
+            throw getPortalPageException(x);
         }
         finally
         {
@@ -1290,15 +1291,39 @@ public class Portal
                 page = page.copy();
                 Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
             }
-            catch (SQLException x)
+            catch (SQLException | DataIntegrityViolationException x)
             {
-                throw new RuntimeSQLException(x);
+                throw getPortalPageException(x);
             }
             finally
             {
                 WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
             }
         }
+    }
+
+    private static RuntimeException getPortalPageException(Exception x)
+    {
+        SQLException s = null;
+        if (x instanceof SQLException)
+            s = (SQLException)x;
+        else if (x instanceof DataIntegrityViolationException)
+        {
+            DataIntegrityViolationException d = (DataIntegrityViolationException)x;
+            if (d.getCause() instanceof SQLException)
+                s = (SQLException)d.getCause();
+        }
+        if (null != s)
+        {
+            if (SqlDialect.isConstraintException(s))
+            {
+                s = new Table.OptimisticConflictException(
+                    "A SQL exception occurred which could have been caused by two clients changing portal page ordering simultaneously. Try again.",
+                    Table.SQLSTATE_TRANSACTION_STATE, 0);
+            }
+            return new RuntimeSQLException(s);
+        }
+        return new RuntimeException(x);
     }
 
     public static final String PROP_CUSTOMTAB = "customTab";
