@@ -39,6 +39,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             name: 'subject_selection',
             inputValue: 'subjects',
             labelAlign: 'top',
+            height: 44,
             fieldLabel: LABKEY.moduleContext.study.subject.nounSingular + ' Selection',
             boxLabel: LABKEY.moduleContext.study.subject.nounPlural,
             checked: this.chartSubjectSelection == 'subjects',
@@ -215,6 +216,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         this.oneChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
             width: 250,
+            height: 40,
             labelAlign: 'top',
             fieldLabel: 'Number of Charts',
             boxLabel: 'One Chart',

@@ -771,12 +771,12 @@ LABKEY.vis.TimeChartHelper = new function() {
     };
 
     var getChartData = function(config) {
-        if (!config.chartInfo)
-            throw "You must specify a chartInfo config!";
         if (!config.success)
             throw "You must specify a success callback function!";
         if (!config.failure)
             throw "You must specify a failure callback function!";
+        if (!config.chartInfo)
+            throw "You must specify a chartInfo config!";
         if (config.chartInfo.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
         if (!config.chartInfo.displayIndividual && !config.chartInfo.displayAggregate)
@@ -987,7 +987,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
-    var validateChartData = function(data, seriesList, limit, force) {
+    var validateChartData = function(data, seriesList, limit) {
         var message = "";
         var sep = "";
 
@@ -1006,32 +1006,29 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
 
         // check to see if any of the measures don't have data
-        if (force !== true)
-        {
-            var msg = ""; var sep = "";
-            var noDataCounter = 0;
-            Ext4.iterate(data.aggregate ? data.aggregate.hasData : data.individual.hasData, function(key, value) {
-                if (!value)
-                {
-                    noDataCounter++;
-                    msg += sep + key;
-                    sep = ", ";
-                }
-            }, this);
-            if (msg.length > 0)
+        var msg = ""; var commaSep = "";
+        var noDataCounter = 0;
+        Ext4.iterate(data.aggregate ? data.aggregate.hasData : data.individual.hasData, function(key, value) {
+            if (!value)
             {
-                msg = "No data found for the following measures/dimensions: " + msg;
+                noDataCounter++;
+                msg += commaSep + key;
+                commaSep = ", ";
+            }
+        }, this);
+        if (msg.length > 0)
+        {
+            msg = "No data found for the following measures/dimensions: " + msg;
 
-                // if there is no data for any series, error out completely
-                if (noDataCounter == seriesList.length)
-                {
-                    return {success: false, message: msg};
-                }
-                else
-                {
-                    message += sep + msg;
-                    sep = "<br/>";
-                }
+            // if there is no data for any series, error out completely
+            if (noDataCounter == seriesList.length)
+            {
+                return {success: false, message: msg};
+            }
+            else
+            {
+                message += sep + msg;
+                sep = "<br/>";
             }
         }
 

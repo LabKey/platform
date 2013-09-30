@@ -829,7 +829,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     schema: this.chartData.individual.schemaName,
                     query: this.chartData.individual.queryName,
                     subjectCol: LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.columnName),
-                    sortCols: this.editorXAxisPanel.getTime() == "date" ? []
+                    sortCols: this.editorXAxisPanel.getTime() == "date"
+                            ? [LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.chartInfo.measures[0].dateOptions.dateCol.name)]
                             : [LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.nounSingular + "Visit/Visit/DisplayOrder")]
                 };
             }
@@ -929,17 +930,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         return {name: obj.name, queryName: obj.queryName, schemaName: obj.schemaName};
     },
 
-    renderLineChart: function(force)
+    renderLineChart: function()
     {
         this.maskAndRemoveCharts();
 
         // add a delay to make sure the loading mask shows before next charts start to render
         new Ext4.util.DelayedTask(function(){
-            this._renderLineChart(force);
+            this._renderLineChart();
         }, this).delay(100);
     },
 
-    _renderLineChart: function(force)
+    _renderLineChart: function()
     {
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
@@ -986,7 +987,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var seriesList = LABKEY.vis.TimeChartHelper.generateSeriesList(this.chartInfo.measures);
 
         // validate the chart data to either display warnings or error messages
-        validation = LABKEY.vis.TimeChartHelper.validateChartData(this.chartData, seriesList, this.dataLimit, force);
+        validation = LABKEY.vis.TimeChartHelper.validateChartData(this.chartData, seriesList, this.dataLimit);
         if (!validation.success)
         {
             this.clearChartPanel(validation.message);
@@ -1123,7 +1124,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             });
         }
 
-        var templateConfig = { chartConfig: this.getChartInfoFromOptionPanels() };
+        var chartInfo = this.getChartInfoFromOptionPanels();
+
+        // remove the leading comment from the developer point click function before generating the export script
+        if (chartInfo.pointClickFn)
+            chartInfo.pointClickFn = this.editorDeveloperPanel.removeLeadingComments(chartInfo.pointClickFn);
+
+        var templateConfig = { chartConfig: chartInfo };
         this.editorExportScriptPanel.setScriptValue(templateConfig);
 
         this.exportScriptWindow.show();

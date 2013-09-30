@@ -3973,6 +3973,7 @@ visualization/resources/schemas/dbscripts/postgresql/visualization-13.20-13.21.s
 visualization/resources/schemas/dbscripts/sqlserver/visualization-13.20-13.21.sql -text
 visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/SVGConverter.js -text
+visualization/resources/web/vis/baseExportScriptPanel.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartGroupingPanel.js -text
@@ -3985,7 +3986,6 @@ visualization/resources/web/vis/mainTitleOptionsPanel.js -text
 visualization/resources/web/vis/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/aestheticOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/baseAxisOptionsPanel.js -text
-visualization/resources/web/vis/timeChart/exportScriptPanel.js -text
 visualization/resources/web/vis/timeChart/groupSelector.js -text
 visualization/resources/web/vis/timeChart/groupingOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/initialMeasurePanel.js -text
@@ -3993,6 +3993,7 @@ visualization/resources/web/vis/timeChart/measureOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/participantSelector.js -text
 visualization/resources/web/vis/timeChart/timeChartHelper.js -text
 visualization/resources/web/vis/timeChart/timeChartPanel.js -text
+visualization/resources/web/vis/timeChart/timeChartScriptPanel.js -text
 visualization/resources/web/vis/timeChart/xAxisOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/yAxisOptionsPanel.js -text
 visualization/resources/web/vischart.lib.xml -text

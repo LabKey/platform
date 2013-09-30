@@ -5,6 +5,7 @@
         <script path="vis/mainTitleOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
+        <script path="vis/baseExportScriptPanel.js"/>
 
         <script path="vis/timeChart/initialMeasurePanel.js"/>
         <script path="vis/timeChart/measureOptionsPanel.js"/>
@@ -16,7 +17,7 @@
         <script path="vis/timeChart/participantSelector.js"/>
         <script path="vis/timeChart/groupSelector.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>
-        <script path="vis/timeChart/exportScriptPanel.js"/>
+        <script path="vis/timeChart/timeChartScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>
     </library>
     <dependencies>

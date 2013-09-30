@@ -268,7 +268,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     {
                         // enable the dimension and aggregate combo box
                         this.measureDimensionComboBox.enable();
-                        this.dimensionAggregateLabel.enable();
                         this.dimensionAggregateComboBox.enable();
                         this.setDimensionAggregate(LABKEY.Query.Visualization.Aggregate.AVG);
 
@@ -352,6 +351,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
         // initialize the aggregate combobox
         this.dimensionAggregateComboBox = Ext4.create('Ext.form.field.ComboBox', {
+            fieldLabel: 'Display Duplicate Values as',
+            labelWidth: 195,
             triggerAction: 'all',
             queryMode: 'local',
             store: Ext4.create('Ext.data.ArrayStore', {
@@ -363,7 +364,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             displayField: 'name',
             disabled: true,
             editable: false,
-            width: 80,
+            width: 275,
             style: {
                 marginLeft: '20px'
             },
@@ -379,24 +380,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 }
             }
         });
-
-        // the aggregate combo label has to be a separate component so that it can also be disabled/enabled
-        this.dimensionAggregateLabel = Ext4.create('Ext.form.Label', {
-            width: 195,
-            text: 'Display Duplicate Values as: ',
-            style: {marginLeft: '20px'},
-            disabled: true
-        });
-
-        columnTwoItems.push({
-            xtype: 'fieldcontainer',
-            layout: 'hbox',
-            hideLabel: true,
-            items: [
-                this.dimensionAggregateLabel,
-                this.dimensionAggregateComboBox
-            ]
-        });
+        columnTwoItems.push(this.dimensionAggregateComboBox);
 
         this.dataFilterUrl = this.filterUrl;
         this.dataFilterQuery = this.filterQuery;
@@ -767,7 +751,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             this.measureDimensionComboBox.enable();
             this.measureDimensionComboBox.setValue(dimensionName);
 
-            this.dimensionAggregateLabel.enable();
             this.dimensionAggregateComboBox.enable();
             this.dimensionAggregateComboBox.setValue(measureAggregate);
 
@@ -778,7 +761,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             this.measureDimensionComboBox.disable();
             this.measureDimensionComboBox.setValue("");
 
-            this.dimensionAggregateLabel.disable();
             this.dimensionAggregateComboBox.disable();
             this.dimensionAggregateComboBox.setValue("");
 
@@ -1059,7 +1041,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.measureDimensionComboBox.setValue("");
 
         // disable and clear the dimension aggregate combobox
-        this.dimensionAggregateLabel.disable();
         this.dimensionAggregateComboBox.disable();
         this.setDimensionAggregate("");
 

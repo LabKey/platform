@@ -5,6 +5,7 @@
         <script path="vis/mainTitleOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
+        <script path="vis/baseExportScriptPanel.js"/>
 
         <script path="vis/genericChart/genericChartHelper.js"/>
         <script path="vis/genericChart/genericChartOptionsPanel.js"/>
