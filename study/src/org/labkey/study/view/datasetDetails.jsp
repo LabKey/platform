@@ -205,18 +205,18 @@ if (!pipelineSet)
 
         function truncate()
         {
-            Ext4.getBody().mask();
+            var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows');
             Ext4.Ajax.request({
                 url     : LABKEY.ActionURL.buildURL('query', 'truncateTable'),
                 method  : 'POST',
                 success: function(response){
-                    Ext4.getBody().unmask();
+                    waitMask.close();
                     var data = Ext4.JSON.decode(response.responseText);
                     Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                 },
                 failure : function(response, opts)
                 {
-                    Ext4.getBody().unmask();
+                    waitMask.close();
                     LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                 },
                 jsonData : {schemaName : <%=q(schemaName)%>, queryName : <%=q(queryName)%>},
