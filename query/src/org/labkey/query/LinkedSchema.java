@@ -207,8 +207,16 @@ public class LinkedSchema extends ExternalSchema
             if (_availableQueries.contains(key))
             {
                 QueryDefinition queryDef = queries.get(key);
-                LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, queryDef);
-                ret.put(key, wrappedQueryDef);
+                TableInfo table = queryDef.getTable(new ArrayList<QueryException>(), true);
+                if (table != null)
+                {
+                    // Apply any filters that might have been specified in the schema linking process
+                    QueryDefinition filteredQueryDef = createWrapperQueryDef(key, table);
+
+                    // Create a wrapper that knows how to apply the rest of the metadata correctly
+                    LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, filteredQueryDef);
+                    ret.put(key, wrappedQueryDef);
+                }
             }
         }
 
@@ -216,16 +224,6 @@ public class LinkedSchema extends ExternalSchema
         ret.putAll(super.getQueryDefs());
 
         return ret;
-    }
-
-    @Override
-    protected TableInfo createTable(String name)
-    {
-        TableInfo table = super.createTable(name);
-
-        // fixup FKs, URLs
-
-        return table;
     }
 
     @Override
@@ -237,23 +235,9 @@ public class LinkedSchema extends ExternalSchema
     @Override
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
-        assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
+        QueryDefinition queryDef = createWrapperQueryDef(name, sourceTable);
 
         TableType metaData = getXbTable(name);
-        LocalOrRefFiltersType xmlFilters = metaData != null ? metaData.getFilters() : null;
-        Collection<QueryService.ParameterDecl> parameterDecls = new ArrayList<>();
-
-        // UNDONE: Don't let the filters be mutated -- use a filter type instead of xmlbeans
-        xmlFilters = fireCustomizeFilters(name, sourceTable, xmlFilters);
-        if (metaData == null && xmlFilters != null)
-        {
-            metaData = TableType.Factory.newInstance();
-            metaData.setFilters(xmlFilters);
-        }
-        parameterDecls = fireCustomizeParameters(name, sourceTable, xmlFilters, parameterDecls);
-
-        QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlFilters, parameterDecls);
-
         ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo tableInfo = queryDef.getTable(errors, true);
         if (!errors.isEmpty())
@@ -271,10 +255,31 @@ public class LinkedSchema extends ExternalSchema
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
         linkedTableInfo.init();
 
-        // Apply metadata and the <filter> style filters.  The <where> style filters were applied in .createQueryDef().
-        linkedTableInfo.loadFromXML(this, metaData, _namedFilters, errors);
+        // Apply metadata. Filters have already been applied
+        linkedTableInfo.loadFromXML(this, metaData, errors);
 
         return linkedTableInfo;
+    }
+
+    /** Wraps the TableInfo with a custom query that applies any filters to limit the rows */
+    private QueryDefinition createWrapperQueryDef(String name, TableInfo sourceTable)
+    {
+        assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
+
+        TableType metaData = getXbTable(name);
+        LocalOrRefFiltersType xmlFilters = metaData != null ? metaData.getFilters() : null;
+        Collection<QueryService.ParameterDecl> parameterDecls = new ArrayList<>();
+
+        // UNDONE: Don't let the filters be mutated -- use a filter type instead of xmlbeans
+        xmlFilters = fireCustomizeFilters(name, sourceTable, xmlFilters);
+        if (metaData == null && xmlFilters != null)
+        {
+            metaData = TableType.Factory.newInstance();
+            metaData.setFilters(xmlFilters);
+        }
+        parameterDecls = fireCustomizeParameters(name, sourceTable, xmlFilters, parameterDecls);
+
+        return createQueryDef(name, sourceTable, xmlFilters, parameterDecls);
     }
 
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */

@@ -16,7 +16,6 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -30,16 +29,12 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -157,12 +152,6 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         // LinkedTableInfos only adds columns from the source table and has no Domain columns.
         return Collections.emptyList();
-    }
-
-    @Override
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
-    {
-        super.loadAllButCustomizerFromXML(schema, xmlTable, namedFilters, errors);
     }
 
     @NotNull

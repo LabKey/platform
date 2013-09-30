@@ -56,7 +56,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         {
             //create list to avoid NPE if an error occurs
             Collection<QueryException> errors = new ArrayList<>();
-            loadFromXML(getUserSchema(), _metadata, null, errors);
+            loadFromXML(getUserSchema(), _metadata, errors);
         }
         catch (IllegalArgumentException e)
         {
