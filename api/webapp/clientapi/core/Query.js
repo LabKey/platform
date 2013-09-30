@@ -470,45 +470,47 @@ LABKEY.Query = new function()
             if (!config.queryName)
                 throw "You must specify a queryName!";
 
+            config.dataRegionName = config.dataRegionName || "query";
+
             var dataObject = LABKEY.Query.buildQueryParams(
                     config.schemaName,
                     config.queryName,
                     config.filterArray,
                     config.sort,
                     config.dataRegionName
-                    );
+            );
 
             if (!config.showRows || config.showRows == 'paginated')
             {
                 if (config.offset)
-                    dataObject['query.offset'] = config.offset;
+                    dataObject[config.dataRegionName + '.offset'] = config.offset;
 
                 if (config.maxRows != undefined)
                 {
                     if (config.maxRows < 0)
-                        dataObject['query.showRows'] = "all";
+                        dataObject[config.dataRegionName + '.showRows'] = "all";
                     else
-                        dataObject['query.maxRows'] = config.maxRows;
+                        dataObject[config.dataRegionName + '.maxRows'] = config.maxRows;
                 }
             }
             else if (config.showRows in {'all':true, 'selected':true, 'unselected':true, 'none':true})
             {
-                dataObject['query.showRows'] = config.showRows;
+                dataObject[config.dataRegionName + '.showRows'] = config.showRows;
             }
 
 
             if (config.viewName)
-                dataObject['query.viewName'] = config.viewName;
+                dataObject[config.dataRegionName + '.viewName'] = config.viewName;
 
             if (config.columns)
-                dataObject['query.columns'] = LABKEY.ExtAdapter.isArray(config.columns) ? config.columns.join(",") : config.columns;
+                dataObject[config.dataRegionName + '.columns'] = LABKEY.ExtAdapter.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
             if (config.selectionKey)
-                dataObject['query.selectionKey'] = config.selectionKey;
+                dataObject[config.dataRegionName + '.selectionKey'] = config.selectionKey;
 
             if (config.parameters)
                 for (var propName in config.parameters)
-                    dataObject['query.param.' + propName] = config.parameters[propName];
+                    dataObject[config.dataRegionName + '.param.' + propName] = config.parameters[propName];
 
             if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
@@ -902,11 +904,13 @@ LABKEY.Query = new function()
 
         buildQueryParams: function(schemaName, queryName, filterArray, sort, dataRegionName)
         {
+            dataRegionName = dataRegionName || "query";
             var params = {};
-            params['query.queryName'] = queryName;
+            params.dataRegionName = dataRegionName;
+            params[dataRegionName + '.queryName'] = queryName;
             params['schemaName'] = schemaName;
             if (sort)
-                params['query.sort'] = sort;
+                params[dataRegionName + '.sort'] = sort;
 
             LABKEY.Filter.appendFilterParams(params, filterArray, dataRegionName);
 
