@@ -26,7 +26,6 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import java.util.concurrent.Callable;
 
 /**
  * User: matthewb
@@ -46,8 +45,9 @@ public class TransformQuartzJobRunner implements Job
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
-        ScheduledPipelineJobContext info = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
+        ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
+        ScheduledPipelineJobContext info = infoTemplate.clone();
 
         boolean hasWork = d.checkForWork(info, true, info.isVerbose());
         if (!hasWork)

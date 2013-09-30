@@ -66,8 +66,16 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
 
     public void setPipelineJob(@NotNull PipelineJob job)
     {
+        if (_locked)
+            throw new IllegalStateException("Context is read-only");
         if (null != _pipelineJob && _pipelineJob != job)
             throw new IllegalStateException("Context is already associated with a pipeline job");
         _pipelineJob = job;
+    }
+
+    @Override
+    public TransformJobContext clone()
+    {
+        return (TransformJobContext)super.clone();
     }
 }

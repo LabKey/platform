@@ -172,7 +172,7 @@ public class TransformManager implements DataIntegrationService
             if (null != ft)
                 defaultFactory = createFilterFactory(ft);
             if (null == defaultFactory)
-                defaultFactory = new ModifiedSinceFilterStrategy.Factory();
+                defaultFactory = new SelectAllFilterStrategy.Factory();
 
             // schedule
             if (null != etlXML.getSchedule())
@@ -479,6 +479,7 @@ public class TransformManager implements DataIntegrationService
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user);
             info.setVerbose(verbose);
+            info.setLocked();
 
             // find job
             JobKey jobKey = jobKeyFromDescriptor(descriptor);
