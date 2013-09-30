@@ -512,18 +512,18 @@ function handleTabsInTextArea(event)
     }
 }
 
-_menuMgr = new function() {
-    var menus = {};
-
-    return {
-        register: function(id, config) {
-            menus[id] = config;
-        },
-        get: function(id) {
-            return menus[id];
-        }
-    };
-};
+//_menuMgr = new function() {
+//    var menus = {};
+//
+//    return {
+//        register: function(id, config) {
+//            menus[id] = config;
+//        },
+//        get: function(id) {
+//            return menus[id];
+//        }
+//    };
+//};
 
 function showMenu(parent, menuElementId, align) {
     if (!align)
@@ -535,12 +535,12 @@ function showMenu(parent, menuElementId, align) {
     if (typeof(Ext) != 'undefined') {
         menu = Ext.menu.MenuMgr.get(menuElementId);
 
-        if (!menu) {
-            menuCfg = _menuMgr.get(menuElementId);
-            if (menuCfg) {
-                menu = new Ext.menu.Menu(menuCfg);
-            }
-        }
+//        if (!menu) {
+//            menuCfg = _menuMgr.get(menuElementId);
+//            if (menuCfg) {
+//                menu = new Ext.menu.Menu(menuCfg);
+//            }
+//        }
 
         // attach class listeners
         menu.on('beforeshow', function() { Ext.get(this).addClass(cls); menu.floatParent = this; }, parent);
@@ -552,6 +552,7 @@ function showMenu(parent, menuElementId, align) {
     {
         console.error("No menu registered :" + menuElementId);
     }
+    return menu;
 
     // TODO: Ext 4 Menus do not escape id's properly, must fix before dependency on Ext 3 can be dropped
 //    if (typeof(Ext4) != 'undefined') {

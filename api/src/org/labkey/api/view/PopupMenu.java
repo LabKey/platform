@@ -153,11 +153,32 @@ public class PopupMenu extends DisplayElement
 
     private void renderExtMenu(Writer out, String dataRegionName) throws IOException
     {
-        out.append("_menuMgr.register(");
-        out.append(PageFlowUtil.qh(getId(dataRegionName)));
-        out.append(", ");
+        // Unfortunately, have to add this back for now. Tests rely on the menus being generated objects and do not
+        // know what dependent element to click on (probably a good thing)
+        out.append("Ext.onReady(function() {\n");
+        out.append(renderUnregScript(getId(dataRegionName)));
+        out.append("        var m = new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-        out.append(");");
+        out.append("         );});");
+//        out.append("_menuMgr.register(");
+//        out.append(PageFlowUtil.qh(getId(dataRegionName)));
+//        out.append(", ");
+//        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
+//        out.append(");");
+    }
+
+    private String renderUnregScript(String id)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    var oldMenu = Ext.menu.MenuMgr.get(");
+        sb.append(PageFlowUtil.qh(id));
+        sb.append(");\n");
+        sb.append("    if(oldMenu)\n");
+        sb.append("    {\n");
+        sb.append("        oldMenu.removeAll();\n");
+        sb.append("        Ext.menu.MenuMgr.unregister(oldMenu);\n");
+        sb.append("    }\n");
+        return sb.toString();
     }
 
     private static String renderMenuModel(Collection<NavTree> trees, String id)
