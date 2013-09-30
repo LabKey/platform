@@ -28,13 +28,16 @@ import org.quartz.JobExecutionContext;
  * Date: 2013-03-18
  * Time: 3:52 PM
  */
-public class ScheduledPipelineJobContext implements ContainerUser
+public class ScheduledPipelineJobContext implements ContainerUser, Cloneable
 {
     private ScheduledPipelineJobDescriptor _jobDescriptor;
     String _key;
     private String _containerId = null;
     private int _userId = 0;
     private boolean _verbose = false;
+
+    // when associated with a quartz job, this object should not be edited
+    protected boolean _locked = false;
 
     public ScheduledPipelineJobContext()
     {
@@ -49,6 +52,28 @@ public class ScheduledPipelineJobContext implements ContainerUser
         _key = container.getRowId() + "/" + descriptor.getId();
     }
 
+    public void setLocked()
+    {
+        _locked = true;
+    }
+
+
+    @Override
+    public ScheduledPipelineJobContext clone()
+    {
+        try
+        {
+            ScheduledPipelineJobContext c = (ScheduledPipelineJobContext)super.clone();
+            c._locked = false;
+            return c;
+        }
+        catch (CloneNotSupportedException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+
     public ScheduledPipelineJobDescriptor getJobDescriptor()
     {
         return _jobDescriptor;
@@ -56,6 +81,8 @@ public class ScheduledPipelineJobContext implements ContainerUser
 
     public void setJobDescriptor(ScheduledPipelineJobDescriptor jobDescriptor)
     {
+        if (_locked)
+            throw new IllegalStateException("Context is read-only");
         _jobDescriptor = jobDescriptor;
     }
 
@@ -83,6 +110,8 @@ public class ScheduledPipelineJobContext implements ContainerUser
 
     public void setVerbose(boolean verbose)
     {
+        if (_locked)
+            throw new IllegalStateException("Context is read-only");
         _verbose = verbose;
     }
 
