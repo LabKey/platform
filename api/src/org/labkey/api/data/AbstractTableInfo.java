@@ -71,7 +71,6 @@ import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import javax.script.ScriptException;
 import java.sql.ResultSet;
@@ -780,11 +779,11 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
 
-    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
     {
         checkLocked();
 
-        loadAllButCustomizerFromXML(schema, xmlTable, namedFilters, errors);
+        loadAllButCustomizerFromXML(schema, xmlTable, errors);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
@@ -794,7 +793,8 @@ abstract public class AbstractTableInfo implements TableInfo
         }
     }
 
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable Map<String, NamedFiltersType> namedFilters, Collection<QueryException> errors)
+    /** Applies XML metadata for everything, except for invoking any Java TableInfo customizer */
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
     {
         if (xmlTable == null)
             return;
@@ -1086,7 +1086,7 @@ abstract public class AbstractTableInfo implements TableInfo
         checkLocked();
         if (isMetadataOverrideable())
         {
-            loadFromXML(schema, metadata, null, errors);
+            loadFromXML(schema, metadata, errors);
         }
     }
 
