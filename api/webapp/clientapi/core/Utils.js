@@ -163,7 +163,7 @@ LABKEY.Utils = new function()
                 msgPrefix: msgPrefix,
                 showExceptionClass: showExceptionClass
             });
-            alert(LABKEY.Utils.encodeHtml(error));
+            LABKEY.ExtAdapter.Msg.alert("Error", LABKEY.ExtAdapter.htmlEncode(error));
         },
 
         /**
