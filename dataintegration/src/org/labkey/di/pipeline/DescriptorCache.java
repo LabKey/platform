@@ -51,7 +51,6 @@ public class DescriptorCache
         {
             _etlModules.add(module);
 
-            // TODO: Dev mode only?
             // TODO: Integrate this better with Resource
             ((MergedDirectoryResource)etlsDir).registerListener(WATCHER, new EtlDirectoryListener(module),
                     StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
