@@ -808,7 +808,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             else
             {
-                assert false : "Query name in XML metadata did not match expected.  Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "]";
+                LOG.warn("Query name in XML metadata did not match expected.  Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "]");
             }
         }
         if (xmlTable.getTitleColumn() != null)
