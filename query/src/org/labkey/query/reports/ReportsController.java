@@ -2786,7 +2786,7 @@ public class ReportsController extends SpringActionController
         props.put("Status", "1");
         props.put("Access", "1");
         props.put("Details", "1");
-        //props.put("Data Cut Date", "1");
+        props.put("Data Cut Date", "1");
 
         return props;
     }
