@@ -20,12 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUrls;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.*;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -56,7 +51,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     {
         List<DataViewInfo> dataViews = new ArrayList<>();
 
-        for (CustomViewInfo view : getCustomViews(context))
+        for (CustomView view : getCustomViews(context))
         {
             DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getName(), view.getContainer());
 
@@ -93,11 +88,11 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
         return dataViews;
     }
 
-    protected List<CustomViewInfo> getCustomViews(ViewContext context)
+    protected List<CustomView> getCustomViews(ViewContext context)
     {
-        List<CustomViewInfo> views = new ArrayList<>();
+        List<CustomView> views = new ArrayList<>();
 
-        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true))
+        for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true))
         {
             if (view.isHidden())
                 continue;
@@ -111,7 +106,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
         return views;
     }
 
-    protected abstract boolean includeView(ViewContext context, CustomViewInfo view);
+    protected abstract boolean includeView(ViewContext context, CustomView view);
 
     private ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
     {
@@ -119,7 +114,8 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
         if (StudyService.get().getStudy(c) != null)
         {
-            dataregionName = "Dataset";
+            if (StudyService.get().getDatasetIdByQueryName(c, view.getQueryName()) != -1)
+                dataregionName = "Dataset";
         }
         return QueryService.get().urlFor(user, c,
                 QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).

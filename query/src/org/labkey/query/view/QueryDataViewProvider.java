@@ -18,6 +18,7 @@ package org.labkey.query.view;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.ProviderType;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -44,7 +45,7 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
     }
 
     @Override
-    protected boolean includeView(ViewContext context, CustomViewInfo view)
+    protected boolean includeView(ViewContext context, CustomView view)
     {
         return !ReportUtil.isInherited(view, context.getContainer());
     }
