@@ -451,14 +451,14 @@ public class WikiManager implements WikiService
         if (fOverwrite)
         {
             //can't overwrite if page does not exist
-            if (!destPageNames.contains(destName))
+            if (!containsCaseInsensitive(destName, destPageNames))
                 fOverwrite = false;
         }
         else
         {
             int i = 1;
 
-            while (destPageNames.contains(destName))
+            while (containsCaseInsensitive(destName, destPageNames))
                 destName = srcName.concat("" + i++);
         }
 
@@ -517,6 +517,16 @@ public class WikiManager implements WikiService
         }
 
         return newWikiPage;
+    }
+
+    private boolean containsCaseInsensitive(HString str, List<HString> list)
+    {
+        for (HString s : list)
+        {
+            if (s.equalsIgnoreCase(str))
+                return true;
+        }
+        return false;
     }
 
 
