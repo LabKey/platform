@@ -48,7 +48,6 @@ public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
     private static final BlockingStringKeyCache<Resource> CACHE = CacheManager.getBlockingStringKeyCache(4096, CacheManager.HOUR, "Module resources", null);
-    private static final boolean DEV_MODE = AppProps.getInstance().isDevMode();
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Module resource resolver watcher");
 
     // Consider: single static set to track all registered listeners?
@@ -64,8 +63,8 @@ public class ModuleResourceResolver implements Resolver
             Path normalized = (Path)argument;
             Resource r = resolve(normalized);
 
-            // In dev mode, register a listener on every directory we encounter
-            if (DEV_MODE && null != r && r.exists() && r.isCollection())
+            // Register a listener on every directory we encounter
+            if (null != r && r.exists() && r.isCollection())
                 registerListener(r);
 
             if (null == r)

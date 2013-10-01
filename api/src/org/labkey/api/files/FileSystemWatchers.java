@@ -1,5 +1,6 @@
 package org.labkey.api.files;
 
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -13,14 +14,19 @@ public class FileSystemWatchers
 {
     public static FileSystemWatcher get(String name)
     {
-        try
+        // TODO: For now, return a real FileSystemWatcher in dev mode only. In the future,
+        if (AppProps.getInstance().isDevMode())
         {
-            return new FileSystemWatcherImpl(name);
+            try
+            {
+                return new FileSystemWatcherImpl(name);
+            }
+            catch (IOException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
         }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-            return new NoopFileSystemWatcher();
-        }
+
+        return new NoopFileSystemWatcher();
     }
 }
