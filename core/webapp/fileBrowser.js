@@ -208,7 +208,7 @@ Ext.extend(LABKEY.FileSystem.TreeLoader, Ext.tree.TreeLoader,
     errorHandler: function(error, options){
         console.log(error);
         var msg = error ? error.statusText : null;
-        alert('Error: ' + (msg || 'unknown problem'));
+        LABKEY.ExtAdapter.Msg.alert('Error', msg || 'unknown problem');
     },
 
     //the callback for fileSystem.listFiles
@@ -614,7 +614,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         console.log(options);
 
         var msg = error ? error.statusText : null;
-        alert('Error: ' + (msg || 'unknown problem'));
+        LABKEY.ExtAdapter.Msg.alert('Error', msg || 'unknown problem');
     },
 
     getDownloadAction : function()
@@ -965,7 +965,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
                     var newName = field.getValue();
 
                     if(!newName || !field.isValid()){
-                        alert('Must enter a valid filename');
+                        LABKEY.ExtAdapter.Msg.alert("Warning", 'Must enter a valid filename');
                     }
 
                     if(newName == win.origName){
@@ -1119,7 +1119,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
                     var panel = win.find('itemId', 'treepanel')[0];
                     var node = panel.getSelectionModel().getSelectedNode();
                     if(!node){
-                        alert('Must pick a destination folder');
+                        LABKEY.ExtAdapter.Msg.alert('Warning', 'Must pick a destination folder');
                         return;
                     }
 
@@ -2719,7 +2719,8 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
 
             this.doPost = function(overwrite) {
                 var options = {method:'POST',
-                    url:overwrite ? this.currentDirectory.data.uri + '?overwrite=t' : this.currentDirectory.data.uri,
+                    // success response is same as PROPFIND, error response is JSON
+                    url: this.currentDirectory.data.uri + '?Accept=application/json' + (overwrite ? '&overwrite=t' : ''),
                     record:this.currentDirectory,
                     name:this.fileUploadField.getValue(),
                     failure: LABKEY.Utils.displayAjaxErrorResponse
@@ -2764,6 +2765,17 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     // handler for a file upload complete event
     uploadSuccess : function(f, action)
     {
+        var txt = (action.response.responseText || "").trimLeft();
+        var json = {success : true};
+        if (txt && txt.charAt(0) == '{' )
+            json = Ext.util.JSON.decode(txt);
+
+        if (!json.success)
+        {
+            this.uploadFailed(f, action, json.exception);
+            return;
+        }
+
         this.fileUploadPanel.getEl().unmask();
         var form = this.uploadPanel.getForm();
         if (form)
@@ -2781,13 +2793,15 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     },
 
     // handler for a file upload failed event
-    uploadFailed : function(f, action)
+    uploadFailed : function(f, action, message)
     {
         this.fileUploadPanel.getEl().unmask();
         var form = this.uploadPanel.getForm();
         if (form)
             form.reset();
-        console.log("upload actionfailed");
+        var message = message || "File upload failed.";
+        LABKEY.ExtAdapter.Msg.alert("Error", LABKEY.ExtAdapter.htmlEncode(message).replace("\n","<br>"));
+        console.log(message);
         console.log(action);
         this.refreshDirectory();
     },

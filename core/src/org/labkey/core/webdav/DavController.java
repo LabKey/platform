@@ -150,6 +150,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 
 
 /**
@@ -318,8 +319,11 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Exception x)
         {
-            _log.error("unexpected error", x);
-            return sendError(status, x.getMessage() != null ? x.getMessage() : status.message);
+            _log.error(x instanceof ConfigurationException ? "Configuration Exception" : "Unexpected exception", x);
+            String message = x.getMessage() != null ? x.getMessage() : status.message;
+            if (x instanceof ConfigurationException)
+                message += "\nThis may be a server configuration problem.  Contact the site administrator.";
+            return sendError(status, message);
         }
 
         WebdavStatus sendError(WebdavStatus status, Path path)
@@ -336,15 +340,25 @@ public class DavController extends SpringActionController
                     response.sendError(status.code);
                 else
                 {
-                    if("XMLHttpRequest".equals(getRequest().getHeader("x-requested-with")) &&
-                        "application/json".equals(getRequest().getHeader("Content-Type")))
+                    String accept = StringUtils.join(getRequest().getHeader("Accept"), "," , getRequest().getParameter("Accept"));
+                    if(CONTENT_TYPE_JSON.equals(getRequest().getHeader("Content-Type")) ||
+                            accept.contains(CONTENT_TYPE_JSON))
                     {
                         JSONObject o = new JSONObject();
+                        o.put("success", false);
                         o.put("status", status.code);
                         o.put("exception", message);
-                        response.setHeader("Content-Type", "application/json");
-                        response.getWriter().write(o.toString());
-                        response.setStatus(HttpServletResponse.SC_OK);
+                        // if this is a multi-part post, it's probably really a background ext form, respond in an ext compatible way
+                        if ("post".equals(getViewContext().getActionURL().getAction()) && getRequest() instanceof MultipartHttpServletRequest)
+                        {
+                            response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
+                        }
+                        else
+                        {
+                            response.setHeader("Content-Type", CONTENT_TYPE_JSON);
+                            response.getWriter().write(o.toString());
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        }
                     }
                     else
                     {
