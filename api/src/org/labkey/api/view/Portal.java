@@ -399,6 +399,49 @@ public class Portal
         return Collections.unmodifiableMap(pages);
     }
 
+    public static List<PortalPage> getSortedPages(Container c, boolean showHidden)
+    {
+        // Note: This does not ignore stealth pages. Use getTabPages for that.
+        Map<String, PortalPage> pages = WebPartCache.getPages(c, showHidden);
+        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<>(pages.values());
+        Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
+        {
+            @Override
+            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
+            {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
+
+        return Collections.unmodifiableList(sortedPages);
+    }
+
+    public static List<PortalPage> getTabPages(Container c)
+    {
+        return getTabPages(c, false);
+    }
+
+    public static List<PortalPage> getTabPages(Container c, boolean showHidden)
+    {
+        // Returns the list of tab pages in order. Ignores "stealth" pages.
+        List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
+        List<PortalPage> allPortalPages = getSortedPages(c, showHidden);
+        ArrayList<PortalPage> tabPages = new ArrayList<>();
+
+        for (PortalPage page : allPortalPages)
+            if (page.isCustomTab() || isPageInTabList(folderTabs, page)) // Check for stealth page
+                tabPages.add(page);
+
+        return tabPages;
+    }
+
+    private static boolean isPageInTabList(List<FolderTab> folderTabs, Portal.PortalPage page)
+    {
+        for (FolderTab folderTab : folderTabs)
+            if (folderTab.getName().equalsIgnoreCase(page.getPageId()))
+                return true;
+        return false;
+    }
 
     public static List<WebPart> getParts(Container c, String pageId)
     {

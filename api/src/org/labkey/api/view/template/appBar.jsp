@@ -38,6 +38,7 @@
 %>
 <%
     ViewContext context = HttpView.currentView().getViewContext();
+    boolean tabEditMode = session.getAttribute("tabEditMode") != null && ((boolean) session.getAttribute("tabEditMode"));
     AppBarView me = (AppBarView) HttpView.currentView();
     AppBar bean = me.getModelBean();
     if (null == bean)
@@ -54,15 +55,26 @@
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
         <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
-        <div class="button-bar">
+        <div class="button-bar <%=tabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled"%>">
             <ul>
                 <%
                     for (NavTree navTree : tabs)
                     {
                         if (null != navTree.getText() && navTree.getText().length() > 0)
                         {
+                            String classes = "";
+                            if (navTree.isSelected())
+                                classes = classes + "labkey-app-bar-tab-active";
+                            else
+                                classes = classes + "labkey-app-bar-tab-inactive";
+
+                            if (navTree.isDisabled())
+                                classes = classes + " labkey-app-bar-tab-hidden";
+
+                            if (navTree.getChildCount() == 0)
+                                classes = classes + " labkey-no-tab-menu";
                 %>
-                        <li class="<%=text(navTree.isSelected() ? "labkey-app-bar-tab-active" : "labkey-app-bar-tab-inactive") + (navTree.getChildCount() > 0 ? "" : " labkey-no-tab-menu")%>">
+                        <li class="<%=text(classes)%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
                             <%
                                 if(navTree.getChildCount() > 0)
@@ -89,9 +101,12 @@
                     if(context.hasPermission(context.getUser(), AdminPermission.class) && context.getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
                     {
                 %>
-                    <li class="labkey-app-bar-add-tab" id="addTab">
-                        <a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAddTabURL(context.getContainer(), context.getActionURL())%>">+</a>
-                    </li>
+                        <li class="labkey-app-bar-add-tab" id="addTab">
+                            <a href="javascript:LABKEY.Portal.addTab();" title="Add New Tab">+</a>
+                        </li>
+                        <li class="labkey-app-bar-edit-tab" id="editTabs">
+                            <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode"><img src="<%=context.getContextPath()%>/_images/pencil2.png" /></a>
+                        </li>
                 <%
                     }
                 %>
@@ -197,9 +212,12 @@
             for(; i < tabs.length; i++){
                 tab = Ext4.get(tabs[i]);
                 tab.on('mouseover', function(){
-                    var tabMenu =  Ext4.get(this.query('span[class=labkey-tab-menu]')[0]);
-                    if(tabMenu){
-                       tabMenu.show();
+                    // only show menu if tab edit mode is enabled.
+                    if (Ext4.query('.tab-edit-mode-enabled').length > 0) {
+                        var tabMenu =  Ext4.get(this.query('span[class=labkey-tab-menu]')[0]);
+                        if(tabMenu){
+                            tabMenu.show();
+                        }
                     }
                 });
 

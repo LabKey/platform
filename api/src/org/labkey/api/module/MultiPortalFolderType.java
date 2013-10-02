@@ -69,54 +69,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return true;
     }
 
-
-    private ArrayList<Portal.PortalPage> getSortedPortalPages(Container container)
+    private static List<FolderTab> getFolderTabs(Container container, FolderType folderType, boolean showHidden)
     {
-
-        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(container, false));
-
-        // Build up a list of all the currently defined tab names
-        Set<String> currentTabNames = new HashSet<>();
-        for (FolderTab folderTab : getDefaultTabs())
-        {
-            currentTabNames.add(folderTab.getName());
-        }
-
-        // Filter out ones that we've saved that are no longer part of the folder type
-        ArrayList<Portal.PortalPage> filtered = new ArrayList<>(portalPages.size());
-        for (Portal.PortalPage tab : portalPages.values())
-        {
-            if (currentTabNames.contains(tab.getPageId()))
-            {
-                filtered.add(tab);
-            }
-        }
-
-        // Add in custom (portal page) tabs
-        for (Portal.PortalPage portalPage : portalPages.values())
-        {
-            String customTab = portalPage.getProperty(Portal.PROP_CUSTOMTAB);
-            if (null != customTab && customTab.equalsIgnoreCase("true"))
-            {
-                filtered.add(portalPage);
-            }
-        }
-
-        // Need to sort by index so we choose the first tab as the default tab.
-        Collections.sort(filtered, new Comparator<Portal.PortalPage>()
-        {
-            @Override
-            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-            {
-                return o1.getIndex() - o2.getIndex();
-            }
-        });
-        return filtered;
-    }
-
-    private static List<FolderTab> getFolderTabs(Container container, FolderType folderType)
-    {
-        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(container, false));
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<>(Portal.getPages(container, showHidden));
         List<FolderTab> folderTabs = new ArrayList<>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
         {
@@ -154,25 +109,18 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig, Container childContainer)
     {
         Container container = ctx.getContainer();
+        // Show hidden tabs if the user is an admin.
+        boolean showHiddenTabs = ctx.hasPermission(ctx.getUser(), AdminPermission.class);
 
         // Get folder tabs first because it will bring back a portal page if ALL have been hidden
         CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
-        for (FolderTab folderTab : getFolderTabs(container, this))
+        for (FolderTab folderTab : getFolderTabs(container, this, showHiddenTabs))
         {
             folderTabMap.put(folderTab.getName(), folderTab);
         }
 
-        // Now get portal pages that are not hidden
-        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
-        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<>(portalPages.values());
-        Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
-        {
-            @Override
-            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-            {
-                return o1.getIndex() - o2.getIndex();
-            }
-        });
+        // Now get portal pages that are not stealth pages.
+        List<Portal.PortalPage> sortedPages = Portal.getTabPages(container, showHiddenTabs);
 
         // No page index should be 0
         assert !(sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0);
@@ -202,6 +150,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                     nav.setId("portal:" + portalPage.getPageId());
                     nav.addChild(getTabMenu(ctx, folderTab, portalPage, label));
+
+                    // Set disabled if hidden so we can hide if not in tab edit mode.
+                    if (portalPage.isHidden())
+                        nav.setDisabled(true);
+
                     buttons.add(nav);
                     navMap.put(portalPage.getPageId(), nav);
 
@@ -223,7 +176,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                             {
                                 folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
                                 boolean foundSelected = false;
-                                List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType);
+                                List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType, false);
                                 for (FolderTab subTab : subTabs)
                                 {
                                     if (FolderTab.TAB_TYPE.Container == subTab.getTabType())
@@ -275,7 +228,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override
     public ActionURL getStartURL(Container c, User user)
     {
-        ArrayList<Portal.PortalPage> tabs = getSortedPortalPages(c);
+        List<Portal.PortalPage> tabs = Portal.getTabPages(c);
 
         for (Portal.PortalPage tab : tabs)
         {
@@ -381,7 +334,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            ArrayList<Portal.PortalPage> activeTabs = getSortedPortalPages(ctx.getContainer());
+            List<Portal.PortalPage> activeTabs = Portal.getTabPages(ctx.getContainer());
 
             // Use the left-most tab as the default
             for (Portal.PortalPage tab : activeTabs)
@@ -429,7 +382,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
         moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
 
-        menu.addChild(new NavTree("Hide", hideURL));
+        if(portalPage.isHidden())
+        {
+            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab('" + portalPage.getPageId() + "')"));
+        }
+        else
+            menu.addChild(new NavTree("Hide", hideURL));
 
         if (portalPage.isCustomTab())
         {
@@ -437,8 +395,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         menu.addChild(moveMenu);
-        ActionURL renameURL = PageFlowUtil.urlProvider(AdminUrls.class).getRenameTabURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
-        menu.addChild(new NavTree("Rename", renameURL));
+        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab('" + portalPage.getPageId() + "', '" + folderLabel + "Tab');"));
 
         // TODO: Determing permissions and settings links.
 //        menu.addChild(new NavTree("Permissions"));

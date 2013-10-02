@@ -519,6 +519,176 @@ LABKEY.Portal = new function()
                     direction: MOVE_RIGHT
                 }
             });
+        },
+
+        /**
+         * Toggle tab edit mode. Enables or disables tab edit mode. When in tab edit mode an administrator
+         * can manage tabs (i.e. change order, add, remove, etc.)
+         */
+        toggleTabEditMode: function(){
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('admin', 'toggleTabEditMode', LABKEY.container.path),
+                method: 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(function(response, options){
+                    var classToSearchFor = response.tabEditMode ? 'tab-edit-mode-disabled' : 'tab-edit-mode-enabled';
+                    var classToReplaceWith = response.tabEditMode ? 'tab-edit-mode-enabled' : 'tab-edit-mode-disabled';
+                    var tabDiv = document.getElementsByClassName(classToSearchFor)[0];
+                    if (tabDiv) {
+                        tabDiv.setAttribute('class', tabDiv.getAttribute('class').replace(classToSearchFor, classToReplaceWith));
+                    }
+
+                })
+            });
+        },
+
+        /**
+         * Allows an administrator to add a new portal page tab.
+         */
+        addTab: function(){
+            Ext4.onReady(function(){
+                var nameTextField = Ext4.create('Ext.form.field.Text', {
+                    xtype: 'textfield',
+                    fieldLabel: 'Name',
+                    labelSeparator: ''
+                });
+
+                var addTabWindow = Ext4.create('Ext.window.Window', {
+                    title: 'Add Tab',
+                    closeAction: 'destroy',
+                    modal: true,
+                    items: [{
+                        xtype: 'panel',
+                        border: false,
+                        frame: false,
+                        bodyPadding: 5,
+                        items: [nameTextField]
+                    }],
+                    buttons: [{
+                        text: 'Ok',
+                        scope: this,
+                        handler: function(){
+                            Ext4.Ajax.request({
+                                url: LABKEY.ActionURL.buildURL('admin', 'addTab'),
+                                method: 'POST',
+                                jsonData: {tabName: nameTextField.getValue()},
+                                success: function(response){
+                                    var jsonResp = JSON.parse(response.responseText);
+                                    if (jsonResp.success) {
+                                        if (jsonResp.url) {
+                                            window.location = jsonResp.url;
+                                        }
+                                    }
+                                },
+                                failure: function(response){
+                                    var jsonResp = JSON.parse(response.responseText);
+                                    var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
+                                    Ext4.MessageBox.alert('Error', errorHTML);
+                                }
+                            });
+                        }
+                    },{
+                        text: 'Cancel',
+                        scope: this,
+                        handler: function(){
+                            addTabWindow.close();
+                        }
+                    }]
+                });
+
+                addTabWindow.show();
+            });
+        },
+
+        /**
+         * Shows a hidden tab.
+         * @param pageId the pageId of the tab.
+         */
+        showTab: function(pageId){
+            Ext4.onReady(function(){
+                Ext4.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('admin', 'showTab'),
+                    method: 'POST',
+                    jsonData: {tabPageId: pageId},
+                    success: function(response){
+                        var jsonResp = JSON.parse(response.responseText);
+                        if (jsonResp.success) {
+                            if (jsonResp.url) {
+                                window.location = jsonResp.url;
+                            }
+                        }
+                    },
+                    failure: function(response){
+                        var jsonResp = JSON.parse(response.responseText);
+                        var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
+                        Ext4.MessageBox.alert('Error', errorHTML);
+                    }
+                });
+            });
+        },
+
+        /**
+         * Allows an administrator to rename a tab.
+         * @param pageId the pageId of the tab to rename
+         * @param urlId the id of the anchor tag of the tab to be renamed.
+         */
+        renameTab: function(pageId, urlId){
+            var currentName = document.getElementById(urlId).innerText;
+
+            Ext4.onReady(function(){
+                var nameTextField = Ext4.create('Ext.form.field.Text', {
+                    xtype: 'textfield',
+                    fieldLabel: 'Name',
+                    value: currentName,
+                    labelSeparator: ''
+                });
+
+                var renameTabWindow = Ext4.create('Ext.window.Window', {
+                    title: 'Rename Tab',
+                    closeAction: 'destroy',
+                    modal: true,
+                    items: [{
+                        xtype: 'panel',
+                        border: false,
+                        frame: false,
+                        bodyPadding: 5,
+                        items: [nameTextField]
+                    }],
+                    buttons: [{
+                        text: 'Ok',
+                        scope: this,
+                        handler: function(){
+                            Ext4.Ajax.request({
+                                url: LABKEY.ActionURL.buildURL('admin', 'renameTab'),
+                                method: 'POST',
+                                jsonData: {
+                                    tabPageId: pageId,
+                                    tabName: nameTextField.getValue()
+                                },
+                                success: function(response){
+                                    var jsonResp = JSON.parse(response.responseText);
+                                    if (jsonResp.success) {
+                                        document.getElementById(urlId).innerText = nameTextField.getValue();
+                                    }
+                                    renameTabWindow.close();
+                                },
+                                failure: function(response){
+                                    var jsonResp = JSON.parse(response.responseText);
+                                    var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
+                                    Ext4.MessageBox.alert('Error', errorHTML);
+                                }
+                            });
+                        }
+                    },{
+                        text: 'Cancel',
+                        scope: this,
+                        handler: function(){
+                            renameTabWindow.close();
+                        }
+                    }]
+                });
+
+                renameTabWindow.show();
+            });
         }
     };
 };
