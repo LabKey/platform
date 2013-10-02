@@ -1017,21 +1017,13 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (returnURL == null)
-                return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
-            else
-                return new ActionURL(returnURL.toString());
+            return form.getReturnActionURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
         }
 
         @Override
         public ActionURL getCancelURL(QueryUpdateForm form)
         {
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (returnURL == null)
-                return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
-            else
-                return new ActionURL(returnURL.toString());
+            return form.getReturnActionURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
         }
 
         public NavTree appendNavTrail(NavTree root)

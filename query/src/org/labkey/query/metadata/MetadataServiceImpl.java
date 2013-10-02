@@ -16,6 +16,7 @@
 
 package org.labkey.query.metadata;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -109,9 +110,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
+                TableInfo lookupTarget = fk.getLookupTableInfo();
                 if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
                 {
-                    TableInfo lookupTarget = fk.getLookupTableInfo();
                     if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
                     {
                         gwtColumnInfo.setLookupSchema(lookupTarget.getPublicSchemaName());
@@ -126,6 +127,11 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 {
                     gwtColumnInfo.setLookupSchema(fk.getLookupSchemaName());
                     gwtColumnInfo.setLookupQuery(fk.getLookupTableName());
+                }
+                // Set the lookup's container if it targets some other container
+                if (lookupTarget != null && lookupTarget.getUserSchema() != null && !lookupTarget.getUserSchema().getContainer().equals(getViewContext().getContainer()))
+                {
+                    gwtColumnInfo.setLookupContainer(lookupTarget.getUserSchema().getContainer().getPath());
                 }
             }
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
@@ -534,10 +540,15 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (!gwtColumnInfo.isLookupCustom() && gwtColumnInfo.getLookupQuery() != null && gwtColumnInfo.getLookupSchema() != null)
             {
                 ForeignKey rawFK = rawColumnInfo.getFk();
-                // Check if it's the same FK
-                if (rawFK == null || (!gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) && !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName())))
+                // Check if it's the same FK, based on schema, query, and container
+                String rawTargetContainer = (rawFK == null || rawFK.getLookupContainer() == null) ? null : rawFK.getLookupContainer().getPath();
+                if (rawFK == null ||
+                        (!gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) &&
+                                !ObjectUtils.equals(gwtColumnInfo.getLookupContainer(), rawTargetContainer) &&
+                                !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName())))
                 {
-                    UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), gwtColumnInfo.getLookupSchema());
+                    Container targetContainer = gwtColumnInfo.getLookupContainer() != null ? ContainerManager.getForPath(gwtColumnInfo.getLookupContainer()) : null;
+                    UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), targetContainer == null ? getViewContext().getContainer() : targetContainer, gwtColumnInfo.getLookupSchema());
                     if (fkSchema != null)
                     {
                         TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery());
@@ -554,6 +565,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                                 fk.setFkDbSchema(gwtColumnInfo.getLookupSchema());
                                 fk.setFkTable(gwtColumnInfo.getLookupQuery());
                                 fk.setFkColumnName(pkCols.get(0));
+                                if (targetContainer != null)
+                                {
+                                    fk.setFkFolderPath(targetContainer.getPath());
+                                }
                             }
                         }
                     }
