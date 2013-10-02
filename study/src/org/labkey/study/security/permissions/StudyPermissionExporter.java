@@ -26,6 +26,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -100,59 +101,65 @@ public class StudyPermissionExporter
         //per dataset permissions
         if (study.getSecurityType().isSupportsPerDatasetPermissions())
         {
-            PerDatasetPermissions pdp = PerDatasetPermissions.Factory.newInstance();
             ArrayList<Group> restrictedGroups = new ArrayList<>();
             for (Group g : groups)
             {
-                if (g.getUserId() != Group.groupAdministrators && studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))
+                if (g.getUserId() != Group.groupAdministrators && studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class) &&
+                        !studyPolicy.hasNonInheritedPermission(g, ReadPermission.class) &&
+                        !studyPolicy.hasNonInheritedPermission(g, UpdatePermission.class))
                     restrictedGroups.add(g);
             }
 
-            for (DataSet ds : study.getDataSets())
+            if (!restrictedGroups.isEmpty())
             {
-                SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
+                PerDatasetPermissions pdp = PerDatasetPermissions.Factory.newInstance();
 
-                for (Group g : restrictedGroups)
+                for (DataSet ds : study.getDataSets())
                 {
-                    java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
-                    Role assignedRole = roles.isEmpty() ? null : roles.get(0);
+                    SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
-                    boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
-                    boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);
-
-                    if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
-                        readPerm = true;
-
-                    boolean noPerm = !writePerm && !readPerm && assignedRole == null;
-
-                    String role = null;
-                    if (noPerm)
-                        role = "NONE";
-                    if (readPerm)
-                        role = ReaderRole.class.getName();
-
-                    if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+                    for (Group g : restrictedGroups)
                     {
-                        if (writePerm)
-                            role = EditorRole.class.getName();
+                        java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
+                        Role assignedRole = roles.isEmpty() ? null : roles.get(0);
 
-                        if (assignedRole != null)
+                        boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
+                        boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);
+
+                        if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
+                            readPerm = true;
+
+                        boolean noPerm = !writePerm && !readPerm && assignedRole == null;
+
+                        String role = null;
+                        if (noPerm)
+                            role = "NONE";
+                        if (readPerm)
+                            role = ReaderRole.class.getName();
+
+                        if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
                         {
-                            role = assignedRole.getClass().getName();
+                            if (writePerm)
+                                role = EditorRole.class.getName();
+
+                            if (assignedRole != null)
+                            {
+                                role = assignedRole.getClass().getName();
+                            }
+                        }
+
+                        if (role != null)
+                        {
+                            PerDatasetPermission pd = pdp.addNewDatasetPermission();
+                            pd.setDatasetName(ds.getName());
+                            pd.setGroupName(g.getName());
+                            pd.setRole(role);
                         }
                     }
-
-                    if (role != null)
-                    {
-                        PerDatasetPermission pd = pdp.addNewDatasetPermission();
-                        pd.setDatasetName(ds.getName());
-                        pd.setGroupName(g.getName());
-                        pd.setRole(role);
-                    }
                 }
-            }
 
-            sp.setPerDatasetPermissions(pdp);
+                sp.setPerDatasetPermissions(pdp);
+            }
         }
 
         xml.setStudySecurityPolicy(sp);

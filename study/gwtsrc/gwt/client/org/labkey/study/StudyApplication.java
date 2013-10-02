@@ -110,6 +110,12 @@ public class StudyApplication implements EntryPoint
 
     public static class ListChooser extends GWTModule
     {
+        /**
+         * Used to force GWT service to target the AssayController.Service class, instead of whatever controller
+         * is hosting the overall page UI
+         */
+        public static final String CONTROLLER_PROPERTY_NAME = "controller";
+
         public ListChooser()
         {
             super("gwt.client.org.labkey.assay.upload.client.ListChooser");

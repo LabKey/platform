@@ -18,6 +18,7 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -47,19 +48,34 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.*;
-import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
+import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -69,7 +85,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -121,6 +145,7 @@ public class AssayManager implements AssayService.Interface
         provider.registerLsidHandler();
     }
 
+    @Override @Nullable
     public AssayProvider getProvider(String providerName)
     {
         for (AssayProvider potential : _providers)
@@ -133,12 +158,13 @@ public class AssayManager implements AssayService.Interface
         return null;
     }
 
+    @Override @Nullable
     public AssayProvider getProvider(ExpProtocol protocol)
     {
         return Handler.Priority.findBestHandler(_providers, protocol);
     }
 
-    @Override
+    @Override @Nullable
     public AssayProvider getProvider(ExpRun run)
     {
         ExpProtocol protocol = run.getProtocol();
@@ -149,6 +175,7 @@ public class AssayManager implements AssayService.Interface
         return getProvider(protocol);
     }
 
+    @Override @NotNull
     public List<AssayProvider> getAssayProviders()
     {
         return Collections.unmodifiableList(_providers);
@@ -262,7 +289,7 @@ public class AssayManager implements AssayService.Interface
     public ModelAndView createListChooserView(Map<String, String> properties)
     {
         GWTView listChooser = new StudyGWTView(new StudyApplication.ListChooser(), properties);
-        listChooser.getModelBean().getProperties().put("pageFlow", "assay");
+        listChooser.getModelBean().getProperties().put(StudyApplication.ListChooser.CONTROLLER_PROPERTY_NAME, ViewServlet.getControllerName(AssayController.class));
         return listChooser;
     }
 

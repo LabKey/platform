@@ -122,8 +122,8 @@ public class ListChooser implements EntryPoint, LookupListener<GWTPropertyDescri
     {
         if (_service == null)
         {
-            _service = (AssayServiceAsync) GWT.create(AssayService.class);
-            ServiceUtil.configureEndpoint(_service, "service");
+            _service = GWT.create(AssayService.class);
+            ServiceUtil.configureEndpoint(_service, "service", PropertyUtil.getServerProperty(StudyApplication.ListChooser.CONTROLLER_PROPERTY_NAME));
         }
         return _service;
     }

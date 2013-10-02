@@ -134,6 +134,7 @@ import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.EnrollmentReport;
@@ -247,9 +248,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
         StudyService.register(StudyServiceImpl.INSTANCE);
-        DefaultSchema.registerProvider("study", new StudySchemaProvider());
-        DefaultSchema.registerProvider("plate", new PlateSchema.Provider());
-        DefaultSchema.registerProvider("assay", new AssaySchemaImpl.Provider());
+        DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider());
+        DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider());
+        DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider());
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
