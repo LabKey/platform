@@ -224,6 +224,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws SQLException
+    {
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+    }
+
+
+    @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
