@@ -32,6 +32,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -698,7 +699,9 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 
         if (null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
-            throw new IllegalStateException("@RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+        {
+            throw new ConfigurationException("@RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+        }
 
         // All permission checks have succeeded.  Now check for deprecated action.
         if (actionClass.isAnnotationPresent(DeprecatedAction.class))

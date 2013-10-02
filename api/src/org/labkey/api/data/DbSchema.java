@@ -849,7 +849,7 @@ public class DbSchema
         {
             TableInfo t = curSchema.getTable(tableName);
 
-            if (t.getTableType()!= DatabaseTableType.TABLE)
+            if (null == t || t.getTableType()!= DatabaseTableType.TABLE)
                 continue;
 
             for (ColumnInfo col : t.getColumns())

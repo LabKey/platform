@@ -226,7 +226,7 @@ public class StandardETL implements DataIteratorBuilder
             int indexConvert;
 
             if (null == pair.target || isAttachment)
-                indexConvert = convert.addColumn(input.getColumnInfo(pair.indexFrom).getName(), pair.indexFrom);
+                indexConvert = convert.addColumn(pair.indexFrom);
             else if (null == pair.dp)
                 indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);
             else

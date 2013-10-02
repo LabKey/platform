@@ -645,7 +645,7 @@ public enum CompareType
 
         protected JdbcType getColumnType(Map<FieldKey, ? extends ColumnInfo> columnMap, JdbcType defaultType)
         {
-            ColumnInfo col = columnMap.get(_fieldKey);
+            ColumnInfo col = null==columnMap ? null : columnMap.get(_fieldKey);
             return col != null ? col.getJdbcType() : defaultType;
         }
 
