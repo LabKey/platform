@@ -699,7 +699,7 @@ public class ReportUtil
         return query;
     }
 
-    public static String getQueryLabelByName(UserSchema userSchema, String query)
+    public static String getQueryLabelByName(@Nullable UserSchema userSchema, String query)
     {
         if (userSchema != null)
         {

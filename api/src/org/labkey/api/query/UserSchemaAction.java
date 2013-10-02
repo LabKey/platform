@@ -112,25 +112,38 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     {
         String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
         if (returnURL != null)
-            return new ActionURL(returnURL);
+        {
+            try
+            {
+                return new ActionURL(returnURL);
+            }
+            catch (IllegalArgumentException ignored) {}
+        }
         return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
     }
 
     public ActionURL getCancelURL(QueryUpdateForm form)
     {
-        ActionURL cancelURL;
+        ActionURL cancelURL = null;
         if (getViewContext().getActionURL().getParameter(QueryParam.srcURL) != null)
         {
-            cancelURL = new ActionURL(getViewContext().getActionURL().getParameter(QueryParam.srcURL));
+            try
+            {
+                cancelURL = new ActionURL(getViewContext().getActionURL().getParameter(QueryParam.srcURL));
+            }
+            catch (IllegalArgumentException ignored) {}
         }
-        else if (_schema != null && _table != null)
+        if (cancelURL == null)
         {
-            cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
-        }
-        else
-        {
-            cancelURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
-            //cancelURL = new ActionURL(ExecuteQueryAction.class, form.getContainer());
+            if (_schema != null && _table != null)
+            {
+                cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+            }
+            else
+            {
+                cancelURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
+                //cancelURL = new ActionURL(ExecuteQueryAction.class, form.getContainer());
+            }
         }
         return cancelURL;
     }
