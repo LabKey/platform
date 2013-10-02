@@ -388,13 +388,9 @@ public class ListWriter
             }
         }
 
-        @Override  // TODO: Update this to match Dataset version?
+        @Override  // No reason to ever export list PropertyURIs, see #18718
         protected String getPropertyURI(ColumnInfo column)
         {
-            String propertyURI = column.getPropertyURI();
-            if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
-                return propertyURI;
-
             return null;
         }
     }
