@@ -305,18 +305,16 @@ public class XarExporter
             InputOutputRefsType.MaterialLSID materialLSID = inputRefs.addNewMaterialLSID();
             materialLSID.setStringValue(_relativizedLSIDs.relativize(material.getLSID()));
 
-            String roleName = null;
             for (MaterialInput materialInput : materialInputs)
             {
                 if (materialInput.getMaterialId() == material.getRowId())
                 {
-                    roleName = material.getName();
+                    if (materialInput.getRole() != null)
+                    {
+                        materialLSID.setRoleName(materialInput.getRole());
+                    }
                     break;
                 }
-            }
-            if (roleName != null)
-            {
-                materialLSID.setRoleName(roleName);
             }
         }
 

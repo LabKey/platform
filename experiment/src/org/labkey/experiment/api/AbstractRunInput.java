@@ -56,6 +56,13 @@ public abstract class AbstractRunInput
         {
             role = _defaultRole;
         }
+        // Issue 17590. For a while, we've had a bug with exporting material role names in XARs. We exported the
+        // material name instead of the role name itself. The material names can be longer than the role names,
+        // so truncate here if needed to prevent a SQLException later
+        if (role.length() > 50)
+        {
+            role = role.substring(0, 49);
+        }
         _role = role;
     }
 
