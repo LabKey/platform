@@ -641,7 +641,6 @@ core/src/org/labkey/core/admin/MenuViewFactory.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
-core/src/org/labkey/core/admin/addTab.jsp -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
@@ -677,7 +676,6 @@ core/src/org/labkey/core/admin/mvIndicators.jsp -text
 core/src/org/labkey/core/admin/newInstallSiteSettings.jsp -text
 core/src/org/labkey/core/admin/properties.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
-core/src/org/labkey/core/admin/renameTab.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text

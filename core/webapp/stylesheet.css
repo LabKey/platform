@@ -3693,6 +3693,7 @@ input[type="checkbox"], input[type="radio"] {
     float: left;
     line-height : 14px;
     text-decoration : none;
+    background-color: #efefef;
 
     border-radius: 5px 5px 0 0;
     margin-right: 4px;
@@ -3703,30 +3704,46 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .labkey-app-bar ul li.labkey-no-tab-menu {
-    padding:  8px 8px 8px 8px;
+    padding:  8px;
 }
 
-.labkey-app-bar ul li.labkey-app-bar-add-tab {
-    background-color: #efefef;
-    margin: 0;
-    padding: 8px 6px 6px 6px;
+.labkey-app-bar ul li.labkey-app-bar-edit-tab {
+    padding: 5px 8px 0px 8px;
 }
 
-.labkey-app-bar ul li.labkey-app-bar-add-tab a {
-    color: #565656;
+.labkey-app-bar ul li.labkey-app-bar-edit-tab a {
+    width: 23px;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.labkey-app-bar ul li.labkey-app-bar-edit-tab img:hover {
+    margin: 0 0 0 -25px;
 }
 
 .labkey-app-bar ul li a {
     font-weight: bold;
 }
 
-li.labkey-app-bar-tab-active {
+.labkey-app-bar ul li.labkey-app-bar-tab-active {
     border:  1px solid transparent;
     background-color: #f8f8f8;
 }
 
-li.labkey-app-bar-tab-inactive {
-    background-color: #efefef;
+.button-bar.tab-edit-mode-enabled ul li.labkey-app-bar-tab-hidden {
+    display: inline-block;
+    background-color: #cfcfcf;
+}
+
+.button-bar.tab-edit-mode-enabled ul li.labkey-app-bar-add-tab {
+    display: inline-block;
+    padding: 8px;
+}
+
+.button-bar.tab-edit-mode-disabled ul li.labkey-app-bar-tab-hidden,
+.button-bar.tab-edit-mode-disabled ul li.labkey-app-bar-add-tab
+{
+    display: none;
 }
 
 li.labkey-app-bar-tab-inactive:hover a {

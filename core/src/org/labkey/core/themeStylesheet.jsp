@@ -236,7 +236,7 @@ span.labkey-button:active
     color: #<%= link %>;
 }
 
-.labkey-app-bar li.labkey-tab-active { /* map bottom border and background color to Primary background color */
+.labkey-app-bar ul li.labkey-app-bar-tab-active { /* map bottom border and background color to Primary background color */
     background-color: #<%= primary %>;
 	border-bottom: 1px solid #<%= primary %>;
 }

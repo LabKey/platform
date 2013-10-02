@@ -176,6 +176,7 @@ import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
@@ -5564,9 +5565,9 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class AddTabAction extends FormViewAction<AddTabForm>
+    public class AddTabAction extends ApiAction<TabActionForm>
     {
-        public void validateCommand(AddTabForm form, Errors errors)
+        public void validateCommand(TabActionForm form, Errors errors)
         {
             if(getContainer().getFolderType() == FolderType.NONE)
             {
@@ -5583,27 +5584,14 @@ public class AdminController extends SpringActionController
                     folderTabMap.put(tab.getName(), tab);
                 }
 
-                if (form.getTabType().equalsIgnoreCase("portal"))
+                if(name == null)
                 {
-                    if(name == null)
-                    {
-                        errors.reject(ERROR_MSG, "A tab name must be specified.");
-                    }
-                    else if (pages.containsKey(name))
-                    {
-                        errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
-                        return;
-                    }
+                    errors.reject(ERROR_MSG, "A tab name must be specified.");
                 }
-                else
+                else if (pages.containsKey(name))
                 {
-                    if(name == null)
-                    {
-                        // Caption not set by user, use default caption.
-                        FolderTab tab = folderTabMap.get(form.getTabType());
-                        if (tab != null)
-                            name = tab.getCaption(getViewContext());
-                    }
+                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    return;
                 }
 
                 for (Portal.PortalPage page : pages.values())
@@ -5611,93 +5599,84 @@ public class AdminController extends SpringActionController
                     if (page.getCaption() != null && page.getCaption().equals(name))
                     {
                         errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                        return;
                     }
                     else if (folderTabMap.containsKey(page.getPageId()))
                     {
                         if (folderTabMap.get(page.getPageId()).getCaption(getViewContext()).equalsIgnoreCase(name))
-                            errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
-                    }
-                }
-            }
-        }
-
-        public boolean handlePost(AddTabForm form, BindException errors) throws Exception
-        {
-            Container container = getContainer();
-            if (form.getTabType().equalsIgnoreCase("portal"))
-            {
-                Portal.saveParts(container, form.getTabName(), new Portal.WebPart[0]);
-                Portal.addProperty(container, form.getTabName(), Portal.PROP_CUSTOMTAB);
-            }
-            else
-            {
-                // TabType is really pageId of hidden page
-                Portal.showPage(container, form.getTabType());
-
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container));
-                Portal.PortalPage page = pages.get(form.getTabType());
-
-                if (null == page)
-                {
-                    errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
-                    return false;
-                }
-
-                if(form.getTabName() != null && !form.getTabName().equals(""))
-                {
-                    page.setCaption(form.getTabName());
-                }
-                else
-                {
-                    String caption = "";
-
-                    for(FolderTab folderTab : container.getFolderType().getDefaultTabs())
-                    {
-                        if(folderTab.getName().equals(form.getTabType()))
                         {
-                            caption = folderTab.getCaption(getViewContext());
-                            break;
+                            errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                            return;
                         }
                     }
-
-                    page.setCaption(caption);
                 }
-
-                // Update the page the caption is saved.
-                Portal.updatePortalPage(container, page);
             }
-            return true;
         }
 
-        public ModelAndView getView(AddTabForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(TabActionForm form, BindException errors) throws Exception
         {
-            HttpView view = new JspView<>("/org/labkey/core/admin/addTab.jsp", form, errors);
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
-            return view;
-        }
+            validateCommand(form, errors);
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Add Tab");
-            return root;
-        }
-
-        public ActionURL getSuccessURL(AddTabForm form)
-        {
-            ActionURL actionURL = form.getReturnActionURL();
-            if (null != actionURL && !actionURL.getAction().equals("addTab"))
+            if(errors.hasErrors())
             {
-                return actionURL.replaceParameter("pageId", form.getTabName());
+                return response;
             }
 
-            return new ActionURL(ProjectController.BeginAction.class, getContainer());
+            Container container = getContainer();
+            Portal.saveParts(container, form.getTabName(), new Portal.WebPart[0]);
+            Portal.addProperty(container, form.getTabName(), Portal.PROP_CUSTOMTAB);
+            ActionURL tabURL = new ActionURL(ProjectController.BeginAction.class, getContainer());
+            tabURL.addParameter("pageId", form.getTabName());
+            response.put("url", tabURL);
+            response.put("success", true);
+            return response;
         }
     }
 
-    public static class AddTabForm extends ReturnUrlForm
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ShowTabAction extends ApiAction<TabActionForm>
     {
-        String _tabType;
+        public void validateCommand(TabActionForm form, Errors errors)
+        {
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer(), true));
+
+            if (form.getTabPageId() == null)
+            {
+                errors.reject(ERROR_MSG, "PageId cannot be blank.");
+            }
+
+            if (!pages.containsKey(form.getTabPageId()))
+            {
+                errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
+            }
+        }
+
+        public ApiResponse execute(TabActionForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            validateCommand(form, errors);
+            if (errors.hasErrors())
+                return response;
+
+            Portal.showPage(getContainer(), form.getTabPageId());
+            ActionURL tabURL = new ActionURL(ProjectController.BeginAction.class, getContainer());
+            tabURL.addParameter("pageId", form.getTabPageId());
+            response.put("url", tabURL);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+
+    public static class TabActionForm extends ReturnUrlForm
+    {
+        // This class is used for tab related actions (add, rename, show, etc.)
         String _tabName;
+        String _tabPageId;
 
         public String getTabName()
         {
@@ -5709,14 +5688,14 @@ public class AdminController extends SpringActionController
             _tabName = name;
         }
 
-        public String getTabType()
+        public String getTabPageId()
         {
-            return _tabType;
+            return _tabPageId;
         }
 
-        public void setTabType(String tabType)
+        public void setTabPageId(String tabPageId)
         {
-            _tabType = tabType;
+            _tabPageId = tabPageId;
         }
     }
 
@@ -5738,7 +5717,7 @@ public class AdminController extends SpringActionController
                 tabContainer = getContainer();
             }
 
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
             Portal.PortalPage tab = pages.get(form.getPageId());
 
             if (null != tab)
@@ -5814,17 +5793,7 @@ public class AdminController extends SpringActionController
 
     private Portal.PortalPage handleMovePortalPage(Container c, Portal.PortalPage page, int direction)
     {
-        Map<String, Portal.PortalPage> pages = Portal.getPages(c, false);
-        ArrayList<Portal.PortalPage> pagesList = new ArrayList<>(pages.values());
-
-        Collections.sort(pagesList, new Comparator<Portal.PortalPage>()
-        {
-            @Override
-            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-            {
-                return o1.getIndex() - o2.getIndex();
-            }
-        });
+        List<Portal.PortalPage> pagesList = Portal.getTabPages(c, true);
 
         int visibleIndex;
         for (visibleIndex = 0; visibleIndex < pagesList.size(); visibleIndex++)
@@ -5847,17 +5816,8 @@ public class AdminController extends SpringActionController
                 return page;
             }
 
-            Portal.PortalPage nextPage = null;
-            List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
-            for (int i = visibleIndex + 1; i < pagesList.size(); i += 1)
-            {
-                Portal.PortalPage newPage = pagesList.get(i);
-                if (newPage.isCustomTab() || isPageInTabList(folderTabs, newPage))      // Ignore stealth pages
-                {
-                    nextPage = newPage;
-                    break;
-                }
-            }
+            Portal.PortalPage nextPage = pagesList.get(visibleIndex + 1);
+
             if (null == nextPage)
                 return null;
             Portal.swapPageIndexes(getContainer(), page, nextPage);
@@ -5870,17 +5830,8 @@ public class AdminController extends SpringActionController
                 return page;
             }
 
-            Portal.PortalPage prevPage = null;
-            List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
-            for (int i = visibleIndex - 1; i >= 0; i -= 1)
-            {
-                Portal.PortalPage newPage = pagesList.get(i);
-                if (newPage.isCustomTab() || isPageInTabList(folderTabs, newPage))      // Ignore stealth pages
-                {
-                    prevPage = newPage;
-                    break;
-                }
-            }
+            Portal.PortalPage prevPage = pagesList.get(visibleIndex - 1);
+
             if (null == prevPage)
                 return null;
             Portal.swapPageIndexes(getContainer(), page, prevPage);
@@ -5888,18 +5839,10 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private boolean isPageInTabList(List<FolderTab> folderTabs, Portal.PortalPage page)
-    {
-        for (FolderTab folderTab : folderTabs)
-            if (folderTab.getName().equalsIgnoreCase(page.getPageId()))
-                return true;
-        return false;
-    }
-
     @RequiresPermissionClass(AdminPermission.class)
-    public class RenameTabAction extends FormViewAction<RenameTabForm>
+    public class RenameTabAction extends ApiAction<TabActionForm>
     {
-        public void validateCommand(RenameTabForm form, Errors errors)
+        public void validateCommand(TabActionForm form, Errors errors)
         {
             if (getContainer().getFolderType() == FolderType.NONE)
             {
@@ -5908,14 +5851,14 @@ public class AdminController extends SpringActionController
             else
             {
                 String name = form.getTabName();
-                if (name == null)
+                if (StringUtils.isEmpty(name))
                 {
                     errors.reject(ERROR_MSG, "A tab name must be specified.");
                     return;
                 }
 
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer(), true));
-                Portal.PortalPage pageToChange = pages.get(form.getPageId());
+                Portal.PortalPage pageToChange = pages.get(form.getTabPageId());
                 if (null == pageToChange)
                 {
                     errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
@@ -5955,76 +5898,25 @@ public class AdminController extends SpringActionController
             }
         }
 
-        public boolean handlePost(RenameTabForm form, BindException errors) throws Exception
+        public ApiResponse execute(TabActionForm form, BindException errors) throws Exception
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            validateCommand(form, errors);
+
+            if (errors.hasErrors())
+            {
+                return response;
+            }
+
             Container container = getContainer();
-            String name = form.getTabName();
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container));
-            Portal.PortalPage page = pages.get(form.getPageId());
+            Portal.PortalPage page = pages.get(form.getTabPageId());
+            page.setCaption(form.getTabName());
+            // Update the page the caption is saved.
+            Portal.updatePortalPage(container, page);
 
-            if (null == page)
-            {
-                errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
-                return false;
-            }
-
-            if (StringUtils.isNotEmpty(name))
-            {
-                page.setCaption(form.getTabName());
-
-                // Update the page the caption is saved.
-                Portal.updatePortalPage(container, page);
-            }
-            return true;
-        }
-
-        public ModelAndView getView(RenameTabForm form, boolean reshow, BindException errors) throws Exception
-        {
-            HttpView view = new JspView<>("/org/labkey/core/admin/renameTab.jsp", form, errors);
-
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Rename Tab");
-            return root;
-        }
-
-        public ActionURL getSuccessURL(RenameTabForm form)
-        {
-            if (form.getReturnActionURL() != null && !form.getReturnActionURL().getAction().equals("renameTab"))
-            {
-                return form.getReturnActionURL();
-            }
-
-            return new ActionURL(ProjectController.BeginAction.class, getContainer());
-        }
-    }
-
-    public static class RenameTabForm extends ReturnUrlForm
-    {
-        String _pageId;
-        String _tabName;
-
-        public String getTabName()
-        {
-            return _tabName;
-        }
-
-        public void setTabName(String name)
-        {
-            _tabName = name;
-        }
-
-        public String getPageId()
-        {
-            return _pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            _pageId = pageId;
+            response.put("success", true);
+            return response;
         }
     }
 
@@ -6077,6 +5969,22 @@ public class AdminController extends SpringActionController
         public void setNewFolderType(String newFolderType)
         {
             _newFolderType = newFolderType;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ToggleTabEditModeAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object bean, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            HttpSession session = getViewContext().getSession();
+            boolean tabEditMode = session.getAttribute("tabEditMode") != null && ((boolean) session.getAttribute("tabEditMode"));
+            session.setAttribute("tabEditMode", !tabEditMode);
+            response.put("success", true);
+            response.put("tabEditMode", session.getAttribute("tabEditMode"));
+            return response;
         }
     }
 }
