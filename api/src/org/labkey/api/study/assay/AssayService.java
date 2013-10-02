@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
@@ -62,9 +63,13 @@ public class AssayService
     public interface Interface
     {
         public void registerAssayProvider(AssayProvider provider);
+        @Nullable
         public AssayProvider getProvider(String providerName);
+        @Nullable
         public AssayProvider getProvider(ExpProtocol protocol);
+        @Nullable
         public AssayProvider getProvider(ExpRun run);
+        @NotNull
         public List<AssayProvider> getAssayProviders();
         public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
 

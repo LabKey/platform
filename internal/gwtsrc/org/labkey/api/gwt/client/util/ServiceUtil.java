@@ -30,27 +30,27 @@ import java.util.Map;
  */
 public class ServiceUtil
 {
-    public static Object configureEndpoint(Object remoteService, String action)
+    public static Object configureEndpoint(Object remoteService, String actionName)
     {
-        return configureEndpoint(remoteService, action, null);
+        return configureEndpoint(remoteService, actionName, null);
     }
 
-    public static Object configureEndpoint(Object remoteService, String action, String pageflow)
+    public static Object configureEndpoint(Object remoteService, String actionName, String controllerName)
     {
-        return configureEndpoint(remoteService, action, pageflow, Collections.<String, String>emptyMap());
+        return configureEndpoint(remoteService, actionName, controllerName, Collections.<String, String>emptyMap());
     }
 
-    public static Object configureEndpoint(Object remoteService, String action, String pageflow, Map<String, String> urlParams)
+    public static Object configureEndpoint(Object remoteService, String actionName, String controllerName, Map<String, String> urlParams)
     {
         ServiceDefTarget endpoint = (ServiceDefTarget) remoteService;
         String url;
-        if (pageflow == null)
+        if (controllerName == null)
         {
-            url = PropertyUtil.getRelativeURL(action);
+            url = PropertyUtil.getRelativeURL(actionName);
         }
         else
         {
-            url = PropertyUtil.getRelativeURL(action, pageflow);
+            url = PropertyUtil.getRelativeURL(actionName, controllerName);
         }
         String separator = "?";
         for (String key : urlParams.keySet())
