@@ -986,7 +986,7 @@ public class SimpleFilter implements Filter
                 if (compareInfo.length == 2)
                     type = CompareType.getByURLKey(compareInfo[1]);
 
-                if (null == type)
+                if (null == type || fieldKey == null)
                     continue;
 
                 try
