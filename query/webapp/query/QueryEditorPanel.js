@@ -739,9 +739,9 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         {
             var pos = {ch : 0};
             if (error && error.line)
-                pos.line = error.line-1;
+                pos.line = Math.max(0,error.line-1);
             if (error && error.col)
-                pos.ch = error.col;
+                pos.ch = Math.max(0,error.col);
 
             _editor.codeMirror.setCursor(pos);
             _editor.codeMirror.scrollIntoView(pos);

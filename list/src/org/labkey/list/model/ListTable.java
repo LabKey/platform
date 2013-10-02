@@ -258,14 +258,23 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
-        ColumnInfo entityId = wrapColumn(getRealTable().getColumn(FieldKey.fromParts("EntityId")));
-        entityId.setName("EntityId");
-        entityId.setLabel("Entity Id");
-        entityId.setHidden(true);
-        entityId.setUserEditable(false);
-        entityId.setShownInInsertView(false);
-        entityId.setShownInUpdateView(false);
-        addColumn(entityId);
+
+        ColumnInfo colEntityId = getRealTable().getColumn(FieldKey.fromParts("EntityId"));
+        if (null == colEntityId)
+        {
+            throw new NullPointerException("List does not have entityid column??: " + listDef.getContainer().getPath() + ", " + listDef.getName());
+        }
+        else
+        {
+            ColumnInfo entityId = wrapColumn(colEntityId);
+            entityId.setName("EntityId");
+            entityId.setLabel("Entity Id");
+            entityId.setHidden(true);
+            entityId.setUserEditable(false);
+            entityId.setShownInInsertView(false);
+            entityId.setShownInUpdateView(false);
+            addColumn(entityId);
+        }
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);

@@ -1343,7 +1343,8 @@ Ext4.define('File.panel.Browser', {
         var tb = this.getDockedComponent(0); // button toolbar
         if (tb) {
             if (this.actions.download) {
-                this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords[0])); // TODO: multi-select
+                if (selectedRecords.length > 0)
+                    this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords[0])); // TODO: multi-select
             }
             if (this.actions.renamePath) {
                 if (selectedRecords.length > 1)

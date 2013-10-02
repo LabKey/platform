@@ -2464,6 +2464,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
 
                 String uniq = isDemographic ? ptid : uri;
+                if (null == uniq)
+                    continue;
                 if (null != uriMap.put(uniq, key))
                     noDeleteMap.put(uniq,key);
 

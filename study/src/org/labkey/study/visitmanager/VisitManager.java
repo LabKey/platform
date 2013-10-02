@@ -247,6 +247,9 @@ public abstract class VisitManager
         }
     }
 
+
+
+    @SuppressWarnings("UnusedDeclaration")
     boolean dump(Map<VisitMapKey, VisitStatistics> map, Set<VisitStatistic> set)
     {
         VisitStatistic[] statsToDisplay = set.toArray(new VisitStatistic[set.size()]);

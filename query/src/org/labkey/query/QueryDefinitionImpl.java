@@ -315,6 +315,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
                 catch (Exception x)
                 {
+                    log.error("Unexpected error",  x);
                     errors.add(wrapParseException(x, false));
                 }
             }
