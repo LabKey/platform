@@ -97,11 +97,14 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(" t\n");
         return sql.toString();
     }
+
     protected String getWhereClause()
     {
         return getWhereClause(null);
     }
 
+    // filter out NO_WORK as well as
+    // scope to the current container
     protected String getWhereClause(String tableAlias)
     {
         StringBuilder sqlWhere = new StringBuilder();
@@ -113,6 +116,10 @@ abstract public class TransformBaseTable extends VirtualTable
         }
         sqlWhere.append("Status <> '");
         sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
+        sqlWhere.append("'");
+        sqlWhere.append(" AND ");
+        sqlWhere.append(" Container = '");
+        sqlWhere.append(_schema.getContainer().getId());
         sqlWhere.append("'");
         return sqlWhere.toString();
     }
