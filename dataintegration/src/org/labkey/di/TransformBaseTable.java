@@ -35,6 +35,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.di.pipeline.TransformRun;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Calendar;
@@ -293,25 +294,31 @@ abstract public class TransformBaseTable extends VirtualTable
 
             if (null != jobId && null != filePath && null != dataRegionName)
             {
-                String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
-                ActionURL jobAction = new ActionURL("pipeline-status", "showFile", ctx.getContainer());
-                jobAction.addParameter("rowId", jobId);
-                jobAction.addParameter("filename", filename);
+                File logFile = new File(filePath);
+                if (logFile.exists())
+                {
+                    String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
+                    ActionURL jobAction = new ActionURL("pipeline-status", "showFile", ctx.getContainer());
+                    jobAction.addParameter("rowId", jobId);
+                    jobAction.addParameter("filename", filename);
 
-                StringBuilder text = new StringBuilder();
-                text.append("<a href=\"#viewLog\" onclick=\"");
-                text.append(dataRegionName + ShowLog);
-                text.append("(");
-                text.append(hq(jobAction.toString()));
-                text.append(",");
-                text.append(hq(filename));
-                text.append(")\">");
-                text.append(statusValue);
-                text.append("</a>");
-                out.write(text.toString());
-                return;
+                    StringBuilder text = new StringBuilder();
+                    text.append("<a href=\"#viewLog\" onclick=\"");
+                    text.append(dataRegionName + ShowLog);
+                    text.append("(");
+                    text.append(hq(jobAction.toString()));
+                    text.append(",");
+                    text.append(hq(filename));
+                    text.append(")\">");
+                    text.append(statusValue);
+                    text.append("</a>");
+                    out.write(text.toString());
+                    return;
+                }
             }
-            // if anything goes wrong above, just return the formatted value
+
+            // if none of the conditions are met above then just write out the status
+            // value without the link
             out.write(statusValue);
         }
     }
