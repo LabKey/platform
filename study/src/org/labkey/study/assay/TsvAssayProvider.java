@@ -229,9 +229,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public boolean supportsReRun()
+    public ReRunSupport getReRunSupport()
     {
-        return true;
+        return ReRunSupport.ReRunAndReplace;
     }
 
     @Override

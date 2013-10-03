@@ -993,7 +993,7 @@ public class AssayController extends SpringActionController
             String resultsTableName = AssayProtocolSchema.DATA_TABLE_NAME;
 
             // Check if we need to set a filter on the URL to show replaced data, which is usually filtered out
-            if (provider.supportsReRun())
+            if (provider.getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
                 for (int runId : runIds)
                 {

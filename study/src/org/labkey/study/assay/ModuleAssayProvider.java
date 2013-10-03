@@ -675,8 +675,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public boolean supportsReRun()
+    public ReRunSupport getReRunSupport()
     {
-        return false;
+        return ReRunSupport.None;
     }
 }
