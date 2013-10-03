@@ -1025,7 +1025,7 @@ public class SecurityController extends SpringActionController
             // validate that group is in the current project!
             Container c = getContainer();
             ensureGroupInContainer(group, c);
-            List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group);
+            List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group, true);
 
             DataRegion rgn = new DataRegion();
             List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(UserController.getUserColumnNames(getUser(), c));
