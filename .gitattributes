@@ -208,7 +208,6 @@ audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
 authentication/Authentication.iml -text
 authentication/module.properties -text
-authentication/src/META-INF/authentication/jars.txt -text
 authentication/src/org/labkey/authentication/AuthenticationModule.java -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationManager.java -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.java -text

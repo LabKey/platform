@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-amclientsdk.jar|OpenSSO|9/28/07 stable release|{link:OpenSSO|https://opensso.dev.java.net/}|{link:CDDL|http://www.sun.com/cddl/cddl.html}|adam|OpenSSO single sign on integration
-{table}
