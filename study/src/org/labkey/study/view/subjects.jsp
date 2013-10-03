@@ -609,7 +609,7 @@
     function generateToolTip(p)
     {
         var part = _ptids[p];
-        var html = ["<div style='font-weight:bold;font-size:11px;'>" + part.html + "</div>"];
+        var html = ["<div style='font-weight:bold;font-size:11px;'>" + (LABKEY.demoMode?LABKEY.id(part.ptid):part.html) + "</div>"];
         for (var g=0 ; g<_groups.length ; g++)
         {
             if (_groups[g].id != -1 && testGroupPtid(g,p))

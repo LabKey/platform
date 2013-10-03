@@ -273,7 +273,12 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     getColumnCfg : function(isHeader) {
 
-        var field = '{'+this.labelField+':htmlEncode}';
+        var field = '';
+        // Issue 18619: mask ptid in demo mode
+        if (this.panelName == 'participant')
+            field = '{[Ext4.String.htmlEncode(LABKEY.id(values["' + this.labelField + '"]))]}';
+        else
+            field = '{'+this.labelField+':htmlEncode}';
 
         var tpl = [
             '<div><span ext:qtip=" " class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
@@ -578,7 +583,8 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 xtype : 'labkey-filterselectlist',
                 allowAll : this.allowAll,
                 border : false,
-                frame : false
+                frame : false,
+                panelName : this.panelName
             }));
         }
 

@@ -148,6 +148,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // tack on our own default url
                     if (!page.headerValue.url)
                         page.headerValue.url = LABKEY.ActionURL.buildURL('study', 'participant.view', null, {participantId : page.headerValue.value});
+                    // Issue 18619: mask ptid in demo mode
+                    if (page.headerValue.displayValue)
+                        page.headerValue.displayValue = LABKEY.id(page.headerValue.displayValue);
 
                     // store the index of the page, for transpose template
                     page.index = p;
