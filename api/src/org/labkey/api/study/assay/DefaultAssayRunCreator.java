@@ -179,7 +179,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         throw new UnexpectedException(e);
                     }
                 }
-            });
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
         catch (IOException e)
         {
@@ -310,7 +310,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     {
                         replacedRun.archiveDataFiles(context.getUser());
                     }
-                });
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
             }
 
             transaction.commit();

@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Collection;
 
 /**
@@ -28,6 +30,7 @@ public interface Handler<HandledType>
     {
         LOW, MEDIUM, HIGH;
 
+        @Nullable
         public static <H extends Handler<V>, V> H findBestHandler(Collection<H> handlers, V value)
         {
             H bestHandler = null;

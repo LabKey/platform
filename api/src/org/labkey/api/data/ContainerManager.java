@@ -1308,7 +1308,7 @@ public class ContainerManager
                         DATABASE_QUERY_LOCK.unlock();
                     }
                 }
-            });
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
             addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
             t.commit();
         }

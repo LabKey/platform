@@ -339,6 +339,7 @@ public class DbScope
             Connection conn = t.getConnection();
             try
             {
+                t.runCommitTasks(CommitTaskOption.PRECOMMIT);
                 conn.commit();
                 conn.setAutoCommit(true);
     //            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
@@ -347,7 +348,7 @@ public class DbScope
                 {
                     _transaction.remove(getEffectiveThread());
                 }
-                t.runCommitTasks();
+                t.runCommitTasks(CommitTaskOption.POSTCOMMIT);
             }
             catch (SQLException e)
             {
@@ -804,7 +805,7 @@ public class DbScope
      * multiple times. Make sure you have implemented hashCode() and equals() on your task if you want to only run it
      * once per transaction.
      */
-    public void addCommitTask(Runnable task)
+    public void addCommitTask(Runnable task, CommitTaskOption taskOption)
     {
         Transaction t = getCurrentTransaction();
 
@@ -814,7 +815,7 @@ public class DbScope
         }
         else
         {
-            t.addCommitTask(task);
+            t.addCommitTask(task, taskOption);
         }
     }
 
@@ -1232,9 +1233,15 @@ public class DbScope
         }
     }
 
+    public enum CommitTaskOption
+    {
+        PRECOMMIT,
+        POSTCOMMIT
+    }
+
     public interface Transaction extends AutoCloseable
     {
-        public void addCommitTask(Runnable runnable);
+        public void addCommitTask(Runnable runnable, DbScope.CommitTaskOption taskOption);
         public Connection getConnection();
         public void close();
         public void commit();
@@ -1246,8 +1253,11 @@ public class DbScope
     {
         private final Connection _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
-        // A set so that we can coalesce identical tasks and avoid duplicating the effort
-        private final Set<Runnable> _commitTasks = new LinkedHashSet<>();
+
+        // Sets so that we can coalesce identical tasks and avoid duplicating the effort
+        private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
+        private final Set<Runnable> _postCommitTasks = new LinkedHashSet<>();
+
         private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
@@ -1269,9 +1279,13 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        public void addCommitTask(Runnable task)
+        public void addCommitTask(Runnable task, DbScope.CommitTaskOption taskOption)
         {
-            boolean added = _commitTasks.add(task);
+            boolean added = false;
+            if (taskOption == CommitTaskOption.PRECOMMIT)
+                added = _preCommitTasks.add(task);
+            else if (taskOption == CommitTaskOption.POSTCOMMIT)
+                added = _postCommitTasks.add(task);
 
             if (!added)
                 LOG.debug("Skipping duplicate runnable: " + task.toString());
@@ -1284,7 +1298,8 @@ public class DbScope
 
         private void clearCommitTasks()
         {
-            _commitTasks.clear();
+            _preCommitTasks.clear();
+            _postCommitTasks.clear();
             closeCaches();
         }
 
@@ -1300,11 +1315,13 @@ public class DbScope
             DbScope.this.commitTransaction();
         }
 
-        private void runCommitTasks()
+        private void runCommitTasks(CommitTaskOption taskOption)
         {
-            while (!_commitTasks.isEmpty())
+            Set<Runnable> tasks = (taskOption == CommitTaskOption.PRECOMMIT ? _preCommitTasks : _postCommitTasks);
+
+            while (!tasks.isEmpty())
             {
-                Iterator<Runnable> i = _commitTasks.iterator();
+                Iterator<Runnable> i = tasks.iterator();
                 i.next().run();
                 i.remove();
             }

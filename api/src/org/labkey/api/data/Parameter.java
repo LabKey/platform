@@ -737,7 +737,7 @@ public class Parameter
             if (null != _onClose)
             {
                 if (_runAfterTransaction && _scope.isTransactionActive())
-                    _scope.addCommitTask(_onClose);
+                    _scope.addCommitTask(_onClose, DbScope.CommitTaskOption.POSTCOMMIT);
                 else
                     _onClose.run();
             }
