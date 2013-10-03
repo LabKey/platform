@@ -65,6 +65,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -83,6 +84,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.LabkeySQL;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QueryName;
@@ -889,21 +891,32 @@ public class Query
     {
         final JdbcType _type;
         final Object _value;
+        final Callable _call;
 
         MethodSqlTest(String sql, JdbcType type, Object value)
         {
             super(sql, 1, 1);
             _type = type;
             _value = value;
+            _call = null;
+        }
+
+        MethodSqlTest(String sql, JdbcType type, Callable call)
+        {
+            super(sql, 1, 1);
+            _type = type;
+            _value = null;
+            _call = call;
         }
 
         @Override
-        protected void validateResults(CachedResultSet rs) throws SQLException
+        protected void validateResults(CachedResultSet rs) throws Exception
         {
             QueryTestCase.assertTrue("Expected one row: " + sql, rs.next());
             Object o = rs.getObject(1);
             QueryTestCase.assertFalse("Expected one row: " + sql, rs.next());
-            assertSqlEquals(_value,o);
+            Object value = null==_call ? _value : _call.call();
+            assertSqlEquals(value,o);
         }
 
         public void assertSqlEquals(Object a, Object b)
@@ -1115,19 +1128,41 @@ public class Query
         new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),
         new MethodSqlTest("SELECT CAST(1 AS VARCHAR) ", JdbcType.VARCHAR, '1'),
         new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
-        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT concat('concat', concat('in',concat('the','hat'))) FROM R WHERE rowid=1", JdbcType.INTEGER, "concatinthehat"),
+        new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, new Callable(){
+            @Override
+            public Object call() throws Exception
+            {
+                return new ActionURL().getContextPath();
+            }
+        }),
         new MethodSqlTest("SELECT CONVERT(123,VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
             // cos, cot, curdate,
 //        new MethodSqlTest("SELECT DAYOFMONTH(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
 //        new MethodSqlTest("SELECT DAYOFWEEK(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
 //        new MethodSqlTest("SELECT DAYOFYEAR(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
             // degrees, exp, floor, hour
+        new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, new Callable(){
+            @Override
+            public Object call() throws Exception
+            {
+                return JunitUtil.getTestContainer().getName();
+            }
+        }),
+        new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, new Callable(){
+            @Override
+            public Object call() throws Exception
+            {
+                return JunitUtil.getTestContainer().getPath();
+            }
+        }),
         new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT ISEQUAL(1, 1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT ISEQUAL(1, 2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false),
+            // javaConstant() always return VARCHAR currently, would like to fix
+        new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit tests
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED',2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -1140,7 +1175,22 @@ public class Query
         new MethodSqlTest("SELECT STARTSWITH('FRED ','FR')", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT STARTSWITH('FRED ','Z')", JdbcType.BOOLEAN, false),
         new MethodSqlTest("SELECT SUBSTRING('FRED ',2,3)", JdbcType.VARCHAR, "RED"),
-            // tan, timestampadd, userid, week year
+            // tan, timestampadd, week year
+        new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, new Callable(){
+            @Override
+            public Object call() throws Exception
+            {
+                return TestContext.get().getUser().getUserId();
+            }
+
+        }),
+            new MethodSqlTest("SELECT username()", JdbcType.INTEGER, new Callable(){
+                @Override
+                public Object call() throws Exception
+                {
+                    return TestContext.get().getUser().getDisplayName(TestContext.get().getUser());
+                }
+            }),
         new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
         new MethodSqlTest("SELECT UPPER('fred')", JdbcType.VARCHAR, "FRED"),
 
