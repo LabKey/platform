@@ -16,7 +16,6 @@
 
 package org.labkey.authentication.opensso;
 
-import com.iplanet.am.util.SystemProperties;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 
@@ -27,6 +26,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
+@Deprecated
+// No longer used or supported, but may be useful for
 public class OpenSSOManager
 {
     private static final OpenSSOManager _instance = new OpenSSOManager();
@@ -41,7 +42,7 @@ public class OpenSSOManager
     {
         Properties props = loadProps("AMClient.properties");
         replaceDefaults(props, getSystemSettings());  // System settings will replace values in static properties file
-        SystemProperties.initializeProperties(props);
+//        SystemProperties.initializeProperties(props);
     }
 
 

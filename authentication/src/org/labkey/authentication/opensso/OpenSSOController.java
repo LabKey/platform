@@ -31,6 +31,8 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
+// No longer used, but might be helpful when implementing future SSO authentication providers (e.g., OpenID)
 public class OpenSSOController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OpenSSOController.class);

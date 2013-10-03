@@ -16,9 +16,6 @@
 
 package org.labkey.authentication.opensso;
 
-import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOToken;
-import com.iplanet.sso.SSOTokenManager;
 import org.apache.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
@@ -35,6 +32,9 @@ import javax.servlet.http.HttpServletResponse;
  * Date: Oct 10, 2007
  * Time: 7:01:10 PM
  */
+
+@Deprecated
+// No longer supported, no longer works. However, this code is a useful model for future SSO providers (e.g., OpenID).
 public class OpenSSOProvider implements AuthenticationProvider.RequestAuthenticationProvider
 {
     private static final Logger _log = Logger.getLogger(OpenSSOProvider.class);
@@ -72,25 +72,25 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
     @Override
     public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
     {
-        try
-        {
-            SSOTokenManager manager = SSOTokenManager.getInstance();
-            SSOToken token = manager.createSSOToken(request);
-
-            if (SSOTokenManager.getInstance().isValidToken(token))
-            {
-                String principalName = token.getPrincipal().getName();
-                int i = principalName.indexOf(',');
-                String email = principalName.substring(3, i);
-                return AuthenticationResponse.createSuccessResponse(new ValidEmail(email));
-            }
-
-            // TODO: Need special failure response for this case?
-        }
-        catch (SSOException e)
-        {
-            _log.debug("Invalid, expired, or missing OpenSSO token", e);
-        }
+//        try
+//        {
+//            SSOTokenManager manager = SSOTokenManager.getInstance();
+//            SSOToken token = manager.createSSOToken(request);
+//
+//            if (SSOTokenManager.getInstance().isValidToken(token))
+//            {
+//                String principalName = token.getPrincipal().getName();
+//                int i = principalName.indexOf(',');
+//                String email = principalName.substring(3, i);
+//                return AuthenticationResponse.createSuccessResponse(new ValidEmail(email));
+//            }
+//
+//            // TODO: Need special failure response for this case?
+//        }
+//        catch (SSOException e)
+//        {
+//            _log.debug("Invalid, expired, or missing OpenSSO token", e);
+//        }
 
         String referrerPrefix = OpenSSOManager.get().getReferrerPrefix();
 
@@ -118,15 +118,15 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
 
     public void logout(HttpServletRequest request)
     {
-        try
-        {
-            SSOTokenManager manager = SSOTokenManager.getInstance();
-            SSOToken token = manager.createSSOToken(request);
-            manager.destroyToken(token);
-        }
-        catch (SSOException e)
-        {
-            // Ignore
-        }
+//        try
+//        {
+//            SSOTokenManager manager = SSOTokenManager.getInstance();
+//            SSOToken token = manager.createSSOToken(request);
+//            manager.destroyToken(token);
+//        }
+//        catch (SSOException e)
+//        {
+//            // Ignore
+//        }
     }
 }

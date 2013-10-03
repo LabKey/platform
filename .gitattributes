@@ -207,8 +207,6 @@ audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
 authentication/Authentication.iml -text
-authentication/lib/amclientsdk.jar -text
-authentication/lib/opensso-src.zip -text
 authentication/module.properties -text
 authentication/src/META-INF/authentication/jars.txt -text
 authentication/src/org/labkey/authentication/AuthenticationModule.java -text
@@ -217,11 +215,9 @@ authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.jav
 authentication/src/org/labkey/authentication/ldap/LdapController.java -text
 authentication/src/org/labkey/authentication/ldap/configure.jsp -text
 authentication/src/org/labkey/authentication/ldap/testLdap.jsp -text
-authentication/src/org/labkey/authentication/opensso/AMClient.properties -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOController.java -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOManager.java -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOProvider.java -text
-authentication/src/org/labkey/authentication/opensso/clientDefault.properties -text
 authentication/src/org/labkey/authentication/opensso/view/configure.jsp -text
 authentication/src/org/labkey/authentication/opensso/view/currentSettings.jsp -text
 authentication/src/org/labkey/authentication/opensso/view/referrerPrefix.jsp -text

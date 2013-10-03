@@ -21,10 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.AuthenticationManager.*;
+import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.authentication.opensso.OpenSSOController;
-import org.labkey.authentication.opensso.OpenSSOProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
 
@@ -58,9 +56,9 @@ public class AuthenticationModule extends DefaultModule
 
     protected void init()
     {
-        addController("opensso", OpenSSOController.class);
+//        addController("opensso", OpenSSOController.class);
         addController("ldap", LdapController.class);
-        AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);
+//        AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
     }
 
