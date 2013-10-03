@@ -44,10 +44,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: matthewb
@@ -92,7 +89,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo createTable(String name)
     {
         if (USERS_TABLE_NAME.equalsIgnoreCase(name))
-            return getUserTable();
+            return getUsers();
         if (SITE_USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getSiteUsers();
         if (PRINCIPALS_TABLE_NAME.equalsIgnoreCase(name))
@@ -179,13 +176,24 @@ public class CoreQuerySchema extends UserSchema
 
     public TableInfo getSiteUsers()
     {
-        FilteredTable users = getUserTable();
+        FilteredTable users = _getUserTable();
 
-        //only site admins are allowed to see all site users,
-        //so if the user is not a site admin, add a filter that will
-        //generate an empty set (CONSIDER: should we throw an exception here instead?)
-        if (!getUser().isSiteAdmin())
-            addNullSetFilter(users);
+        // only site admins are allowed to see all site users, if the
+        // user is a guest, return an empty set, else just filter to
+        // the logged in user, so the user can at least see and update their
+        // account info.
+
+        User user = getUser();
+        if (!user.isSiteAdmin())
+        {
+            if (!user.isGuest())
+            {
+                ColumnInfo userid = users.getRealTable().getColumn("userid");
+                users.addInClause(userid, Collections.singletonList(user.getUserId()));
+            }
+            else
+                addNullSetFilter(users);
+        }
         users.setName("SiteUsers");
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
         " The data in this table are available only to site administrators. All other users will see no rows.");
@@ -306,7 +314,7 @@ public class CoreQuerySchema extends UserSchema
         if (getContainer().isRoot())
             return getSiteUsers();
 
-        FilteredTable users = getUserTable();
+        FilteredTable users = _getUserTable();
 
         //if the user is a guest, add a filter to produce a null set
         if (getUser().isGuest())
@@ -390,14 +398,10 @@ public class CoreQuerySchema extends UserSchema
         return result;
     }
 
-
-
-    protected FilteredTable getUserTable()
+    private FilteredTable _getUserTable()
     {
         return new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME)).init();
     }
-
-
 
     protected TableInfo getUsersAndGroupsTable()
     {

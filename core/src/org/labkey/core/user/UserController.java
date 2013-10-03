@@ -306,7 +306,7 @@ public class UserController extends SpringActionController
 
         ActionURL editURL = new ActionURL(ShowUpdateAction.class, getContainer());
         editURL.addParameter(QueryParam.schemaName.toString(), "core");
-        editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+        editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
         editURL.addParameter(QueryParam.srcURL, currentURL.getLocalURIString());
 
@@ -616,19 +616,22 @@ public class UserController extends SpringActionController
 
         protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
-            QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
+            CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
+            QuerySettings settings = schema.getSettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("email");
-            SimpleFilter filter = authorizeAndGetProjectMemberFilter();
+
             if (!form.isInactive())
-                filter.addCondition("Active", true); //filter out active users by default
-            settings.getBaseFilter().addAllClauses(filter);
+            {
+                //filter out inactive users by default
+                settings.getBaseFilter().addAllClauses(new SimpleFilter(FieldKey.fromString("Active"), true));
+            }
 
             final boolean forExport2 = forExport;
             final boolean isSiteAdmin = getUser().isSiteAdmin();
             final boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
 
-            QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings, errors)
+            QueryView queryView = new QueryView(schema, settings, errors)
             {
                 @Override
                 protected void setupDataView(DataView ret)
@@ -761,49 +764,6 @@ public class UserController extends SpringActionController
     }
 
 
-    private SimpleFilter authorizeAndGetProjectMemberFilter() throws UnauthorizedException
-    {
-        return authorizeAndGetProjectMemberFilter("UserId");
-    }
-
-
-    private SimpleFilter authorizeAndGetProjectMemberFilter(String userIdColumnName) throws UnauthorizedException
-    {
-        Container c = getContainer();
-        SimpleFilter filter = new SimpleFilter();
-
-        if (c.isRoot())
-        {
-            if (!getUser().isSiteAdmin())
-                throw new UnauthorizedException();
-        }
-        else
-        {
-            SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
-
-            final FieldKey userIdColumnFieldKey = new FieldKey(null, userIdColumnName);
-            filter.addClause(new SimpleFilter.SQLClause(sql.getSQL(), sql.getParamsArray(), userIdColumnFieldKey)
-            {
-                @Override
-                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
-                {
-                    ColumnInfo col = columnMap.get(userIdColumnFieldKey);
-
-                    // NOTE: Ideally we would use col.getValueSql() here instead
-                    SQLFragment sql = new SQLFragment();
-                    sql.append(col.getAlias());
-                    sql.append(" IN (SELECT members.UserId ");
-                    sql.append(super.toSQLFragment(columnMap, dialect));
-                    sql.append(")");
-                    return sql;
-                }
-            });
-        }
-
-        return filter;
-    }
-
-
     @RequiresPermissionClass(AdminPermission.class)
     public class ShowUserHistoryAction extends SimpleViewAction
     {
@@ -817,6 +777,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+
             if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(UserManager.USER_AUDIT_EVENT))
             {
                 UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
@@ -824,7 +785,7 @@ public class UserController extends SpringActionController
                 {
                     QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                    SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter(UserAuditProvider.COLUMN_NAME_USER);
+                    SimpleFilter projectMemberFilter = UsersTable.authorizeAndGetProjectMemberFilter(getContainer(), getUser(), UserAuditProvider.COLUMN_NAME_USER);
 
                     settings.setBaseFilter(projectMemberFilter);
                     settings.setQueryName(UserManager.USER_AUDIT_EVENT);
@@ -834,7 +795,7 @@ public class UserController extends SpringActionController
             }
             else
             {
-                SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter("IntKey1");
+                SimpleFilter projectMemberFilter = UsersTable.authorizeAndGetProjectMemberFilter(getContainer(), getUser(), "IntKey1");
                 return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext(), projectMemberFilter);
             }
         }
@@ -1434,7 +1395,7 @@ public class UserController extends SpringActionController
             }
 
             CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
-            QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.USERS_TABLE_NAME), getViewContext());
+            QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.SITE_USERS_TABLE_NAME), getViewContext());
             DetailsView detailsView = new DetailsView(quf);
             DataRegion rgn = detailsView.getDataRegion();
 
