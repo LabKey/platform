@@ -1258,6 +1258,9 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    // Something to think about: This forces all web parts that want to use GetWebPartAction as the method of
+    // being served up to be readable in the current container. Might be worth delegating permissions to the
+    // webparts and defaulting to a state of ReadPermission.
     @RequiresPermissionClass(ReadPermission.class)
     public class GetWebPartAction extends ApiAction<GetWebPartForm>
     {
@@ -1308,6 +1311,31 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission
+    public class GetNavigationPartAction extends ApiAction<GetWebPartForm>
+    {
+        String _webPartName;
+
+        @Override
+        public void validateForm(GetWebPartForm form, Errors errors)
+        {
+            HttpServletRequest request = getViewContext().getRequest();
+            _webPartName = request.getParameter(GetWebPartAction.PARAM_WEBPART);
+
+            if (null == _webPartName || (!_webPartName.equals("foldernav") && !_webPartName.equals("projectnav") && _webPartName.equals("betanav")))
+                errors.reject("You must provide a valid navigation part value for the " + GetWebPartAction.PARAM_WEBPART + " parameter!");
+        }
+
+        @Override
+        public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
+        {
+            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(_webPartName);
+            Portal.WebPart part = factory.createWebPart();
+            WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
+
+            return view.renderToApiResponse();
+        }
+    }
 
     public static class GetContainersForm
     {
