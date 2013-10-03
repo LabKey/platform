@@ -238,14 +238,20 @@
 
             render : function() {
                 if (!this.rendered) {
-                    var p = new LABKEY.WebPart({
+                    var partConfig = {
                         renderTo : this.popup.id,
                         partName : this.webPartName,
                         frame    : 'none',
                         partConfig : this.partConfig,
                         failure  : function(err) {if (window.console && window.console.log) { window.console.log(err);}},
                         scope    : this
-                    });
+                    };
+
+                    if (this.webPartUrl) {
+                        partConfig.partUrl = this.webPartUrl;
+                    }
+
+                    var p = new LABKEY.WebPart(partConfig);
                     p.render();
                     this.rendered = true;
                 }
@@ -280,12 +286,12 @@
             }
         });
 
-        HoverNavigation._project = new HoverNavigation({hoverElem : '<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>', webPartName : '<%=isShowExperimentalNavigation ? "betanav" : "projectnav"%>' });
+        HoverNavigation._project = new HoverNavigation({hoverElem : '<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>', webPartName : '<%=isShowExperimentalNavigation ? "betanav" : "projectnav"%>', webPartUrl: LABKEY.ActionURL.buildURL('project', 'getNavigationPart')});
 <%
     if (showFolderNavigation)
     {
 %>
-        HoverNavigation._folder = new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav'});
+        HoverNavigation._folder = new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav', webPartUrl: LABKEY.ActionURL.buildURL('project', 'getNavigationPart')});
 <%
     }
 

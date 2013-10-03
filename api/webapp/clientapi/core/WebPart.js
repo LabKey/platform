@@ -119,6 +119,7 @@ LABKEY.WebPart = function(config)
     var _containerPath = config.containerPath;
     var _scope = config.scope || this;
     var _suppressRenderErrors = config.supressRenderErrors;
+    var _partUrl = config.partUrl || LABKEY.ActionURL.buildURL('project', 'getWebPart', _containerPath);
 
     //validate config
     if(!_partName)
@@ -133,7 +134,7 @@ LABKEY.WebPart = function(config)
     }
 
     // private methods:
-    var handleLoadError = function(response, partConfig)
+    var handleLoadError = function(response)
     {
         var msg = "Error getting the web part: ";
         if (response.status == 0)
@@ -189,11 +190,11 @@ LABKEY.WebPart = function(config)
     // public methods:
     /** @scope LABKEY.WebPart.prototype */
     return {
-	  /**
- 	  *   Renders the WebPart to the div element specified in the configuration settings.
-       * @returns A transaction id for the async request that can be used to cancel the request
-       * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.Ajax" target="_blank">Ext.Ajax.abort()</a>).
-	  */
+	   /**
+ 	    * Renders the WebPart to the div element specified in the configuration settings.
+        * @returns A transaction id for the async request that can be used to cancel the request
+        * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.Ajax" target="_blank">Ext.Ajax.abort()</a>).
+	    */
         render : function()
         {
             if(!_partConfig)
@@ -223,7 +224,7 @@ LABKEY.WebPart = function(config)
             delete _partConfig["_dc"];
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("project", "getWebPart", _containerPath),
+                url: _partUrl,
                 success: renderPart,
                 failure: _errorCallback,
                 method: 'GET',
