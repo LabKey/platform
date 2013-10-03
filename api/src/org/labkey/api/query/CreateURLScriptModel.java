@@ -82,16 +82,16 @@ public class CreateURLScriptModel extends ExportScriptModel
 
         ContainerFilter containerFilter = getContainerFilter();
         if (null != containerFilter && null != containerFilter.getType())
-            url.addParameter("containerFilterName", containerFilter.getType().name());
+            url.addParameter("query.containerFilterName", containerFilter.getType().name());
 
         if (null != getViewName())
-            url.addParameter("viewName", getViewName());
+            url.addParameter("query.viewName", getViewName());
 
         url.addParameter("query.columns", getColumns());
 
         String sort = getSort();
         if (!StringUtils.isEmpty(sort))
-            url.addParameter("sort", sort);
+            url.addParameter("query.sort", sort);
 
         return AppProps.getInstance().getBaseServerUrl() + url.toString() + getFilters();
     }
