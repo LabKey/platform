@@ -22,23 +22,25 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.pipeline.PipelineProvider;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -57,6 +59,17 @@ import java.util.Map;
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
+    /** Level of support provided for re running (starting from an existing run and creating a new run to take its place */
+    public enum ReRunSupport
+    {
+        /** No form of re run is supported */
+        None,
+        /** Assay offers re run, but always deletes the old version of the run */
+        ReRunAndDelete,
+        /** Assay offers re run, and retains the original version of the run */
+        ReRunAndReplace
+    }
+
     AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy);
 
     /** Get a schema for Batch, Run, Results, and any additional tables. */
@@ -180,7 +193,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean isEditableRuns(ExpProtocol protocol);
 
     boolean supportsBackgroundUpload();
-    boolean supportsReRun();
+    /** What level of re run for assay data, if any, is supported */
+    ReRunSupport getReRunSupport();
     void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException;
     boolean isBackgroundUpload(ExpProtocol protocol);
 

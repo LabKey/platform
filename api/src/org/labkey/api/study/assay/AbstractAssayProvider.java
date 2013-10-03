@@ -1185,9 +1185,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public boolean supportsReRun()
+    public ReRunSupport getReRunSupport()
     {
-        return false;
+        return ReRunSupport.None;
     }
 
     @Override

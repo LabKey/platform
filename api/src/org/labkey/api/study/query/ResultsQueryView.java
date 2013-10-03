@@ -143,7 +143,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
                 if (runId != null && getViewContext().hasPermission(InsertPermission.class) &&
                         getViewContext().hasPermission(DeletePermission.class) &&
-                        _provider.supportsReRun())
+                        _provider.getReRunSupport() != AssayProvider.ReRunSupport.None)
                 {
                     try
                     {
@@ -160,7 +160,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 }
             }
 
-            if (_provider != null && _provider.supportsReRun())
+            if (_provider != null && _provider.getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
                 MenuButton button = new MenuButton("Replaced Filter");
                 for (ReplacedRunFilter.Type type : ReplacedRunFilter.Type.values())

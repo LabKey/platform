@@ -58,7 +58,7 @@ public class CustomFolderType implements FolderType
 
     public String getDescription()
     {
-        return "Create a tab for each LabKey module you select. Used in older LabKey installations. Note that any LabKey module can also be enabled in any folder type via Folder Management.";
+        return "Create a tab for each LabKey module you select. Used in older LabKey installations. Note that any LabKey module can also be enabled in any folder type.";
     }
 
     public List<Portal.WebPart> getRequiredWebParts()

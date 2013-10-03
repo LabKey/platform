@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.view.ActionURL;
@@ -88,18 +89,18 @@ public class RunListQueryView extends ExperimentRunListView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-        if (_schema.getProvider().supportsReRun())
+        if (_schema.getProvider().getReRunSupport() != AssayProvider.ReRunSupport.None && getViewContext().hasPermission(InsertPermission.class) && getViewContext().hasPermission(DeletePermission.class))
         {
-            if (getViewContext().hasPermission(InsertPermission.class) && getViewContext().hasPermission(DeletePermission.class))
-            {
-                ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
-                reRunURL.addParameter("rowId", _schema.getProtocol().getRowId());
-                ActionButton button = new ActionButton("Re-import run", reRunURL);
-                button.setActionType(ActionButton.Action.POST);
-                button.setRequiresSelection(true, 1, 1);
-                bar.add(button);
-            }
+            ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
+            reRunURL.addParameter("rowId", _schema.getProtocol().getRowId());
+            ActionButton button = new ActionButton("Re-import run", reRunURL);
+            button.setActionType(ActionButton.Action.POST);
+            button.setRequiresSelection(true, 1, 1);
+            bar.add(button);
+        }
 
+        if (_schema.getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
+        {
             MenuButton button = new MenuButton("Replaced Filter");
             for (ReplacedRunFilter.Type type : ReplacedRunFilter.Type.values())
             {

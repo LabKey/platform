@@ -46,7 +46,7 @@ public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
             throw new NotFoundException("No run selected");
         }
         AssayProvider provider = form.getProvider();
-        if (!provider.supportsReRun())
+        if (provider.getReRunSupport() == AssayProvider.ReRunSupport.None)
         {
             throw new NotFoundException("Unable to reimport a run for assays of type " + provider.getName());
         }

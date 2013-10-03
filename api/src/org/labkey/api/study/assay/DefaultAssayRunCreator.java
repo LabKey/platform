@@ -292,7 +292,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
-            if (context.getReRunId() != null && getProvider().supportsReRun())
+            if (context.getReRunId() != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
                 final ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
                 if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
