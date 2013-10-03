@@ -774,6 +774,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     applyContextFilters: true,
 
+    /**
+     * Logically convert filters to try and optimize the query on the server.
+     * (e.g. using NOT IN when less than half the available values are checked)
+     */
     filterOptimization: true,
 
     emptyDisplayValue: '[Blank]',
@@ -862,8 +866,12 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             }
             else if (this.filterOptimization && selected.length > unselected.length) {
                 // Do the negation
-                if (unselected.length == 1)
-                    filter = LABKEY.Filter.create(columnName, unselected[0].get('value'), LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING);
+                if (unselected.length == 1) {
+                    var val = unselected[0].get('value');
+
+                    // 18716: Check if 'unselected' contains empty value
+                    filter = LABKEY.Filter.create(columnName, val, (val == "" ? LABKEY.Filter.Types.NONBLANK : LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING));
+                }
                 else
                     filter = LABKEY.Filter.create(columnName, this.delimitValues(unselected), LABKEY.Filter.Types.NOT_IN);
             }
