@@ -1835,11 +1835,16 @@ public class SecurityManager
 
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
     {
+        return getGroupMemberNamesAndIds(path, false);
+    }
+
+    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path, boolean includeInactive)
+    {
         Integer groupId = SecurityManager.getGroupId(path);
         if (groupId == null)
             return Collections.emptyList();
         else
-            return getGroupMemberNamesAndIds(groupId, false);
+            return getGroupMemberNamesAndIds(groupId, includeInactive);
     }
     
 
