@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import com.google.common.base.Strings;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -497,17 +498,19 @@ public class DomainUtil
 
         if (from.getLookupQuery() != null)
         {
-            String container = from.getLookupContainer();
+            String containerId = from.getLookupContainer();
             Container c = null;
-            if (container != null)
+            if (Strings.isNullOrEmpty(containerId))
+                c = to.getContainer();              // null or empty; use current container
+            else if (containerId != null)
             {
-                if (GUID.isGUID(container))
-                    c = ContainerManager.getForId(container);
+                if (GUID.isGUID(containerId))
+                    c = ContainerManager.getForId(containerId);
                 if (null == c)
-                    c = ContainerManager.getForPath(container);
+                    c = ContainerManager.getForPath(containerId);
                 if (c == null)
                 {
-                    String msg = "Container not found: " + container;
+                    String msg = "Container not found: " + containerId;
                     if (errors == null)
                         throw new RuntimeException(msg);
                     errors.add(msg);
