@@ -131,6 +131,7 @@ public class ListDefinitionImpl implements ListDefinition
         return ContainerManager.getForId(_def.getContainerId());
     }
 
+    @Nullable
     public Domain getDomain()
     {
         if (_domain == null)
@@ -507,10 +508,6 @@ public class ListDefinitionImpl implements ListDefinition
                 domain.delete(user);
 
                 transaction.commit();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
             }
         }
     }

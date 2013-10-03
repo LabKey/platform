@@ -455,7 +455,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         if (s.isTransactionActive())
         {
-            s.addCommitTask(new ItemRunnable(i));
+            s.addCommitTask(new ItemRunnable(i), DbScope.CommitTaskOption.POSTCOMMIT);
             return;
         }
 

@@ -16,11 +16,13 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -70,15 +72,21 @@ public class ListQuerySchema extends UserSchema
         return ListService.get().getLists(getContainer()).keySet();
     }
 
+    @Nullable
     public TableInfo createTable(String name)
     {
         ListDefinition def = ListService.get().getLists(getContainer()).get(name);
         if (def != null)
         {
             // Only for supporting migration. These should not be handed out after migration to hard tables.
-            if (def.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
+            Domain domain = def.getDomain();
+            if (domain != null)
             {
-                return new OntologyListTable(this, def);
+                if (domain.getDomainKind() != null)
+                {
+                    if (domain.getDomainKind().getClass().equals(ListDomainType.class))
+                        return new OntologyListTable(this, def);
+                }
             }
             return new ListTable(this, def);
         }

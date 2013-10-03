@@ -292,7 +292,7 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     task.addRunnable(r, p);
                 }
-            });
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
         else
         {

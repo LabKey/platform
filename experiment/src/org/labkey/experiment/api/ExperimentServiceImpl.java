@@ -1557,7 +1557,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // gets repopulated by another thread before then
                     AssayService.get().clearProtocolCache();
                 }
-            });
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
 
             transaction.commit();
         }
@@ -2385,7 +2385,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // gets repopulated by another thread before then
                     AssayService.get().clearProtocolCache();
                 }
-            });
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
 
             transaction.commit();
             return result;
