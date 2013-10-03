@@ -698,20 +698,25 @@ public class SpecimenApiController extends BaseStudyController
 
             SampleManager sampleManager = SampleManager.getInstance();
             List<Map<String, Object>> groupingsJSON = new ArrayList<>();
+
+            Map<String, Map<String, Object>> groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), groupings);
             for (String[] grouping: groupings)
             {
                 if (null != StringUtils.trimToNull(grouping[0]))        // Do nothing if no columns were specified
                 {
-                    Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), grouping);
+                    Map<String, Object> groupingJSON = groupingMap.get(grouping[0]);
                     groupingsJSON.add(groupingJSON);
                 }
             }
             if (groupingsJSON.isEmpty())
             {
                 // no groupings; create default grouping
+                groupings = new ArrayList<>(1);
                 String[] dummyGrouping = new String[1];
                 dummyGrouping[0] = "Primary Type";
-                Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), dummyGrouping);
+                groupings.add(dummyGrouping);
+                groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), groupings);
+                Map<String, Object> groupingJSON = groupingMap.get(dummyGrouping[0]);
                 groupingJSON.put("dummy", true);
                 groupingsJSON.add(groupingJSON);
             }
