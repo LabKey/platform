@@ -106,7 +106,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                     {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this, tooltip: "Move the selected folder" },
                     {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Rename the selected folder" },
                     {text : 'Revert',               itemId : 'revert',  handler : function() { this.action('revert'); },  scope : this,
-                        tooltip: "For a tab folder, revert to the original folder type; for a folder with children tab folders, revert each child tab folder to its original folder type"
+                        tooltip: "For a tab folder, revert to the original folder type; for a folder with child tab folders, revert each child tab folder to its original folder type"
                     }
                 ]
             }];
