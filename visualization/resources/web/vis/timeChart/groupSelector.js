@@ -55,7 +55,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
-            width: 210,
+            padding: 3,
             value: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
         });
 

@@ -805,6 +805,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
                     hideLabel: true,
                     hidden: true,
+                    padding: 3,
                     value: 'Selecting 5 values by default',
                     style: 'font-size:75%;color:red;'
                 });
