@@ -28,7 +28,6 @@ import org.labkey.api.resource.ClassResourceCollection;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
 

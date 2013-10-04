@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -30,6 +32,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,7 +152,13 @@ public class TidyUtil
         {
             // parse wants to use streams
             tidy.setErrout(new PrintWriter(err));
-            Document doc = tidy.parseDOM(new ByteArrayInputStream(stripped.toString().getBytes("UTF-8")), null);
+
+            String strippedString = stripped.toString().trim();
+
+            if (strippedString.isEmpty())
+                return null;
+
+            Document doc = tidy.parseDOM(new ByteArrayInputStream(strippedString.getBytes("UTF-8")), null);
 
             // fix up scripts
             if (null != doc && null != doc.getDocumentElement())
@@ -200,5 +209,29 @@ public class TidyUtil
 
         if (errors.isEmpty() && errorString.contains(genericError))
             errors.add(genericError);
+    }
+
+
+    // TODO: Add many more test cases... jtidy behaves very badly
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            Collection<String> errors = new LinkedList<>();
+
+            // See #18726
+            convertHtmlToDocument("", true, errors);
+            convertHtmlToDocument("", false, errors);
+
+            // TODO: Fix these cases
+//            tidyHTML("", true, errors);
+//            tidyHTML("", false, errors);
+//            tidyXML("", errors);
+
+            // TODO: I don't think these are fixable until we ditch jtidy, see #18725
+//            tidyHTML("<!-- -->", true, errors);
+//            tidyHTML("<!-- -->", false, errors);
+        }
     }
 }
