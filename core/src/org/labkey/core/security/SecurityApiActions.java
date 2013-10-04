@@ -824,6 +824,7 @@ public class SecurityApiActions
             event.setContainerId(c.getId());
             event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
             event.setCreatedBy(getViewContext().getUser());
+            event.setIntKey1(principal.getUserId());
             event.setEntityId(resource.getResourceId());
             event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
             AuditLogService.get().addEvent(event);

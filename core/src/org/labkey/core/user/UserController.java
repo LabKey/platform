@@ -20,65 +20,17 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UrlColumn;
-import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.UserSchemaAction;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.MemberType;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.query.*;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.SecurityUrls;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -89,37 +41,12 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.TermsOfUseException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
-import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.query.GroupAuditProvider;
-import org.labkey.core.query.GroupAuditViewFactory;
-import org.labkey.core.query.UserAuditProvider;
-import org.labkey.core.query.UserAuditViewFactory;
-import org.labkey.core.query.UsersDomainKind;
-import org.labkey.core.query.UsersTable;
+import org.labkey.core.query.*;
 import org.labkey.core.security.SecurityController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -127,15 +54,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public class UserController extends SpringActionController
 {
@@ -1230,10 +1149,15 @@ public class UserController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UserAccessAction extends SimpleViewAction<UserAccessForm>
+    public class UserAccessAction extends QueryViewAction<UserAccessForm, QueryView>
     {
         private boolean _showNavTrail;
         private Integer _userId;
+
+        public UserAccessAction()
+        {
+            super(UserAccessForm.class);
+        }
 
         @Override
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -1244,7 +1168,8 @@ public class UserController extends SpringActionController
             requiresProjectOrSiteAdmin();
         }
 
-        public ModelAndView getView(UserAccessForm form, BindException errors) throws Exception
+        @Override
+        protected ModelAndView getHtmlView(UserAccessForm form, BindException errors) throws Exception
         {
             String email = form.getNewEmail();
 
@@ -1295,21 +1220,7 @@ public class UserController extends SpringActionController
             details.setActive(requestedUser.isActive());
             JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/userAccess.jsp", details);
             view.addView(accessView);
-
-            if (c.isRoot())
-            {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
-                    view.addView(GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors));
-                else
-                    view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
-            }
-            else
-            {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
-                    view.addView(GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors));
-                else
-                    view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId()));
-            }
+            view.addView(createQueryView(form, errors, false, QueryView.DATAREGIONNAME_DEFAULT));
 
             if (form.getRenderInHomeTemplate())
             {
@@ -1319,6 +1230,25 @@ public class UserController extends SpringActionController
             else
             {
                 return new PrintTemplate(view);
+            }
+        }
+
+        @Override
+        protected QueryView createQueryView(UserAccessForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            if (getContainer().isRoot())
+            {
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
+                    return GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors);
+                else
+                    return GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId());
+            }
+            else
+            {
+                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
+                    return GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors);
+                else
+                    return GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId());
             }
         }
 
@@ -1734,7 +1664,6 @@ public class UserController extends SpringActionController
         private int _userId;
         private String _newEmail;
         private String _message = null;
-        private boolean _renderInHomeTemplate = true;
 
         public String getNewEmail()
         {
@@ -1753,6 +1682,45 @@ public class UserController extends SpringActionController
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
+        public void setUserId(int userId)
+        {
+            _userId = userId;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+    public static class UserAccessForm extends QueryViewAction.QueryExportForm
+    {
+        private boolean _showAll = false;
+        private int _userId;
+        private String _newEmail;
+        private String _message = null;
+        private boolean _renderInHomeTemplate = true;
+
+        public String getNewEmail()
+        {
+            return _newEmail;
+        }
+
+        public void setNewEmail(String newEmail)
+        {
+            _newEmail = newEmail;
+        }
+
+        public int getUserId()
+        {
+            return _userId;
+        }
+
         public void setUserId(int userId)
         {
             _userId = userId;
@@ -1777,11 +1745,6 @@ public class UserController extends SpringActionController
         {
             _message = message;
         }
-    }
-
-    public static class UserAccessForm extends UserForm
-    {
-        private boolean _showAll = false;
 
         public boolean getShowAll()
         {

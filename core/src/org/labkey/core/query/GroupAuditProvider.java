@@ -23,14 +23,8 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.*;
 import org.labkey.api.data.PropertyStorageSpec.Index;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -185,7 +179,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
 
-        return createUserView(context, filter, "Access Modification History:", columns, errors);
+        return createUserView(context, filter, "Access Modification History:", columns, errors, ContainerFilter.Type.AllFolders);
     }
 
     @Nullable
@@ -201,11 +195,11 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
 
-        return createUserView(context, filter, "Access Modification History For This Project:", columns, errors);
+        return createUserView(context, filter, "Access Modification History For This Project:", columns, errors, null);
     }
 
     @Nullable
-    private static QueryView createUserView(ViewContext context, SimpleFilter filter, String title, List<FieldKey> columns, BindException errors)
+    private static QueryView createUserView(ViewContext context, SimpleFilter filter, String title, List<FieldKey> columns, BindException errors, ContainerFilter.Type filterType)
     {
         if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
         {
@@ -217,6 +211,10 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 settings.setBaseFilter(filter);
                 settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
                 settings.setFieldKeys(columns);
+
+                if (filterType != null)
+                    settings.setContainerFilterName(filterType.name());
+
                 QueryView auditView = schema.createView(context, settings, errors);
                 auditView.setTitle(title);
 
