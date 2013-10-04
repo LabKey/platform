@@ -376,4 +376,10 @@ public class MockModule implements Module
     public void clearResourceCache()
     {
     }
+
+    @Override
+    public String getResourcePath()
+    {
+        return null;
+    }
 }

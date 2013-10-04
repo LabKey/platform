@@ -135,6 +135,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
+    protected String _resourcePath = null;
 
     protected DefaultModule()
     {
@@ -259,9 +260,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected abstract void doStartup(ModuleContext moduleContext);
 
-    protected String getResourcePath()
+    @Override
+    public String getResourcePath()
     {
-        return "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
+        return _resourcePath;
+    }
+
+    // resourcePath can optionally be set in the module.properties / xml files
+    public void setResourcePath(String resourcePath)
+    {
+        // If the resourcePath was set in the module.properties or xml file, override the path derived from the
+        // module class.
+        if (StringUtils.isNotEmpty(resourcePath))
+        {
+            _resourcePath = resourcePath;
+        }
+        else _resourcePath = "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
     protected void addController(String primaryName, Class<? extends Controller> cl, String... aliases)
@@ -769,7 +783,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         for (String script : dir.listNames())
         {
             // TODO: Ignore case to work around EHR case inconsistencies
-            if (StringUtils.endsWithIgnoreCase(script, ".sql") && StringUtils.startsWithIgnoreCase(script, schema.getDisplayName() + "-"))
+            if ( (script.endsWith(".sql") || script.endsWith(".jsp"))  && StringUtils.startsWithIgnoreCase(script, schema.getDisplayName() + "-"))
                 fileNames.add(script);
         }
 

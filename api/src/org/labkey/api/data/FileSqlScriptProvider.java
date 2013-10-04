@@ -16,13 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -30,14 +30,17 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.JspTemplate;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -109,7 +112,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         Returns set of filenames in the specified directory matching one of the following patterns:
 
             schema == null          *.sql
-            schema == <schema>      <schema display name>-*.sql
+            schema == <schema>      <schema display name>-*.sql, <schema display name>-*.jsp
 
         Returned set can be empty (i.e., schemas that have no scripts)
     */
@@ -138,24 +141,39 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         String schemaName = schema.getDisplayName();
         SqlScript script = new FileSqlScript(this, schema, schemaName + "-" + suffix, schemaName);
 
+        // Look for a .sql script first. If there isn't one, check for a jsp file.
         if (script.getContents().isEmpty())
-            return null;
-        else
-            return script;
+        {
+            script = new FileSqlScript(this, schema, schemaName + "-" + suffix.replace(".sql",".jsp"), schemaName);
+            if (script.getContents().isEmpty())
+                return null;
+        }
+
+        return script;
     }
 
-    private String getContents(SqlDialect dialect, String filename) throws SqlScriptException
+    private String getContents(DbSchema schema, String filename) throws SqlScriptException
     {
         try
         {
-            Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append(filename);
+            Path path = Path.parse(_module.getSqlScriptsPath(schema.getSqlDialect())).append(filename);
             Resource r = _module.getModuleResource(path);
             if (null == r || !r.isFile())
                 throw new SqlScriptException("File not found: " + path, filename);
 
-            return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
-        }
-        catch (NullPointerException | IOException e)
+            if (filename.endsWith(".sql"))
+            {
+                return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
+            }
+            else // jsp, the only other format allowed by FileSqlScript
+            {
+                ScriptContext ctx = new ScriptContext(schema);
+
+                JspTemplate<ScriptContext> jspQuery = new JspTemplate<>(_module.getResourcePath() + "/" + path.toString(), ctx);
+                return jspQuery.render();
+            }
+         }
+        catch (Exception e)
         {
             throw new SqlScriptException(e, filename);
         }
@@ -218,7 +236,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final int SCHEMA_INDEX = 0;
         private static final int FROM_INDEX = 1;
         private static final int TO_INDEX = 2;
-        private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.sql");
+        private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.(sql|jsp)");
 
         private final FileSqlScriptProvider _provider;
         private final DbSchema _schema;
@@ -324,7 +342,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             try
             {
-                return _provider.getContents(_schema.getSqlDialect(), _fileName);
+                return _provider.getContents(_schema, _fileName);
             }
             catch (SqlScriptException e)
             {
@@ -384,6 +402,24 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 return fromCompare;
 
             return Double.compare(getToVersion(), script.getToVersion());
+        }
+    }
+
+    public static class ScriptContext
+    {
+        // Model bean for jsp's generating SQL scripts. For now this is limited to the DbSchema and a map
+        // of the datasource -> database names. Additional context can be added as needed.
+        public final DbSchema schema;
+        public final Map<String,String> dataSources = new HashMap<>();
+
+        private ScriptContext(DbSchema schema)
+        {
+            this.schema = schema;
+            for (DbScope scope : DbScope.getDbScopes())
+            {
+                dataSources.put(StringUtils.substringBefore(scope.getDataSourceName(), "DataSource"), scope.getDatabaseName());
+            }
+
         }
     }
 }

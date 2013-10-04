@@ -1439,15 +1439,16 @@ public class ModuleLoader implements Filter
 
     public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
-        //NOTE: jasper encodes underscores in JSPs, so decode this here
+        //NOTE: jasper encodes underscores and dashes in JSPs, so decode this here
         path = path.replaceAll("_005f", "_");
+        path = path.replaceAll("_002d", "-");
 
         Collection<ResourceFinder> finders = new LinkedList<>();
 
         synchronized (_resourceFinders)
         {
             for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
-                if (path.startsWith(e.getKey()))
+                if (path.startsWith(e.getKey() + "/"))
                     finders.addAll(e.getValue());
         }
 

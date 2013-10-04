@@ -78,8 +78,9 @@ public class JspClassLoader
 
     protected String getCompiledJspPath(String packageName, String jspFile)
     {
-        //NOTE: jasper encodes underscores in the filepath, so we account for this here
+        //NOTE: jasper encodes underscores and dashes in the filepath, so we account for this here
         jspFile = jspFile.replaceAll("_", "_005f");
+        jspFile = jspFile.replaceAll("-", "_002d");
         return getSourceJspPath(packageName, jspFile.replaceAll("\\.", "_"));
     }
 

@@ -324,4 +324,7 @@ public interface Module extends Comparable<Module>
     public @Nullable UpgradeCode getUpgradeCode();
 
     void clearResourceCache();
+
+    @Nullable
+    public String getResourcePath();
 }

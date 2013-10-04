@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections15.Closure;
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
@@ -241,9 +242,14 @@ public class SimpleModule extends SpringModule
         }
     }
 
-    protected String getResourcePath()
+    @Override
+    public void setResourcePath(String resourcePath)
     {
-        return null;
+        if (StringUtils.isNotEmpty(resourcePath))
+        {
+            // initialized to null, only gets a value if set in module.properties or .xml file
+            _resourcePath = resourcePath;
+        }
     }
 
     public ActionURL getTabURL(Container c, User user)

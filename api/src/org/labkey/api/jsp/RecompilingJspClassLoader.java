@@ -52,6 +52,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
     private static final Set<String> _compiledJsps = new HashSet<>();    // Used during test mode
+    private static final String DB_SCRIPT_PATH = "/schemas/dbscripts";
 
     @Override
     public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
@@ -65,7 +66,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
             File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
             File sourceFile = null;
             if (null != finder.getSourcePath())
-                sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFilename));
+                sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(packageName, jspFilename)));
 
             if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
                 return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
@@ -79,7 +80,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     {
         String relativePath = getSourceJspPath(packageName, jspFileName);
         // Create File object for JSP source
-        String sourcePath = finder.getSourcePath() + "/src" + relativePath;
+        String sourcePath = getCompleteSourcePath(finder.getSourcePath(), relativePath);
         File sourceFile = new File(sourcePath);
 
         try
@@ -153,6 +154,23 @@ public class RecompilingJspClassLoader extends JspClassLoader
        {
            throw new RuntimeException(e);
        }
+    }
+
+    private String getCompleteSourcePath(String finderSource, String jspSource)
+    {
+        StringBuilder ret = new StringBuilder(jspSource);
+
+        if (ret.indexOf(DB_SCRIPT_PATH) == -1) // it's a regular jsp file, source folder will be something like src/org/labkey/modulename etc.
+        {
+            ret.insert(0, "/src");
+        }
+        else // it's a db upgrade script, drop the namespace portion of the path and change to correct location in resources folder
+        {
+            ret.replace(0, ret.indexOf(DB_SCRIPT_PATH), "/resources");
+        }
+        ret.insert(0, finderSource);
+
+        return ret.toString();
     }
 
 
