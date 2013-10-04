@@ -35,29 +35,7 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
      * Gets the markup to be inserted into the subTplMarkup.
      */
     getTriggerMarkup: function() {
-        var me = this,
-            result,
-            btn = Ext4.widget('button', Ext.apply({
-                id: me.id + '-buttonEl',
-                ui: me.ui,
-                disabled: me.disabled,
-                text: me.buttonText,
-                cls: Ext4.baseCSSPrefix + 'form-file-btn',
-                preventDefault: false,
-                style: me.buttonOnly ? '' : 'margin-left:' + me.buttonMargin + 'px'
-            }, me.buttonConfig)),
-            btnCfg = btn.getRenderTree(),
-            inputElCfg = {
-                id: me.id + '-fileInputEl',
-                cls: Ext4.baseCSSPrefix + 'form-file-input',
-                tag: 'input',
-                type: 'file',
-                size: 1
-            };
-        if (me.disabled) {
-            inputElCfg.disabled = true;
-        }
-        btnCfg.cn = inputElCfg;
+        var me = this, result;
 
         if (this.hasRemoveButton) {
 
@@ -71,16 +49,13 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
             }, me.buttonConfig));
 
             var removeBtnCfg = removeBtn.getRenderTree();
-
-            result = '<td id="' + me.id + '-browseButtonWrap"><span>' + Ext4.DomHelper.markup(btnCfg) +
-                    Ext4.DomHelper.markup(removeBtnCfg) + '</span></td>';
+            result = '<td id="' + this.id + '-browseButtonWrap"></td><td style="width : 70px;">' + Ext4.DomHelper.markup(removeBtnCfg) + '</td>';
             removeBtn.destroy();
         }
         else
         {
-            result = '<td id="' + me.id + '-browseButtonWrap">' + Ext4.DomHelper.markup(btnCfg) + '</td>';
+            result = '<td id="' + this.id + '-browseButtonWrap"></td>';
         }
-        btn.destroy();
         return result;
     },
 
