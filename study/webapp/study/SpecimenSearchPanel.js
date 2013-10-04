@@ -211,7 +211,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
     getGroupSearchItems: function(){
         return [
-            [this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null],
+            [this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName + "/" + this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null],
             ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label'],
             ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
             ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
@@ -226,7 +226,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 xtype: 'textfield',
                 itemId: queryName,
                 fieldLabel: label,
-                filterParam: displayColumn,
+                filterParam: filterParam,
                 //emptyText: defaultOptionText,
                 value: defaultOptionValue
             }
