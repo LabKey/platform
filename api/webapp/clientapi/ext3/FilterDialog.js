@@ -1119,7 +1119,13 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 var suffix = filter.getFilterType().getURLSuffix();
                 var negated = suffix == 'neqornull' || suffix == 'notin';
 
-                this.setValue(filter.getURLParameterValue(), negated);
+                // negation of the null case is a bit different so check it as a special case.
+                var value = filter.getURLParameterValue();
+                if (value == "") {
+                    negated = true;
+                }
+
+                this.setValue(value, negated);
 
                 if (!me.filterOptimization && negated) {
                     me.fireEvent('invalidfilter');

@@ -393,22 +393,24 @@ LABKEY.Filter = new function()
 
             for (var paramName in params)
             {
-                // Look for parameters that have the right prefix
-                if (paramName.indexOf(dataRegionName + ".") == 0)
-                {
-                    var tilde = paramName.indexOf("~");
-
-                    if (tilde != -1)
+                if (params.hasOwnProperty(paramName)) {
+                    // Look for parameters that have the right prefix
+                    if (paramName.indexOf(dataRegionName + ".") == 0)
                     {
-                        var columnName = paramName.substring(dataRegionName.length + 1, tilde);
-                        var filterName = paramName.substring(tilde + 1);
-                        var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
-                        var values = params[paramName];
-                        if (!LABKEY.Utils.isArray(values))
+                        var tilde = paramName.indexOf("~");
+
+                        if (tilde != -1)
                         {
-                            values = [values];
+                            var columnName = paramName.substring(dataRegionName.length + 1, tilde);
+                            var filterName = paramName.substring(tilde + 1);
+                            var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
+                            var values = params[paramName];
+                            if (!LABKEY.Utils.isArray(values))
+                            {
+                                values = [values];
+                            }
+                            filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
                         }
-                        filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
                     }
                 }
             }
