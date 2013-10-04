@@ -104,6 +104,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -780,7 +781,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 Aggregate.TestCase.class,
                 CaseInsensitiveHashSet.TestCase.class,
                 SwapQueue.TestCase.class,
-                ApiXmlWriter.TestCase.class
+                ApiXmlWriter.TestCase.class,
+                TidyUtil.TestCase.class
         ));
     }
 
