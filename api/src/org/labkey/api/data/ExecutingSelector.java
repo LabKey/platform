@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Table.TableResultSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.springframework.dao.ConcurrencyFailureException;
 
@@ -398,9 +399,10 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         }
 
         @Override
-        public void handleSqlException(SQLException e, Connection conn)
+        public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
             Table.logException(_sql, conn, e, getLogLevel());
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.getSQL(), false);
             throw getExceptionFramework().translate(getScope(), "ExecutingSelector", _sql.getSQL(), e);
         }
     }

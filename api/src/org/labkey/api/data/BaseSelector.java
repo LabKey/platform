@@ -89,78 +89,96 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return getArrayList(clazz, getStandardResultSetFactory());
     }
 
-    protected @NotNull <E> ArrayList<E> getArrayList(final Class<E> clazz, ResultSetFactory factory)
+    protected @NotNull <E> ArrayList<E> getArrayList(final Class<E> clazz, final ResultSetFactory factory)
     {
-        final ArrayList<E> list;
-        final Table.Getter getter = Table.Getter.forClass(clazz);
-
-        // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
-        if (null != getter)
-        {
-            list = new ArrayList<>();
-            forEach(new ForEachBlock<ResultSet>() {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    //noinspection unchecked
-                    list.add((E)getter.getObject(rs));
-                }
-            }, factory);
-        }
-        // If not, we're generating maps or beans
-        else
-        {
-            list = handleResultSet(factory, new ResultSetHandler<ArrayList<E>>()
-            {
-                @Override
-                public ArrayList<E> handle(ResultSet rs, Connection conn) throws SQLException
-                {
-                    if (Map.class == clazz)
-                    {
-                        // We will consume the result set and close it immediately, so no need to cache meta data
-                        CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(rs, false, Table.ALL_ROWS, null);
-                        //noinspection unchecked
-                        E[] arrayListMaps = (E[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
-                        copy.close();
-
-                        // TODO: Not very efficient...
-                        ArrayList<E> list = new ArrayList<>(arrayListMaps.length);
-                        //noinspection unchecked
-                        Collections.addAll(list, arrayListMaps);
-                        return list;
-                    }
-                    else
-                    {
-                        ObjectFactory<E> factory = getObjectFactory(clazz);
-
-                        return factory.handleArrayList(rs);
-                    }
-                }
-            });
-        }
-
-        return list;
+        return handleResultSet(factory, new ArrayListResultSetHandler<>(clazz, factory));
     }
+
+
+    private class ArrayListResultSetHandler<E> implements ResultSetHandler<ArrayList<E>>
+    {
+        private final Class<E> _clazz;
+        private final ResultSetFactory _factory;
+
+        public ArrayListResultSetHandler(Class<E> clazz, ResultSetFactory factory)
+        {
+            _clazz = clazz;
+            _factory = factory;
+        }
+
+        @Override
+        public ArrayList<E> handle(ResultSet rs, Connection conn) throws SQLException
+        {
+            final ArrayList<E> list;
+            final Table.Getter getter = Table.Getter.forClass(_clazz);
+
+           // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
+            if (null != getter)
+            {
+                list = new ArrayList<>();
+                forEach(new ForEachBlock<ResultSet>() {
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        //noinspection unchecked
+                        list.add((E)getter.getObject(rs));
+                    }
+                }, _factory);
+            }
+            // If not, we're generating maps or beans
+            else
+            {
+                if (Map.class == _clazz)
+                {
+                    // We will consume the result set and close it immediately, so no need to cache meta data
+                    CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(rs, false, Table.ALL_ROWS, null);
+                    //noinspection unchecked
+                    E[] arrayListMaps = (E[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
+                    copy.close();
+
+                    // TODO: Not very efficient...
+                    list = new ArrayList<>(arrayListMaps.length);
+                    //noinspection unchecked
+                    Collections.addAll(list, arrayListMaps);
+                }
+                else
+                {
+                    list = getObjectFactory(_clazz).handleArrayList(rs);
+                }
+            }
+
+            return list;
+        }
+    }
+
 
     @Override
     public <T> T getObject(Class<T> clazz)
     {
-        return getObject(getArrayList(clazz), clazz);
+        return getObject(clazz, getStandardResultSetFactory());
     }
 
-    protected <T> T getObject(Class<T> clazz, ResultSetFactory factory)
+    protected <T> T getObject(final Class<T> clazz, ResultSetFactory factory)
     {
-        return getObject(getArrayList(clazz, factory), clazz);
-    }
+        List<T> list = handleResultSet(factory, new ArrayListResultSetHandler<T>(clazz, factory) {
+            @Override
+            public ArrayList<T> handle(ResultSet rs, Connection conn) throws SQLException
+            {
+                ArrayList<T> list = super.handle(rs, conn);
 
-    protected <T> T getObject(List<T> list, Class<T> clazz)
-    {
+                if (list.size() > 1)
+                    throw new SQLException("Query returned " + list.size() + " " + clazz.getSimpleName() + " objects; expected 1 or 0.");
+
+                return list;
+            }
+        });
+
         if (list.size() == 1)
             return list.get(0);
         else if (list.isEmpty())
             return null;
         else
-            throw new IllegalStateException("Query returned " + list.size() + " " + clazz.getSimpleName() + " objects; expected 1 or 0.");
+            throw new IllegalStateException("Result set handler should have returned either 0 or 1 rows!");
     }
 
     @Override

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,5 +30,5 @@ public interface ResultSetFactory
 {
     ResultSet getResultSet(Connection conn) throws SQLException;
     boolean shouldClose();
-    void handleSqlException(SQLException e, Connection conn);
+    void handleSqlException(SQLException e, @Nullable Connection conn);
 }

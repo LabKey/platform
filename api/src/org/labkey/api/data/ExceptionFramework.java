@@ -35,7 +35,7 @@ public enum ExceptionFramework
             DataAccessException translate(DbScope scope, String task, @Nullable String sql, SQLException e)
             {
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
-                return translator.translate(task, sql, e);
+                return translator.translate(task, null, e);
             }
         },
     JDBC
@@ -47,5 +47,6 @@ public enum ExceptionFramework
             }
         };
 
+    // TODO: Remove SQL parameter? Generally, we don't want SQL going into the exception message (for users to see), we want to decorate
     abstract RuntimeException translate(DbScope scope, String task, @Nullable String SQL, SQLException e);
 }

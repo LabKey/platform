@@ -15,9 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.TestContext;
+import org.springframework.jdbc.UncategorizedSQLException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,6 +40,34 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
     {
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
+    }
+
+    @Test
+    public void testGetObject() throws SQLException
+    {
+        TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers());
+
+        User user = TestContext.get().getUser();
+        User selectedUser = userSelector.getObject(user.getUserId(), User.class);
+        assertEquals(user, selectedUser);
+
+        // Make sure that getObject() throws if more than one row is selected
+        TableSelector moduleSelector = new TableSelector(CoreSchema.getInstance().getTableInfoModules());
+        moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing a SQLException
+
+        try
+        {
+            moduleSelector.getObject(ModuleContext.class);
+        }
+        catch (UncategorizedSQLException e)
+        {
+            String message = e.getMessage();
+            // Verify that the exception message does not contain SQL (we don't want to display SQL to users...
+            assertTrue("Exception message " + message + " seems to contain SQL", message.contains("SQL []") && !message.contains("SELECT"));
+            // ...and that the exception is decorated, so the SQL does end up in mothership
+            String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
+            assertNotNull("Exception was not decorated", decoration);
+        }
     }
 
     public <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
@@ -85,7 +117,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(rowCount, (int) selector.getRowCount());
             K[] rowCountArray = selector.getArray(clazz);
             assertEquals(rowCount, rowCountArray.length);
-            assertEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
+            assertArrayEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
             List<K> rowCountList = new ArrayList<>(selector.getCollection(clazz));
             assertEquals(rowCount, rowCountList.size());
             assertEquals(sortedList.subList(0, rowCount), rowCountList);
@@ -96,7 +128,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(rowCount, (int) selector.getRowCount());
             K[] offsetArray = selector.getArray(clazz);
             assertEquals(rowCount, offsetArray.length);
-            assertEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
+            assertArrayEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
             List<K> offsetList = new ArrayList<>(selector.getCollection(clazz));
             assertEquals(rowCount, offsetList.size());
             assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);

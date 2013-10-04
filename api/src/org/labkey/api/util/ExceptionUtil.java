@@ -723,7 +723,7 @@ public class ExceptionUtil
 
 
     @Nullable
-    public static String  getExceptionDecoration(Throwable t, Enum e)
+    public static String getExceptionDecoration(Throwable t, Enum e)
     {
         // could optimize...
         return getExceptionDecorations(t).get(e);
