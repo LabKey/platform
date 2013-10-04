@@ -238,8 +238,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getLabel().equals(updated.getLabel()))
             {
                 DataSet existing = studyManager.getDataSetDefinitionByLabel(study, updated.getLabel());
-
-                if (existing != null)
+                if (existing != null && existing.getDataSetId() != ds.getDatasetId())
                 {
                     errors.add("A Dataset already exists with the label \"" + updated.getLabel() +"\"");
                     return errors;
@@ -249,7 +248,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getName().equals(updated.getName()))
             {
                 // issue 17766: check if dataset or query exist with this name
-                if (null != studyManager.getDataSetDefinitionByName(study, updated.getName())
+                DataSet existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
+                if ((null != existing && existing.getDataSetId() != ds.getDatasetId())
                     || null != QueryService.get().getQueryDef(getUser(), getContainer(), "study", updated.getName()))
                 {
                     errors.add("A Dataset or Query already exists with the name \"" + updated.getName() +"\"");
