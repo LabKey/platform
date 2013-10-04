@@ -409,6 +409,11 @@ public class ButtonBarConfig
         return _onRenderScript;
     }
 
+    public void setOnRenderScript(String onRenderScript)
+    {
+        _onRenderScript = onRenderScript;
+    }
+
     public boolean isAlwaysShowRecordSelectors()
     {
         return _alwaysShowRecordSelectors;

@@ -100,6 +100,7 @@ Ext4.define('Ext.ux.CheckCombo', {
                     else
                     {
                         var records = [];
+                        this.store.clearFilter();  //if the user has typed text, this can filter the store, causing it to select all visible, rather than selecting all
                         this.store.each(function(record)
                         {
                             records.push(record);

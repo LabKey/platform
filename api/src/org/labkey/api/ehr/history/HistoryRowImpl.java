@@ -92,7 +92,8 @@ public class HistoryRowImpl implements HistoryRow
             if (_date == null)
                 return "";
 
-            return _dateFormat.format(_date);
+            //note: Date formats are not synchronized, so create a new instance here.
+            return new SimpleDateFormat("yyyy-MM-dd").format(_date);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
@@ -101,7 +102,7 @@ public class HistoryRowImpl implements HistoryRow
         }
         catch (Exception e)
         {
-            _log.error("Error creating sortDateString for animal: " + _subjectId + ", " + _primaryGroup, e);
+            _log.error("Error creating sortDateString for animal: " + _subjectId + ", " + _primaryGroup + " with date: " + _date, e);
             return "";
         }
     }
