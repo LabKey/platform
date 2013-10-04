@@ -16,8 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.util.FolderDisplayMode" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -31,7 +30,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -48,37 +46,36 @@
     List<Portal.WebPart> menus = bean.menus;
     PageConfig pageConfig = bean.pageConfig;
 
-    ViewContext currentContext = HttpView.currentContext();
-    Container c = currentContext.getContainer();
+    ViewContext context = HttpView.currentContext();
+    Container c = context.getContainer();
 
-    FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    boolean isShowExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);
-    boolean showFolderNavigation = !isShowExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && currentContext.isShowFolders();
+//    FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
+    boolean showExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);
+    boolean showProjectNavigation = showExperimentalNavigation || context.isShowFolders();
+    boolean showFolderNavigation = !showExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && context.isShowFolders();
     Container p = c.getProject();
-    String projectName = null;
+    String projectName = "";
     if (null != p)
     {
         projectName = p.getName();
         if (null != projectName && projectName.equalsIgnoreCase("home"))
             projectName = "Home";
     }
-
-    folderMode.isShowInMenu();
 %>
 <div id="menubar" class="labkey-main-menu">
     <ul>
 <%
-    if (isShowExperimentalNavigation || currentContext.isShowFolders())
+    if (showProjectNavigation)
     {
 %>
-        <li id="<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>" class="menu-projects"></li>
+        <li id="<%=text(showExperimentalNavigation ? "betaBar" : "projectBar")%>" class="menu-projects"></li>
 <%
     }
 
     if (showFolderNavigation)
     {
 %>
-        <li id="folderBar" class="menu-folders"><%=projectName%></li>
+        <li id="folderBar" class="menu-folders"><%=text(projectName)%></li>
 <%
     }
 %>
@@ -94,7 +91,7 @@
                         WebPartFactory factory = Portal.getPortalPart(part.getName());
                         if (null == factory)
                             continue;
-                        WebPartView view = factory.getWebPartView(currentContext, part);
+                        WebPartView view = factory.getWebPartView(context, part);
                         if (view.isEmpty())
                             continue;       // Don't show folder/query if nothing to show
                         if (null != view.getTitle())
@@ -286,7 +283,7 @@
             }
         });
 
-        HoverNavigation._project = new HoverNavigation({hoverElem : '<%=isShowExperimentalNavigation ? "betaBar" : "projectBar"%>', webPartName : '<%=isShowExperimentalNavigation ? "betanav" : "projectnav"%>', webPartUrl: LABKEY.ActionURL.buildURL('project', 'getNavigationPart')});
+        HoverNavigation._project = new HoverNavigation({hoverElem : '<%=text(showExperimentalNavigation ? "betaBar" : "projectBar")%>', webPartName : '<%=text(showExperimentalNavigation ? "betanav" : "projectnav")%>', webPartUrl: LABKEY.ActionURL.buildURL('project', 'getNavigationPart')});
 <%
     if (showFolderNavigation)
     {
@@ -302,16 +299,16 @@
 
         String menuName = part.getName() + part.getIndex();
 %>
-        HoverNavigation.Parts["_<%=menuName%>"] = new HoverNavigation({hoverElem:"<%=menuName%>$Header", webPartName: "<%=part.getName()%>",
+        HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({hoverElem:"<%=text(menuName)%>$Header", webPartName: "<%=text(part.getName())%>",
             partConfig: { <%
                     String sep = "";
                     for (Map.Entry<String,String> entry : part.getPropertyMap().entrySet())
                     { %>
-                        <%=sep%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
+                        <%=text(sep)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
                         sep = ",";
                     }%>
 
-                    <%=sep%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
+                    <%=text(sep)%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
             }});
 <%
     }
