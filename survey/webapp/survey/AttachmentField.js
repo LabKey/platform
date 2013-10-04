@@ -65,7 +65,7 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
                 id  : me.id + '-removeButton',
                 ui  : me.ui,
                 disabled: me.disabled,
-                text    : 'remove',
+                text    : 'Remove',
                 cls     : Ext4.baseCSSPrefix + 'form-file-btn',
                 style: me.buttonOnly ? '' : 'margin-left:' + me.buttonMargin + 'px'
             }, me.buttonConfig));
