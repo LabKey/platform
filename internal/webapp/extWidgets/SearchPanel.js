@@ -296,7 +296,12 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             row.push({
                 xtype: 'hidden',
                 value: 'in',
-                itemId: id,
+                itemId: id
+            });
+
+            //NOTE: in Ext4.2.1 hidden fields no longer preserve width, so add a spacer
+            row.push({
+                border: false,
                 width: this.OP_FIELD_WIDTH
             });
         }
