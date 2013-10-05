@@ -1387,22 +1387,28 @@ public class SpecimenController extends BaseStudyController
                     eventSummary = "Comments added.";
                 }
 
+                SampleRequestEvent event;
                 try
                 {
-                    SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), _sampleRequest, changeType,
-                            comment, files);
+                    event = SampleManager.getInstance().createRequestEvent(getUser(), _sampleRequest, changeType, comment, files);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, "The request could not be updated because of an unexpected error. " +
+                            "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                    return false;
+                }
+                try
+                {
                     List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                     DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                             eventSummary, event, form.getComments(), null, getViewContext());
                     getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
                 }
-                catch (ConfigurationException e)
+                catch (ConfigurationException | IOException e)
                 {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
+                    errors.reject(ERROR_MSG, "The request was updated successfully, but the notification failed: " +  e.getMessage());
+                    return false;
                 }
             }
 
@@ -2309,23 +2315,29 @@ public class SpecimenController extends BaseStudyController
             if (form.getComment() != null && form.getComment().length() > 0)
                 comment.append("\n").append(form.getComment());
 
+            SampleRequestEvent event;
             try
             {
-                SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), requirement,
-                        eventType, comment.toString(), files);
+                event = SampleManager.getInstance().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "The request could not be updated because of an unexpected error. " +
+                        "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                return false;
+            }
+            try
+            {
 
                 List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                         eventSummary, event, form.getComment(), requirement, getViewContext());
                 getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
             }
-            catch (ConfigurationException e)
+            catch (ConfigurationException | IOException e)
             {
-                errors.reject(ERROR_MSG, e.getMessage());
-            }
-            catch (IOException e)
-            {
-                errors.reject(ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, "The request was updated successfully, but the notification failed: " +  e.getMessage());
+                return false;
             }
 
             if (errors.hasErrors())
@@ -2856,11 +2868,7 @@ public class SpecimenController extends BaseStudyController
                         };
                         getUtils().sendNotification(notification, form.isEmailInactiveUsers(), errors);
                     }
-                    catch (ConfigurationException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                    catch (IOException e)
+                    catch (ConfigurationException | IOException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
                     }

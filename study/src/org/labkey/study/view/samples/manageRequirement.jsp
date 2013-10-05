@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SpecimenController.ManageRequirementBean> me = (JspView<SpecimenController.ManageRequirementBean>) HttpView.currentView();
     SpecimenController.ManageRequirementBean bean = me.getModelBean();
@@ -34,6 +35,7 @@
     String deleteURL = buildURL(SpecimenController.DeleteRequirementAction.class, "id=" + requirement.getRequestId() +
             "&requirementId=" + requirement.getRowId());
 %>
+<labkey:errors />
 <table class="labkey-manage-display">
     <tr>
         <td align="left"><%= textLink("View Request", buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId())%></td>
