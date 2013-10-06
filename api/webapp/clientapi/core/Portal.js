@@ -463,7 +463,7 @@ LABKEY.Portal = new function()
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
-                            var anchorText = anchors[0].text || anchors[0].innerText;
+                            var anchorText = anchors[0].textContent;
 
                             if(anchorText === config.folderLabel){
                                 // Found the tab, swap it with the previous tab.
@@ -500,7 +500,7 @@ LABKEY.Portal = new function()
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
-                            var anchorText = anchors[0].text || anchors[0].innerText;
+                            var anchorText = anchors[0].textContent;
 
                             if(anchorText === config.folderLabel){
                                 // Found the tab, swap it with the previous tab.
@@ -549,6 +549,7 @@ LABKEY.Portal = new function()
                 var nameTextField = Ext4.create('Ext.form.field.Text', {
                     xtype: 'textfield',
                     fieldLabel: 'Name',
+                    name: 'tabName',
                     labelSeparator: ''
                 });
 
@@ -632,12 +633,13 @@ LABKEY.Portal = new function()
          * @param urlId the id of the anchor tag of the tab to be renamed.
          */
         renameTab: function(pageId, urlId){
-            var currentName = document.getElementById(urlId).innerText;
+            var currentName = document.getElementById(urlId).textContent;
 
             Ext4.onReady(function(){
                 var nameTextField = Ext4.create('Ext.form.field.Text', {
                     xtype: 'textfield',
                     fieldLabel: 'Name',
+                    name: 'tabName',
                     value: currentName,
                     labelSeparator: ''
                 });
@@ -667,7 +669,7 @@ LABKEY.Portal = new function()
                                 success: function(response){
                                     var jsonResp = JSON.parse(response.responseText);
                                     if (jsonResp.success) {
-                                        document.getElementById(urlId).innerText = nameTextField.getValue();
+                                        document.getElementById(urlId).textContent = nameTextField.getValue();
                                     }
                                     renameTabWindow.close();
                                 },
