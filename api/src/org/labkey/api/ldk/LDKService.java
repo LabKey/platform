@@ -58,4 +58,6 @@ abstract public class LDKService
     abstract public void appendEnddateColumns(AbstractTableInfo ti);
 
     abstract public void registerSiteSummaryNotification(NotificationSection ns);
+
+    abstract public boolean isNaturalizeInstalled();
 }
