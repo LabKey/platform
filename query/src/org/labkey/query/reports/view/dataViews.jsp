@@ -64,9 +64,6 @@
             allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
             listeners   : {
                 render: function(panel) {
-                    // Issue 18337: hold onto the initial width diff for the panel, to be used in resizing
-                    panel.panelWidthDiff = Ext4.getBody().getViewSize().width - panel.getWidth();
-
                     if (panel.fullPage) {
 
                         var size = Ext4.getBody().getViewSize();
@@ -81,15 +78,29 @@
 
                 if (dvp.fullPage)
                     LABKEY.ext4.Util.resizeToViewport(dvp, w, h);
-                else if (dvp.panelWidthDiff) {
-                    var width = Ext4.getBody().getViewSize().width - dvp.panelWidthDiff < 625 ? 625 : Ext4.getBody().getViewSize().width - dvp.panelWidthDiff;
-                    dvp.setWidth(width);
-                    dvp.doLayout();
+                else
+                {
+                    // Issue 18337: having multiple data view panels on same page causes resizing issues
+                    var lfh = Ext4.query('div.labkey-folder-header');
+                    var lsp  = Ext4.query('td.labkey-side-panel');
+
+                    if (lfh.length > 0)
+                    {
+                        // use the full width of the tab panel header bar minus the width  of the narrow webpart panel
+                        var labkeyProjWidth = Ext4.get(lfh[0]).getWidth();
+                        var leftPanelWidth = 0;
+                        if (lsp.length > 0)
+                            leftPanelWidth = Ext4.get(lsp[0]).getWidth();
+
+                        var width = labkeyProjWidth - leftPanelWidth - 30;
+                        dvp.setWidth(Ext4.Array.max([width, 625]));
+                        dvp.doLayout();
+                    }
                 }
             }
         };
 
-        Ext4.EventManager.onWindowResize(resize);
+        Ext4.EventManager.onWindowResize(resize, this, {delay: 250});
     });
 
     /**
