@@ -18,8 +18,10 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.data.Table" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,8 +30,7 @@
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
 <%@ page import="org.labkey.experiment.api.MaterialSource" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.study.SamplesUrls" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -41,11 +42,7 @@
     }
     else
     {
-        SimpleFilter filter = new SimpleFilter();
-        Object[] params = { proj.getId(), ContainerManager.getSharedContainer().getProject().getId(), ContainerManager.getSharedContainer().getId() };
-        filter.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, FieldKey.fromParts("Project"));
-
-        ExpSampleSet[] sampleSets = ExpSampleSetImpl.fromMaterialSources(Table.select(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject(), Table.ALL_COLUMNS, filter, null, MaterialSource.class));
+        List<ExpSampleSetImpl> sampleSets = ExperimentServiceImpl.get().getSampleSets(ctx.getContainer(), ctx.getUser(), true);
 
         int i = 0;
     %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%
@@ -59,10 +56,10 @@
                 url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
             %>
     <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a>
-                <br><%=sampleSet.getDescription() != null ? h(sampleSet.getDescription()) : h(sampleSet.getContainer().getPath())%>
+                <br><%=h(sampleSet.getDescription() != null ? sampleSet.getDescription() : sampleSet.getContainer().getPath())%>
             <br>
     <%
-            if (sampleSets.length > 1 && ++i == sampleSets.length / 2)
+            if (sampleSets.size() > 1 && ++i == sampleSets.size() / 2)
             { %>
                 </td><td style="vertical-align:top;white-space:nowrap;margin:1em">
         <%  }

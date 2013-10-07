@@ -1910,7 +1910,7 @@ public class ExperimentController extends SpringActionController
                 public DataView createDataView()
                 {
                     DataView result = super.createDataView();
-                    result.getRenderContext().setBaseFilter(new SimpleFilter("Protocol/LSID", _protocol.getLSID()));
+                    result.getRenderContext().setBaseFilter(new SimpleFilter(FieldKey.fromParts("Protocol", "LSID"), _protocol.getLSID()));
                     return result;
                 }
             };
@@ -3843,7 +3843,8 @@ public class ExperimentController extends SpringActionController
 
     private List<ExpSampleSet> getUploadableSampleSets()
     {
-        List<ExpSampleSet> sampleSets = new ArrayList<>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true)));
+        // Make a copy so we can modify it
+        List<ExpSampleSet> sampleSets = new ArrayList<>(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true));
         Iterator<ExpSampleSet> iter = sampleSets.iterator();
         while (iter.hasNext())
         {

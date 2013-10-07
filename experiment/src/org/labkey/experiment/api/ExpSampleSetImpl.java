@@ -323,16 +323,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
     }
 
-    public static ExpSampleSetImpl[] fromMaterialSources(MaterialSource[] sources)
-    {
-        ExpSampleSetImpl[] ret = new ExpSampleSetImpl[sources.length];
-        for (int i = 0; i < sources.length; i ++)
-        {
-            ret[i] = new ExpSampleSetImpl(sources[i]);
-        }
-        return ret;
-    }
-
     @Override
     public String toString()
     {

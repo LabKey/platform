@@ -643,8 +643,7 @@ public class UploadSamplesHelper
     private ExpMaterial findParent(String sampleSetName, String sampleName)
     {
         // Could easily do some caching here, but probably not a significant perf issue
-        ExpSampleSet[] sampleSets = ExperimentService.get().getSampleSets(getContainer(), _form.getUser(), true);
-        for (ExpSampleSet sampleSet : sampleSets)
+        for (ExpSampleSet sampleSet : ExperimentService.get().getSampleSets(getContainer(), _form.getUser(), true))
         {
             // Look for a sample set with the right name
             if (sampleSetName.equals(sampleSet.getName()))

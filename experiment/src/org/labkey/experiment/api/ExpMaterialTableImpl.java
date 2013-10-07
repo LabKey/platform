@@ -104,7 +104,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
-                columnInfo.setFk(new LookupForeignKey((ActionURL)null, (String)null, "LSID", "Name")
+                columnInfo.setFk(new LookupForeignKey(null, (String)null, "LSID", "Name")
                 {
                     public TableInfo getLookupTableInfo()
                     {

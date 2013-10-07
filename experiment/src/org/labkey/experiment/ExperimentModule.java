@@ -326,7 +326,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
         */
 
-        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).length;
+        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
 

@@ -529,14 +529,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result;
     }
 
-    public ExpSampleSetImpl[] getSampleSets(Container container, User user, boolean includeOtherContainers)
+    public List<ExpSampleSetImpl> getSampleSets(Container container, User user, boolean includeOtherContainers)
     {
         SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-        MaterialSource[] materialSources = new TableSelector(getTinfoMaterialSource(), filter, null).getArray(MaterialSource.class);
-        ExpSampleSetImpl[] result = ExpSampleSetImpl.fromMaterialSources(materialSources);
-        // Do the sort on the Java side to make sure it's always case-insensitive
-        Arrays.sort(result);
-        return result;
+        List<MaterialSource> sources = new TableSelector(getTinfoMaterialSource(), filter, null).getArrayList(MaterialSource.class);
+        List<ExpSampleSetImpl> result = new ArrayList<>(sources.size());
+        for (MaterialSource source : sources)
+        {
+            result.add(new ExpSampleSetImpl(source));
+        }
+        // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
+        Collections.sort(result);
+        return Collections.unmodifiableList(result);
     }
 
     public ExpExperimentImpl getExpExperiment(int rowid)
@@ -1119,7 +1123,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
         SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.InClause("Container", containerIds));
+        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("Container"), containerIds));
         return filter;
     }
 
@@ -1133,11 +1137,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
         if (!includeHidden)
         {
-            filter.addCondition("Hidden", Boolean.FALSE);
+            filter.addCondition(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         }
         if (!includeBatches)
         {
-            filter.addCondition("BatchProtocolId", null, CompareType.ISBLANK);
+            filter.addCondition(FieldKey.fromParts("BatchProtocolId"), null, CompareType.ISBLANK);
         }
         Sort sort = new Sort("RowId");
         sort.insertSort(new Sort("Name"));
@@ -1691,7 +1695,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
             ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
-            ExpSampleSet[] sampleSets = getSampleSets(c, user, false);
+            List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
 
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
             int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
@@ -3194,8 +3198,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
     {
         Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-        ExpSampleSetImpl[] sampleSets = ExperimentServiceImpl.get().getSampleSets(container, user, true);
-        for (ExpSampleSetImpl sampleSet : sampleSets)
+        for (ExpSampleSetImpl sampleSet : getSampleSets(container, user, true))
         {
             for (ExpMaterialImpl expMaterial : sampleSet.getSamples())
             {
