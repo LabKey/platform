@@ -32,7 +32,6 @@ import org.labkey.api.view.NotFoundException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class SamplesSchema extends AbstractExpSchema
 {

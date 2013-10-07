@@ -112,7 +112,7 @@ public class ExperimentService
         /**
          * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
          */
-        ExpSampleSet[] getSampleSets(Container container, User user, boolean includeOtherContainers);
+        List<? extends ExpSampleSet> getSampleSets(Container container, User user, boolean includeOtherContainers);
         ExpSampleSet getSampleSet(Container container, String name);
         ExpSampleSet lookupActiveSampleSet(Container container);
         void setActiveSampleSet(Container container, ExpSampleSet sampleSet);

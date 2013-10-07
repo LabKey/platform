@@ -497,7 +497,18 @@ public class URLHelper implements Cloneable, Serializable, Taintable
             if (null == e.getKey() || null == e.getValue()) continue;
             String key = (null == prefix) ? String.valueOf(e.getKey()) :
                     prefix + String.valueOf(e.getKey());
-            _parameters.add(new Pair<>(key, String.valueOf(e.getValue())));
+            // HttpServletRequest.getParameterMap() returns String->String[], so handle those specially here
+            if (e.getValue() instanceof String[])
+            {
+                for (String value : (String[])e.getValue())
+                {
+                    addParameter(key, value);
+                }
+            }
+            else
+            {
+                _parameters.add(new Pair<>(key, String.valueOf(e.getValue())));
+            }
         }
         return this;
     }
