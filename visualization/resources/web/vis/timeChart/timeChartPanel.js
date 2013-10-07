@@ -820,7 +820,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             {
                 this.tempGridInfo = {
                     schema: this.chartData.aggregate.schemaName,
-                    query: this.chartData.aggregate.queryName
+                    query: this.chartData.aggregate.queryName,
+                    sortCols : ["UniqueId"]
                 };
             }
             else
@@ -829,9 +830,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     schema: this.chartData.individual.schemaName,
                     query: this.chartData.individual.queryName,
                     subjectCol: LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.columnName),
-                    sortCols: this.editorXAxisPanel.getTime() == "date"
-                            ? [LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.chartInfo.measures[0].dateOptions.dateCol.name)]
-                            : [LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.nounSingular + "Visit/Visit/DisplayOrder")]
+                    sortCols: [LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.columnName),
+                        (this.editorXAxisPanel.getTime() == "date"
+                            ? LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.chartInfo.measures[0].dateOptions.dateCol.name)
+                            : LABKEY.vis.getColumnAlias(this.chartData.individual.columnAliases, this.SUBJECT.nounSingular + "Visit/Visit/DisplayOrder"))
+                    ]
                 };
             }
 
@@ -1263,7 +1266,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 renderTo: qwpPanelDiv.getId(),
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
-                sort: this.tempGridInfo.sortCols ? this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", ") : null,
+                sort: this.tempGridInfo.sortCols ? this.tempGridInfo.sortCols.join(", ") : null,
                 allowChooseQuery : false,
                 allowChooseView  : false,
                 allowHeaderLock  : false,

@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -648,6 +649,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public Sort getSort()
     {
         Sort sort = new Sort();
+
+        // see comment for ORDER BY sql in wrapInGroupBy (i.e. include group bys in sorting)
+        for (VisualizationSourceColumn groupBy : _groupBys)
+        {
+            sort.appendSortColumn(FieldKey.fromParts(groupBy.getOriginalName()), Sort.SortDirection.ASC, true);
+        }
 
         Map<String, VisualizationSourceColumn> sorts = new LinkedHashMap<>();
         for (IVisualizationSourceQuery query : _sourceQueries.values())
