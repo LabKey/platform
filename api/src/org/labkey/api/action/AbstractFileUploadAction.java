@@ -168,26 +168,32 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
 
         // Issue 12845: clean the upload filename before trying to create the file
         String legalName = FileUtil.makeLegalName(filename);
-        File targetFile = getTargetFile(legalName);
-
-        OutputStream output = new FileOutputStream(targetFile);
         try
         {
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = input.read(buffer)) > 0)
-                output.write(buffer, 0, len);
+            File targetFile = getTargetFile(legalName);
 
-            output.flush();
-            output.close();
-            input.close();
-            return targetFile;
+            try (OutputStream output = new FileOutputStream(targetFile))
+            {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = input.read(buffer)) > 0)
+                    output.write(buffer, 0, len);
 
+                output.flush();
+                input.close();
+                return targetFile;
+
+            }
+            catch (IOException ioe)
+            {
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
+                error(writer, ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return null;
+            }
         }
-        catch (IOException ioe)
+        catch (UploadException e)
         {
-            ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
-            error(writer, ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            error(writer, e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
     }

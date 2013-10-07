@@ -34,7 +34,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
 import org.labkey.api.gwt.client.ui.ImageButton;
-import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -557,9 +556,16 @@ public class DomainImporter
 
         public void onSubmitComplete(FormSubmitCompleteEvent event)
         {
-            uploadStatusLabel.setText("Processing...");
-
-            service.inferenceColumns(this);
+            if (event.getResults() != null && event.getResults().toLowerCase().contains("success"))
+            {
+                uploadStatusLabel.setText("Processing...");
+                service.inferenceColumns(this);
+            }
+            else
+            {
+                uploadStatusLabel.setHTML("&nbsp;");
+                Window.alert("File upload failed: " + event.getResults());
+            }
         }
 
         public void handleFailure(String message, Throwable caught)
