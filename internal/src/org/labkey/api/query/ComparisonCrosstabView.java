@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.gwt.client.model.GWTComparisonResult;
 import org.labkey.api.gwt.client.model.GWTComparisonMember;
 import org.labkey.api.gwt.client.model.GWTComparisonGroup;
+import org.labkey.api.reports.ReportService;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -35,6 +36,9 @@ public abstract class ComparisonCrosstabView extends CrosstabView
     public ComparisonCrosstabView(UserSchema schema)
     {
         super(schema);
+        // Don't allow users to create R views or other reports, since they won't know how to create the special
+        // context with the run list to be compared, etc
+        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
     protected abstract FieldKey getComparisonColumn();

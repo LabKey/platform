@@ -16,8 +16,19 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
-import org.labkey.api.reports.ReportService;
+import org.labkey.api.data.AggregateColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CrosstabDataRegion;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabTable;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.DataView;
 import org.springframework.validation.Errors;
@@ -48,13 +59,11 @@ public class CrosstabView extends QueryView
     public CrosstabView(UserSchema schema)
     {
         super(schema);
-        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
     public CrosstabView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         super(schema, settings, errors);
-        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
     // Collect the DisplayColumns by column member while keeping the column order the same.
