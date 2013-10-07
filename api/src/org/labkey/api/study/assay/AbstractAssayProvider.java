@@ -26,8 +26,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
@@ -64,6 +62,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -106,6 +106,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -569,6 +570,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
                                 reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
                             }
                         }
+                    }
+                }
+
+                // Filter out any files that aren't under the current pipeline root, since we won't be able to resolve
+                // them successfully due to security restrictions for what's an allowable input to the new run. See issue 18387.
+                PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(context.getContainer());
+                for (Iterator<Map.Entry<String, File>> iter = reusableFiles.entrySet().iterator(); iter.hasNext(); )
+                {
+                    Map.Entry<String, File> entry = iter.next();
+                    // If it's not under the current pipeline root
+                    if (!pipeRoot.isUnderRoot(entry.getValue()))
+                    {
+                        // Remove it from the collection
+                        iter.remove();
                     }
                 }
 
