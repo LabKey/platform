@@ -57,15 +57,6 @@ public class ListQueryView extends QueryView
         disableContainerFilterSelection();
     }
 
-    public DataView createDataView()
-    {
-        DataView view = super.createDataView();
-        DataRegion rgn = view.getDataRegion();
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
-        return view;
-    }
-
     protected boolean canDelete()
     {
         return super.canDelete() && _list.getAllowDelete();
