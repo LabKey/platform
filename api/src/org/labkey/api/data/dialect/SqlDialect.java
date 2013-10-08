@@ -49,6 +49,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
 import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -314,6 +315,21 @@ public abstract class SqlDialect
             return msg.toLowerCase().contains("deadlock") || state.startsWith("25") || state.startsWith("40");
         }
         return false;
+    }
+
+    public static boolean isObjectNotFoundException(Exception x)
+    {
+        SQLException sqlx = null;
+        if (x instanceof BadSqlGrammarException)
+            sqlx = ((BadSqlGrammarException)x).getSQLException();
+        else if (x instanceof RuntimeSQLException)
+            sqlx = ((RuntimeSQLException)x).getSQLException();
+        else if (x instanceof SQLException)
+            sqlx = (SQLException)x;
+        if (null == sqlx)
+            return false;
+        String sqlstate = sqlx.getSQLState();
+        return ("42P01".equals(sqlstate) || "42S02".equals(sqlstate) || "S0002".equals(sqlstate));
     }
 
 

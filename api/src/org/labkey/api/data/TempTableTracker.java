@@ -161,7 +161,7 @@ public class TempTableTracker extends WeakReference<Object>
         {
             // 42P01    postgres: UNDEFINED TABLE
             // 42S02    sqlserver: Base table or view not found
-            if (x.getSQLState().startsWith("42"))
+            if (SqlDialect.isObjectNotFoundException(x))
                 success = true;
             else
                 _log.warn("Error deleting temp table '" + tableName + "'", x);

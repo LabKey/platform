@@ -22,6 +22,7 @@ import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
@@ -287,6 +288,13 @@ class StatementDataIterator extends AbstractDataIterator
                 getRowError().addGlobalError(x);
                 _context.checkShouldCancel();
                 return hasNextRow;
+            }
+            // table does not exists
+            else if (SqlDialect.isObjectNotFoundException(x))
+            {
+                Table.OptimisticConflictException opt = Table.OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
+                getRowError().addGlobalError(opt);
+                throw _errors;
             }
             throw new RuntimeSQLException(x);
         }

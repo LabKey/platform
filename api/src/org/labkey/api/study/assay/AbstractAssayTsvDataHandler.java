@@ -30,6 +30,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -62,6 +63,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
 import java.io.IOException;
@@ -255,7 +257,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     deleteSQL.append(" WHERE DataId = ?");
                     deleteSQL.add(d.getRowId());
 
-                    new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                    try
+                    {
+                        new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                    }
+                    catch (BadSqlGrammarException x)
+                    {
+                        // (18035) presumably this is an optimistic concurrency problem and the table is gone
+                        // postgres returns 42P01 in this case... SQL Server?
+                        if (!SqlDialect.isObjectNotFoundException(x))
+                            throw x;
+                    }
                 }
             }
         }

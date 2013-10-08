@@ -90,6 +90,8 @@ public class Table
     public static final String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
     public static final int ERROR_DELETED = 10002;
+    public static final int ERROR_TABLEDELETED = 10003;
+
 
     private static final Logger _log = Logger.getLogger(Table.class);
 
@@ -1258,6 +1260,10 @@ public class Table
                             error);
                 case ERROR_ROWVERSION:
                     return new OptimisticConflictException("Optimistic concurrency exception: Row updated",
+                            SQLSTATE_TRANSACTION_STATE,
+                            error);
+                case ERROR_TABLEDELETED:
+                    return new OptimisticConflictException("Optimistic concurrency exception: Table deleted",
                             SQLSTATE_TRANSACTION_STATE,
                             error);
             }
