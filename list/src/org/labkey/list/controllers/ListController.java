@@ -284,7 +284,7 @@ public class ListController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            return new HtmlView("Are you sure you want to delete the list '" + PageFlowUtil.filter(form.getList().getName()) + "'?");
+            return new JspView("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception

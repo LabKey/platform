@@ -2280,6 +2280,12 @@ public class QueryServiceImpl extends QueryService
 
 
     @Override
+    public Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        return QueryManager.get().getQueryDependents(user, container, scope, schema, queries);
+    }
+
+    @Override
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         QueryManager.get().fireQueryCreated(user, container, scope, schema, queries);

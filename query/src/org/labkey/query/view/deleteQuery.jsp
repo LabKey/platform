@@ -29,16 +29,12 @@
 <labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the query '<%=h(action._form.getQueryName())%>'?</p>
 
-<%
-    if (dependents != null && dependents.size() > 0)
-    {
-        %>The following depend upon this query:
-        <ul><%
-        for (String dependent : dependents)
-        {
-            %><li><%=h(dependent)%></li><%
-        }
-        %></ul><%
-    }
-%>
+<% if (dependents != null && dependents.size() > 0) { %>
+The following depend upon this query:
+<ul>
+    <% for (String dependent : dependents) { %>
+    <li><%=h(dependent)%></li>
+    <% } %>
+</ul>
+<% } %>
 

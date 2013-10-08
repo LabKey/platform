@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -509,6 +510,9 @@ public class ListDefinitionImpl implements ListDefinition
 
                 transaction.commit();
             }
+
+            SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
+            QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
         }
     }
 
@@ -661,6 +665,13 @@ public class ListDefinitionImpl implements ListDefinition
         }
         return _def;
 
+    }
+
+    @Override
+    public Collection<String> getDependents(User user)
+    {
+        SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
+        return QueryService.get().getQueryDependents(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
     }
 
     @Override

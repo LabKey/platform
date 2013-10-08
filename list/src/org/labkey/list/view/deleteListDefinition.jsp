@@ -18,16 +18,23 @@
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="org.labkey.list.view.ListDefinitionForm" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
-    ListDefinitionForm form = (ListDefinitionForm) __form;
+    ListDefinitionForm form = (ListDefinitionForm)getModelBean();
     ListDefinition list = form.getList();
+    Collection<String> dependents = list == null ? null : list.getDependents(getViewContext().getUser());
 %>
-<form action="<%=list.urlFor(ListController.DeleteListDefinitionAction.class)%>" method="POST">
-    <p>Are you sure you want to delete the list '<%=h(list.getName())%>'?<br>
-        <labkey:button text="OK" />
-        <labkey:button text="Cancel" href="<%=list.urlShowDefinition()%>"/>
-    </p>
+<labkey:errors></labkey:errors>
+<p>Are you sure you want to delete the list '<%=h(list.getName())%>'?</p>
 
-</form>
+<% if (dependents != null && dependents.size() > 0) { %>
+The following depend upon this list:
+<ul>
+    <% for (String dependent : dependents) { %>
+    <li><%=h(dependent)%></li>
+    <% } %>
+</ul>
+<% } %>
+
