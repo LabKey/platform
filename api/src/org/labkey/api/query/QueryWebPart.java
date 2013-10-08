@@ -76,6 +76,9 @@ public class QueryWebPart extends VBox
         if (_schemaName != null)
         {
             _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
+            // normalize the name (18641)
+            if (null != _schema)
+                _schemaName = _schema.getSchemaPath().toString();
         }
 
         // check for any metadata overrides
