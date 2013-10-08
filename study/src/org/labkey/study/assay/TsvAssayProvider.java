@@ -16,12 +16,12 @@
 
 package org.labkey.study.assay;
 
-import org.junit.Assert;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -39,6 +39,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
@@ -290,7 +291,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
                 will(returnValue(new ExpData[]{_data}));
                 allowing(_data).getFile();
-                will(returnValue(new File("mockFile")));
+                will(returnValue(PipelineService.get().getPipelineRootSetting(_uploadContext.getContainer()).resolvePath("mockFile")));
             }});
 
             TsvAssayProvider provider = new TsvAssayProvider();
@@ -299,6 +300,31 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
             assertEquals(PreviouslyUploadedDataCollector.class, dataCollectors.get(1).getClass());
             assertEquals(FileUploadDataCollector.class, dataCollectors.get(2).getClass());
+        }
+
+        @Test
+        public void testReRunDataNotUnderRootCollectorList()
+        {
+            // Pretend that the user is rerunning an existing run, and should be offered the option of uploading new
+            // data or reusing the existing file
+            _context.checking(new Expectations(){{
+                allowing(_session).getAttribute(PipelineDataCollector.class.getName());
+                will(returnValue(new HashMap()));
+                allowing(_uploadContext).getReRun();
+                will(returnValue(_run));
+                allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
+                will(returnValue(new ExpData[]{_data}));
+                allowing(_data).getFile();
+                // Use a file that's not under the pipeline root for the folder
+                will(returnValue(new File("mockFile")));
+            }});
+
+            TsvAssayProvider provider = new TsvAssayProvider();
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
+            // Make sure that we're not offered the option of reusing the file
+            assertEquals(2, dataCollectors.size());
+            assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(FileUploadDataCollector.class, dataCollectors.get(1).getClass());
         }
 
         @Test
