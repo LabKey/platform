@@ -333,6 +333,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     ActionURL urlFor(Class<? extends Controller> actionClass);
 
+    Collection<String> getDependents(User user);
+
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);
 
