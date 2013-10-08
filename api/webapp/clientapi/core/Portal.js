@@ -255,6 +255,51 @@ LABKEY.Portal = new function()
         };
     }
 
+    var showEditTabWindow = function(title, handler, name){
+        var nameTextField = Ext4.create('Ext.form.field.Text', {
+            xtype: 'textfield',
+            fieldLabel: 'Name',
+            name: 'tabName',
+            value: name ? name : '',
+            enableKeyEvents: true,
+            labelSeparator: '',
+            listeners: {
+                scope: this,
+                keypress: function(field, event){
+                    if (event.getKey() == event.ENTER) {
+                        handler(nameTextField.getValue(), editTabWindow);
+                    }
+                }
+            }
+        });
+
+        var editTabWindow = Ext4.create('Ext.window.Window', {
+            title: title,
+            closeAction: 'destroy',
+            modal: true,
+            items: [{
+                xtype: 'panel',
+                border: false,
+                frame: false,
+                bodyPadding: 5,
+                items: [nameTextField]
+            }],
+            buttons: [{
+                text: 'Ok',
+                scope: this,
+                handler: function(){handler(nameTextField.getValue(), editTabWindow);}
+            },{
+                text: 'Cancel',
+                scope: this,
+                handler: function(){
+                    editTabWindow.close();
+                }
+            }]
+        });
+
+        editTabWindow.show(false, function(){nameTextField.focus();}, this);
+    };
+
     // public methods:
     /** @scope LABKEY.Portal.prototype */
     return {
@@ -546,57 +591,33 @@ LABKEY.Portal = new function()
          */
         addTab: function(){
             Ext4.onReady(function(){
-                var nameTextField = Ext4.create('Ext.form.field.Text', {
-                    xtype: 'textfield',
-                    fieldLabel: 'Name',
-                    name: 'tabName',
-                    labelSeparator: ''
-                });
-
-                var addTabWindow = Ext4.create('Ext.window.Window', {
-                    title: 'Add Tab',
-                    closeAction: 'destroy',
-                    modal: true,
-                    items: [{
-                        xtype: 'panel',
-                        border: false,
-                        frame: false,
-                        bodyPadding: 5,
-                        items: [nameTextField]
-                    }],
-                    buttons: [{
-                        text: 'Ok',
-                        scope: this,
-                        handler: function(){
-                            Ext4.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL('admin', 'addTab'),
-                                method: 'POST',
-                                jsonData: {tabName: nameTextField.getValue()},
-                                success: function(response){
-                                    var jsonResp = JSON.parse(response.responseText);
-                                    if (jsonResp.success) {
-                                        if (jsonResp.url) {
-                                            window.location = jsonResp.url;
-                                        }
-                                    }
-                                },
-                                failure: function(response){
-                                    var jsonResp = JSON.parse(response.responseText);
-                                    var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
-                                    Ext4.MessageBox.alert('Error', errorHTML);
+                var addTabHandler = function(name, editWindow){
+                    Ext4.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('admin', 'addTab'),
+                        method: 'POST',
+                        jsonData: {tabName: name},
+                        success: function(response){
+                            var jsonResp = Ext4.JSON.decode(response.responseText);
+                            if (jsonResp.success) {
+                                if (jsonResp.url) {
+                                    window.location = jsonResp.url;
                                 }
-                            });
+                            }
+                        },
+                        failure: function(response){
+                            var jsonResp = Ext4.JSON.decode(response.responseText);
+                            var errorHTML;
+                            if(jsonResp.errors) {
+                                errorHTML = jsonResp.errors[0].message;
+                            } else {
+                                errorHTML = 'An unknown error occured. Please contact your administrator.';
+                            }
+                            Ext4.MessageBox.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
                         }
-                    },{
-                        text: 'Cancel',
-                        scope: this,
-                        handler: function(){
-                            addTabWindow.close();
-                        }
-                    }]
-                });
+                    });
+                };
 
-                addTabWindow.show();
+                showEditTabWindow("Add Tab", addTabHandler, null);
             });
         },
 
@@ -636,60 +657,35 @@ LABKEY.Portal = new function()
             var currentName = document.getElementById(urlId).textContent;
 
             Ext4.onReady(function(){
-                var nameTextField = Ext4.create('Ext.form.field.Text', {
-                    xtype: 'textfield',
-                    fieldLabel: 'Name',
-                    name: 'tabName',
-                    value: currentName,
-                    labelSeparator: ''
-                });
-
-                var renameTabWindow = Ext4.create('Ext.window.Window', {
-                    title: 'Rename Tab',
-                    closeAction: 'destroy',
-                    modal: true,
-                    items: [{
-                        xtype: 'panel',
-                        border: false,
-                        frame: false,
-                        bodyPadding: 5,
-                        items: [nameTextField]
-                    }],
-                    buttons: [{
-                        text: 'Ok',
-                        scope: this,
-                        handler: function(){
-                            Ext4.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL('admin', 'renameTab'),
-                                method: 'POST',
-                                jsonData: {
-                                    tabPageId: pageId,
-                                    tabName: nameTextField.getValue()
-                                },
-                                success: function(response){
-                                    var jsonResp = JSON.parse(response.responseText);
-                                    if (jsonResp.success) {
-                                        document.getElementById(urlId).textContent = nameTextField.getValue();
-                                    }
-                                    renameTabWindow.close();
-                                },
-                                failure: function(response){
-                                    var jsonResp = JSON.parse(response.responseText);
-                                    var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
-                                    Ext4.MessageBox.alert('Error', errorHTML);
-                                }
-                            });
+                var renameHandler = function(name, editWindow){
+                    Ext4.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('admin', 'renameTab'),
+                        method: 'POST',
+                        jsonData: {
+                            tabPageId: pageId,
+                            tabName: name
+                        },
+                        success: function(response){
+                            var jsonResp = Ext4.JSON.decode(response.responseText);
+                            if (jsonResp.success) {
+                                document.getElementById(urlId).textContent = name;
+                            }
+                            editWindow.close();
+                        },
+                        failure: function(response){
+                            var jsonResp = Ext4.JSON.decode(response.responseText);
+                            var errorHTML;
+                            if(jsonResp.errors) {
+                                errorHTML = jsonResp.errors[0].message;
+                            } else {
+                                errorHTML = 'An unknown error occured. Please contact your administrator.';
+                            }
+                            Ext4.MessageBox.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
                         }
-                    },{
-                        text: 'Cancel',
-                        scope: this,
-                        handler: function(){
-                            renameTabWindow.close();
-                        }
-                    }]
-                });
+                    });
+                };
 
-                renameTabWindow.show();
+                showEditTabWindow("Rename Tab", renameHandler, currentName);
             });
         }
     };
