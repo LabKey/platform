@@ -429,21 +429,21 @@ public class StatementUtils
             col = table.getColumn("Owner");
             if (null != col && null != user)
             {
-                cols.add(new SQLFragment("Owner"));
+                cols.add(new SQLFragment(col.getSelectName()));
                 values.add(new SQLFragment().append(user.getUserId()));
                 done.add("Owner");
             }
             col = table.getColumn("CreatedBy");
             if (null != col && null != user)
             {
-                cols.add(new SQLFragment("CreatedBy"));
+                cols.add(new SQLFragment(col.getSelectName()));
                 values.add(new SQLFragment().append(user.getUserId()));
                 done.add("CreatedBy");
             }
             col = table.getColumn("Created");
             if (null != col)
             {
-                cols.add(new SQLFragment("Created"));
+                cols.add(new SQLFragment(col.getSelectName()));
                 values.add(new SQLFragment("{fn now()}"));
                 done.add("Created");
             }
@@ -453,7 +453,7 @@ public class StatementUtils
 
         if (autoFillDefaultColumns && null != colModifiedBy && null != user)
         {
-            cols.add(new SQLFragment("ModifiedBy"));
+            cols.add(new SQLFragment(colModifiedBy.getSelectName()));
             values.add(new SQLFragment().append(user.getUserId()));
             done.add("ModifiedBy");
         }
@@ -462,7 +462,7 @@ public class StatementUtils
 
         if (autoFillDefaultColumns && null != colModified)
         {
-            cols.add(new SQLFragment("Modified"));
+            cols.add(new SQLFragment(colModified.getSelectName()));
             values.add(new SQLFragment("{fn now()}"));
             done.add("Modified");
         }
