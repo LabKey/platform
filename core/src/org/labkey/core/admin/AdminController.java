@@ -5972,8 +5972,14 @@ public class AdminController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             HttpSession session = getViewContext().getSession();
-            boolean tabEditMode = session.getAttribute("tabEditMode") != null && ((boolean) session.getAttribute("tabEditMode"));
-            session.setAttribute("tabEditMode", !tabEditMode);
+            Container tabContainer = getTabContainer(getContainer());
+            String tabEditMode = (String) session.getAttribute("tabEditMode");
+
+            if (tabEditMode == null || tabEditMode != tabContainer.getId())
+                session.setAttribute("tabEditMode", tabContainer.getId());
+            else
+                session.setAttribute("tabEditMode", null);
+
             response.put("success", true);
             response.put("tabEditMode", session.getAttribute("tabEditMode"));
             return response;
