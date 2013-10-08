@@ -1330,10 +1330,14 @@ public class OntologyManager
             }
             catch (SQLException e)
             {
-                throw new RuntimeSQLException(e);
+                if (SqlDialect.isConstraintException(e))
+                    pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
+                if (null == pd)
+                    throw new RuntimeSQLException(e);
             }
         }
-        else if (pd.equals(pdIn))
+
+        if (pd.equals(pdIn))
         {
             return pd;
         }
