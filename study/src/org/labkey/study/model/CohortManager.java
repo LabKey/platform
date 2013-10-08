@@ -318,6 +318,8 @@ public class CohortManager
         Table.execute(ss, "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
                 (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
                 "\nSET CohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
+
+        StudyManager.getInstance().clearParticipantCache(study.getContainer());
     }
 
 

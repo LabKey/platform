@@ -3278,6 +3278,11 @@ public class StudyManager
         return participantMap;
     }
 
+    public void clearParticipantCache(Container container)
+    {
+        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(container));
+    }
+
     public Participant[] getParticipants(Study study) throws SQLException
     {
         Map<String, Participant> participantMap = getParticipantMap(study);
