@@ -760,6 +760,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row, 0, panel);
 
+
+
+            // ADDITIONAL KEY COLUMN
             VerticalPanel vPanel = new VerticalPanel();
             vPanel.setSpacing(1);
             panel = new HorizontalPanel();
@@ -768,10 +771,8 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             _noneButton = new RadioButton("additionalKey", "None");
             _noneButton.setChecked(_dataset.getKeyPropertyName() == null);
             setCheckboxId(_noneButton.getElement(), "button_none");
-
-            if (fromAssay)
+            if (fromAssay || _dataset.getDemographicData())
                 _noneButton.setEnabled(false);
-
             panel.add(_noneButton);
             vPanel.add(panel);
             
@@ -780,7 +781,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field:");
             setCheckboxId(dataFieldButton.getElement(), "button_dataField");
-            if (fromAssay)
+            if (fromAssay || _dataset.getDemographicData())
                 dataFieldButton.setEnabled(false);
             dataFieldButton.setChecked(_dataset.getKeyPropertyName() != null && !_dataset.getKeyPropertyManaged());
             panel.add(dataFieldButton);
@@ -794,7 +795,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 }
             });
             DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
-            dataFieldsBox.setEnabled(!fromAssay && !_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
+            dataFieldsBox.setEnabled(!fromAssay && !_dataset.getDemographicData() && !_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
 
             panel.add(dataFieldsBox);
             vPanel.add(panel);
@@ -804,7 +805,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field:");
             setCheckboxId(managedButton.getElement(), "button_managedField");
-            if (fromAssay)
+            if (fromAssay || _dataset.getDemographicData())
                 managedButton.setEnabled(false);
             managedButton.setChecked(_dataset.getKeyPropertyManaged());
             panel.add(managedButton);
@@ -818,7 +819,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 }
             });
             DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
-            managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged() && !fromAssay);
+            managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged() && !fromAssay && !_dataset.getDemographicData());
 
             panel.add(managedFieldsBox);
             vPanel.add(panel);
@@ -888,13 +889,20 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             }
 
             resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
+            // ADDITIONAL KEY COLUMN (end)
 
 
             BoundCheckBox demographicData = new BoundCheckBox("", _dataset.getDemographicData(), new WidgetUpdatable()
             {
                 public void update(Widget widget)
                 {
-                    _dataset.setDemographicData(((CheckBox)widget).isChecked());
+                    boolean isDemographic = ((CheckBox)widget).isChecked();
+                    _dataset.setDemographicData(isDemographic);
+                    _noneButton.setEnabled(!isDemographic);
+                    dataFieldButton.setEnabled(!isDemographic);
+                    managedButton.setEnabled(!isDemographic);
+                    dataFieldsBox.setEnabled(!isDemographic);
+                    managedFieldsBox.setEnabled(!isDemographic);
                 }
             });
             demographicData.setName("demographicData");

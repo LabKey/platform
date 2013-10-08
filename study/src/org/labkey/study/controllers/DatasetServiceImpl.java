@@ -195,6 +195,12 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 return errors;
             }
 
+            if (ds.getDemographicData())
+            {
+                ds.setKeyPropertyName(null);
+                ds.setKeyPropertyManaged(false);
+            }
+
             DataSetDefinition updated = def.createMutable();
             BeanUtils.copyProperties(updated, ds);
 
