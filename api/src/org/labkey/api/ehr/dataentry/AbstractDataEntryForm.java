@@ -131,15 +131,6 @@ public class AbstractDataEntryForm implements DataEntryForm
         if (!c.getActiveModules().contains(_owner))
             return false;
 
-        for (FormSection section : getFormSections())
-        {
-            for (Class<? extends Permission> clazz : getAvailabilityPermissions())
-            {
-                if (!section.hasPermission(c, u, clazz))
-                    return false;
-            }
-        }
-
         return true;
     }
 
@@ -163,6 +154,20 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("permissions", getPermissionMap(c, u));
         json.put("buttons", getButtonConfigs());
         json.put("moreActionButtons", getMoreActionButtonConfigs());
+
+        boolean canInsert = true;
+        for (FormSection section : getFormSections())
+        {
+            for (Class<? extends Permission> clazz : getAvailabilityPermissions())
+            {
+                if (!section.hasPermission(c, u, clazz))
+                {
+                    canInsert = false;
+                    break;
+                }
+            }
+        }
+        json.put("canInsert", canInsert);
 
         return json;
     }
