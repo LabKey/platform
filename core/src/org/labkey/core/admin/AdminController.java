@@ -545,28 +545,6 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(SessionLoggingAction.class, ContainerManager.getRoot());
         }
-
-        public ActionURL getAddTabURL(Container c, @Nullable URLHelper returnURL)
-        {
-            if (c.isWorkbookOrTab())
-                c = c.getParent();          // If we're in a container tab container, context should be the parent
-            ActionURL url = new ActionURL(AddTabAction.class, c);
-
-            if (returnURL != null)
-            {
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
-            }
-            return url;
-        }
-
-        public ActionURL getRenameTabURL(Container c, String pageId, @Nullable URLHelper returnURL)
-        {
-            ActionURL url = new ActionURL(RenameTabAction.class, c);
-            url.addParameter("pageId", pageId);
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
-            return url;
-        }
     }
 
 
@@ -5576,6 +5554,12 @@ public class AdminController extends SpringActionController
             }
             else
             {
+                if (form.getTabName().length() > 64)
+                {
+                    errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
+                    return;
+                }
+
                 String name = form.getTabName();
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
                 CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
@@ -5844,6 +5828,12 @@ public class AdminController extends SpringActionController
             }
             else
             {
+                if (form.getTabName().length() > 64)
+                {
+                    errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
+                    return;
+                }
+
                 String name = form.getTabName();
                 if (StringUtils.isEmpty(name))
                 {
