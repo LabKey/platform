@@ -601,8 +601,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         catch (SQLException s)
         {
-            String sqlState = StringUtils.defaultString("");
-            if ("42P01".equals(sqlState) || "42S02".equals(sqlState)) // UNDEFINED TABLE
+            if (SqlDialect.isObjectNotFoundException(s)) // UNDEFINED TABLE
                 return 0;
             throw new RuntimeSQLException(s);
         }

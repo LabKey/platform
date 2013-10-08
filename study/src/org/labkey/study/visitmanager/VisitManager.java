@@ -699,7 +699,7 @@ public abstract class VisitManager
             }
             catch (SQLException x)
             {
-                if (retry != 0 && ("42P01".equals(x.getSQLState()) || "42S02".equals(x.getSQLState())))
+                if (retry != 0 && (SqlDialect.isObjectNotFoundException(x)))
                 {
                     StudyManager.getInstance().clearCaches(study.getContainer(), false);
                     continue; // retry
