@@ -261,6 +261,8 @@ LABKEY.Portal = new function()
             fieldLabel: 'Name',
             name: 'tabName',
             value: name ? name : '',
+            maxLength: 64,
+            enforceMaxLength: true,
             enableKeyEvents: true,
             labelSeparator: '',
             listeners: {
