@@ -580,10 +580,10 @@ LABKEY.Portal = new function()
                     var classToSearchFor = response.tabEditMode ? 'tab-edit-mode-disabled' : 'tab-edit-mode-enabled';
                     var classToReplaceWith = response.tabEditMode ? 'tab-edit-mode-enabled' : 'tab-edit-mode-disabled';
                     var tabDiv = document.getElementsByClassName(classToSearchFor)[0];
+
                     if (tabDiv) {
                         tabDiv.setAttribute('class', tabDiv.getAttribute('class').replace(classToSearchFor, classToReplaceWith));
                     }
-
                 })
             });
         },

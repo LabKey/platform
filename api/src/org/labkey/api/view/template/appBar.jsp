@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,7 +39,12 @@
 %>
 <%
     ViewContext context = HttpView.currentView().getViewContext();
-    boolean tabEditMode = session.getAttribute("tabEditMode") != null && ((boolean) session.getAttribute("tabEditMode"));
+    Container tabContainer = context.getContainer();
+    if(tabContainer.isContainerTab() || tabContainer.isWorkbook())
+        tabContainer = tabContainer.getParent();
+
+    String tabEditMode = session.getAttribute("tabEditMode") == null ? "" : (String) session.getAttribute("tabEditMode");
+    boolean isTabEditMode = tabEditMode.equals(tabContainer.getId());
     AppBarView me = (AppBarView) HttpView.currentView();
     AppBar bean = me.getModelBean();
     if (null == bean)
@@ -55,7 +61,7 @@
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
         <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
-        <div class="button-bar <%=tabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled"%>">
+        <div class="button-bar <%=isTabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled"%>">
             <ul>
                 <%
                     for (NavTree navTree : tabs)
