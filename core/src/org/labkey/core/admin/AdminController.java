@@ -5577,7 +5577,7 @@ public class AdminController extends SpringActionController
             else
             {
                 String name = form.getTabName();
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, false));
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
                 CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
 
                 for (FolderTab tab : tabContainer.getFolderType().getDefaultTabs())
@@ -5903,7 +5903,7 @@ public class AdminController extends SpringActionController
             }
 
             Container container = getTabContainer(getContainer());
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
             Portal.PortalPage page = pages.get(form.getTabPageId());
             page.setCaption(form.getTabName());
             // Update the page the caption is saved.

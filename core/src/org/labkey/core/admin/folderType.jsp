@@ -249,7 +249,7 @@ function validate()
 
 function checkChangedType()
 {
-    var currentType = '<%=text(folderType.getName())%>';
+    var currentType = '<%=h(folderType.getName())%>';
     if (currentType.toLowerCase() != getSelectedFolderType().toLowerCase())
     {
         return confirm("Are you sure you want to change a container tab's folder type?");
