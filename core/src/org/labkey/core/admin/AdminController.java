@@ -5561,6 +5561,10 @@ public class AdminController extends SpringActionController
                 }
 
                 String name = form.getTabName();
+
+                if(name.length() > 50)
+                    name = name.substring(0, 50).trim();
+
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
                 CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
 
@@ -5611,10 +5615,26 @@ public class AdminController extends SpringActionController
             }
 
             Container container = getTabContainer(getContainer());
-            Portal.saveParts(container, form.getTabName(), new Portal.WebPart[0]);
-            Portal.addProperty(container, form.getTabName(), Portal.PROP_CUSTOMTAB);
+            String name = form.getTabName();
+            String caption = form.getTabName();
+
+            if (name.length() > 50)
+                name = name.substring(0, 50).trim();
+
+            Portal.saveParts(container, name, new Portal.WebPart[0]);
+            Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
+
+            if (!name.equals(caption))
+            {
+                // If we had to truncate the name then we want to set the caption to the un-truncated version of the name.
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
+                Portal.PortalPage page = pages.get(name);
+                page.setCaption(caption);
+                Portal.updatePortalPage(container, page);
+            }
+
             ActionURL tabURL = new ActionURL(ProjectController.BeginAction.class, container);
-            tabURL.addParameter("pageId", form.getTabName());
+            tabURL.addParameter("pageId", name);
             response.put("url", tabURL);
             response.put("success", true);
             return response;

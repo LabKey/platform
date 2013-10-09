@@ -515,9 +515,6 @@ public class ProjectController extends SpringActionController
         {
             // UNDONE: this is used as a link, fix to make POST
             handlePost(form, errors);
-            URLHelper successURL = getSuccessURL(form);
-            if (null != successURL)
-                return HttpView.redirect(successURL);
             return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
         }
 
