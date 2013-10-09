@@ -72,10 +72,10 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
             {
                 Container c = ctx.getContainer();
 
-                if (!Objects.equals(manifestDatasetsXml.getDefaultDateFormat(), StudyManager.getInstance().getDefaultDateFormatString(c)))
+                if (manifestDatasetsXml.isSetDefaultDateFormat())
                     StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
 
-                if (!Objects.equals(manifestDatasetsXml.getDefaultNumberFormat(), StudyManager.getInstance().getDefaultNumberFormatString(c)))
+                if (manifestDatasetsXml.isSetDefaultNumberFormat())
                     StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
 
                 DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
