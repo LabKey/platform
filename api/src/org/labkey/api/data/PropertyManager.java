@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.SimpleFilter.SQLClause;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
@@ -45,51 +44,6 @@ import java.util.Set;
  */
 public class PropertyManager
 {
-    public static class PropertySchema
-    {
-        private static final PropertySchema _instance = new PropertySchema();
-        private static final String SCHEMA_NAME = "prop";
-
-        public static PropertySchema getInstance()
-        {
-            return _instance;
-        }
-
-        private PropertySchema()
-        {
-        }
-
-        public String getSchemaName()
-        {
-            return SCHEMA_NAME;
-        }
-
-        public DbSchema getSchema()
-        {
-            return DbSchema.get(SCHEMA_NAME);
-        }
-
-        public SqlDialect getSqlDialect()
-        {
-            return getSchema().getSqlDialect();
-        }
-
-        public TableInfo getTableInfoProperties()
-        {
-            return getSchema().getTable("Properties");
-        }
-
-        public TableInfo getTableInfoPropertyEntries()
-        {
-            return getSchema().getTable("PropertyEntries");
-        }
-
-        public TableInfo getTableInfoPropertySets()
-        {
-            return getSchema().getTable("PropertySets");
-        }
-    }
-
     private static final Logger _log = Logger.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
 

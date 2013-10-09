@@ -98,7 +98,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         sortOrderCol.setReadOnly(true);
         sortOrderCol.setUserEditable(false);
 
-        PropertyManager.PropertySchema propertySchema = PropertyManager.PropertySchema.getInstance();
+        PropertySchema propertySchema = PropertySchema.getInstance();
         SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
                 propertySchema.getTableInfoPropertySets() + " ps WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS +
                 ".EntityId AND ps.Category = ? AND ps." + getSqlDialect().getColumnSelectName("set") + " = p." +
