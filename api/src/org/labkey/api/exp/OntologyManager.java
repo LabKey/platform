@@ -3551,7 +3551,7 @@ public class OntologyManager
         {
             PropertyType oldType = pdOld.getPropertyType();
             PropertyType newType = pdNew.getPropertyType();
-            if (oldType.getStorageType() != newType.getStorageType() && !new TableSelector(getTinfoObjectProperty(), new SimpleFilter("PropertyId", pdOld.getPropertyId()), null).exists())
+            if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter("PropertyId", pdOld.getPropertyId()), null).exists())
                 throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
 
             validatePropertyDescriptor(pdNew);
