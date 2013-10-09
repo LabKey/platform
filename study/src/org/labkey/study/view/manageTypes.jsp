@@ -16,20 +16,29 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.exp.property.Domain"%>
 <%@ page import="org.labkey.api.study.DataSet"%>
 <%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController.*" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetDetailsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetDisplayOrderAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageUndefinedTypesAction" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.exp.property.Domain" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -48,7 +57,7 @@
 </script>
 
 <%
-    Container c = HttpView.currentContext().getContainer();
+    Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
 
     List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
@@ -59,12 +68,12 @@
         if (null == d || 0 == d.getProperties().length)
             countUndefined++;
     }
-    String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(HttpView.currentContext().getContainer());
-    String numberFormat = StudyManager.getInstance().getDefaultNumberFormatString(HttpView.currentContext().getContainer());
+    String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getContainer());
+    String numberFormat = StudyManager.getInstance().getDefaultNumberFormatString(getContainer());
     String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
-            "<a href=\"http://java.sun.com/j2se/1.4.2/docs/api/java/text/DecimalFormat.html\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
@@ -75,7 +84,7 @@
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
     String dateFormatHelp = "The format string for dates must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
-            "<a href=\"http://java.sun.com/j2se/1.4.2/docs/api/java/text/SimpleDateFormat.html\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
@@ -161,9 +170,9 @@
 <form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>
         <tr><td>Default Study Date format string:<%=PageFlowUtil.helpPopup("Date format string", dateFormatHelp, true)%></td>
-            <td><input id="dateFormat" name="dateFormat" value="<%=StringUtils.trimToEmpty(dateFormat)%>"></td></tr>
+            <td><input id="dateFormat" name="dateFormat" value="<%=h(StringUtils.trimToEmpty(dateFormat))%>"></td></tr>
         <tr><td>Default Study Number format string:<%=PageFlowUtil.helpPopup("Number format string", decimalFormatHelp, true)%></td>
-            <td><input id="numberFormat" name="numberFormat" value="<%=StringUtils.trimToEmpty(numberFormat)%>"></td></tr>
+            <td><input id="numberFormat" name="numberFormat" value="<%=h(StringUtils.trimToEmpty(numberFormat))%>"></td></tr>
         <tr><td><%=generateSubmitButton("Submit")%>
             &nbsp;<%=generateButton("Reset to Default", "javascript:resetDefaultFormats()")%>
 
@@ -191,17 +200,20 @@
     for (DataSet def : datasets)
     {
         details.replaceParameter("id",String.valueOf(def.getDataSetId()));
+        ViewCategory viewCategory = def.getViewCategory();
+        Cohort cohort = def.getCohort();
+
     %><tr>
         <td align=right><a href="<%=h(details)%>"><%=def.getDataSetId()%></a></td>
         <td><a href="<%=h(details)%>"><%= h(def.getName()) %></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
-        <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %>&nbsp;</td>
-        <td><%= def.getType()%>&nbsp;</td>
-        <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
-        <td><%= def.isShowByDefault() ? "" : "false" %></td>
-        <td><%= def.isDemographicData() ? "true" : "" %></td>
-        <td><%= def.getKeyTypeDescription() %></td>
-        <td><%= def.getAssayProtocol() != null ? def.getAssayProtocol().getName() : "" %></td>
+        <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
+        <td><%=h(def.getType())%>&nbsp;</td>
+        <td><%=h(cohort != null ? cohort.getLabel() : "All")%></td>
+        <td><%=text(def.isShowByDefault() ? "" : "false")%></td>
+        <td><%=text(def.isDemographicData() ? "true" : "")%></td>
+        <td><%=h(def.getKeyTypeDescription())%></td>
+        <td><%=h(def.getAssayProtocol() != null ? def.getAssayProtocol().getName() : "")%></td>
     </tr><%
     }
 %></table>

@@ -23,7 +23,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.JavaRuntimeHack;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -114,7 +114,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
-    @JavaRuntimeHack
+    @JavaRuntimeVersion
     public AbstractSearchService()
     {
         addSearchCategory(fileCategory);
