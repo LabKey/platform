@@ -82,7 +82,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "\n" +
             "        // Validate that the chart data has expected values and give warnings if certain elements are not present\n" +
             "        var messages = [];\n" +
-            "        var validation = TCH.validateChartData(responseData, seriesList, DEFAULT_DATA_LIMIT, false);\n" +
+            "        var validation = TCH.validateChartData(responseData, this.chartInfo, seriesList, DEFAULT_DATA_LIMIT, false);\n" +
             "        if (validation.message != null)\n" +
             "        {\n" +
             "            messages.push(validation.message);\n" +

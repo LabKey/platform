@@ -426,9 +426,9 @@ LABKEY.vis.TimeChartHelper = new function() {
     };
 
     var generateApplyClipRect = function(config) {
-        var xAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "x-axis");
-        var leftAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "y-axis", "left");
-        var rightAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "y-axis", "right");
+        var xAxisIndex = getAxisIndex(config.axis, "x-axis");
+        var leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left");
+        var rightAxisIndex = getAxisIndex(config.axis, "y-axis", "right");
 
         return (
             xAxisIndex > -1 && (config.axis[xAxisIndex].range.min != null || config.axis[xAxisIndex].range.max != null) ||
@@ -454,9 +454,9 @@ LABKEY.vis.TimeChartHelper = new function() {
             var leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor;
             var columnAliases = data.individual ? data.individual.columnAliases : (data.aggregate ? data.aggregate.columnAliases : null);
             var isDateBased = config.measures[0].time == "date";
-            var xAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "x-axis");
-            var leftAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "y-axis", "left");
-            var rightAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(config.axis, "y-axis", "right");
+            var xAxisIndex = getAxisIndex(config.axis, "x-axis");
+            var leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left");
+            var rightAxisIndex = getAxisIndex(config.axis, "y-axis", "right");
 
             for (var i = 0; i < seriesList.length; i++)
             {
@@ -790,7 +790,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         var chartData = {numberFormats: {}};
         var counter = config.chartInfo.displayIndividual && config.chartInfo.displayAggregate ? 2 : 1;
         var isDateBased = config.chartInfo.measures[0].time == "date";
-        var seriesList = LABKEY.vis.TimeChartHelper.generateSeriesList(config.chartInfo.measures);
+        var seriesList = generateSeriesList(config.chartInfo.measures);
         var nounSingular = LABKEY.moduleContext.study.subject.nounSingular;
 
         // Issue 16156: for date based charts, give error message if there are no calculated interval values
@@ -869,16 +869,24 @@ LABKEY.vis.TimeChartHelper = new function() {
             getNumberFormats(response.metaData.fields, config.defaultNumberFormat);
 
             // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
+            // also keep track of which measure/dimensions have negative values (for log scale)
             var visitsInData = [];
             response.hasData = {};
+            response.hasNegativeValues = {};
             Ext4.each(seriesList, function(s) {
                 response.hasData[s.name] = false;
+                response.hasNegativeValues[s.name] = false;
                 for (var i = 0; i < response.rows.length; i++)
                 {
                     var row = response.rows[i];
                     var alias = LABKEY.vis.getColumnAlias(response.columnAliases, s.aliasLookupInfo);
                     if (row[alias] && row[alias].value != null)
+                    {
                         response.hasData[s.name] = true;
+
+                        if (row[alias].value < 0)
+                            response.hasNegativeValues[s.name] = true;
+                    }
 
                     var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, nounSingular + "Visit/Visit");
                     if (!isDateBased && row[visitMappedName])
@@ -914,7 +922,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                     config.failure.call(config.scope, info);
                 },
                 measures: config.chartInfo.measures,
-                sorts: LABKEY.vis.TimeChartHelper.generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
+                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
                 limit : config.dataLimit || 10000,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
@@ -941,7 +949,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 },
                 measures: config.chartInfo.measures,
                 groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'UniqueId', values: groups}],
-                sorts: LABKEY.vis.TimeChartHelper.generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
+                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
                 limit : config.dataLimit || 10000,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
@@ -992,7 +1000,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
-    var validateChartData = function(data, seriesList, limit) {
+    var validateChartData = function(data, config, seriesList, limit) {
         var message = "";
         var sep = "";
 
@@ -1035,6 +1043,38 @@ LABKEY.vis.TimeChartHelper = new function() {
                 message += sep + msg;
                 sep = "<br/>";
             }
+        }
+
+        // check to make sure that data can be used in a log scale (if applicable)
+        if (config)
+        {
+            var leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left");
+            var rightAxisIndex = getAxisIndex(config.axis, "y-axis", "right");
+
+            Ext4.each(config.measures, function(md){
+                var m = md.measure;
+
+                // check the left y-axis
+                if (m.yAxis == "left" && leftAxisIndex > -1 && config.axis[leftAxisIndex].scale == "log"
+                        && ((data.individual && data.individual.hasNegativeValues && data.individual.hasNegativeValues[m.name])
+                        || (data.aggregate && data.aggregate.hasNegativeValues && data.aggregate.hasNegativeValues[m.name])))
+                {
+                    config.axis[leftAxisIndex].scale = "linear";
+                    message += sep + "Unable to use a log scale on the left y-axis. All y-axis values must be >= 0. Reverting to linear scale on left y-axis.";
+                    sep = "<br/>";
+                }
+
+                // check the right y-axis
+                if (m.yAxis == "right" && rightAxisIndex > -1 && config.axis[rightAxisIndex].scale == "log"
+                        && ((data.individual && data.individual.hasNegativeValues[m.name])
+                        || (data.aggregate && data.aggregate.hasNegativeValues[m.name])))
+                {
+                    config.axis[rightAxisIndex].scale = "linear";
+                    message += sep + "Unable to use a log scale on the right y-axis. All y-axis values must be >= 0. Reverting to linear scale on right y-axis.";
+                    sep = "<br/>";
+                }
+
+            });
         }
 
         return {success: true, message: message};

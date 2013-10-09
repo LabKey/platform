@@ -990,7 +990,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var seriesList = LABKEY.vis.TimeChartHelper.generateSeriesList(this.chartInfo.measures);
 
         // validate the chart data to either display warnings or error messages
-        validation = LABKEY.vis.TimeChartHelper.validateChartData(this.chartData, seriesList, this.dataLimit);
+        validation = LABKEY.vis.TimeChartHelper.validateChartData(this.chartData, this.chartInfo, seriesList, this.dataLimit);
         if (!validation.success)
         {
             this.clearChartPanel(validation.message);
