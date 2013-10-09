@@ -16,6 +16,8 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.annotations.JavaRuntimeVersion;
+
 import java.text.DecimalFormat;
 
 /**
@@ -39,4 +41,10 @@ public class Formats
     public static DecimalFormat percent2 = new DecimalFormat("0.00%");
     public static DecimalFormat commaf0 = new DecimalFormat("#,##0");
     public static DecimalFormat chargeFilter = new DecimalFormat("0.#");
+
+    @JavaRuntimeVersion  // Update this link whenever we require a new major Java version so we always point at the current docs
+    public static String getDecimalFormatDocumentationURL()
+    {
+        return "http://docs.oracle.com/javase/7/docs/api/java/text/DecimalFormat.html";
+    }
 }

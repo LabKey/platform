@@ -24,10 +24,11 @@ package org.labkey.api.annotations;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-// Used to mark hacks that work around problems in the Java runtime. Re-evaluate these when new versions of the
-// Java runtime are released or deprecated.
+// Used to mark code that is specific to a particular Java runtime version, for example, hacks that work around problems
+// in the runtime or links to the Java documentation. Re-evaluate these when Java versions are released or deprecated.
+// Search for text "@JavaRuntimeVersion" to find all usages.
 
 @Retention(RetentionPolicy.SOURCE)
-public @interface JavaRuntimeHack
+public @interface JavaRuntimeVersion
 {
 }

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
@@ -258,7 +259,7 @@ public class DateUtil
 
     enum ISO
     {
-        t;    // T : time marker
+        t    // T : time marker
     }
 
     static Enum[] parts = null;
@@ -487,7 +488,7 @@ validNum:       {
                 {
                     dp = resolveDatePart(s,st,i);
                 }
-                catch (IllegalArgumentException x)
+                catch (IllegalArgumentException ignored)
                 {
                 }
                 if (null == dp)
@@ -783,13 +784,15 @@ validNum:       {
                 format.setLenient(false);
                 return format.parse(s).getTime();
             }
-            catch (ParseException ignored)
+            catch (ParseException pe)
             {
                 try
                 {
                     return parseXMLDate(s);
                 }
-                catch (IllegalArgumentException ignored2) {}
+                catch (IllegalArgumentException ignored)
+                {
+                }
             }
 
             throw e;
@@ -1143,6 +1146,12 @@ Parse:
     }
 
 
+    @JavaRuntimeVersion  // Update this link whenever we require a new major Java version so we always point at the current docs
+    public static String getSimpleDateFormatDocumentationURL()
+    {
+        return "http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html";
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -1155,7 +1164,6 @@ Parse:
             }
             catch (ConversionException x)
             {
-                return;
             }
         }
 
@@ -1168,7 +1176,6 @@ Parse:
             }
             catch (ConversionException x)
             {
-                return;
             }
         }
 
@@ -1181,7 +1188,6 @@ Parse:
             }
             catch (ConversionException x)
             {
-                return;
             }
         }
 
@@ -1424,7 +1430,9 @@ Parse:
                 parseDuration("1m2d3h");
                 assertFalse("unsupported conversion", true);
             }
-            catch (ConversionException x) {;}
+            catch (ConversionException x)
+            {
+            }
 
             // one non-zero field
             assertEquals("1s", formatDuration(makeDuration(0,0,0,1)));
@@ -1490,11 +1498,7 @@ Parse:
                     String s = f.format(datetimeExpected);
                     assertEquals(l.getDisplayName(), msExpected, f.parse(s).getTime());
                 }
-                catch (ParseException x)
-                {
-                    fail(" locale test failed: " + l.getDisplayName());
-                }
-                catch (ConversionException x)
+                catch (ParseException | ConversionException x)
                 {
                     fail(" locale test failed: " + l.getDisplayName());
                 }

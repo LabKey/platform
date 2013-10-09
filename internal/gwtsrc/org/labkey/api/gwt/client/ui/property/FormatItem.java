@@ -30,8 +30,14 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  */
 public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
+    // @JavaRuntimeVersion: Update these documentation links whenever we require a new major Java version so we always point at the current docs.
+    // Should match Formats.getDecimalFormatDocumentationURL()
+    private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/7/docs/api/java/text/DecimalFormat.html";
+    // Should match DateUtil.getSimpleDateFormatDocumentationURL()
+    private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html";
+
     private static final String FORMAT_HELP_NUMBER = "The format string for numbers " +
-    "must be compatible with the format that the java class <a href=\"http://java.sun.com/j2se/1.4.2/docs/api/java/text/DecimalFormat.html\" target=\"blank\"><code>DecimalFormat</code></a> accepts.<br/>" +
+    "must be compatible with the format that the java class <a href=\"" + DECIMAL_FORMAT_DOCUMENTATION_LINK + "\" target=\"blank\"><code>DecimalFormat</code></a> accepts.<br/>" +
             "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
             "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
@@ -40,7 +46,7 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table><br/><br/>";
     private static final String FORMAT_HELP_DATE = "The format string for dates must be compatible with the format that the java class " +
-    "<a href=\"http://java.sun.com/j2se/1.4.2/docs/api/java/text/SimpleDateFormat.html\" target=\"blank\"><code>SimpleDateFormat</code></a> accepts.<br/>" +
+    "<a href=\"" + SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK + "\" target=\"blank\"><code>SimpleDateFormat</code></a> accepts.<br/>" +
             "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
