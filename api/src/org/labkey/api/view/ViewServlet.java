@@ -27,6 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -75,6 +76,7 @@ public class ViewServlet extends HttpServlet
     public static final String REQUEST_CONTAINER = "LABKEY.container";
 
     public static final String MOCK_REQUEST_HEADER = "X-Mock-Request";
+    public static final String MOCK_REQUEST_CSRF = "Mock-Request-Inherently-Trusted-For-CSRF";
 
     private static ServletContext _servletContext = null;
     private static String _serverHeader = null;
@@ -397,6 +399,11 @@ public class ViewServlet extends HttpServlet
         request.setServerName(props.getServerName());
         request.setScheme(props.getScheme());
         request.addHeader(MOCK_REQUEST_HEADER, true);
+
+        // Mock requests are used for things like trigger scripts making client API calls back into the server
+        // They're inherently trusted from the CSRF perspective, since they can't originate from external clients
+        request.setAttribute(CSRFUtil.csrfName, MOCK_REQUEST_CSRF);
+        request.addHeader(CSRFUtil.csrfHeader, MOCK_REQUEST_CSRF);
 
         if (user != null)
             request.setUserPrincipal(user);
