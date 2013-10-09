@@ -548,6 +548,7 @@ api/src/org/labkey/api/exp/XarFormatException.java -text
 api/src/org/labkey/api/exp/XarSource.java -text
 api/src/org/labkey/api/exp/api/AbstractExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/AssayDomainType.java -text
+api/src/org/labkey/api/exp/api/AssayJSONConverter.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/ExpData.java -text
@@ -1288,6 +1289,7 @@ api/src/org/labkey/api/study/assay/AssayRunDatabaseContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
+api/src/org/labkey/api/study/assay/AssaySaveHandler.java -text
 api/src/org/labkey/api/study/assay/AssaySchema.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
 api/src/org/labkey/api/study/assay/AssayTableMetadata.java -text
@@ -1298,6 +1300,7 @@ api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
 api/src/org/labkey/api/study/assay/BulkPropertiesUploadWizardAction.java -text
 api/src/org/labkey/api/study/assay/DefaultAssayRunCreator.java -text
+api/src/org/labkey/api/study/assay/DefaultAssaySaveHandler.java -text
 api/src/org/labkey/api/study/assay/DefaultDataTransformer.java -text
 api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileUploadDataCollector.java -text

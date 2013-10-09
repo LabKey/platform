@@ -224,4 +224,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /**@ return the module in which this assay provider is declared */
     Module getDeclaringModule();
+
+    AssaySaveHandler getSaveHandler();
 }

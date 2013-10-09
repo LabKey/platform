@@ -1223,6 +1223,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return Boolean.TRUE.equals(getBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX));
     }
 
+    @Override
+    public AssaySaveHandler getSaveHandler()
+    {
+        return null;
+    }
+
     protected Boolean getBooleanProperty(ExpProtocol protocol, String propertySuffix)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(createPropertyURI(protocol, propertySuffix));
