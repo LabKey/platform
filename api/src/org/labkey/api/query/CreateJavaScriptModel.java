@@ -142,16 +142,21 @@ public class CreateJavaScriptModel extends ExportScriptModel
 
         params.append(indent).append("queryName: ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
         params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");  // TODO: Inconsistent with R and SAS, which don't include view columns
-        params.append(indent).append("filterArray: ").append(getFilters()).append(",\n");
+        params.append(indent).append("filterArray: ").append(getFilters());
 
         ContainerFilter containerFilter = getContainerFilter();
 
-        if (null != containerFilter && null != containerFilter.getType())
-            params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
+        if (null != containerFilter)
+        {
+            ContainerFilter.Type type = containerFilter.getType();
+
+            if (null != type)
+                params.append(",\n").append(indent).append("containerFilter: '").append(type.name());
+        }
 
         String sort = getSort();
         if (sort != null)
-            params.append(indent).append("sort: ").append(PageFlowUtil.jsString(sort));
+            params.append(",\n").append(indent).append("sort: ").append(PageFlowUtil.jsString(sort));
 
         if (includeStandardCallbacks)
         {
@@ -189,7 +194,7 @@ public class CreateJavaScriptModel extends ExportScriptModel
         sb.append(indent).append(indent).append("}").append("\n");
         sb.append("\n");
 
-        sb.append(indent).append(indent).append("data = data + '\\n'\\n").append("\n");
+        sb.append(indent).append(indent).append("data = data + '\\n';").append("\n");
         sb.append(indent).append("}").append("\n");
         sb.append("\n");
         sb.append(indent).append("alert(data);").append("\n");

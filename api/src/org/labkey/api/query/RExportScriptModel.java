@@ -104,7 +104,7 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append(indent).append("colSort=" + doubleQuote(getSort()) + ",").append("\n");
         sb.append(indent).append("colFilter=" + getFilters() + ",").append("\n");
         sb.append(indent).append("containerFilter=" + getContainerFilterString()).append("\n");
-        sb.append(")");
+        sb.append(")\n");
 
         return sb.toString();
     }

@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.query.ExportScriptModel" %><%@ page extends="org.labkey.api.jsp.JspBase" %><%
+%><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%@ page import="org.labkey.api.query.ExportScriptModel" %><%@ page extends="org.labkey.api.jsp.JspBase" %><%
     JspView<ExportScriptModel> me = (JspView<ExportScriptModel>) HttpView.currentView();
     ExportScriptModel model = me.getModelBean();
     me.getViewContext().getResponse().setContentType("text/plain");

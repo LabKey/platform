@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
@@ -37,13 +38,14 @@ public class CreatePerlScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Nullable
     public String getFilters()
     {
         String indent = StringUtils.repeat(" ", _indentSpaces);
 
         List<String> filterExprs = getFilterExpressions();
         if (null == filterExprs || filterExprs.size() == 0)
-            return "null";
+            return null;
 
         StringBuilder ret = new StringBuilder("[");
         String sep = "\n";
@@ -89,24 +91,32 @@ public class CreatePerlScriptModel extends ExportScriptModel
         //params.append(indent).append("requiredVersion => 9.1,\n");
         params.append(indent).append("-baseUrl => ").append(PageFlowUtil.jsString(getBaseUrl())).append(",\n");
         params.append(indent).append("-containerPath => ").append(PageFlowUtil.jsString(getFolderPath())).append(",\n");
-
         params.append(indent).append("-schemaName => ").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
 
         if (null != getViewName())
             params.append(indent).append("-viewName => ").append(PageFlowUtil.jsString(getViewName())).append(",\n");
 
         params.append(indent).append("-queryName => ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
-        params.append(indent).append("-columns => ").append(PageFlowUtil.jsString(getColumns())).append(",\n");  // TODO: Inconsistent with R and SAS, which don't include view columns
-        params.append(indent).append("-filterArray => ").append(getFilters()).append(",\n");
+        params.append(indent).append("-columns => ").append(PageFlowUtil.jsString(getColumns()));  // TODO: Inconsistent with R and SAS, which don't include view columns
+
+        String filters = getFilters();
+
+        if (null != filters)
+            params.append(",\n").append(indent).append("-filterArray => ").append(filters);
 
         ContainerFilter containerFilter = getContainerFilter();
 
-        if (null != containerFilter && null != containerFilter.getType())
-            params.append(indent).append("-containerFilterName => '").append(containerFilter.getType().name()).append("',\n");
+        if (null != containerFilter)
+        {
+            ContainerFilter.Type type = containerFilter.getType();
+
+            if (null != type)
+                params.append(",\n").append(indent).append("-containerFilterName => '").append(type.name()).append("',\n");
+        }
 
         String sort = getSort();
         if (sort != null)
-            params.append(indent).append("-sort => ").append(PageFlowUtil.jsString(sort));
+            params.append(",\n").append(indent).append("-sort => ").append(PageFlowUtil.jsString(sort));
 
         return params.toString();
     }
@@ -117,7 +127,9 @@ public class CreatePerlScriptModel extends ExportScriptModel
         StringBuilder sb = new StringBuilder();
         String indent = StringUtils.repeat(" ", 4);
 
-        sb.append("my $results = LABKEY::Query::selectRows(\n");
+        sb.append("use LabKey::Query;").append("\n\n");
+
+        sb.append("my $results = LabKey::Query::selectRows(\n");
         sb.append(getStandardScriptParameters(4)).append("\n");
         sb.append(");\n");
         sb.append("\n");
@@ -135,7 +147,7 @@ public class CreatePerlScriptModel extends ExportScriptModel
         sb.append(indent).append("my @line;").append("\n");
         sb.append(indent).append("foreach (@fields){").append("\n");
         sb.append(indent).append(indent).append("if ($row->{$_}){").append("\n");
-        sb.append(indent).append(indent).append(indent).append("push(@line, $row->{$_});").append("\n");
+        sb.append(indent).append(indent).append(indent).append("push(@line, $row->{$_}{'value'});").append("\n");
         sb.append(indent).append(indent).append("}").append("\n");
         sb.append(indent).append(indent).append("else {").append("\n");
         sb.append(indent).append(indent).append(indent).append("push(@line, \"\");").append("\n");
@@ -143,7 +155,7 @@ public class CreatePerlScriptModel extends ExportScriptModel
         sb.append(indent).append("}").append("\n");
         sb.append(indent).append("print join(\"\\t\", @line);").append("\n");
         sb.append(indent).append("print \"\\n\";").append("\n");
-        sb.append("};").append("\n");
+        sb.append("}").append("\n");
 
         return sb.toString();
     }
