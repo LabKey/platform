@@ -1578,7 +1578,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null != failedReplaceMap && failedReplaceMap.size() > 0)
         {
             StringBuilder error = new StringBuilder();
-            error.append("Only one row is allowed for each ").append(StudyService.get().getSubjectNounSingular(getContainer()));
+            error.append("Only one row is allowed for each ");
             error.append(getKeyTypeDescription());
             error.append(".  ");
 
