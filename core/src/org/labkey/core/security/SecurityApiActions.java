@@ -26,6 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -675,7 +676,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class SavePolicyAction extends MutatingApiAction<SavePolicyForm>
     {
         protected enum RoleModification
@@ -833,7 +834,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
@@ -910,7 +911,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
         public ApiResponse execute(NameForm form, BindException errors) throws Exception
@@ -940,7 +941,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -972,7 +973,7 @@ public class SecurityApiActions
     }
 
     @RequiresSiteAdmin
-//    @CSRF
+    @CSRF
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -1022,7 +1023,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class RenameGroupAction extends FormApiAction<RenameForm>
     {
         Group group;
@@ -1248,7 +1249,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-//    @CSRF
+    @CSRF
     public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
     {
         public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
