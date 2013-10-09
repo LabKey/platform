@@ -3240,6 +3240,7 @@ study/src/org/labkey/study/importer/StudyImportProvider.java -text
 study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
+study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
@@ -3655,6 +3656,7 @@ study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
 study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
+study/src/org/labkey/study/writer/StudyViewsWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyWriterFactory.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text

@@ -15,9 +15,13 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.qcStates.StudyqcDocument;
 
 /**
  * User: adam
@@ -27,6 +31,7 @@ import org.labkey.study.xml.StudyDocument;
 public class QcStateWriter implements InternalStudyWriter
 {
     public static final String DATA_TYPE = "QC State Settings";
+    private static final String DEFAULT_SETTINGS_FILE = "quality_control_states.xml";
 
     public String getSelectionText()
     {
@@ -35,8 +40,50 @@ public class QcStateWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        // TODO: Write out the actual QC states
-        StudyDocument.Study.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
-        qcStatesXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
+        QCState[] qcStates = StudyManager.getInstance().getQCStates(ctx.getContainer());
+
+        if (qcStates != null && qcStates.length > 0)
+        {
+            StudyDocument.Study.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
+            StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
+
+            StudyqcDocument.Studyqc qcXml = doc.addNewStudyqc();
+            qcXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
+            qcXml.setBlankQCStatePublic(study.isBlankQCStatePublic());
+
+            // set the default states for each import type
+            QCState pipelineImportState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPipelineQCState());
+            if (pipelineImportState != null)
+                qcXml.setPipelineImportDefault(pipelineImportState.getLabel());
+
+            QCState assayCopyState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultAssayQCState());
+            if (assayCopyState != null)
+                qcXml.setAssayDataDefault(assayCopyState.getLabel());
+
+            QCState datasetInsertState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultDirectEntryQCState());
+            if (datasetInsertState != null)
+                qcXml.setInsertUpdateDefault(datasetInsertState.getLabel());
+
+            // now save each of the individual states
+            StudyqcDocument.Studyqc.Qcstates states = qcXml.addNewQcstates();
+            for (QCState qc : qcStates)
+            {
+                StudyqcDocument.Studyqc.Qcstates.Qcstate state = states.addNewQcstate();
+
+                state.setName(qc.getLabel());
+                state.setDescription(qc.getDescription());
+                state.setPublic(qc.isPublicData());
+            }
+            qcStatesXml.setFile(DEFAULT_SETTINGS_FILE);
+            vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);
+        }
+    }
+
+    private QCState getQCStateFromRowId(Container container, Integer rowId)
+    {
+        if (rowId != null)
+            return StudyManager.getInstance().getQCStateForRowId(container, rowId);
+
+        return null;
     }
 }

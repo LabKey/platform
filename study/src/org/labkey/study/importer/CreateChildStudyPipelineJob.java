@@ -416,6 +416,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             ProtocolDocumentImporter proImporter = new ProtocolDocumentImporter();
             proImporter.process(importContext, studyDir, errors);
 
+            // custom participant view
+            StudyViewsImporter viewsImporter = new StudyViewsImporter();
+            viewsImporter.process(importContext, studyDir, errors);
+
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
         }
