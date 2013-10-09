@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     protected ExpExperiment lookupBatch(int batchId)
@@ -64,7 +65,7 @@ LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
-    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
+    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
     %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);<%
  }
  else

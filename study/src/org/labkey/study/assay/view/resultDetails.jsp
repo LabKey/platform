@@ -22,9 +22,9 @@
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.json.JSONArray" %>
+<%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.ResultDetailsBean> me = (JspView<ModuleAssayProvider.ResultDetailsBean>) HttpView.currentView();
@@ -34,7 +34,7 @@
     ExpData data = bean.expData;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
-    JSONArray dataRows = AbstractAssayAPIAction.serializeDataRows(data, provider, protocol, getViewContext().getUser(), bean.objectId);
+    JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getViewContext().getUser(), bean.objectId);
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>
 <script type="text/javascript">

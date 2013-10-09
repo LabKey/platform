@@ -26,6 +26,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -82,7 +83,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             protocol = pp.first;
             provider = pp.second;
 
-            batchId = json.optInt(AbstractAssayAPIAction.BATCH_ID);
+            batchId = json.optInt(AssayJSONConverter.BATCH_ID);
             String name = json.optString(ExperimentJSONConverter.NAME);
             String comments = json.optString(ExperimentJSONConverter.COMMENT);
             Map<String, String> runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);

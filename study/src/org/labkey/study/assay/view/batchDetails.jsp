@@ -22,8 +22,8 @@
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
-<%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.BatchDetailsBean> me = (JspView<ModuleAssayProvider.BatchDetailsBean>) HttpView.currentView();
@@ -33,7 +33,7 @@
     ExpExperiment batch = bean.expExperiment;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
-    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
+    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();

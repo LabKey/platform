@@ -50,6 +50,7 @@ import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.FileUploadDataCollector;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -120,6 +121,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public String getName()
     {
         return "General";
+    }
+
+    @Override
+    public AssaySaveHandler getSaveHandler()
+    {
+        return new TsvSaveHandler(this);
     }
 
     @Override @NotNull
