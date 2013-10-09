@@ -5978,7 +5978,11 @@ public class AdminController extends SpringActionController
             if (tabEditMode == null || tabEditMode != tabContainer.getId())
                 session.setAttribute("tabEditMode", tabContainer.getId());
             else
+            {
                 session.setAttribute("tabEditMode", null);
+                // Used if the user is currently on a hidden page. We navigate to the start url when exiting tabEditMode.
+                response.put("startURL", tabContainer.getStartURL(getUser()));
+            }
 
             response.put("success", true);
             response.put("tabEditMode", session.getAttribute("tabEditMode"));
