@@ -305,6 +305,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 });
 
                 this.codeMirror.setSize(null, size.height + 'px');
+                LABKEY.codemirror.RegisterEditorInstance('metadata', this.codeMirror);
             }
         }, this);
 
