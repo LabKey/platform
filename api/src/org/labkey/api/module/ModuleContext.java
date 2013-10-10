@@ -92,11 +92,6 @@ public class ModuleContext implements Cloneable
         return _newInstall;
     }
 
-    public boolean isInstallComplete()
-    {
-        return ModuleLoader.ModuleState.ReadyToRun == _moduleState || ModuleLoader.ModuleState.Running == _moduleState;
-    }
-
     public String getClassName()
     {
         return _className;
@@ -121,7 +116,7 @@ public class ModuleContext implements Cloneable
         }
 
         double targetVersion = module.getVersion();
-        return getModuleState().describeModuleState(_installedVersion, targetVersion);
+        return getModuleState().describeModuleState(this, _installedVersion, targetVersion);
     }
 
     private static DecimalFormat df2 = new DecimalFormat("0.00#");
@@ -144,7 +139,7 @@ public class ModuleContext implements Cloneable
     public void upgradeComplete(Module module)
     {
         _installedVersion = module.getVersion();
-        setModuleState(ModuleLoader.ModuleState.ReadyToRun);
+        setModuleState(ModuleLoader.ModuleState.ReadyToStart);
         ModuleLoader.getInstance().saveModuleContext(this);
 
         SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider(module);

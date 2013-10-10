@@ -404,9 +404,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
+        boolean startupComplete = ModuleLoader.getInstance().isStartupComplete();
         boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
-        if (upgradeRequired || maintenanceMode)
+        if (upgradeRequired || !startupComplete || maintenanceMode)
         {
             boolean actionIsAllowed = (null != action && action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class));
 
@@ -421,27 +422,36 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 if (user.isSearchUser())
                     return null;
 
+                URLHelper returnURL = null;
+                try
+                {
+                    StringBuilder url = new StringBuilder(request.getRequestURL().toString());
+                    if (request.getQueryString() != null)
+                    {
+                        url.append("?");
+                        url.append(request.getQueryString());
+                    }
+                    returnURL = new URLHelper(url.toString());
+                }
+                catch (URISyntaxException e)
+                {
+                    // ignore
+                }
+
                 if (user.isGuest())
                 {
-                    ActionURL loginURL;
-                    try
-                    {
-                        URLHelper requested = new URLHelper(request.getRequestURL().toString());
-                        loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), requested);
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
-                    }
-                    return loginURL;
+                    if (returnURL != null)
+                        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
+                    else
+                        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
                 }
                 else if (!user.isSiteAdmin())
                 {
                     return PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL();
                 }
-                else if (upgradeRequired)
+                else if (upgradeRequired || !startupComplete)
                 {
-                    return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
+                    return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL(returnURL);
                 }
             }
         }

@@ -136,11 +136,16 @@ public class ModuleLoader implements Filter
     private File _webappDir;
     private UpgradeState _upgradeState;
     private User upgradeUser = null;
-    private boolean _startupComplete = false;
+
+    // NOTE: the following startup fields are synchronized under STARTUP_LOCK
+    private StartupState _startupState = StartupState.StartupIncomplete;
+    private String _startingUpMessage = null;
 
     private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<>();
 
     private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
+
+    private enum StartupState {StartupIncomplete, StartupInProgress, StartupComplete}
 
     public enum ModuleState
     {
@@ -148,7 +153,7 @@ public class ModuleLoader implements Filter
         Loading,
         InstallRequired
         {
-            public String describeModuleState(double installedVersion, double targetVersion)
+            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
             {
                 if (installedVersion > 0.0)
                     return "Upgrade Required: " + ModuleContext.formatVersion(installedVersion) + " -> " + ModuleContext.formatVersion(targetVersion);
@@ -158,22 +163,29 @@ public class ModuleLoader implements Filter
         },
         Installing,
         InstallComplete,
-        ReadyToRun
+        ReadyToStart
         {
-            public String describeModuleState(double installedVersion, double targetVersion)
+            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
             {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " ready to run.";
+                return "Version " + ModuleContext.formatVersion(installedVersion) + " ready to start.";
             }
         },
-        Running
+        Starting
         {
-            public String describeModuleState(double installedVersion, double targetVersion)
+            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
             {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " running.";
+                return "Version " + ModuleContext.formatVersion(installedVersion) + " starting up.";
+            }
+        },
+        Started
+        {
+            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
+            {
+                return "Version " + ModuleContext.formatVersion(installedVersion) + " started.";
             }
         };
 
-        public String describeModuleState(double installedVersion, double targetVersion)
+        public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
         {
             return toString();
         }
@@ -379,7 +391,7 @@ public class ModuleLoader implements Filter
             if (context.getInstalledVersion() < module.getVersion())
                 context.setModuleState(ModuleState.InstallRequired);
             else
-                context.setModuleState(ModuleState.ReadyToRun);
+                context.setModuleState(ModuleState.ReadyToStart);
             /*
         else if (!context.isEnabled())
             context.setModuleState(ModuleState.Disabled);
@@ -388,7 +400,7 @@ public class ModuleLoader implements Filter
 
         // Core module should be upgraded and ready-to-run
         ModuleContext coreCtx = contextMap.get(DefaultModule.CORE_MODULE_NAME);
-        assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
+        assert (ModuleState.ReadyToStart == coreCtx.getModuleState());
 
         List<String> modulesRequiringUpgrade = new LinkedList<>();
         List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
@@ -998,11 +1010,54 @@ public class ModuleLoader implements Filter
         }
     }
 
+    /**
+     * Module upgrade scripts have completed, and we are now completing module startup.
+     * @return true if module startup in progress.
+     */
+    public boolean isStartupInProgress()
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            return _startupState == StartupState.StartupInProgress;
+        }
+    }
+
+    /**
+     * All module startup is complete.
+     * @return true if complete.
+     */
     public boolean isStartupComplete()
     {
         synchronized (STARTUP_LOCK)
         {
-            return _startupComplete;
+            return _startupState == StartupState.StartupComplete;
+        }
+    }
+
+    private void setStartupState(StartupState state)
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            _startupState = state;
+        }
+    }
+
+    public String getStartingUpMessage()
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            return _startingUpMessage;
+        }
+    }
+
+    /** Set a message that will be displayed in the upgrade/startup UI. */
+    public void setStartingUpMessage(String message)
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            _startingUpMessage = message;
+            if (message != null)
+                _log.info(message);
         }
     }
 
@@ -1010,60 +1065,101 @@ public class ModuleLoader implements Filter
     {
         synchronized (STARTUP_LOCK)
         {
-            if (_startupComplete)
+            if (_startupState == StartupState.StartupInProgress || _startupState == StartupState.StartupComplete)
                 return;
 
             if (isUpgradeRequired())
                 throw new IllegalStateException("Can't start modules before upgrade is complete");
 
-            _startupComplete = true;
-
-            for (Module m : _modules)
+            // Run module startup in the background
+            Thread thread = new Thread("Module Starter")
             {
-                try
-                {
-                    ModuleContext ctx = getModuleContext(m);
-                    m.startup(ctx);
-                    ctx.setModuleState(ModuleLoader.ModuleState.Running);
-                }
-                catch (Throwable x)
-                {
-                    setStartupFailure(x);
-                    _log.error("Failure starting module: " + m.getName(), x);
-                }
-
-                //call the module resource loaders
-                for (ModuleResourceLoader resLoader : _resourceLoaders)
+                @Override
+                public void run()
                 {
                     try
                     {
-                        resLoader.registerResources(m);
+                        completeStartup();
                     }
-                    catch(Throwable t)
+                    catch (Throwable t)
                     {
-                        _log.error("Unable to load resources from module " + m.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
+                        ModuleLoader.getInstance().setStartupFailure(t);
+                        _log.error("Failure during module startup", t);
                     }
                 }
+            };
+            thread.start();
+
+            _startupState = StartupState.StartupInProgress;
+            setStartingUpMessage("Starting up modules");
+        }
+    }
+
+    /**
+     * Perform the final stage of startup:
+     * <ol>
+     *     <li>{@link Module#startup(ModuleContext) module startup}</li>
+     *     <li>Register module resources (eg, creating module assay providers)</li>
+     *     <li>Deferred upgrade tasks</li>
+     *     <li>Startup listeners</li>
+     * </ol>
+     *
+     * Once the deferred upgrade tasks have run, the module is considered {@link ModuleState.Started started}.
+     */
+    private void completeStartup()
+    {
+        for (Module m : _modules)
+        {
+            // Module startup
+            try
+            {
+                ModuleContext ctx = getModuleContext(m);
+                ctx.setModuleState(ModuleLoader.ModuleState.Starting);
+                setStartingUpMessage("Starting module '" + m.getName() + "'");
+                m.startup(ctx);
+            }
+            catch (Throwable x)
+            {
+                setStartupFailure(x);
+                _log.error("Failure starting module: " + m.getName(), x);
             }
 
-            // Finally, run any deferred upgrades, after all of the modules are in the Running state so that we
-            // know they've registered their listeners
-            for (Module m : _modules)
+            //call the module resource loaders
+            for (ModuleResourceLoader resLoader : _resourceLoaders)
             {
                 try
                 {
-                    ModuleContext ctx = getModuleContext(m);
-                    m.runDeferredUpgradeTasks(ctx);
+                    resLoader.registerResources(m);
                 }
-                catch (Throwable x)
+                catch(Throwable t)
                 {
-                    setStartupFailure(x);
-                    _log.error("Failure starting module: " + m.getName(), x);
+                    _log.error("Unable to load resources from module " + m.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
                 }
             }
-
-            ContextListener.moduleStartupComplete(_servletContext);
         }
+
+        // Run any deferred upgrades, after all of the modules are in the Running state so that we
+        // know they've registered their listeners
+        for (Module m : _modules)
+        {
+            try
+            {
+                ModuleContext ctx = getModuleContext(m);
+                m.runDeferredUpgradeTasks(ctx);
+                ctx.setModuleState(ModuleLoader.ModuleState.Started);
+            }
+            catch (Throwable x)
+            {
+                setStartupFailure(x);
+                _log.error("Failure starting module: " + m.getName(), x);
+            }
+        }
+
+        // Finally, fire the startup complete event
+        ContextListener.moduleStartupComplete(_servletContext);
+
+        setStartupState(StartupState.StartupComplete);
+        setStartingUpMessage("Module startup complete");
     }
 
 

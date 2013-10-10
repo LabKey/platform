@@ -32,7 +32,7 @@ public class ContextListener implements ServletContextListener
 {
     private static final Logger _log = Logger.getLogger(ContextListener.class);
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
-    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
+    private static final List<Pair<String, StartupListener>> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
 
     public void contextInitialized(ServletContextEvent servletContextEvent)
@@ -91,12 +91,15 @@ public class ContextListener implements ServletContextListener
 
     public static void moduleStartupComplete(ServletContext servletContext)
     {
-        List<StartupListener> startupListeners = _startupListeners;
+        List<Pair<String, StartupListener>> startupListeners = _startupListeners;
 
-        for (StartupListener listener : startupListeners)
+        for (Pair<String, StartupListener> pair : startupListeners)
         {
             try
             {
+                String name = pair.first;
+                StartupListener listener = pair.second;
+                ModuleLoader.getInstance().setStartingUpMessage("Running startup listener: " + name);
                 listener.moduleStartupComplete(servletContext);
             }
             catch (Throwable t)
@@ -107,9 +110,9 @@ public class ContextListener implements ServletContextListener
         }
     }
 
-    public static void addStartupListener(StartupListener listener)
+    public static void addStartupListener(String name, StartupListener listener)
     {
-        _startupListeners.add(listener);
+        _startupListeners.add(Pair.of(name, listener));
     }
 
     public static void removeStartupListener(StartupListener listener)

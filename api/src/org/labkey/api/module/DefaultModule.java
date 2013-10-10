@@ -1217,11 +1217,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             Method task = _deferredUpgradeTasks.remove();
             try
             {
+                ModuleLoader.getInstance().setStartingUpMessage("Running deferred upgrade for module '" + context.getName() + "': " + task.getName());
                 task.invoke(getUpgradeCode(), context);
             }
             catch (ReflectiveOperationException e)
             {
                 throw new UnexpectedException(e);
+            }
+            finally
+            {
+                ModuleLoader.getInstance().setStartingUpMessage(null);
             }
         }
     }
