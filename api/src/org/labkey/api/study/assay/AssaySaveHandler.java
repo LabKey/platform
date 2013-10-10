@@ -39,6 +39,9 @@ import java.util.Map;
  */
 public interface AssaySaveHandler
 {
+    void setProvider(AssayProvider provider);
+    AssayProvider getProvider();
+
     ExpExperiment handleBatch(ViewContext context, JSONObject batchJson, ExpProtocol protocol) throws Exception;
     ExpRun handleRun(ViewContext context, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException;
     ExpData handleData(ViewContext context, JSONObject dataJson) throws ValidationException;

@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
@@ -226,4 +227,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     Module getDeclaringModule();
 
     AssaySaveHandler getSaveHandler();
+
+    AssayRunUploadContext getRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData);
 }

@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -1225,6 +1226,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     @Override
     public AssaySaveHandler getSaveHandler()
+    {
+        return null;
+    }
+
+    @Override
+    public AssayRunUploadContext getRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
     {
         return null;
     }

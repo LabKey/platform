@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -58,12 +59,17 @@ import java.util.Map;
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public abstract class DefaultAssaySaveHandler implements AssaySaveHandler
+public class DefaultAssaySaveHandler implements AssaySaveHandler
 {
     private static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
 
-    public DefaultAssaySaveHandler(AssayProvider provider)
+    public AssayProvider getProvider()
+    {
+        return _provider;
+    }
+
+    public void setProvider(AssayProvider provider)
     {
         _provider = provider;
     }
@@ -535,5 +541,18 @@ public abstract class DefaultAssaySaveHandler implements AssaySaveHandler
             material.setCpasType(sampleSet.getLSID());
         material.save(viewContext.getUser());
         return material;
+    }
+
+    @Override
+    public void importRows(ViewContext context, ExpData data, ExpRun run, ExpProtocol protocol, JSONObject runJson, List<Map<String, Object>> rawData) throws ExperimentException, ValidationException
+    {
+        // programmatic qc validation
+        DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
+        if (dataTransformer != null)
+            dataTransformer.transformAndValidate(_provider.getRunUploadContext(context, protocol.getRowId(), runJson, rawData), run);
+
+        TsvDataHandler dataHandler = new TsvDataHandler();
+        dataHandler.setAllowEmptyData(true);
+        dataHandler.importRows(data, context.getUser(), run, protocol, _provider, rawData);
     }
 }

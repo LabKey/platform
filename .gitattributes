@@ -1334,6 +1334,7 @@ api/src/org/labkey/api/study/assay/ThawListBean.java -text
 api/src/org/labkey/api/study/assay/ThawListFileResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListListResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListResolverType.java -text
+api/src/org/labkey/api/study/assay/TsvDataHandler.java -text
 api/src/org/labkey/api/study/assay/bulkPropertiesInput.jsp -text
 api/src/org/labkey/api/study/assay/fileUpload.jsp -text
 api/src/org/labkey/api/study/assay/pipeline/AssayRunAsyncContext.java -text
