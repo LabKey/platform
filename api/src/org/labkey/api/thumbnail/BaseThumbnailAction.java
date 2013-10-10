@@ -61,7 +61,7 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
 
         if (null != provider)
         {
-            CacheableWriter writer = svc.getThumbnailWriter(provider);
+            CacheableWriter writer = svc.getThumbnailWriter(provider, ThumbnailService.ImageType.Large);
 
             // TODO: need to handle client caching better -- use long expiration and _dc to defeat caching
             Calendar expiration = new GregorianCalendar();

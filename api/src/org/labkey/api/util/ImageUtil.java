@@ -147,17 +147,19 @@ public class ImageUtil
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image) throws IOException
     {
-        // TODO: Check size -- don't scale up if smaller than THUMBNAIL_HEIGHT
+        if (null == image)
+            return null;
 
-        if (null != image)
-        {
-            ThumbnailOutputStream os = new ThumbnailOutputStream();
-            ImageUtil.resizeImage(image, os, THUMBNAIL_HEIGHT/image.getHeight(), 1);
+        ThumbnailOutputStream os = new ThumbnailOutputStream();
+        int height = image.getHeight();
 
-            return os.getThumbnail("image/png");
-        }
+        // Scale the image down if height is greater than THUMBNAIL_HEIGHT, otherwise leave it alone
+        if (height > THUMBNAIL_HEIGHT)
+            ImageUtil.resizeImage(image, os, THUMBNAIL_HEIGHT/height, 1);
+        else
+            ImageIO.write(image, "png", os);
 
-        return null;
+        return os.getThumbnail("image/png");
     }
 
     public static Thumbnail webThumbnail(URL url) throws IOException

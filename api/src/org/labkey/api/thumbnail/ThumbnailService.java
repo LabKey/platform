@@ -17,9 +17,11 @@ package org.labkey.api.thumbnail;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * User: adam
@@ -28,10 +30,28 @@ import java.io.IOException;
  */
 public interface ThumbnailService
 {
-    public static final String THUMBNAIL_FILENAME = "Thumbnail";
+    public static final Set<String> ImageFilenames = PageFlowUtil.set(ImageType.Large.getFilename(), ImageType.Small.getFilename());
 
-    CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider);
-    void queueThumbnailRendering(DynamicThumbnailProvider provider);
-    void deleteThumbnail(DynamicThumbnailProvider provider);
-    void replaceThumbnail(DynamicThumbnailProvider provider, @Nullable ViewContext context) throws IOException;
+    public enum ImageType
+    {
+        Large("Thumbnail"),
+        Small("SmallThumbnail");
+
+        private final String _filename;
+
+        private ImageType(String filename)
+        {
+            _filename = filename;
+        }
+
+        public String getFilename()
+        {
+            return _filename;
+        }
+    }
+
+    CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider, ImageType type);
+    void queueThumbnailRendering(DynamicThumbnailProvider provider, ImageType type);
+    void deleteThumbnail(DynamicThumbnailProvider provider, ImageType type);
+    void replaceThumbnail(DynamicThumbnailProvider provider, ImageType type, @Nullable ViewContext context) throws IOException;
 }
