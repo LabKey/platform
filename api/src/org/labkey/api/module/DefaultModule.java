@@ -43,6 +43,7 @@ import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -932,7 +933,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         Resource r = getModuleResource(path);
         if (r != null && r.isFile())
+        {
+            if (r instanceof FileResource)
+            {
+                File file = ((FileResource)r).getFile();
+                if (file.getPath().contains("src") || file.getPath().contains("META-INF"))
+                    _log.info("/src resource: " + file.getPath());
+            }
             return r.getInputStream();
+        }
         return null;
     }
 
