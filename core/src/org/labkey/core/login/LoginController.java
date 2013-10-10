@@ -421,6 +421,13 @@ public class LoginController extends SpringActionController
                     "Only Site Administrators are permitted to log in during the upgrade process.");
             vBox.addView(updateMessageView);
         }
+        else if (!ModuleLoader.getInstance().isStartupComplete())
+        {
+            HtmlView startupMessageView = new HtmlView("Server startup in progress",
+                    "This server is starting up.<br/>" +
+                    "Only Site Administrators are permitted to log in during the startup process.");
+            vBox.addView(startupMessageView);
+        }
         else if (isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
@@ -1022,7 +1029,7 @@ public class LoginController extends SpringActionController
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
             if (!UserManager.hasNoUsers())
-                throw new RedirectException(AdminController.getModuleStatusURL());
+                throw new RedirectException(AdminController.getModuleStatusURL(null));
 
             _email = email;
             _unrecoverableError = false;

@@ -142,7 +142,7 @@ public class SearchModule extends DefaultModule
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11);
 
             // don't start the crawler until all the modules are done startuping
-            ContextListener.addStartupListener(new StartupListener(){
+            ContextListener.addStartupListener("Search Service: start", new StartupListener(){
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
                     ss.start();
@@ -184,7 +184,7 @@ public class SearchModule extends DefaultModule
                 ContextListener.removeStartupListener(this);
             }
         };
-        ContextListener.addStartupListener(l);
+        ContextListener.addStartupListener("Search Service: clear indexes", l);
     }
     
 

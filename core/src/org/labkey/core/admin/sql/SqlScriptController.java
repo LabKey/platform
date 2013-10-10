@@ -86,8 +86,8 @@ public class SqlScriptController extends SpringActionController
             JSONObject result = new JSONObject();
             JSONArray modulesJSON = new JSONArray();
 
-            String currentModule = SqlScriptRunner.getCurrentModuleName();
-            result.put("currentModule", currentModule);
+            String currentlyUpgradingModule = SqlScriptRunner.getCurrentModuleName();
+            result.put("currentlyUpgradingModule", currentlyUpgradingModule);
             for (Module module : ModuleLoader.getInstance().getModules())
             {
                 JSONObject moduleJSON = new JSONObject();
@@ -101,10 +101,10 @@ public class SqlScriptController extends SpringActionController
 
                 JSONArray scriptsJSON = new JSONArray();
 
-                if (module.getName().equals(currentModule))
+                if (module.getName().equals(currentlyUpgradingModule))
                 {
                     moduleJSON.put("currentlyUpgrading", true);
-                    List<SqlScript> sqlScripts = SqlScriptRunner.getRunningScripts(currentModule);
+                    List<SqlScript> sqlScripts = SqlScriptRunner.getRunningScripts(currentlyUpgradingModule);
                     for (SqlScript sqlScript : sqlScripts)
                     {
                         JSONObject scriptJSON = new JSONObject();
@@ -123,9 +123,11 @@ public class SqlScriptController extends SpringActionController
                 modulesJSON.put(moduleJSON);
             }
             result.put("modules", modulesJSON);
-            result.put("startupComplete", ModuleLoader.getInstance().isStartupComplete());
-            result.put("upgradeInProgress", ModuleLoader.getInstance().isUpgradeInProgress());
+            result.put("message", ModuleLoader.getInstance().getStartingUpMessage());
             result.put("upgradeRequired", ModuleLoader.getInstance().isUpgradeRequired());
+            result.put("upgradeInProgress", ModuleLoader.getInstance().isUpgradeInProgress());
+            result.put("startupInProgress", ModuleLoader.getInstance().isStartupInProgress());
+            result.put("startupComplete", ModuleLoader.getInstance().isStartupComplete());
             result.put("newInstall", ModuleLoader.getInstance().isNewInstall());
 
             return new ApiSimpleResponse(result);

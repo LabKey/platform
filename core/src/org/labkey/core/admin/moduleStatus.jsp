@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-ModuleLoader loader = ModuleLoader.getInstance();
-
-String verb = loader.isNewInstall() ? "Install" : "Upgrade";
-String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
+AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getModelBean();
 %>
 <script type="text/javascript">
     try
@@ -41,7 +37,7 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 
 <br/>
 
-<div>This step will <%= verb.toLowerCase() %> the modules needed to use LabKey Server.</div>
+<div>This step will <%= h(bean.verb.toLowerCase()) %> the modules needed to use LabKey Server.</div>
 <div>Please wait, this page will automatically update with progress information.</div>
 <br/>
 <div id="progressBarDiv"></div>
@@ -106,34 +102,54 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 
     function updateProgress(o)
     {
-        var currentModule = o.currentModule;
         var message;
-        if (o.upgradeInProgress)
+
+        <%--
+        Once module upgrades are complete, the o.message field will
+        be set by the ModuleLoader.getInstance().getStartingUpMessage().
+        --%>
+        if (o.message)
         {
-            message = "<%= verbing %>";
-            if (currentModule)
-            {
-                message += " " + currentModule + " module";
-            }
-            else
-            {
-                message += "...";
-            }
+            message = o.message;
         }
         else
         {
-            message = "<%= verb %>" + " complete";
+            if (o.upgradeInProgress)
+            {
+                message = "<%= h(bean.verbing) %>";
+                if (o.currentlyUpgradingModule)
+                {
+                    message += " " + o.currentlyUpgradingModule + " module";
+                }
+                else
+                {
+                    message += "...";
+                }
+            }
+            else if (o.startupComplete)
+            {
+                message = "<%= h(bean.verb) %>" + " complete.";
+            }
         }
-        
-        var runningModules = 0;
+
+        var progress = 0;
         for (var i = 0; i < o.modules.length; i++)
         {
             var module = o.modules[i];
-            if (module.state == 'Running' || module.state == 'ReadyToRun')
+            if (module.state == 'ReadyToStart')
             {
-                runningModules++;
+                progress += 1;
             }
-            if (module.name == currentModule)
+            else if (module.state == 'Starting')
+            {
+                progress += 2;
+            }
+            if (module.state == 'Started')
+            {
+                progress += 3;
+            }
+
+            if (o.upgradeInProgress && module.name == o.currentlyUpgradingModule)
             {
                 if (module.scripts && module.scripts.length > 0)
                 {
@@ -141,8 +157,8 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
                 }
             }
         }
-        
-        progressBar.updateProgress(runningModules / o.modules.length, message);
+
+        progressBar.updateProgress(progress / (3*o.modules.length), message);
         if (!o.startupComplete)
         {
             task.delay(500);
@@ -157,5 +173,5 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 <br/>
 <div id="completeDiv" style="visibility: hidden">
     <%-- Send new installs to set their defaults, and upgrades to the complete page --%>
-    <%= PageFlowUtil.generateButton("Next", new ActionURL(loader.isNewInstall() ? AdminController.NewInstallSiteSettingsAction.class : AdminController.InstallCompleteAction.class, ContainerManager.getRoot()), null, "id=\"nextButton\"") %>
+    <%= PageFlowUtil.generateButton("Next", bean.nextURL, null, "id=\"nextButton\"") %>
 </div>

@@ -390,9 +390,9 @@ public class AdminController extends SpringActionController
             return getShowAdminURL();
         }
 
-        public ActionURL getModuleStatusURL()
+        public ActionURL getModuleStatusURL(URLHelper returnURL)
         {
-            return AdminController.getModuleStatusURL();
+            return AdminController.getModuleStatusURL(returnURL);
         }
 
         public ActionURL getCustomizeSiteURL()
@@ -3183,28 +3183,63 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static ActionURL getModuleStatusURL()
+    public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {
-        return new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
+        ActionURL url = new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
+        if (returnURL != null)
+            url.addReturnURL(returnURL);
+        return url;
+    }
+
+    public static class ModuleStatusBean
+    {
+        public String verb;
+        public String verbing;
+        public ActionURL nextURL;
     }
 
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
-    public class ModuleStatusAction extends SimpleViewAction
+    public class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            ModuleLoader.getInstance().startNonCoreUpgrade(getUser());
+            ModuleLoader loader = ModuleLoader.getInstance();
+            loader.startNonCoreUpgrade(getUser());
 
             VBox vbox = new VBox();
 
-            JspView statusView = new JspView("/org/labkey/core/admin/moduleStatus.jsp");
+            ModuleStatusBean bean = new ModuleStatusBean();
+
+            if (loader.isNewInstall())
+                bean.nextURL = new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot());
+            else if (form.getReturnURL() != null)
+                bean.nextURL = form.getReturnActionURL();
+            else
+                bean.nextURL = new ActionURL(AdminController.InstallCompleteAction.class, ContainerManager.getRoot());
+
+            if (loader.isNewInstall())
+                bean.verb = "Install";
+            else if (loader.isUpgradeRequired() || loader.isUpgradeInProgress())
+                bean.verb = "Upgrade";
+            else
+                bean.verb = "Startup";
+
+            if (loader.isNewInstall())
+                bean.verbing = "Installing";
+            else if (loader.isUpgradeRequired() || loader.isUpgradeInProgress())
+                bean.verbing = "Upgrading";
+            else
+                bean.verbing = "Starting";
+
+            JspView <ModuleStatusBean> statusView = new JspView<>("/org/labkey/core/admin/moduleStatus.jsp", bean, errors);
             vbox.addView(statusView);
 
             getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
 
             getPageConfig().setTemplate(Template.Wizard);
-            getPageConfig().setTitle((ModuleLoader.getInstance().isNewInstall() ? "Install" : "Upgrade") + " Modules");
+            getPageConfig().setTitle(bean.verb + " Modules");
             getPageConfig().setHelpTopic(new HelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade"));
 
             return vbox;

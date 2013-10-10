@@ -177,7 +177,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         if (PipelineService.get().isEnterprisePipeline())
         {
             EPipelineContextListener listener = new EPipelineContextListener();
-            ContextListener.addStartupListener(listener);
+            ContextListener.addStartupListener("EPipeline", listener);
             ContextListener.addShutdownListener(listener);
         }
 
