@@ -29,6 +29,7 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ViewContext;
 
@@ -46,7 +47,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ThumbnailServiceImpl implements ThumbnailService
 {
     private static final Logger LOG = Logger.getLogger(ThumbnailServiceImpl.class);
-    private static final BlockingQueue<DynamicThumbnailProvider> QUEUE = new LinkedBlockingQueue<>(1000);
+    private static final BlockingQueue<Pair<DynamicThumbnailProvider, ImageType>> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final ThumbnailGeneratingThread THREAD = new ThumbnailGeneratingThread();
 
     static
@@ -59,53 +60,62 @@ public class ThumbnailServiceImpl implements ThumbnailService
     }
 
     @Override
-    public CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider)
+    public CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider, ImageType type)
     {
         if (provider instanceof DynamicThumbnailProvider)
-            return ThumbnailCache.getThumbnailWriter((DynamicThumbnailProvider)provider);
+            return ThumbnailCache.getThumbnailWriter((DynamicThumbnailProvider)provider, type);
         else
-            return ThumbnailCache.getThumbnailWriter(provider);
+            return ThumbnailCache.getThumbnailWriter(provider, type);
     }
 
     @Override
-    public void queueThumbnailRendering(DynamicThumbnailProvider provider)
+    public void queueThumbnailRendering(DynamicThumbnailProvider provider, ImageType type)
     {
-        QUEUE.offer(provider);
+        QUEUE.offer(new Pair<>(provider, type));
     }
 
     @Override
-    public void deleteThumbnail(DynamicThumbnailProvider provider)
+    public void deleteThumbnail(DynamicThumbnailProvider provider, ImageType type)
     {
         AttachmentService.Service svc = AttachmentService.get();
-        svc.deleteAttachment(provider, THUMBNAIL_FILENAME, null);
-        ThumbnailCache.remove(provider);
+        svc.deleteAttachment(provider, type.getFilename(), null);
+        ThumbnailCache.remove(provider, type);
     }
 
     @Override
-    // Deletes existing thumbnail before saving
-    public void replaceThumbnail(DynamicThumbnailProvider provider, @Nullable ViewContext context) throws IOException
+    // Deletes existing thumbnail and then saves
+    public void replaceThumbnail(DynamicThumbnailProvider provider, ImageType type, @Nullable ViewContext context) throws IOException
     {
         // TODO: Shouldn't need this check... but file-based reports don't have entityid??
         if (null == provider.getEntityId())
             return;
+
+        deleteThumbnail(provider, type);
 
         Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
 
         if (null != thumbnail)
         {
             AttachmentService.Service svc = AttachmentService.get();
-            AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
-            deleteThumbnail(provider);
-            svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
-            ThumbnailCache.remove(provider);   // Just in case (delete already cleared the old thumbnail from the cache)
+            AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), type.getFilename(), thumbnail.getContentType());
+
+            try
+            {
+                svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
+            }
+            finally
+            {
+                // Delete already cleared the cache, but another request could have already cached a miss
+                ThumbnailCache.remove(provider, type);
+            }
         }
     }
 
     private static class ThumbnailGeneratingThread extends Thread implements ShutdownListener
     {
+        // Not a daemon thread, because it performs I/O and needs to shut down gracefully
         private ThumbnailGeneratingThread()
         {
-            setDaemon(true);
             setName(ThumbnailGeneratingThread.class.getSimpleName());
             ContextListener.addShutdownListener(this);
         }
@@ -113,18 +123,27 @@ public class ThumbnailServiceImpl implements ThumbnailService
         @Override
         public void run()
         {
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (null == svc)
+            {
+                LOG.warn(getClass().getSimpleName() + " is terminating because ThumbnailService is null");
+                return;
+            }
+
             try
             {
                 //noinspection InfiniteLoopStatement
                 while (!interrupted())
                 {
-                    DynamicThumbnailProvider provider = QUEUE.take();
+                    Pair<DynamicThumbnailProvider, ImageType> pair = QUEUE.take();
+                    DynamicThumbnailProvider provider = pair.getKey();
+                    ImageType type = pair.getValue();
 
                     try
                     {
-                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
                         // TODO: Real ViewContext
-                        svc.replaceThumbnail(provider, null);
+                        svc.replaceThumbnail(provider, type, null);
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {
@@ -133,7 +152,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
                     finally
                     {
                         // No matter what, clear this entry from the cache.
-                        ThumbnailCache.remove(provider);
+                        ThumbnailCache.remove(provider, type);
                     }
                 }
             }

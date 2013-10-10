@@ -1838,14 +1838,14 @@ public class VisualizationController extends SpringActionController
             if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
             {
                 // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
-                svc.deleteThumbnail(generator);
+                svc.deleteThumbnail(generator, ThumbnailService.ImageType.Large);
                 ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
             }
             else if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
             {
                 // Generate and save the thumbnail (in the background)
                 generator.setSvg(svg);
-                svc.queueThumbnailRendering(generator);
+                svc.queueThumbnailRendering(generator, ThumbnailService.ImageType.Large);
                 ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
             }
         }

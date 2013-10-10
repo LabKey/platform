@@ -31,10 +31,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
@@ -136,11 +134,11 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         while (iter.hasPrevious())
         {
             Attachment current = iter.previous();
-            if (!current.getName().equals(ThumbnailService.THUMBNAIL_FILENAME))
+            if (!ThumbnailService.ImageFilenames.contains(current.getName()))
                 return current;
         }
 
-        // Something went horribly wrong... I guess we only have a thumbnail
+        // Something went horribly wrong... I guess we only have thumbnails
         return attachments.get(attachments.size() - 1);
     }
 

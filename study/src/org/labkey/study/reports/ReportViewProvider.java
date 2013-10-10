@@ -34,7 +34,6 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -375,7 +374,7 @@ public class ReportViewProvider implements DataViewProvider
 
                             if (null != svc)
                             {
-                                svc.replaceThumbnail(wrapper, context);
+                                svc.replaceThumbnail(wrapper, ThumbnailService.ImageType.Large, context);
                                 ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.CUSTOM.name());
                             }
                         }

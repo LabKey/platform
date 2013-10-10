@@ -57,20 +57,16 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.query.ViewOptions;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
@@ -109,10 +105,8 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -123,6 +117,7 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.HelpTopic;
@@ -148,7 +143,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.DataViewsWebPartFactory;
-import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.beans.PropertyValue;
@@ -172,7 +166,6 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -1323,12 +1316,12 @@ public class ReportsController extends SpringActionController
                     if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
                     {
                         // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
-                        svc.deleteThumbnail(provider);
+                        svc.deleteThumbnail(provider, ImageType.Large);
                         ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
                     }
                     else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()))
                     {
-                        svc.replaceThumbnail(provider, getViewContext());
+                        svc.replaceThumbnail(provider, ImageType.Large, getViewContext());
                         ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
                     }
                 }
@@ -1690,7 +1683,7 @@ public class ReportsController extends SpringActionController
                 ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
                 if (null != svc)
-                    svc.queueThumbnailRendering(report);
+                    svc.queueThumbnailRendering(report, ImageType.Large);
 
                 return true;
             }
