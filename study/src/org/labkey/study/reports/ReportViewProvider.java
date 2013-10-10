@@ -46,6 +46,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -368,13 +369,13 @@ public class ReportViewProvider implements DataViewProvider
                         if (report instanceof DynamicThumbnailProvider)
                         {
                             String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ThumbnailService.ImageType.Large);
+                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Large);
 
                             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
                             if (null != svc)
                             {
-                                svc.replaceThumbnail(wrapper, ThumbnailService.ImageType.Large, context);
+                                svc.replaceThumbnail(wrapper, ImageType.Large, context);
                                 ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.CUSTOM.name());
                             }
                         }

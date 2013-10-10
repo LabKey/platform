@@ -79,6 +79,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -1838,14 +1839,14 @@ public class VisualizationController extends SpringActionController
             if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
             {
                 // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
-                svc.deleteThumbnail(generator, ThumbnailService.ImageType.Large);
+                svc.deleteThumbnail(generator, ImageType.Large);
                 ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
             }
             else if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
             {
                 // Generate and save the thumbnail (in the background)
                 generator.setSvg(svg);
-                svc.queueThumbnailRendering(generator, ThumbnailService.ImageType.Large);
+                svc.queueThumbnailRendering(generator, ImageType.Large);
                 ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
             }
         }
