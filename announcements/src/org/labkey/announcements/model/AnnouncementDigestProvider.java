@@ -25,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
@@ -124,9 +123,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         }
     }
 
-    private static AnnouncementModel[] getRecentAnnouncementsInContainer(Container c, Date min, Date max) throws SQLException
+    private static AnnouncementModel[] getRecentAnnouncementsInContainer(Container c, Date min, Date max)
     {
-        AnnouncementModel[] announcementModels = Table.executeQuery(_comm.getSchema(), RECENT_ANN_SQL, new Object[]{c, min, max, c, min, max}, AnnouncementManager.BareAnnouncementModel.class);
+        AnnouncementModel[] announcementModels = new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).getArray(AnnouncementManager.BareAnnouncementModel.class);
         AnnouncementManager.attachMemberLists(announcementModels);
         return announcementModels;
     }

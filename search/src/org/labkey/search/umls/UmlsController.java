@@ -21,6 +21,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresNoPermission;
@@ -240,54 +241,24 @@ public class UmlsController extends SpringActionController
         return h(o.toString());
     }
 
-
-
     public static ConceptName[] getNames(DbSchema umls, String CUI)
     {
-        try
-        {
-            return Table.executeQuery(umls, "SELECT * FROM umls.MRCONSO WHERE CUI=? AND LAT='ENG'", new Object[]{CUI}, ConceptName.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return new SqlSelector(umls, "SELECT * FROM umls.MRCONSO WHERE CUI=? AND LAT='ENG'",CUI).getArray(ConceptName.class);
     }
 
     public static Related[] getRelated(DbSchema umls, String CUI)
     {
-        try
-        {
-            return Table.executeQuery(umls, "SELECT * FROM umls.MRREL WHERE CUI1=? UNION SELECT * FROM umls.MRREL WHERE CUI2=?", new Object[]{CUI, CUI}, Related.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return new SqlSelector(umls, "SELECT * FROM umls.MRREL WHERE CUI1=? UNION SELECT * FROM umls.MRREL WHERE CUI2=?", CUI, CUI).getArray(Related.class);
     }
 
     public static Definition[] getDefinitions(DbSchema umls, String CUI)
     {
-        try
-        {
-            return Table.executeQuery(umls, "SELECT * FROM umls.MRDEF WHERE CUI=?", new Object[]{CUI}, Definition.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return new SqlSelector(umls, "SELECT * FROM umls.MRDEF WHERE CUI=?", CUI).getArray(Definition.class);
     }
 
     public static SemanticType[] getSemanticType(DbSchema umls, String CUI)
     {
-        try
-        {
-            return Table.executeQuery(umls, "SELECT * FROM umls.MRSTY WHERE CUI=?", new Object[]{CUI}, SemanticType.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return new SqlSelector(umls, "SELECT * FROM umls.MRSTY WHERE CUI=?", CUI).getArray(SemanticType.class);
     }
 
     public static Map<String,String> getNames(DbSchema umls, Set<String> cuis)

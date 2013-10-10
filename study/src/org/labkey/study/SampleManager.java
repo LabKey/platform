@@ -1684,7 +1684,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             sql.append(") AND Container = ?;");
             sql.add(container.getId());
 
-            Specimen[] commented = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Specimen.class);
+            Collection<Specimen> commented = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(Specimen.class);
 
             for (Specimen specimen : commented)
                 result.put(specimen, globalUniqueIds.get(specimen.getGlobalUniqueId()));

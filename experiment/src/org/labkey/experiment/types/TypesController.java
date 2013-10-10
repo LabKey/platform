@@ -406,8 +406,7 @@ public class TypesController extends SpringActionController
                         "WHERE " + where + "\n" +
                         "ORDER BY 1\n";
 
-                //noinspection unchecked
-                rows = (Map<String,Object>[])Table.executeQuery(ExperimentService.get().getSchema(), sql, params.toArray(), Map.class);
+                rows = new SqlSelector(ExperimentService.get().getSchema(), sql, params).getMapArray();
                 System.err.println(sql);
                 System.err.println(params.toString());
             }

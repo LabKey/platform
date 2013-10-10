@@ -99,7 +99,6 @@ import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -1333,7 +1332,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-
             for (int runId : selectedRunIds)
             {
                 ensureTransaction();
@@ -1587,7 +1585,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 String materialIds = StringUtils.join(new ArrayIterator(selectedMaterialIds, from, to), ", ");
                 String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
 
-                Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
+                Collection<Material> materials = new SqlSelector(getExpSchema(), sql).getCollection(Material.class);
 
                 for (Material material : materials)
                 {
@@ -1626,10 +1624,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             getExpSchema().getScope().commitTransaction();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             getExpSchema().getScope().closeConnection();
@@ -1656,7 +1650,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ", ");
                 String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
                 
-                Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);
+                Data[] datas = new SqlSelector(getExpSchema(), sql).getArray(Data.class);
 
                 beforeDeleteData(ExpDataImpl.fromDatas(datas));
                 for (Data data : datas)
@@ -1999,274 +1993,254 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpRunImpl populateRun(ExpRunImpl expRun)
+    public ExpRunImpl populateRun(final ExpRunImpl expRun)
     {
         //todo cache populated runs
-        try
+        final Map<Integer, ExpMaterialImpl> outputMaterialMap = new HashMap<>();
+        final Map<Integer, ExpDataImpl> outputDataMap = new HashMap<>();
+
+        int runId = expRun.getRowId();
+        SimpleFilter filt = new SimpleFilter("RunId", runId);
+        Sort sort = new Sort("ActionSequence, RowId");
+        ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArray(ProtocolApplication.class));
+        expRun.setProtocolApplications(protocolSteps);
+        final Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.length);
+
+        for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
         {
-            Map<Integer, ExpMaterialImpl> outputMaterialMap = new HashMap<>();
-            Map<Integer, ExpDataImpl> outputDataMap = new HashMap<>();
-
-            int runId = expRun.getRowId();
-            SimpleFilter filt = new SimpleFilter("RunId", runId);
-            Sort sort = new Sort("ActionSequence, RowId");
-            ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArray(ProtocolApplication.class));
-            expRun.setProtocolApplications(protocolSteps);
-            Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.length);
-            for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
-            {
-                protStepMap.put(protocolStep.getRowId(), protocolStep);
-                protocolStep.setInputMaterials(new ArrayList<ExpMaterial>());
-                protocolStep.setInputDatas(new ArrayList<ExpData>());
-                protocolStep.setOutputMaterials(new ArrayList<ExpMaterial>());
-                protocolStep.setOutputDatas(new ArrayList<ExpData>());
-            }
-
-            sort = new Sort("RowId");
-
-            ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArray(Material.class));
-            Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.length);
-            for (ExpMaterialImpl mat : materials)
-            {
-                runMaterialMap.put(mat.getRowId(), mat);
-                ExpProtocolApplication sourceApplication = mat.getSourceApplication();
-                Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
-                assert protStepMap.containsKey(srcAppId);
-                protStepMap.get(srcAppId).getOutputMaterials().add(mat);
-                mat.markAsPopulated(protStepMap.get(srcAppId));
-            }
-
-            ExpDataImpl[] datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArray(Data.class));
-            Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.length);
-            for (ExpDataImpl dat : datas)
-            {
-                runDataMap.put(dat.getRowId(), dat);
-                Integer srcAppId = dat.getDataObject().getSourceApplicationId();
-                assert protStepMap.containsKey(srcAppId);
-                protStepMap.get(srcAppId).getOutputDatas().add(dat);
-                dat.markAsPopulated(protStepMap.get(srcAppId));
-            }
-
-            // get the set of starting materials, which do not belong to the run
-            String materialSQL = "SELECT M.* "
-                    + " FROM " + getTinfoMaterial().getSelectName() + " M "
-                    + " INNER JOIN " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
-                    + " ON (M.RowId = MI.MaterialId) "
-                    + " WHERE MI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                    + "  ORDER BY RowId ;";
-            String materialInputSQL = "SELECT MI.* "
-                    + " FROM " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
-                    + " WHERE MI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                    + "  ORDER BY MI.MaterialId;";
-            Object[] params = {new Integer(runId)};
-            materials = ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(), materialSQL, params, Material.class));
-            MaterialInput[] materialInputs = Table.executeQuery(getExpSchema(), materialInputSQL, params, MaterialInput.class);
-            assert materials.length == materialInputs.length;
-            Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<>(materials.length);
-            int index = 0;
-            for (ExpMaterialImpl mat : materials)
-            {
-                startingMaterialMap.put(mat.getRowId(), mat);
-                MaterialInput input = materialInputs[index++];
-                expRun.getMaterialInputs().put(mat, input.getRole());
-                mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-            }
-
-            // and starting data
-            String dataSQL = "SELECT D.*"
-                    + " FROM " + getTinfoData().getSelectName() + " D "
-                    + " INNER JOIN " + getTinfoDataInput().getSelectName() + " DI "
-                    + " ON (D.RowId = DI.DataId) "
-                    + " WHERE DI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                    + "  ORDER BY RowId ;";
-            String dataInputSQL = "SELECT DI.*"
-                    + " FROM " + getTinfoDataInput().getSelectName() + " DI "
-                    + " WHERE DI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                    + "  ORDER BY DataId;";
-            datas = ExpDataImpl.fromDatas(Table.executeQuery(getExpSchema(), dataSQL, params, Data.class));
-            DataInput[] dataInputs = Table.executeQuery(getExpSchema(), dataInputSQL, params, DataInput.class);
-            Map<Integer, ExpDataImpl> startingDataMap = new HashMap<>(datas.length);
-            index = 0;
-            for (ExpDataImpl dat : datas)
-            {
-                startingDataMap.put(dat.getRowId(), dat);
-                DataInput input = dataInputs[index++];
-                expRun.getDataInputs().put(dat, input.getRole());
-                dat.markSuccessorAppsAsPopulated();
-            }
-
-            // now hook up material inputs to processes in both directions
-            dataSQL = "SELECT TargetApplicationId, MaterialId"
-                    + " FROM " + getTinfoMaterialInput().getSelectName()
-                    + " WHERE TargetApplicationId IN"
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
-                    + " WHERE PA.RunId = ?)"
-                    + " ORDER BY TargetApplicationId, MaterialId";
-            ResultSet materialInputRS = null;
-            try
-            {
-                materialInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
-                while (materialInputRS.next())
-                {
-                    Integer appId = materialInputRS.getInt("TargetApplicationId");
-                    int matId = materialInputRS.getInt("MaterialId");
-                    ExpProtocolApplication pa = protStepMap.get(appId);
-                    ExpMaterialImpl mat;
-
-                    if (runMaterialMap.containsKey(matId))
-                        mat = runMaterialMap.get(matId);
-                    else
-                        mat = startingMaterialMap.get(matId);
-
-                    if (mat == null)
-                    {
-                        mat = getExpMaterial(matId);
-                        mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                    }
-
-                    pa.getInputMaterials().add(mat);
-                    mat.getSuccessorApps().add(pa);
-
-                    if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    {
-                        expRun.getMaterialOutputs().add(mat);
-                        outputMaterialMap.put(mat.getRowId(), mat);
-                    }
-                }
-            }
-            finally
-            {
-                ResultSetUtil.close(materialInputRS);
-            }
-
-            // now hook up data inputs in both directions
-            dataSQL = "SELECT TargetApplicationId, DataId"
-                    + " FROM " + getTinfoDataInput().getSelectName()
-                    + " WHERE TargetApplicationId IN"
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
-                    + " WHERE PA.RunId = ?)"
-                    + " ORDER BY TargetApplicationId, DataId";
-
-            ResultSet dataInputRS = null;
-            try
-            {
-                dataInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
-                while (dataInputRS.next())
-                {
-                    Integer appId = dataInputRS.getInt("TargetApplicationId");
-                    Integer datId = dataInputRS.getInt("DataId");
-                    ExpProtocolApplication pa = protStepMap.get(appId);
-                    ExpDataImpl dat;
-
-                    if (runDataMap.containsKey(datId))
-                        dat = runDataMap.get(datId);
-                    else
-                        dat = startingDataMap.get(datId);
-
-                    if (dat == null)
-                    {
-                        dat = getExpData(datId.intValue());
-                        dat.markSuccessorAppsAsPopulated();
-                    }
-
-                    pa.getInputDatas().add(dat);
-                    dat.getSuccessorApps().add(pa);
-
-                    if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    {
-                        expRun.getDataOutputs().add(dat);
-                        outputDataMap.put(dat.getRowId(), dat);
-                    }
-                }
-            }
-            finally
-            {
-                ResultSetUtil.close(dataInputRS);
-            }
-
-            //For run summary view, need to know if other ExperimentRuns
-            // use the outputs of this run.
-            if (outputMaterialMap.keySet().size() > 0)
-            {
-                SimpleFilter.InClause in = new SimpleFilter.InClause("MaterialId", outputMaterialMap.keySet());
-
-                SQLFragment sql = new SQLFragment();
-                sql.append("SELECT TargetApplicationId, MaterialId, PA.RunId"
-                        + " FROM " + getTinfoMaterialInput().getSelectName() + " M"
-                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA"
-                        + " ON M.TargetApplicationId = PA.RowId"
-                        + " WHERE ");
-                sql.append(in.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
-                sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
-                sql.add(runId);
-
-                ResultSet materialOutputRS = null;
-                try
-                {
-                    materialOutputRS = Table.executeQuery(getExpSchema(), sql);
-
-                    while (materialOutputRS.next())
-                    {
-                        Integer successorRunId = materialOutputRS.getInt("RunId");
-                        Integer matId = materialOutputRS.getInt("MaterialId");
-                        ExpMaterialImpl mat = outputMaterialMap.get(matId);
-                        mat.addSuccessorRunId(successorRunId.intValue());
-                    }
-                }
-                finally
-                {
-                    ResultSetUtil.close(materialOutputRS);
-                }
-            }
-
-            if (outputDataMap.keySet().size() > 0)
-            {
-                List<Integer> dataIds = new ArrayList<>(outputDataMap.keySet());
-                int batchSize = 200;
-                for (int i = 0; i < dataIds.size(); i += batchSize)
-                {
-                    List<Integer> subset = dataIds.subList(i, Math.min(dataIds.size(), i + batchSize));
-                    String inClause = StringUtils.join(subset, ", ");
-                    dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
-                            + " FROM " + getTinfoDataInput().getSelectName() + " D  "
-                            + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
-                            + " ON D.TargetApplicationId = PA.RowId "
-                            + " WHERE DataId IN ( " + inClause + " ) "
-                            + " AND PA.RunId <> ? "
-                            + " ORDER BY TargetApplicationId, DataId ;";
-                    ResultSet dataOutputRS = null;
-                    try
-                    {
-                        dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
-                        while (dataOutputRS.next())
-                        {
-                            int successorRunId = dataOutputRS.getInt("RunId");
-                            Integer datId = dataOutputRS.getInt("DataId");
-                            ExpDataImpl dat = outputDataMap.get(datId);
-                            dat.addSuccessorRunId(successorRunId);
-                        }
-                    }
-                    finally
-                    {
-                        ResultSetUtil.close(dataOutputRS);
-                    }
-                }
-            }
-
-            return expRun;
+            protStepMap.put(protocolStep.getRowId(), protocolStep);
+            protocolStep.setInputMaterials(new ArrayList<ExpMaterial>());
+            protocolStep.setInputDatas(new ArrayList<ExpData>());
+            protocolStep.setOutputMaterials(new ArrayList<ExpMaterial>());
+            protocolStep.setOutputDatas(new ArrayList<ExpData>());
         }
-        catch (SQLException e)
+
+        sort = new Sort("RowId");
+        ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArray(Material.class));
+        final Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.length);
+
+        for (ExpMaterialImpl mat : materials)
         {
-            throw new RuntimeSQLException(e);
+            runMaterialMap.put(mat.getRowId(), mat);
+            ExpProtocolApplication sourceApplication = mat.getSourceApplication();
+            Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
+            assert protStepMap.containsKey(srcAppId);
+            protStepMap.get(srcAppId).getOutputMaterials().add(mat);
+            mat.markAsPopulated(protStepMap.get(srcAppId));
         }
+
+        ExpDataImpl[] datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArray(Data.class));
+        final Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.length);
+
+        for (ExpDataImpl dat : datas)
+        {
+            runDataMap.put(dat.getRowId(), dat);
+            Integer srcAppId = dat.getDataObject().getSourceApplicationId();
+            assert protStepMap.containsKey(srcAppId);
+            protStepMap.get(srcAppId).getOutputDatas().add(dat);
+            dat.markAsPopulated(protStepMap.get(srcAppId));
+        }
+
+        // get the set of starting materials, which do not belong to the run
+        String materialSQL = "SELECT M.* "
+                + " FROM " + getTinfoMaterial().getSelectName() + " M "
+                + " INNER JOIN " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
+                + " ON (M.RowId = MI.MaterialId) "
+                + " WHERE MI.TargetApplicationId IN "
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
+                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
+                + "  ORDER BY RowId ;";
+        String materialInputSQL = "SELECT MI.* "
+                + " FROM " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
+                + " WHERE MI.TargetApplicationId IN "
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
+                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
+                + "  ORDER BY MI.MaterialId;";
+
+        materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL, runId).getArray(Material.class));
+        MaterialInput[] materialInputs = new SqlSelector(getExpSchema(), materialInputSQL, runId).getArray(MaterialInput.class);
+        assert materials.length == materialInputs.length;
+        final Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<>(materials.length);
+        int index = 0;
+
+        for (ExpMaterialImpl mat : materials)
+        {
+            startingMaterialMap.put(mat.getRowId(), mat);
+            MaterialInput input = materialInputs[index++];
+            expRun.getMaterialInputs().put(mat, input.getRole());
+            mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+        }
+
+        // and starting data
+        String dataSQL = "SELECT D.*"
+                + " FROM " + getTinfoData().getSelectName() + " D "
+                + " INNER JOIN " + getTinfoDataInput().getSelectName() + " DI "
+                + " ON (D.RowId = DI.DataId) "
+                + " WHERE DI.TargetApplicationId IN "
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
+                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
+                + "  ORDER BY RowId ;";
+        String dataInputSQL = "SELECT DI.*"
+                + " FROM " + getTinfoDataInput().getSelectName() + " DI "
+                + " WHERE DI.TargetApplicationId IN "
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
+                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
+                + "  ORDER BY DataId;";
+
+        datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL, runId).getArray(Data.class));
+        DataInput[] dataInputs = new SqlSelector(getExpSchema(), dataInputSQL, runId).getArray(DataInput.class);
+        final Map<Integer, ExpDataImpl> startingDataMap = new HashMap<>(datas.length);
+        index = 0;
+
+        for (ExpDataImpl dat : datas)
+        {
+            startingDataMap.put(dat.getRowId(), dat);
+            DataInput input = dataInputs[index++];
+            expRun.getDataInputs().put(dat, input.getRole());
+            dat.markSuccessorAppsAsPopulated();
+        }
+
+        // now hook up material inputs to processes in both directions
+        dataSQL = "SELECT TargetApplicationId, MaterialId"
+                + " FROM " + getTinfoMaterialInput().getSelectName()
+                + " WHERE TargetApplicationId IN"
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
+                + " WHERE PA.RunId = ?)"
+                + " ORDER BY TargetApplicationId, MaterialId";
+
+        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet materialInputRS) throws SQLException
+            {
+                Integer appId = materialInputRS.getInt("TargetApplicationId");
+                int matId = materialInputRS.getInt("MaterialId");
+                ExpProtocolApplication pa = protStepMap.get(appId);
+                ExpMaterialImpl mat;
+
+                if (runMaterialMap.containsKey(matId))
+                    mat = runMaterialMap.get(matId);
+                else
+                    mat = startingMaterialMap.get(matId);
+
+                if (mat == null)
+                {
+                    mat = getExpMaterial(matId);
+                    mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                }
+
+                pa.getInputMaterials().add(mat);
+                mat.getSuccessorApps().add(pa);
+
+                if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                {
+                    expRun.getMaterialOutputs().add(mat);
+                    outputMaterialMap.put(mat.getRowId(), mat);
+                }
+            }
+        });
+
+        // now hook up data inputs in both directions
+        dataSQL = "SELECT TargetApplicationId, DataId"
+                + " FROM " + getTinfoDataInput().getSelectName()
+                + " WHERE TargetApplicationId IN"
+                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
+                + " WHERE PA.RunId = ?)"
+                + " ORDER BY TargetApplicationId, DataId";
+
+        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet dataInputRS) throws SQLException
+            {
+                Integer appId = dataInputRS.getInt("TargetApplicationId");
+                Integer datId = dataInputRS.getInt("DataId");
+                ExpProtocolApplication pa = protStepMap.get(appId);
+                ExpDataImpl dat;
+
+                if (runDataMap.containsKey(datId))
+                    dat = runDataMap.get(datId);
+                else
+                    dat = startingDataMap.get(datId);
+
+                if (dat == null)
+                {
+                    dat = getExpData(datId.intValue());
+                    dat.markSuccessorAppsAsPopulated();
+                }
+
+                pa.getInputDatas().add(dat);
+                dat.getSuccessorApps().add(pa);
+
+                if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                {
+                    expRun.getDataOutputs().add(dat);
+                    outputDataMap.put(dat.getRowId(), dat);
+                }
+            }
+        });
+
+        //For run summary view, need to know if other ExperimentRuns
+        // use the outputs of this run.
+        if (!outputMaterialMap.isEmpty())
+        {
+            SimpleFilter.InClause in = new SimpleFilter.InClause("MaterialId", outputMaterialMap.keySet());
+
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT TargetApplicationId, MaterialId, PA.RunId"
+                    + " FROM " + getTinfoMaterialInput().getSelectName() + " M"
+                    + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA"
+                    + " ON M.TargetApplicationId = PA.RowId"
+                    + " WHERE ");
+            sql.append(in.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+            sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
+            sql.add(runId);
+
+            new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet materialOutputRS) throws SQLException
+                {
+                    Integer successorRunId = materialOutputRS.getInt("RunId");
+                    Integer matId = materialOutputRS.getInt("MaterialId");
+                    ExpMaterialImpl mat = outputMaterialMap.get(matId);
+                    mat.addSuccessorRunId(successorRunId);
+                }
+            });
+        }
+
+        if (!outputDataMap.isEmpty())
+        {
+            List<Integer> dataIds = new ArrayList<>(outputDataMap.keySet());
+            int batchSize = 200;
+
+            for (int i = 0; i < dataIds.size(); i += batchSize)
+            {
+                List<Integer> subset = dataIds.subList(i, Math.min(dataIds.size(), i + batchSize));
+                String inClause = StringUtils.join(subset, ", ");
+                dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
+                        + " FROM " + getTinfoDataInput().getSelectName() + " D  "
+                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
+                        + " ON D.TargetApplicationId = PA.RowId "
+                        + " WHERE DataId IN ( " + inClause + " ) "
+                        + " AND PA.RunId <> ? "
+                        + " ORDER BY TargetApplicationId, DataId ;";
+
+                new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
+                {
+                    @Override
+                    public void exec(ResultSet dataOutputRS) throws SQLException
+                    {
+                        int successorRunId = dataOutputRS.getInt("RunId");
+                        Integer datId = dataOutputRS.getInt("DataId");
+                        ExpDataImpl dat = outputDataMap.get(datId);
+                        dat.addSuccessorRunId(successorRunId);
+                    }
+                });
+            }
+        }
+
+        return expRun;
     }
 
 
@@ -2328,15 +2302,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new TableSelector(getTinfoProtocolApplicationParameter(), filter, null).getArray(ProtocolApplicationParameter.class);
     }
 
-    public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException, SQLException
+    public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException
     {
         String cmdSql = "SELECT * FROM exp.ProtocolActionStepDetailsView "
                 + " WHERE ParentProtocolLSID = ? "
                 + " AND Sequence = ? "
                 + " ORDER BY Sequence";
 
-        Object [] params = new Object[]{parentProtocolLSID, actionSequence};
-        ProtocolActionStepDetail[] details = Table.executeQuery(getExpSchema(), cmdSql, params, ProtocolActionStepDetail.class);
+        ProtocolActionStepDetail[] details = new SqlSelector(getExpSchema(), cmdSql, parentProtocolLSID, actionSequence).getArray(ProtocolActionStepDetail.class);
         if (details.length == 0)
         {
             return null;
