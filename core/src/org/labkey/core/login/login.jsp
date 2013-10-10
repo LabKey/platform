@@ -95,5 +95,10 @@
             <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"), "", "name=\"SUBMIT\"")%>
         </td></tr>
     </table>
+    <input type="hidden" id="urlhash" name="urlhash">
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
+<script type="text/javascript">
+    <% // Provide support for persisting the url hash through a login redirect %>
+    (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();
+</script>

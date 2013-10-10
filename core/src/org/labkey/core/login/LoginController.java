@@ -471,11 +471,16 @@ public class LoginController extends SpringActionController
         {
             returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
         }
+
+        if (null != form.getUrlhash())
+        {
+            returnURL.setFragment(form.getUrlhash().replace("#", ""));
+        }
+
         return returnURL;
     }
 
 
-    // TODO: Move to LoginController, only place that uses this now
     public boolean isAdminOnlyMode()
     {
         return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && !UserManager.hasNoUsers());
