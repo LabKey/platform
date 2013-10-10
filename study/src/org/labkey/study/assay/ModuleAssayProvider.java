@@ -41,6 +41,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayPipelineProvider;
@@ -83,10 +84,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private static final String UPLOAD_VIEW_FILENAME = "upload.html";
     private static final String BEGIN_VIEW_FILENAME = "begin.html";
 
+    private static final String INVALID_SAVE_HANDLER_CLASS = "The specified saveHandler class specified does not exist";
+    private static final String INVALID_SAVE_HANDLER_INTERFACE = "The specified saveHandler class does not implement the AssaySaveHandler interface";
+
     private Resource basePath;
     private String name;
     private String description;
     private FileType[] inputFileSuffices = new FileType[0];
+    private Class saveHandlerClass;
 
     private FieldKey participantIdKey;
     private FieldKey visitIdKey;
@@ -140,6 +145,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 _scriptMetadata.add(new ScriptMetadata(transformScript.getFileName(), null, null));
             }
         }
+
+        if (providerConfig.isSetSaveHandler())
+            setSaveHandlerClass(providerConfig.getSaveHandler());
     }
 
     @Override
@@ -164,6 +172,28 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public String getDescription()
     {
         return description;
+    }
+
+    @Override
+    public AssaySaveHandler getSaveHandler()
+    {
+        if (saveHandlerClass != null)
+        {
+            try
+            {
+                AssaySaveHandler saveHandler = (AssaySaveHandler) saveHandlerClass.newInstance();
+                saveHandler.setProvider(this);
+                return saveHandler;
+            }
+            catch(Exception e)
+            {
+                throw getWrappedModuleAssayException("");
+            }
+        }
+        else
+        {
+            return super.getSaveHandler();
+        }
     }
 
     @Override @NotNull
@@ -239,22 +269,16 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     if (errors.size() > 0)
                         sb.append("\n");
                 }
-                ModuleAssayException e = new ModuleAssayException("Unable to parse " + domainFile + ": " + sb.toString());
-                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                throw e;
+                throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + sb.toString());
             }
         }
         catch (IOException e)
         {
-            ModuleAssayException wrapped = new ModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
-            ExceptionUtil.decorateException(wrapped, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-            throw wrapped;
+            throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
         }
         catch (XmlException e)
         {
-            ModuleAssayException wrapped = new ModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
-            ExceptionUtil.decorateException(wrapped, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-            throw wrapped;
+            throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
         }
 
         return null;
@@ -617,6 +641,48 @@ public class ModuleAssayProvider extends TsvAssayProvider
             LOG.warn("Unable to find a script file '" + fileName + "' specified in metadata for assay type '" + getName() + "'");
         }
         return null;
+    }
+
+    private ModuleAssayException getWrappedModuleAssayException(String message)
+    {
+        return getWrappedModuleAssayException(message, null);
+    }
+
+    private ModuleAssayException getWrappedModuleAssayException(String message, Throwable cause)
+    {
+        ModuleAssayException wrapped = (cause != null) ?
+                new ModuleAssayException(message, cause) :
+                new ModuleAssayException(message);
+
+        ExceptionUtil.decorateException(wrapped, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+        return wrapped;
+    }
+
+    private void setSaveHandlerClass(String className)
+    {
+        if (!className.contains("."))
+        {
+            StringBuilder sbClass = new StringBuilder();
+            sbClass.append("org.labkey.");
+            sbClass.append(getDeclaringModule().getName());
+            sbClass.append(".assay.");
+            sbClass.append(basePath.getName());
+            sbClass.append(".");
+            sbClass.append(className);
+            className = sbClass.toString();
+        }
+
+        try
+        {
+            saveHandlerClass = Class.forName(className);
+            if (!AssaySaveHandler.class.isAssignableFrom(saveHandlerClass))
+                throw getWrappedModuleAssayException(INVALID_SAVE_HANDLER_INTERFACE);
+
+        }
+        catch(ClassNotFoundException e)
+        {
+            throw getWrappedModuleAssayException(INVALID_SAVE_HANDLER_CLASS, e);
+        }
     }
 
     @Override

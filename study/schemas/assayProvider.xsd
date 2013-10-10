@@ -74,6 +74,11 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="saveHandler" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Class name of the custom save handler for this assay type.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="plateBased" type="xs:boolean" default="false">
             <xs:annotation>

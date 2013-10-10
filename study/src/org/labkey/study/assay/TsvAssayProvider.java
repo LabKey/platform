@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,8 +51,10 @@ import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.DefaultAssaySaveHandler;
 import org.labkey.api.study.assay.FileUploadDataCollector;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.PipelineDataCollector;
@@ -59,10 +62,12 @@ import org.labkey.api.study.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.TextAreaDataCollector;
 import org.labkey.api.study.assay.ThawListResolverType;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudyModule;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -126,7 +131,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public AssaySaveHandler getSaveHandler()
     {
-        return new TsvSaveHandler(this);
+        AssaySaveHandler saveHandler = new DefaultAssaySaveHandler();
+        saveHandler.setProvider(this);
+        return saveHandler;
+    }
+
+    @Override
+    public AssayRunUploadContext getRunUploadContext(ViewContext context, int protocolId, JSONObject runJson, List<Map<String, Object>> uploadedData)
+    {
+        return new ModuleRunUploadContext(context, protocolId, runJson, uploadedData);
     }
 
     @Override @NotNull
