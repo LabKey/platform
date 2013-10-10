@@ -83,8 +83,6 @@ public class ProtocolWebPart extends WebPartView
             bb.add(exportProtocols);
 
             dr.setButtonBar(bb);
-            dr.setShadeAlternatingRows(true);
-            dr.setShowBorders(true);
         }
         else
         {

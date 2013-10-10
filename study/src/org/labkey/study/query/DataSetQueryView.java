@@ -172,8 +172,6 @@ public class DataSetQueryView extends StudyQueryView
         if (null == table)
             throw new IllegalStateException("Could not create table from dataset: " + this._dataset.getName());
 
-        view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowBorders(true);
         view.getDataRegion().setRecordSelectorValueColumns("lsid");
 
         if (null != _visit)

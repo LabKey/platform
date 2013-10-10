@@ -182,8 +182,6 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = super.createDataRegion();
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
         DataColumn commentsDC = (DataColumn) rgn.getDisplayColumn("Comments");
         if (commentsDC != null)
         {

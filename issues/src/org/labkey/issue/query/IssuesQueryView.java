@@ -61,8 +61,6 @@ public class IssuesQueryView extends QueryView
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         view.getDataRegion().setRecordSelectorValueColumns("IssueId");
-        view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowBorders(true);
 
 //        DisplayColumn issueid = view.getDataRegion().getDisplayColumn("IssueId");
 //        if (null != issueid)

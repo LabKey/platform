@@ -2322,7 +2322,6 @@ public class AnnouncementsController extends SpringActionController
             DataRegion rgn = new DataRegion();
             rgn.setSettings(qs);
             rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-            rgn.setShadeAlternatingRows(true);
             return rgn;
         }
 

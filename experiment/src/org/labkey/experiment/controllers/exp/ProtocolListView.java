@@ -42,8 +42,6 @@ public class ProtocolListView extends GridView
         pp.addParameter("ParentLSID", protocol.getLSID());
         getDataRegion().getDisplayColumn(1).setURL(pp.toString() + "&Sequence=${ActionSequence}");
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
-        getDataRegion().setShadeAlternatingRows(true);
-        getDataRegion().setShowBorders(true);
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("ParentProtocolLSID", protocol.getLSID(), CompareType.EQUAL);

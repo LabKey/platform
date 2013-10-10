@@ -80,8 +80,6 @@ public class PlateQueryViewImpl extends PlateQueryView
         DataRegion region = super.createDataRegion();
         region.setShowRecordSelectors(true);
         region.setRecordSelectorValueColumns("RowId");
-        region.setShadeAlternatingRows(true);
-        region.setShowBorders(true);
 
         if (_hiddenFormFields != null)
         {

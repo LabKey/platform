@@ -49,13 +49,4 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
         return new SpecimenEventQueryView(schema, qs, filter, sort);
     }
 
-
-    @Override
-    protected DataRegion createDataRegion()
-    {
-        DataRegion rgn = super.createDataRegion();
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
-        return rgn;
-    }
 }
