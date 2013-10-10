@@ -281,6 +281,13 @@ public class Table
         return new LegacySqlSelector(schema, sqlf).getArray(clss);
     }
 
+    @NotNull
+    @Deprecated /** Use SqlSelector */
+    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
@@ -327,7 +334,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 138 usages
+    // 136 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -335,14 +342,6 @@ public class Table
     }
 
     // ===== SqlSelector methods below =====
-
-    // 23 usages
-    @NotNull
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
-    }
 
     // 44 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
@@ -352,7 +351,7 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
-    // 51 usages
+    // 48 usages
     @Deprecated /** Use SqlSelector */
     public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
@@ -1498,8 +1497,7 @@ public class Table
 
 
         @Test
-        public void testSqlJoin()
-                throws SQLException
+        public void testSqlJoin() throws SQLException
         {
             //UNDONE
             // SELECT MEMBERS
@@ -1510,7 +1508,7 @@ public class Table
             TableInfo membersTable = core.getTableInfoMembers();
             TableInfo principalsTable = core.getTableInfoPrincipals();
 
-            Map[] members = executeQuery(schema, "SELECT * FROM " + membersTable.getSelectName(), null, Map.class);
+            Map[] members = new SqlSelector(schema, "SELECT * FROM " + membersTable.getSelectName()).getArray(Map.class);
             List<Map> users = join(Arrays.asList(members), "UserId", schema,
                     "SELECT * FROM " + principalsTable.getSelectName() + " WHERE UserId IN (?)");
             for (Map m : users)

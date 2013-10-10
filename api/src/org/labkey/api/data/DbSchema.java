@@ -893,8 +893,7 @@ public class DbSchema
                     }
                     else if (t.getSchema().getName().equals("ms2") && null != t.getColumn("Run"))
                     {
-                        sbSql.append( " AND Run IN (SELECT Run FROM " + MS2Service.get().getRunsTableName() +
-                                " WHERE Deleted = ? ) ");
+                        sbSql.append(" AND Run IN (SELECT Run FROM ").append(MS2Service.get().getRunsTableName()).append(" WHERE Deleted = ? ) ");
                         sbSql.add(Boolean.FALSE);
                     }
 

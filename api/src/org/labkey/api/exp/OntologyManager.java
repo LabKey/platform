@@ -996,7 +996,7 @@ public class OntologyManager
             // Drop tables directly and allow bulk delete calls below to clean up rows in exp.propertydescriptor,
             // exp.domaindescriptor, etc
             String selectSQL = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), selectSQL, new Object[] { c.getId() }, DomainDescriptor.class);
+            Collection<DomainDescriptor> dds = new SqlSelector(getExpSchema(), selectSQL, c).getCollection(DomainDescriptor.class);
             for (DomainDescriptor dd : dds)
             {
                 StorageProvisioner.drop(PropertyService.get().getDomain(dd.getDomainId()));

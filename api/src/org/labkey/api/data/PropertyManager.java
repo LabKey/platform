@@ -269,7 +269,7 @@ public class PropertyManager
                 " WHERE " + setSelectName +  " IN " +
                 "(SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId=?)";
 
-        Table.execute(prop.getSchema(), deleteProps, objectId);
+        new SqlExecutor(prop.getSchema()).execute(deleteProps, objectId);
         Table.delete(prop.getTableInfoPropertySets(), new SimpleFilter("ObjectId", objectId));
     }
 
@@ -345,14 +345,8 @@ public class PropertyManager
             return;
 
         String sql = prop.getSqlDialect().execute(prop.getSchema(), "property_setValue", "?, ?, ?");
-        try
-        {
-            Table.execute(prop.getSchema(), sql, set, name, value);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        new SqlExecutor(prop.getSchema()).execute(sql, set, name, value);
     }
 
 
@@ -416,15 +410,8 @@ public class PropertyManager
             filter.addCondition(FieldKey.fromString("Name"), key);
 
         Sort sort = new Sort("UserId,ObjectId,Category,Name");
-        try
-        {
-            return Table.select(prop.getTableInfoPropertyEntries(), Table.ALL_COLUMNS, filter, sort, PropertyEntry.class);
-        }
-        catch (Exception x)
-        {
-            _log.error("selecting properties", x);
-            return null;
-        }
+
+        return new TableSelector(prop.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
     }
 
     public static class PropertyMap extends HashMap<String, String>
@@ -434,7 +421,7 @@ public class PropertyManager
         private final String _objectId;
         private final String _category;
 
-        boolean _modified = false;
+        private boolean _modified = false;
         Set<Object> removedKeys = null;
 
 
@@ -497,18 +484,21 @@ public class PropertyManager
         }
 
 
+        @NotNull
         @Override
         public Set<String> keySet()
         {
             return Collections.unmodifiableSet(super.keySet());
         }
 
+        @NotNull
         @Override
         public Collection<String> values()
         {
             return Collections.unmodifiableCollection(super.values());
         }
 
+        @NotNull
         @Override
         public Set<Map.Entry<String, String>> entrySet()
         {
