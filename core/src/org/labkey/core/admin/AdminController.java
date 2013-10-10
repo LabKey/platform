@@ -679,7 +679,7 @@ public class AdminController extends SpringActionController
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             Module core = ModuleLoader.getInstance().getCoreModule();
 
-            HttpView jars = new CreditsView("/core/META-INF/core/jars.txt", getCreditsFile(core, "jars.txt"), getWebInfJars(true), "JAR", "webapp", null, jarRegEx);
+            HttpView jars = new CreditsView("/core/resources/credits/jars.txt", getCreditsFile(core, "jars.txt"), getWebInfJars(true), "JAR", "webapp", null, jarRegEx);
             VBox views = new VBox(jars);
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
@@ -698,8 +698,8 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            views.addView(new CreditsView("/core/META-INF/core/tomcat_jars.txt", getCreditsFile(core, "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
-            views.addView(new CreditsView("/core/META-INF/core/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
+            views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(core, "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
+            views.addView(new CreditsView("/core/resources/credits/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
 
             for (Module module : modules)
             {
@@ -805,7 +805,16 @@ public class AdminController extends SpringActionController
 
     private static String getCreditsFile(Module module, String filename) throws IOException
     {
-        InputStream is = module.getResourceStream("/META-INF/" + module.getName().toLowerCase() + "/" + filename);
+        // New way... in /resources/credits
+        InputStream is = module.getResourceStream("credits/" + filename);
+
+        // Old way... in /src/META-INF/<module>  TODO: Remove this once we verify
+        if (null == is)
+        {
+            is = module.getResourceStream("/META-INF/" + module.getName().toLowerCase() + "/" + filename);
+            assert null == is;
+        }
+
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
 
