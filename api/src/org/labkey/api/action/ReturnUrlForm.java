@@ -34,6 +34,7 @@ import java.net.URISyntaxException;
 public class ReturnUrlForm
 {
     private ReturnURLString _returnUrl;
+    private String urlhash;
 
     // Generate a hidden form field to post a return URL with the standard name used by this form
     public static String generateHiddenFormField(URLHelper returnUrl)
@@ -44,6 +45,16 @@ public class ReturnUrlForm
     public ReturnURLString getReturnUrl()
     {
         return _returnUrl;
+    }
+
+    public void setUrlhash(String urlhash)
+    {
+        this.urlhash = urlhash;
+    }
+
+    public String getUrlhash()
+    {
+        return this.urlhash;
     }
 
     public void setReturnUrl(ReturnURLString returnUrl)
