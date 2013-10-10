@@ -21,7 +21,7 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
-import org.labkey.api.util.ImageUtil;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
@@ -58,7 +58,7 @@ public class SvgOutput extends HtmlOutput
 
             try
             {
-                svc.svgToPng(PageFlowUtil.getFileContentsAsString(getFile()), os, ImageUtil.THUMBNAIL_HEIGHT);
+                svc.svgToPng(PageFlowUtil.getFileContentsAsString(getFile()), os, ImageType.Large.getHeight());
 
                 return os.getThumbnail("image/png");
             }

@@ -21,6 +21,7 @@ import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.resource.ImageResource;
@@ -34,14 +35,14 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -147,6 +148,11 @@ public class ImageUtil
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image) throws IOException
     {
+        return renderThumbnail(image, ImageType.Large.getHeight());
+    }
+
+    public static @Nullable Thumbnail renderThumbnail(BufferedImage image, float desiredHeight) throws IOException
+    {
         if (null == image)
             return null;
 
@@ -154,8 +160,8 @@ public class ImageUtil
         int height = image.getHeight();
 
         // Scale the image down if height is greater than THUMBNAIL_HEIGHT, otherwise leave it alone
-        if (height > THUMBNAIL_HEIGHT)
-            ImageUtil.resizeImage(image, os, THUMBNAIL_HEIGHT/height, 1);
+        if (height > desiredHeight)
+            ImageUtil.resizeImage(image, os, desiredHeight/height, 1);
         else
             ImageIO.write(image, "png", os);
 

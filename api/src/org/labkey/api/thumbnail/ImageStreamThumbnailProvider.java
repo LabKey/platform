@@ -27,7 +27,6 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ViewContext;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -41,13 +40,15 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     private static final Logger LOG = Logger.getLogger(ImageStreamThumbnailProvider.class);
     private final DynamicThumbnailProvider _provider;
     private final @Nullable String _contentType;
+    private final ThumbnailService.ImageType _type;
     private final InputStream _is;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
-    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType)
+    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType, ThumbnailService.ImageType type)
     {
         _provider = provider;
         _contentType = contentType;
+        _type = type;
         _is = new CheckedInputStream(is);
     }
 
@@ -65,9 +66,10 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
                 {
                     ThumbnailOutputStream os = new ThumbnailOutputStream();
 
-                    try
+                    // Try-with-resources will close stream
+                    try (InputStream is = _is)
                     {
-                        svc.svgToPng(IOUtils.toString(_is), os, ImageUtil.THUMBNAIL_HEIGHT);
+                        svc.svgToPng(IOUtils.toString(is), os, _type.getHeight());
 
                         return os.getThumbnail("image/png");
                     }
@@ -75,26 +77,15 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
                     {
                         LOG.error("Couldn't generate thumbnail", e);
                     }
-                    finally
-                    {
-                        IOUtils.closeQuietly(_is);
-                    }
                 }
             }
             else if (null == _contentType || _contentType.startsWith("image/"))
             {
-                BufferedImage image = null;
-
-                try
+                // Try-with-resources will close stream
+                try (InputStream is = _is)
                 {
-                    image = ImageIO.read(_is);
+                    return ImageUtil.renderThumbnail(ImageIO.read(is));
                 }
-                finally
-                {
-                    IOUtils.closeQuietly(_is);
-                }
-
-                return ImageUtil.renderThumbnail(image);
             }
         }
         catch (IOException e)

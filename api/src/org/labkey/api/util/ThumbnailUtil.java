@@ -20,6 +20,7 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 
 /**
  * User: adam
@@ -39,7 +40,7 @@ public class ThumbnailUtil
                 if (null != svc)
                 {
                     ThumbnailOutputStream os = new ThumbnailOutputStream();
-                    svc.svgToPng(svg, os, ImageUtil.THUMBNAIL_HEIGHT);
+                    svc.svgToPng(svg, os, ImageType.Large.getHeight());
 
                     return os.getThumbnail("image/png");
                 }

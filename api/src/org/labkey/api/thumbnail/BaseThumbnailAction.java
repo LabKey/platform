@@ -21,6 +21,7 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Calendar;
@@ -61,7 +62,7 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
 
         if (null != provider)
         {
-            CacheableWriter writer = svc.getThumbnailWriter(provider, ThumbnailService.ImageType.Large);
+            CacheableWriter writer = svc.getThumbnailWriter(provider, getImageType(form));
 
             // TODO: need to handle client caching better -- use long expiration and _dc to defeat caching
             Calendar expiration = new GregorianCalendar();
@@ -69,5 +70,11 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
 
             writer.writeToResponse(response, expiration);
         }
+    }
+
+    // Default to large thumbnails
+    protected ImageType getImageType(FORM form)
+    {
+        return ImageType.Large;
     }
 }

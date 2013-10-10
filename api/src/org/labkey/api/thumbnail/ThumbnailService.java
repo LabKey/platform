@@ -34,19 +34,26 @@ public interface ThumbnailService
 
     public enum ImageType
     {
-        Large("Thumbnail"),
-        Small("SmallThumbnail");
+        Large("Thumbnail", 256.0f),
+        Small("SmallThumbnail", 16.0f);
 
         private final String _filename;
+        private final float _height;
 
-        private ImageType(String filename)
+        ImageType(String filename, float height)
         {
             _filename = filename;
+            _height = height;
         }
 
         public String getFilename()
         {
             return _filename;
+        }
+
+        public float getHeight()
+        {
+            return _height;
         }
     }
 
