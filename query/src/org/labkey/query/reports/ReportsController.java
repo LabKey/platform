@@ -2410,12 +2410,22 @@ public class ReportsController extends SpringActionController
         {
             return form.getReportId().getReport(getViewContext());
         }
+
+        @Override
+        protected ImageType getImageType(ThumbnailForm form)
+        {
+            if ("Small".equals(form.getImageType()))
+                return ImageType.Small;
+            else
+                return ImageType.Large;
+        }
     }
 
 
     public static class ThumbnailForm
     {
         private ReportIdentifier _reportId;
+        private String _imageType;
 
         public ReportIdentifier getReportId()
         {
@@ -2426,6 +2436,17 @@ public class ReportsController extends SpringActionController
         public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
+        }
+
+        public String getImageType()
+        {
+            return _imageType;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setImageType(String imageType)
+        {
+            _imageType = imageType;
         }
     }
 

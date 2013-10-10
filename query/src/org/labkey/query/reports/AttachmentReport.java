@@ -17,7 +17,6 @@
 package org.labkey.query.reports;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +36,7 @@ import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
@@ -199,18 +199,9 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                InputStream imageStream = null;
-
-                try
+                try (InputStream imageStream = report.getInputStream())
                 {
-                    imageStream = report.getInputStream();
-                    BufferedImage image = ImageIO.read(imageStream);
-
-                    return ImageUtil.renderThumbnail(image);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(imageStream);
+                    return ImageUtil.renderThumbnail(ImageIO.read(imageStream));
                 }
             }
         },
@@ -279,7 +270,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
                     try
                     {
-                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, ImageUtil.THUMBNAIL_HEIGHT);
+                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, ImageType.Large.getHeight());
 
                         return os.getThumbnail("image/png");
                     }

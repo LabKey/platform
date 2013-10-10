@@ -368,7 +368,7 @@ public class ReportViewProvider implements DataViewProvider
                         if (report instanceof DynamicThumbnailProvider)
                         {
                             String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType);
+                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ThumbnailService.ImageType.Large);
 
                             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 

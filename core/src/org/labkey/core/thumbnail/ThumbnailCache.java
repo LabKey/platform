@@ -54,7 +54,7 @@ public class ThumbnailCache
     {
         CacheableWriter dynamic = _cache.get(getCacheKey(dynamicProvider, type), new Pair<>(dynamicProvider, type), _dynamicLoader);
 
-        if (CacheableWriter.noDocument == dynamic)
+        if (CacheableWriter.noDocument == dynamic && ImageType.Large.equals(type))
             return getThumbnailWriter((StaticThumbnailProvider)dynamicProvider, type);
         else
             return dynamic;
