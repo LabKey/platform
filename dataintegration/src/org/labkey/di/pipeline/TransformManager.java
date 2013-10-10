@@ -274,8 +274,8 @@ public class TransformManager implements DataIntegrationService
     static final String TYPE_REQUIRED = "Transform type attribute is required";
     static final String ID_REQUIRED = "Id attribute is required";
     static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
-    static final String INVALID_TARGET_OPTION = "Invaild targetOption attribute value specified";
-    static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
+    static final String INVALID_TARGET_OPTION = "Invalid targetOption attribute value specified";
+    static final String INVALID_SOURCE_OPTION = "Invalid sourceOption attribute value specified";
 
     private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
     {
