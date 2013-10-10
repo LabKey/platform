@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
@@ -40,11 +41,11 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     private static final Logger LOG = Logger.getLogger(ImageStreamThumbnailProvider.class);
     private final DynamicThumbnailProvider _provider;
     private final @Nullable String _contentType;
-    private final ThumbnailService.ImageType _type;
+    private final ImageType _type;
     private final InputStream _is;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
-    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType, ThumbnailService.ImageType type)
+    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type)
     {
         _provider = provider;
         _contentType = contentType;
