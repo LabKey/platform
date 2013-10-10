@@ -47,14 +47,6 @@ public class ReportQueryView extends QueryView
         _filter = filter;
     }
 
-    public DataRegion createDataRegion()
-    {
-        DataRegion region = super.createDataRegion();
-        region.setShadeAlternatingRows(true);
-        region.setShowBorders(true);
-        return region;
-    }
-
     public ResultSet getResultSet(int maxRows) throws Exception
     {
         getSettings().setMaxRows(maxRows);

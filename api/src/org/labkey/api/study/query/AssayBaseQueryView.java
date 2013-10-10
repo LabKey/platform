@@ -46,8 +46,6 @@ public abstract class AssayBaseQueryView extends QueryView
     {
         super.configureDataRegion(dr);
         dr.setShowRecordSelectors(showControls());
-        dr.setShadeAlternatingRows(true);
-        dr.setShowBorders(true);
     }
 
     protected boolean showControls()

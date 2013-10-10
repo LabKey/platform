@@ -76,8 +76,6 @@ public class ResultsQueryView extends AssayBaseQueryView
     {
         configureDataRegion(rgn);
         rgn.setShowRecordSelectors(true);
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
     }
 
     public DataView createDataView()

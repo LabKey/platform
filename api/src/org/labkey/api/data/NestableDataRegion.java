@@ -36,7 +36,6 @@ public class NestableDataRegion extends AbstractNestableDataRegion
     {
         super(groupingColumnName, url);
         _allColumns = allColumns;
-        setShadeAlternatingRows(true);
     }
 
     @Override

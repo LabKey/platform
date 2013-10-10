@@ -67,8 +67,6 @@ public class ContactWebPart extends WebPartView
         rgn.getDisplayColumn("UserId").setVisible(false);
         rgn.getDisplayColumn("DisplayName").setCaption("Display Name");
 
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY, DataRegion.MODE_GRID);
         return rgn;
     }

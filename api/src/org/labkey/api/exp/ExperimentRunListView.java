@@ -240,8 +240,6 @@ public class ExperimentRunListView extends QueryView
     protected DataRegion createDataRegion()
     {
         DataRegion result = super.createDataRegion();
-        result.setShadeAlternatingRows(true);
-        result.setShowBorders(true);
         for (DisplayColumn column : result.getDisplayColumns())
         {
             if (column.getCaption().startsWith("Experiment Run "))
