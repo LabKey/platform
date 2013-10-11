@@ -172,10 +172,28 @@ public class StudyDesignManager
 
     public StudyDesignInfo getStudyDesign(Container c, String name) throws SQLException
     {
+        return getStudyDesign(c, name, false);
+    }
+
+    public StudyDesignInfo getStudyDesign(Container c, String name, boolean checkSourceContainer) throws SQLException
+    {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("Label", name);
-        StudyDesignInfo[] designs = Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
-        return (null == designs || designs.length == 0) ? null : designs[0];
+        filter.addCondition(FieldKey.fromParts("Label"), name);
+        StudyDesignInfo[] designs = new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
+        if (designs.length > 0)
+            return designs[0];
+
+        // Issue 18393: if the study design has been used to create a study folder, also check the sourcecontainer field
+        if (checkSourceContainer)
+        {
+            filter = new SimpleFilter(FieldKey.fromParts("SourceContainer"), c);
+            filter.addCondition(FieldKey.fromParts("Label"), name);
+            designs = new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
+            if (designs.length > 0)
+                return designs[0];
+        }
+
+        return null;
     }
 
     public GWTStudyDefinition getGWTStudyDefinition(User user, Container c, StudyDesignInfo info) throws SQLException
@@ -268,18 +286,19 @@ public class StudyDesignManager
 
         try
         {
+            // Check if there is a name conflict
+            StudyDesignInfo existingStudyDesign = getStudyDesign(container, version.getLabel(), true);
+            if (existingStudyDesign != null && (0 == studyDesignId || existingStudyDesign.getStudyId() != studyDesignId))
+            {
+                throw new SaveException("The name '" + version.getLabel() + "' is already in use");
+            }
+
             getSchema().getScope().ensureTransaction();
             if (0 == studyDesignId)
             {
                 designInfo = new StudyDesignInfo();
                 designInfo.setLabel(version.getLabel());
                 designInfo.setContainer(container);
-
-                // Check if there is a name conflict
-                if (getStudyDesign(container, version.getLabel()) != null)
-                {
-                    throw new SaveException("The name '" + version.getLabel() + "' is already in use");
-                }
                 designInfo = insertStudyDesign(user, designInfo);
                 version.setStudyId(designInfo.getStudyId());
             }
