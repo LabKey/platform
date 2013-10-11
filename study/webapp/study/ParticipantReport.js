@@ -667,9 +667,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     updateStatus : function(msg) {
         var tb = this.centerPanel.getDockedItems()[0];
         if (tb) {
-            var status = tb.getComponent('lengthreport');
+            var status = tb.down('#lengthreport');
             if (status) {
-                status.update('<i>' + (Ext4.isNumber(msg) ? 'Showing ' + msg + ' Results' : msg) + '</i>');
+                status.setValue('<i>' + (Ext4.isNumber(msg) ? 'Showing ' + msg + ' Results' : msg) + '</i>');
             }
         }
     },
