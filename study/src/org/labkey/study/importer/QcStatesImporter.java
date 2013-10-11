@@ -65,18 +65,24 @@ public class QcStatesImporter implements InternalStudyImporter
                 StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
                 Map<String, Integer> stateMap = new HashMap<>();
 
+                for (QCState existingState : StudyManager.getInstance().getQCStates(ctx.getContainer()))
+                    stateMap.put(existingState.getLabel(), existingState.getRowId());
+
                 if (states != null)
                 {
                     for (StudyqcDocument.Studyqc.Qcstates.Qcstate state : states.getQcstateArray())
                     {
-                        QCState newState = new QCState();
-                        newState.setContainer(ctx.getContainer());
-                        newState.setLabel(state.getName());
-                        newState.setDescription(state.getDescription());
-                        newState.setPublicData(state.getPublic());
+                        if (!stateMap.containsKey(state.getName()))
+                        {
+                            QCState newState = new QCState();
+                            newState.setContainer(ctx.getContainer());
+                            newState.setLabel(state.getName());
+                            newState.setDescription(state.getDescription());
+                            newState.setPublicData(state.getPublic());
 
-                        newState = StudyManager.getInstance().insertQCState(ctx.getUser(), newState);
-                        stateMap.put(newState.getLabel(), newState.getRowId());
+                            newState = StudyManager.getInstance().insertQCState(ctx.getUser(), newState);
+                            stateMap.put(newState.getLabel(), newState.getRowId());
+                        }
                     }
                 }
 
