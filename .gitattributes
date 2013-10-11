@@ -1378,7 +1378,6 @@ filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-11.30-11.
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-9.30-10.10.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-9.31-9.32.sql -text
 filecontent/resources/schemas/filecontent.xml -text
-filecontent/src/META-INF/filecontent.xml -text
 filecontent/src/org/labkey/filecontent/FileContentContainerListener.java -text
 filecontent/src/org/labkey/filecontent/FileContentController.java -text
 filecontent/src/org/labkey/filecontent/FileContentModule.java -text
@@ -2604,7 +2603,6 @@ search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/searchStats.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
-search/src/schemas/umls.xml -text
 study/gwtsrc/gwt/DatasetDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/DatasetImporter.gwt.xml_old -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
