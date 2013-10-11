@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.data.CompareType;
@@ -78,7 +79,7 @@ import java.util.concurrent.BlockingQueue;
 public class StudyReload
 {
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
-    private static final BlockingQueue<Container> QUEUE = new ArrayBlockingQueue<>(100);       // Container IDs instead?
+    private static final BlockingQueue<ImportOptions> QUEUE = new ArrayBlockingQueue<>(100);       // Container IDs instead?
     private static final Thread RELOAD_THREAD = new ReloadThread();
 
     private static final String JOB_GROUP_NAME = "org.labkey.study.importer.StudyReload";
@@ -283,7 +284,8 @@ public class StudyReload
             String studyContainerId = (String)context.getJobDetail().getJobDataMap().get(CONTAINER_ID_KEY);
             try
             {
-                attemptReload(studyContainerId);    // Ignore success messages
+                ImportOptions options = new ImportOptions(studyContainerId);
+                attemptReload(options);    // Ignore success messages
             }
             catch (ImportException ie)
             {
@@ -299,15 +301,15 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload(String studyContainerId) throws SQLException, ImportException
+        public ReloadStatus attemptReload(ImportOptions options) throws SQLException, ImportException
         {
-            Container c = ContainerManager.getForId(studyContainerId);
+            Container c = ContainerManager.getForId(options.getContainerId());
 
             if (null == c)
             {
                 // Container must have been deleted
-                cancelTimer(studyContainerId);
-                throw new ImportException("Container " + studyContainerId + " does not exist");
+                cancelTimer(options.getContainerId());
+                throw new ImportException("Container " + options.getContainerId() + " does not exist");
             }
             else
             {
@@ -316,7 +318,7 @@ public class StudyReload
                 if (null == study)
                 {
                     // Study must have been deleted
-                    cancelTimer(studyContainerId);
+                    cancelTimer(options.getContainerId());
                     throw new ImportException("Study does not exist in folder " + c.getPath());
                 }
                 else
@@ -356,7 +358,7 @@ public class StudyReload
                             study.setLastReload(new Date(lastModified));
                             StudyManager.getInstance().updateStudy(null, study);
 
-                            if (QUEUE.offer(c))
+                            if (QUEUE.offer(options))
                             {
                                 return new ReloadStatus("Reloading " + getDescription(study), true);
                             }
@@ -425,7 +427,8 @@ public class StudyReload
 
                 try
                 {
-                    c = QUEUE.take();
+                    ImportOptions options = QUEUE.take();
+                    c = ContainerManager.getForId(options.getContainerId());
                     PipeRoot root = StudyReload.getPipelineRoot(c);
                     study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
@@ -460,7 +463,7 @@ public class StudyReload
                         }
                     }
 
-                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root));
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
                 }
                 catch (InterruptedException e)
                 {

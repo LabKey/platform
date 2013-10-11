@@ -199,29 +199,37 @@ public class QueryImporter implements FolderImporter
 
         //validate all queries in all schemas in the container
         ctx.getLogger().info("Post-processing " + getDescription());
-        ctx.getLogger().info("Validating all queries in all schemas...");
-        Container container = ctx.getContainer();
-        User user = ctx.getUser();
-        DefaultSchema defSchema = DefaultSchema.get(user, container);
 
-        ValidateQueriesVisitor validator = new ValidateQueriesVisitor(true);
-        Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
-
-        ctx.getLogger().info("Finished validating queries.");
-        if (valid != null && valid)
+        if (ctx.isSkipQueryValidation())
         {
-            assert validator.getTotalCount() == validator.getValidCount();
-            ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+            ctx.getLogger().info("Skipping query validation.");
         }
         else
         {
-            ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
-        }
+            ctx.getLogger().info("Validating all queries in all schemas...");
+            Container container = ctx.getContainer();
+            User user = ctx.getUser();
+            DefaultSchema defSchema = DefaultSchema.get(user, container);
+
+            ValidateQueriesVisitor validator = new ValidateQueriesVisitor(true);
+            Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
+
+            ctx.getLogger().info("Finished validating queries.");
+            if (valid != null && valid)
+            {
+                assert validator.getTotalCount() == validator.getValidCount();
+                ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+            }
+            else
+            {
+                ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
+            }
 
 
-        for (Pair<String, Throwable> warn : validator.getWarnings())
-        {
-            warnings.add(new PipelineJobWarning(warn.first, warn.second));
+            for (Pair<String, Throwable> warn : validator.getWarnings())
+            {
+                warnings.add(new PipelineJobWarning(warn.first, warn.second));
+            }
         }
 
         ctx.getLogger().info("Done post-processing " + getDescription());

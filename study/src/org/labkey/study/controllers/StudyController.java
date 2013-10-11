@@ -30,6 +30,7 @@ import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.announcements.DiscussionService;
@@ -4145,7 +4146,8 @@ public class StudyController extends BaseStudyController
         ActionURL url = context.getActionURL();
         try
         {
-            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+            ImportOptions options = new ImportOptions(c.getId());
+            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot, options));
         }
         catch (PipelineValidationException e)
         {
@@ -6347,6 +6349,7 @@ public class StudyController extends BaseStudyController
         private boolean allowReload = false;
         private int interval = 0;
         private boolean _ui = false;
+        private boolean _skipQueryValidation;
 
         public boolean isAllowReload()
         {
@@ -6376,6 +6379,16 @@ public class StudyController extends BaseStudyController
         public void setUi(boolean ui)
         {
             _ui = ui;
+        }
+
+        public boolean isSkipQueryValidation()
+        {
+            return _skipQueryValidation;
+        }
+
+        public void setSkipQueryValidation(boolean skipQueryValidation)
+        {
+            _skipQueryValidation = skipQueryValidation;
         }
     }
 
@@ -6477,7 +6490,9 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                ReloadStatus status = task.attemptReload(getContainer().getId());
+                ImportOptions options = new ImportOptions(getContainer().getId());
+                options.setSkipQueryValidation(form.isSkipQueryValidation());
+                ReloadStatus status = task.attemptReload(options);
 
                 if (status.isReloadQueued() && form.isUi())
                     return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));

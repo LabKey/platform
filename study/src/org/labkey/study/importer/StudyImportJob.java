@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
@@ -54,7 +55,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     private final String _originalFilename;
 
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
-    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot)
+    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(studyXml.getParentFile());
@@ -62,6 +63,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load")));
         _errors = errors;
         _ctx = new StudyImportContext(user, c, studyXml, new PipelineJobLoggerGetter(this), _root);
+        _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);

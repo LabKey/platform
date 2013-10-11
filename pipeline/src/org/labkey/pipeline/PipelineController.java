@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.DomainUtil;
@@ -1303,7 +1304,8 @@ public class PipelineController extends SpringActionController
         User user = context.getUser();
         ActionURL url = context.getActionURL();
 
-        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot));
+        ImportOptions options = new ImportOptions(c.getId());
+        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
 
         return !errors.hasErrors();
     }

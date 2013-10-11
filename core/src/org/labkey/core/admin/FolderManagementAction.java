@@ -23,6 +23,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.ButtonBar;
@@ -553,12 +554,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
                     User user = context.getUser();
                     ActionURL url = context.getActionURL();
+                    ImportOptions options = new ImportOptions(getContainer().getId());
+                    options.setSkipQueryValidation(!form.isValidateQueries());
 
                     if(isStudy){
-                       StudyService.get().runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot);
+                       StudyService.get().runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
                     else {
-                       PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot);
+                       PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
                 }
             }
@@ -630,6 +633,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private boolean shiftDates;
         private boolean alternateIds;
         private boolean maskClinic;
+
+        // folder import settings
+        private boolean validateQueries;
 
         // file management settings
         private String _folderRootPath;
@@ -925,6 +931,16 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setMaskClinic(boolean maskClinic)
         {
             this.maskClinic = maskClinic;
+        }
+
+        public boolean isValidateQueries()
+        {
+            return validateQueries;
+        }
+
+        public void setValidateQueries(boolean validateQueries)
+        {
+            this.validateQueries = validateQueries;
         }
     }
 

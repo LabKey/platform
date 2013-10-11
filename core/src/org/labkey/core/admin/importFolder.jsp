@@ -86,12 +86,9 @@
     <tr>
         <td><%=generateSubmitButton("Import Folder From Local Zip Archive")%></td>
 <% } %>
-
-
 </tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
+<tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+<tr><td>&nbsp;</td></tr>
 
 <% if(requestOrigin.equals("Study")){%>
     <tr><td class="labkey-announcement-title" align=left><span>Import Study From Server-Accessible Archive</span></td></tr>

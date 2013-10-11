@@ -2846,7 +2846,11 @@ public class ReportsController extends SpringActionController
 
             for (DataViewProvider.Type type : visibleDataTypes)
             {
-                views.addAll(DataViewService.get().getProvider(type, getViewContext()).getViews(getViewContext()));
+                for (DataViewInfo info : DataViewService.get().getProvider(type, getViewContext()).getViews(getViewContext()))
+                {
+                    if (!form.isManageView() || !info.isReadOnly())
+                        views.add(info);
+                }
             }
 
             for (DataViewInfo info : views)

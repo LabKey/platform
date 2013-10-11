@@ -17,6 +17,7 @@ package org.labkey.pipeline.importer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
@@ -48,13 +49,14 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     private final VirtualFile _root;
     private final String _originalFilename;
 
-    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, PipeRoot pipeRoot)
+    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(folderXml.getParentFile());
         _originalFilename = originalFilename;
         setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load")));
         _ctx = new FolderImportContext(user, c, folderXml, new PipelineJobLoggerGetter(this), _root);
+        _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
 
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
     }
