@@ -161,13 +161,13 @@ public class LdapAuthenticationManager
     // Get configuration for searching LDAP, if so configured. If not so configured, silently return null.
     private static LdapSearchConfig lookupLdapSearchConfig()
     {
-        Context jndiCtx = null;
         try
         {
-            jndiCtx = (Context) new InitialContext().lookup("java:comp/env");
+            Context jndiCtx = (Context) new InitialContext().lookup("java:comp/env");
             String username = (String) jndiCtx.lookup("ldapSearch_username");
             String password = (String) jndiCtx.lookup("ldapSearch_password");
             String searchBase = (String) jndiCtx.lookup("ldapSearch_searchBase");
+
             return new LdapSearchConfig(username, password, searchBase);
         }
         catch (NamingException ne)
@@ -176,20 +176,9 @@ public class LdapAuthenticationManager
             _log.debug("ldapSearch_* values not configured in Environment of context xml.", ne);
             return null;
         }
-        finally
-        {
-            if (jndiCtx != null)
-            {
-                try
-                {
-                    jndiCtx.close();
-                }
-                catch (NamingException ne)
-                {
-                    _log.warn("Exception while trying to close JNDI Context", ne);
-                }
-            }
-        }
+
+        // No explicit close() here because Tomcat 7 changed to throw on every call to close(). For more information,
+        // see #18777 and https://issues.apache.org/bugzilla/show_bug.cgi?id=51744
     }
     
     // Returns true if we're using the email as the LDAP principal.
