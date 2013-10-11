@@ -41,6 +41,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final LoggerGetter _logger;
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<>();
+    private boolean _skipQueryValidation;
 
     private transient XmlDocument _xmlDocument;
 
@@ -187,5 +188,16 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     {
         //noinspection unchecked
         return (K)_contextMap.get(contextClass);
+    }
+
+    @Override
+    public boolean isSkipQueryValidation()
+    {
+        return _skipQueryValidation;
+    }
+
+    public void setSkipQueryValidation(boolean skipQueryValidation)
+    {
+        _skipQueryValidation = skipQueryValidation;
     }
 }

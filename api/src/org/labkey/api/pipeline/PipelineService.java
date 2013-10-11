@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.view.SetupForm;
@@ -120,7 +121,7 @@ abstract public class PipelineService
 
     abstract public TableInfo getJobsTable(User user, Container container);
 
-    abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot);
+    abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     abstract public Integer getJobId(User u, Container c, String jobGUID);
 }
