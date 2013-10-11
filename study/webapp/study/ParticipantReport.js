@@ -983,8 +983,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                 this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                     renderTo: this.filterDiv,
-                    title    : 'Filter Report',
-                    layout   : 'form',              // strange workaround to make sure content renders after expand
                     items    : [this.filterPanel],
                     shadow: Ext4.isIE7 ? false : "sides",
                     bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
@@ -994,11 +992,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         offsets  : [-9, 27]
                     },
                     collapseDirection : 'left',
-                    collapsed: true,
-                    closeable: true,
                     closeAction : 'hide',
                     listeners: {
-                        close: function() { fb.show(); }
+                        scope: this,
+                        close: function() { fb.show(); },
+                        resize: function(win, width, height) {
+                            this.filterPanel.getGroupPanel().setWidth(width - 10);
+                        }
                     },
                     scope    : this
                 });

@@ -406,10 +406,14 @@
         <% if (bean.getWide()) { %>
         var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
         {
-            id        : <%=q(groupsPanelId)%>,
-            border    : false,
-            cls : 'iScroll',
+            id : <%=q(groupsPanelId)%>,
+            renderTo : X.get(<%=q(groupsDivId)%>),
+            title : 'Show',
+            border : true,
+            cls : 'themed-panel iScroll',
             bodyStyle : 'overflow-x: hidden !important;',
+            width : 260,
+            height : 350,
             autoScroll : true,
             normalWrap : true,
             allowAll  : true,
@@ -489,24 +493,18 @@
             }
         });
 
-        var outerPanel = X.create('Ext.panel.Panel', {
-            renderTo : X.get(<%=q(groupsDivId)%>),
-            cls : 'themed-panel',
-            title : 'Show',
-            width : 260,
-            height : 350,
-            bodyStyle : 'padding: 8px;',
-            layout : 'fit',
-            items : ptidPanel
-        });
-
         X.create('Ext.resizer.Resizer', {
             // default handles are east, south, and souteast
-            target: outerPanel,
+            target: ptidPanel,
             dynamic: false,
             minWidth: 260,
             minHeight: 350,
-            listeners: { resize: doAdjustSize }
+            listeners: {
+                resize: function(cmp, width) {
+                    ptidPanel.getGroupPanel().setWidth(width - 10);
+                    doAdjustSize();
+                }
+            }
         });
         <% } %>
 

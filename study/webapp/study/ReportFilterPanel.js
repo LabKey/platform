@@ -746,11 +746,7 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
             titleCollapse : true,
             draggable     : false,
             cls           : 'report-filter-window',
-            title         : 'Filter Report',
-            alignConfig   : {
-                position : 'tl-tr',
-                offsets  : [-300, 27]
-            }
+            title         : 'Filter Report'
         });
 
         this.callParent([config]);

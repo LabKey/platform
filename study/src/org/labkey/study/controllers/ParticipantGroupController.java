@@ -864,8 +864,16 @@ public class ParticipantGroupController extends BaseStudyController
 
             // we want to OR subjects within a category and AND them across categories
             Collection<String> subjects = new ArrayList<>();
-            for (Set<String> participants : categoryToSubjectMap.values())
+            Set<String> cohortParticipants = null;
+            for (String key : categoryToSubjectMap.keySet())
             {
+                if (key.equals("cohort"))
+                {
+                    cohortParticipants = categoryToSubjectMap.get(key);
+                    continue;
+                }
+
+                Set<String> participants = categoryToSubjectMap.get(key);
                 if (!subjects.isEmpty())
                 {
                     subjects = CollectionUtils.intersection(subjects, participants);
@@ -874,6 +882,15 @@ public class ParticipantGroupController extends BaseStudyController
                 }
                 else
                     subjects.addAll(participants);
+            }
+
+            // Issue 18697: since cohorts are allowed to be empty (i.e. have no ptids in it) and ptid groups are not, go through the ptids groups first
+            if (cohortParticipants != null)
+            {
+                if (subjects.isEmpty())
+                    subjects.addAll(cohortParticipants);
+                else
+                    subjects = CollectionUtils.intersection(subjects, cohortParticipants);
             }
 
             List<String> sortedSubjects = new ArrayList<>();

@@ -212,6 +212,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     getGroupPanelCfg : function() {
 
         var groupPanel = Ext4.create('Ext.panel.Panel', {
+            itemId      : 'groupPanelId',
             layout      : 'fit',
             border      : false,
             frame       : false
@@ -410,6 +411,10 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             }, this);
             return selections;
         }
+    },
+
+    getGroupPanel : function() {
+        return this.down('#groupPanelId');
     },
 
     getFilterPanel : function() {

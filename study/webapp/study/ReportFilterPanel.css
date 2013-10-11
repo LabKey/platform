@@ -16,6 +16,11 @@
     border: none !important;
 }
 
+.rpf .x4-grid-body .x4-grid-table-over-first
+{
+    border-top: none !important;
+}
+
 .rpf .x4-grid-row.x4-grid-row-over,
 .rpf .x4-column-header-over {
     background-color: #F6F6F6;
