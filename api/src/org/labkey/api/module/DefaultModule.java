@@ -43,7 +43,6 @@ import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -933,15 +932,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         Resource r = getModuleResource(path);
         if (r != null && r.isFile())
-        {
-            if (r instanceof FileResource)
-            {
-                File file = ((FileResource)r).getFile();
-                if (file.getPath().contains("src") || file.getPath().contains("META-INF"))
-                    _log.info("/src resource: " + file.getPath());
-            }
             return r.getInputStream();
-        }
         return null;
     }
 
@@ -1003,12 +994,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 ((HasViewContext)controller).setViewContext(rootContext);
             controller.handleRequest(request, response);
         }
-        catch (ServletException x)
-        {
-            _log.error("error", x);
-            throw x;
-        }
-        catch (IOException x)
+        catch (ServletException | IOException x)
         {
             _log.error("error", x);
             throw x;
@@ -1041,11 +1027,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             return (Controller)cls.newInstance();
         }
-        catch (IllegalAccessException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (InstantiationException x)
+        catch (IllegalAccessException | InstantiationException x)
         {
             throw new RuntimeException(x);
         }
@@ -1112,25 +1094,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 {
                     File resourcesDir = new File(new File(sourcePath), "resources");
 
-                    // If we have a "resources" directory then we assume a Java module layout (which includes a "src" directory)
-                    // If not, we're a simple modules with individual, top-level resource directories
+                    // If we have a "resources" directory then look for resources there (Java module layout)
+                    // If not, treat all top-level directories as resource directories (simple module layout)
                     if (resourcesDir.isDirectory())
-                    {
                         dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir));
-
-                        File srcDir = new File(new File(sourcePath), "src");
-
-                        if (srcDir.isDirectory())
-                            dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(srcDir));
-                    }
                     else
-                    {
                         dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(sourceDir));
-                    }
                 }
             }
             else
             {
+                // TODO: Stop doing this
                 String build = getBuildPath();
 
                 if (null != build)
@@ -1146,6 +1120,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             File exploded = getExplodedPath();
 
+            // TODO: In 14.1, check "resources" or top-level directories, as above
             if (exploded != null && exploded.isDirectory())
             {
                 dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
