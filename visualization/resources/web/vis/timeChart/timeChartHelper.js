@@ -948,7 +948,11 @@ LABKEY.vis.TimeChartHelper = new function() {
                     config.failure.call(config.scope, info);
                 },
                 measures: config.chartInfo.measures,
-                groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'UniqueId', values: groups}],
+                groupBys: [
+                    // Issue 18747: if grouping by cohorts and ptid groups, order it so the cohorts are first
+                    {schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'GroupingOrder', values: [0,1]},
+                    {schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'UniqueId', values: groups}
+                ],
                 sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
                 limit : config.dataLimit || 10000,
                 filterUrl: config.chartInfo.filterUrl,

@@ -20,8 +20,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
@@ -55,6 +58,10 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
             currentCohortColumn.setFk(new CohortForeignKey(_userSchema));
             addColumn(currentCohortColumn);
         }
+
+        ColumnInfo groupOrderCol = new ExprColumn(this, "GroupingOrder", new SQLFragment("(CASE WHEN GroupId IS NOT NULL THEN 1 ELSE 0 END)"), JdbcType.INTEGER);
+        groupOrderCol.setHidden(true);
+        addColumn(groupOrderCol);
 
         ColumnInfo col = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("UniqueId")));
         col.setHidden(true);

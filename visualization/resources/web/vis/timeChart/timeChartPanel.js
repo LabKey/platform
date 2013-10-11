@@ -821,7 +821,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.tempGridInfo = {
                     schema: this.chartData.aggregate.schemaName,
                     query: this.chartData.aggregate.queryName,
-                    sortCols : ["UniqueId"]
+                    sortCols : ["GroupingOrder", "UniqueId"]
                 };
             }
             else
