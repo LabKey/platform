@@ -114,6 +114,7 @@ function addExtFilePickerHandler()
 
     var uploadField = Ext4.create('Ext.Panel', {
         border : false, frame : false,
+        bodyStyle : 'background-color: transparent;',
         height : 35,
         items:[fibasic, removeBtn]
     });
@@ -379,11 +380,12 @@ function renderFormPanel(data, editable){
     if (editableFormPanel) {
         items.push({
             fieldLabel : 'Render Type',
+            xtype : 'combo',
             labelWidth : 150,
+            height : 22,
             padding : 5,
             hiddenName : 'DescriptionRendererType',
             name : 'DescriptionRendererType',
-            triggerAction : 'all',
             queryMode: 'local',
             valueField: 'renderType',
             displayField: 'displayText',
@@ -415,6 +417,7 @@ function renderFormPanel(data, editable){
     });
     items.push({
         xtype: 'panel',
+        bodyStyle : 'background-color: transparent;',
         itemId : 'protocolPanel',
         cls    : 'protocolPanel',
         height : (initHeight * 25) + 30,
