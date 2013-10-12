@@ -987,7 +987,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (hidePanel == true)
             this.update("<span class='labkey-error'>" + message + "</span>");
         else
-            Ext4.MessageBox.alert('Error', message != null ? message : 'An unknown error has ocurred.');
+            Ext4.MessageBox.alert('Error', message != null ? message : 'An unknown error has occurred.');
 
         this.clearLoadingMask();
     },

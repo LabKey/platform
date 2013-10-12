@@ -1084,7 +1084,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 if(resp && resp.exception){
                     Ext4.Msg.alert('Failure', resp.exception);
                 } else {
-                    Ext4.Msg.alert('Failure', 'An unknown failure has ocurred');
+                    Ext4.Msg.alert('Failure', 'An unknown failure has occurred');
                 }
             },
             scope   : this

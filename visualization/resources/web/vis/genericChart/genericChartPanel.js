@@ -1508,7 +1508,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if(error){
             Ext.MessageBox.alert('Error', error);
         } else {
-            Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the chart.');
+            Ext.MessageBox.alert('Error', 'An unknown error has occurred, unable to save the chart.');
         }
     },
 

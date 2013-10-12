@@ -319,7 +319,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         if(error)
             Ext.MessageBox.alert('Error', error);
         else
-            Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the survey.');
+            Ext.MessageBox.alert('Error', 'An unknown error has occurred, unable to save the survey.');
     },
 
     initCombo : function(cmp, value) {
