@@ -3,6 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+if(!LABKEY.vis) {
+    LABKEY.vis = {};
+}
 
 LABKEY.vis.GenericChartHelper = new function(){
     var getChartType = function(renderType, xAxisType) {
@@ -401,6 +404,26 @@ LABKEY.vis.GenericChartHelper = new function(){
         return {success: true, message: message};
     };
 
+    var loadVisDependencies = function(callback, scope){
+        var devScripts = [
+            '/vis/lib/d3-2.0.4.min.js',
+            '/vis/lib/raphael-min-2.1.0.js',
+            '/vis/lib/patches.js',
+            '/vis/src/utils.js',
+            '/vis/src/geom.js',
+            '/vis/src/stat.js',
+            '/vis/src/scale.js',
+            '/vis/src/layer.js',
+            '/vis/src/plot.js'
+        ];
+        var productionScripts = [
+            '/vis/lib/d3-2.0.4.min.js',
+            '/vis/lib/raphael-min-2.1.0.js',
+            '/vis/vis.min.js'
+        ];
+        LABKEY.requiresScript((LABKEY.devMode ? devScripts : productionScripts), true, callback, scope, true);
+    };
+
     return {
         getChartType: getChartType,
         generateLabels: generateLabels,
@@ -414,6 +437,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generatePointClickFn: generatePointClickFn,
         generateGeom: generateGeom,
         validateXAxis: validateXAxis,
-        validateYAxis: validateYAxis
+        validateYAxis: validateYAxis,
+        loadVisDependencies: loadVisDependencies
     };
 };

@@ -11,27 +11,6 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "// Wrap in function to prevent leaking variables into global namespace.\n" +
             "(function() {\n" +
             "    var chartId = 'exportedChart';\n" +
-            "    var loadVisDependencies = function(callback, scope) {\n" +
-            "        var devScripts = [\n" +
-            "            '/vis/lib/d3-2.0.4.min.js',\n" +
-            "            '/vis/lib/raphael-min-2.1.0.js',\n" +
-            "            '/vis/lib/patches.js',\n" +
-            "            '/vis/src/utils.js',\n" +
-            "            '/vis/src/geom.js',\n" +
-            "            '/vis/src/stat.js',\n" +
-            "            '/vis/src/scale.js',\n" +
-            "            '/vis/src/layer.js',\n" +
-            "            '/vis/src/plot.js',\n" +
-            "            '/vis/genericChart/genericChartHelper.js'\n" +
-            "        ];\n" +
-            "        var productionScripts = [\n" +
-            "            '/vis/lib/d3-2.0.4.min.js',\n" +
-            "            '/vis/lib/raphael-min-2.1.0.js',\n" +
-            "            '/vis/vis.min.js',\n" +
-            "            '/vis/genericChart/genericChartHelper.js'\n" +
-            "        ];\n" +
-            "        LABKEY.requiresScript((LABKEY.devMode ? devScripts : productionScripts), true, callback, scope, true);\n" +
-            "    };\n" +
             "\n" +
             "    var renderMessages = function(id, messages) {\n" +
             "        var errorDiv;\n" +
@@ -126,7 +105,8 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        LABKEY.Query.selectRows(queryConfig);\n" +
             "    };\n" +
             "\n" +
-            "    loadVisDependencies(dependencyCallback);\n" +
+            "   // Load the script dependencies for charts. \n" +
+            "   LABKEY.requiresScript('/vis/genericChart/genericChartHelper.js', true, function(){LABKEY.vis.GenericChartHelper.loadVisDependencies(dependencyCallback);});\n" +
             "})();\n" +
             '</script>',
 
