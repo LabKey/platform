@@ -228,5 +228,5 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     AssaySaveHandler getSaveHandler();
 
-    AssayRunUploadContext getRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData);
+    AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData);
 }

@@ -85,7 +85,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
     }
 
 
-    void setParameters(Map<String,Object> p)
+    public void setParameters(Map<String,Object> p)
     {
         _parameters.putAll(p);
     }
@@ -109,7 +109,12 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
             sql = _sql;
 
         QueryService qs = QueryService.get();
-        QueryDefinition qd = qs.createQueryDef(_user, _container, (UserSchema)_schema, "source");
+        QueryDefinition qd;
+        if (_schema != null)
+            qd = qs.createQueryDef(_user, _container, (UserSchema)_schema, "source");
+        else
+            qd = qs.createQueryDef(_user, _container, _schemaKey, "source");
+
         qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();
         TableInfo t = qd.getTable(qerrors, true);

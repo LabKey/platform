@@ -1231,7 +1231,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunUploadContext getRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
+    public AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
     {
         return null;
     }

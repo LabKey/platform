@@ -63,6 +63,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 {
     private static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
+    private boolean _deleteProtocolApplications = true;
 
     public AssayProvider getProvider()
     {
@@ -72,6 +73,16 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     public void setProvider(AssayProvider provider)
     {
         _provider = provider;
+    }
+
+    @Override
+    public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol) throws Exception
+    {
+    }
+
+    @Override
+    public void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception
+    {
     }
 
     public static ExpExperiment lookupBatch(Container c, int batchId)
@@ -89,7 +100,10 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         return batch;
     }
 
-
+    public void setDeleteProtocolApplications(boolean deletelProtocolApplications)
+    {
+        _deleteProtocolApplications = deletelProtocolApplications;
+    }
 
     @Override
     public ExpExperiment handleBatch(ViewContext context, JSONObject batchJsonObject, ExpProtocol protocol) throws Exception
@@ -160,6 +174,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
         String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
+
         if (runJsonObject.has(ExperimentJSONConverter.ID))
         {
             int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
@@ -317,8 +332,9 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 inputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterialRunInput.DEFAULT_ROLE));
         }
 
-        // Delete the contents of the run
-        run.deleteProtocolApplications(context.getUser());
+        // Delete the contents of the run if allowed
+        if (_deleteProtocolApplications)
+            run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
         Map<ExpData, String> outputData = new HashMap<>();
@@ -378,7 +394,14 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
         if (tsvData != null)
         {
-            importRows(context, tsvData, run, protocol, runJsonObject, rawData);
+            // programmatic qc validation
+            DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
+            if (dataTransformer != null)
+                dataTransformer.transformAndValidate(_provider.createRunUploadContext(context, protocol.getRowId(), runJsonObject, rawData), run);
+
+            TsvDataHandler dataHandler = new TsvDataHandler();
+            dataHandler.setAllowEmptyData(true);
+            dataHandler.importRows(tsvData, context.getUser(), run, protocol, _provider, rawData);
         }
     }
 
@@ -541,18 +564,5 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             material.setCpasType(sampleSet.getLSID());
         material.save(viewContext.getUser());
         return material;
-    }
-
-    @Override
-    public void importRows(ViewContext context, ExpData data, ExpRun run, ExpProtocol protocol, JSONObject runJson, List<Map<String, Object>> rawData) throws ExperimentException, ValidationException
-    {
-        // programmatic qc validation
-        DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
-        if (dataTransformer != null)
-            dataTransformer.transformAndValidate(_provider.getRunUploadContext(context, protocol.getRowId(), runJson, rawData), run);
-
-        TsvDataHandler dataHandler = new TsvDataHandler();
-        dataHandler.setAllowEmptyData(true);
-        dataHandler.importRows(data, context.getUser(), run, protocol, _provider, rawData);
     }
 }

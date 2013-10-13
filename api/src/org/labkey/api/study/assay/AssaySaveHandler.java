@@ -41,11 +41,11 @@ public interface AssaySaveHandler
 {
     void setProvider(AssayProvider provider);
     AssayProvider getProvider();
-
     ExpExperiment handleBatch(ViewContext context, JSONObject batchJson, ExpProtocol protocol) throws Exception;
     ExpRun handleRun(ViewContext context, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException;
     ExpData handleData(ViewContext context, JSONObject dataJson) throws ValidationException;
     ExpMaterial handleMaterial(ViewContext context, JSONObject materialJson) throws ValidationException;
     void handleProperties(ViewContext context, ExpObject object, DomainProperty[] dps, JSONObject propertiesJson) throws ValidationException, JSONException;
-    void importRows(ViewContext context, ExpData data, ExpRun run, ExpProtocol protocol, JSONObject runJson, List<Map<String, Object>> rawData) throws ExperimentException, ValidationException;
+    void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)throws Exception;
+    void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception;
 }
