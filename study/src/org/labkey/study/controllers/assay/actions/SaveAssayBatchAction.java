@@ -57,12 +57,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         ExpExperiment batch;
 
+        saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             batch = saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol);
             transaction.commit();
         }
-
+        saveHandler.afterSave(getViewContext(), batch, protocol);
         return AssayJSONConverter.serializeResult(provider, protocol, batch, getViewContext().getUser());
     }
 }
