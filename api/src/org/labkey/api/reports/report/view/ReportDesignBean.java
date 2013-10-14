@@ -51,7 +51,6 @@ public class ReportDesignBean extends ReportForm
     protected boolean _shareReport;
     protected boolean _inheritable;
     protected boolean _cached;
-    protected boolean _sourceTabVisible;
 
     public ReportDesignBean()
     {

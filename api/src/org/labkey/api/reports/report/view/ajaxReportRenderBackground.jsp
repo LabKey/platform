@@ -53,7 +53,7 @@
 
     function startJob()
     {
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: <%=q(startReportURL.getLocalURIString())%>,
             method: 'GET',
             success: startJobSuccess,
@@ -92,15 +92,16 @@
 <%
     if (autoRefresh)
     { %>
-        Ext.onReady(init());
+        Ext4.onReady(init());
 <%
     } %>
 
     function pollForResults()
     {
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: <%=q(getResultsURL.getLocalURIString())%>,
             method: 'GET',
+            params : {runInBackground : true},
             success: resultsSuccess,
             failure: resultsFailure
         });
@@ -108,15 +109,21 @@
 
     function resultsSuccess(response)
     {
-        var map = Ext.util.JSON.decode(response.responseText);
+        var o = Ext4.decode(response.responseText);
 
-        var extDiv = Ext.get("results");
-        extDiv.update(map['results']);
+        if (o) {
+            var extDiv = Ext4.get('backgroundReportDiv');
 
-        if (map['status'] == <%=q(PipelineJob.COMPLETE_STATUS)%>)
-            stopPolling();
-        else if (!timer)
-            timer = window.setInterval("pollForResults()", 4000);
+            if (extDiv) {
+
+                extDiv.update(o.results);
+            }
+
+            if (o.status == <%=q(PipelineJob.COMPLETE_STATUS)%>)
+                stopPolling();
+            else if (!timer)
+                timer = window.setInterval("pollForResults()", 4000);
+        }
     }
 
     function resultsFailure(o)
@@ -153,4 +160,3 @@
     <tr><td colspan="2">&nbsp;</td></tr><%
     } %>
 </table>
-<div id="results"></div>
