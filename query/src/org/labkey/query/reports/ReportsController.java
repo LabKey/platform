@@ -222,6 +222,12 @@ public class ReportsController extends SpringActionController
             return new ActionURL(ViewScriptReportAction.class, c);
         }
 
+        @Override
+        public ActionURL urlViewBackgroundScriptReport(Container c)
+        {
+            return new ActionURL(GetBackgroundReportResultsAction.class, c);
+        }
+
         public ActionURL urlCreateScriptReport(Container c)
         {
             return new ActionURL(CreateScriptReportAction.class, c);

@@ -23,24 +23,19 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     initComponent : function() {
 
         this.items = [];
-        var numTabs = 0;
 
         this.items.push(this.createViewPanel());
-        numTabs++;
-
         if (this.reportConfig.schemaName && this.reportConfig.queryName) {
             this.items.push(this.createDataPanel());
-            numTabs++;
         }
 
         if (this.sourceAndHelp)
         {
             this.items.push(this.createSourcePanel());
             this.items.push(this.createHelpPanel());
-            numTabs+= 2;
 
             if (this.preferSourceTab)
-                this.activeTab = numTabs-2;
+                this.activeTab = this.items.length-2;
         }
         this.callParent();
 
@@ -74,9 +69,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return {
             title   : 'View',
             html    : {
-                id : panelId,
                 tag : 'div',
-                cls : 'reportView'
+                children : [
+                    {tag : 'div', cls : 'reportView', id : panelId},
+                    {tag : 'div', cls : 'reportView', id : 'backgroundReportDiv'}
+                ]
             },
             bodyPadding : 10,
             autoScroll  : true,
@@ -327,7 +324,15 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             boxLabel : 'Make this view available in child folders&nbsp;' +
                                     '<span data-qtip="If this check box is selected, this view will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                             checked : this.reportConfig.inheritable},
-                    {name : 'runInBackground', hidden : !this.reportConfig.supportsPipeline, boxLabel : 'Run this view in the background as a pipeline job', checked : this.reportConfig.runInBackground}
+                    {name : 'runInBackground',
+                        hidden : !this.reportConfig.supportsPipeline,
+                        boxLabel : 'Run this view in the background as a pipeline job',
+                        checked : this.reportConfig.runInBackground,
+                        listeners : {
+                            scope: this,
+                            'change': function(cb, value) {this.runInBackground = value;}
+                        }
+                    }
                 ]
             });
 
