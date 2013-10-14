@@ -62,7 +62,7 @@ Ext4.define('File.panel.Actions', {
         this.showFolderTree = config.showFolderTree;
         this.inheritedTbarConfig = config.inheritedTbarConfig;
 
-        if (Ext4.isObject(config.actions))
+        if(config.actions)
         {
             for (var i=0; i < config.actions.length; i++)
             {

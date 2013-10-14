@@ -5,6 +5,7 @@
  */
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css");
+LABKEY.requiresCss("/ux/css/CheckHeader.css");
 
 Ext4.define('File.panel.Browser', {
 
@@ -109,6 +110,10 @@ Ext4.define('File.panel.Browser', {
 
     actionsConfig : [],
 
+    fileProps : [],
+
+    fileObjects : [],
+
     actionGroups: {},
 
     adminUser : false,
@@ -186,7 +191,60 @@ Ext4.define('File.panel.Browser', {
             }
         },
 
-        _pipelineConfigurationCache : {}
+        _pipelineConfigurationCache : {},
+
+        _toggleActions : function(actions, selection)
+        {
+            for(var key in actions)
+            {
+                if(actions.hasOwnProperty(key))
+                {
+                    if(!actions[key].initialConfig.actionType)
+                        continue;
+                    if(selection == 0)
+                    {
+                        if(actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.NOMIN ||
+                                actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.NOFILE )
+                        {
+                            actions[key].setDisabled(false);
+                        }
+                        else
+                            actions[key].setDisabled(true);
+                    }
+
+                    else if(selection == 1)
+                    {
+                        if(actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.NOMIN ||
+                                actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.ATLEASTONE ||
+                                actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.ONLYONE)
+                        {
+                            actions[key].setDisabled(false);
+                        }
+                        else
+                            actions[key].setDisabled(true);
+                    }
+                    else if (selection >= 2)
+                    {
+                        if(actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.NOMIN ||
+                                actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.ATLEASTONE ||
+                                actions[key].initialConfig.actionType === File.panel.Browser.actionTypes.ATLEASTTWO)
+                        {
+                            actions[key].setDisabled(false);
+                        }
+                        else
+                            actions[key].setDisabled(true);
+                    }
+                }
+            }
+        },
+
+        actionTypes : {
+            NOMIN :        'No file required',
+            ATLEASTONE :     'At least one file required',
+            ONLYONE :       'Only one file allowed',
+            ATLEASTTWO :    'Needs at least two files',
+            NOFILE :        'Only works with no files'
+        }
     },
 
     constructor : function(config) {
@@ -202,7 +260,6 @@ Ext4.define('File.panel.Browser', {
 
     initComponent : function() {
 
-        fb = this;
         var testFlag = document.createElement("div");
         testFlag.id = 'testFlag';
 
@@ -229,6 +286,7 @@ Ext4.define('File.panel.Browser', {
             iconCls:'iconUp',
             disabledClass:'x-button-disabled',
             handler : this.onTreeUp,
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             scope: this,
             hideText: true
         });
@@ -240,6 +298,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconReload',
             disabledClass: 'x-button-disabled',
             handler : this.onRefresh,
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             scope: this,
             hideText: true
         });
@@ -251,6 +310,7 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'Create a new folder on the server',
             disabledClass: 'x-button-disabled',
             handler : this.onCreateDirectory,
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             scope: this,
             hideText: true
         });
@@ -263,6 +323,7 @@ Ext4.define('File.panel.Browser', {
             disabledClass: 'x-button-disabled',
             disabled: true,
             handler: this.onDownload,
+            actionType : File.panel.Browser.actionTypes.ATLEASTONE,
             scope: this,
             hideText: true
         });
@@ -274,6 +335,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconDelete',
             disabledClass: 'x-button-disabled',
             handler: this.onDelete,
+            actionType : File.panel.Browser.actionTypes.ATLEASTONE,
             scope: this,
             disabled: true,
             hideText: true
@@ -286,6 +348,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconRename',
             disabledClass: 'x-button-disabled',
             handler : this.onRename,
+            actionType : File.panel.Browser.actionTypes.ONLYONE,
             scope: this,
             disabled: true,
             hideText: true
@@ -298,6 +361,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconMove',
             disabledClass: 'x-button-disabled',
             handler : this.onMoveClick,
+            actionType : File.panel.Browser.actionTypes.ATLEASTONE,
             scope: this,
             disabled: true,
             hideText: true
@@ -369,6 +433,7 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'Show or hide the folder tree',
             hideText: true,
             handler : function() { this.tree.toggleCollapse(); },
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             scope: this
         });
 
@@ -379,6 +444,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconDBCommit',
             disabledClass:'x-button-disabled',
             tooltip: 'Import data from files into the database, or analyze data files',
+            actionType : File.panel.Browser.actionTypes.ATLEASTONE,
             scope: this
         });
 
@@ -388,6 +454,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
             tooltip: 'Configure the buttons shown on the toolbar',
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             handler: this.showAdminWindow,
             scope: this
         });
@@ -398,7 +465,8 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconEditFileProps',
             disabledClass:'x-button-disabled',
             tooltip: 'Edit properties on the selected file(s)',
-            handler : function() { Ext4.Msg.alert('Edit File Properties', 'This feature is not yet implemented.'); },
+            actionType : File.panel.Browser.actionTypes.ATLEASTONE,
+            handler : this.onEditFileProps,
             disabled : true,
             hideText: true,
             scope: this
@@ -411,6 +479,7 @@ Ext4.define('File.panel.Browser', {
             disabledClass:'x-button-disabled',
             tooltip: 'Configure email notifications on file actions.',
             hideText: true,
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             handler : this.onEmailPreferences,
             scope: this
         });
@@ -421,6 +490,7 @@ Ext4.define('File.panel.Browser', {
             iconCls: 'iconAuditLog',
             disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
+            actionType : File.panel.Browser.actionTypes.NOMIN,
             handler : function() {
                 window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
             },
@@ -590,23 +660,96 @@ Ext4.define('File.panel.Browser', {
         {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true, height : 20},
         {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
         ];
-
-        var success = function(response) {
-            var json = Ext4.JSON.decode(response.responseText);
-            if (json && json.config && json.config.gridConfig) {
-                json = json.config.gridConfig.columns;
-                var finalColumns = [], i= 1, g = this.getGrid();
-                for (; i < json.length; i++) {
-                    columns[json[i].id-1].hidden = json[i].hidden;
-                    finalColumns[i-1] = columns[json[i].id-1];
-                }
-                g.reconfigure(g.getStore(), finalColumns);
-            }
-        };
-
-        File.panel.Browser._getPipelineConfiguration(success, this.containerPath, this);
+        this.setDefaultColumns(columns);
+        File.panel.Browser._getPipelineConfiguration(this._onExtraColumns, this.containerPath, this);
 
         return columns;
+    },
+
+    _onExtraColumns: function(response) {
+        var extraColumns = [];
+        var columns = this.getDefaultColumns();
+        var json = Ext4.JSON.decode(response.responseText);
+        if (json && json.config && json.config.gridConfig) {
+            var customColumns = json.fileProperties;
+            json = json.config.gridConfig.columns;
+            var finalColumns = [columns[0]], i= 1, g = this.getGrid(), customCol;
+            for (; i < json.length-1; i++) {
+                if(columns[json[i].id-1])
+                    columns[json[i].id-1].hidden = json[i].hidden;
+                else
+                {
+                    var index = json[i].id-10;
+                    customCol = {
+                        header : customColumns[index].label,
+                        flex : 1,
+                        dataIndex : customColumns[index].name,
+                        height : 20
+                    }
+                    columns.push(customCol);
+
+                    extraColumns.push(customCol);
+
+                }
+                finalColumns[i] = columns[json[i].id-1];
+            }
+            this.setDefaultColumns(finalColumns);
+            this.setExtraColumns(extraColumns);
+        }
+    },
+
+    setFileObjects : function(fileObjects)
+    {
+        this.fileObjects = fileObjects;
+    },
+
+    getFileObjects : function()
+    {
+        return this.fileObjects.slice(0);
+    },
+
+    setExtraColumns: function(extraColumns) {
+        this.extraColumns = extraColumns;
+        this.fireEvent('columnchange', this.onColumnChange(this.getColumns()));
+    },
+
+    getExtraColumns: function() {
+        if(this.extraColumns)
+            return this.extraColumns.slice(0);
+        else
+            return [];
+    },
+
+    getExtraColumnNames : function()
+    {
+        var columns = this.getExtraColumns();
+        var retCols = [];
+        if(columns)
+        {
+            for(var i = 0; i < columns.length; i++)
+            {
+                retCols.push(columns[i].dataIndex);
+            }
+        }
+        return retCols;
+    },
+
+    setDefaultColumns: function(defaultColumns)
+    {
+        this.defaultColumns = defaultColumns;
+    },
+
+    getDefaultColumns: function()
+    {
+        return this.defaultColumns.splice(0);
+    },
+
+    getColumns: function() {
+        return this.getDefaultColumns();
+    },
+
+    onColumnChange: function(allTheColumns) {
+        this.getGrid().reconfigure(this.getGrid().getStore(), allTheColumns); // REMEMBER: Check if passing in the store fires reload
     },
 
     getItems : function() {
@@ -635,7 +778,6 @@ Ext4.define('File.panel.Browser', {
 
         var storeConfig = {
             model : this.fileSystem.getModel(),
-            autoLoad : true,
             proxy : this.fileSystem.getProxyCfg(this.getRootURL())
         };
 
@@ -661,12 +803,49 @@ Ext4.define('File.panel.Browser', {
         // 'load' only works on non-buffered stores
         this.fileStore.on(this.bufferFiles ? 'prefetch' : 'load', function() {
             this.gridMask.cancel();
+            Ext4.getCmp('treeNav').getStore().reload();
             if (this.grid) {
                 this.getGrid().getEl().unmask();
             }
+            this.attachCustomFileProperties();
         }, this);
 
         return this.fileStore;
+    },
+
+
+    attachCustomFileProperties : function(){
+        //Copied array so as not to be include name/Row Id in extra columns
+        var extraColumns = this.getExtraColumnNames();
+        LABKEY.Query.selectRows({
+            schemaName : 'exp',
+            queryName : 'Data',
+
+            success : function(resp){
+                console.log(resp);
+                resp = resp.rows;
+                this.setFileObjects(resp);
+                for(var i = 0; i < resp.length; i++)
+                {
+                    if(this.fileStore.findExact('name', resp[i].Name) >= 0)
+                    {
+                        var rec = this.fileStore.getAt(this.fileStore.findExact('name', resp[i].Name));
+                        if(!this.fileProps[rec.get('name')])
+                            this.fileProps[rec.get('name')] = {};
+                        for(var r = 0; r < extraColumns.length; r++)
+                        {
+                            rec.set(extraColumns[r], resp[i][extraColumns[r]]);
+                            this.fileProps[rec.get('name')][extraColumns[r]] = resp[i][extraColumns[r]];
+                        }
+                        this.fileProps[rec.get('name')].rowId = resp[i]['RowId'];
+                        this.fileProps[rec.get('name')].name = resp[i]['Name'];
+                    }
+                }
+                console.log(this.fileProps);
+            },
+            scope : this
+
+        })
     },
 
     updateGridProxy : function(url) {
@@ -769,6 +948,7 @@ Ext4.define('File.panel.Browser', {
         return {
             xtype : 'treepanel',
             itemId : 'treenav',
+            id : 'treeNav',
             region : 'west',
             cls : 'themed-panel',
             flex : 1,
@@ -844,13 +1024,14 @@ Ext4.define('File.panel.Browser', {
         this.tree.getView().expand(rec);
     },
 
+    //TODO:  Don't have this method return two different types
     getGrid : function() {
 
         if (this.grid) {
             return this.grid;
         }
 
-        return this.getGridCfg();
+        console.error('DUDES! Remember that getGrid() is borked? Refactor this ASAP.');
     },
 
     /**
@@ -956,67 +1137,77 @@ Ext4.define('File.panel.Browser', {
     //TODO: Button logic should work for multiple file selection (MFS)
     updateActionButtons : function()
     {
+        var selection = this.getGrid().getSelectionModel().getSelection();
         for(var key in this.actionMap)
         {
-            if(!this.selectedRecord)
-                break;
-
-            if(Ext4.getCmp(key))
+            if(!Ext4.getCmp(key))
+                continue;
+            else if(!this.actionMap[key].multiSelect && selection.length > 1)
             {
-                var disabled = true;
-                for(var i = 0; i < this.actionMap[key].files.length; i++)
-                {
-
-                    if(this.selectedRecord.data.name === this.actionMap[key].files[i])
-                    {
-                        disabled = false;
-                        break;
-                    }
-                }
-                Ext4.getCmp(key).setDisabled(disabled);
+                Ext4.getCmp(key).setDisabled(true);
+                continue;
             }
+            else if(selection.length == 0)
+            {
+                Ext4.getCmp(key).setDisabled(true);
+                continue;
+            }
+
+            var disabled = true;
+            for(var i = 0; i < this.actionMap[key].files.length; i++)
+            {
+                if(this.selectedRecord.data.name === this.actionMap[key].files[i])
+                {
+                    disabled = false;
+                    break;
+                }
+            }
+            Ext4.getCmp(key).setDisabled(disabled);
+
         }
     },
 
-    isValidFileCheck : function(files, filename)
+    isValidFileCheck : function(actionFiles, filenames)
     {
-        for(var i = 0; i < files.length; i++)
+        var valid = 0
+        for(var i = 0; i < actionFiles.length; i++)
         {
-            if(files[i] === filename)
+            for(var r = 0; r < filenames.length; r++)
             {
-                return true;
+                if(actionFiles[i] === filenames[r])
+                {
+                    valid++;
+                }
             }
         }
-        return false;
+        return valid;
+    },
+
+    getFileNames : function()
+    {
+        var files = [];
+        var selection = this.getGrid().getSelectionModel().getSelection();
+        for(var i = 0; i < selection.length; i++)
+        {
+            files.push(selection[i].data.name);
+        }
+        return files;
     },
 
     onImportData : function()
     {
-//        if (this.importDataEnabled) {
-//
-//            if (!this.importDataWindow) {
-//                this.importDataWindow = Ext4.create('File.panel.Import', {
-//                    actionGroups: this.actionGroups,
-//                    selection: this.getSelection(),
-//                    autoRequestImport: true
-//                });
-//            }
-//            else {
-//                this.importDataWindow.requestImport({
-//                    actionGroups: this.actionGroups,
-//                    selection: this.getSelection()
-//                });
-//            }
-//        }
         var actionMap = [],
+                fileNames = this.getFileNames(),
                 actions = [],
+                validFiles,
                 items   = [],
                 alreadyChecked = false, // Whether we've already found an enabled action to make the default selection
                 hasAdmin = false, pa, shrink, shortMessage, longMessage;
 
-        //TODO make this work for multiple file selection (MFS)
         for (var ag in this.actionGroups)
         {
+            //If you somehow managed to click this button when there was no data selected, flag a warning.
+            //THIS SHOULD PROBABLY NEVER APPEAR.  Button should disable like all the others if no viable data is selected.
             if (!this.selectedRecord)
             {
                 console.warning('No record selected for data import');
@@ -1026,41 +1217,59 @@ Ext4.define('File.panel.Browser', {
             var group = this.actionGroups[ag];
             pa = group.actions[0];
 
-            var bad = 0, badFiles = [];
+            var bad = 0, badFiles = [], goodActions = [];
             var potential = false;
+            var invalidMultiselect = false;
 
+            //Check to see if any file is applicable to this action (which is a member of an action group)
             for(var i=0; i < group.actions.length; i++){
+                //If no files can be used for this action, it is marked as bad
                 if(group.actions[i].files.length <= 0)
                 {
                     bad++;
+                    goodActions[i] = false;
+                    continue;
                 }
-                else if(!this.isValidFileCheck(group.actions[i].files, this.selectedRecord.data.name))
+                //Flag if action is not compatible with multiselect and user has more than one file selected
+                else if(!group.actions[i].multiSelect && fileNames.length > 1)
+                {
+                    bad++;
+                    goodActions[i] = false;
+                    invalidMultiselect = true;
+                }
+                //Otherwise, checks if the currently selected files can be used for this action.  If none, pushes the list of files which WOULD work for the tooltip.
+                validFiles = this.isValidFileCheck(group.actions[i].files, fileNames);
+                if(validFiles <= 0)
                 {
                     badFiles.push(group.actions[i].files);
                 }
-            }
-            if(bad == group.actions.length)
-                continue;
-            else if(bad + badFiles.length == group.actions.length)
-            {
-                potential = true;
-            }
-
-            badFiles['fileset'] = {};
-            for(var i = 0; i < badFiles.length; i++)
-            {
-                for(var j = 0; j < badFiles[i].length; j++)
+                if(goodActions[i] != false)
                 {
-                    badFiles['fileset'][badFiles[i][j]] = true;
+                    goodActions[i] = true;
                 }
             }
 
-            if(!potential)
+            //If all the actions in this group are bad, ignore the rest of the loop
+            if(bad == group.actions.length && !invalidMultiselect)
+                continue;
+            //Otherwise, if no files were valid, but there were possible files, we toggle a boolean to indicate that state.
+            else if((bad + badFiles.length == group.actions.length) && !invalidMultiselect)
             {
-                shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv"> using ' + '1' + ' of ' + pa.files.length + ' files</span>';
-                longMessage = 'This action will use the selected file: <br>' + this.selectedRecord.data.name;
+                potential = true;
+
+                //Goes through and collects all the unselected (but potentially usable) files into a single array
+                badFiles['fileset'] = {};
+                for(var i = 0; i < badFiles.length; i++)
+                {
+                    for(var j = 0; j < badFiles[i].length; j++)
+                    {
+                        badFiles['fileset'][badFiles[i][j]] = true;
+                    }
+                }
             }
-            else
+
+            //Toggling messages for if we had potential files vs. actual files
+            if(potential)
             {
                 shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv">None of the selected files can be used</span>';
                 longMessage = 'The following files could be used for this action: <br>'
@@ -1068,6 +1277,20 @@ Ext4.define('File.panel.Browser', {
                 {
                     longMessage += key + '<br>';
                 }
+            }
+            else if(invalidMultiselect)
+            {
+                shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv">This action can only opperate on one file at a time</span>';
+                longMessage = 'The following files could be used for this action: <br>'
+                for(var key in badFiles['fileset'])
+                {
+                    longMessage += key + '<br>';
+                }
+            }
+            else
+            {
+                shortMessage = group.label + '<br>' + '<span style="margin-left:5px;" class="labkey-mv"> using ' + validFiles + ' of ' + fileNames.length + ' files</span>';
+                longMessage = 'This action will use the selected file: <br>' + this.selectedRecord.data.name;
             }
 
             var radioGroup = Ext4.create('Ext.form.RadioGroup', {
@@ -1082,7 +1305,7 @@ Ext4.define('File.panel.Browser', {
                 listeners : {
                     render : function(rg){
                         rg.setHeight(rg.getHeight()+10);
-                        !potential ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');
+                        (!potential && !invalidMultiselect) ? this.setFormFieldTooltip(rg, 'info.png') : this.setFormFieldTooltip(rg, 'warning-icon-alt.png');
                     },
                     scope : this
                 }
@@ -1090,6 +1313,7 @@ Ext4.define('File.panel.Browser', {
 
             var radios = [];
 
+            //Generate the radio buttons for each action group
             for (var i=0; i < group.actions.length; i++)
             {
                 var action = group.actions[i];
@@ -1112,7 +1336,7 @@ Ext4.define('File.panel.Browser', {
                         boxLabel: label,
                         name: 'importAction',
                         inputValue: action.id,
-                        disabled : potential
+                        disabled : !goodActions[i]
                     });
 
                     if (action.enabled)
@@ -1125,7 +1349,7 @@ Ext4.define('File.panel.Browser', {
                 xtype: 'radiogroup',
                 fieldLabel : shortMessage,
                 labelWidth : 275,
-                showAsWarning: potential,
+                showAsWarning: potential || invalidMultiselect,
                 border: '0 0 1 0',
                 style: 'border-bottom: 1px dashed lightgray',
                 columns    : 1,
@@ -1181,6 +1405,7 @@ Ext4.define('File.panel.Browser', {
         else if (!radioGroup)
         {
             items.push({
+                //TODO:  MFS
                 html      : 'There are no actions capable of processing ' + this.selectedRecord.data.name,
                 bodyStyle : 'padding:10px;',
                 border    : false
@@ -1281,8 +1506,7 @@ Ext4.define('File.panel.Browser', {
     {
         if (action)
         {
-            //TODO convert for multiple file selection (MFS)
-            var selections = [this.selectedRecord], i;
+            var selections = this.getGrid().getSelectionModel().getSelection(), i;
             var link = action.link;
 
             // if there are no selections, treat as if all are selected
@@ -1340,39 +1564,9 @@ Ext4.define('File.panel.Browser', {
                 this.getDetailPanel().update('');
         }
 
-        var tb = this.getDockedComponent(0); // button toolbar
-        if (tb) {
-            if (this.actions.download) {
-                if (selectedRecords.length > 0)
-                    this.actions.download.setDisabled(!this.fileSystem.canRead(selectedRecords[0])); // TODO: multi-select
-            }
-            if (this.actions.renamePath) {
-                if (selectedRecords.length > 1)
-                    this.actions.renamePath.setDisabled(true);
-                else if (selectedRecords.length == 1)
-                    this.actions.renamePath.setDisabled(false);
-                else
-                    this.actions.renamePath.setDisabled(true);
-            }
-            if (this.actions.movePath) {
-                if (selectedRecords.length > 1)
-                    this.actions.movePath.setDisabled(true);
-                else if (selectedRecords.length == 1)
-                    this.actions.movePath.setDisabled(false);
-                else
-                    this.actions.movePath.setDisabled(true);
-            }
-            if (this.actions.deletePath) {
-                if (selectedRecords.length > 1)
-                    this.actions.deletePath.setDisabled(true);
-                else if (selectedRecords.length == 1)
-                    this.actions.deletePath.setDisabled(false);
-                else
-                    this.actions.deletePath.setDisabled(true);
-            }
-        }
+        this.fireEvent('selectionchange', File.panel.Browser._toggleActions(this.actions, selectedRecords.length));
 
-        this.selectedRecord = selectedRecords[0]; // TODO: Fix multi-select
+        this.selectedRecord = selectedRecords[0];
         this.changeTestFlag(true, false);
         this.updateActionButtons();
         this.changeTestFlag(true, true);
@@ -1651,27 +1845,34 @@ Ext4.define('File.panel.Browser', {
     onDelete : function() {
 
         var recs = this.getGrid().getSelectionModel().getSelection();
-
+        var deleted = 0;
         if (recs && recs.length > 0) {
 
+            var msg = recs.length == 1 ? 'Are you sure that you want to delete the ' + (recs[0].data.collection ? 'folder' : 'file') +' \'' + recs[0].data.name + '\'?'
+                    : 'Are you sure you want to delete the ' + recs.length + ' selected files?'
             Ext4.Msg.show({
                 title : 'Delete Files',
                 cls : 'data-window',
-                msg : 'Are you sure that you want to delete the ' + (recs[0].data.collection ? 'folder' : 'file') +' \'' + recs[0].data.name + '\'?',
+                msg : msg,
                 buttons : Ext4.Msg.YESNO,
                 icon : Ext4.Msg.QUESTION,
                 fn : function(btn) {
                     if (btn == 'yes') {
-                        this.fileSystem.deletePath({
-                            path : recs[0].data.href,
-                            success : function(path) {
-                                this.getFileStore().load();
-                            },
-                            failure : function(response) {
-                                 Ext4.Msg.alert('Delete', 'Failed to delete.');
-                            },
-                            scope : this
-                        });
+                        for(var i = 0; i < recs.length; i++)
+                        {
+                            this.fileSystem.deletePath({
+                                path : recs[i].data.href,
+                                success : function(path) {
+                                    deleted++;
+                                    if(deleted == recs.length)
+                                        this.getFileStore().load();
+                                },
+                                failure : function(response) {
+                                    Ext4.Msg.alert('Delete', 'Failed to delete.');
+                                },
+                                scope : this
+                            });
+                        }
                     }
                 },
                 scope : this
@@ -1680,13 +1881,13 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    // TODO: Support multiple selection download -- migrate to file system (MFS)
     onDownload : function(config) {
 
-        var recs = (config && config.recs) ? config.recs : this.getGrid().getSelectionModel().getSelection();
+        var recs = this.getGrid().getSelectionModel().getSelection();
 
-        if (recs.length == 1) {
-            this.fileSystem.downloadResource({record: recs[0]});
+        if (recs.length >= 1)
+        {
+            this.fileSystem.downloadResource({record: recs, directory : this.currentDirectory});
         }
         else {
             Ext4.Msg.show({
@@ -1714,8 +1915,7 @@ Ext4.define('File.panel.Browser', {
         if (!this.currentDirectory || !this.selectedRecord)
             return;
 
-        //TODO Make this not a workaround for a single file (MFS)
-        var selections = [this.selectedRecord];
+        var selections = this.getGrid().getSelectionModel().getSelection();
 
 //        function validateNode(record, node){
 //            if(record.data.options.indexOf('MOVE') == -1){
@@ -2009,6 +2209,35 @@ Ext4.define('File.panel.Browser', {
                 failure: function(){}
             });
         }
+    },
+
+
+    onEditFileProps : function()
+    {
+        var filePropsWin =  Ext4.create('Ext.Window', {
+            title : 'Edit File Properties',
+            id : 'editFilePropsWin',
+            height : 300,
+            width : 400,
+            items : Ext4.create('File.panel.EditCustomFileProps', {
+                extraColumns : this.getExtraColumnNames(),
+                sm : this.getGrid().getSelectionModel().getSelection(),
+                winId : 'editFilePropsWin',
+                fileProps : this.fileProps
+            }),
+            listeners : {
+                successfulsave : function()
+                {
+                    //TODO:  Make this not awful
+                    this.getGrid().getStore().load();
+                },
+                scope : this
+            },
+            autoShow : true
+        });
+
+        filePropsWin.show();
+
     },
 
     setFormFieldTooltip : function(component, icon)

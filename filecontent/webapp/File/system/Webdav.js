@@ -172,12 +172,20 @@ Ext4.define('File.system.Webdav', {
     /**
      * Returns true if the current user can read the passed file
      * In order to obtain the record for the desired file, recordFromCache() is normally used.
-     * @param {Ext.Record} record The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
+     * @param {Ext.Record} record(s) The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
-    canRead : function(record)
+    canRead : function(records)
     {
-        return this._check(record, 'GET');
+        if (Ext4.isArray(records))
+        {
+            for (var i=0; i < records.length; i++)
+            {
+                if (this._check(records[i], 'GET') == false)
+                    return false;
+            }
+        }
+        return this._check(records, 'GET');
     },
 
     /**
@@ -450,7 +458,8 @@ Ext4.define('File.system.Webdav', {
      */
     downloadResource : function (config)
     {
-        var record = config.record;
+        var record = config.record[0];
+        var records = config.record;
         var directget = record.data.directget;
         if (directget)
         {
@@ -489,14 +498,19 @@ Ext4.define('File.system.Webdav', {
         }
         else
         {
-            // use href property
-            var url;
-            if (!record.data.collection) {
+            if (records.length == 1 && record)
+            {
                 url = record.data.href + "?contentDisposition=attachment";
             }
-            else {
-                url = record.data.href + "?method=zip&depth=-1";
-                url += "&file=" + encodeURIComponent(record.data.name);
+            else if (config.directory.data.uri)
+            {
+                var url = config.directory.data.uri + "?method=zip&depth=-1";
+                for (var i = 0; i < records.length; i++)
+                {
+                    url = url + "&file=" + encodeURIComponent(records[i].data.name);
+                }
+
+                window.location = url;
             }
 
             window.location = url;

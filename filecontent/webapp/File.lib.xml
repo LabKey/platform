@@ -15,6 +15,7 @@
         <script path="File/panel/FilePropertiesPanel.js"/>
         <script path="File/panel/Actions.js"/>
         <script path="File/panel/EmailProps.js"/>
+        <script path="File/panel/EditCustomFileProps.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4"/>
