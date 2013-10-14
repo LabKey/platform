@@ -227,7 +227,3 @@ Ext4.override(Ext4.data.Store, {
         me.fireEvent('load', me, me.data.getRange(), true);
     }
 });
-
-// NOTE: Workaround for menu highlighting in NavTree.java for Ext 4.2.1. Supposedly fixed in 4.2.2.
-// Committed: r28270
-// Sencha Issue: http://www.sencha.com/forum/showthread.php?270572-4.2.x-menuitem-with-href-issue&p=991651
