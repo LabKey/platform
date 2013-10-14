@@ -3,6 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+if(!LABKEY.vis) {
+    LABKEY.vis = {};
+}
 
 LABKEY.vis.TimeChartHelper = new function() {
 
@@ -1084,6 +1087,13 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
+    // Since the time chart and generic chart have the same vis dependencies to load, use the GenericChartHelper here
+    var loadVisDependencies = function(callback, scope) {
+        LABKEY.requiresScript('/vis/genericChart/genericChartHelper.js', true, function(){
+            LABKEY.vis.GenericChartHelper.loadVisDependencies(callback, scope);
+        });
+    };
+
     return {
         generateLabels : generateLabels,
         generateScales : generateScales,
@@ -1101,6 +1111,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         getAxisIndex : getAxisIndex,
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
-        validateChartData : validateChartData
+        validateChartData : validateChartData,
+        loadVisDependencies: loadVisDependencies
     };
 };

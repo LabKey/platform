@@ -20,28 +20,6 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "    var DEFAULT_SINGLE_CHART_HEIGHT = 600;\n" +
             "    var DEFAULT_MULTI_CHART_HEIGHT = 380;\n" +
             "\n" +
-            "    var loadVisDependencies = function(callback, scope) {\n" +
-            "        var devScripts = [\n" +
-            "            '/vis/lib/d3-2.0.4.min.js',\n" +
-            "            '/vis/lib/raphael-min-2.1.0.js',\n" +
-            "            '/vis/lib/patches.js',\n" +
-            "            '/vis/src/utils.js',\n" +
-            "            '/vis/src/geom.js',\n" +
-            "            '/vis/src/stat.js',\n" +
-            "            '/vis/src/scale.js',\n" +
-            "            '/vis/src/layer.js',\n" +
-            "            '/vis/src/plot.js',\n" +
-            "            '/vis/timeChart/timeChartHelper.js'\n" +
-            "        ];\n" +
-            "        var productionScripts = [\n" +
-            "            '/vis/lib/d3-2.0.4.min.js',\n" +
-            "            '/vis/lib/raphael-min-2.1.0.js',\n" +
-            "            '/vis/vis.min.js',\n" +
-            "            '/vis/timeChart/timeChartHelper.js'\n" +
-            "        ];\n" +
-            "        LABKEY.requiresScript((LABKEY.devMode ? devScripts : productionScripts), true, callback, scope, true);\n" +
-            "    };\n" +
-            "\n" +
             "    // chartConfig is the saved information about the chart (measures, dimensions, labels, scales, etc.)\n" +
             "    var chartConfig = {{chartConfig}};\n" +
             "\n" +
@@ -156,7 +134,8 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "        TCH.getChartData(queryConfig);\n" +
             "    };\n" +
             "\n" +
-            "    loadVisDependencies(dependencyCallback);\n" +
+            "    // Load the script dependencies for charts. \n" +
+            "    LABKEY.requiresScript('/vis/timeChart/timeChartHelper.js', true, function(){LABKEY.vis.TimeChartHelper.loadVisDependencies(dependencyCallback);});\n" +
             "})();\n" +
             "</script>"
 });

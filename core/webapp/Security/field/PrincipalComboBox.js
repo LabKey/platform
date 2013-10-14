@@ -38,7 +38,7 @@ Ext4.define('Security.field.PrincipalComboBox', {
                 {
                     value = "Site: " + value;
                 }
-                else if (values.Type == 'u' && values.Name != values.DisplayName)
+                else if (values.Type == 'u' && values.DisplayName && values.DisplayName.length > 0 && values.Name != values.DisplayName)
                 {
                     // issue 17704, add display name to users
                     value += " (" + Ext4.String.htmlEncode(values.DisplayName) + ")";
