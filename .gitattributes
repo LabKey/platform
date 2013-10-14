@@ -4284,6 +4284,9 @@ wiki/radeox/src/simplelog.properties -text
 wiki/radeox/src/test/radeox/test/groovy/AllGroovyTests.java -text
 wiki/radeox/src/test/radeox/test/groovy/RadeoxTemplateEngineTest.java -text
 wiki/resources/credits/jars.txt -text
+wiki/resources/web/_images/page.png -text
+wiki/resources/web/wiki/internal/Wiki.js -text
+wiki/resources/web/wiki/internal/wikiEdit.js -text
 wiki/schemas/wiki.xsd -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
 wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
