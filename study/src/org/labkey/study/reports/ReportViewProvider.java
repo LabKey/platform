@@ -92,6 +92,7 @@ public class ReportViewProvider implements DataViewProvider
         ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
         ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
         ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
+        ReportPropsManager.get().ensureProperty(c, user, "iconType", "IconType", PropertyType.STRING);
     }
 
     @Override
@@ -237,7 +238,13 @@ public class ReportViewProvider implements DataViewProvider
                     info.setVisible(!descriptor.isHidden());
 
                     // This icon is the small icon -- not the same as thumbnail
-                    String iconPath = ReportService.get().getIconPath(r);
+                    String iconPath;
+                    String iconType = (String)ReportPropsManager.get().getPropertyValue(r.getEntityId(), context.getContainer(), "iconType");
+
+                    if(iconType != null && iconType.equals(EditInfo.ThumbnailType.CUSTOM.name()))
+                        iconPath = PageFlowUtil.urlProvider(ReportUrls.class).urlIcon(c, r).toString();
+                    else
+                        iconPath = ReportService.get().getIconPath(r);
 
                     if (!StringUtils.isEmpty(iconPath))
                         info.setIcon(iconPath);
@@ -277,7 +284,9 @@ public class ReportViewProvider implements DataViewProvider
                 Property.refreshDate.name(),
                 Property.shared.name(),
                 Property.customThumbnail.name(),
-                Property.customThumbnailFileName.name()
+                Property.customThumbnailFileName.name(),
+                Property.customIcon.name(),
+                Property.customIconFileName.name()
         };
 
         private static final Actions[] _actions = {
@@ -377,6 +386,26 @@ public class ReportViewProvider implements DataViewProvider
                             {
                                 svc.replaceThumbnail(wrapper, ImageType.Large, context);
                                 ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.CUSTOM.name());
+                            }
+                        }
+                    }
+
+                    if (props.containsKey(Property.customIcon.name()))
+                    {
+                        InputStream is = (InputStream)props.get(Property.customIcon.name());
+                        String filename = (String)props.get(Property.customIconFileName);
+
+                        if (report instanceof DynamicThumbnailProvider)
+                        {
+                            String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
+                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Small);
+
+                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                            if (null != svc)
+                            {
+                                svc.replaceThumbnail(wrapper, ImageType.Small, context);
+                                ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "iconType", ThumbnailType.CUSTOM.name());
                             }
                         }
                     }

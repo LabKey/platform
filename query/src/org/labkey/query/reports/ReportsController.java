@@ -272,6 +272,15 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
+        public ActionURL urlIcon(Container c, Report r)
+        {
+            ActionURL url = new ActionURL(ThumbnailAction.class, c);
+            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
+            url.addParameter("imageType", "Small");
+            return url;
+        }
+
+        @Override
         public Class<? extends Controller> getDownloadClass()
         {
             return DownloadAction.class;

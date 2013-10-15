@@ -23,9 +23,6 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             dateFormat  : 'Y-m-d',
             fieldDefaults  : {
                 labelWidth : 120,
-//                minWidth   : 500,
-//                maxWidth   : 450,
-//                width      : 400,
                 style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
             }
@@ -43,9 +40,10 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
     initComponent : function() {
 
-        var formItems = [];
+        var propertiesItems = [];
+        var imagesItems = [];
 
-        formItems.push({
+        propertiesItems.push({
             xtype      : 'textfield',
             allowBlank : false,
             name       : 'viewName',
@@ -69,7 +67,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 }
             }, this, {single: true});
 
-            formItems.push({
+            propertiesItems.push({
                 xtype: 'combo',
                 itemId: 'authorfield',
                 fieldLabel: 'Author',
@@ -91,7 +89,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['status']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Status',
                 name        : 'status',
@@ -122,7 +120,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['modifieddate']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype       : 'datefield',
                 fieldLabel  : "Date",
                 name        : "modifiedDate",
@@ -137,7 +135,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['datacutdate']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype       : 'datefield',
                 fieldLabel  : 'Data Cut Date',
                 name        : 'refreshDate',
@@ -153,7 +151,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['category']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Category',
                 name        : 'category',
@@ -203,7 +201,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['description']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype      : 'textarea',
                 fieldLabel : 'Description',
                 name       : 'description',
@@ -219,7 +217,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             if (this.disableShared) {
                 // be sure to roundtrip the original shared value
                 // since we are disabling the checkbox
-                formItems.push({
+                propertiesItems.push({
                     xtype : 'hidden',
                     name  : "shared",
                     value : this.data.shared,
@@ -231,7 +229,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 sharedName = "hiddenShared";
             }
 
-            formItems.push({
+            propertiesItems.push({
                 xtype   : 'checkbox',
                 inputValue  : this.data.shared,
                 checked     : this.data.shared,
@@ -252,7 +250,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['type']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Type',
                 value      : this.data.dataType,
@@ -264,7 +262,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['visible']) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype      : 'radiogroup',
                 fieldLabel : 'Visibility',
                 columns    : 2,
@@ -279,7 +277,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['created'] && this.data.created) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Created',
                 value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
@@ -291,7 +289,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['modified'] && this.data.modified) {
 
-            formItems.push({
+            propertiesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Modified',
                 value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
@@ -300,9 +298,13 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 width      : 400
             });
         }
+
+        Ext4.each(this.extraItems, function(item) {
+            propertiesItems.push(item);
+        }, this);
                                                    
         if (this.visibleFields['customThumbnail']) {
-            formItems.push({
+            imagesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Thumbnail',
                 value      : '<div class="thumbnail"><img src="' + this.data.thumbnail + '"/></div>',
@@ -313,7 +315,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             if (this.data.allowCustomThumbnail)
             {
-                formItems.push({
+                imagesItems.push({
                     xtype      : 'filefield',
                     id         : 'customThumbnail',
                     name       : 'customThumbnail',
@@ -343,20 +345,88 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 });
 
                 // hidden form field for the custom thumbnail file name
-                formItems.push({
+                imagesItems.push({
                     xtype : 'hidden',
                     id    : 'customThumbnailFileName',
                     name  : 'customThumbnailFileName',
                     value : null
                 });
             }
+
+            // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
+            // is not necessary.
+            imagesItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Icon',
+                value      : '<div class="icon"><img src="' + this.data.icon + '"/></div>',
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
+            });
+
+            if (this.data.allowCustomIcon || true) {
+                imagesItems.push({
+                    xtype      : 'filefield',
+                    id         : 'customIcon',
+                    name       : 'customIcon',
+                    fieldLabel : 'Change Icon',
+                    msgTarget  : 'side',
+                    labelWidth : 120,
+                    width      : 400,
+                    validator  : function(value) {
+                        value = value.toLowerCase();
+                        if (value != null && value.length > 0 && !(/\.png$/.test(value) || /\.jpg$/.test(value) || /\.jpeg$/.test(value) || /\.gif$/.test(value) || /\.svg$/.test(value)))
+                            return "Please choose a PNG, JPG, GIF, or SVG image.";
+                        else
+                            return true;
+                    },
+                    listeners  : {
+                        afterrender : function(cmp) {
+                            Ext4.tip.QuickTipManager.register({
+                                target: cmp.getId(),
+                                text: 'Choose a PNG, JPG, GIF, or SVG image. Images will be scaled to 18 × 18 pixels.'
+                            });
+                        },
+                        change : function(cmp, value) {
+                            this.down('#customIconFileName').setValue(value);
+                        },
+                        scope: this
+                    }
+                });
+
+                imagesItems.push({
+                    xtype : 'hidden',
+                    id    : 'customIconFileName',
+                    name  : 'customIconFileName',
+                    value : null
+                });
+            }
         }
 
-        this.items = formItems;
-
-        Ext4.each(this.extraItems, function(item) {
-            this.items.push(item);
-        }, this);
+        if (imagesItems.length > 0) {
+            this.items = [{
+                xtype: 'tabpanel',
+                border: false,
+                frame: false,
+                items: [{
+                    xtype: 'form',
+                    title: 'Properties',
+                    margin: '5 0 0 0',
+                    border: false,
+                    frame: false,
+                    items: propertiesItems
+                }, {
+                    xtype: 'form',
+                    title: 'Images',
+                    margin: '5 0 0 0',
+                    border: false,
+                    frame: false,
+                    items: imagesItems
+                }]
+            }];
+        } else {
+            this.items = propertiesItems;
+        }
 
         this.callParent();
     }
