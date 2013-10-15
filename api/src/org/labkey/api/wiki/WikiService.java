@@ -37,6 +37,8 @@ public interface WikiService
     public static final String RENDERER_TYPE_TABLE_NAME = "renderertype";
 
     public WebPartView getView(Container c, String name, boolean renderContentOnly);
+    public WebPartView getHistoryView(Container c, String name);
+
     public String getHtml(Container c, String name);
 
     @Deprecated // Use getView(Container c, String name, boolean renderContentOnly) instead (forceRefresh parameter is ignored)
